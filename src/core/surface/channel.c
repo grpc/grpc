@@ -148,7 +148,8 @@ grpc_channel *grpc_channel_create_from_filters(
     }
   }
 
-  if (channel->is_client && channel->default_authority == NULL) {
+  if (channel->is_client && channel->default_authority == NULL &&
+      target != NULL) {
     char *default_authority = grpc_get_default_authority(target);
     if (default_authority) {
       channel->default_authority = grpc_mdelem_from_strings(
