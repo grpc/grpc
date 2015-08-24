@@ -31,6 +31,14 @@ require 'grpc'
 
 include GRPC::Core::StatusCodes
 
+describe GRPC::Core::WriteFlags do
+  it 'should define the known write flag values' do
+    m = GRPC::Core::WriteFlags
+    expect(m.const_get(:BUFFER_HINT)).to_not be_nil
+    expect(m.const_get(:NO_COMPRESS)).to_not be_nil
+  end
+end
+
 describe GRPC::Core::RpcErrors do
   before(:each) do
     @known_types = {

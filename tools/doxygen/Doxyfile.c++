@@ -792,14 +792,11 @@ include/grpc++/support/byte_buffer.h \
 include/grpc++/support/channel_arguments.h \
 include/grpc++/support/config.h \
 include/grpc++/support/config_protobuf.h \
-include/grpc++/support/dynamic_thread_pool.h \
-include/grpc++/support/fixed_size_thread_pool.h \
 include/grpc++/support/slice.h \
 include/grpc++/support/status.h \
 include/grpc++/support/status_code_enum.h \
 include/grpc++/support/stub_options.h \
 include/grpc++/support/sync_stream.h \
-include/grpc++/support/thread_pool_interface.h \
 include/grpc++/support/time.h
 
 # This tag can be used to specify the character encoding of the source files

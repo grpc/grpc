@@ -131,7 +131,7 @@ class _Kernel(object):
     ticket = links.Ticket(
         call, 0, group, method, links.Ticket.Subscription.FULL,
         service_acceptance.deadline - time.time(), None, event.metadata, None,
-        None, None, None, None)
+        None, None, None, None, 'TODO: Service Context Object!')
     self._relay.add_value(ticket)
 
   def _on_read_event(self, event):
@@ -157,7 +157,7 @@ class _Kernel(object):
         # rpc_state.read = _Read.AWAITING_ALLOWANCE
     ticket = links.Ticket(
         call, rpc_state.sequence_number, None, None, None, None, None, None,
-        payload, None, None, None, termination)
+        payload, None, None, None, termination, None)
     rpc_state.sequence_number += 1
     self._relay.add_value(ticket)
 
@@ -176,7 +176,7 @@ class _Kernel(object):
     else:
       ticket = links.Ticket(
           call, rpc_state.sequence_number, None, None, None, None, 1, None,
-          None, None, None, None, None)
+          None, None, None, None, None, None)
       rpc_state.sequence_number += 1
       self._relay.add_value(ticket)
       rpc_state.low_write = _LowWrite.OPEN
@@ -198,7 +198,7 @@ class _Kernel(object):
       termination = links.Ticket.Termination.TRANSMISSION_FAILURE
     ticket = links.Ticket(
         call, rpc_state.sequence_number, None, None, None, None, None, None,
-        None, None, None, None, termination)
+        None, None, None, None, termination, None)
     rpc_state.sequence_number += 1
     self._relay.add_value(ticket)
 
@@ -259,7 +259,7 @@ class _Kernel(object):
             termination = links.Ticket.Termination.COMPLETION
           ticket = links.Ticket(
               call, rpc_state.sequence_number, None, None, None, None, None,
-              None, payload, None, None, None, termination)
+              None, payload, None, None, None, termination, None)
           rpc_state.sequence_number += 1
           self._relay.add_value(ticket)
 

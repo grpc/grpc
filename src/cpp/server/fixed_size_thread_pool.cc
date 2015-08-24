@@ -33,7 +33,7 @@
 
 #include <grpc++/impl/sync.h>
 #include <grpc++/impl/thd.h>
-#include <grpc++/support/fixed_size_thread_pool.h>
+#include "src/cpp/server/fixed_size_thread_pool.h"
 
 namespace grpc {
 

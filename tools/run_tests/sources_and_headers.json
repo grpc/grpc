@@ -468,6 +468,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "grpc_channel_args_test", 
+    "src": [
+      "test/core/channel/channel_args_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "grpc_channel_stack_test", 
     "src": [
       "test/core/channel/channel_stack_test.c"
@@ -1189,21 +1203,6 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "dynamic_thread_pool_test", 
-    "src": [
-      "test/cpp/server/dynamic_thread_pool_test.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -1212,21 +1211,6 @@
     "name": "end2end_test", 
     "src": [
       "test/cpp/end2end/end2end_test.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "fixed_size_thread_pool_test", 
-    "src": [
-      "test/cpp/server/fixed_size_thread_pool_test.cc"
     ]
   }, 
   {
@@ -1627,8 +1611,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
-      "grpc_test_util", 
-      "grpc_zookeeper"
+      "grpc_test_util"
     ], 
     "headers": [], 
     "language": "c++", 
@@ -13150,20 +13133,20 @@
       "include/grpc++/support/channel_arguments.h", 
       "include/grpc++/support/config.h", 
       "include/grpc++/support/config_protobuf.h", 
-      "include/grpc++/support/dynamic_thread_pool.h", 
-      "include/grpc++/support/fixed_size_thread_pool.h", 
       "include/grpc++/support/slice.h", 
       "include/grpc++/support/status.h", 
       "include/grpc++/support/status_code_enum.h", 
       "include/grpc++/support/stub_options.h", 
       "include/grpc++/support/sync_stream.h", 
-      "include/grpc++/support/thread_pool_interface.h", 
       "include/grpc++/support/time.h", 
       "src/cpp/client/create_channel_internal.h", 
       "src/cpp/client/secure_credentials.h", 
       "src/cpp/common/create_auth_context.h", 
       "src/cpp/common/secure_auth_context.h", 
-      "src/cpp/server/secure_server_credentials.h"
+      "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/fixed_size_thread_pool.h", 
+      "src/cpp/server/secure_server_credentials.h", 
+      "src/cpp/server/thread_pool_interface.h"
     ], 
     "language": "c++", 
     "name": "grpc++", 
@@ -13200,14 +13183,11 @@
       "include/grpc++/support/channel_arguments.h", 
       "include/grpc++/support/config.h", 
       "include/grpc++/support/config_protobuf.h", 
-      "include/grpc++/support/dynamic_thread_pool.h", 
-      "include/grpc++/support/fixed_size_thread_pool.h", 
       "include/grpc++/support/slice.h", 
       "include/grpc++/support/status.h", 
       "include/grpc++/support/status_code_enum.h", 
       "include/grpc++/support/stub_options.h", 
       "include/grpc++/support/sync_stream.h", 
-      "include/grpc++/support/thread_pool_interface.h", 
       "include/grpc++/support/time.h", 
       "src/cpp/client/channel.cc", 
       "src/cpp/client/channel_arguments.cc", 
@@ -13233,7 +13213,9 @@
       "src/cpp/server/async_generic_service.cc", 
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
+      "src/cpp/server/dynamic_thread_pool.h", 
       "src/cpp/server/fixed_size_thread_pool.cc", 
+      "src/cpp/server/fixed_size_thread_pool.h", 
       "src/cpp/server/insecure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.h", 
@@ -13241,6 +13223,7 @@
       "src/cpp/server/server_builder.cc", 
       "src/cpp/server/server_context.cc", 
       "src/cpp/server/server_credentials.cc", 
+      "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/util/byte_buffer.cc", 
       "src/cpp/util/slice.cc", 
       "src/cpp/util/status.cc", 
@@ -13324,17 +13307,17 @@
       "include/grpc++/support/channel_arguments.h", 
       "include/grpc++/support/config.h", 
       "include/grpc++/support/config_protobuf.h", 
-      "include/grpc++/support/dynamic_thread_pool.h", 
-      "include/grpc++/support/fixed_size_thread_pool.h", 
       "include/grpc++/support/slice.h", 
       "include/grpc++/support/status.h", 
       "include/grpc++/support/status_code_enum.h", 
       "include/grpc++/support/stub_options.h", 
       "include/grpc++/support/sync_stream.h", 
-      "include/grpc++/support/thread_pool_interface.h", 
       "include/grpc++/support/time.h", 
       "src/cpp/client/create_channel_internal.h", 
-      "src/cpp/common/create_auth_context.h"
+      "src/cpp/common/create_auth_context.h", 
+      "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/fixed_size_thread_pool.h", 
+      "src/cpp/server/thread_pool_interface.h"
     ], 
     "language": "c++", 
     "name": "grpc++_unsecure", 
@@ -13371,14 +13354,11 @@
       "include/grpc++/support/channel_arguments.h", 
       "include/grpc++/support/config.h", 
       "include/grpc++/support/config_protobuf.h", 
-      "include/grpc++/support/dynamic_thread_pool.h", 
-      "include/grpc++/support/fixed_size_thread_pool.h", 
       "include/grpc++/support/slice.h", 
       "include/grpc++/support/status.h", 
       "include/grpc++/support/status_code_enum.h", 
       "include/grpc++/support/stub_options.h", 
       "include/grpc++/support/sync_stream.h", 
-      "include/grpc++/support/thread_pool_interface.h", 
       "include/grpc++/support/time.h", 
       "src/cpp/client/channel.cc", 
       "src/cpp/client/channel_arguments.cc", 
@@ -13398,12 +13378,15 @@
       "src/cpp/server/async_generic_service.cc", 
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
+      "src/cpp/server/dynamic_thread_pool.h", 
       "src/cpp/server/fixed_size_thread_pool.cc", 
+      "src/cpp/server/fixed_size_thread_pool.h", 
       "src/cpp/server/insecure_server_credentials.cc", 
       "src/cpp/server/server.cc", 
       "src/cpp/server/server_builder.cc", 
       "src/cpp/server/server_context.cc", 
       "src/cpp/server/server_credentials.cc", 
+      "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/util/byte_buffer.cc", 
       "src/cpp/util/slice.cc", 
       "src/cpp/util/status.cc", 
