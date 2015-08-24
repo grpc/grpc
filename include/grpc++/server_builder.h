@@ -96,10 +96,6 @@ class ServerBuilder {
                         std::shared_ptr<ServerCredentials> creds,
                         int* selected_port = nullptr);
 
-  // Set the thread pool used for running appliation rpc handlers.
-  // Does not take ownership.
-  void SetThreadPool(ThreadPoolInterface* thread_pool);
-
   // Add a completion queue for handling asynchronous services
   // Caller is required to keep this completion queue live until calling
   // BuildAndStart()

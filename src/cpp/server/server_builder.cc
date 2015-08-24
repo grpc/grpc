@@ -37,8 +37,8 @@
 #include <grpc/support/log.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
-#include <grpc++/thread_pool_interface.h>
-#include <grpc++/fixed_size_thread_pool.h>
+#include "src/cpp/server/thread_pool_interface.h"
+#include "src/cpp/server/fixed_size_thread_pool.h"
 
 namespace grpc {
 
@@ -87,10 +87,6 @@ void ServerBuilder::AddListeningPort(const grpc::string& addr,
                                      int* selected_port) {
   Port port = {addr, creds, selected_port};
   ports_.push_back(port);
-}
-
-void ServerBuilder::SetThreadPool(ThreadPoolInterface* thread_pool) {
-  thread_pool_ = thread_pool;
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
