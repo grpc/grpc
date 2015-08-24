@@ -65,6 +65,7 @@
     </Compile>
     <Compile Include="ClientBaseTest.cs" />
     <Compile Include="ShutdownTest.cs" />
+    <Compile Include="Internal\AsyncCallTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ClientServerTest.cs" />
     <Compile Include="ServerTest.cs" />
