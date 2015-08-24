@@ -49,7 +49,7 @@ namespace Grpc.Core
         readonly Func<Metadata> getTrailersFunc;
         readonly Action disposeAction;
 
-        public AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> responseAsync, Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
+        internal AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> responseAsync, Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
         {
             this.requestStream = requestStream;
             this.responseAsync = responseAsync;

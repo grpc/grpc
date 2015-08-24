@@ -41,7 +41,7 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Provides access to read and write metadata values to be exchanged during a call.
+    /// A collection of metadata entries that can be exchanged during a call.
     /// </summary>
     public sealed class Metadata : IList<Metadata.Entry>
     {
@@ -58,21 +58,19 @@ namespace Grpc.Core
         readonly List<Entry> entries;
         bool readOnly;
 
+        /// <summary>
+        /// Initializes a new instance of <c>Metadata</c>.
+        /// </summary>
         public Metadata()
         {
             this.entries = new List<Entry>();
-        }
-
-        public Metadata(ICollection<Entry> entries)
-        {
-            this.entries = new List<Entry>(entries);
         }
 
         /// <summary>
         /// Makes this object read-only.
         /// </summary>
         /// <returns>this object</returns>
-        public Metadata Freeze()
+        internal Metadata Freeze()
         {
             this.readOnly = true;
             return this;
