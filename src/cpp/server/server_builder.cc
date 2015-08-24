@@ -37,8 +37,8 @@
 #include <grpc/support/log.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
-#include <grpc++/thread_pool_interface.h>
-#include <grpc++/fixed_size_thread_pool.h>
+#include "src/cpp/server/thread_pool_interface.h"
+#include "src/cpp/server/fixed_size_thread_pool.h"
 
 namespace grpc {
 
@@ -104,17 +104,6 @@ ServerBuilder& ServerBuilder::AddListeningPort(const grpc::string& addr,
   return *this;
 }
 
-ServerBuilder& ServerBuilder::SetThreadPool(ThreadPoolInterface* thread_pool) {
-  thread_pool_ = thread_pool;
-  return *this;
-}
-
-ServerBuilder& ServerBuilder::SetCompressionOptions(
-    const grpc_compression_options& options) {
-  compression_options_ = options;
-  return *this;
-}
-
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   bool thread_pool_owned = false;
   if (!async_services_.empty() && !services_.empty()) {
@@ -123,12 +112,6 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
   if (!thread_pool_ && !services_.empty()) {
     thread_pool_ = CreateDefaultThreadPool();
-    thread_pool_owned = true;
-  }
-  // Async services only, create a thread pool to handle requests to unknown
-  // services.
-  if (!thread_pool_ && !generic_service_ && !async_services_.empty()) {
-    thread_pool_ = new FixedSizeThreadPool(1);
     thread_pool_owned = true;
   }
   std::unique_ptr<Server> server(new Server(thread_pool_, thread_pool_owned,
@@ -161,7 +144,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       *port->selected_port = r;
     }
   }
-  if (!server->Start()) {
+  if (!server->Start(&cqs_[0], cqs_.size())) {
     return nullptr;
   }
   return server;

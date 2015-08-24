@@ -772,8 +772,6 @@ include/grpc++/config.h \
 include/grpc++/config_protobuf.h \
 include/grpc++/create_channel.h \
 include/grpc++/credentials.h \
-include/grpc++/dynamic_thread_pool.h \
-include/grpc++/fixed_size_thread_pool.h \
 include/grpc++/generic_stub.h \
 include/grpc++/impl/call.h \
 include/grpc++/impl/client_unary_call.h \
@@ -799,7 +797,6 @@ include/grpc++/status.h \
 include/grpc++/status_code_enum.h \
 include/grpc++/stream.h \
 include/grpc++/stub_options.h \
-include/grpc++/thread_pool_interface.h \
 include/grpc++/time.h
 
 # This tag can be used to specify the character encoding of the source files

@@ -96,16 +96,9 @@ class ServerBuilder {
                         std::shared_ptr<ServerCredentials> creds,
                         int* selected_port = nullptr);
 
-  // Set the thread pool used for running appliation rpc handlers.
-  // Does not take ownership.
-  ServerBuilder& SetThreadPool(ThreadPoolInterface* thread_pool);
-
-  // Set the compression options to be used by the server.
-  ServerBuilder& SetCompressionOptions(const grpc_compression_options& options);
-
   // Add a completion queue for handling asynchronous services
-  // Caller is required to keep this completion queue live until calling
-  // BuildAndStart()
+  // Caller is required to keep this completion queue live until
+  // the server is destroyed.
   std::unique_ptr<ServerCompletionQueue> AddCompletionQueue();
 
   // Return a running server which is ready for processing rpcs.
