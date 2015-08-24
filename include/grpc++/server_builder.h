@@ -97,8 +97,8 @@ class ServerBuilder {
                         int* selected_port = nullptr);
 
   // Add a completion queue for handling asynchronous services
-  // Caller is required to keep this completion queue live until calling
-  // BuildAndStart()
+  // Caller is required to keep this completion queue live until
+  // the server is destroyed.
   std::unique_ptr<ServerCompletionQueue> AddCompletionQueue();
 
   // Return a running server which is ready for processing rpcs.
