@@ -468,6 +468,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "grpc_channel_args_test", 
+    "src": [
+      "test/core/channel/channel_args_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "grpc_channel_stack_test", 
     "src": [
       "test/core/channel/channel_stack_test.c"
@@ -1618,6 +1632,22 @@
     "name": "server_crash_test_client", 
     "src": [
       "test/cpp/end2end/server_crash_test_client.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "shutdown_test", 
+    "src": [
+      "test/cpp/end2end/shutdown_test.cc"
     ]
   }, 
   {

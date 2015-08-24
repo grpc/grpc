@@ -761,6 +761,8 @@ class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
   }
 
  private:
+  friend class ::grpc::Server;
+
   void BindCall(Call* call) GRPC_OVERRIDE { call_ = *call; }
 
   Call call_;
