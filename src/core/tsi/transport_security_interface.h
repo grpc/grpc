@@ -158,6 +158,8 @@ tsi_result tsi_frame_protector_protect_flush(
      value is expected to be at most max_protected_frame_size minus overhead
      which means that max_protected_frame_size is a safe bet. The output value
      is the number of bytes actually written.
+     If *unprotected_bytes_size is unchanged, there may be more data remaining
+     to unprotect, and the caller should call this function again.
 
    - This method returns TSI_OK in case of success. Success includes cases where
      there is not enough data to output a frame in which case
@@ -339,4 +341,4 @@ void tsi_handshaker_destroy(tsi_handshaker* self);
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H */
+#endif /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H */

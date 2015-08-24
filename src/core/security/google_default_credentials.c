@@ -80,9 +80,11 @@ static void on_compute_engine_detection_http_response(
   }
   gpr_mu_lock(GRPC_POLLSET_MU(&detector->pollset));
   detector->is_done = 1;
-  grpc_pollset_kick(&detector->pollset);
+  grpc_pollset_kick(&detector->pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector->pollset));
 }
+
+static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
 
 static int is_stack_running_on_compute_engine(void) {
   compute_engine_detector detector;
@@ -112,12 +114,14 @@ static int is_stack_running_on_compute_engine(void) {
      called once for the lifetime of the process by the default credentials. */
   gpr_mu_lock(GRPC_POLLSET_MU(&detector.pollset));
   while (!detector.is_done) {
-    grpc_pollset_work(&detector.pollset, gpr_inf_future(GPR_CLOCK_REALTIME));
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&detector.pollset, &worker,
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 
   grpc_httpcli_context_destroy(&context);
-  grpc_pollset_destroy(&detector.pollset);
+  grpc_pollset_shutdown(&detector.pollset, destroy_pollset, &detector.pollset);
 
   return detector.success;
 }
@@ -199,8 +203,8 @@ end:
     /* Blend with default ssl credentials and add a global reference so that it
        can be cached and re-served. */
     grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL);
-    default_credentials = grpc_credentials_ref(grpc_composite_credentials_create(
-        ssl_creds, result));
+    default_credentials = grpc_credentials_ref(
+        grpc_composite_credentials_create(ssl_creds, result));
     GPR_ASSERT(default_credentials != NULL);
     grpc_credentials_unref(ssl_creds);
     grpc_credentials_unref(result);

@@ -58,4 +58,4 @@ tsi_frame_protector* tsi_create_fake_protector(
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_TSI_FAKE_TRANSPORT_SECURITY_H */
+#endif /* GRPC_INTERNAL_CORE_TSI_FAKE_TRANSPORT_SECURITY_H */

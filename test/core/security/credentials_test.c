@@ -373,8 +373,8 @@ static void test_ssl_oauth2_composite_creds(void) {
   grpc_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL);
   const grpc_credentials_array *creds_array;
-  grpc_credentials *oauth2_creds =
-      grpc_fake_oauth2_credentials_create(test_oauth2_bearer_token, 0);
+  grpc_credentials *oauth2_creds = grpc_md_only_test_credentials_create(
+      "Authorization", test_oauth2_bearer_token, 0);
   grpc_credentials *composite_creds =
       grpc_composite_credentials_create(ssl_creds, oauth2_creds);
   grpc_credentials_unref(ssl_creds);
@@ -424,8 +424,8 @@ static void test_ssl_oauth2_iam_composite_creds(void) {
   grpc_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL);
   const grpc_credentials_array *creds_array;
-  grpc_credentials *oauth2_creds =
-      grpc_fake_oauth2_credentials_create(test_oauth2_bearer_token, 0);
+  grpc_credentials *oauth2_creds = grpc_md_only_test_credentials_create(
+      "Authorization", test_oauth2_bearer_token, 0);
   grpc_credentials *aux_creds =
       grpc_composite_credentials_create(ssl_creds, oauth2_creds);
   grpc_credentials *iam_creds = grpc_iam_credentials_create(
@@ -477,7 +477,7 @@ static void on_oauth2_creds_get_metadata_failure(
 
 static void validate_compute_engine_http_request(
     const grpc_httpcli_request *request) {
-  GPR_ASSERT(!request->use_ssl);
+  GPR_ASSERT(request->handshaker != &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "metadata") == 0);
   GPR_ASSERT(
       strcmp(request->path,
@@ -573,7 +573,7 @@ static void validate_refresh_token_http_request(
   GPR_ASSERT(strlen(expected_body) == body_size);
   GPR_ASSERT(memcmp(expected_body, body, body_size) == 0);
   gpr_free(expected_body);
-  GPR_ASSERT(request->use_ssl);
+  GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST) == 0);
   GPR_ASSERT(strcmp(request->path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
   GPR_ASSERT(request->hdr_count == 1);
@@ -697,7 +697,7 @@ static void validate_service_account_http_request(
   GPR_ASSERT(strlen(expected_body) == body_size);
   GPR_ASSERT(memcmp(expected_body, body, body_size) == 0);
   gpr_free(expected_body);
-  GPR_ASSERT(request->use_ssl);
+  GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, GRPC_GOOGLE_OAUTH2_SERVICE_HOST) == 0);
   GPR_ASSERT(strcmp(request->path, GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH) == 0);
   GPR_ASSERT(request->hdr_count == 1);

@@ -170,6 +170,11 @@ int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
 char *grpc_sockaddr_to_uri(const struct sockaddr *addr) {
   char *temp;
   char *result;
+  struct sockaddr_in addr_normalized;
+
+  if (grpc_sockaddr_is_v4mapped(addr, &addr_normalized)) {
+    addr = (const struct sockaddr *)&addr_normalized;
+  }
 
   switch (addr->sa_family) {
     case AF_INET:
@@ -201,7 +206,8 @@ int grpc_sockaddr_get_port(const struct sockaddr *addr) {
     case AF_UNIX:
       return 1;
     default:
-      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port", addr->sa_family);
+      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_get_port",
+              addr->sa_family);
       return 0;
   }
 }
@@ -215,7 +221,8 @@ int grpc_sockaddr_set_port(const struct sockaddr *addr, int port) {
       ((struct sockaddr_in6 *)addr)->sin6_port = htons(port);
       return 1;
     default:
-      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port", addr->sa_family);
+      gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",
+              addr->sa_family);
       return 0;
   }
 }

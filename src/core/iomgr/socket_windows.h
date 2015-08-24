@@ -54,7 +54,7 @@ typedef struct grpc_winsocket_callback_info {
   OVERLAPPED overlapped;
   /* The callback information for the pending operation. May be empty if the
      caller hasn't registered a callback yet. */
-  void(*cb)(void *opaque, int success);
+  void (*cb)(void *opaque, int success);
   void *opaque;
   /* A boolean to describe if the IO Completion Port got a notification for
      that operation. This will happen if the operation completed before the
@@ -118,4 +118,4 @@ void grpc_winsocket_orphan(grpc_winsocket *socket);
    or by grpc_winsocket_orphan if there's no pending operation. */
 void grpc_winsocket_destroy(grpc_winsocket *socket);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_SOCKET_WINDOWS_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_SOCKET_WINDOWS_H */

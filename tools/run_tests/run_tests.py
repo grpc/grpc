@@ -32,6 +32,7 @@
 
 import argparse
 import glob
+import hashlib
 import itertools
 import json
 import multiprocessing
@@ -43,6 +44,7 @@ import subprocess
 import sys
 import time
 import xml.etree.cElementTree as ET
+import urllib2
 
 import jobset
 import watch_dirs
@@ -52,6 +54,17 @@ os.chdir(ROOT)
 
 
 _FORCE_ENVIRON_FOR_WRAPPERS = {}
+
+
+def platform_string():
+  if platform.system() == 'Windows':
+    return 'windows'
+  elif platform.system() == 'Darwin':
+    return 'mac'
+  elif platform.system() == 'Linux':
+    return 'linux'
+  else:
+    return 'posix'
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -109,28 +122,30 @@ class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
     self.make_target = make_target
-    if platform.system() == 'Windows':
-      plat = 'windows'
-    else:
-      plat = 'posix'
-    self.platform = plat
-    with open('tools/run_tests/tests.json') as f:
-      js = json.load(f)
-      self.binaries = [tgt
-                       for tgt in js
-                       if tgt['language'] == test_lang and
-                          plat in tgt['platforms']]
+    self.platform = platform_string()
+    self.test_lang = test_lang
 
   def test_specs(self, config, travis):
     out = []
-    for target in self.binaries:
+    with open('tools/run_tests/tests.json') as f:
+      js = json.load(f)
+      platforms_str = 'ci_platforms' if travis else 'platforms'
+      binaries = [tgt
+                  for tgt in js
+                  if tgt['language'] == self.test_lang and
+                      config.build_config not in tgt['exclude_configs'] and
+                      platform_string() in tgt[platforms_str]]
+    for target in binaries:
       if travis and target['flaky']:
         continue
       if self.platform == 'windows':
         binary = 'vsprojects/test_bin/%s.exe' % (target['name'])
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
-      out.append(config.job_spec([binary], [binary]))
+      if os.path.isfile(binary):
+        out.append(config.job_spec([binary], [binary]))
+      else:
+        print "\nWARNING: binary not found, skipping", binary
     return sorted(out)
 
   def make_targets(self):
@@ -187,40 +202,18 @@ class PhpLanguage(object):
 class PythonLanguage(object):
 
   def __init__(self):
-    with open('tools/run_tests/python_tests.json') as f:
-      self._tests = json.load(f)
-    self._build_python_versions = set([
-        python_version
-        for test in self._tests
-        for python_version in test['pythonVersions']])
+    self._build_python_versions = ['2.7']
     self._has_python_versions = []
 
   def test_specs(self, config, travis):
-    job_specifications = []
-    for test in self._tests:
-      command = None
-      short_name = None
-      if 'module' in test:
-        command = ['tools/run_tests/run_python.sh', '-m', test['module']]
-        short_name = test['module']
-      elif 'file' in test:
-        command = ['tools/run_tests/run_python.sh', test['file']]
-        short_name = test['file']
-      else:
-        raise ValueError('expected input to be a module or file to run '
-                         'unittests from')
-      for python_version in test['pythonVersions']:
-        if python_version in self._has_python_versions:
-          environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
-          environment['PYVER'] = python_version
-          job_specifications.append(config.job_spec(
-              command, None, environ=environment, shortname=short_name))
-        else:
-          jobset.message(
-              'WARNING',
-              'Could not find Python {}; skipping test'.format(python_version),
-              '{}\n'.format(command), do_newline=True)
-    return job_specifications
+    environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+    environment['PYVER'] = '2.7'
+    return [config.job_spec(
+        ['tools/run_tests/run_python.sh'],
+        None,
+        environ=environment,
+        shortname='py.test',
+    )]
 
   def make_targets(self):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
@@ -267,15 +260,12 @@ class RubyLanguage(object):
 
 class CSharpLanguage(object):
   def __init__(self):
-    if platform.system() == 'Windows':
-      plat = 'windows'
-    else:
-      plat = 'posix'
-    self.platform = plat
+    self.platform = platform_string()
 
   def test_specs(self, config, travis):
     assemblies = ['Grpc.Core.Tests',
                   'Grpc.Examples.Tests',
+                  'Grpc.HealthCheck.Tests',
                   'Grpc.IntegrationTesting']
     if self.platform == 'windows':
       cmd = 'tools\\run_tests\\run_csharp.bat'
@@ -284,7 +274,7 @@ class CSharpLanguage(object):
     return [config.job_spec([cmd, assembly],
             None, shortname=assembly,
             environ=_FORCE_ENVIRON_FOR_WRAPPERS)
-            for assembly in assemblies ]
+            for assembly in assemblies]
 
   def make_targets(self):
     # For Windows, this target doesn't really build anything,
@@ -302,6 +292,25 @@ class CSharpLanguage(object):
 
   def __str__(self):
     return 'csharp'
+
+
+class ObjCLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
+                            environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def make_targets(self):
+    return ['grpc_objective_c_plugin', 'interop_server']
+
+  def build_steps(self):
+    return [['src/objective-c/tests/build_tests.sh']]
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'objc'
 
 
 class Sanity(object):
@@ -369,6 +378,7 @@ _LANGUAGES = {
     'python': PythonLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
+    'objc' : ObjCLanguage(),
     'sanity': Sanity(),
     'build': Build(),
     }
@@ -462,7 +472,8 @@ else:
                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
                                args.slowdown,
-                           'CONFIG=%s' % cfg] + targets)
+                           'CONFIG=%s' % cfg] + targets,
+                          timeout_seconds=30*60)
 
 build_steps = [make_jobspec(cfg,
                             list(set(itertools.chain.from_iterable(
@@ -473,12 +484,6 @@ build_steps.extend(set(
                    for cfg in build_configs
                    for l in languages
                    for cmdline in l.build_steps()))
-one_run = set(
-    spec
-    for config in run_configs
-    for language in languages
-    for spec in language.test_specs(config, args.travis)
-    if re.search(args.regex, spec.shortname))
 
 runs_per_test = args.runs_per_test
 forever = args.forever
@@ -524,7 +529,43 @@ class TestCache(object):
         self.parse(json.loads(f.read()))
 
 
-def _build_and_run(check_cancelled, newline_on_success, travis, cache, xml_report=None):
+def _start_port_server(port_server_port):
+  # check if a compatible port server is running
+  # if incompatible (version mismatch) ==> start a new one
+  # if not running ==> start a new one
+  # otherwise, leave it up
+  try:
+    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port).read()
+    running = True
+  except Exception:
+    running = False
+  if running:
+    with open('tools/run_tests/port_server.py') as f:
+      current_version = hashlib.sha1(f.read()).hexdigest()
+      running = (version == current_version)
+      if not running:
+        urllib2.urlopen('http://localhost:%d/quit' % port_server_port).read()
+        time.sleep(1)
+  if not running:
+    port_log = open('portlog.txt', 'w')
+    port_server = subprocess.Popen(
+        ['python', 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port],
+        stderr=subprocess.STDOUT,
+        stdout=port_log)
+    # ensure port server is up
+    while True:
+      try:
+        urllib2.urlopen('http://localhost:%d/get' % port_server_port).read()
+        break
+      except urllib2.URLError:
+        time.sleep(0.5)
+      except:
+        port_server.kill()
+        raise
+
+
+def _build_and_run(
+    check_cancelled, newline_on_success, travis, cache, xml_report=None):
   """Do one pass of building & running tests."""
   # build latest sequentially
   if not jobset.run(build_steps, maxjobs=1,
@@ -534,8 +575,16 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache, xml_repor
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
                  for _ in range(0, args.antagonists)]
+  port_server_port = 9999
+  _start_port_server(port_server_port)
   try:
     infinite_runs = runs_per_test == 0
+    one_run = set(
+      spec
+      for config in run_configs
+      for language in languages
+      for spec in language.test_specs(config, args.travis)
+      if re.search(args.regex, spec.shortname))
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.
     if travis:
@@ -560,7 +609,8 @@ def _build_and_run(check_cancelled, newline_on_success, travis, cache, xml_repor
                       maxjobs=args.jobs,
                       stop_on_failure=args.stop_on_failure,
                       cache=cache if not xml_report else None,
-                      xml_report=testsuite):
+                      xml_report=testsuite,
+                      add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port}):
       return 2
   finally:
     for antagonist in antagonists:

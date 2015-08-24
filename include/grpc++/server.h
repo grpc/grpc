@@ -63,7 +63,14 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   ~Server();
 
   // Shutdown the server, block until all rpc processing finishes.
-  void Shutdown();
+  // Forcefully terminate pending calls after deadline expires.
+  template <class T>
+  void Shutdown(const T& deadline) {
+    ShutdownInternal(TimePoint<T>(deadline).raw_time());
+  }
+
+  // Shutdown the server, waiting for all rpc processing to finish.
+  void Shutdown() { ShutdownInternal(gpr_inf_future(GPR_CLOCK_MONOTONIC)); }
 
   // Block waiting for all work to complete (the server must either
   // be shutting down or some other thread must call Shutdown for this
@@ -84,8 +91,9 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
          int max_message_size);
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const grpc::string *host, RpcService* service);
-  bool RegisterAsyncService(const grpc::string *host, AsynchronousService* service);
+  bool RegisterService(const grpc::string* host, RpcService* service);
+  bool RegisterAsyncService(const grpc::string* host,
+                            AsynchronousService* service);
   void RegisterAsyncGenericService(AsyncGenericService* service);
   // Add a listening port. Can be called multiple times.
   int AddListeningPort(const grpc::string& addr, ServerCredentials* creds);
@@ -97,6 +105,8 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   void ScheduleCallback();
 
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) GRPC_OVERRIDE;
+
+  void ShutdownInternal(gpr_timespec deadline);
 
   class BaseAsyncRequest : public CompletionQueueTag {
    public:
@@ -228,6 +238,8 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   grpc::condition_variable callback_cv_;
 
   std::list<SyncRequest>* sync_methods_;
+  std::unique_ptr<RpcServiceMethod> unknown_method_;
+  bool has_generic_service_;
 
   // Pointer to the c grpc server.
   grpc_server* const server_;

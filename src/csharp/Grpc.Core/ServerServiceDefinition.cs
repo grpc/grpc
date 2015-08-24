@@ -33,7 +33,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using Grpc.Core.Internal;
 
 namespace Grpc.Core
@@ -43,14 +43,14 @@ namespace Grpc.Core
     /// </summary>
     public class ServerServiceDefinition
     {
-        readonly ImmutableDictionary<string, IServerCallHandler> callHandlers;
+        readonly ReadOnlyDictionary<string, IServerCallHandler> callHandlers;
 
-        private ServerServiceDefinition(ImmutableDictionary<string, IServerCallHandler> callHandlers)
+        private ServerServiceDefinition(Dictionary<string, IServerCallHandler> callHandlers)
         {
-            this.callHandlers = callHandlers;
+            this.callHandlers = new ReadOnlyDictionary<string, IServerCallHandler>(callHandlers);
         }
 
-        internal ImmutableDictionary<string, IServerCallHandler> CallHandlers
+        internal IDictionary<string, IServerCallHandler> CallHandlers
         {
             get
             {
@@ -79,7 +79,7 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(method.GetFullName(serviceName), ServerCalls.UnaryCall(method, handler));
+                callHandlers.Add(method.FullName, ServerCalls.UnaryCall(method, handler));
                 return this;
             }
 
@@ -89,7 +89,7 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(method.GetFullName(serviceName), ServerCalls.ClientStreamingCall(method, handler));
+                callHandlers.Add(method.FullName, ServerCalls.ClientStreamingCall(method, handler));
                 return this;
             }
 
@@ -99,7 +99,7 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(method.GetFullName(serviceName), ServerCalls.ServerStreamingCall(method, handler));
+                callHandlers.Add(method.FullName, ServerCalls.ServerStreamingCall(method, handler));
                 return this;
             }
 
@@ -109,13 +109,13 @@ namespace Grpc.Core
                     where TRequest : class
                     where TResponse : class
             {
-                callHandlers.Add(method.GetFullName(serviceName), ServerCalls.DuplexStreamingCall(method, handler));
+                callHandlers.Add(method.FullName, ServerCalls.DuplexStreamingCall(method, handler));
                 return this;
             }
 
             public ServerServiceDefinition Build()
             {
-                return new ServerServiceDefinition(callHandlers.ToImmutableDictionary());
+                return new ServerServiceDefinition(callHandlers);
             }
         }
     }

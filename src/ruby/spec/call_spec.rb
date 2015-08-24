@@ -31,6 +31,14 @@ require 'grpc'
 
 include GRPC::Core::StatusCodes
 
+describe GRPC::Core::WriteFlags do
+  it 'should define the known write flag values' do
+    m = GRPC::Core::WriteFlags
+    expect(m.const_get(:BUFFER_HINT)).to_not be_nil
+    expect(m.const_get(:NO_COMPRESS)).to_not be_nil
+  end
+end
+
 describe GRPC::Core::RpcErrors do
   before(:each) do
     @known_types = {
@@ -137,7 +145,7 @@ describe GRPC::Core::Call do
   end
 
   def make_test_call
-    @ch.create_call(client_queue, 'dummy_method', 'dummy_host', deadline)
+    @ch.create_call(client_queue, nil, nil, 'dummy_method', nil, deadline)
   end
 
   def deadline

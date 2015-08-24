@@ -32,7 +32,7 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -48,18 +48,19 @@ namespace Grpc.Core
     /// </summary>
     public class Server
     {
-        /// <summary>
-        /// Pass this value as port to have the server choose an unused listening port for you.
-        /// </summary>
-        public const int PickUnusedPort = 0;
-
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
+        readonly AtomicCounter activeCallCounter = new AtomicCounter();
+
+        readonly ServiceDefinitionCollection serviceDefinitions;
+        readonly ServerPortCollection ports;
         readonly GrpcEnvironment environment;
         readonly List<ChannelOption> options;
         readonly ServerSafeHandle handle;
         readonly object myLock = new object();
 
+        readonly List<ServerServiceDefinition> serviceDefinitionsList = new List<ServerServiceDefinition>();
+        readonly List<ServerPort> serverPortList = new List<ServerPort>();
         readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
@@ -72,7 +73,9 @@ namespace Grpc.Core
         /// <param name="options">Channel options.</param>
         public Server(IEnumerable<ChannelOption> options = null)
         {
-            this.environment = GrpcEnvironment.GetInstance();
+            this.serviceDefinitions = new ServiceDefinitionCollection(this);
+            this.ports = new ServerPortCollection(this);
+            this.environment = GrpcEnvironment.AddRef();
             this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
             using (var channelArgs = ChannelOptions.CreateChannelArgs(this.options))
             {
@@ -81,47 +84,37 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Adds a service definition to the server. This is how you register
-        /// handlers for a service with the server.
-        /// Only call this before Start().
+        /// Services that will be exported by the server once started. Register a service with this
+        /// server by adding its definition to this collection.
         /// </summary>
-        public void AddServiceDefinition(ServerServiceDefinition serviceDefinition)
+        public ServiceDefinitionCollection Services
         {
-            lock (myLock)
+            get
             {
-                Preconditions.CheckState(!startRequested);
-                foreach (var entry in serviceDefinition.CallHandlers)
-                {
-                    callHandlers.Add(entry.Key, entry.Value);
-                }
+                return serviceDefinitions;
             }
         }
 
         /// <summary>
-        /// Add a port on which server should listen.
-        /// Only call this before Start().
+        /// Ports on which the server will listen once started. Register a port with this
+        /// server by adding its definition to this collection.
         /// </summary>
-        /// <returns>The port on which server will be listening.</returns>
-        /// <param name="host">the host</param>
-        /// <param name="port">the port. If zero, an unused port is chosen automatically.</param>
-        public int AddPort(string host, int port, ServerCredentials credentials)
+        public ServerPortCollection Ports
         {
-            lock (myLock)
+            get
             {
-                Preconditions.CheckNotNull(credentials);
-                Preconditions.CheckState(!startRequested);
-                var address = string.Format("{0}:{1}", host, port);
-                using (var nativeCredentials = credentials.ToNativeCredentials())
-                {
-                    if (nativeCredentials != null)
-                    {
-                        return handle.AddSecurePort(address, nativeCredentials);
-                    }
-                    else
-                    {
-                        return handle.AddInsecurePort(address);
-                    }
-                }
+                return ports;
+            }
+        }
+
+        /// <summary>
+        /// To allow awaiting termination of the server.
+        /// </summary>
+        public Task ShutdownTask
+        {
+            get
+            {
+                return shutdownTcs.Task;
             }
         }
 
@@ -156,18 +149,9 @@ namespace Grpc.Core
 
             handle.ShutdownAndNotify(HandleServerShutdown, environment);
             await shutdownTcs.Task;
-            handle.Dispose();
-        }
+            DisposeHandle();
 
-        /// <summary>
-        /// To allow awaiting termination of the server.
-        /// </summary>
-        public Task ShutdownTask
-        {
-            get
-            {
-                return shutdownTcs.Task;
-            }
+            await Task.Run(() => GrpcEnvironment.Release());
         }
 
         /// <summary>
@@ -186,7 +170,66 @@ namespace Grpc.Core
             handle.ShutdownAndNotify(HandleServerShutdown, environment);
             handle.CancelAllCalls();
             await shutdownTcs.Task;
-            handle.Dispose();
+            DisposeHandle();
+        }
+
+        internal void AddCallReference(object call)
+        {
+            activeCallCounter.Increment();
+
+            bool success = false;
+            handle.DangerousAddRef(ref success);
+            Preconditions.CheckState(success);
+        }
+
+        internal void RemoveCallReference(object call)
+        {
+            handle.DangerousRelease();
+            activeCallCounter.Decrement();
+        }
+
+        /// <summary>
+        /// Adds a service definition.
+        /// </summary>
+        private void AddServiceDefinitionInternal(ServerServiceDefinition serviceDefinition)
+        {
+            lock (myLock)
+            {
+                Preconditions.CheckState(!startRequested);
+                foreach (var entry in serviceDefinition.CallHandlers)
+                {
+                    callHandlers.Add(entry.Key, entry.Value);
+                }
+                serviceDefinitionsList.Add(serviceDefinition);
+            }
+        }
+
+        /// <summary>
+        /// Adds a listening port.
+        /// </summary>
+        private int AddPortInternal(ServerPort serverPort)
+        {
+            lock (myLock)
+            {
+                Preconditions.CheckNotNull(serverPort.Credentials, "serverPort");
+                Preconditions.CheckState(!startRequested);
+                var address = string.Format("{0}:{1}", serverPort.Host, serverPort.Port);
+                int boundPort;
+                using (var nativeCredentials = serverPort.Credentials.ToNativeCredentials())
+                {
+                    if (nativeCredentials != null)
+                    {
+                        boundPort = handle.AddSecurePort(address, nativeCredentials);
+                    }
+                    else
+                    {
+                        boundPort = handle.AddInsecurePort(address);
+                    }
+                }
+                var newServerPort = new ServerPort(serverPort, boundPort);
+                this.serverPortList.Add(newServerPort);
+                return boundPort;
+            }
         }
 
         /// <summary>
@@ -201,6 +244,16 @@ namespace Grpc.Core
                     handle.RequestCall(HandleNewServerRpc, environment);
                 }
             }
+        }
+
+        private void DisposeHandle()
+        {
+            var activeCallCount = activeCallCounter.Count;
+            if (activeCallCount > 0)
+            {
+                Logger.Warning("Server shutdown has finished but there are still {0} active calls for that server.", activeCallCount);
+            }
+            handle.Dispose();
         }
 
         /// <summary>
@@ -230,7 +283,7 @@ namespace Grpc.Core
         {
             if (success)
             {
-                ServerRpcNew newRpc = ctx.GetServerRpcNew();
+                ServerRpcNew newRpc = ctx.GetServerRpcNew(this);
 
                 // after server shutdown, the callback returns with null call
                 if (!newRpc.Call.IsInvalid)
@@ -248,6 +301,83 @@ namespace Grpc.Core
         private void HandleServerShutdown(bool success, BatchContextSafeHandle ctx)
         {
             shutdownTcs.SetResult(null);
+        }
+
+        /// <summary>
+        /// Collection of service definitions.
+        /// </summary>
+        public class ServiceDefinitionCollection : IEnumerable<ServerServiceDefinition>
+        {
+            readonly Server server;
+
+            internal ServiceDefinitionCollection(Server server)
+            {
+                this.server = server;
+            }
+
+            /// <summary>
+            /// Adds a service definition to the server. This is how you register
+            /// handlers for a service with the server. Only call this before Start().
+            /// </summary>
+            public void Add(ServerServiceDefinition serviceDefinition)
+            {
+                server.AddServiceDefinitionInternal(serviceDefinition);
+            }
+
+            public IEnumerator<ServerServiceDefinition> GetEnumerator()
+            {
+                return server.serviceDefinitionsList.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return server.serviceDefinitionsList.GetEnumerator();
+            }
+        }
+
+        /// <summary>
+        /// Collection of server ports.
+        /// </summary>
+        public class ServerPortCollection : IEnumerable<ServerPort>
+        {
+            readonly Server server;
+
+            internal ServerPortCollection(Server server)
+            {
+                this.server = server;
+            }
+
+            /// <summary>
+            /// Adds a new port on which server should listen.
+            /// Only call this before Start().
+            /// <returns>The port on which server will be listening.</returns>
+            /// </summary>
+            public int Add(ServerPort serverPort)
+            {
+                return server.AddPortInternal(serverPort);
+            }
+
+            /// <summary>
+            /// Adds a new port on which server should listen.
+            /// <returns>The port on which server will be listening.</returns>
+            /// </summary>
+            /// <param name="host">the host</param>
+            /// <param name="port">the port. If zero, an unused port is chosen automatically.</param>
+            /// <param name="credentials">credentials to use to secure this port.</param>
+            public int Add(string host, int port, ServerCredentials credentials)
+            {
+                return Add(new ServerPort(host, port, credentials));
+            }
+
+            public IEnumerator<ServerPort> GetEnumerator()
+            {
+                return server.serverPortList.GetEnumerator();
+            }
+
+            IEnumerator IEnumerable.GetEnumerator()
+            {
+                return server.serverPortList.GetEnumerator();
+            }
         }
     }
 }

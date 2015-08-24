@@ -49,8 +49,7 @@ typedef struct {
   int is_done;
 } synchronizer;
 
-static void on_metadata_response(void *user_data,
-                                 grpc_credentials_md *md_elems,
+static void on_metadata_response(void *user_data, grpc_credentials_md *md_elems,
                                  size_t num_md,
                                  grpc_credentials_status status) {
   synchronizer *sync = user_data;
@@ -65,7 +64,7 @@ static void on_metadata_response(void *user_data,
   }
   gpr_mu_lock(GRPC_POLLSET_MU(&sync->pollset));
   sync->is_done = 1;
-  grpc_pollset_kick(&sync->pollset);
+  grpc_pollset_kick(&sync->pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync->pollset));
 }
 
@@ -95,8 +94,11 @@ int main(int argc, char **argv) {
                                         on_metadata_response, &sync);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
-  while (!sync.is_done)
-    grpc_pollset_work(&sync.pollset, gpr_inf_future(GPR_CLOCK_REALTIME));
+  while (!sync.is_done) {
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&sync.pollset, &worker,
+                      gpr_inf_future(GPR_CLOCK_REALTIME));
+  }
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
 
   grpc_credentials_release(creds);
