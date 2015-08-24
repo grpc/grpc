@@ -31,47 +31,54 @@
  *
  */
 
-#include <condition_variable>
-#include <functional>
-#include <mutex>
+#ifndef GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
+#define GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
 
-#include <grpc++/dynamic_thread_pool.h>
-#include <gtest/gtest.h>
+#include <grpc++/config.h>
+
+#include <grpc++/impl/sync.h>
+#include <grpc++/impl/thd.h>
+
+#include <list>
+#include <memory>
+#include <queue>
+
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
 
-class DynamicThreadPoolTest : public ::testing::Test {
+class DynamicThreadPool GRPC_FINAL : public ThreadPoolInterface {
  public:
-  DynamicThreadPoolTest() : thread_pool_(0) {}
+  explicit DynamicThreadPool(int reserve_threads);
+  ~DynamicThreadPool();
 
- protected:
-  DynamicThreadPool thread_pool_;
+  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
+
+ private:
+  class DynamicThread {
+   public:
+    DynamicThread(DynamicThreadPool* pool);
+    ~DynamicThread();
+
+   private:
+    DynamicThreadPool* pool_;
+    std::unique_ptr<grpc::thread> thd_;
+    void ThreadFunc();
+  };
+  grpc::mutex mu_;
+  grpc::condition_variable cv_;
+  grpc::condition_variable shutdown_cv_;
+  bool shutdown_;
+  std::queue<std::function<void()>> callbacks_;
+  int reserve_threads_;
+  int nthreads_;
+  int threads_waiting_;
+  std::list<DynamicThread*> dead_threads_;
+
+  void ThreadFunc();
+  static void ReapThreads(std::list<DynamicThread*>* tlist);
 };
-
-void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
-  std::unique_lock<std::mutex> lock(*mu);
-  *done = true;
-  cv->notify_all();
-}
-
-TEST_F(DynamicThreadPoolTest, Add) {
-  std::mutex mu;
-  std::condition_variable cv;
-  bool done = false;
-  std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
-  thread_pool_.Add(callback);
-
-  // Wait for the callback to finish.
-  std::unique_lock<std::mutex> lock(mu);
-  while (!done) {
-    cv.wait(lock);
-  }
-}
 
 }  // namespace grpc
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  return result;
-}
+#endif  // GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
