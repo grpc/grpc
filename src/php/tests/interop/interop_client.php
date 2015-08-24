@@ -173,7 +173,11 @@ function clientStreaming($stub) {
         return $request;
       }, $request_lengths);
 
-  list($result, $status) = $stub->StreamingInputCall($requests)->wait();
+  $call = $stub->StreamingInputCall();
+  foreach ($requests as $request) {
+    $call->write($request);
+  }
+  list($result, $status) = $call->wait();
   hardAssert($status->code === Grpc\STATUS_OK, 'Call did not complete successfully');
   hardAssert($result->getAggregatedPayloadSize() === 74922,
               'aggregated_payload_size was incorrect');
@@ -374,5 +378,6 @@ switch ($args['test_case']) {
     // messages are sent immediately after metadata is sent. There is
     // currently no way to cancel before messages are sent.
   default:
+    echo "Unsupported test case $args[test_case]\n";
     exit(1);
 }

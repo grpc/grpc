@@ -66,9 +66,14 @@ class BidiStreamingCall extends AbstractCall {
    * Write a single message to the server. This cannot be called after
    * writesDone is called.
    * @param ByteBuffer $data The data to write
+   * @param array $options an array of options
    */
-  public function write($data) {
-    $this->call->startBatch([OP_SEND_MESSAGE => $data->serialize()]);
+  public function write($data, $options = array()) {
+    $message_array = ['message' => $data->serialize()];
+    if ($grpc_write_flags = self::getGrpcWriteFlags($options)) {
+      $message_array['flags'] = $grpc_write_flags;
+    }
+    $this->call->startBatch([OP_SEND_MESSAGE => $message_array]);
   }
 
   /**
@@ -86,7 +91,7 @@ class BidiStreamingCall extends AbstractCall {
   public function getStatus() {
     $status_event = $this->call->startBatch([
         OP_RECV_STATUS_ON_CLIENT => true
-                                              ]);
+    ]);
     return $status_event->status;
   }
 }

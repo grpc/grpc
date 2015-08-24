@@ -79,15 +79,13 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase {
   }
 
   public function testClientStreaming() {
-    $num_iter = function() {
-      for ($i = 0; $i < 7; $i++) {
-        $num = new math\Num();
-        $num->setNum($i);
-        yield $num;
-      }
-    };
-    $call = self::$client->Sum($num_iter());
+    $call = self::$client->Sum();
     $this->assertTrue(is_string($call->getPeer()));
+    for ($i = 0; $i < 7; $i++) {
+      $num = new math\Num();
+      $num->setNum($i);
+      $call->write($num);
+    }
     list($response, $status) = $call->wait();
     $this->assertSame(21, $response->getNum());
     $this->assertSame(\Grpc\STATUS_OK, $status->code);
