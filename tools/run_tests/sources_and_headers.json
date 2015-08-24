@@ -468,6 +468,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "grpc_channel_args_test", 
+    "src": [
+      "test/core/channel/channel_args_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "grpc_channel_stack_test", 
     "src": [
       "test/core/channel/channel_stack_test.c"
