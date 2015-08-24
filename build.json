@@ -1150,8 +1150,7 @@
       "src": [
         "tools/codegen/core/gen_legal_metadata_characters.c"
       ],
-      "deps": [
-      ]
+      "deps": []
     },
     {
       "name": "gpr_cmdline_test",
