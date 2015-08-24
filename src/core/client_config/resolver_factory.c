@@ -48,3 +48,9 @@ grpc_resolver *grpc_resolver_factory_create_resolver(
   if (!factory) return NULL;
   return factory->vtable->create_resolver(factory, uri, subchannel_factory);
 }
+
+char *grpc_resolver_factory_get_default_authority(
+    grpc_resolver_factory *factory, grpc_uri *uri) {
+  if (!factory) return NULL;
+  return factory->vtable->get_default_authority(factory, uri);
+}

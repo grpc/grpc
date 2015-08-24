@@ -41,41 +41,33 @@
 
 #define MAX_RESOLVERS 10
 
-typedef struct {
-  char *scheme;
-  grpc_resolver_factory *factory;
-} registered_resolver;
-
-static registered_resolver g_all_of_the_resolvers[MAX_RESOLVERS];
+static grpc_resolver_factory *g_all_of_the_resolvers[MAX_RESOLVERS];
 static int g_number_of_resolvers = 0;
 
-static char *g_default_resolver_scheme;
+static char *g_default_resolver_prefix;
 
-void grpc_resolver_registry_init(const char *default_resolver_scheme) {
+void grpc_resolver_registry_init(const char *default_resolver_prefix) {
   g_number_of_resolvers = 0;
-  g_default_resolver_scheme = gpr_strdup(default_resolver_scheme);
+  g_default_resolver_prefix = gpr_strdup(default_resolver_prefix);
 }
 
 void grpc_resolver_registry_shutdown(void) {
   int i;
   for (i = 0; i < g_number_of_resolvers; i++) {
-    gpr_free(g_all_of_the_resolvers[i].scheme);
-    grpc_resolver_factory_unref(g_all_of_the_resolvers[i].factory);
+    grpc_resolver_factory_unref(g_all_of_the_resolvers[i]);
   }
-  gpr_free(g_default_resolver_scheme);
+  gpr_free(g_default_resolver_prefix);
 }
 
-void grpc_register_resolver_type(const char *scheme,
-                                 grpc_resolver_factory *factory) {
+void grpc_register_resolver_type(grpc_resolver_factory *factory) {
   int i;
   for (i = 0; i < g_number_of_resolvers; i++) {
-    GPR_ASSERT(0 != strcmp(scheme, g_all_of_the_resolvers[i].scheme));
+    GPR_ASSERT(0 != strcmp(factory->vtable->scheme,
+                           g_all_of_the_resolvers[i]->vtable->scheme));
   }
   GPR_ASSERT(g_number_of_resolvers != MAX_RESOLVERS);
-  g_all_of_the_resolvers[g_number_of_resolvers].scheme = gpr_strdup(scheme);
   grpc_resolver_factory_ref(factory);
-  g_all_of_the_resolvers[g_number_of_resolvers].factory = factory;
-  g_number_of_resolvers++;
+  g_all_of_the_resolvers[g_number_of_resolvers++] = factory;
 }
 
 static grpc_resolver_factory *lookup_factory(grpc_uri *uri) {
@@ -85,40 +77,53 @@ static grpc_resolver_factory *lookup_factory(grpc_uri *uri) {
   if (!uri) return NULL;
 
   for (i = 0; i < g_number_of_resolvers; i++) {
-    if (0 == strcmp(uri->scheme, g_all_of_the_resolvers[i].scheme)) {
-      return g_all_of_the_resolvers[i].factory;
+    if (0 == strcmp(uri->scheme, g_all_of_the_resolvers[i]->vtable->scheme)) {
+      return g_all_of_the_resolvers[i];
     }
   }
 
   return NULL;
 }
 
-grpc_resolver *grpc_resolver_create(
-    const char *name, grpc_subchannel_factory *subchannel_factory) {
-  grpc_uri *uri;
+static grpc_resolver_factory *resolve_factory(const char *target,
+                                              grpc_uri **uri) {
   char *tmp;
   grpc_resolver_factory *factory = NULL;
-  grpc_resolver *resolver;
 
-  uri = grpc_uri_parse(name, 1);
-  factory = lookup_factory(uri);
-  if (factory == NULL && g_default_resolver_scheme != NULL) {
-    grpc_uri_destroy(uri);
-    gpr_asprintf(&tmp, "%s%s", g_default_resolver_scheme, name);
-    uri = grpc_uri_parse(tmp, 1);
-    factory = lookup_factory(uri);
+  *uri = grpc_uri_parse(target, 1);
+  factory = lookup_factory(*uri);
+  if (factory == NULL && g_default_resolver_prefix != NULL) {
+    grpc_uri_destroy(*uri);
+    gpr_asprintf(&tmp, "%s%s", g_default_resolver_prefix, target);
+    *uri = grpc_uri_parse(tmp, 1);
+    factory = lookup_factory(*uri);
     if (factory == NULL) {
-      grpc_uri_destroy(grpc_uri_parse(name, 0));
+      grpc_uri_destroy(grpc_uri_parse(target, 0));
       grpc_uri_destroy(grpc_uri_parse(tmp, 0));
-      gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", name, tmp);
+      gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target, tmp);
     }
     gpr_free(tmp);
   } else if (factory == NULL) {
-    grpc_uri_destroy(grpc_uri_parse(name, 0));
-    gpr_log(GPR_ERROR, "don't know how to resolve '%s'", name);
+    grpc_uri_destroy(grpc_uri_parse(target, 0));
+    gpr_log(GPR_ERROR, "don't know how to resolve '%s'", target);
   }
-  resolver =
+  return factory;
+}
+
+grpc_resolver *grpc_resolver_create(
+    const char *target, grpc_subchannel_factory *subchannel_factory) {
+  grpc_uri *uri = NULL;
+  grpc_resolver_factory *factory = resolve_factory(target, &uri);
+  grpc_resolver *resolver =
       grpc_resolver_factory_create_resolver(factory, uri, subchannel_factory);
   grpc_uri_destroy(uri);
   return resolver;
+}
+
+char *grpc_get_default_authority(const char *target) {
+  grpc_uri *uri = NULL;
+  grpc_resolver_factory *factory = resolve_factory(target, &uri);
+  char *authority = grpc_resolver_factory_get_default_authority(factory, uri);
+  grpc_uri_destroy(uri);
+  return authority;
 }

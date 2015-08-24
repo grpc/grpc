@@ -156,7 +156,28 @@ static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, int *len) {
 
   return 1;
 }
+
+static char *unix_get_default_authority(grpc_resolver_factory *factory,
+                                        grpc_uri *uri) {
+  return gpr_strdup("localhost");
+}
 #endif
+
+static char *ip_get_default_authority(grpc_uri *uri) {
+  const char *path = uri->path;
+  if (path[0] == '/') ++path;
+  return gpr_strdup(path);
+}
+
+static char *ipv4_get_default_authority(grpc_resolver_factory *factory,
+                                        grpc_uri *uri) {
+  return ip_get_default_authority(uri);
+}
+
+static char *ipv6_get_default_authority(grpc_resolver_factory *factory,
+                                        grpc_uri *uri) {
+  return ip_get_default_authority(uri);
+}
 
 static int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr, int *len) {
   const char *host_port = uri->path;
@@ -276,20 +297,20 @@ static void sockaddr_factory_ref(grpc_resolver_factory *factory) {}
 
 static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
 
-#define DECL_FACTORY(name)                                            \
-  static grpc_resolver *name##_factory_create_resolver(               \
-      grpc_resolver_factory *factory, grpc_uri *uri,                  \
-      grpc_subchannel_factory *subchannel_factory) {                  \
-    return sockaddr_create(uri, grpc_create_pick_first_lb_policy,     \
-                           subchannel_factory, parse_##name);         \
-  }                                                                   \
-  static const grpc_resolver_factory_vtable name##_factory_vtable = { \
-      sockaddr_factory_ref, sockaddr_factory_unref,                   \
-      name##_factory_create_resolver};                                \
-  static grpc_resolver_factory name##_resolver_factory = {            \
-      &name##_factory_vtable};                                        \
-  grpc_resolver_factory *grpc_##name##_resolver_factory_create() {    \
-    return &name##_resolver_factory;                                  \
+#define DECL_FACTORY(name)                                                  \
+  static grpc_resolver *name##_factory_create_resolver(                     \
+      grpc_resolver_factory *factory, grpc_uri *uri,                        \
+      grpc_subchannel_factory *subchannel_factory) {                        \
+    return sockaddr_create(uri, grpc_create_pick_first_lb_policy,           \
+                           subchannel_factory, parse_##name);               \
+  }                                                                         \
+  static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
+      sockaddr_factory_ref, sockaddr_factory_unref,                         \
+      name##_factory_create_resolver, name##_get_default_authority, #name}; \
+  static grpc_resolver_factory name##_resolver_factory = {                  \
+      &name##_factory_vtable};                                              \
+  grpc_resolver_factory *grpc_##name##_resolver_factory_create() {          \
+    return &name##_resolver_factory;                                        \
   }
 
 #ifdef GPR_POSIX_SOCKET
