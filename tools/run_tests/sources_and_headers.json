@@ -238,10 +238,7 @@
     ]
   }, 
   {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
+    "deps": [], 
     "headers": [], 
     "language": "c", 
     "name": "gen_legal_metadata_characters", 
