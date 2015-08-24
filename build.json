@@ -2488,6 +2488,9 @@
         "gpr",
         "grpc++_test_config"
       ],
+      "exclude_configs": [
+        "tsan"
+      ],
       "platforms": [
         "mac",
         "linux",
@@ -2608,6 +2611,26 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ]
+    },
+    {
+      "name": "shutdown_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/shutdown_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc_zookeeper",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "external_deps": [
+        "zookeeper"
       ]
     },
     {

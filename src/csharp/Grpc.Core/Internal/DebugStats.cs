@@ -38,10 +38,6 @@ namespace Grpc.Core.Internal
 {
     internal class DebugStats
     {
-        public readonly AtomicCounter ActiveClientCalls = new AtomicCounter();
-
-        public readonly AtomicCounter ActiveServerCalls = new AtomicCounter();
-
         public readonly AtomicCounter PendingBatchCompletions = new AtomicCounter();
 
         /// <summary>
@@ -49,16 +45,6 @@ namespace Grpc.Core.Internal
         /// </summary>
         public void CheckOK()
         {
-            var remainingClientCalls = ActiveClientCalls.Count;
-            if (remainingClientCalls != 0)
-            {                
-                DebugWarning(string.Format("Detected {0} client calls that weren't disposed properly.", remainingClientCalls));
-            }
-            var remainingServerCalls = ActiveServerCalls.Count;
-            if (remainingServerCalls != 0)
-            {
-                DebugWarning(string.Format("Detected {0} server calls that weren't disposed properly.", remainingServerCalls));
-            }
             var pendingBatchCompletions = PendingBatchCompletions.Count;
             if (pendingBatchCompletions != 0)
             {
