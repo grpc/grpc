@@ -207,6 +207,13 @@ class SendMessageOp : public Op {
     if (!::node::Buffer::HasInstance(value)) {
       return false;
     }
+    Handle<Object> object_value = value->ToObject();
+    if (object_value->HasOwnProperty(NanNew("grpcWriteFlags"))) {
+      Handle<Value> flag_value = object_value->Get(NanNew("grpcWriteFlags"));
+      if (flag_value->IsUint32()) {
+        out->flags = flag_value->Uint32Value() & GRPC_WRITE_USED_MASK;
+      }
+    }
     out->data.send_message = BufferToByteBuffer(value);
     Persistent<Value> *handle = new Persistent<Value>();
     NanAssignPersistent(*handle, value);
@@ -457,10 +464,6 @@ void Call::Init(Handle<Object> exports) {
                           NanNew<FunctionTemplate>(GetPeer)->GetFunction());
   NanAssignPersistent(fun_tpl, tpl);
   Handle<Function> ctr = tpl->GetFunction();
-  ctr->Set(NanNew("WRITE_BUFFER_HINT"),
-           NanNew<Uint32, uint32_t>(GRPC_WRITE_BUFFER_HINT));
-  ctr->Set(NanNew("WRITE_NO_COMPRESS"),
-           NanNew<Uint32, uint32_t>(GRPC_WRITE_NO_COMPRESS));
   exports->Set(NanNew("Call"), ctr);
   constructor = new NanCallback(ctr);
 }
@@ -502,6 +505,22 @@ NAN_METHOD(Call::New) {
         return NanThrowTypeError(
             "Call's third argument must be a date or a number");
       }
+      // These arguments are at the end because they are optional
+      grpc_call *parent_call = NULL;
+      if (Call::HasInstance(args[4])) {
+        Call *parent_obj = ObjectWrap::Unwrap<Call>(args[4]->ToObject());
+        parent_call = parent_obj->wrapped_call;
+      } else if (!(args[4]->IsUndefined() || args[4]->IsNull())) {
+        return NanThrowTypeError(
+            "Call's fifth argument must be another call, if provided");
+      }
+      gpr_uint32 propagate_flags = GRPC_PROPAGATE_DEFAULTS;
+      if (args[5]->IsUint32()) {
+        propagate_flags = args[5]->Uint32Value();
+      } else if (!(args[5]->IsUndefined() || args[5]->IsNull())) {
+        return NanThrowTypeError(
+            "Call's sixth argument must be propagate flags, if provided");
+      }
       Handle<Object> channel_object = args[0]->ToObject();
       Channel *channel = ObjectWrap::Unwrap<Channel>(channel_object);
       if (channel->GetWrappedChannel() == NULL) {
@@ -510,10 +529,21 @@ NAN_METHOD(Call::New) {
       NanUtf8String method(args[1]);
       double deadline = args[2]->NumberValue();
       grpc_channel *wrapped_channel = channel->GetWrappedChannel();
-      grpc_call *wrapped_call = grpc_channel_create_call(
-          wrapped_channel, NULL, GRPC_PROPAGATE_DEFAULTS,
-          CompletionQueueAsyncWorker::GetQueue(), *method, channel->GetHost(),
-          MillisecondsToTimespec(deadline));
+      grpc_call *wrapped_call;
+      if (args[3]->IsString()) {
+        NanUtf8String host_override(args[3]);
+        wrapped_call = grpc_channel_create_call(
+            wrapped_channel, parent_call, propagate_flags,
+            CompletionQueueAsyncWorker::GetQueue(), *method,
+            *host_override, MillisecondsToTimespec(deadline), NULL);
+      } else if (args[3]->IsUndefined() || args[3]->IsNull()) {
+        wrapped_call = grpc_channel_create_call(
+            wrapped_channel, parent_call, propagate_flags,
+            CompletionQueueAsyncWorker::GetQueue(), *method,
+            NULL, MillisecondsToTimespec(deadline), NULL);
+      } else {
+        return NanThrowTypeError("Call's fourth argument must be a string");
+      }
       call = new Call(wrapped_call);
       args.This()->SetHiddenValue(NanNew("channel_"), channel_object);
     }
@@ -554,6 +584,7 @@ NAN_METHOD(Call::StartBatch) {
     uint32_t type = keys->Get(i)->Uint32Value();
     ops[i].op = static_cast<grpc_op_type>(type);
     ops[i].flags = 0;
+    ops[i].reserved = NULL;
     switch (type) {
       case GRPC_OP_SEND_INITIAL_METADATA:
         op.reset(new SendMetadataOp());
@@ -590,9 +621,9 @@ NAN_METHOD(Call::StartBatch) {
   NanCallback *callback = new NanCallback(callback_func);
   grpc_call_error error = grpc_call_start_batch(
       call->wrapped_call, &ops[0], nops, new struct tag(
-          callback, op_vector.release(), resources));
+          callback, op_vector.release(), resources), NULL);
   if (error != GRPC_CALL_OK) {
-    return NanThrowError("startBatch failed", error);
+    return NanThrowError(nanErrorWithCode("startBatch failed", error));
   }
   CompletionQueueAsyncWorker::Next();
   NanReturnUndefined();
@@ -604,9 +635,9 @@ NAN_METHOD(Call::Cancel) {
     return NanThrowTypeError("cancel can only be called on Call objects");
   }
   Call *call = ObjectWrap::Unwrap<Call>(args.This());
-  grpc_call_error error = grpc_call_cancel(call->wrapped_call);
+  grpc_call_error error = grpc_call_cancel(call->wrapped_call, NULL);
   if (error != GRPC_CALL_OK) {
-    return NanThrowError("cancel failed", error);
+    return NanThrowError(nanErrorWithCode("cancel failed", error));
   }
   NanReturnUndefined();
 }

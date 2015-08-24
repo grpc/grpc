@@ -54,4 +54,4 @@ unsigned gpr_cpu_current_cpu(void);
 }  // extern "C"
 #endif
 
-#endif  /* GRPC_SUPPORT_CPU_H */
+#endif /* GRPC_SUPPORT_CPU_H */

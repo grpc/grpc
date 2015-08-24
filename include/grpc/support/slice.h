@@ -96,7 +96,7 @@ typedef struct gpr_slice {
 #define GPR_SLICE_LENGTH(slice)                      \
   ((slice).refcount ? (slice).data.refcounted.length \
                     : (slice).data.inlined.length)
-#define GPR_SLICE_SET_LENGTH(slice, newlen)                       \
+#define GPR_SLICE_SET_LENGTH(slice, newlen)                               \
   ((slice).refcount ? ((slice).data.refcounted.length = (size_t)(newlen)) \
                     : ((slice).data.inlined.length = (gpr_uint8)(newlen)))
 #define GPR_SLICE_END_PTR(slice) \

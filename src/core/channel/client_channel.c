@@ -84,8 +84,10 @@ typedef struct {
   grpc_pollset_set pollset_set;
 } channel_data;
 
-/** We create one watcher for each new lb_policy that is returned from a resolver,
-    to watch for state changes from the lb_policy. When a state change is seen, we
+/** We create one watcher for each new lb_policy that is returned from a
+   resolver,
+    to watch for state changes from the lb_policy. When a state change is seen,
+   we
     update the channel, and create a new watcher */
 typedef struct {
   channel_data *chand;
@@ -380,7 +382,8 @@ static void perform_transport_stream_op(grpc_call_element *elem,
           if (lb_policy) {
             grpc_transport_stream_op *op = &calld->waiting_op;
             grpc_pollset *bind_pollset = op->bind_pollset;
-            grpc_metadata_batch *initial_metadata = &op->send_ops->ops[0].data.metadata;
+            grpc_metadata_batch *initial_metadata =
+                &op->send_ops->ops[0].data.metadata;
             GRPC_LB_POLICY_REF(lb_policy, "pick");
             gpr_mu_unlock(&chand->mu_config);
             calld->state = CALL_WAITING_FOR_PICK;
@@ -388,13 +391,14 @@ static void perform_transport_stream_op(grpc_call_element *elem,
             GPR_ASSERT(op->bind_pollset);
             GPR_ASSERT(op->send_ops);
             GPR_ASSERT(op->send_ops->nops >= 1);
-            GPR_ASSERT(
-                op->send_ops->ops[0].type == GRPC_OP_METADATA);
+            GPR_ASSERT(op->send_ops->ops[0].type == GRPC_OP_METADATA);
             gpr_mu_unlock(&calld->mu_state);
 
-            grpc_iomgr_closure_init(&calld->async_setup_task, picked_target, calld);
+            grpc_iomgr_closure_init(&calld->async_setup_task, picked_target,
+                                    calld);
             grpc_lb_policy_pick(lb_policy, bind_pollset, initial_metadata,
-                                &calld->picked_channel, &calld->async_setup_task);
+                                &calld->picked_channel,
+                                &calld->async_setup_task);
 
             GRPC_LB_POLICY_UNREF(lb_policy, "pick");
           } else if (chand->resolver != NULL) {
@@ -430,7 +434,8 @@ static void cc_start_transport_stream_op(grpc_call_element *elem,
   perform_transport_stream_op(elem, op, 0);
 }
 
-static void watch_lb_policy(channel_data *chand, grpc_lb_policy *lb_policy, grpc_connectivity_state current_state);
+static void watch_lb_policy(channel_data *chand, grpc_lb_policy *lb_policy,
+                            grpc_connectivity_state current_state);
 
 static void on_lb_policy_state_changed(void *arg, int iomgr_success) {
   lb_policy_connectivity_watcher *w = arg;
@@ -450,7 +455,8 @@ static void on_lb_policy_state_changed(void *arg, int iomgr_success) {
   gpr_free(w);
 }
 
-static void watch_lb_policy(channel_data *chand, grpc_lb_policy *lb_policy, grpc_connectivity_state current_state) {
+static void watch_lb_policy(channel_data *chand, grpc_lb_policy *lb_policy,
+                            grpc_connectivity_state current_state) {
   lb_policy_connectivity_watcher *w = gpr_malloc(sizeof(*w));
   GRPC_CHANNEL_INTERNAL_REF(chand->master, "watch_lb_policy");
 
@@ -499,13 +505,13 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   if (iomgr_success && chand->resolver) {
     grpc_resolver *resolver = chand->resolver;
     GRPC_RESOLVER_REF(resolver, "channel-next");
+    grpc_connectivity_state_set(&chand->state_tracker, state,
+                                "new_lb+resolver");
     gpr_mu_unlock(&chand->mu_config);
     GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
     grpc_resolver_next(resolver, &chand->incoming_configuration,
                        &chand->on_config_changed);
     GRPC_RESOLVER_UNREF(resolver, "channel-next");
-    grpc_connectivity_state_set(&chand->state_tracker, state,
-                                "new_lb+resolver");
     if (lb_policy != NULL) {
       watch_lb_policy(chand, lb_policy, state);
     }
@@ -527,6 +533,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   }
 
   if (old_lb_policy != NULL) {
+    grpc_lb_policy_shutdown(old_lb_policy);
     GRPC_LB_POLICY_UNREF(old_lb_policy, "channel");
   }
 
@@ -662,7 +669,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   grpc_iomgr_closure_init(&chand->on_config_changed, cc_on_config_changed,
                           chand);
 
-  grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE, "client_channel");
+  grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
+                               "client_channel");
 }
 
 /* Destructor for channel_data */
@@ -746,19 +754,20 @@ void grpc_client_channel_watch_connectivity_state(
   gpr_mu_unlock(&chand->mu_config);
 }
 
-grpc_pollset_set *grpc_client_channel_get_connecting_pollset_set(grpc_channel_element *elem) {
+grpc_pollset_set *grpc_client_channel_get_connecting_pollset_set(
+    grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
   return &chand->pollset_set;
 }
 
 void grpc_client_channel_add_interested_party(grpc_channel_element *elem,
-                                          grpc_pollset *pollset) {
+                                              grpc_pollset *pollset) {
   channel_data *chand = elem->channel_data;
   grpc_pollset_set_add_pollset(&chand->pollset_set, pollset);
 }
 
 void grpc_client_channel_del_interested_party(grpc_channel_element *elem,
-                                          grpc_pollset *pollset) {
+                                              grpc_pollset *pollset) {
   channel_data *chand = elem->channel_data;
   grpc_pollset_set_del_pollset(&chand->pollset_set, pollset);
 }

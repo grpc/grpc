@@ -88,6 +88,19 @@ pygrpc_tag *pygrpc_produce_server_shutdown_tag(PyObject *user_tag) {
   return tag;
 }
 
+pygrpc_tag *pygrpc_produce_channel_state_change_tag(PyObject *user_tag) {
+  pygrpc_tag *tag = gpr_malloc(sizeof(pygrpc_tag));
+  tag->user_tag = user_tag;
+  Py_XINCREF(tag->user_tag);
+  tag->call = NULL;
+  tag->ops = NULL;
+  tag->nops = 0;
+  grpc_call_details_init(&tag->request_call_details);
+  grpc_metadata_array_init(&tag->request_metadata);
+  tag->is_new_call = 0;
+  return tag;
+}
+
 void pygrpc_discard_tag(pygrpc_tag *tag) {
   if (!tag) {
     return;
@@ -139,7 +152,7 @@ PyObject *pygrpc_consume_event(grpc_event event) {
 }
 
 int pygrpc_produce_op(PyObject *op, grpc_op *result) {
-  static const int OP_TUPLE_SIZE = 5;
+  static const int OP_TUPLE_SIZE = 6;
   static const int STATUS_TUPLE_SIZE = 2;
   static const int TYPE_INDEX = 0;
   static const int INITIAL_METADATA_INDEX = 1;
@@ -148,6 +161,7 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
   static const int STATUS_INDEX = 4;
   static const int STATUS_CODE_INDEX = 0;
   static const int STATUS_DETAILS_INDEX = 1;
+  static const int WRITE_FLAGS_INDEX = 5;
   int type;
   Py_ssize_t message_size;
   char *message;
@@ -170,7 +184,11 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
     return 0;
   }
   c_op.op = type;
-  c_op.flags = 0;
+  c_op.reserved = NULL;
+  c_op.flags = PyInt_AsLong(PyTuple_GET_ITEM(op, WRITE_FLAGS_INDEX));
+  if (PyErr_Occurred()) {
+    return 0;
+  }
   switch (type) {
   case GRPC_OP_SEND_INITIAL_METADATA:
     if (!pygrpc_cast_pyseq_to_send_metadata(

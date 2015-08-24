@@ -34,12 +34,43 @@
 #ifndef GRPCXX_AUTH_CONTEXT_H
 #define GRPCXX_AUTH_CONTEXT_H
 
+#include <iterator>
 #include <vector>
 
-#include <grpc++/auth_property_iterator.h>
 #include <grpc++/config.h>
 
+struct grpc_auth_context;
+struct grpc_auth_property;
+struct grpc_auth_property_iterator;
+
 namespace grpc {
+class SecureAuthContext;
+
+typedef std::pair<grpc::string, grpc::string> AuthProperty;
+
+class AuthPropertyIterator
+    : public std::iterator<std::input_iterator_tag, const AuthProperty> {
+ public:
+  ~AuthPropertyIterator();
+  AuthPropertyIterator& operator++();
+  AuthPropertyIterator operator++(int);
+  bool operator==(const AuthPropertyIterator& rhs) const;
+  bool operator!=(const AuthPropertyIterator& rhs) const;
+  const AuthProperty operator*();
+
+ protected:
+  AuthPropertyIterator();
+  AuthPropertyIterator(const grpc_auth_property* property,
+                       const grpc_auth_property_iterator* iter);
+
+ private:
+  friend class SecureAuthContext;
+  const grpc_auth_property* property_;
+  // The following items form a grpc_auth_property_iterator.
+  const grpc_auth_context* ctx_;
+  size_t index_;
+  const char* name_;
+};
 
 class AuthContext {
  public:
@@ -62,4 +93,3 @@ class AuthContext {
 }  // namespace grpc
 
 #endif  // GRPCXX_AUTH_CONTEXT_H
-

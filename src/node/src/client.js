@@ -79,13 +79,19 @@ function ClientWritableStream(call, serialize) {
  * implementation of a method needed for implementing stream.Writable.
  * @access private
  * @param {Buffer} chunk The chunk to write
- * @param {string} encoding Ignored
+ * @param {string} encoding Used to pass write flags
  * @param {function(Error=)} callback Called when the write is complete
  */
 function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
-  batch[grpc.opType.SEND_MESSAGE] = this.serialize(chunk);
+  var message = this.serialize(chunk);
+  if (_.isFinite(encoding)) {
+    /* Attach the encoding if it is a finite number. This is the closest we
+     * can get to checking that it is valid flags */
+    message.grpcWriteFlags = encoding;
+  }
+  batch[grpc.opType.SEND_MESSAGE] = message;
   this.call.startBatch(batch, function(err, event) {
     if (err) {
       // Something has gone wrong. Stop writing by failing to call callback
@@ -208,6 +214,30 @@ ClientWritableStream.prototype.getPeer = getPeer;
 ClientDuplexStream.prototype.getPeer = getPeer;
 
 /**
+ * Get a call object built with the provided options. Keys for options are
+ * 'deadline', which takes a date or number, and 'host', which takes a string
+ * and overrides the hostname to connect to.
+ * @param {Object} options Options map.
+ */
+function getCall(channel, method, options) {
+  var deadline;
+  var host;
+  var parent;
+  var propagate_flags;
+  if (options) {
+    deadline = options.deadline;
+    host = options.host;
+    parent = _.get(options, 'parent.call');
+    propagate_flags = options.propagate_flags;
+  }
+  if (deadline === undefined) {
+    deadline = Infinity;
+  }
+  return new grpc.Call(channel, method, deadline, host,
+                       parent, propagate_flags);
+}
+
+/**
  * Get a function that can make unary requests to the specified method.
  * @param {string} method The name of the method to request
  * @param {function(*):Buffer} serialize The serialization function for inputs
@@ -226,17 +256,13 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
    *     response is received
    * @param {array=} metadata Array of metadata key/value pairs to add to the
    *     call
-   * @param {(number|Date)=} deadline The deadline for processing this request.
-   *     Defaults to infinite future
+   * @param {Object=} options Options map
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeUnaryRequest(argument, callback, metadata, deadline) {
+  function makeUnaryRequest(argument, callback, metadata, options) {
     /* jshint validthis: true */
-    if (deadline === undefined) {
-      deadline = Infinity;
-    }
     var emitter = new EventEmitter();
-    var call = new grpc.Call(this.channel, method, deadline);
+    var call = getCall(this.channel, method, options);
     if (metadata === null || metadata === undefined) {
       metadata = {};
     }
@@ -253,8 +279,12 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
         return;
       }
       var client_batch = {};
+      var message = serialize(argument);
+      if (options) {
+        message.grpcWriteFlags = options.flags;
+      }
       client_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
-      client_batch[grpc.opType.SEND_MESSAGE] = serialize(argument);
+      client_batch[grpc.opType.SEND_MESSAGE] = message;
       client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
       client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
       client_batch[grpc.opType.RECV_MESSAGE] = true;
@@ -300,16 +330,12 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
    *     response is received
    * @param {array=} metadata Array of metadata key/value pairs to add to the
    *     call
-   * @param {(number|Date)=} deadline The deadline for processing this request.
-   *     Defaults to infinite future
+   * @param {Object=} options Options map
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeClientStreamRequest(callback, metadata, deadline) {
+  function makeClientStreamRequest(callback, metadata, options) {
     /* jshint validthis: true */
-    if (deadline === undefined) {
-      deadline = Infinity;
-    }
-    var call = new grpc.Call(this.channel, method, deadline);
+    var call = getCall(this.channel, method, options);
     if (metadata === null || metadata === undefined) {
       metadata = {};
     }
@@ -374,16 +400,12 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
    *     serialize
    * @param {array=} metadata Array of metadata key/value pairs to add to the
    *     call
-   * @param {(number|Date)=} deadline The deadline for processing this request.
-   *     Defaults to infinite future
+   * @param {Object} options Options map
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeServerStreamRequest(argument, metadata, deadline) {
+  function makeServerStreamRequest(argument, metadata, options) {
     /* jshint validthis: true */
-    if (deadline === undefined) {
-      deadline = Infinity;
-    }
-    var call = new grpc.Call(this.channel, method, deadline);
+    var call = getCall(this.channel, method, options);
     if (metadata === null || metadata === undefined) {
       metadata = {};
     }
@@ -395,9 +417,13 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
         return;
       }
       var start_batch = {};
+      var message = serialize(argument);
+      if (options) {
+        message.grpcWriteFlags = options.flags;
+      }
       start_batch[grpc.opType.SEND_INITIAL_METADATA] = metadata;
       start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
-      start_batch[grpc.opType.SEND_MESSAGE] = serialize(argument);
+      start_batch[grpc.opType.SEND_MESSAGE] = message;
       start_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
       call.startBatch(start_batch, function(err, response) {
         if (err) {
@@ -446,16 +472,12 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
    * @this {SurfaceClient} Client object. Must have a channel member.
    * @param {array=} metadata Array of metadata key/value pairs to add to the
    *     call
-   * @param {(number|Date)=} deadline The deadline for processing this request.
-   *     Defaults to infinite future
+   * @param {Options} options Options map
    * @return {EventEmitter} An event emitter for stream related events
    */
-  function makeBidiStreamRequest(metadata, deadline) {
+  function makeBidiStreamRequest(metadata, options) {
     /* jshint validthis: true */
-    if (deadline === undefined) {
-      deadline = Infinity;
-    }
-    var call = new grpc.Call(this.channel, method, deadline);
+    var call = getCall(this.channel, method, options);
     if (metadata === null || metadata === undefined) {
       metadata = {};
     }
@@ -523,7 +545,7 @@ var requester_makers = {
  * requestSerialize: function to serialize request objects
  * responseDeserialize: function to deserialize response objects
  * @param {Object} methods An object mapping method names to method attributes
- * @param {string} serviceName The name of the service
+ * @param {string} serviceName The fully qualified name of the service
  * @return {function(string, Object)} New client constructor
  */
 exports.makeClientConstructor = function(methods, serviceName) {
@@ -548,10 +570,41 @@ exports.makeClientConstructor = function(methods, serviceName) {
     }
     options['grpc.primary_user_agent'] = 'grpc-node/' + version;
     this.channel = new grpc.Channel(address, credentials, options);
-    this.server_address = address.replace(/\/$/, '');
-    this.auth_uri = this.server_address + '/' + serviceName;
+    // Remove the optional DNS scheme, trailing port, and trailing backslash
+    address = address.replace(/^(dns:\/{3})?([^:\/]+)(:\d+)?\/?$/, '$2');
+    this.server_address = address;
+    this.auth_uri = 'https://' + this.server_address + '/' + serviceName;
     this.updateMetadata = updateMetadata;
   }
+
+  /**
+   * Wait for the client to be ready. The callback will be called when the
+   * client has successfully connected to the server, and it will be called
+   * with an error if the attempt to connect to the server has unrecoverablly
+   * failed or if the deadline expires. This function will make the channel
+   * start connecting if it has not already done so.
+   * @param {(Date|Number)} deadline When to stop waiting for a connection. Pass
+   *     Infinity to wait forever.
+   * @param {function(Error)} callback The callback to call when done attempting
+   *     to connect.
+   */
+  Client.prototype.$waitForReady = function(deadline, callback) {
+    var self = this;
+    var checkState = function(err) {
+      if (err) {
+        callback(new Error('Failed to connect before the deadline'));
+      }
+      var new_state = self.channel.getConnectivityState(true);
+      if (new_state === grpc.connectivityState.READY) {
+        callback();
+      } else if (new_state === grpc.connectivityState.FATAL_FAILURE) {
+        callback(new Error('Failed to connect to server'));
+      } else {
+        self.channel.watchConnectivityState(new_state, deadline, checkState);
+      }
+    };
+    checkState();
+  };
 
   _.each(methods, function(attrs, name) {
     var method_type;
@@ -587,7 +640,8 @@ exports.makeClientConstructor = function(methods, serviceName) {
  */
 exports.makeProtobufClientConstructor =  function(service) {
   var method_attrs = common.getProtobufServiceAttrs(service, service.name);
-  var Client = exports.makeClientConstructor(method_attrs);
+  var Client = exports.makeClientConstructor(
+      method_attrs, common.fullyQualifiedName(service));
   Client.service = service;
   return Client;
 };

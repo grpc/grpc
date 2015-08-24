@@ -31,11 +31,7 @@
 
 #endregion
 
-using System;
-using System.Threading;
 using System.Threading.Tasks;
-
-using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {

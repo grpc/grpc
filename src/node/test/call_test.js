@@ -84,6 +84,11 @@ describe('call', function() {
            new grpc.Call(channel, 'method', 0);
          });
        });
+    it('should accept an optional fourth string parameter', function() {
+      assert.doesNotThrow(function() {
+        new grpc.Call(channel, 'method', new Date(), 'host_override');
+      });
+    });
     it('should fail with a closed channel', function() {
       var local_channel = new grpc.Channel('hostname', insecureCreds);
       local_channel.close();

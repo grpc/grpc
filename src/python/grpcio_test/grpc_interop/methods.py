@@ -33,10 +33,12 @@ import enum
 import json
 import os
 import threading
+import time
 
 from oauth2client import client as oauth2client_client
 
 from grpc.framework.alpha import utilities
+from grpc.framework.alpha import exceptions
 
 from grpc_interop import empty_pb2
 from grpc_interop import messages_pb2
@@ -318,6 +320,24 @@ def _cancel_after_first_response(stub):
       raise ValueError('expected call to be cancelled')
 
 
+def _timeout_on_sleeping_server(stub):
+  request_payload_size = 27182
+  with stub, _Pipe() as pipe:
+    response_iterator = stub.FullDuplexCall(pipe, 0.001)
+
+    request = messages_pb2.StreamingOutputCallRequest(
+        response_type=messages_pb2.COMPRESSABLE,
+        payload=messages_pb2.Payload(body=b'\x00' * request_payload_size))
+    pipe.add(request)
+    time.sleep(0.1)
+    try:
+      next(response_iterator)
+    except exceptions.ExpirationError:
+      pass
+    else:
+      raise ValueError('expected call to exceed deadline')
+
+
 def _compute_engine_creds(stub, args):
   response = _large_unary_common_behavior(stub, True, True)
   if args.default_service_account != response.username:
@@ -351,6 +371,7 @@ class TestCase(enum.Enum):
   CANCEL_AFTER_FIRST_RESPONSE = 'cancel_after_first_response'
   COMPUTE_ENGINE_CREDS = 'compute_engine_creds'
   SERVICE_ACCOUNT_CREDS = 'service_account_creds'
+  TIMEOUT_ON_SLEEPING_SERVER = 'timeout_on_sleeping_server'
 
   def test_interoperability(self, stub, args):
     if self is TestCase.EMPTY_UNARY:
@@ -367,6 +388,8 @@ class TestCase(enum.Enum):
       _cancel_after_begin(stub)
     elif self is TestCase.CANCEL_AFTER_FIRST_RESPONSE:
       _cancel_after_first_response(stub)
+    elif self is TestCase.TIMEOUT_ON_SLEEPING_SERVER:
+      _timeout_on_sleeping_server(stub)
     elif self is TestCase.COMPUTE_ENGINE_CREDS:
       _compute_engine_creds(stub, args)
     elif self is TestCase.SERVICE_ACCOUNT_CREDS:

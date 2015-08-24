@@ -1,8 +1,8 @@
 @rem Builds gRPC NuGet packages
 
 @rem Current package versions
-set VERSION=0.6.0
-set CORE_VERSION=0.10.0
+set VERSION=0.6.1
+set CORE_VERSION=0.10.1
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe

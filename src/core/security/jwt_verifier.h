@@ -133,4 +133,3 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims,
                                                const char *audience);
 
 #endif /* GRPC_INTERNAL_CORE_SECURITY_JWT_VERIFIER_H */
-

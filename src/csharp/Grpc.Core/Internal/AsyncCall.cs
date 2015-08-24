@@ -50,20 +50,34 @@ namespace Grpc.Core.Internal
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCall<TRequest, TResponse>>();
 
-        readonly CallInvocationDetails<TRequest, TResponse> callDetails;
+        readonly CallInvocationDetails<TRequest, TResponse> details;
+        readonly INativeCall injectedNativeCall;  // for testing
 
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
 
+        // Indicates that steaming call has finished.
+        TaskCompletionSource<object> streamingCallFinishedTcs = new TaskCompletionSource<object>();
+
+        // Response headers set here once received.
+        TaskCompletionSource<Metadata> responseHeadersTcs = new TaskCompletionSource<Metadata>();
+
         // Set after status is received. Used for both unary and streaming response calls.
         ClientSideStatus? finishedStatus;
 
-        bool readObserverCompleted;  // True if readObserver has already been completed.
-
         public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
-            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer)
+            : base(callDetails.RequestMarshaller.Serializer, callDetails.ResponseMarshaller.Deserializer, callDetails.Channel.Environment)
         {
-            this.callDetails = callDetails;
+            this.details = callDetails.WithOptions(callDetails.Options.Normalize());
+            this.initialMetadataSent = true;  // we always send metadata at the very beginning of the call.
+        }
+
+        /// <summary>
+        /// This constructor should only be used for testing.
+        /// </summary>
+        public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails, INativeCall injectedNativeCall) : this(callDetails)
+        {
+            this.injectedNativeCall = injectedNativeCall;
         }
 
         // TODO: this method is not Async, so it shouldn't be in AsyncCall class, but 
@@ -89,17 +103,17 @@ namespace Grpc.Core.Internal
                     readingDone = true;
                 }
 
-                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
                     using (var ctx = BatchContextSafeHandle.Create())
                     {
-                        call.StartUnary(payload, ctx, metadataArray);
+                        call.StartUnary(ctx, payload, metadataArray, GetWriteFlagsForCall());
                         var ev = cq.Pluck(ctx.Handle);
 
                         bool success = (ev.success != 0);
                         try
                         {
-                            HandleUnaryResponse(success, ctx);
+                            HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessage(), ctx.GetReceivedInitialMetadata());
                         }
                         catch (Exception e)
                         {
@@ -108,15 +122,9 @@ namespace Grpc.Core.Internal
                     }
                 }
 
-                try
-                {
-                    // Once the blocking call returns, the result should be available synchronously.
-                    return unaryResponseTcs.Task.Result;
-                }
-                catch (AggregateException ae)
-                {
-                    throw ExceptionHelper.UnwrapRpcException(ae);
-                }
+                // Once the blocking call returns, the result should be available synchronously.
+                // Note that GetAwaiter().GetResult() doesn't wrap exceptions in AggregateException.
+                return unaryResponseTcs.Task.GetAwaiter().GetResult();
             }
         }
 
@@ -130,7 +138,7 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckState(!started);
                 started = true;
 
-                Initialize(callDetails.Channel.Environment.CompletionQueue);
+                Initialize(environment.CompletionQueue);
 
                 halfcloseRequested = true;
                 readingDone = true;
@@ -138,9 +146,9 @@ namespace Grpc.Core.Internal
                 byte[] payload = UnsafeSerialize(msg);
 
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
-                    call.StartUnary(payload, HandleUnaryResponse, metadataArray);
+                    call.StartUnary(HandleUnaryResponse, payload, metadataArray, GetWriteFlagsForCall());
                 }
                 return unaryResponseTcs.Task;
             }
@@ -157,12 +165,12 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckState(!started);
                 started = true;
 
-                Initialize(callDetails.Channel.Environment.CompletionQueue);
+                Initialize(environment.CompletionQueue);
 
                 readingDone = true;
 
                 unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
                     call.StartClientStreaming(HandleUnaryResponse, metadataArray);
                 }
@@ -181,17 +189,17 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckState(!started);
                 started = true;
 
-                Initialize(callDetails.Channel.Environment.CompletionQueue);
+                Initialize(environment.CompletionQueue);
 
                 halfcloseRequested = true;
-                halfclosed = true;  // halfclose not confirmed yet, but it will be once finishedHandler is called.
 
                 byte[] payload = UnsafeSerialize(msg);
 
-                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
-                    call.StartServerStreaming(payload, HandleFinished, metadataArray);
+                    call.StartServerStreaming(HandleFinished, payload, metadataArray, GetWriteFlagsForCall());
                 }
+                call.StartReceiveInitialMetadata(HandleReceivedResponseHeaders);
             }
         }
 
@@ -206,12 +214,13 @@ namespace Grpc.Core.Internal
                 Preconditions.CheckState(!started);
                 started = true;
 
-                Initialize(callDetails.Channel.Environment.CompletionQueue);
+                Initialize(environment.CompletionQueue);
 
-                using (var metadataArray = MetadataArraySafeHandle.Create(callDetails.Options.Headers))
+                using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                 {
                     call.StartDuplexStreaming(HandleFinished, metadataArray);
                 }
+                call.StartReceiveInitialMetadata(HandleReceivedResponseHeaders);
             }
         }
 
@@ -219,9 +228,9 @@ namespace Grpc.Core.Internal
         /// Sends a streaming request. Only one pending send action is allowed at any given time.
         /// completionDelegate is called when the operation finishes.
         /// </summary>
-        public void StartSendMessage(TRequest msg, AsyncCompletionDelegate<object> completionDelegate)
+        public void StartSendMessage(TRequest msg, WriteFlags writeFlags, AsyncCompletionDelegate<object> completionDelegate)
         {
-            StartSendMessageInternal(msg, completionDelegate);
+            StartSendMessageInternal(msg, writeFlags, completionDelegate);
         }
 
         /// <summary>
@@ -253,6 +262,28 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
+        /// Get the task that completes once if streaming call finishes with ok status and throws RpcException with given status otherwise.
+        /// </summary>
+        public Task StreamingCallFinishedTask
+        {
+            get
+            {
+                return streamingCallFinishedTcs.Task;
+            }
+        }
+
+        /// <summary>
+        /// Get the task that completes once response headers are received.
+        /// </summary>
+        public Task<Metadata> ResponseHeadersAsync
+        {
+            get
+            {
+                return responseHeadersTcs.Task;
+            }
+        }
+
+        /// <summary>
         /// Gets the resulting status if the call has already finished.
         /// Throws InvalidOperationException otherwise.
         /// </summary>
@@ -278,54 +309,45 @@ namespace Grpc.Core.Internal
             }
         }
 
-        /// <summary>
-        /// On client-side, we only fire readCompletionDelegate once all messages have been read 
-        /// and status has been received.
-        /// </summary>
-        protected override void ProcessLastRead(AsyncCompletionDelegate<TResponse> completionDelegate)
+        public CallInvocationDetails<TRequest, TResponse> Details
         {
-            if (completionDelegate != null && readingDone && finishedStatus.HasValue)
+            get
             {
-                bool shouldComplete;
-                lock (myLock)
-                {
-                    shouldComplete = !readObserverCompleted;
-                    readObserverCompleted = true;
-                }
-
-                if (shouldComplete)
-                {
-                    var status = finishedStatus.Value.Status;
-                    if (status.StatusCode != StatusCode.OK)
-                    {
-                        FireCompletion(completionDelegate, default(TResponse), new RpcException(status));
-                    }
-                    else
-                    {
-                        FireCompletion(completionDelegate, default(TResponse), null);
-                    }
-                }
+                return this.details;
             }
         }
 
-        protected override void OnReleaseResources()
+        protected override void OnAfterReleaseResources()
         {
-            callDetails.Channel.Environment.DebugStats.ActiveClientCalls.Decrement();
+            details.Channel.RemoveCallReference(this);
         }
 
         private void Initialize(CompletionQueueSafeHandle cq)
         {
-            var call = callDetails.Channel.Handle.CreateCall(callDetails.Channel.Environment.CompletionRegistry, cq,
-                callDetails.Method, callDetails.Host, Timespec.FromDateTime(callDetails.Options.Deadline));
-            callDetails.Channel.Environment.DebugStats.ActiveClientCalls.Increment();
+            var call = CreateNativeCall(cq);
+            details.Channel.AddCallReference(this);
             InitializeInternal(call);
             RegisterCancellationCallback();
+        }
+
+        private INativeCall CreateNativeCall(CompletionQueueSafeHandle cq)
+        {
+            if (injectedNativeCall != null)
+            {
+                return injectedNativeCall;  // allows injecting a mock INativeCall in tests.
+            }
+
+            var parentCall = details.Options.PropagationToken != null ? details.Options.PropagationToken.ParentCall : CallSafeHandle.NullInstance;
+
+            return details.Channel.Handle.CreateCall(environment.CompletionRegistry,
+                parentCall, ContextPropagationToken.DefaultMask, cq,
+                details.Method, details.Host, Timespec.FromDateTime(details.Options.Deadline.Value));
         }
 
         // Make sure that once cancellationToken for this call is cancelled, Cancel() will be called.
         private void RegisterCancellationCallback()
         {
-            var token = callDetails.Options.CancellationToken;
+            var token = details.Options.CancellationToken;
             if (token.CanBeCanceled)
             {
                 token.Register(() => this.Cancel());
@@ -333,31 +355,40 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
+        /// Gets WriteFlags set in callDetails.Options.WriteOptions
+        /// </summary>
+        private WriteFlags GetWriteFlagsForCall()
+        {
+            var writeOptions = details.Options.WriteOptions;
+            return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
+        }
+
+        /// <summary>
+        /// Handles receive status completion for calls with streaming response.
+        /// </summary>
+        private void HandleReceivedResponseHeaders(bool success, Metadata responseHeaders)
+        {
+            responseHeadersTcs.SetResult(responseHeaders);
+        }
+
+        /// <summary>
         /// Handler for unary response completion.
         /// </summary>
-        private void HandleUnaryResponse(bool success, BatchContextSafeHandle ctx)
+        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders)
         {
-            var fullStatus = ctx.GetReceivedStatusOnClient();
-
             lock (myLock)
             {
                 finished = true;
-                finishedStatus = fullStatus;
-
-                halfclosed = true;
+                finishedStatus = receivedStatus;
 
                 ReleaseResourcesIfPossible();
             }
 
-            if (!success)
-            {
-                unaryResponseTcs.SetException(new RpcException(new Status(StatusCode.Internal, "Internal error occured.")));
-                return;
-            }
+            responseHeadersTcs.SetResult(responseHeaders);
 
-            var status = fullStatus.Status;
+            var status = receivedStatus.Status;
 
-            if (status.StatusCode != StatusCode.OK)
+            if (!success || status.StatusCode != StatusCode.OK)
             {
                 unaryResponseTcs.SetException(new RpcException(status));
                 return;
@@ -365,7 +396,7 @@ namespace Grpc.Core.Internal
 
             // TODO: handle deserialization error
             TResponse msg;
-            TryDeserialize(ctx.GetReceivedMessage(), out msg);
+            TryDeserialize(receivedMessage, out msg);
 
             unaryResponseTcs.SetResult(msg);
         }
@@ -373,22 +404,25 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handles receive status completion for calls with streaming response.
         /// </summary>
-        private void HandleFinished(bool success, BatchContextSafeHandle ctx)
+        private void HandleFinished(bool success, ClientSideStatus receivedStatus)
         {
-            var fullStatus = ctx.GetReceivedStatusOnClient();
-
-            AsyncCompletionDelegate<TResponse> origReadCompletionDelegate = null;
             lock (myLock)
             {
                 finished = true;
-                finishedStatus = fullStatus;
-
-                origReadCompletionDelegate = readCompletionDelegate;
+                finishedStatus = receivedStatus;
 
                 ReleaseResourcesIfPossible();
             }
 
-            ProcessLastRead(origReadCompletionDelegate);
+            var status = receivedStatus.Status;
+
+            if (!success || status.StatusCode != StatusCode.OK)
+            {
+                streamingCallFinishedTcs.SetException(new RpcException(status));
+                return;
+            }
+
+            streamingCallFinishedTcs.SetResult(null);
         }
     }
 }

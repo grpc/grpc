@@ -78,20 +78,17 @@
 
 #pragma mark Tests
 
-static NSString * const kLocalCleartextHost = @"localhost:5050";
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.google.com";
 
 @implementation InteropTests {
   RMTTestService *_service;
 }
 
 + (NSString *)host {
-  return kLocalCleartextHost;
+  return kRemoteSSLHost;
 }
 
 - (void)setUp {
-  // Register test server as non-SSL.
-  [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
-
   _service = [[RMTTestService alloc] initWithHost:self.class.host];
 }
 
@@ -131,7 +128,7 @@ static NSString * const kLocalCleartextHost = @"localhost:5050";
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:8 handler:nil];
+  [self waitForExpectationsWithTimeout:16 handler:nil];
 }
 
 - (void)testClientStreamingRPC {
