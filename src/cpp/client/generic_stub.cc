@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc++/generic_stub.h>
+#include <grpc++/generic/generic_stub.h>
 
 #include <grpc++/impl/rpc_method.h>
 

@@ -31,74 +31,42 @@
  *
  */
 
-#ifndef GRPCXX_BYTE_BUFFER_H
-#define GRPCXX_BYTE_BUFFER_H
+#ifndef GRPCXX_SUPPORT_CONFIG_PROTOBUF_H
+#define GRPCXX_SUPPORT_CONFIG_PROTOBUF_H
 
-#include <grpc/grpc.h>
-#include <grpc/byte_buffer.h>
-#include <grpc/support/log.h>
-#include <grpc++/config.h>
-#include <grpc++/slice.h>
-#include <grpc++/status.h>
-#include <grpc++/impl/serialization_traits.h>
+#ifndef GRPC_CUSTOM_PROTOBUF_INT64
+#include <google/protobuf/stubs/common.h>
+#define GRPC_CUSTOM_PROTOBUF_INT64 ::google::protobuf::int64
+#endif
 
-#include <vector>
+#ifndef GRPC_CUSTOM_MESSAGE
+#include <google/protobuf/message.h>
+#define GRPC_CUSTOM_MESSAGE ::google::protobuf::Message
+#endif
+
+#ifndef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream.h>
+#define GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM \
+  ::google::protobuf::io::ZeroCopyOutputStream
+#define GRPC_CUSTOM_ZEROCOPYINPUTSTREAM \
+  ::google::protobuf::io::ZeroCopyInputStream
+#define GRPC_CUSTOM_CODEDINPUTSTREAM ::google::protobuf::io::CodedInputStream
+#endif
 
 namespace grpc {
+namespace protobuf {
 
-class ByteBuffer GRPC_FINAL {
- public:
-  ByteBuffer() : buffer_(nullptr) {}
+typedef GRPC_CUSTOM_MESSAGE Message;
+typedef GRPC_CUSTOM_PROTOBUF_INT64 int64;
 
-  ByteBuffer(const Slice* slices, size_t nslices);
+namespace io {
+typedef GRPC_CUSTOM_ZEROCOPYOUTPUTSTREAM ZeroCopyOutputStream;
+typedef GRPC_CUSTOM_ZEROCOPYINPUTSTREAM ZeroCopyInputStream;
+typedef GRPC_CUSTOM_CODEDINPUTSTREAM CodedInputStream;
+}  // namespace io
 
-  ~ByteBuffer() {
-    if (buffer_) {
-      grpc_byte_buffer_destroy(buffer_);
-    }
-  }
-
-  void Dump(std::vector<Slice>* slices) const;
-
-  void Clear();
-  size_t Length() const;
-
- private:
-  friend class SerializationTraits<ByteBuffer, void>;
-
-  ByteBuffer(const ByteBuffer&);
-  ByteBuffer& operator=(const ByteBuffer&);
-
-  // takes ownership
-  void set_buffer(grpc_byte_buffer* buf) {
-    if (buffer_) {
-      gpr_log(GPR_ERROR, "Overriding existing buffer");
-      Clear();
-    }
-    buffer_ = buf;
-  }
-
-  grpc_byte_buffer* buffer() const { return buffer_; }
-
-  grpc_byte_buffer* buffer_;
-};
-
-template <>
-class SerializationTraits<ByteBuffer, void> {
- public:
-  static Status Deserialize(grpc_byte_buffer* byte_buffer, ByteBuffer* dest,
-                            int max_message_size) {
-    dest->set_buffer(byte_buffer);
-    return Status::OK;
-  }
-  static Status Serialize(const ByteBuffer& source, grpc_byte_buffer** buffer,
-                          bool* own_buffer) {
-    *buffer = source.buffer();
-    *own_buffer = false;
-    return Status::OK;
-  }
-};
-
+}  // namespace protobuf
 }  // namespace grpc
 
-#endif  // GRPCXX_BYTE_BUFFER_H
+#endif  // GRPCXX_SUPPORT_CONFIG_PROTOBUF_H

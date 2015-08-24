@@ -31,7 +31,6 @@
  *
  */
 
-#include <grpc++/channel_arguments.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
@@ -39,7 +38,6 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
 #include <gtest/gtest.h>
 
 #include "examples/pubsub/publisher.h"

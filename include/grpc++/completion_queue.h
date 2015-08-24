@@ -36,8 +36,8 @@
 
 #include <grpc/support/time.h>
 #include <grpc++/impl/grpc_library.h>
-#include <grpc++/status.h>
-#include <grpc++/time.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/time.h>
 
 struct grpc_completion_queue;
 

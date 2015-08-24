@@ -31,44 +31,33 @@
  *
  */
 
-#ifndef GRPCXX_SLICE_H
-#define GRPCXX_SLICE_H
+#ifndef GRPCXX_GENERIC_GENERIC_STUB_H
+#define GRPCXX_GENERIC_GENERIC_STUB_H
 
-#include <grpc/support/slice.h>
-#include <grpc++/config.h>
+#include <grpc++/support/async_stream.h>
+#include <grpc++/support/byte_buffer.h>
 
 namespace grpc {
 
-class Slice GRPC_FINAL {
- public:
-  // construct empty slice
-  Slice();
-  // destructor - drops one ref
-  ~Slice();
-  // construct slice from grpc slice, adding a ref
-  enum AddRef { ADD_REF };
-  Slice(gpr_slice slice, AddRef);
-  // construct slice from grpc slice, stealing a ref
-  enum StealRef { STEAL_REF };
-  Slice(gpr_slice slice, StealRef);
-  // copy constructor - adds a ref
-  Slice(const Slice& other);
-  // assignment - ref count is unchanged
-  Slice& operator=(Slice other) {
-    std::swap(slice_, other.slice_);
-    return *this;
-  }
+class CompletionQueue;
+typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
+    GenericClientAsyncReaderWriter;
 
-  size_t size() const { return GPR_SLICE_LENGTH(slice_); }
-  const gpr_uint8* begin() const { return GPR_SLICE_START_PTR(slice_); }
-  const gpr_uint8* end() const { return GPR_SLICE_END_PTR(slice_); }
+// Generic stubs provide a type-unsafe interface to call gRPC methods
+// by name.
+class GenericStub GRPC_FINAL {
+ public:
+  explicit GenericStub(std::shared_ptr<Channel> channel) : channel_(channel) {}
+
+  // begin a call to a named method
+  std::unique_ptr<GenericClientAsyncReaderWriter> Call(
+      ClientContext* context, const grpc::string& method, CompletionQueue* cq,
+      void* tag);
 
  private:
-  friend class ByteBuffer;
-
-  gpr_slice slice_;
+  std::shared_ptr<Channel> channel_;
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_SLICE_H
+#endif  // GRPCXX_GENERIC_GENERIC_STUB_H

@@ -31,50 +31,63 @@
  *
  */
 
-#ifndef GRPCXX_SERVER_CREDENTIALS_H
-#define GRPCXX_SERVER_CREDENTIALS_H
+#ifndef GRPCXX_SUPPORT_CHANNEL_ARGUMENTS_H
+#define GRPCXX_SUPPORT_CHANNEL_ARGUMENTS_H
 
-#include <memory>
 #include <vector>
+#include <list>
 
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include <grpc++/support/config.h>
 
-struct grpc_server;
-
 namespace grpc {
-class Server;
+namespace testing {
+class ChannelArgumentsTest;
+}  // namespace testing
 
-// grpc_server_credentials wrapper class.
-class ServerCredentials {
+// Options for channel creation. The user can use generic setters to pass
+// key value pairs down to c channel creation code. For grpc related options,
+// concrete setters are provided.
+class ChannelArguments {
  public:
-  virtual ~ServerCredentials();
+  ChannelArguments() {}
+  ~ChannelArguments() {}
+
+  ChannelArguments(const ChannelArguments& other);
+  ChannelArguments& operator=(ChannelArguments other) {
+    Swap(other);
+    return *this;
+  }
+
+  void Swap(ChannelArguments& other);
+
+  // grpc specific channel argument setters
+  // Set target name override for SSL host name checking.
+  void SetSslTargetNameOverride(const grpc::string& name);
+  // TODO(yangg) add flow control options
+
+  // Set the compression algorithm for the channel.
+  void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
+
+  // Generic channel argument setters. Only for advanced use cases.
+  void SetInt(const grpc::string& key, int value);
+  void SetString(const grpc::string& key, const grpc::string& value);
+
+  // Populates given channel_args with args_, does not take ownership.
+  void SetChannelArgs(grpc_channel_args* channel_args) const;
 
  private:
-  friend class ::grpc::Server;
+  friend class SecureCredentials;
+  friend class testing::ChannelArgumentsTest;
 
-  virtual int AddPortToServer(const grpc::string& addr,
-                              grpc_server* server) = 0;
+  // Returns empty string when it is not set.
+  grpc::string GetSslTargetNameOverride() const;
+
+  std::vector<grpc_arg> args_;
+  std::list<grpc::string> strings_;
 };
-
-// Options to create ServerCredentials with SSL
-struct SslServerCredentialsOptions {
-  SslServerCredentialsOptions() : force_client_auth(false) {}
-
-  struct PemKeyCertPair {
-    grpc::string private_key;
-    grpc::string cert_chain;
-  };
-  grpc::string pem_root_certs;
-  std::vector<PemKeyCertPair> pem_key_cert_pairs;
-  bool force_client_auth;
-};
-
-// Builds SSL ServerCredentials given SSL specific options
-std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options);
-
-std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
 }  // namespace grpc
 
-#endif  // GRPCXX_SERVER_CREDENTIALS_H
+#endif  // GRPCXX_SUPPORT_CHANNEL_ARGUMENTS_H

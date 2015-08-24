@@ -36,11 +36,11 @@
 
 #include <memory>
 
-#include <grpc++/config.h>
 #include <grpc++/credentials.h>
+#include <grpc++/support/channel_arguments.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
-class ChannelArguments;
 
 // If creds does not hold an object or is invalid, a lame channel is returned.
 std::shared_ptr<Channel> CreateChannel(

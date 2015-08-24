@@ -112,13 +112,14 @@ grpc::string GetHeaderPrologue(const grpc::protobuf::FileDescriptor *file,
 grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
                                const Parameters &params) {
   grpc::string temp =
+      "#include <grpc++/support/async_stream.h>\n"
       "#include <grpc++/impl/rpc_method.h>\n"
       "#include <grpc++/impl/proto_utils.h>\n"
       "#include <grpc++/impl/service_type.h>\n"
-      "#include <grpc++/async_unary_call.h>\n"
-      "#include <grpc++/status.h>\n"
-      "#include <grpc++/stream.h>\n"
-      "#include <grpc++/stub_options.h>\n"
+      "#include <grpc++/support/async_unary_call.h>\n"
+      "#include <grpc++/support/status.h>\n"
+      "#include <grpc++/support/stub_options.h>\n"
+      "#include <grpc++/support/sync_stream.h>\n"
       "\n"
       "namespace grpc {\n"
       "class CompletionQueue;\n"
@@ -701,12 +702,13 @@ grpc::string GetSourceIncludes(const grpc::protobuf::FileDescriptor *file,
     grpc::protobuf::io::Printer printer(&output_stream, '$');
     std::map<grpc::string, grpc::string> vars;
 
-    printer.Print(vars, "#include <grpc++/async_unary_call.h>\n");
     printer.Print(vars, "#include <grpc++/channel.h>\n");
     printer.Print(vars, "#include <grpc++/impl/client_unary_call.h>\n");
     printer.Print(vars, "#include <grpc++/impl/rpc_service_method.h>\n");
     printer.Print(vars, "#include <grpc++/impl/service_type.h>\n");
-    printer.Print(vars, "#include <grpc++/stream.h>\n");
+    printer.Print(vars, "#include <grpc++/support/async_unary_call.h>\n");
+    printer.Print(vars, "#include <grpc++/support/async_stream.h>\n");
+    printer.Print(vars, "#include <grpc++/support/sync_stream.h>\n");
 
     if (!file->package().empty()) {
       std::vector<grpc::string> parts =

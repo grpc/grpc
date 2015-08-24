@@ -31,50 +31,65 @@
  *
  */
 
-#ifndef GRPCXX_SERVER_CREDENTIALS_H
-#define GRPCXX_SERVER_CREDENTIALS_H
+#ifndef GRPCXX_SUPPORT_AUTH_CONTEXT_H
+#define GRPCXX_SUPPORT_AUTH_CONTEXT_H
 
-#include <memory>
+#include <iterator>
 #include <vector>
 
 #include <grpc++/support/config.h>
 
-struct grpc_server;
+struct grpc_auth_context;
+struct grpc_auth_property;
+struct grpc_auth_property_iterator;
 
 namespace grpc {
-class Server;
+class SecureAuthContext;
 
-// grpc_server_credentials wrapper class.
-class ServerCredentials {
+typedef std::pair<grpc::string, grpc::string> AuthProperty;
+
+class AuthPropertyIterator
+    : public std::iterator<std::input_iterator_tag, const AuthProperty> {
  public:
-  virtual ~ServerCredentials();
+  ~AuthPropertyIterator();
+  AuthPropertyIterator& operator++();
+  AuthPropertyIterator operator++(int);
+  bool operator==(const AuthPropertyIterator& rhs) const;
+  bool operator!=(const AuthPropertyIterator& rhs) const;
+  const AuthProperty operator*();
+
+ protected:
+  AuthPropertyIterator();
+  AuthPropertyIterator(const grpc_auth_property* property,
+                       const grpc_auth_property_iterator* iter);
 
  private:
-  friend class ::grpc::Server;
-
-  virtual int AddPortToServer(const grpc::string& addr,
-                              grpc_server* server) = 0;
+  friend class SecureAuthContext;
+  const grpc_auth_property* property_;
+  // The following items form a grpc_auth_property_iterator.
+  const grpc_auth_context* ctx_;
+  size_t index_;
+  const char* name_;
 };
 
-// Options to create ServerCredentials with SSL
-struct SslServerCredentialsOptions {
-  SslServerCredentialsOptions() : force_client_auth(false) {}
+class AuthContext {
+ public:
+  virtual ~AuthContext() {}
 
-  struct PemKeyCertPair {
-    grpc::string private_key;
-    grpc::string cert_chain;
-  };
-  grpc::string pem_root_certs;
-  std::vector<PemKeyCertPair> pem_key_cert_pairs;
-  bool force_client_auth;
+  // A peer identity, in general is one or more properties (in which case they
+  // have the same name).
+  virtual std::vector<grpc::string> GetPeerIdentity() const = 0;
+  virtual grpc::string GetPeerIdentityPropertyName() const = 0;
+
+  // Returns all the property values with the given name.
+  virtual std::vector<grpc::string> FindPropertyValues(
+      const grpc::string& name) const = 0;
+
+  // Iteration over all the properties.
+  virtual AuthPropertyIterator begin() const = 0;
+  virtual AuthPropertyIterator end() const = 0;
 };
-
-// Builds SSL ServerCredentials given SSL specific options
-std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options);
-
-std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
 }  // namespace grpc
 
-#endif  // GRPCXX_SERVER_CREDENTIALS_H
+#endif  // GRPCXX_SUPPORT_AUTH_CONTEXT_H

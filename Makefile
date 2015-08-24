@@ -4626,19 +4626,13 @@ LIBGRPC++_SRC = \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
-    include/grpc++/async_generic_service.h \
-    include/grpc++/async_unary_call.h \
-    include/grpc++/auth_context.h \
-    include/grpc++/byte_buffer.h \
     include/grpc++/channel.h \
-    include/grpc++/channel_arguments.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
-    include/grpc++/config.h \
-    include/grpc++/config_protobuf.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
-    include/grpc++/generic_stub.h \
+    include/grpc++/generic/async_generic_service.h \
+    include/grpc++/generic/generic_stub.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
@@ -4657,12 +4651,19 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/server_builder.h \
     include/grpc++/server_context.h \
     include/grpc++/server_credentials.h \
-    include/grpc++/slice.h \
-    include/grpc++/status.h \
-    include/grpc++/status_code_enum.h \
-    include/grpc++/stream.h \
-    include/grpc++/stub_options.h \
-    include/grpc++/time.h \
+    include/grpc++/support/async_stream.h \
+    include/grpc++/support/async_unary_call.h \
+    include/grpc++/support/auth_context.h \
+    include/grpc++/support/byte_buffer.h \
+    include/grpc++/support/channel_arguments.h \
+    include/grpc++/support/config.h \
+    include/grpc++/support/config_protobuf.h \
+    include/grpc++/support/slice.h \
+    include/grpc++/support/status.h \
+    include/grpc++/support/status_code_enum.h \
+    include/grpc++/support/stub_options.h \
+    include/grpc++/support/sync_stream.h \
+    include/grpc++/support/time.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
@@ -4865,19 +4866,13 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/time.cc \
 
 PUBLIC_HEADERS_CXX += \
-    include/grpc++/async_generic_service.h \
-    include/grpc++/async_unary_call.h \
-    include/grpc++/auth_context.h \
-    include/grpc++/byte_buffer.h \
     include/grpc++/channel.h \
-    include/grpc++/channel_arguments.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
-    include/grpc++/config.h \
-    include/grpc++/config_protobuf.h \
     include/grpc++/create_channel.h \
     include/grpc++/credentials.h \
-    include/grpc++/generic_stub.h \
+    include/grpc++/generic/async_generic_service.h \
+    include/grpc++/generic/generic_stub.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
@@ -4896,12 +4891,19 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/server_builder.h \
     include/grpc++/server_context.h \
     include/grpc++/server_credentials.h \
-    include/grpc++/slice.h \
-    include/grpc++/status.h \
-    include/grpc++/status_code_enum.h \
-    include/grpc++/stream.h \
-    include/grpc++/stub_options.h \
-    include/grpc++/time.h \
+    include/grpc++/support/async_stream.h \
+    include/grpc++/support/async_unary_call.h \
+    include/grpc++/support/auth_context.h \
+    include/grpc++/support/byte_buffer.h \
+    include/grpc++/support/channel_arguments.h \
+    include/grpc++/support/config.h \
+    include/grpc++/support/config_protobuf.h \
+    include/grpc++/support/slice.h \
+    include/grpc++/support/status.h \
+    include/grpc++/support/status_code_enum.h \
+    include/grpc++/support/stub_options.h \
+    include/grpc++/support/sync_stream.h \
+    include/grpc++/support/time.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 

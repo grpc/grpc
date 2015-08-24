@@ -34,14 +34,14 @@
 #ifndef TEST_QPS_CLIENT_H
 #define TEST_QPS_CLIENT_H
 
+#include <condition_variable>
+#include <mutex>
+
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/qps/qpstest.grpc.pb.h"
-
-#include <condition_variable>
-#include <mutex>
-#include <grpc++/config.h>
+#include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {
 

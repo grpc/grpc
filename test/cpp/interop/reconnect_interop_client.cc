@@ -39,7 +39,6 @@
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
-#include <grpc++/status.h>
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
 #include "test/proto/test.grpc.pb.h"

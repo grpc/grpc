@@ -37,18 +37,16 @@
 #include <string>
 #include <thread>
 
+#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <gflags/gflags.h>
-#include <grpc++/channel_arguments.h>
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/status.h>
-#include "test/cpp/util/test_config.h"
 
 #include "examples/pubsub/publisher.h"
 #include "examples/pubsub/subscriber.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_int32(server_port, 443, "Server port.");
 DEFINE_string(server_host, "pubsub-staging.googleapis.com",

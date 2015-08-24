@@ -31,63 +31,74 @@
  *
  */
 
-#ifndef GRPCXX_CHANNEL_ARGUMENTS_H
-#define GRPCXX_CHANNEL_ARGUMENTS_H
+#ifndef GRPCXX_SUPPORT_BYTE_BUFFER_H
+#define GRPCXX_SUPPORT_BYTE_BUFFER_H
+
+#include <grpc/grpc.h>
+#include <grpc/byte_buffer.h>
+#include <grpc/support/log.h>
+#include <grpc++/impl/serialization_traits.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/slice.h>
+#include <grpc++/support/status.h>
 
 #include <vector>
-#include <list>
-
-#include <grpc++/config.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
 
 namespace grpc {
-namespace testing {
-class ChannelArgumentsTest;
-}  // namespace testing
 
-// Options for channel creation. The user can use generic setters to pass
-// key value pairs down to c channel creation code. For grpc related options,
-// concrete setters are provided.
-class ChannelArguments {
+class ByteBuffer GRPC_FINAL {
  public:
-  ChannelArguments() {}
-  ~ChannelArguments() {}
+  ByteBuffer() : buffer_(nullptr) {}
 
-  ChannelArguments(const ChannelArguments& other);
-  ChannelArguments& operator=(ChannelArguments other) {
-    Swap(other);
-    return *this;
+  ByteBuffer(const Slice* slices, size_t nslices);
+
+  ~ByteBuffer() {
+    if (buffer_) {
+      grpc_byte_buffer_destroy(buffer_);
+    }
   }
 
-  void Swap(ChannelArguments& other);
+  void Dump(std::vector<Slice>* slices) const;
 
-  // grpc specific channel argument setters
-  // Set target name override for SSL host name checking.
-  void SetSslTargetNameOverride(const grpc::string& name);
-  // TODO(yangg) add flow control options
-
-  // Set the compression algorithm for the channel.
-  void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
-
-  // Generic channel argument setters. Only for advanced use cases.
-  void SetInt(const grpc::string& key, int value);
-  void SetString(const grpc::string& key, const grpc::string& value);
-
-  // Populates given channel_args with args_, does not take ownership.
-  void SetChannelArgs(grpc_channel_args* channel_args) const;
+  void Clear();
+  size_t Length() const;
 
  private:
-  friend class SecureCredentials;
-  friend class testing::ChannelArgumentsTest;
+  friend class SerializationTraits<ByteBuffer, void>;
 
-  // Returns empty string when it is not set.
-  grpc::string GetSslTargetNameOverride() const;
+  ByteBuffer(const ByteBuffer&);
+  ByteBuffer& operator=(const ByteBuffer&);
 
-  std::vector<grpc_arg> args_;
-  std::list<grpc::string> strings_;
+  // takes ownership
+  void set_buffer(grpc_byte_buffer* buf) {
+    if (buffer_) {
+      gpr_log(GPR_ERROR, "Overriding existing buffer");
+      Clear();
+    }
+    buffer_ = buf;
+  }
+
+  grpc_byte_buffer* buffer() const { return buffer_; }
+
+  grpc_byte_buffer* buffer_;
+};
+
+template <>
+class SerializationTraits<ByteBuffer, void> {
+ public:
+  static Status Deserialize(grpc_byte_buffer* byte_buffer, ByteBuffer* dest,
+                            int max_message_size) {
+    dest->set_buffer(byte_buffer);
+    return Status::OK;
+  }
+  static Status Serialize(const ByteBuffer& source, grpc_byte_buffer** buffer,
+                          bool* own_buffer) {
+    *buffer = source.buffer();
+    *own_buffer = false;
+    return Status::OK;
+  }
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CHANNEL_ARGUMENTS_H
+#endif  // GRPCXX_SUPPORT_BYTE_BUFFER_H

@@ -31,65 +31,48 @@
  *
  */
 
-#ifndef GRPCXX_AUTH_CONTEXT_H
-#define GRPCXX_AUTH_CONTEXT_H
+#ifndef GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H
+#define GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H
 
-#include <iterator>
-#include <vector>
+#include <grpc++/support/byte_buffer.h>
+#include <grpc++/support/async_stream.h>
 
-#include <grpc++/config.h>
-
-struct grpc_auth_context;
-struct grpc_auth_property;
-struct grpc_auth_property_iterator;
+struct grpc_server;
 
 namespace grpc {
-class SecureAuthContext;
 
-typedef std::pair<grpc::string, grpc::string> AuthProperty;
+typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
+    GenericServerAsyncReaderWriter;
 
-class AuthPropertyIterator
-    : public std::iterator<std::input_iterator_tag, const AuthProperty> {
+class GenericServerContext GRPC_FINAL : public ServerContext {
  public:
-  ~AuthPropertyIterator();
-  AuthPropertyIterator& operator++();
-  AuthPropertyIterator operator++(int);
-  bool operator==(const AuthPropertyIterator& rhs) const;
-  bool operator!=(const AuthPropertyIterator& rhs) const;
-  const AuthProperty operator*();
-
- protected:
-  AuthPropertyIterator();
-  AuthPropertyIterator(const grpc_auth_property* property,
-                       const grpc_auth_property_iterator* iter);
+  const grpc::string& method() const { return method_; }
+  const grpc::string& host() const { return host_; }
 
  private:
-  friend class SecureAuthContext;
-  const grpc_auth_property* property_;
-  // The following items form a grpc_auth_property_iterator.
-  const grpc_auth_context* ctx_;
-  size_t index_;
-  const char* name_;
+  friend class Server;
+
+  grpc::string method_;
+  grpc::string host_;
 };
 
-class AuthContext {
+class AsyncGenericService GRPC_FINAL {
  public:
-  virtual ~AuthContext() {}
+  // TODO(yangg) Once we can add multiple completion queues to the server
+  // in c core, add a CompletionQueue* argument to the ctor here.
+  // TODO(yangg) support methods list.
+  AsyncGenericService(const grpc::string& methods) : server_(nullptr) {}
 
-  // A peer identity, in general is one or more properties (in which case they
-  // have the same name).
-  virtual std::vector<grpc::string> GetPeerIdentity() const = 0;
-  virtual grpc::string GetPeerIdentityPropertyName() const = 0;
+  void RequestCall(GenericServerContext* ctx,
+                   GenericServerAsyncReaderWriter* reader_writer,
+                   CompletionQueue* call_cq,
+                   ServerCompletionQueue* notification_cq, void* tag);
 
-  // Returns all the property values with the given name.
-  virtual std::vector<grpc::string> FindPropertyValues(
-      const grpc::string& name) const = 0;
-
-  // Iteration over all the properties.
-  virtual AuthPropertyIterator begin() const = 0;
-  virtual AuthPropertyIterator end() const = 0;
+ private:
+  friend class Server;
+  Server* server_;
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_AUTH_CONTEXT_H
+#endif  // GRPCXX_GENERIC_ASYNC_GENERIC_SERVICE_H
