@@ -40,6 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/call.h"
@@ -70,6 +71,7 @@ struct grpc_channel {
   grpc_mdstr *grpc_message_string;
   grpc_mdstr *path_string;
   grpc_mdstr *authority_string;
+  grpc_mdelem *default_authority;
   /** mdelem for grpc-status: 0 thru grpc-status: 2 */
   grpc_mdelem *grpc_status_elem[NUM_CACHED_STATUS_ELEMS];
 
@@ -134,8 +136,25 @@ grpc_channel *grpc_channel_create_from_filters(
         } else {
           channel->max_message_length = args->args[i].value.integer;
         }
+      } else if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
+        if (args->args[i].type != GRPC_ARG_STRING) {
+          gpr_log(GPR_ERROR, "%s: must be an string",
+                  GRPC_ARG_DEFAULT_AUTHORITY);
+        } else {
+          channel->default_authority = grpc_mdelem_from_strings(
+              mdctx, ":authority", args->args[i].value.string);
+        }
       }
     }
+  }
+
+  if (channel->is_client && channel->default_authority == NULL) {
+    char *default_authority = grpc_get_default_authority(target);
+    if (default_authority) {
+      channel->default_authority = grpc_mdelem_from_strings(
+          channel->metadata_context, ":authority", default_authority);
+    }
+    gpr_free(default_authority);
   }
 
   grpc_channel_stack_init(filters, num_filters, channel, args,
@@ -161,6 +180,8 @@ static grpc_call *grpc_channel_create_call_internal(
   send_metadata[num_metadata++] = path_mdelem;
   if (authority_mdelem != NULL) {
     send_metadata[num_metadata++] = authority_mdelem;
+  } else if (channel->default_authority != NULL) {
+    send_metadata[num_metadata++] = GRPC_MDELEM_REF(channel->default_authority);
   }
 
   return grpc_call_create(channel, parent_call, propagation_mask, cq, NULL,
@@ -250,6 +271,9 @@ static void destroy_channel(void *p, int ok) {
       GRPC_MDELEM_UNREF(rc->authority);
     }
     gpr_free(rc);
+  }
+  if (channel->default_authority != NULL) {
+    GRPC_MDELEM_UNREF(channel->default_authority);
   }
   grpc_mdctx_unref(channel->metadata_context);
   gpr_mu_destroy(&channel->registered_call_mu);
