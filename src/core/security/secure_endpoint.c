@@ -80,7 +80,8 @@ static void destroy(secure_endpoint *secure_ep) {
   gpr_free(ep);
 }
 
-#define GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG
+/*#define GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG*/
+#ifdef GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG
 #define SECURE_ENDPOINT_UNREF(ep, reason) \
   secure_endpoint_unref((ep), (reason), __FILE__, __LINE__)
 #define SECURE_ENDPOINT_REF(ep, reason) \
@@ -100,7 +101,6 @@ static void secure_endpoint_ref(secure_endpoint *ep, const char *reason,
           ep, reason, ep->ref.count, ep->ref.count + 1);
   gpr_ref(&ep->ref);
 }
-#ifdef GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG
 #else
 #define SECURE_ENDPOINT_UNREF(ep, reason) secure_endpoint_unref((ep))
 #define SECURE_ENDPOINT_REF(ep, reason) secure_endpoint_ref((ep))
