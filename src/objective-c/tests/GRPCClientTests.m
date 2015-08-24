@@ -79,7 +79,7 @@ static ProtoMethod *kUnaryCallMethod;
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
   _callback(keyPath, object, change);
-  [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+  [object removeObserver:self forKeyPath:keyPath];
 }
 
 @end
@@ -219,15 +219,15 @@ static ProtoMethod *kUnaryCallMethod;
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
   __weak XCTestExpectation *metadata = [self expectationWithDescription:@"Metadata changed."];
   
-  PassthroughObserver *observer = [[PassthroughObserver alloc] initWithCallback:^(NSString *keypath, id object, NSDictionary * change) {
-    if (keypath == @"responseHeaders") {
-      [expectation fulfill];
-    }
-  }]
-  
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+  
+  PassthroughObserver *observer = [[PassthroughObserver alloc] initWithCallback:^(NSString *keypath, id object, NSDictionary * change) {
+    if ([keypath isEqual: @"responseHeaders"]) {
+      [metadata fulfill];
+    }
+  }];
   
   [call addObserver:observer forKeyPath:@"responseHeaders" options:0 context:NULL];
   
