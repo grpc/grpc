@@ -96,22 +96,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\grpc++\async_generic_service.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\async_unary_call.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\auth_context.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\byte_buffer.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\channel.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\channel_arguments.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\client_context.h">
@@ -120,20 +105,17 @@
     <ClInclude Include="..\..\include\grpc++\completion_queue.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\config.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\config_protobuf.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\create_channel.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\credentials.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\generic_stub.h">
-      <Filter>include\grpc++</Filter>
+    <ClInclude Include="..\..\include\grpc++\generic\async_generic_service.h">
+      <Filter>include\grpc++\generic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\generic\generic_stub.h">
+      <Filter>include\grpc++\generic</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\call.h">
       <Filter>include\grpc++\impl</Filter>
@@ -189,23 +171,44 @@
     <ClInclude Include="..\..\include\grpc++\server_credentials.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\slice.h">
-      <Filter>include\grpc++</Filter>
+    <ClInclude Include="..\..\include\grpc++\support\async_stream.h">
+      <Filter>include\grpc++\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\status.h">
-      <Filter>include\grpc++</Filter>
+    <ClInclude Include="..\..\include\grpc++\support\async_unary_call.h">
+      <Filter>include\grpc++\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\status_code_enum.h">
-      <Filter>include\grpc++</Filter>
+    <ClInclude Include="..\..\include\grpc++\support\auth_context.h">
+      <Filter>include\grpc++\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\stream.h">
-      <Filter>include\grpc++</Filter>
+    <ClInclude Include="..\..\include\grpc++\support\byte_buffer.h">
+      <Filter>include\grpc++\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\stub_options.h">
-      <Filter>include\grpc++</Filter>
+    <ClInclude Include="..\..\include\grpc++\support\channel_arguments.h">
+      <Filter>include\grpc++\support</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\time.h">
-      <Filter>include\grpc++</Filter>
+    <ClInclude Include="..\..\include\grpc++\support\config.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\support\config_protobuf.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\support\slice.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\support\status.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\support\status_code_enum.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\support\stub_options.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\support\sync_stream.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\support\time.h">
+      <Filter>include\grpc++\support</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -242,8 +245,14 @@
     <Filter Include="include\grpc++">
       <UniqueIdentifier>{784a0281-f547-aeb0-9f55-b26b7de9c769}</UniqueIdentifier>
     </Filter>
+    <Filter Include="include\grpc++\generic">
+      <UniqueIdentifier>{51dae921-3aa2-1976-2ee4-c5615de1af54}</UniqueIdentifier>
+    </Filter>
     <Filter Include="include\grpc++\impl">
       <UniqueIdentifier>{0da8cd95-314f-da1b-5ce7-7791a5be1f1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\support">
+      <UniqueIdentifier>{a5c10dae-f715-2a30-1066-d22f8bc94cb2}</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
       <UniqueIdentifier>{328ff211-2886-406e-56f9-18ba1686f363}</UniqueIdentifier>

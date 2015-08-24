@@ -36,7 +36,6 @@
 #include <memory>
 
 #include <gflags/gflags.h>
-#include <grpc++/config.h>
 #include <grpc++/server_credentials.h>
 
 #include "src/core/surface/call.h"

@@ -33,10 +33,10 @@
 
 #include "test/cpp/interop/interop_client.h"
 
+#include <unistd.h>
+
 #include <fstream>
 #include <memory>
-
-#include <unistd.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -45,14 +45,12 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
 
+#include "src/core/transport/stream_op.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/proto/test.grpc.pb.h"
 #include "test/proto/empty.grpc.pb.h"
 #include "test/proto/messages.grpc.pb.h"
-#include "src/core/transport/stream_op.h"
 
 namespace grpc {
 namespace testing {

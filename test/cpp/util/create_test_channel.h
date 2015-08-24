@@ -36,7 +36,6 @@
 
 #include <memory>
 
-#include <grpc++/config.h>
 #include <grpc++/credentials.h>
 
 namespace grpc {

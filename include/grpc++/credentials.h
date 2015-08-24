@@ -36,8 +36,8 @@
 
 #include <memory>
 
-#include <grpc++/config.h>
 #include <grpc++/impl/grpc_library.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
 class ChannelArguments;

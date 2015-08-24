@@ -31,13 +31,13 @@
  *
  */
 
+#include <grpc++/credentials.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-
 #include <grpc++/channel.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/config.h>
-#include <grpc++/credentials.h>
+#include <grpc++/support/channel_arguments.h>
+#include <grpc++/support/config.h>
 #include "src/cpp/client/create_channel_internal.h"
 
 namespace grpc {

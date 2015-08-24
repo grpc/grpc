@@ -38,17 +38,16 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
-
-#include "src/core/profiling/timers.h"
-#include <grpc++/channel_arguments.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
-#include <grpc++/config.h>
 #include <grpc++/credentials.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/rpc_method.h>
-#include <grpc++/status.h>
-#include <grpc++/time.h>
+#include <grpc++/support/channel_arguments.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/time.h>
+#include "src/core/profiling/timers.h"
 
 namespace grpc {
 

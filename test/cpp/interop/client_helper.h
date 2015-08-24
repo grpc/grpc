@@ -36,7 +36,6 @@
 
 #include <memory>
 
-#include <grpc++/config.h>
 #include <grpc++/channel.h>
 
 #include "src/core/surface/call.h"

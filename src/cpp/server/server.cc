@@ -32,18 +32,19 @@
  */
 
 #include <grpc++/server.h>
+
 #include <utility>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
-#include <grpc++/async_generic_service.h>
+#include <grpc++/generic/async_generic_service.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/time.h>
+#include <grpc++/support/time.h>
 
 #include "src/core/profiling/timers.h"
 #include "src/cpp/server/thread_pool_interface.h"

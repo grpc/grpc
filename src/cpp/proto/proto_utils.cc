@@ -32,7 +32,6 @@
  */
 
 #include <grpc++/impl/proto_utils.h>
-#include <grpc++/config.h>
 
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
@@ -40,6 +39,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/port_platform.h>
+#include <grpc++/support/config.h>
 
 const int kMaxBufferLength = 8192;
 

@@ -35,8 +35,8 @@
 #include <sstream>
 
 #include <grpc++/channel.h>
-#include <grpc++/channel_arguments.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/support/channel_arguments.h>
 
 #include "src/cpp/client/create_channel_internal.h"
 

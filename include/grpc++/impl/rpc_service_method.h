@@ -39,10 +39,10 @@
 #include <memory>
 #include <vector>
 
-#include <grpc++/config.h>
 #include <grpc++/impl/rpc_method.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/sync_stream.h>
 
 namespace grpc {
 class ServerContext;

@@ -34,13 +34,12 @@
 #ifndef GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
 #define GRPC_INTERNAL_CPP_FIXED_SIZE_THREAD_POOL_H
 
-#include <grpc++/config.h>
+#include <queue>
+#include <vector>
 
 #include <grpc++/impl/sync.h>
 #include <grpc++/impl/thd.h>
-
-#include <queue>
-#include <vector>
+#include <grpc++/support/config.h>
 
 #include "src/cpp/server/thread_pool_interface.h"
 

@@ -33,11 +33,11 @@
 
 #ifndef GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
 #define GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
+
 #include <memory>
 
 #include <grpc/grpc.h>
 #include <grpc++/channel.h>
-#include <grpc++/status.h>
 #include "test/proto/messages.grpc.pb.h"
 
 namespace grpc {
