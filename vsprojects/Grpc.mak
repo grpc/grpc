@@ -767,10 +767,10 @@ server_crash_test_client: server_crash_test_client.exe
 	echo Running server_crash_test_client
 	$(OUT_DIR)\server_crash_test_client.exe
 
-shutdown_test.exe: Debug\grpc++_test_util.lib build_grpc_test_util build_grpc++ Debug\grpc_zookeeper.lib build_grpc build_gpr_test_util build_gpr $(OUT_DIR)
+shutdown_test.exe: Debug\grpc++_test_util.lib build_grpc_test_util build_grpc++ build_grpc build_gpr_test_util build_gpr $(OUT_DIR)
 	echo Building shutdown_test
     $(CC) $(CXXFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\cpp\end2end\shutdown_test.cc 
-	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\shutdown_test.exe" Debug\grpc++_test_util.lib Debug\grpc_test_util.lib Debug\grpc++.lib Debug\grpc_zookeeper.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(CXX_LIBS) $(LIBS) $(OUT_DIR)\shutdown_test.obj 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\shutdown_test.exe" Debug\grpc++_test_util.lib Debug\grpc_test_util.lib Debug\grpc++.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(CXX_LIBS) $(LIBS) $(OUT_DIR)\shutdown_test.obj 
 shutdown_test: shutdown_test.exe
 	echo Running shutdown_test
 	$(OUT_DIR)\shutdown_test.exe
