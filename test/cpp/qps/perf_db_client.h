@@ -38,7 +38,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
@@ -65,7 +65,7 @@ class PerfDbClient {
     client_user_time_ = DBL_MIN;
   }
 
-  void init(std::shared_ptr<ChannelInterface> channel) {
+  void init(std::shared_ptr<Channel> channel) {
     stub_ = PerfDbTransfer::NewStub(channel);
   }
 

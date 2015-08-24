@@ -16,6 +16,9 @@
     <ClCompile Include="..\..\src\cpp\client\create_channel.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cpp\client\create_channel_internal.cc">
+      <Filter>src\cpp\client</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
@@ -23,9 +26,6 @@
       <Filter>src\cpp\client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\client\insecure_credentials.cc">
-      <Filter>src\cpp\client</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\cpp\client\internal_stub.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\common\call.cc">
@@ -93,10 +93,10 @@
     <ClInclude Include="..\..\include\grpc++\byte_buffer.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\channel_arguments.h">
+    <ClInclude Include="..\..\include\grpc++\channel.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\channel_interface.h">
+    <ClInclude Include="..\..\include\grpc++\channel_arguments.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\client_context.h">
@@ -127,9 +127,6 @@
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\grpc_library.h">
-      <Filter>include\grpc++\impl</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\impl\internal_stub.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\proto_utils.h">
@@ -197,7 +194,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\cpp\client\channel.h">
+    <ClInclude Include="..\..\src\cpp\client\create_channel_internal.h">
       <Filter>src\cpp\client</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\cpp\common\create_auth_context.h">

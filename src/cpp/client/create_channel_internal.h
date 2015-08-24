@@ -31,27 +31,21 @@
  *
  */
 
-#ifndef GRPCXX_IMPL_INTERNAL_STUB_H
-#define GRPCXX_IMPL_INTERNAL_STUB_H
+#ifndef GRPC_INTERNAL_CPP_CLIENT_CREATE_CHANNEL_INTERNAL_H
+#define GRPC_INTERNAL_CPP_CLIENT_CREATE_CHANNEL_INTERNAL_H
 
 #include <memory>
 
-#include <grpc++/channel_interface.h>
+#include <grpc++/config.h>
+
+struct grpc_channel;
 
 namespace grpc {
+class Channel;
 
-class InternalStub {
- public:
-  InternalStub(const std::shared_ptr<ChannelInterface>& channel)
-      : channel_(channel) {}
-  virtual ~InternalStub() {}
-
-  ChannelInterface* channel() { return channel_.get(); }
-
- private:
-  const std::shared_ptr<ChannelInterface> channel_;
-};
+std::shared_ptr<Channel> CreateChannelInternal(const grpc::string& host,
+                                               grpc_channel* c_channel);
 
 }  // namespace grpc
 
-#endif  // GRPCXX_IMPL_INTERNAL_STUB_H
+#endif  // GRPC_INTERNAL_CPP_CLIENT_CREATE_CHANNEL_INTERNAL_H

@@ -31,36 +31,49 @@
  *
  */
 
-#ifndef GRPCXX_CHANNEL_INTERFACE_H
-#define GRPCXX_CHANNEL_INTERFACE_H
+#ifndef GRPCXX_CHANNEL_H
+#define GRPCXX_CHANNEL_H
 
 #include <memory>
 
 #include <grpc/grpc.h>
-#include <grpc++/status.h>
+#include <grpc++/config.h>
 #include <grpc++/impl/call.h>
+#include <grpc++/impl/grpc_library.h>
 
-struct grpc_call;
+struct grpc_channel;
 
 namespace grpc {
-class Call;
-class CallOpBuffer;
-class ClientContext;
+class CallOpSetInterface;
+class ChannelArguments;
 class CompletionQueue;
-class RpcMethod;
+class Credentials;
+class SecureCredentials;
 
-class ChannelInterface : public CallHook,
-                         public std::enable_shared_from_this<ChannelInterface> {
+template <class R>
+class ClientReader;
+template <class W>
+class ClientWriter;
+template <class R, class W>
+class ClientReaderWriter;
+template <class R>
+class ClientAsyncReader;
+template <class W>
+class ClientAsyncWriter;
+template <class R, class W>
+class ClientAsyncReaderWriter;
+template <class R>
+class ClientAsyncResponseReader;
+
+class Channel GRPC_FINAL : public GrpcLibrary,
+                           public CallHook,
+                           public std::enable_shared_from_this<Channel> {
  public:
-  virtual ~ChannelInterface() {}
-
-  virtual void* RegisterMethod(const char* method_name) = 0;
-  virtual Call CreateCall(const RpcMethod& method, ClientContext* context,
-                          CompletionQueue* cq) = 0;
+  ~Channel();
 
   // Get the current channel state. If the channel is in IDLE and try_to_connect
   // is set to true, try to connect.
-  virtual grpc_connectivity_state GetState(bool try_to_connect) = 0;
+  grpc_connectivity_state GetState(bool try_to_connect);
 
   // Return the tag on cq when the channel state is changed or deadline expires.
   // GetState needs to called to get the current state.
@@ -80,13 +93,46 @@ class ChannelInterface : public CallHook,
   }
 
  private:
-  virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                                       gpr_timespec deadline,
-                                       CompletionQueue* cq, void* tag) = 0;
-  virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
-                                      gpr_timespec deadline) = 0;
+  template <class R>
+  friend class ::grpc::ClientReader;
+  template <class W>
+  friend class ::grpc::ClientWriter;
+  template <class R, class W>
+  friend class ::grpc::ClientReaderWriter;
+  template <class R>
+  friend class ::grpc::ClientAsyncReader;
+  template <class W>
+  friend class ::grpc::ClientAsyncWriter;
+  template <class R, class W>
+  friend class ::grpc::ClientAsyncReaderWriter;
+  template <class R>
+  friend class ::grpc::ClientAsyncResponseReader;
+  template <class InputMessage, class OutputMessage>
+  friend Status BlockingUnaryCall(Channel* channel, const RpcMethod& method,
+                                  ClientContext* context,
+                                  const InputMessage& request,
+                                  OutputMessage* result);
+  friend class ::grpc::RpcMethod;
+  friend std::shared_ptr<Channel> CreateChannelInternal(
+      const grpc::string& host, grpc_channel* c_channel);
+
+  Channel(const grpc::string& host, grpc_channel* c_channel);
+
+  Call CreateCall(const RpcMethod& method, ClientContext* context,
+                  CompletionQueue* cq);
+  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call);
+  void* RegisterMethod(const char* method);
+
+  void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
+                               gpr_timespec deadline, CompletionQueue* cq,
+                               void* tag);
+  bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
+                              gpr_timespec deadline);
+
+  const grpc::string host_;
+  grpc_channel* const c_channel_;  // owned
 };
 
 }  // namespace grpc
 
-#endif  // GRPCXX_CHANNEL_INTERFACE_H
+#endif  // GRPCXX_CHANNEL_H

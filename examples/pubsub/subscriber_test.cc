@@ -32,7 +32,7 @@
  */
 
 #include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/server.h>
@@ -122,7 +122,7 @@ class SubscriberTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
   SubscriberServiceImpl service_;
 
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
 
   std::unique_ptr<grpc::examples::pubsub::Subscriber> subscriber_;
 };

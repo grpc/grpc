@@ -235,7 +235,7 @@ class RpcServiceMethod : public RpcMethod {
   // Takes ownership of the handler
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,
                    MethodHandler* handler)
-      : RpcMethod(name, type, nullptr), handler_(handler) {}
+      : RpcMethod(name, type), handler_(handler) {}
 
   MethodHandler* handler() { return handler_.get(); }
 

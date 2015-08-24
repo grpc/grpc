@@ -41,7 +41,7 @@
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>
 #include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 #include <grpc++/status.h>
@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
   ss << FLAGS_server_host << ":" << FLAGS_server_port;
 
   std::shared_ptr<grpc::Credentials> creds = grpc::GoogleDefaultCredentials();
-  std::shared_ptr<grpc::ChannelInterface> channel =
+  std::shared_ptr<grpc::Channel> channel =
       grpc::CreateChannel(ss.str(), creds, grpc::ChannelArguments());
 
   grpc::examples::pubsub::Publisher publisher(channel);

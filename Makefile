@@ -4603,10 +4603,10 @@ LIBGRPC++_SRC = \
     src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
+    src/cpp/client/create_channel_internal.cc \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
-    src/cpp/client/internal_stub.cc \
     src/cpp/common/call.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
@@ -4630,8 +4630,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/async_unary_call.h \
     include/grpc++/auth_context.h \
     include/grpc++/byte_buffer.h \
+    include/grpc++/channel.h \
     include/grpc++/channel_arguments.h \
-    include/grpc++/channel_interface.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
     include/grpc++/config.h \
@@ -4642,7 +4642,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
-    include/grpc++/impl/internal_stub.h \
     include/grpc++/impl/proto_utils.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \
@@ -4843,10 +4842,10 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
+    src/cpp/client/create_channel_internal.cc \
     src/cpp/client/credentials.cc \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
-    src/cpp/client/internal_stub.cc \
     src/cpp/common/call.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
@@ -4870,8 +4869,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/async_unary_call.h \
     include/grpc++/auth_context.h \
     include/grpc++/byte_buffer.h \
+    include/grpc++/channel.h \
     include/grpc++/channel_arguments.h \
-    include/grpc++/channel_interface.h \
     include/grpc++/client_context.h \
     include/grpc++/completion_queue.h \
     include/grpc++/config.h \
@@ -4882,7 +4881,6 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
-    include/grpc++/impl/internal_stub.h \
     include/grpc++/impl/proto_utils.h \
     include/grpc++/impl/rpc_method.h \
     include/grpc++/impl/rpc_service_method.h \

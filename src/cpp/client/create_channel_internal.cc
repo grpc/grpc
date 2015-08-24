@@ -31,50 +31,16 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H
-#define GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H
-
 #include <memory>
 
-#include <grpc++/channel_interface.h>
-#include <grpc++/config.h>
-#include <grpc++/impl/grpc_library.h>
+#include <grpc++/channel.h>
 
 struct grpc_channel;
 
 namespace grpc {
-class Call;
-class CallOpSetInterface;
-class ChannelArguments;
-class CompletionQueue;
-class Credentials;
-class StreamContextInterface;
 
-class Channel GRPC_FINAL : public GrpcLibrary, public ChannelInterface {
- public:
-  explicit Channel(grpc_channel* c_channel);
-  Channel(const grpc::string& host, grpc_channel* c_channel);
-  ~Channel() GRPC_OVERRIDE;
-
-  void* RegisterMethod(const char* method) GRPC_OVERRIDE;
-  Call CreateCall(const RpcMethod& method, ClientContext* context,
-                  CompletionQueue* cq) GRPC_OVERRIDE;
-  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) GRPC_OVERRIDE;
-
-  grpc_connectivity_state GetState(bool try_to_connect) GRPC_OVERRIDE;
-
- private:
-  void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline, CompletionQueue* cq,
-                               void* tag) GRPC_OVERRIDE;
-
-  bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
-                              gpr_timespec deadline) GRPC_OVERRIDE;
-
-  const grpc::string host_;
-  grpc_channel* const c_channel_;  // owned
-};
-
+std::shared_ptr<Channel> CreateChannelInternal(const grpc::string& host,
+                                               grpc_channel* c_channel) {
+  return std::shared_ptr<Channel>(new Channel(host, c_channel));
+}
 }  // namespace grpc
-
-#endif  // GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H

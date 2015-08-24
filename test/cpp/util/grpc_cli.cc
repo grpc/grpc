@@ -67,7 +67,7 @@
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/test_config.h"
 #include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 
@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
       creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
     }
   }
-  std::shared_ptr<grpc::ChannelInterface> channel =
+  std::shared_ptr<grpc::Channel> channel =
       grpc::CreateChannel(server_address, creds, grpc::ChannelArguments());
 
   grpc::string response;
