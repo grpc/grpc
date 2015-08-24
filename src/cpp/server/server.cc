@@ -43,10 +43,10 @@
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/thread_pool_interface.h>
 #include <grpc++/time.h>
 
 #include "src/core/profiling/timers.h"
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
 
