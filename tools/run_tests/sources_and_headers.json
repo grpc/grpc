@@ -13396,8 +13396,8 @@
   {
     "deps": [], 
     "headers": [
-      "include/grpc++/config.h", 
-      "include/grpc++/config_protobuf.h", 
+      "include/grpc++/support/config.h", 
+      "include/grpc++/support/config_protobuf.h", 
       "src/compiler/config.h", 
       "src/compiler/cpp_generator.h", 
       "src/compiler/cpp_generator_helpers.h", 
@@ -13415,8 +13415,8 @@
     "language": "c++", 
     "name": "grpc_plugin_support", 
     "src": [
-      "include/grpc++/config.h", 
-      "include/grpc++/config_protobuf.h", 
+      "include/grpc++/support/config.h", 
+      "include/grpc++/support/config_protobuf.h", 
       "src/compiler/config.h", 
       "src/compiler/cpp_generator.cc", 
       "src/compiler/cpp_generator.h", 

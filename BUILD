@@ -854,8 +854,8 @@ cc_library(
 cc_library(
   name = "grpc_plugin_support",
   srcs = [
-    "include/grpc++/config.h",
-    "include/grpc++/config_protobuf.h",
+    "include/grpc++/support/config.h",
+    "include/grpc++/support/config_protobuf.h",
     "src/compiler/config.h",
     "src/compiler/cpp_generator.h",
     "src/compiler/cpp_generator_helpers.h",
