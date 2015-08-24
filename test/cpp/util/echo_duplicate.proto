@@ -30,7 +30,7 @@
 
 // This is a partial copy of echo.proto with a different package name.
 
-syntax = "proto2";
+syntax = "proto3";
 
 import "test/cpp/util/messages.proto";
 

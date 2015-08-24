@@ -121,8 +121,8 @@ class ServerAsyncResponseWriter GRPC_FINAL
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
-      finish_buf_.ServerSendStatus(
-          ctx_->trailing_metadata_, finish_buf_.SendMessage(msg));
+      finish_buf_.ServerSendStatus(ctx_->trailing_metadata_,
+                                   finish_buf_.SendMessage(msg));
     } else {
       finish_buf_.ServerSendStatus(ctx_->trailing_metadata_, status);
     }

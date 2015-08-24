@@ -51,6 +51,19 @@ namespace node {
 using std::unique_ptr;
 using std::shared_ptr;
 
+/**
+ * Helper function for throwing errors with a grpc_call_error value.
+ * Modified from the answer by Gus Goose to
+ * http://stackoverflow.com/questions/31794200.
+ */
+inline v8::Local<v8::Value> nanErrorWithCode(const char *msg,
+                                             grpc_call_error code) {
+    NanEscapableScope();
+    v8::Local<v8::Object> err = NanError(msg).As<v8::Object>();
+    err->Set(NanNew("code"), NanNew<v8::Uint32>(code));
+    return NanEscapeScope(err);
+}
+
 v8::Handle<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
 
 class PersistentHolder {

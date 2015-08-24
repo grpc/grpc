@@ -219,7 +219,8 @@ static grpc_resolver *dns_create(
   default_host_arg.type = GRPC_ARG_STRING;
   default_host_arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
   default_host_arg.value.string = host;
-  subchannel_factory = grpc_subchannel_factory_add_channel_arg(subchannel_factory, &default_host_arg);
+  subchannel_factory = grpc_subchannel_factory_add_channel_arg(
+      subchannel_factory, &default_host_arg);
 
   gpr_free(host);
   gpr_free(port);

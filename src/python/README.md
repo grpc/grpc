@@ -9,12 +9,36 @@ Alpha : Ready for early adopters
 PREREQUISITES
 -------------
 - Python 2.7, virtualenv, pip
-- [homebrew][] on Mac OS X, [linuxbrew][] on Linux.  These simplify the installation of the gRPC C core.
+- [homebrew][] on Mac OS X.  These simplify the installation of the gRPC C core.
 
 INSTALLATION
 -------------
-On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][].
-Run the following command to install gRPC Python.
+
+**Linux (Debian):**
+
+Add [Debian unstable][] to your `sources.list` file. Example:
+
+```sh
+echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
+sudo tee -a /etc/apt/sources.list
+```
+
+Install the gRPC Debian package
+
+```sh
+sudo apt-get update
+sudo apt-get install libgrpc-dev
+```
+
+Install the gRPC Python module
+
+```sh
+sudo pip install grpcio
+```
+
+**Mac OS X**
+
+Install [homebrew][]. Run the following command to install gRPC Python.
 ```sh
 $ curl -fsSL https://goo.gl/getgrpc | bash -s python
 ```
@@ -27,11 +51,6 @@ Please read our online documentation for a [Quick Start][] and a [detailed examp
 BUILDING FROM SOURCE
 ---------------------
 - Clone this repository
-- Build the gRPC core from the root of the
-  [gRPC Git repository](https://github.com/grpc/grpc)
-```
-$ make shared_c static_c
-```
 
 - Use build_python.sh to build the Python code and install it into a virtual environment
 ```
@@ -60,7 +79,7 @@ $ ../../tools/distrib/python/submit.py
 ```
 
 [homebrew]:http://brew.sh
-[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Quick Start]:http://www.grpc.io/docs/tutorials/basic/python.html
 [detailed example]:http://www.grpc.io/docs/installation/python.html
+[Debian unstable]:https://www.debian.org/releases/sid/

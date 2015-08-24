@@ -63,19 +63,19 @@ namespace Grpc.Core
         public ChannelOption(string name, string stringValue)
         {
             this.type = OptionType.String;
-            this.name = Preconditions.CheckNotNull(name);
-            this.stringValue = Preconditions.CheckNotNull(stringValue);
+            this.name = Preconditions.CheckNotNull(name, "name");
+            this.stringValue = Preconditions.CheckNotNull(stringValue, "stringValue");
         }
 
         /// <summary>
         /// Creates a channel option with an integer value.
         /// </summary>
         /// <param name="name">Name.</param>
-        /// <param name="stringValue">String value.</param>
+        /// <param name="intValue">Integer value.</param>
         public ChannelOption(string name, int intValue)
         {
             this.type = OptionType.Integer;
-            this.name = Preconditions.CheckNotNull(name);
+            this.name = Preconditions.CheckNotNull(name, "name");
             this.intValue = intValue;
         }
 

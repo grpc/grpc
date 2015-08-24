@@ -41,51 +41,42 @@ namespace Grpc.Core.Tests
 {
     public class ChannelTest
     {
-        [TestFixtureTearDown]
-        public void CleanupClass()
-        {
-            GrpcEnvironment.Shutdown();
-        }
-
         [Test]
         public void Constructor_RejectsInvalidParams()
         {
-            Assert.Throws(typeof(NullReferenceException), () => new Channel(null, Credentials.Insecure));
+            Assert.Throws(typeof(ArgumentNullException), () => new Channel(null, Credentials.Insecure));
         }
 
         [Test]
         public void State_IdleAfterCreation()
         {
-            using (var channel = new Channel("localhost", Credentials.Insecure))
-            {
-                Assert.AreEqual(ChannelState.Idle, channel.State);
-            }
+            var channel = new Channel("localhost", Credentials.Insecure);
+            Assert.AreEqual(ChannelState.Idle, channel.State);
+            channel.ShutdownAsync().Wait();
         }
 
         [Test]
         public void WaitForStateChangedAsync_InvalidArgument()
         {
-            using (var channel = new Channel("localhost", Credentials.Insecure))
-            {
-                Assert.Throws(typeof(ArgumentException), () => channel.WaitForStateChangedAsync(ChannelState.FatalFailure));
-            }
+            var channel = new Channel("localhost", Credentials.Insecure);
+            Assert.Throws(typeof(ArgumentException), () => channel.WaitForStateChangedAsync(ChannelState.FatalFailure));
+            channel.ShutdownAsync().Wait();
         }
 
         [Test]
-        public void Target()
+        public void ResolvedTarget()
         {
-            using (var channel = new Channel("127.0.0.1", Credentials.Insecure))
-            {
-                Assert.IsTrue(channel.Target.Contains("127.0.0.1"));
-            }
+            var channel = new Channel("127.0.0.1", Credentials.Insecure);
+            Assert.IsTrue(channel.ResolvedTarget.Contains("127.0.0.1"));
+            channel.ShutdownAsync().Wait();
         }
 
         [Test]
-        public void Dispose_IsIdempotent()
+        public void Shutdown_AllowedOnlyOnce()
         {
             var channel = new Channel("localhost", Credentials.Insecure);
-            channel.Dispose();
-            channel.Dispose();
+            channel.ShutdownAsync().Wait();
+            Assert.Throws(typeof(InvalidOperationException), () => channel.ShutdownAsync().GetAwaiter().GetResult());
         }
     }
 }

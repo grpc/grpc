@@ -78,7 +78,7 @@ class ServerBuilder {
   // BuildAndStart().
   // Only matches requests with :authority \a host
   ServerBuilder& RegisterService(const grpc::string& host,
-                       SynchronousService* service);
+                                 SynchronousService* service);
 
   // Register an asynchronous service.
   // This call does not take ownership of the service or completion queue.
@@ -86,7 +86,7 @@ class ServerBuilder {
   // instance returned by BuildAndStart().
   // Only matches requests with :authority \a host
   ServerBuilder& RegisterAsyncService(const grpc::string& host,
-                            AsynchronousService* service);
+                                      AsynchronousService* service);
 
   // Set max message size in bytes.
   ServerBuilder& SetMaxMessageSize(int max_message_size);
@@ -119,9 +119,10 @@ class ServerBuilder {
   };
 
   typedef std::unique_ptr<grpc::string> HostString;
-  template <class T> struct NamedService {
+  template <class T>
+  struct NamedService {
     explicit NamedService(T* s) : service(s) {}
-    NamedService(const grpc::string& h, T *s)
+    NamedService(const grpc::string& h, T* s)
         : host(new grpc::string(h)), service(s) {}
     HostString host;
     T* service;
@@ -130,7 +131,8 @@ class ServerBuilder {
   int max_message_size_;
   grpc_compression_options compression_options_;
   std::vector<std::unique_ptr<NamedService<RpcService>>> services_;
-  std::vector<std::unique_ptr<NamedService<AsynchronousService>>> async_services_;
+  std::vector<std::unique_ptr<NamedService<AsynchronousService>>>
+      async_services_;
   std::vector<Port> ports_;
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;

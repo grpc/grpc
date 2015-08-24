@@ -61,19 +61,25 @@ Channel::~Channel() { grpc_channel_destroy(c_channel_); }
 
 Call Channel::CreateCall(const RpcMethod& method, ClientContext* context,
                          CompletionQueue* cq) {
-  const char* host_str = host_.empty() ? NULL : host_.c_str();
-  auto c_call = method.channel_tag() && context->authority().empty()
-                    ? grpc_channel_create_registered_call(
-                          c_channel_, context->propagate_from_call_,
-                          context->propagation_options_.c_bitmask(), cq->cq(),
-                          method.channel_tag(), context->raw_deadline())
-                    : grpc_channel_create_call(
-                          c_channel_, context->propagate_from_call_,
-                          context->propagation_options_.c_bitmask(), cq->cq(),
-                          method.name(), context->authority().empty()
-                                             ? host_str
-                                             : context->authority().c_str(),
-                          context->raw_deadline());
+  const bool kRegistered = method.channel_tag() && context->authority().empty();
+  grpc_call* c_call = NULL;
+  if (kRegistered) {
+    c_call = grpc_channel_create_registered_call(
+        c_channel_, context->propagate_from_call_,
+        context->propagation_options_.c_bitmask(), cq->cq(),
+        method.channel_tag(), context->raw_deadline(), nullptr);
+  } else {
+    const char* host_str = NULL;
+    if (!context->authority().empty()) {
+      host_str = context->authority_.c_str();
+    } else if (!host_.empty()) {
+      host_str = host_.c_str();
+    }
+    c_call = grpc_channel_create_call(c_channel_, context->propagate_from_call_,
+                                      context->propagation_options_.c_bitmask(),
+                                      cq->cq(), method.name(), host_str,
+                                      context->raw_deadline(), nullptr);
+  }
   grpc_census_call_set_context(c_call, context->census_context());
   GRPC_TIMER_MARK(GRPC_PTAG_CPP_CALL_CREATED, c_call);
   context->set_call(c_call, shared_from_this());
@@ -87,13 +93,13 @@ void Channel::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
   GRPC_TIMER_BEGIN(GRPC_PTAG_CPP_PERFORM_OPS, call->call());
   ops->FillOps(cops, &nops);
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call->call(), cops, nops, ops));
+             grpc_call_start_batch(call->call(), cops, nops, ops, nullptr));
   GRPC_TIMER_END(GRPC_PTAG_CPP_PERFORM_OPS, call->call());
 }
 
 void* Channel::RegisterMethod(const char* method) {
-  return grpc_channel_register_call(c_channel_, method,
-                                    host_.empty() ? NULL : host_.c_str());
+  return grpc_channel_register_call(
+      c_channel_, method, host_.empty() ? NULL : host_.c_str(), nullptr);
 }
 
 grpc_connectivity_state Channel::GetState(bool try_to_connect) {
@@ -110,6 +116,7 @@ class TagSaver GRPC_FINAL : public CompletionQueueTag {
     delete this;
     return true;
   }
+
  private:
   void* tag_;
 };

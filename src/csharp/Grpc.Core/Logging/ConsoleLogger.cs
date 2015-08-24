@@ -42,16 +42,33 @@ namespace Grpc.Core.Logging
         readonly Type forType;
         readonly string forTypeString;
 
+        /// <summary>Creates a console logger not associated to any specific type.</summary>
         public ConsoleLogger() : this(null)
         {
         }
 
+        /// <summary>Creates a console logger that logs messsage specific for given type.</summary>
         private ConsoleLogger(Type forType)
         {
             this.forType = forType;
-            this.forTypeString = forType != null ? forType.FullName + " " : "";
+            if (forType != null)
+            {
+                var namespaceStr = forType.Namespace ?? "";
+                if (namespaceStr.Length > 0)
+                {
+                     namespaceStr += ".";
+                }
+                this.forTypeString = namespaceStr + forType.Name + " ";
+            }
+            else
+            {
+                this.forTypeString = "";
+            }
         }
-
+ 
+        /// <summary>
+        /// Returns a logger associated with the specified type.
+        /// </summary>
         public ILogger ForType<T>()
         {
             if (typeof(T) == forType)
@@ -61,31 +78,37 @@ namespace Grpc.Core.Logging
             return new ConsoleLogger(typeof(T));
         }
 
+        /// <summary>Logs a message with severity Debug.</summary>
         public void Debug(string message, params object[] formatArgs)
         {
             Log("D", message, formatArgs);
         }
 
+        /// <summary>Logs a message with severity Info.</summary>
         public void Info(string message, params object[] formatArgs)
         {
             Log("I", message, formatArgs);
         }
 
+        /// <summary>Logs a message with severity Warning.</summary>
         public void Warning(string message, params object[] formatArgs)
         {
             Log("W", message, formatArgs);
         }
 
+        /// <summary>Logs a message and an associated exception with severity Warning.</summary>
         public void Warning(Exception exception, string message, params object[] formatArgs)
         {
             Log("W", message + " " + exception, formatArgs);
         }
 
+        /// <summary>Logs a message with severity Error.</summary>
         public void Error(string message, params object[] formatArgs)
         {
             Log("E", message, formatArgs);
         }
 
+        /// <summary>Logs a message and an associated exception with severity Error.</summary>
         public void Error(Exception exception, string message, params object[] formatArgs)
         {
             Log("E", message + " " + exception, formatArgs);

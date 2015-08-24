@@ -38,6 +38,7 @@
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
 #include <grpc++/thread_pool_interface.h>
+#include <grpc++/fixed_size_thread_pool.h>
 
 namespace grpc {
 
@@ -63,9 +64,10 @@ ServerBuilder& ServerBuilder::RegisterAsyncService(
   return *this;
 }
 
-ServerBuilder& ServerBuilder::RegisterService(
-    const grpc::string& addr, SynchronousService* service) {
-  services_.emplace_back(new NamedService<RpcService>(addr, service->service()));
+ServerBuilder& ServerBuilder::RegisterService(const grpc::string& addr,
+                                              SynchronousService* service) {
+  services_.emplace_back(
+      new NamedService<RpcService>(addr, service->service()));
   return *this;
 }
 
@@ -123,11 +125,18 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     thread_pool_ = CreateDefaultThreadPool();
     thread_pool_owned = true;
   }
+  // Async services only, create a thread pool to handle requests to unknown
+  // services.
+  if (!thread_pool_ && !generic_service_ && !async_services_.empty()) {
+    thread_pool_ = new FixedSizeThreadPool(1);
+    thread_pool_owned = true;
+  }
   std::unique_ptr<Server> server(new Server(thread_pool_, thread_pool_owned,
                                             max_message_size_,
                                             compression_options_));
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
-    grpc_server_register_completion_queue(server->server_, (*cq)->cq());
+    grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
+                                          nullptr);
   }
   for (auto service = services_.begin(); service != services_.end();
        service++) {
@@ -135,8 +144,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       return nullptr;
     }
   }
-  for (auto service = async_services_.begin();
-       service != async_services_.end(); service++) {
+  for (auto service = async_services_.begin(); service != async_services_.end();
+       service++) {
     if (!server->RegisterAsyncService((*service)->host.get(),
                                       (*service)->service)) {
       return nullptr;

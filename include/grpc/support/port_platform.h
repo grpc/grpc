@@ -64,7 +64,8 @@
 #undef GRPC_NOMINMAX_WAS_NOT_DEFINED
 #undef NOMINMAX
 #endif /* GRPC_WIN32_LEAN_AND_MEAN_WAS_NOT_DEFINED */
-#endif /* defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32) */
+#endif /* defined(_WIN64) || defined(WIN64) || defined(_WIN32) || \
+          defined(WIN32) */
 
 /* Override this file with one for your platform if you need to redefine
    things.  */
@@ -173,6 +174,8 @@
 #endif /* _LP64 */
 #elif defined(__APPLE__)
 #include <TargetConditionals.h>
+/* Provides IPV6_RECVPKTINFO */
+#define __APPLE_USE_RFC_3542
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif

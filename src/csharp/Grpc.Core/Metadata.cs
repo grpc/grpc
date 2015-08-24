@@ -46,6 +46,11 @@ namespace Grpc.Core
     public sealed class Metadata : IList<Metadata.Entry>
     {
         /// <summary>
+        /// All binary headers should have this suffix.
+        /// </summary>
+        public const string BinaryHeaderSuffix = "-bin";
+
+        /// <summary>
         /// An read-only instance of metadata containing no entries.
         /// </summary>
         public static readonly Metadata Empty = new Metadata().Freeze();
@@ -114,6 +119,16 @@ namespace Grpc.Core
             entries.Add(item);
         }
 
+        public void Add(string key, string value)
+        {
+            Add(new Entry(key, value));
+        }
+
+        public void Add(string key, byte[] valueBytes)
+        {
+            Add(new Entry(key, valueBytes));
+        }
+
         public void Clear()
         {
             CheckWriteable();
@@ -171,23 +186,49 @@ namespace Grpc.Core
             private static readonly Encoding Encoding = Encoding.ASCII;
 
             readonly string key;
-            string value;
-            byte[] valueBytes;
+            readonly string value;
+            readonly byte[] valueBytes;
 
-            public Entry(string key, byte[] valueBytes)
+            private Entry(string key, string value, byte[] valueBytes)
             {
-                this.key = Preconditions.CheckNotNull(key);
-                this.value = null;
-                this.valueBytes = Preconditions.CheckNotNull(valueBytes);
+                this.key = key;
+                this.value = value;
+                this.valueBytes = valueBytes;
             }
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata+Entry"/> struct with a binary value.
+            /// </summary>
+            /// <param name="key">Metadata key, needs to have suffix indicating a binary valued metadata entry.</param>
+            /// <param name="valueBytes">Value bytes.</param>
+            public Entry(string key, byte[] valueBytes)
+            {
+                this.key = NormalizeKey(key);
+                Preconditions.CheckArgument(this.key.EndsWith(BinaryHeaderSuffix),
+                    "Key for binary valued metadata entry needs to have suffix indicating binary value.");
+                this.value = null;
+                Preconditions.CheckNotNull(valueBytes, "valueBytes");
+                this.valueBytes = new byte[valueBytes.Length];
+                Buffer.BlockCopy(valueBytes, 0, this.valueBytes, 0, valueBytes.Length);  // defensive copy to guarantee immutability
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata+Entry"/> struct holding an ASCII value.
+            /// </summary>
+            /// <param name="key">Metadata key, must not use suffix indicating a binary valued metadata entry.</param>
+            /// <param name="value">Value string. Only ASCII characters are allowed.</param>
             public Entry(string key, string value)
             {
-                this.key = Preconditions.CheckNotNull(key);
-                this.value = Preconditions.CheckNotNull(value);
+                this.key = NormalizeKey(key);
+                Preconditions.CheckArgument(!this.key.EndsWith(BinaryHeaderSuffix),
+                    "Key for ASCII valued metadata entry cannot have suffix indicating binary value.");
+                this.value = Preconditions.CheckNotNull(value, "value");
                 this.valueBytes = null;
             }
 
+            /// <summary>
+            /// Gets the metadata entry key.
+            /// </summary>
             public string Key
             {
                 get
@@ -196,33 +237,86 @@ namespace Grpc.Core
                 }
             }
 
+            /// <summary>
+            /// Gets the binary value of this metadata entry.
+            /// </summary>
             public byte[] ValueBytes
             {
                 get
                 {
                     if (valueBytes == null)
                     {
-                        valueBytes = Encoding.GetBytes(value);
+                        return Encoding.GetBytes(value);
                     }
-                    return valueBytes;
+
+                    // defensive copy to guarantee immutability
+                    var bytes = new byte[valueBytes.Length];
+                    Buffer.BlockCopy(valueBytes, 0, bytes, 0, valueBytes.Length);
+                    return bytes;
                 }
             }
 
+            /// <summary>
+            /// Gets the string value of this metadata entry.
+            /// </summary>
             public string Value
             {
                 get
                 {
-                    if (value == null)
-                    {
-                        value = Encoding.GetString(valueBytes);
-                    }
-                    return value;
+                    Preconditions.CheckState(!IsBinary, "Cannot access string value of a binary metadata entry");
+                    return value ?? Encoding.GetString(valueBytes);
                 }
             }
-                
+
+            /// <summary>
+            /// Returns <c>true</c> if this entry is a binary-value entry.
+            /// </summary>
+            public bool IsBinary
+            {
+                get
+                {
+                    return value == null;
+                }
+            }
+
+            /// <summary>
+            /// Returns a <see cref="System.String"/> that represents the current <see cref="Grpc.Core.Metadata+Entry"/>.
+            /// </summary>
             public override string ToString()
             {
-                return string.Format("[Entry: key={0}, value={1}]", Key, Value);
+                if (IsBinary)
+                {
+                    return string.Format("[Entry: key={0}, valueBytes={1}]", key, valueBytes);
+                }
+                
+                return string.Format("[Entry: key={0}, value={1}]", key, value);
+            }
+
+            /// <summary>
+            /// Gets the serialized value for this entry. For binary metadata entries, this leaks
+            /// the internal <c>valueBytes</c> byte array and caller must not change contents of it.
+            /// </summary>
+            internal byte[] GetSerializedValueUnsafe()
+            {
+                return valueBytes ?? Encoding.GetBytes(value);
+            }
+
+            /// <summary>
+            /// Creates a binary value or ascii value metadata entry from data received from the native layer.
+            /// We trust C core to give us well-formed data, so we don't perform any checks or defensive copying.
+            /// </summary>
+            internal static Entry CreateUnsafe(string key, byte[] valueBytes)
+            {
+                if (key.EndsWith(BinaryHeaderSuffix))
+                {
+                    return new Entry(key, null, valueBytes);
+                }
+                return new Entry(key, Encoding.GetString(valueBytes), null);
+            }
+
+            private static string NormalizeKey(string key)
+            {
+                return Preconditions.CheckNotNull(key, "key").ToLower();
             }
         }
     }

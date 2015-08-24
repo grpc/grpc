@@ -121,7 +121,7 @@ static void store32_little_endian(gpr_uint32 value, unsigned char* buf) {
   buf[3] = (unsigned char)(value >> 24) & 0xFF;
   buf[2] = (unsigned char)(value >> 16) & 0xFF;
   buf[1] = (unsigned char)(value >> 8) & 0xFF;
-  buf[0] = (unsigned char)(value) & 0xFF;
+  buf[0] = (unsigned char)(value)&0xFF;
 }
 
 static void tsi_fake_frame_reset(tsi_fake_frame* frame, int needs_draining) {
@@ -370,7 +370,8 @@ static void fake_protector_destroy(tsi_frame_protector* self) {
 
 static const tsi_frame_protector_vtable frame_protector_vtable = {
     fake_protector_protect, fake_protector_protect_flush,
-    fake_protector_unprotect, fake_protector_destroy, };
+    fake_protector_unprotect, fake_protector_destroy,
+};
 
 /* --- tsi_handshaker methods implementation. ---*/
 
@@ -393,7 +394,8 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;
     }
     if (tsi_tracing_enabled) {
-      gpr_log(GPR_INFO, "%s prepared %s.", impl->is_client ? "Client" : "Server",
+      gpr_log(GPR_INFO, "%s prepared %s.",
+              impl->is_client ? "Client" : "Server",
               tsi_fake_handshake_message_to_string(impl->next_message_to_send));
     }
     impl->next_message_to_send = next_message_to_send;
@@ -493,7 +495,8 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     fake_handshaker_get_result,
     fake_handshaker_extract_peer,
     fake_handshaker_create_frame_protector,
-    fake_handshaker_destroy, };
+    fake_handshaker_destroy,
+};
 
 tsi_handshaker* tsi_create_fake_handshaker(int is_client) {
   tsi_fake_handshaker* impl = calloc(1, sizeof(tsi_fake_handshaker));

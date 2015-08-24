@@ -96,7 +96,7 @@ Server *pygrpc_Server_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) 
   PyObject *py_args;
   grpc_channel_args c_args;
   char *keywords[] = {"cq", "args", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O:Channel", keywords,
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O:Server", keywords,
         &pygrpc_CompletionQueue_type, &cq, &py_args)) {
     return NULL;
   }
@@ -104,8 +104,8 @@ Server *pygrpc_Server_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) 
     return NULL;
   }
   self = (Server *)type->tp_alloc(type, 0);
-  self->c_serv = grpc_server_create(&c_args);
-  grpc_server_register_completion_queue(self->c_serv, cq->c_cq);
+  self->c_serv = grpc_server_create(&c_args, NULL);
+  grpc_server_register_completion_queue(self->c_serv, cq->c_cq, NULL);
   pygrpc_discard_channel_args(c_args);
   self->cq = cq;
   Py_INCREF(self->cq);

@@ -65,7 +65,6 @@
 #endif
 
 #include <grpc/support/time.h> /* for gpr_timespec */
-#include <grpc/support/cancellable_platform.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -121,11 +120,6 @@ void gpr_cv_destroy(gpr_cv *cv);
    holds an exclusive lock on *mu.  */
 int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline);
 
-/* Behave like gpr_cv_wait(cv, mu, abs_deadline), except behave as though
-   the deadline has expired if *c is cancelled. */
-int gpr_cv_cancellable_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline,
-                            gpr_cancellable *c);
-
 /* If any threads are waiting on *cv, wake at least one.
    Clients may treat this as an optimization of gpr_cv_broadcast()
    for use in the case where waking more than one waiter is not useful.
@@ -134,28 +128,6 @@ void gpr_cv_signal(gpr_cv *cv);
 
 /* Wake all threads waiting on *cv.  Requires:  *cv initialized.  */
 void gpr_cv_broadcast(gpr_cv *cv);
-
-/* --- Cancellation ---
-   A gpr_cancellable can be used with gpr_cv_cancellable_wait()
-   or gpr_event_cancellable_wait() cancel pending waits. */
-
-/* Initialize *c. */
-void gpr_cancellable_init(gpr_cancellable *c);
-
-/* Cause *c no longer to be initialized, freeing any memory in use.  Requires:
-   *c initialized; no other concurrent operation on *c.  */
-void gpr_cancellable_destroy(gpr_cancellable *c);
-
-/* Return non-zero iff *c has been cancelled.  Requires *c initialized.
-   This call is faster than acquiring a mutex on most platforms. */
-int gpr_cancellable_is_cancelled(gpr_cancellable *c);
-
-/* Cancel *c.  If *c was not previously cancelled, cause
-   gpr_cancellable_init() to return non-zero, and outstanding and future
-   calls to gpr_cv_cancellable_wait() and gpr_event_cancellable_wait() to
-   return immediately indicating a timeout has occurred; otherwise do nothing.
-   Requires *c initialized.*/
-void gpr_cancellable_cancel(gpr_cancellable *c);
 
 /* --- One-time initialization ---
 
@@ -198,11 +170,6 @@ void *gpr_event_get(gpr_event *ev);
    signalled before the call, this operation is faster than acquiring a mutex
    on most platforms.  */
 void *gpr_event_wait(gpr_event *ev, gpr_timespec abs_deadline);
-
-/* Behave like gpr_event_wait(ev, abs_deadline), except behave as though
-   the deadline has expired if *c is cancelled. */
-void *gpr_event_cancellable_wait(gpr_event *ev, gpr_timespec abs_deadline,
-                                 gpr_cancellable *c);
 
 /* --- Reference counting ---
 
@@ -345,4 +312,4 @@ gpr_intptr gpr_stats_read(const gpr_stats_counter *c);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_SYNC_H */
+#endif /* GRPC_SUPPORT_SYNC_H */
