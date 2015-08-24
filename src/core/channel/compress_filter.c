@@ -306,6 +306,7 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   channel_data *channeld = elem->channel_data;
   grpc_compression_algorithm algo_idx;
   const char *supported_algorithms_names[GRPC_COMPRESS_ALGORITHMS_COUNT - 1];
+  size_t supported_algorithms_idx = 0;
   char *accept_encoding_str;
   size_t accept_encoding_str_len;
 
@@ -344,15 +345,15 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
             GRPC_MDSTR_REF(channeld->mdstr_outgoing_compression_algorithm_key),
             grpc_mdstr_from_string(mdctx, algorithm_name, 0));
     if (algo_idx > 0) {
-      supported_algorithms_names[algo_idx - 1] = algorithm_name;
+      supported_algorithms_names[supported_algorithms_idx++] = algorithm_name;
     }
   }
 
   /* TODO(dgq): gpr_strjoin_sep could be made to work with statically allocated
    * arrays, as to avoid the heap allocs */
-  accept_encoding_str = gpr_strjoin_sep(
-      supported_algorithms_names, GPR_ARRAY_SIZE(supported_algorithms_names),
-      ", ", &accept_encoding_str_len);
+  accept_encoding_str =
+      gpr_strjoin_sep(supported_algorithms_names, supported_algorithms_idx,
+                      ", ", &accept_encoding_str_len);
 
   channeld->mdelem_accept_encoding = grpc_mdelem_from_metadata_strings(
       mdctx, GRPC_MDSTR_REF(channeld->mdstr_compression_capabilities_key),
