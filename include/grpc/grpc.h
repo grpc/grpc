@@ -386,13 +386,6 @@ typedef struct grpc_op {
     the reverse order they were initialized. */
 void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
 
-/** Frees the memory used by all the plugin information.
-
-    While grpc_init and grpc_shutdown can be called multiple times, the plugins
-    won't be unregistered and their memory cleaned up unless you call that
-    function. Using atexit(grpc_unregister_all_plugins) is a valid method. */
-void grpc_unregister_all_plugins();
-
 /* Propagation bits: this can be bitwise or-ed to form propagation_mask for
  * grpc_call */
 /** Propagate deadline */

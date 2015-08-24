@@ -592,8 +592,7 @@
       "external_deps": [
         "zookeeper"
       ],
-      "secure": "no",
-      "vs_project_guid": "{F14EBEC1-DC43-45D3-8A7D-1A47072EFE50}"
+      "secure": "no"
     },
     {
       "name": "reconnect_server",
@@ -1358,6 +1357,20 @@
       "language": "c",
       "src": [
         "test/core/surface/byte_buffer_reader_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "grpc_channel_args_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/channel/channel_args_test.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -2489,6 +2502,9 @@
         "gpr",
         "grpc++_test_config"
       ],
+      "exclude_configs": [
+        "tsan"
+      ],
       "platforms": [
         "mac",
         "linux",
@@ -2601,6 +2617,22 @@
       "language": "c++",
       "src": [
         "test/cpp/end2end/server_crash_test_client.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "shutdown_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/shutdown_test.cc"
       ],
       "deps": [
         "grpc++_test_util",

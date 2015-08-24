@@ -35,7 +35,7 @@ require 'AbstractGeneratedCodeTest.php';
 
 class GeneratedCodeTest extends AbstractGeneratedCodeTest {
   public static function setUpBeforeClass() {
-    self::$client = new math\MathClient(new Grpc\BaseStub(
-        getenv('GRPC_TEST_HOST'), []));
+    self::$client = new math\MathClient(
+        getenv('GRPC_TEST_HOST'), []);
   }
 }

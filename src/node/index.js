@@ -145,6 +145,11 @@ exports.propagate = grpc.propagate;
 exports.callError = grpc.callError;
 
 /**
+ * Write flag name to code number mapping
+ */
+exports.writeFlags = grpc.writeFlags;
+
+/**
  * Credentials factories
  */
 exports.Credentials = grpc.Credentials;

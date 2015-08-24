@@ -53,7 +53,6 @@ typedef struct wrapped_grpc_channel {
   zend_object std;
 
   grpc_channel *wrapped;
-  char *target;
 } wrapped_grpc_channel;
 
 /* Initializes the Channel class */
