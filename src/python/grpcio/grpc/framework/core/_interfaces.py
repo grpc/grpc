@@ -155,13 +155,19 @@ class TransmissionManager(object):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def abort(self, outcome):
+  def abort(self, outcome, code, message):
     """Indicates that the operation has aborted.
 
     Args:
       outcome: An interfaces.Outcome for the operation. If None, indicates that
         the operation abortion should not be communicated to the other side of
         the operation.
+      code: A code value to communicate to the other side of the operation
+        along with indication of operation abortion. May be None, and has no
+        effect if outcome is None.
+      message: A message value to communicate to the other side of the
+        operation along with indication of operation abortion. May be None, and
+        has no effect if outcome is None.
     """
     raise NotImplementedError()
 

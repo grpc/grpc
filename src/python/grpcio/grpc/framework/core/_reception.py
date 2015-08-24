@@ -73,7 +73,7 @@ class ReceptionManager(_interfaces.ReceptionManager):
     self._aborted = True
     if self._termination_manager.outcome is None:
       self._termination_manager.abort(outcome)
-      self._transmission_manager.abort(None)
+      self._transmission_manager.abort(None, None, None)
       self._expiration_manager.terminate()
 
   def _sequence_failure(self, ticket):
