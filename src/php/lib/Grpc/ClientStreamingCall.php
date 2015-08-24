@@ -40,15 +40,24 @@ namespace Grpc;
 class ClientStreamingCall extends AbstractCall {
   /**
    * Start the call.
-   * @param Traversable $arg_iter The iterator of arguments to send
    * @param array $metadata Metadata to send with the call, if applicable
    */
-  public function start($arg_iter, $metadata = array()) {
-    $event = $this->call->startBatch([OP_SEND_INITIAL_METADATA => $metadata]);
-    foreach($arg_iter as $arg) {
-      $this->call->startBatch([OP_SEND_MESSAGE => $arg->serialize()]);
+  public function start($metadata) {
+    $this->call->startBatch([OP_SEND_INITIAL_METADATA => $metadata]);
+  }
+
+  /**
+   * Write a single message to the server. This cannot be called after
+   * wait is called.
+   * @param ByteBuffer $data The data to write
+   * @param array $options an array of options
+   */
+  public function write($data, $options = array()) {
+    $message_array = ['message' => $data->serialize()];
+    if ($grpc_write_flags = self::getGrpcWriteFlags($options)) {
+      $message_array['flags'] = $grpc_write_flags;
     }
-    $this->call->startBatch([OP_SEND_CLOSE_FROM_CLIENT => true]);
+    $this->call->startBatch([OP_SEND_MESSAGE => $message_array]);
   }
 
   /**
@@ -57,6 +66,7 @@ class ClientStreamingCall extends AbstractCall {
    */
   public function wait() {
     $event = $this->call->startBatch([
+        OP_SEND_CLOSE_FROM_CLIENT => true,
         OP_RECV_INITIAL_METADATA => true,
         OP_RECV_MESSAGE => true,
         OP_RECV_STATUS_ON_CLIENT => true]);
