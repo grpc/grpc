@@ -167,13 +167,13 @@ static int find_compression_algorithm_states_bitset(
 }
 
 grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
-    grpc_channel_args *a,
+    grpc_channel_args **a,
     grpc_compression_algorithm algorithm,
     int state) {
   int *states_arg;
-  grpc_channel_args *result = a;
+  grpc_channel_args *result = *a;
   const int states_arg_found =
-      find_compression_algorithm_states_bitset(a, &states_arg);
+      find_compression_algorithm_states_bitset(*a, &states_arg);
 
   if (states_arg_found) {
     if (state != 0) {
@@ -193,8 +193,9 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
     } else {
       GPR_BITCLEAR(&tmp.value.integer, algorithm);
     }
-    result = grpc_channel_args_copy_and_add(a, &tmp, 1);
-    grpc_channel_args_destroy(a);
+    result = grpc_channel_args_copy_and_add(*a, &tmp, 1);
+    grpc_channel_args_destroy(*a);
+    *a = result;
   }
   return result;
 }
