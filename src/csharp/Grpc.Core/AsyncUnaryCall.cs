@@ -43,13 +43,15 @@ namespace Grpc.Core
     public sealed class AsyncUnaryCall<TResponse> : IDisposable
     {
         readonly Task<TResponse> responseAsync;
+        readonly Task<Metadata> responseHeadersAsync;
         readonly Func<Status> getStatusFunc;
         readonly Func<Metadata> getTrailersFunc;
         readonly Action disposeAction;
 
-        public AsyncUnaryCall(Task<TResponse> responseAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
+        public AsyncUnaryCall(Task<TResponse> responseAsync, Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
         {
             this.responseAsync = responseAsync;
+            this.responseHeadersAsync = responseHeadersAsync;
             this.getStatusFunc = getStatusFunc;
             this.getTrailersFunc = getTrailersFunc;
             this.disposeAction = disposeAction;
@@ -63,6 +65,17 @@ namespace Grpc.Core
             get
             {
                 return this.responseAsync;
+            }
+        }
+
+        /// <summary>
+        /// Asynchronous access to response headers.
+        /// </summary>
+        public Task<Metadata> ResponseHeadersAsync
+        {
+            get
+            {
+                return this.responseHeadersAsync;
             }
         }
 
