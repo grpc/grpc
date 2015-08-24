@@ -146,7 +146,8 @@ static void test_receive(int number_of_clients) {
     while (g_number_of_reads == number_of_reads_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
       grpc_pollset_worker worker;
-      grpc_pollset_work(&g_pollset, &worker, deadline);
+      grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+                        deadline);
     }
     GPR_ASSERT(g_number_of_reads == number_of_reads_before + 1);
     close(clifd);

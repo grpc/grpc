@@ -50,6 +50,8 @@ namespace Grpc.Core
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Server>();
 
+        readonly AtomicCounter activeCallCounter = new AtomicCounter();
+
         readonly ServiceDefinitionCollection serviceDefinitions;
         readonly ServerPortCollection ports;
         readonly GrpcEnvironment environment;
@@ -73,7 +75,7 @@ namespace Grpc.Core
         {
             this.serviceDefinitions = new ServiceDefinitionCollection(this);
             this.ports = new ServerPortCollection(this);
-            this.environment = GrpcEnvironment.GetInstance();
+            this.environment = GrpcEnvironment.AddRef();
             this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
             using (var channelArgs = ChannelOptions.CreateChannelArgs(this.options))
             {
@@ -102,6 +104,17 @@ namespace Grpc.Core
             get
             {
                 return ports;
+            }
+        }
+
+        /// <summary>
+        /// To allow awaiting termination of the server.
+        /// </summary>
+        public Task ShutdownTask
+        {
+            get
+            {
+                return shutdownTcs.Task;
             }
         }
 
@@ -136,18 +149,9 @@ namespace Grpc.Core
 
             handle.ShutdownAndNotify(HandleServerShutdown, environment);
             await shutdownTcs.Task;
-            handle.Dispose();
-        }
+            DisposeHandle();
 
-        /// <summary>
-        /// To allow awaiting termination of the server.
-        /// </summary>
-        public Task ShutdownTask
-        {
-            get
-            {
-                return shutdownTcs.Task;
-            }
+            await Task.Run(() => GrpcEnvironment.Release());
         }
 
         /// <summary>
@@ -166,7 +170,22 @@ namespace Grpc.Core
             handle.ShutdownAndNotify(HandleServerShutdown, environment);
             handle.CancelAllCalls();
             await shutdownTcs.Task;
-            handle.Dispose();
+            DisposeHandle();
+        }
+
+        internal void AddCallReference(object call)
+        {
+            activeCallCounter.Increment();
+
+            bool success = false;
+            handle.DangerousAddRef(ref success);
+            Preconditions.CheckState(success);
+        }
+
+        internal void RemoveCallReference(object call)
+        {
+            handle.DangerousRelease();
+            activeCallCounter.Decrement();
         }
 
         /// <summary>
@@ -227,6 +246,16 @@ namespace Grpc.Core
             }
         }
 
+        private void DisposeHandle()
+        {
+            var activeCallCount = activeCallCounter.Count;
+            if (activeCallCount > 0)
+            {
+                Logger.Warning("Server shutdown has finished but there are still {0} active calls for that server.", activeCallCount);
+            }
+            handle.Dispose();
+        }
+
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
@@ -254,7 +283,7 @@ namespace Grpc.Core
         {
             if (success)
             {
-                ServerRpcNew newRpc = ctx.GetServerRpcNew();
+                ServerRpcNew newRpc = ctx.GetServerRpcNew(this);
 
                 // after server shutdown, the callback returns with null call
                 if (!newRpc.Call.IsInvalid)
