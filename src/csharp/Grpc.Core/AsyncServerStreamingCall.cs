@@ -39,6 +39,7 @@ namespace Grpc.Core
     /// <summary>
     /// Return type for server streaming calls.
     /// </summary>
+    /// <typeparam name="TResponse">Response message type for this call.</typeparam>
     public sealed class AsyncServerStreamingCall<TResponse> : IDisposable
     {
         readonly IAsyncStreamReader<TResponse> responseStream;

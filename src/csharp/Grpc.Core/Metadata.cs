@@ -42,6 +42,12 @@ namespace Grpc.Core
 {
     /// <summary>
     /// A collection of metadata entries that can be exchanged during a call.
+    /// gRPC supports these types of metadata:
+    /// <list type="bullet">
+    /// <item><term>Request headers</term><description>are sent by the client at the beginning of a remote call before any request messages are sent.</description></item>
+    /// <item><term>Response headers</term><description>are sent by the server at the beginning of a remote call handler before any response messages are sent.</description></item>
+    /// <item><term>Response trailers</term><description>are sent by the server at the end of a remote call along with resulting call status.</description></item>
+    /// </list>
     /// </summary>
     public sealed class Metadata : IList<Metadata.Entry>
     {
@@ -195,7 +201,7 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata+Entry"/> struct with a binary value.
+            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct with a binary value.
             /// </summary>
             /// <param name="key">Metadata key, needs to have suffix indicating a binary valued metadata entry.</param>
             /// <param name="valueBytes">Value bytes.</param>
@@ -211,7 +217,7 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata+Entry"/> struct holding an ASCII value.
+            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct holding an ASCII value.
             /// </summary>
             /// <param name="key">Metadata key, must not use suffix indicating a binary valued metadata entry.</param>
             /// <param name="value">Value string. Only ASCII characters are allowed.</param>
@@ -278,7 +284,7 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Returns a <see cref="System.String"/> that represents the current <see cref="Grpc.Core.Metadata+Entry"/>.
+            /// Returns a <see cref="System.String"/> that represents the current <see cref="Grpc.Core.Metadata.Entry"/>.
             /// </summary>
             public override string ToString()
             {
