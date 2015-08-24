@@ -77,15 +77,19 @@ char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 /* Write slices out to the socket.
 
    If the connection is ready for more data after the end of the call, it
-   returns GRPC_ENDPOINT_WRITE_DONE.
-   Otherwise it returns GRPC_ENDPOINT_WRITE_PENDING and calls cb when the
-   connection is ready for more data. */
+   returns GRPC_ENDPOINT_DONE.
+   Otherwise it returns GRPC_ENDPOINT_PENDING and calls cb when the
+   connection is ready for more data.
+   \a slices may be mutated at will by the endpoint until cb is called.
+   No guarantee is made to the content of slices after a write EXCEPT that
+   it is a valid slice buffer.
+   */
 grpc_endpoint_op_status grpc_endpoint_write(
     grpc_endpoint *ep, gpr_slice_buffer *slices,
     grpc_iomgr_closure *cb) GRPC_MUST_USE_RESULT;
 
 /* Causes any pending read/write callbacks to run immediately with
-   GRPC_ENDPOINT_CB_SHUTDOWN status */
+   success==0 */
 void grpc_endpoint_shutdown(grpc_endpoint *ep);
 void grpc_endpoint_destroy(grpc_endpoint *ep);
 
