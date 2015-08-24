@@ -51,7 +51,7 @@ struct census_context;
 
 namespace grpc {
 
-class ChannelInterface;
+class Channel;
 class CompletionQueue;
 class Credentials;
 class RpcMethod;
@@ -215,20 +215,18 @@ class ClientContext {
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(ChannelInterface* channel,
-                                  const RpcMethod& method,
+  friend Status BlockingUnaryCall(Channel* channel, const RpcMethod& method,
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);
 
   grpc_call* call() { return call_; }
-  void set_call(grpc_call* call,
-                const std::shared_ptr<ChannelInterface>& channel);
+  void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
   grpc::string authority() { return authority_; }
 
   bool initial_metadata_received_;
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
   grpc_call* call_;
   gpr_timespec deadline_;
   grpc::string authority_;

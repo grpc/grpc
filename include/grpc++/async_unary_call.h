@@ -34,7 +34,7 @@
 #ifndef GRPCXX_ASYNC_UNARY_CALL_H
 #define GRPCXX_ASYNC_UNARY_CALL_H
 
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/server_context.h>
@@ -58,7 +58,7 @@ class ClientAsyncResponseReader GRPC_FINAL
     : public ClientAsyncResponseReaderInterface<R> {
  public:
   template <class W>
-  ClientAsyncResponseReader(ChannelInterface* channel, CompletionQueue* cq,
+  ClientAsyncResponseReader(Channel* channel, CompletionQueue* cq,
                             const RpcMethod& method, ClientContext* context,
                             const W& request)
       : context_(context), call_(channel->CreateCall(method, context, cq)) {

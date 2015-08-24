@@ -41,7 +41,7 @@
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/echo.grpc.pb.h"
 #include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
@@ -105,7 +105,7 @@ bool CheckIsLocalhost(const grpc::string& addr) {
 
 class Proxy : public ::grpc::cpp::test::util::TestService::Service {
  public:
-  Proxy(std::shared_ptr<ChannelInterface> channel)
+  Proxy(std::shared_ptr<Channel> channel)
       : stub_(grpc::cpp::test::util::TestService::NewStub(channel)) {}
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
@@ -316,7 +316,7 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::unique_ptr<Server> proxy_server_;
@@ -567,7 +567,7 @@ TEST_F(End2endTest, DiffPackageServices) {
 TEST_F(End2endTest, BadCredentials) {
   std::shared_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
   EXPECT_EQ(static_cast<Credentials*>(nullptr), bad_creds.get());
-  std::shared_ptr<ChannelInterface> channel =
+  std::shared_ptr<Channel> channel =
       CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
       grpc::cpp::test::util::TestService::NewStub(channel));

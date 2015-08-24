@@ -39,7 +39,7 @@
 #include "test/cpp/util/echo.grpc.pb.h"
 #include <grpc++/async_unary_call.h>
 #include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
@@ -204,7 +204,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
   }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel = CreateChannel(
+    std::shared_ptr<Channel> channel = CreateChannel(
         server_address_.str(), InsecureCredentials(), ChannelArguments());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
@@ -742,7 +742,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 }
 
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
-  std::shared_ptr<ChannelInterface> channel = CreateChannel(
+  std::shared_ptr<Channel> channel = CreateChannel(
       server_address_.str(), InsecureCredentials(), ChannelArguments());
   std::unique_ptr<grpc::cpp::test::util::UnimplementedService::Stub> stub;
   stub =

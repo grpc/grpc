@@ -764,8 +764,8 @@ INPUT                  = include/grpc++/async_generic_service.h \
 include/grpc++/async_unary_call.h \
 include/grpc++/auth_context.h \
 include/grpc++/byte_buffer.h \
+include/grpc++/channel.h \
 include/grpc++/channel_arguments.h \
-include/grpc++/channel_interface.h \
 include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
 include/grpc++/config.h \
@@ -776,7 +776,6 @@ include/grpc++/generic_stub.h \
 include/grpc++/impl/call.h \
 include/grpc++/impl/client_unary_call.h \
 include/grpc++/impl/grpc_library.h \
-include/grpc++/impl/internal_stub.h \
 include/grpc++/impl/proto_utils.h \
 include/grpc++/impl/rpc_method.h \
 include/grpc++/impl/rpc_service_method.h \
@@ -801,7 +800,7 @@ include/grpc++/time.h \
 src/cpp/client/secure_credentials.h \
 src/cpp/common/secure_auth_context.h \
 src/cpp/server/secure_server_credentials.h \
-src/cpp/client/channel.h \
+src/cpp/client/create_channel_internal.h \
 src/cpp/common/create_auth_context.h \
 src/cpp/server/dynamic_thread_pool.h \
 src/cpp/server/fixed_size_thread_pool.h \
@@ -816,10 +815,10 @@ src/cpp/client/channel.cc \
 src/cpp/client/channel_arguments.cc \
 src/cpp/client/client_context.cc \
 src/cpp/client/create_channel.cc \
+src/cpp/client/create_channel_internal.cc \
 src/cpp/client/credentials.cc \
 src/cpp/client/generic_stub.cc \
 src/cpp/client/insecure_credentials.cc \
-src/cpp/client/internal_stub.cc \
 src/cpp/common/call.cc \
 src/cpp/common/completion_queue.cc \
 src/cpp/common/rpc_method.cc \
