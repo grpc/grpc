@@ -40,6 +40,8 @@ namespace Grpc.Core
     /// <summary>
     /// Return type for client streaming calls.
     /// </summary>
+    /// <typeparam name="TRequest">Request message type for this call.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this call.</typeparam>
     public sealed class AsyncClientStreamingCall<TRequest, TResponse> : IDisposable
     {
         readonly IClientStreamWriter<TRequest> requestStream;
