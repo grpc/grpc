@@ -589,9 +589,14 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
     THREAD SAFETY: grpc_call_destroy is thread-compatible */
 void grpc_call_destroy(grpc_call *call);
 
-/** Request notification of a new call. 'cq_for_notification' must
-    have been registered to the server via
-    grpc_server_register_completion_queue. */
+/** Request notification of a new call.
+    Once a call is received, a notification tagged with \a tag_new is added to 
+    \a cq_for_notification. \a call, \a details and \a request_metadata are 
+    updated with the appropriate call information. \a cq_bound_to_call is bound
+    to \a call, and batch operation notifications for that call will be posted
+    to \a cq_bound_to_call.
+    Note that \a cq_for_notification must have been registered to the server via
+    \a grpc_server_register_completion_queue. */
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,

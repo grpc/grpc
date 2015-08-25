@@ -36,7 +36,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <grpc/support/time.h>
-#include <grpc++/config.h>
 
 Timer::Timer() : start_(Sample()) {}
 

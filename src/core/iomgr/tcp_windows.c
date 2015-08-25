@@ -152,6 +152,7 @@ static void on_read(void *tcpp, int from_iocp) {
       gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
       gpr_free(utf8_message);
     }
+    gpr_slice_unref(tcp->read_slice);
     status = GRPC_ENDPOINT_CB_ERROR;
   } else {
     if (info->bytes_transfered != 0) {

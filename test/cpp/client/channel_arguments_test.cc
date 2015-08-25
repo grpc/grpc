@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc++/channel_arguments.h>
+#include <grpc++/support/channel_arguments.h>
 
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
