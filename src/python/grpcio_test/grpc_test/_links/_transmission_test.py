@@ -128,14 +128,14 @@ class RoundTripTest(unittest.TestCase):
     invocation_ticket = links.Ticket(
         test_operation_id, 0, test_group, test_method,
         links.Ticket.Subscription.FULL, test_constants.LONG_TIMEOUT, None, None,
-        None, None, None, None, links.Ticket.Termination.COMPLETION)
+        None, None, None, None, links.Ticket.Termination.COMPLETION, None)
     invocation_link.accept_ticket(invocation_ticket)
     service_mate.block_until_tickets_satisfy(test_cases.terminated)
 
     service_ticket = links.Ticket(
         service_mate.tickets()[-1].operation_id, 0, None, None, None, None,
         None, None, None, None, test_code, test_message,
-        links.Ticket.Termination.COMPLETION)
+        links.Ticket.Termination.COMPLETION, None)
     service_link.accept_ticket(service_ticket)
     invocation_mate.block_until_tickets_satisfy(test_cases.terminated)
 
@@ -174,33 +174,34 @@ class RoundTripTest(unittest.TestCase):
     invocation_ticket = links.Ticket(
         test_operation_id, 0, test_group, test_method,
         links.Ticket.Subscription.FULL, test_constants.LONG_TIMEOUT, None, None,
-        None, None, None, None, None)
+        None, None, None, None, None, None)
     invocation_link.accept_ticket(invocation_ticket)
     requests = scenario.requests()
     for request_index, request in enumerate(requests):
       request_ticket = links.Ticket(
           test_operation_id, 1 + request_index, None, None, None, None, 1, None,
-          request, None, None, None, None)
+          request, None, None, None, None, None)
       invocation_link.accept_ticket(request_ticket)
       service_mate.block_until_tickets_satisfy(
           test_cases.at_least_n_payloads_received_predicate(1 + request_index))
       response_ticket = links.Ticket(
           service_mate.tickets()[0].operation_id, request_index, None, None,
           None, None, 1, None, scenario.response_for_request(request), None,
-          None, None, None)
+          None, None, None, None)
       service_link.accept_ticket(response_ticket)
       invocation_mate.block_until_tickets_satisfy(
           test_cases.at_least_n_payloads_received_predicate(1 + request_index))
     request_count = len(requests)
     invocation_completion_ticket = links.Ticket(
         test_operation_id, request_count + 1, None, None, None, None, None,
-        None, None, None, None, None, links.Ticket.Termination.COMPLETION)
+        None, None, None, None, None, links.Ticket.Termination.COMPLETION,
+        None)
     invocation_link.accept_ticket(invocation_completion_ticket)
     service_mate.block_until_tickets_satisfy(test_cases.terminated)
     service_completion_ticket = links.Ticket(
         service_mate.tickets()[0].operation_id, request_count, None, None, None,
         None, None, None, None, None, test_code, test_message,
-        links.Ticket.Termination.COMPLETION)
+        links.Ticket.Termination.COMPLETION, None)
     service_link.accept_ticket(service_completion_ticket)
     invocation_mate.block_until_tickets_satisfy(test_cases.terminated)
 

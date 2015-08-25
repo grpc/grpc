@@ -27,10 +27,20 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""The base interface of RPC Framework."""
+"""The base interface of RPC Framework.
 
+Implementations of this interface support the conduct of "operations":
+exchanges between two distinct ends of an arbitrary number of data payloads
+and metadata such as a name for the operation, initial and terminal metadata
+in each direction, and flow control. These operations may be used for transfers
+of data, remote procedure calls, status indication, or anything else
+applications choose.
+"""
+
+# threading is referenced from specification in this module.
 import abc
 import enum
+import threading
 
 # abandonment is referenced from specification in this module.
 from grpc.framework.foundation import abandonment  # pylint: disable=unused-import
@@ -208,19 +218,26 @@ class End(object):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def stop_gracefully(self):
-    """Gracefully stops this object's service of operations.
+  def stop(self, grace):
+    """Stops this object's service of operations.
 
-    Operations in progress will be allowed to complete, and this method blocks
-    until all of them have.
-    """
-    raise NotImplementedError()
+    This object will refuse service of new operations as soon as this method is
+    called but operations under way at the time of the call may be given a
+    grace period during which they are allowed to finish.
 
-  @abc.abstractmethod
-  def stop_immediately(self):
-    """Immediately stops this object's service of operations.
+    Args:
+      grace: A duration of time in seconds to allow ongoing operations to
+        terminate before being forcefully terminated by the stopping of this
+        End. May be zero to terminate all ongoing operations and immediately
+        stop.
 
-    Operations in progress will not be allowed to complete.
+    Returns:
+      A threading.Event that will be set to indicate all operations having
+        terminated and this End having completely stopped. The returned event
+        may not be set until after the full grace period (if some ongoing
+        operation continues for the full length of the period) or it may be set
+        much sooner (if for example this End had no operations in progress at
+        the time its stop method was called).
     """
     raise NotImplementedError()
 

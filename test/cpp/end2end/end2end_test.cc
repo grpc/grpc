@@ -34,30 +34,25 @@
 #include <mutex>
 #include <thread>
 
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
+#include <grpc++/channel.h>
+#include <grpc++/client_context.h>
+#include <grpc++/create_channel.h>
+#include <grpc++/credentials.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
+#include <grpc++/server_context.h>
+#include <grpc++/server_credentials.h>
+#include <gtest/gtest.h>
+
 #include "src/core/security/credentials.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/echo.grpc.pb.h"
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
-#include <grpc++/dynamic_thread_pool.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include <grpc++/time.h>
-#include <gtest/gtest.h>
-
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
@@ -106,7 +101,7 @@ bool CheckIsLocalhost(const grpc::string& addr) {
 
 class Proxy : public ::grpc::cpp::test::util::TestService::Service {
  public:
-  Proxy(std::shared_ptr<ChannelInterface> channel)
+  Proxy(std::shared_ptr<Channel> channel)
       : stub_(grpc::cpp::test::util::TestService::NewStub(channel)) {}
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
@@ -262,7 +257,7 @@ class TestServiceImplDupPkg
 class End2endTest : public ::testing::TestWithParam<bool> {
  protected:
   End2endTest()
-      : kMaxMessageSize_(8192), special_service_("special"), thread_pool_(2) {}
+      : kMaxMessageSize_(8192), special_service_("special") {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
@@ -270,7 +265,7 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     // Setup server
     ServerBuilder builder;
     SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-      test_server1_cert};
+                                                        test_server1_cert};
     SslServerCredentialsOptions ssl_opts;
     ssl_opts.pem_root_certs = "";
     ssl_opts.pem_key_cert_pairs.push_back(pkcp);
@@ -281,7 +276,6 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     builder.SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
-    builder.SetThreadPool(&thread_pool_);
     server_ = builder.BuildAndStart();
   }
 
@@ -295,8 +289,8 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.fr");
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
-    channel_ = CreateChannel(server_address_.str(), SslCredentials(ssl_opts),
-                             args);
+    channel_ =
+        CreateChannel(server_address_.str(), SslCredentials(ssl_opts), args);
   }
 
   void ResetStub(bool use_proxy) {
@@ -309,7 +303,6 @@ class End2endTest : public ::testing::TestWithParam<bool> {
       ServerBuilder builder;
       builder.AddListeningPort(proxyaddr.str(), InsecureServerCredentials());
       builder.RegisterService(proxy_service_.get());
-      builder.SetThreadPool(&thread_pool_);
       proxy_server_ = builder.BuildAndStart();
 
       channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials(),
@@ -319,7 +312,7 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::unique_ptr<Server> proxy_server_;
@@ -329,7 +322,6 @@ class End2endTest : public ::testing::TestWithParam<bool> {
   TestServiceImpl service_;
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
-  DynamicThreadPool thread_pool_;
 };
 
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
@@ -571,7 +563,7 @@ TEST_F(End2endTest, DiffPackageServices) {
 TEST_F(End2endTest, BadCredentials) {
   std::shared_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
   EXPECT_EQ(static_cast<Credentials*>(nullptr), bad_creds.get());
-  std::shared_ptr<ChannelInterface> channel =
+  std::shared_ptr<Channel> channel =
       CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
       grpc::cpp::test::util::TestService::NewStub(channel));
@@ -583,15 +575,15 @@ TEST_F(End2endTest, BadCredentials) {
   Status s = stub->Echo(&context, request, &response);
   EXPECT_EQ("", response.message());
   EXPECT_FALSE(s.ok());
-  EXPECT_EQ(StatusCode::UNKNOWN, s.error_code());
-  EXPECT_EQ("Rpc sent on a lame channel.", s.error_message());
+  EXPECT_EQ(StatusCode::INVALID_ARGUMENT, s.error_code());
+  EXPECT_EQ("Invalid credentials.", s.error_message());
 
   ClientContext context2;
   auto stream = stub->BidiStream(&context2);
   s = stream->Finish();
   EXPECT_FALSE(s.ok());
-  EXPECT_EQ(StatusCode::UNKNOWN, s.error_code());
-  EXPECT_EQ("Rpc sent on a lame channel.", s.error_message());
+  EXPECT_EQ(StatusCode::INVALID_ARGUMENT, s.error_code());
+  EXPECT_EQ("Invalid credentials.", s.error_message());
 }
 
 void CancelRpc(ClientContext* context, int delay_us, TestServiceImpl* service) {
@@ -874,7 +866,7 @@ TEST_P(End2endTest, HugeResponse) {
 
 namespace {
 void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
-                      gpr_event *ev) {
+                      gpr_event* ev) {
   EchoResponse resp;
   gpr_event_set(ev, (void*)1);
   while (stream->Read(&resp)) {
@@ -929,8 +921,8 @@ TEST_F(End2endTest, ChannelState) {
   EXPECT_FALSE(ok);
 
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(true));
-  EXPECT_TRUE(channel_->WaitForStateChange(
-      GRPC_CHANNEL_IDLE, gpr_inf_future(GPR_CLOCK_REALTIME)));
+  EXPECT_TRUE(channel_->WaitForStateChange(GRPC_CHANNEL_IDLE,
+                                           gpr_inf_future(GPR_CLOCK_REALTIME)));
   EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel_->GetState(false));
 }
 

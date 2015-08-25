@@ -131,7 +131,7 @@ class _Kernel(object):
     ticket = links.Ticket(
         call, 0, group, method, links.Ticket.Subscription.FULL,
         service_acceptance.deadline - time.time(), None, event.metadata, None,
-        None, None, None, None)
+        None, None, None, None, 'TODO: Service Context Object!')
     self._relay.add_value(ticket)
 
   def _on_read_event(self, event):
@@ -157,7 +157,7 @@ class _Kernel(object):
         # rpc_state.read = _Read.AWAITING_ALLOWANCE
     ticket = links.Ticket(
         call, rpc_state.sequence_number, None, None, None, None, None, None,
-        payload, None, None, None, termination)
+        payload, None, None, None, termination, None)
     rpc_state.sequence_number += 1
     self._relay.add_value(ticket)
 
@@ -176,7 +176,7 @@ class _Kernel(object):
     else:
       ticket = links.Ticket(
           call, rpc_state.sequence_number, None, None, None, None, 1, None,
-          None, None, None, None, None)
+          None, None, None, None, None, None)
       rpc_state.sequence_number += 1
       self._relay.add_value(ticket)
       rpc_state.low_write = _LowWrite.OPEN
@@ -198,7 +198,7 @@ class _Kernel(object):
       termination = links.Ticket.Termination.TRANSMISSION_FAILURE
     ticket = links.Ticket(
         call, rpc_state.sequence_number, None, None, None, None, None, None,
-        None, None, None, None, termination)
+        None, None, None, None, termination, None)
     rpc_state.sequence_number += 1
     self._relay.add_value(ticket)
 
@@ -239,7 +239,7 @@ class _Kernel(object):
       elif not rpc_state.premetadataed:
         if (ticket.terminal_metadata is not None or
             ticket.payload is not None or
-            ticket.termination is links.Ticket.Termination.COMPLETION or
+            ticket.termination is not None or
             ticket.code is not None or
             ticket.message is not None):
           call.premetadata()
@@ -257,11 +257,11 @@ class _Kernel(object):
             termination = None
           else:
             termination = links.Ticket.Termination.COMPLETION
-          ticket = links.Ticket(
+          early_read_ticket = links.Ticket(
               call, rpc_state.sequence_number, None, None, None, None, None,
-              None, payload, None, None, None, termination)
+              None, payload, None, None, None, termination, None)
           rpc_state.sequence_number += 1
-          self._relay.add_value(ticket)
+          self._relay.add_value(early_read_ticket)
 
       if ticket.payload is not None:
         call.write(rpc_state.response_serializer(ticket.payload), call)

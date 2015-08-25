@@ -39,9 +39,9 @@
 
 #include <grpc/compression.h>
 #include <grpc/support/time.h>
-#include <grpc++/auth_context.h>
-#include <grpc++/config.h>
-#include <grpc++/time.h>
+#include <grpc++/support/auth_context.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/time.h>
 
 struct gpr_timespec;
 struct grpc_metadata;
@@ -81,7 +81,7 @@ class CompletionQueue;
 class Server;
 
 namespace testing {
-class InteropContextInspector;
+class InteropServerContextInspector;
 }  // namespace testing
 
 // Interface of server side rpc context.
@@ -136,7 +136,7 @@ class ServerContext {
   }
 
  private:
-  friend class ::grpc::testing::InteropContextInspector;
+  friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::Server;
   template <class W, class R>
   friend class ::grpc::ServerAsyncReader;
