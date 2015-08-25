@@ -201,7 +201,6 @@ static grpc_endpoint_op_status win_read(grpc_endpoint *ep,
   /* Did we get data immediately ? Yay. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
     info->bytes_transfered = bytes_read;
-    gpr_log(GPR_DEBUG, "immread: %d bytes", bytes_read);
     return on_read(tcp, 1) ? GRPC_ENDPOINT_DONE : GRPC_ENDPOINT_ERROR;
   }
 
@@ -214,7 +213,6 @@ static grpc_endpoint_op_status win_read(grpc_endpoint *ep,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       info->wsa_error = wsa_error;
-      gpr_log(GPR_DEBUG, "immread: err=%d", wsa_error);
       return on_read(tcp, 1) ? GRPC_ENDPOINT_DONE : GRPC_ENDPOINT_ERROR;
     }
   }
