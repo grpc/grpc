@@ -31,6 +31,19 @@
  *
  */
 
+/// A ClientContext allows the person implementing a service client to:
+///
+/// - Add custom metadata key-value pairs that will propagated to the server
+/// side.
+/// - Control call settings such as compression and authentication.
+/// - Initial and trailing metadata coming from the server.
+/// - Get performance metrics (ie, census).
+///
+/// Context settings are only relevant to the previous/next call (depending on
+/// the method semantics), that is to say, they aren't sticky. Some of these
+/// settings, such as the compression options, can be made persistant at channel
+/// construction time (see \a grpc::CreateChannel).
+
 #ifndef GRPCXX_CLIENT_CONTEXT_H
 #define GRPCXX_CLIENT_CONTEXT_H
 
@@ -71,6 +84,11 @@ template <class R>
 class ClientAsyncResponseReader;
 class ServerContext;
 
+/// Options for \a ClientContext::FromServerContext specifying which traits from
+/// the \a ServerContext to propagate (copy) from it into a new \a
+/// ClientContext.
+///
+/// \see ClientContext::FromServerContext
 class PropagationOptions {
  public:
   PropagationOptions() : propagate_(GRPC_PROPAGATE_DEFAULTS) {}
@@ -130,24 +148,57 @@ class ClientContext {
   ClientContext();
   ~ClientContext();
 
-  /// Create a new ClientContext that propagates some or all of its attributes
+  /// Create a new \a ClientContext according to \a options (\see
+  /// PropagationOptions).
+  ///
+  /// \param server_context The source server context to use as the basis for
+  /// constructing the client context.
+  /// \param options The options controlling what to copy from the \a
+  /// server_context.
+  ///
+  /// \return A newly constructed \a ClientContext instance based on \a
+  /// server_context, with traits propagated (copied) according to \a options.
   static std::unique_ptr<ClientContext> FromServerContext(
       const ServerContext& server_context,
       PropagationOptions options = PropagationOptions());
 
+  /// Add the (\a meta_key, \a meta_value) pair to the metadata associated with
+  /// a client call. These are made available at the server side by the \a
+  /// grpc::ServerContext::client_metadata() method.
+  ///
+  /// \param meta_key The metadata key. If \a meta_value is binary data, it must
+  /// end in "-bin".
+  /// \param meta_value The metadata value. If its value is binary, it must be
+  /// base64-encoding (see https://tools.ietf.org/html/rfc4648#section-4) and \a
+  /// meta_key must end in "-bin".
   void AddMetadata(const grpc::string& meta_key,
                    const grpc::string& meta_value);
 
+  /// Return a collection of initial metadata key-value pairs. Note that keys
+  /// may happen more than once (ie, a \a std::multimap is returned).
+  ///
+  /// This should only be called upon a successful reply from the server.
+  ///
+  /// \return A multimap of initial metadata key-value pairs from the server.
   const std::multimap<grpc::string, grpc::string>& GetServerInitialMetadata() {
+    // TODO(dgq): is this really an assert? Why not return an empty multimap?
     GPR_ASSERT(initial_metadata_received_);
     return recv_initial_metadata_;
   }
 
+  /// Return a collection of trailing metadata key-value pairs. Note that keys
+  /// may happen more than once (ie, a \a std::multimap is returned).
+  ///
+  /// \return A multimap of metadata trailing key-value pairs from the server.
   const std::multimap<grpc::string, grpc::string>& GetServerTrailingMetadata() {
     // TODO(yangg) check finished
     return trailing_metadata_;
   }
 
+  /// Set the deadline for the client call.
+  ///
+  /// \param deadline the deadline for the client call. Units are determined by
+  /// the type used.
   template <typename T>
   void set_deadline(const T& deadline) {
     TimePoint<T> deadline_tp(deadline);
@@ -160,35 +211,49 @@ class ClientContext {
   }
 #endif  // !GRPC_CXX0X_NO_CHRONO
 
+  /// XXX: what's raw about this? is it absolute time?
   gpr_timespec raw_deadline() { return deadline_; }
 
+  /// XXX what's an authority?
   void set_authority(const grpc::string& authority) { authority_ = authority; }
 
-  // Set credentials for the rpc.
+  /// XXX: what's an auth context? what is it used for?
+  std::shared_ptr<const AuthContext> auth_context() const;
+
+  /// Set credentials for the rpc. XXX: how do credentials work?
   void set_credentials(const std::shared_ptr<Credentials>& creds) {
     creds_ = creds;
   }
 
+  /// Return the compression algorithm to be used by the client call.
   grpc_compression_algorithm compression_algorithm() const {
     return compression_algorithm_;
   }
 
+  /// Set \a algorithm to be the compression algorithm used for the client call.
+  ///
+  /// \param algorith The compression algorithm used for the client call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
-  std::shared_ptr<const AuthContext> auth_context() const;
-
-  // Return the peer uri in a string.
-  // WARNING: this value is never authenticated or subject to any security
-  // related code. It must not be used for any authentication related
-  // functionality. Instead, use auth_context.
+  /// Return the peer uri in a string.
+  ///
+  /// \warning This value is never authenticated or subject to any security
+  /// related code. It must not be used for any authentication related
+  /// functionality. Instead, use auth_context.
+  ///
+  /// \return The call's peer URI.
   grpc::string peer() const;
 
-  // Get and set census context
+  /// Get and set census context
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
   struct census_context* census_context() const {
     return census_context_;
   }
 
+  /// Send a best-effort out-of-band cancel. The call could be in any stage.
+  /// e.g. if it is already finished, it may still return success.
+  ///
+  /// There is no guarantee the call will be cancelled.
   void TryCancel();
 
  private:
