@@ -31,11 +31,13 @@
  *
  */
 
-#include "src/core/channel/census_filter.h"
+#include "src/core/census/grpc_filter.h"
 
 #include <stdio.h>
 #include <string.h>
 
+#include "include/grpc/census.h"
+#include "src/core/census/rpc_stat_id.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/noop_filter.h"
 #include "src/core/statistics/census_interface.h"
@@ -47,23 +49,18 @@
 
 typedef struct call_data {
   census_op_id op_id;
-  census_rpc_stats stats;
+  census_context* ctxt;
   gpr_timespec start_ts;
+  int error;
 
   /* recv callback */
   grpc_stream_op_buffer* recv_ops;
-  void (*on_done_recv)(void* user_data, int success);
-  void* recv_user_data;
+  grpc_iomgr_closure* on_done_recv;
 } call_data;
 
 typedef struct channel_data {
   grpc_mdstr* path_str; /* pointer to meta data str with key == ":path" */
 } channel_data;
-
-static void init_rpc_stats(census_rpc_stats* stats) {
-  memset(stats, 0, sizeof(census_rpc_stats));
-  stats->cnt = 1;
-}
 
 static void extract_and_annotate_method_tag(grpc_stream_op_buffer* sopb,
                                             call_data* calld,
@@ -77,8 +74,7 @@ static void extract_and_annotate_method_tag(grpc_stream_op_buffer* sopb,
       if (m->md->key == chand->path_str) {
         gpr_log(GPR_DEBUG, "%s",
                 (const char*)GPR_SLICE_START_PTR(m->md->value->slice));
-        census_add_method_tag(calld->op_id, (const char*)GPR_SLICE_START_PTR(
-                                                m->md->value->slice));
+        /* Add method tag here */
       }
     }
   }
@@ -95,8 +91,6 @@ static void client_mutate_op(grpc_call_element* elem,
 
 static void client_start_transport_op(grpc_call_element* elem,
                                       grpc_transport_stream_op* op) {
-  call_data* calld = elem->call_data;
-  GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
   client_mutate_op(elem, op);
   grpc_call_next_op(elem, op);
 }
@@ -108,7 +102,7 @@ static void server_on_done_recv(void* ptr, int success) {
   if (success) {
     extract_and_annotate_method_tag(calld->recv_ops, calld, chand);
   }
-  calld->on_done_recv(calld->recv_user_data, success);
+  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
 }
 
 static void server_mutate_op(grpc_call_element* elem,
@@ -118,9 +112,7 @@ static void server_mutate_op(grpc_call_element* elem,
     /* substitute our callback for the op callback */
     calld->recv_ops = op->recv_ops;
     calld->on_done_recv = op->on_done_recv;
-    calld->recv_user_data = op->recv_user_data;
-    op->on_done_recv = server_on_done_recv;
-    op->recv_user_data = elem;
+    op->on_done_recv = calld->on_done_recv;
   }
 }
 
@@ -132,35 +124,19 @@ static void server_start_transport_op(grpc_call_element* elem,
   grpc_call_next_op(elem, op);
 }
 
-static void channel_op(grpc_channel_element* elem,
-                       grpc_channel_element* from_elem, grpc_channel_op* op) {
-  switch (op->type) {
-    case GRPC_TRANSPORT_CLOSED:
-      /* TODO(hongyu): Annotate trace information for all calls of the channel
-       */
-      break;
-    default:
-      break;
-  }
-  grpc_channel_next_op(elem, op);
-}
-
 static void client_init_call_elem(grpc_call_element* elem,
                                   const void* server_transport_data,
                                   grpc_transport_stream_op* initial_op) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
-  init_rpc_stats(&d->stats);
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
-  d->op_id = census_tracing_start_op();
   if (initial_op) client_mutate_op(elem, initial_op);
 }
 
 static void client_destroy_call_elem(grpc_call_element* elem) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
-  census_record_rpc_client_stats(d->op_id, &d->stats);
-  census_tracing_end_op(d->op_id);
+  /* TODO(hongyu): record rpc client stats and census_rpc_end_op here */
 }
 
 static void server_init_call_elem(grpc_call_element* elem,
@@ -168,29 +144,24 @@ static void server_init_call_elem(grpc_call_element* elem,
                                   grpc_transport_stream_op* initial_op) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
-  init_rpc_stats(&d->stats);
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
-  d->op_id = census_tracing_start_op();
+  /* TODO(hongyu): call census_tracing_start_op here. */
+  grpc_iomgr_closure_init(d->on_done_recv, server_on_done_recv, elem);
   if (initial_op) server_mutate_op(elem, initial_op);
 }
 
 static void server_destroy_call_elem(grpc_call_element* elem) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
-  d->stats.elapsed_time_ms = gpr_timespec_to_micros(
-      gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), d->start_ts));
-  census_record_rpc_server_stats(d->op_id, &d->stats);
-  census_tracing_end_op(d->op_id);
+  /* TODO(hongyu): record rpc server stats and census_tracing_end_op here */
 }
 
-static void init_channel_elem(grpc_channel_element* elem,
+static void init_channel_elem(grpc_channel_element* elem, grpc_channel* master,
                               const grpc_channel_args* args, grpc_mdctx* mdctx,
                               int is_first, int is_last) {
   channel_data* chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
-  GPR_ASSERT(!is_first);
-  GPR_ASSERT(!is_last);
-  chand->path_str = grpc_mdstr_from_string(mdctx, ":path");
+  chand->path_str = grpc_mdstr_from_string(mdctx, ":path", 0);
 }
 
 static void destroy_channel_elem(grpc_channel_element* elem) {
@@ -203,22 +174,24 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_client_census_filter = {
     client_start_transport_op,
-    channel_op,
+    grpc_channel_next_op,
     sizeof(call_data),
     client_init_call_elem,
     client_destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
+    grpc_call_next_get_peer,
     "census-client"};
 
 const grpc_channel_filter grpc_server_census_filter = {
     server_start_transport_op,
-    channel_op,
+    grpc_channel_next_op,
     sizeof(call_data),
     server_init_call_elem,
     server_destroy_call_elem,
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
+    grpc_call_next_get_peer,
     "census-server"};
