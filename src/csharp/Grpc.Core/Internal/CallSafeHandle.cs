@@ -38,7 +38,7 @@ using Grpc.Core.Utils;
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_call from <grpc/grpc.h>
+    /// grpc_call from <c>grpc/grpc.h</c>
     /// </summary>
     internal class CallSafeHandle : SafeHandleZeroIsInvalid, INativeCall
     {
