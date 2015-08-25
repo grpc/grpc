@@ -91,6 +91,87 @@ Client asserts:
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
 
+### large_compressed_unary
+
+This test verifies compressed unary calls succeed in sending messages. It
+sends one unary request for every combination of compression algorithm and
+payload type.
+
+In all scenarios, whether compression was actually performed is determined by
+the compression bit in the response's message flags. The response's compression
+value indicates which algorithm was used if said compression bit is set.
+
+
+Server features:
+* [UnaryCall][]
+* [Compressable Payload][]
+* [Uncompressable Payload][]
+* [Random Payload][]
+
+Procedure:
+ 1. Client calls UnaryCall with:
+
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+    Client asserts:
+    * call was successful
+    * response payload type is COMPRESSABLE
+    * response compression is consistent with the requested one.
+    * if `response_compression == NONE`, the response MUST NOT have the
+      compressed message flag set.
+    * if `response_compression != NONE`, the response MUST have the compressed
+      message flag set.
+    * response payload body is 314159 bytes in size
+    * clients are free to assert that the response payload body contents are
+      zero and comparing the entire response message against a golden response
+
+
+ 2. Client calls UnaryCall with:
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type: UNCOMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+    Client asserts:
+    * call was successful
+    * response payload type is UNCOMPRESSABLE
+    * response compression is consistent with the requested one.
+    * the response MUST NOT have the compressed message flag set.
+    * response payload body is 314159 bytes in size
+    * clients are free to assert that the response payload body contents are
+      identical to the golden uncompressable data at `test/cpp/interop/rnd.dat`.
+
+
+ 3. Client calls UnaryCall with:
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type: RANDOM
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+    Client asserts:
+    * call was successful
+    * response payload type is either COMPRESSABLE or UNCOMPRESSABLE
+    * the behavior is consistent with the randomly chosen incoming payload type,
+      as described in their respective sections.
+
 ### client_streaming
 
 This test verifies that client-only streaming succeeds.
@@ -183,6 +264,112 @@ Client asserts:
 * response payload bodies are sized (in order): 31415, 9, 2653, 58979
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response messages against golden responses
+
+### server_compressed_streaming
+
+This test verifies that server-only compressed streaming succeeds.
+
+Server features:
+* [StreamingOutputCall][]
+* [Compressable Payload][]
+* [Uncompressable Payload][]
+* [Random Payload][]
+
+
+Procedure:
+ 1. Client calls StreamingOutputCall with:
+
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type:COMPRESSABLE
+      response_parameters:{
+        size: 31415
+      }
+      response_parameters:{
+        size: 9
+      }
+      response_parameters:{
+        size: 2653
+      }
+      response_parameters:{
+        size: 58979
+      }
+    }
+    ```
+
+    Client asserts:
+    * call was successful
+    * exactly four responses
+    * response payloads are COMPRESSABLE
+    * response compression is consistent with the requested one.
+    * if `response_compression == NONE`, the response MUST NOT have the
+      compressed message flag set.
+    * if `response_compression != NONE`, the response MUST have the compressed
+      message flag set.
+    * response payload bodies are sized (in order): 31415, 9, 2653, 58979
+    * clients are free to assert that the response payload body contents are
+      zero and comparing the entire response messages against golden responses
+
+
+ 2. Client calls StreamingOutputCall with:
+
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type:UNCOMPRESSABLE
+      response_parameters:{
+        size: 31415
+      }
+      response_parameters:{
+        size: 9
+      }
+      response_parameters:{
+        size: 2653
+      }
+      response_parameters:{
+        size: 58979
+      }
+    }
+    ```
+
+    Client asserts:
+    * call was successful
+    * exactly four responses
+    * response payloads are UNCOMPRESSABLE
+    * response compressions are consistent with the requested one.
+    * the responses MUST NOT have the compressed message flag set.
+    * response payload bodies are sized (in order): 31415, 9, 2653, 58979
+    * clients are free to assert that the body of the responses are identical to
+      the golden uncompressable data at `test/cpp/interop/rnd.dat`.
+
+
+ 3. Client calls StreamingOutputCall with:
+
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type:RANDOM
+      response_parameters:{
+        size: 31415
+      }
+      response_parameters:{
+        size: 9
+      }
+      response_parameters:{
+        size: 2653
+      }
+      response_parameters:{
+        size: 58979
+      }
+    }
+    ```
+
+    Client asserts:
+    * call was successful
+    * response payload type is either COMPRESSABLE or UNCOMPRESSABLE
+    * the behavior is consistent with the randomly chosen incoming payload type,
+      as described in their respective sections.
 
 ### ping_pong
 
@@ -824,6 +1011,21 @@ responses, it closes with OK.
 When the client requests COMPRESSABLE payload, the response includes a payload
 of the size requested containing all zeros and the payload type is
 COMPRESSABLE.
+
+### Uncompressable Payload
+[Uncompressable Payload]: #uncompressable-payload
+
+When the client requests UNCOMPRESSABLE payload, the response includes a payload
+of the size requested containing uncompressable data and the payload type is
+UNCOMPRESSABLE. A 512 kB dump from /dev/urandom is the current golden data,
+stored at `test/cpp/interop/rnd.dat`
+
+### Random Payload
+[Random Payload]: #random-payload
+
+When the client requests RANDOM payload, the response includes either a randomly
+chosen COMPRESSABLE or UNCOMPRESSABLE payload. The data and the payload type
+will be consistent with this choice.
 
 ### Echo Status
 [Echo Status]: #echo-status
