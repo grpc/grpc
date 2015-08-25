@@ -96,12 +96,12 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
     return
   message.old_tag = tag
   message.old_msg = msg
-  if platform.system() == 'Windows' or not sys.stdout.isatty():
-    if explanatory_text:
-      print explanatory_text
-    print '%s: %s' % (tag, msg)
-    return
   try:
+    if platform.system() == 'Windows' or not sys.stdout.isatty():
+      if explanatory_text:
+        print explanatory_text
+      print '%s: %s' % (tag, msg)
+      return
     sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
         _BEGINNING_OF_LINE,
         _CLEAR_LINE,
