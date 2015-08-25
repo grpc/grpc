@@ -50,7 +50,7 @@ class StringRefTest : public ::testing::Test {
 
 TEST_F(StringRefTest, Empty) {
   string_ref s;
-  EXPECT_EQ(0, s.length());
+  EXPECT_EQ(0U, s.length());
   EXPECT_EQ(nullptr, s.data());
 }
 
@@ -62,7 +62,7 @@ TEST_F(StringRefTest, FromCString) {
 
 TEST_F(StringRefTest, FromCStringWithLength) {
   string_ref s(kTestString, 2);
-  EXPECT_EQ(2, s.length());
+  EXPECT_EQ(2U, s.length());
   EXPECT_EQ(kTestString, s.data());
 }
 
@@ -112,14 +112,14 @@ TEST_F(StringRefTest, ReverseIterator) {
   for (auto rit = s.crbegin();  rit != s.crend(); ++rit) {
     EXPECT_EQ(kTestString[--i], *rit);
   }
-  EXPECT_EQ(0, i);
+  EXPECT_EQ(0U, i);
 }
 
 TEST_F(StringRefTest, Capacity) {
   string_ref empty;
-  EXPECT_EQ(0, empty.length());
-  EXPECT_EQ(0, empty.size());
-  EXPECT_EQ(0, empty.max_size());
+  EXPECT_EQ(0U, empty.length());
+  EXPECT_EQ(0U, empty.size());
+  EXPECT_EQ(0U, empty.max_size());
   EXPECT_TRUE(empty.empty());
 
   string_ref s(kTestString);
@@ -165,16 +165,16 @@ TEST_F(StringRefTest, Find) {
   string_ref s1(kTestString);
   string_ref s2(kTestUnrelatedString);
   string_ref s3(kTestStringWithEmbeddedNull, kTestStringWithEmbeddedNullLength);
-  EXPECT_EQ(0, s1.find(s1));
-  EXPECT_EQ(0, s2.find(s2));
-  EXPECT_EQ(0, s3.find(s3));
+  EXPECT_EQ(0U, s1.find(s1));
+  EXPECT_EQ(0U, s2.find(s2));
+  EXPECT_EQ(0U, s3.find(s3));
   EXPECT_EQ(string_ref::npos,s1.find(s2) );
   EXPECT_EQ(string_ref::npos,s2.find(s1));
   EXPECT_EQ(string_ref::npos,s1.find(s3));
-  EXPECT_EQ(0, s3.find(s1));
-  EXPECT_EQ(5, s3.find(s2));
+  EXPECT_EQ(0U, s3.find(s1));
+  EXPECT_EQ(5U, s3.find(s2));
   EXPECT_EQ(string_ref::npos, s1.find('z'));
-  EXPECT_EQ(1, s2.find('o'));
+  EXPECT_EQ(1U, s2.find('o'));
 }
 
 TEST_F(StringRefTest, SubString) {
