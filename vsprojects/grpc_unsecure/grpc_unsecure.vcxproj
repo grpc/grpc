@@ -291,6 +291,8 @@
     <ClInclude Include="..\..\src\core\json\json_writer.h" />
     <ClInclude Include="..\..\src\core\profiling\timers.h" />
     <ClInclude Include="..\..\src\core\profiling\timers_preciseclock.h" />
+    <ClInclude Include="..\..\src\core\statistics\census_interface.h" />
+    <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h" />
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
