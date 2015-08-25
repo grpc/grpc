@@ -63,7 +63,6 @@ static void gpr_precise_clock_init() {
   gpr_precise_clock end_cycle;
   while (time(NULL) == start)
     ;
-  gpr_precise_clock_now();
   gpr_get_cycle_counter(&start_cycle);
   while (time(NULL) == start + 1)
     ;

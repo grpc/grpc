@@ -41,6 +41,7 @@
 namespace grpc {
 namespace node {
 
+using v8::Array;
 using v8::Exception;
 using v8::External;
 using v8::Function;
@@ -52,6 +53,7 @@ using v8::Local;
 using v8::Object;
 using v8::ObjectTemplate;
 using v8::Persistent;
+using v8::String;
 using v8::Value;
 
 NanCallback *ServerCredentials::constructor;
@@ -122,25 +124,66 @@ NAN_METHOD(ServerCredentials::CreateSsl) {
   // TODO: have the node API support multiple key/cert pairs.
   NanScope();
   char *root_certs = NULL;
-  grpc_ssl_pem_key_cert_pair key_cert_pair;
   if (::node::Buffer::HasInstance(args[0])) {
     root_certs = ::node::Buffer::Data(args[0]);
   } else if (!(args[0]->IsNull() || args[0]->IsUndefined())) {
     return NanThrowTypeError(
         "createSSl's first argument must be a Buffer if provided");
   }
-  if (!::node::Buffer::HasInstance(args[1])) {
-    return NanThrowTypeError("createSsl's second argument must be a Buffer");
+  if (!args[1]->IsArray()) {
+    return NanThrowTypeError(
+        "createSsl's second argument must be a list of objects");
   }
-  key_cert_pair.private_key = ::node::Buffer::Data(args[1]);
-  if (!::node::Buffer::HasInstance(args[2])) {
-    return NanThrowTypeError("createSsl's third argument must be a Buffer");
+  int force_client_auth = 0;
+  if (args[2]->IsBoolean()) {
+    force_client_auth = (int)args[2]->BooleanValue();
+  } else if (!(args[2]->IsUndefined() || args[2]->IsNull())) {
+    return NanThrowTypeError(
+        "createSsl's third argument must be a boolean if provided");
   }
-  key_cert_pair.cert_chain = ::node::Buffer::Data(args[2]);
-  // TODO Add a force_client_auth parameter and pass it as the last parameter
-  // here.
+  Handle<Array> pair_list = Local<Array>::Cast(args[1]);
+  uint32_t key_cert_pair_count = pair_list->Length();
+  grpc_ssl_pem_key_cert_pair *key_cert_pairs = new grpc_ssl_pem_key_cert_pair[
+      key_cert_pair_count];
+
+  Handle<String> key_key = NanNew("private_key");
+  Handle<String> cert_key = NanNew("cert_chain");
+
+  for(uint32_t i = 0; i < key_cert_pair_count; i++) {
+    if (!pair_list->Get(i)->IsObject()) {
+      delete key_cert_pairs;
+      return NanThrowTypeError("Key/cert pairs must be objects");
+    }
+    Handle<Object> pair_obj = pair_list->Get(i)->ToObject();
+    if (!pair_obj->HasOwnProperty(key_key)) {
+      delete key_cert_pairs;
+      return NanThrowTypeError(
+          "Key/cert pairs must have a private_key and a cert_chain");
+    }
+    if (!pair_obj->HasOwnProperty(cert_key)) {
+      delete key_cert_pairs;
+      return NanThrowTypeError(
+          "Key/cert pairs must have a private_key and a cert_chain");
+    }
+    if (!::node::Buffer::HasInstance(pair_obj->Get(key_key))) {
+      delete key_cert_pairs;
+      return NanThrowTypeError("private_key must be a Buffer");
+    }
+    if (!::node::Buffer::HasInstance(pair_obj->Get(cert_key))) {
+      delete key_cert_pairs;
+      return NanThrowTypeError("cert_chain must be a Buffer");
+    }
+    key_cert_pairs[i].private_key = ::node::Buffer::Data(
+        pair_obj->Get(key_key));
+    key_cert_pairs[i].cert_chain = ::node::Buffer::Data(
+        pair_obj->Get(cert_key));
+  }
   grpc_server_credentials *creds =
-      grpc_ssl_server_credentials_create(root_certs, &key_cert_pair, 1, 0);
+      grpc_ssl_server_credentials_create(root_certs,
+                                         key_cert_pairs,
+                                         key_cert_pair_count,
+                                         force_client_auth);
+  delete key_cert_pairs;
   if (creds == NULL) {
     NanReturnNull();
   }
