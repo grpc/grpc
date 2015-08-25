@@ -57,22 +57,24 @@ int main(int argc, char **argv) {
     strcpy(root, ".");
   }
   /* start the server */
-  gpr_asprintf(&args[0], "%s/fling_server%s", root, gpr_subprocess_binary_extension());
+  gpr_asprintf(&args[0], "%s/fling_server%s", root,
+               gpr_subprocess_binary_extension());
   args[1] = "--bind";
   gpr_join_host_port(&args[2], "::", port);
   args[3] = "--no-secure";
-  svr = gpr_subprocess_create(4, (const char**)args);
+  svr = gpr_subprocess_create(4, (const char **)args);
   gpr_free(args[0]);
   gpr_free(args[2]);
 
   /* start the client */
-  gpr_asprintf(&args[0], "%s/fling_client%s", root, gpr_subprocess_binary_extension());
+  gpr_asprintf(&args[0], "%s/fling_client%s", root,
+               gpr_subprocess_binary_extension());
   args[1] = "--target";
   gpr_join_host_port(&args[2], "127.0.0.1", port);
   args[3] = "--scenario=ping-pong-request";
   args[4] = "--no-secure";
   args[5] = 0;
-  cli = gpr_subprocess_create(6, (const char**)args);
+  cli = gpr_subprocess_create(6, (const char **)args);
   gpr_free(args[0]);
   gpr_free(args[2]);
 

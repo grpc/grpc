@@ -96,12 +96,12 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
     return
   message.old_tag = tag
   message.old_msg = msg
-  if platform.system() == 'Windows' or not sys.stdout.isatty():
-    if explanatory_text:
-      print explanatory_text
-    print '%s: %s' % (tag, msg)
-    return
   try:
+    if platform.system() == 'Windows' or not sys.stdout.isatty():
+      if explanatory_text:
+        print explanatory_text
+      print '%s: %s' % (tag, msg)
+      return
     sys.stdout.write('%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' % (
         _BEGINNING_OF_LINE,
         _CLEAR_LINE,
@@ -131,7 +131,7 @@ class JobSpec(object):
   """Specifies what to run for a job."""
 
   def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
-               cwd=None, shell=False, timeout_seconds=900):
+               cwd=None, shell=False, timeout_seconds=5*60):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
@@ -194,6 +194,10 @@ class Job(object):
       self._tempfile.seek(0)
       stdout = self._tempfile.read()
       filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))
+      # TODO: looks like jenkins master is slow because parsing the junit results XMLs is not
+      # implemented efficiently. This is an experiment to workaround the issue by making sure
+      # results.xml file is small enough.
+      filtered_stdout = filtered_stdout[-128:]
       if self._xml_test is not None:
         self._xml_test.set('time', str(elapsed))
         ET.SubElement(self._xml_test, 'system-out').text = filtered_stdout

@@ -37,6 +37,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <grpc/support/useful.h>
 
 #include <string.h>
 
@@ -145,4 +146,66 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
   tmp.key = GRPC_COMPRESSION_ALGORITHM_ARG;
   tmp.value.integer = algorithm;
   return grpc_channel_args_copy_and_add(a, &tmp, 1);
+}
+
+/** Returns 1 if the argument for compression algorithm's enabled states bitset
+ * was found in \a a, returning the arg's value in \a states. Otherwise, returns
+ * 0. */
+static int find_compression_algorithm_states_bitset(
+    const grpc_channel_args *a, int **states_arg) {
+  if (a != NULL) {
+    size_t i;
+    for (i = 0; i < a->num_args; ++i) {
+      if (a->args[i].type == GRPC_ARG_INTEGER &&
+          !strcmp(GRPC_COMPRESSION_ALGORITHM_STATE_ARG, a->args[i].key)) {
+        *states_arg = &a->args[i].value.integer;
+        return 1; /* GPR_TRUE */
+      }
+    }
+  }
+  return 0; /* GPR_FALSE */
+}
+
+grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
+    grpc_channel_args **a,
+    grpc_compression_algorithm algorithm,
+    int state) {
+  int *states_arg;
+  grpc_channel_args *result = *a;
+  const int states_arg_found =
+      find_compression_algorithm_states_bitset(*a, &states_arg);
+
+  if (states_arg_found) {
+    if (state != 0) {
+      GPR_BITSET(states_arg, algorithm);
+    } else {
+      GPR_BITCLEAR(states_arg, algorithm);
+    }
+  } else {
+    /* create a new arg */
+    grpc_arg tmp;
+    tmp.type = GRPC_ARG_INTEGER;
+    tmp.key = GRPC_COMPRESSION_ALGORITHM_STATE_ARG;
+    /* all enabled by default */
+    tmp.value.integer = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
+    if (state != 0) {
+      GPR_BITSET(&tmp.value.integer, algorithm);
+    } else {
+      GPR_BITCLEAR(&tmp.value.integer, algorithm);
+    }
+    result = grpc_channel_args_copy_and_add(*a, &tmp, 1);
+    grpc_channel_args_destroy(*a);
+    *a = result;
+  }
+  return result;
+}
+
+int grpc_channel_args_compression_algorithm_get_states(
+    const grpc_channel_args *a) {
+  int *states_arg;
+  if (find_compression_algorithm_states_bitset(a, &states_arg)) {
+    return *states_arg;
+  } else {
+    return (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1; /* All algs. enabled */
+  }
 }

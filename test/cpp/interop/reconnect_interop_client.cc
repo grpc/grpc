@@ -37,9 +37,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
-#include <grpc++/status.h>
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
 #include "test/proto/test.grpc.pb.h"
@@ -50,7 +49,7 @@ DEFINE_int32(server_control_port, 0, "Server port for control rpcs.");
 DEFINE_int32(server_retry_port, 0, "Server port for testing reconnection.");
 DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
 
-using grpc::ChannelInterface;
+using grpc::Channel;
 using grpc::ClientContext;
 using grpc::CreateTestChannel;
 using grpc::Status;
@@ -78,7 +77,7 @@ int main(int argc, char** argv) {
   gpr_log(GPR_INFO, "Starting connections with retries.");
   server_address.str("");
   server_address << FLAGS_server_host << ':' << FLAGS_server_retry_port;
-  std::shared_ptr<ChannelInterface> retry_channel =
+  std::shared_ptr<Channel> retry_channel =
       CreateTestChannel(server_address.str(), true);
   // About 13 retries.
   const int kDeadlineSeconds = 540;

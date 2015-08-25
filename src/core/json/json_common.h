@@ -46,4 +46,4 @@ typedef enum {
   GRPC_JSON_TOP_LEVEL
 } grpc_json_type;
 
-#endif  /* GRPC_INTERNAL_CORE_JSON_JSON_COMMON_H */
+#endif /* GRPC_INTERNAL_CORE_JSON_JSON_COMMON_H */

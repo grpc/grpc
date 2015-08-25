@@ -32,7 +32,7 @@
  */
 
 #include <grpc/grpc_security.h>
-#include <grpc++/auth_context.h>
+#include <grpc++/support/auth_context.h>
 #include <gtest/gtest.h>
 #include "src/cpp/common/secure_auth_context.h"
 
@@ -101,7 +101,7 @@ TEST_F(SecureAuthContextTest, Iterators) {
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -108,4 +108,4 @@ char* tsi_strdup(const char* src); /* Sadly, no strdup in C89. */
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H */
+#endif /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_H */

@@ -54,7 +54,7 @@ typedef struct fullstack_secure_fixture_data {
 } fullstack_secure_fixture_data;
 
 static grpc_server *create_proxy_server(const char *port) {
-  grpc_server *s = grpc_server_create(NULL);
+  grpc_server *s = grpc_server_create(NULL, NULL);
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
@@ -91,7 +91,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   ffd->proxy = grpc_end2end_proxy_create(&proxy_def);
 
   f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create();
+  f.cq = grpc_completion_queue_create(NULL);
 
   return f;
 }
@@ -101,7 +101,7 @@ static void process_auth_failure(void *state, grpc_auth_context *ctx,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void *user_data) {
   GPR_ASSERT(state == NULL);
-  cb(user_data, NULL, 0, 0);
+  cb(user_data, NULL, 0, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, NULL);
 }
 
 static void chttp2_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
@@ -121,8 +121,8 @@ static void chttp2_init_server_secure_fullstack(
   if (f->server) {
     grpc_server_destroy(f->server);
   }
-  f->server = grpc_server_create(server_args);
-  grpc_server_register_completion_queue(f->server, f->cq);
+  f->server = grpc_server_create(server_args, NULL);
+  grpc_server_register_completion_queue(f->server, f->cq, NULL);
   GPR_ASSERT(grpc_server_add_secure_http2_port(
       f->server, grpc_end2end_proxy_get_server_port(ffd->proxy), server_creds));
   grpc_server_credentials_release(server_creds);

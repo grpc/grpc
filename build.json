@@ -30,25 +30,16 @@
     {
       "name": "grpc++_base",
       "public_headers": [
-        "include/grpc++/async_generic_service.h",
-        "include/grpc++/async_unary_call.h",
-        "include/grpc++/auth_context.h",
-        "include/grpc++/byte_buffer.h",
-        "include/grpc++/channel_arguments.h",
-        "include/grpc++/channel_interface.h",
+        "include/grpc++/channel.h",
         "include/grpc++/client_context.h",
         "include/grpc++/completion_queue.h",
-        "include/grpc++/config.h",
-        "include/grpc++/config_protobuf.h",
         "include/grpc++/create_channel.h",
         "include/grpc++/credentials.h",
-        "include/grpc++/dynamic_thread_pool.h",
-        "include/grpc++/fixed_size_thread_pool.h",
-        "include/grpc++/generic_stub.h",
+        "include/grpc++/generic/async_generic_service.h",
+        "include/grpc++/generic/generic_stub.h",
         "include/grpc++/impl/call.h",
         "include/grpc++/impl/client_unary_call.h",
         "include/grpc++/impl/grpc_library.h",
-        "include/grpc++/impl/internal_stub.h",
         "include/grpc++/impl/proto_utils.h",
         "include/grpc++/impl/rpc_method.h",
         "include/grpc++/impl/rpc_service_method.h",
@@ -64,27 +55,37 @@
         "include/grpc++/server_builder.h",
         "include/grpc++/server_context.h",
         "include/grpc++/server_credentials.h",
-        "include/grpc++/slice.h",
-        "include/grpc++/status.h",
-        "include/grpc++/status_code_enum.h",
-        "include/grpc++/stream.h",
-        "include/grpc++/stub_options.h",
-        "include/grpc++/thread_pool_interface.h",
-        "include/grpc++/time.h"
+        "include/grpc++/support/async_stream.h",
+        "include/grpc++/support/async_unary_call.h",
+        "include/grpc++/support/auth_context.h",
+        "include/grpc++/support/byte_buffer.h",
+        "include/grpc++/support/channel_arguments.h",
+        "include/grpc++/support/config.h",
+        "include/grpc++/support/config_protobuf.h",
+        "include/grpc++/support/slice.h",
+        "include/grpc++/support/status.h",
+        "include/grpc++/support/status_code_enum.h",
+        "include/grpc++/support/string_ref.h",
+        "include/grpc++/support/stub_options.h",
+        "include/grpc++/support/sync_stream.h",
+        "include/grpc++/support/time.h"
       ],
       "headers": [
-        "src/cpp/client/channel.h",
-        "src/cpp/common/create_auth_context.h"
+        "src/cpp/client/create_channel_internal.h",
+        "src/cpp/common/create_auth_context.h",
+        "src/cpp/server/dynamic_thread_pool.h",
+        "src/cpp/server/fixed_size_thread_pool.h",
+        "src/cpp/server/thread_pool_interface.h"
       ],
       "src": [
         "src/cpp/client/channel.cc",
         "src/cpp/client/channel_arguments.cc",
         "src/cpp/client/client_context.cc",
         "src/cpp/client/create_channel.cc",
+        "src/cpp/client/create_channel_internal.cc",
         "src/cpp/client/credentials.cc",
         "src/cpp/client/generic_stub.cc",
         "src/cpp/client/insecure_credentials.cc",
-        "src/cpp/client/internal_stub.cc",
         "src/cpp/common/call.cc",
         "src/cpp/common/completion_queue.cc",
         "src/cpp/common/rpc_method.cc",
@@ -101,6 +102,7 @@
         "src/cpp/util/byte_buffer.cc",
         "src/cpp/util/slice.cc",
         "src/cpp/util/status.cc",
+        "src/cpp/util/string_ref.cc",
         "src/cpp/util/time.cc"
       ]
     },
@@ -114,7 +116,7 @@
         "include/grpc/status.h"
       ],
       "headers": [
-        "src/core/channel/census_filter.h",
+        "src/core/census/grpc_filter.h",
         "src/core/channel/channel_args.h",
         "src/core/channel/channel_stack.h",
         "src/core/channel/client_channel.h",
@@ -171,6 +173,7 @@
         "src/core/iomgr/tcp_server.h",
         "src/core/iomgr/tcp_windows.h",
         "src/core/iomgr/time_averaged_stats.h",
+        "src/core/iomgr/udp_server.h",
         "src/core/iomgr/wakeup_fd_pipe.h",
         "src/core/iomgr/wakeup_fd_posix.h",
         "src/core/json/json.h",
@@ -179,6 +182,8 @@
         "src/core/json/json_writer.h",
         "src/core/profiling/timers.h",
         "src/core/profiling/timers_preciseclock.h",
+        "src/core/statistics/census_interface.h",
+        "src/core/statistics/census_rpc_stats.h",
         "src/core/surface/byte_buffer_queue.h",
         "src/core/surface/call.h",
         "src/core/surface/channel.h",
@@ -216,6 +221,7 @@
       ],
       "src": [
         "src/core/census/grpc_context.c",
+        "src/core/census/grpc_filter.c",
         "src/core/channel/channel_args.c",
         "src/core/channel/channel_stack.c",
         "src/core/channel/client_channel.c",
@@ -274,6 +280,7 @@
         "src/core/iomgr/tcp_server_windows.c",
         "src/core/iomgr/tcp_windows.c",
         "src/core/iomgr/time_averaged_stats.c",
+        "src/core/iomgr/udp_server.c",
         "src/core/iomgr/wakeup_fd_eventfd.c",
         "src/core/iomgr/wakeup_fd_nospecial.c",
         "src/core/iomgr/wakeup_fd_pipe.c",
@@ -367,7 +374,6 @@
         "include/grpc/support/atm_gcc_atomic.h",
         "include/grpc/support/atm_gcc_sync.h",
         "include/grpc/support/atm_win32.h",
-        "include/grpc/support/cancellable_platform.h",
         "include/grpc/support/cmdline.h",
         "include/grpc/support/cpu.h",
         "include/grpc/support/histogram.h",
@@ -402,7 +408,6 @@
       ],
       "src": [
         "src/core/support/alloc.c",
-        "src/core/support/cancellable.c",
         "src/core/support/cmdline.c",
         "src/core/support/cpu_iphone.c",
         "src/core/support/cpu_linux.c",
@@ -573,6 +578,28 @@
       "vs_project_guid": "{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}"
     },
     {
+      "name": "grpc_zookeeper",
+      "build": "all",
+      "language": "c",
+      "public_headers": [
+        "include/grpc/grpc_zookeeper.h"
+      ],
+      "headers": [
+        "src/core/client_config/resolvers/zookeeper_resolver.h"
+      ],
+      "src": [
+        "src/core/client_config/resolvers/zookeeper_resolver.c"
+      ],
+      "deps": [
+        "gpr",
+        "grpc"
+      ],
+      "external_deps": [
+        "zookeeper"
+      ],
+      "secure": "no"
+    },
+    {
       "name": "reconnect_server",
       "build": "private",
       "language": "c",
@@ -675,8 +702,8 @@
       "build": "protoc",
       "language": "c++",
       "headers": [
-        "include/grpc++/config.h",
-        "include/grpc++/config_protobuf.h",
+        "include/grpc++/support/config.h",
+        "include/grpc++/support/config_protobuf.h",
         "src/compiler/config.h",
         "src/compiler/cpp_generator.h",
         "src/compiler/cpp_generator_helpers.h",
@@ -710,6 +737,7 @@
         "test/cpp/interop/client_helper.h"
       ],
       "src": [
+        "test/proto/messages.proto",
         "test/cpp/interop/client_helper.cc"
       ],
       "deps": [
@@ -970,6 +998,20 @@
       ]
     },
     {
+      "name": "compression_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/compression/compression_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "dualstack_socket_test",
       "build": "test",
       "language": "c",
@@ -1104,18 +1146,6 @@
       "deps": [
         "gpr",
         "grpc"
-      ]
-    },
-    {
-      "name": "gpr_cancellable_test",
-      "build": "test",
-      "language": "c",
-      "src": [
-        "test/core/support/cancellable_test.c"
-      ],
-      "deps": [
-        "gpr_test_util",
-        "gpr"
       ]
     },
     {
@@ -1332,6 +1362,20 @@
       "language": "c",
       "src": [
         "test/core/surface/byte_buffer_reader_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
+      "name": "grpc_channel_args_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/channel/channel_args_test.c"
       ],
       "deps": [
         "grpc_test_util",
@@ -1876,6 +1920,23 @@
       ]
     },
     {
+      "name": "udp_server_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/iomgr/udp_server_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "platforms": [
+        "posix"
+      ]
+    },
+    {
       "name": "uri_parser_test",
       "build": "test",
       "language": "c",
@@ -2073,26 +2134,22 @@
       ]
     },
     {
+      "name": "cxx_string_ref_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/string_ref_test.cc"
+      ],
+      "deps": [
+        "grpc++"
+      ]
+    },
+    {
       "name": "cxx_time_test",
       "build": "test",
       "language": "c++",
       "src": [
         "test/cpp/util/time_test.cc"
-      ],
-      "deps": [
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "dynamic_thread_pool_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "test/cpp/server/dynamic_thread_pool_test.cc"
       ],
       "deps": [
         "grpc_test_util",
@@ -2111,21 +2168,6 @@
       ],
       "deps": [
         "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "fixed_size_thread_pool_test",
-      "build": "test",
-      "language": "c++",
-      "src": [
-        "test/cpp/server/fixed_size_thread_pool_test.cc"
-      ],
-      "deps": [
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2446,6 +2488,9 @@
         "gpr",
         "grpc++_test_config"
       ],
+      "exclude_configs": [
+        "tsan"
+      ],
       "platforms": [
         "mac",
         "linux",
@@ -2569,6 +2614,22 @@
       ]
     },
     {
+      "name": "shutdown_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/shutdown_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "status_test",
       "build": "test",
       "language": "c++",
@@ -2641,6 +2702,26 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ]
+    },
+    {
+      "name": "zookeeper_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/zookeeper_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc_zookeeper",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ],
+      "external_deps": [
+        "zookeeper"
       ]
     }
   ]

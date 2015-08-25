@@ -248,7 +248,7 @@ if (require.main === module) {
       throw err;
     }
     feature_list = JSON.parse(data);
-    routeServer.listen();
+    routeServer.start();
   });
 }
 

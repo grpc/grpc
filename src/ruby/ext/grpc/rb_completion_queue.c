@@ -56,7 +56,7 @@ typedef struct next_call_stack {
 static void *grpc_rb_completion_queue_next_no_gil(void *param) {
   next_call_stack *const next_call = (next_call_stack*)param;
   next_call->event =
-      grpc_completion_queue_next(next_call->cq, next_call->timeout);
+      grpc_completion_queue_next(next_call->cq, next_call->timeout, NULL);
   return NULL;
 }
 
@@ -64,7 +64,7 @@ static void *grpc_rb_completion_queue_next_no_gil(void *param) {
 static void *grpc_rb_completion_queue_pluck_no_gil(void *param) {
   next_call_stack *const next_call = (next_call_stack*)param;
   next_call->event = grpc_completion_queue_pluck(next_call->cq, next_call->tag,
-                                                 next_call->timeout);
+                                                 next_call->timeout, NULL);
   return NULL;
 }
 
@@ -128,7 +128,7 @@ static rb_data_type_t grpc_rb_completion_queue_data_type = {
 
 /* Allocates a completion queue. */
 static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
-  grpc_completion_queue *cq = grpc_completion_queue_create();
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   if (cq == NULL) {
     rb_raise(rb_eArgError, "could not create a completion queue: not sure why");
   }

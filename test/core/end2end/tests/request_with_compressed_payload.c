@@ -46,6 +46,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/compress_filter.h"
+#include "src/core/surface/call.h"
 
 enum { TIMEOUT = 200000 };
 
@@ -72,15 +73,15 @@ static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time());
+    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -123,13 +124,15 @@ static void request_with_payload_template(
   grpc_byte_buffer *request_payload_recv = NULL;
   grpc_call_details call_details;
   grpc_status_code status;
+  grpc_call_error error;
   char *details = NULL;
   size_t details_capacity = 0;
   int was_cancelled = 2;
   cq_verifier *cqv;
   char str[1024];
 
-  memset(str, 'x', 1023); str[1023] = '\0';
+  memset(str, 'x', 1023);
+  str[1023] = '\0';
   request_payload_slice = gpr_slice_from_copied_string(str);
   request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
@@ -142,7 +145,7 @@ static void request_with_payload_template(
   cqv = cq_verifier_create(f.cq);
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline);
+                               "/foo", "foo.test.google.fr", deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -159,17 +162,21 @@ static void request_with_payload_template(
     op->data.send_initial_metadata.count = 0;
   }
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = request_payload;
   op->flags = send_flags_bitmask;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
@@ -177,26 +184,39 @@ static void request_with_payload_template(
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
+  error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(f.server, &s, &call_details,
-                                      &request_metadata_recv, f.cq,
-                                      f.cq, tag(101)));
+  error =
+      grpc_server_request_call(f.server, &s, &call_details,
+                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
+
+  GPR_ASSERT(GPR_BITCOUNT(grpc_call_get_encodings_accepted_by_peer(s)) == 3);
+  GPR_ASSERT(GPR_BITGET(grpc_call_get_encodings_accepted_by_peer(s),
+                        GRPC_COMPRESS_NONE) != 0);
+  GPR_ASSERT(GPR_BITGET(grpc_call_get_encodings_accepted_by_peer(s),
+                        GRPC_COMPRESS_DEFLATE) != 0);
+  GPR_ASSERT(GPR_BITGET(grpc_call_get_encodings_accepted_by_peer(s),
+                        GRPC_COMPRESS_GZIP) != 0);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &request_payload_recv;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+  error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(102), 1);
   cq_verify(cqv);
@@ -205,14 +225,17 @@ static void request_with_payload_template(
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
   op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
+  op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(103)));
+  error = grpc_call_start_batch(s, ops, op - ops, tag(103), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(103), 1);
   cq_expect_completion(cqv, tag(1), 1);
@@ -256,8 +279,7 @@ static void test_invoke_request_with_exceptionally_uncompressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_exceptionally_uncompressed_payload",
-      GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_NONE,
-      NULL);
+      GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_NONE, NULL);
 }
 
 static void test_invoke_request_with_uncompressed_payload(
@@ -286,12 +308,12 @@ static void test_invoke_request_with_compressed_payload_md_override(
          sizeof(gzip_compression_override.internal_data));
 
   none_compression_override.key = GRPC_COMPRESS_REQUEST_ALGORITHM_KEY;
-  none_compression_override.value = "none";
+  none_compression_override.value = "identity";
   none_compression_override.value_length = 4;
   memset(&none_compression_override.internal_data, 0,
          sizeof(none_compression_override.internal_data));
 
-  /* Channel default NONE, call override to GZIP */
+  /* Channel default NONE (aka IDENTITY), call override to GZIP */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_1", 0,
       GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, &gzip_compression_override);
@@ -301,7 +323,7 @@ static void test_invoke_request_with_compressed_payload_md_override(
       config, "test_invoke_request_with_compressed_payload_md_override_2", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_GZIP, &gzip_compression_override);
 
-  /* Channel default DEFLATE, call override to NONE */
+  /* Channel default DEFLATE, call override to NONE (aka IDENTITY) */
   request_with_payload_template(
       config, "test_invoke_request_with_compressed_payload_md_override_3", 0,
       GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_NONE, &none_compression_override);
