@@ -36,7 +36,7 @@
 
 #include <memory>
 
-#include <grpc++/config.h>
+#include <grpc++/support/config.h>
 
 struct grpc_channel;
 

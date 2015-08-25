@@ -34,10 +34,9 @@
 #ifndef GRPCXX_IMPL_CLIENT_UNARY_CALL_H
 #define GRPCXX_IMPL_CLIENT_UNARY_CALL_H
 
-#include <grpc++/config.h>
-#include <grpc++/status.h>
-
 #include <grpc++/impl/call.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
 
 namespace grpc {
 

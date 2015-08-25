@@ -44,9 +44,19 @@ namespace Grpc.Core
     /// </summary>
     public sealed class ChannelOption
     {
+        /// <summary>
+        /// Type of <c>ChannelOption</c>.
+        /// </summary>
         public enum OptionType
         {
+            /// <summary>
+            /// Channel option with integer value.
+            /// </summary>
             Integer,
+            
+            /// <summary>
+            /// Channel option with string value.
+            /// </summary>
             String
         }
 
@@ -79,6 +89,9 @@ namespace Grpc.Core
             this.intValue = intValue;
         }
 
+        /// <summary>
+        /// Gets the type of the <c>ChannelOption</c>.
+        /// </summary>
         public OptionType Type
         {
             get
@@ -87,6 +100,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Gets the name of the <c>ChannelOption</c>.
+        /// </summary>
         public string Name
         {
             get
@@ -95,6 +111,9 @@ namespace Grpc.Core
             }    
         }
 
+        /// <summary>
+        /// Gets the integer value the <c>ChannelOption</c>.
+        /// </summary>
         public int IntValue
         {
             get
@@ -104,6 +123,9 @@ namespace Grpc.Core
             }
         }
 
+        /// <summary>
+        /// Gets the string value the <c>ChannelOption</c>.
+        /// </summary>
         public string StringValue
         {
             get
@@ -140,7 +162,7 @@ namespace Grpc.Core
         /// <summary>Primary user agent: goes at the start of the user-agent metadata</summary>
         public const string PrimaryUserAgentString = "grpc.primary_user_agent";
 
-        /// <summary> Secondary user agent: goes at the end of the user-agent metadata</summary>
+        /// <summary>Secondary user agent: goes at the end of the user-agent metadata</summary>
         public const string SecondaryUserAgentString = "grpc.secondary_user_agent";
 
         /// <summary>

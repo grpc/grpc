@@ -35,7 +35,6 @@
 #define GRPC_EXAMPLES_PUBSUB_PUBLISHER_H
 
 #include <grpc++/channel.h>
-#include <grpc++/status.h>
 
 #include "examples/pubsub/pubsub.grpc.pb.h"
 

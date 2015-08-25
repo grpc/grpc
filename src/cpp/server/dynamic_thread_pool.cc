@@ -33,6 +33,7 @@
 
 #include <grpc++/impl/sync.h>
 #include <grpc++/impl/thd.h>
+
 #include "src/cpp/server/dynamic_thread_pool.h"
 
 namespace grpc {

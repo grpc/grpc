@@ -33,8 +33,8 @@
 
 #include <grpc/support/log.h>
 #include <grpc++/channel.h>
-#include <grpc++/channel_arguments.h>
 #include <grpc++/impl/grpc_library.h>
+#include <grpc++/support/channel_arguments.h>
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/client/secure_credentials.h"
 

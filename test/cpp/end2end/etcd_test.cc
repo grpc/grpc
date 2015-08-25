@@ -34,7 +34,6 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/channel_arguments.h>
 #include <grpc++/credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
@@ -171,7 +170,8 @@ class EtcdTest : public ::testing::Test {
     gpr_mu_lock(GRPC_POLLSET_MU(&pollset));
     while (http_done == 0) {
       grpc_pollset_worker worker;
-      grpc_pollset_work(&pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20));
+      grpc_pollset_work(&pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+                        GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20));
     }
     gpr_mu_unlock(GRPC_POLLSET_MU(&pollset));
     gpr_free(request.host);
