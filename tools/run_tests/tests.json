@@ -1364,6 +1364,7 @@
       "posix", 
       "windows"
     ], 
+    "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
     "name": "cxx_time_test", 
