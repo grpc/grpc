@@ -4744,8 +4744,8 @@ Debug\grpc++_test_config.lib: $(OUT_DIR)
 
 Debug\grpc++_test_util.lib: $(OUT_DIR)
 	echo Building grpc++_test_util
-    $(CC) $(CXXFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\cpp\util\cli_call.cc $(REPO_ROOT)\test\cpp\util\create_test_channel.cc $(REPO_ROOT)\test\cpp\util\subprocess.cc $(REPO_ROOT)\test\cpp\util\messages.pb.cc $(REPO_ROOT)\test\cpp\util\messages.grpc.pb.cc $(REPO_ROOT)\test\cpp\util\echo.pb.cc $(REPO_ROOT)\test\cpp\util\echo.grpc.pb.cc $(REPO_ROOT)\test\cpp\util\echo_duplicate.pb.cc $(REPO_ROOT)\test\cpp\util\echo_duplicate.grpc.pb.cc 
-	$(LIBTOOL) /OUT:"Debug\grpc++_test_util.lib" $(OUT_DIR)\cli_call.obj $(OUT_DIR)\create_test_channel.obj $(OUT_DIR)\subprocess.obj $(OUT_DIR)\messages.pb.obj $(OUT_DIR)\messages.grpc.pb.obj $(OUT_DIR)\echo.pb.obj $(OUT_DIR)\echo.grpc.pb.obj $(OUT_DIR)\echo_duplicate.pb.obj $(OUT_DIR)\echo_duplicate.grpc.pb.obj 
+    $(CC) $(CXXFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\cpp\util\cli_call.cc $(REPO_ROOT)\test\cpp\util\create_test_channel.cc $(REPO_ROOT)\test\cpp\util\string_ref_helper.cc $(REPO_ROOT)\test\cpp\util\subprocess.cc $(REPO_ROOT)\test\cpp\util\messages.pb.cc $(REPO_ROOT)\test\cpp\util\messages.grpc.pb.cc $(REPO_ROOT)\test\cpp\util\echo.pb.cc $(REPO_ROOT)\test\cpp\util\echo.grpc.pb.cc $(REPO_ROOT)\test\cpp\util\echo_duplicate.pb.cc $(REPO_ROOT)\test\cpp\util\echo_duplicate.grpc.pb.cc 
+	$(LIBTOOL) /OUT:"Debug\grpc++_test_util.lib" $(OUT_DIR)\cli_call.obj $(OUT_DIR)\create_test_channel.obj $(OUT_DIR)\string_ref_helper.obj $(OUT_DIR)\subprocess.obj $(OUT_DIR)\messages.pb.obj $(OUT_DIR)\messages.grpc.pb.obj $(OUT_DIR)\echo.pb.obj $(OUT_DIR)\echo.grpc.pb.obj $(OUT_DIR)\echo_duplicate.pb.obj $(OUT_DIR)\echo_duplicate.grpc.pb.obj 
 
 build_grpc++_unsecure:
 	msbuild grpc.sln /t:grpc++_unsecure /p:Configuration=Debug /p:Linkage-grpc_dependencies_zlib=static
