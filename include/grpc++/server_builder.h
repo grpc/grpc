@@ -37,7 +37,7 @@
 #include <memory>
 #include <vector>
 
-#include <grpc++/config.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
 
@@ -76,15 +76,14 @@ class ServerBuilder {
   // The service must exist for the lifetime of the Server instance returned by
   // BuildAndStart().
   // Only matches requests with :authority \a host
-  void RegisterService(const grpc::string& host, 
-                       SynchronousService* service);
+  void RegisterService(const grpc::string& host, SynchronousService* service);
 
   // Register an asynchronous service.
   // This call does not take ownership of the service or completion queue.
   // The service and completion queuemust exist for the lifetime of the Server
   // instance returned by BuildAndStart().
   // Only matches requests with :authority \a host
-  void RegisterAsyncService(const grpc::string& host, 
+  void RegisterAsyncService(const grpc::string& host,
                             AsynchronousService* service);
 
   // Set max message size in bytes.
@@ -97,13 +96,9 @@ class ServerBuilder {
                         std::shared_ptr<ServerCredentials> creds,
                         int* selected_port = nullptr);
 
-  // Set the thread pool used for running appliation rpc handlers.
-  // Does not take ownership.
-  void SetThreadPool(ThreadPoolInterface* thread_pool);
-
   // Add a completion queue for handling asynchronous services
-  // Caller is required to keep this completion queue live until calling
-  // BuildAndStart()
+  // Caller is required to keep this completion queue live until
+  // the server is destroyed.
   std::unique_ptr<ServerCompletionQueue> AddCompletionQueue();
 
   // Return a running server which is ready for processing rpcs.
@@ -117,9 +112,10 @@ class ServerBuilder {
   };
 
   typedef std::unique_ptr<grpc::string> HostString;
-  template <class T> struct NamedService {
+  template <class T>
+  struct NamedService {
     explicit NamedService(T* s) : service(s) {}
-    NamedService(const grpc::string& h, T *s)
+    NamedService(const grpc::string& h, T* s)
         : host(new grpc::string(h)), service(s) {}
     HostString host;
     T* service;
@@ -127,7 +123,8 @@ class ServerBuilder {
 
   int max_message_size_;
   std::vector<std::unique_ptr<NamedService<RpcService>>> services_;
-  std::vector<std::unique_ptr<NamedService<AsynchronousService>>> async_services_;
+  std::vector<std::unique_ptr<NamedService<AsynchronousService>>>
+      async_services_;
   std::vector<Port> ports_;
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;

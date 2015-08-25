@@ -572,7 +572,8 @@ static void grpc_tcp_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
   grpc_pollset_add_fd(pollset, tcp->em_fd);
 }
 
-static void grpc_tcp_add_to_pollset_set(grpc_endpoint *ep, grpc_pollset_set *pollset_set) {
+static void grpc_tcp_add_to_pollset_set(grpc_endpoint *ep,
+                                        grpc_pollset_set *pollset_set) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_pollset_set_add_fd(pollset_set, tcp->em_fd);
 }

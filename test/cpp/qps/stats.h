@@ -34,8 +34,9 @@
 #ifndef TEST_QPS_STATS_UTILS_H
 #define TEST_QPS_STATS_UTILS_H
 
-#include "test/cpp/qps/histogram.h"
 #include <string>
+
+#include "test/cpp/qps/histogram.h"
 
 namespace grpc {
 namespace testing {

@@ -49,6 +49,8 @@ def get_deps(target_dict):
     deps.append("//external:protobuf_compiler")
   if target_dict['name'] == 'grpc++_unsecure' or target_dict['name'] == 'grpc++':
     deps.append("//external:protobuf_clib")
+  elif target_dict['name'] == 'grpc':
+    deps.append("//external:zlib")
   for d in target_dict.get('deps', []):
     if d.find('//') == 0 or d[0] == ':':
       deps.append(d)

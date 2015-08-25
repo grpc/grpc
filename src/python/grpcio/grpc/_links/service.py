@@ -40,6 +40,19 @@ from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import relay
 from grpc.framework.interfaces.links import links
 
+_TERMINATION_KIND_TO_CODE = {
+    links.Ticket.Termination.COMPLETION: _intermediary_low.Code.OK,
+    links.Ticket.Termination.CANCELLATION: _intermediary_low.Code.CANCELLED,
+    links.Ticket.Termination.EXPIRATION:
+        _intermediary_low.Code.DEADLINE_EXCEEDED,
+    links.Ticket.Termination.SHUTDOWN: _intermediary_low.Code.UNAVAILABLE,
+    links.Ticket.Termination.RECEPTION_FAILURE: _intermediary_low.Code.INTERNAL,
+    links.Ticket.Termination.TRANSMISSION_FAILURE:
+        _intermediary_low.Code.INTERNAL,
+    links.Ticket.Termination.LOCAL_FAILURE: _intermediary_low.Code.UNKNOWN,
+    links.Ticket.Termination.REMOTE_FAILURE: _intermediary_low.Code.UNKNOWN,
+}
+
 
 @enum.unique
 class _Read(enum.Enum):
@@ -93,6 +106,15 @@ def _metadatafy(call, metadata):
     call.add_metadata(metadata_key, metadata_value)
 
 
+def _status(termination_kind, code, details):
+  effective_details = b'' if details is None else details
+  if code is None:
+    effective_code = _TERMINATION_KIND_TO_CODE[termination_kind]
+  else:
+    effective_code = code
+  return _intermediary_low.Status(effective_code, effective_details)
+
+
 class _Kernel(object):
 
   def __init__(self, request_deserializers, response_serializers, ticket_relay):
@@ -131,7 +153,7 @@ class _Kernel(object):
     ticket = links.Ticket(
         call, 0, group, method, links.Ticket.Subscription.FULL,
         service_acceptance.deadline - time.time(), None, event.metadata, None,
-        None, None, None, None)
+        None, None, None, None, 'TODO: Service Context Object!')
     self._relay.add_value(ticket)
 
   def _on_read_event(self, event):
@@ -157,7 +179,7 @@ class _Kernel(object):
         # rpc_state.read = _Read.AWAITING_ALLOWANCE
     ticket = links.Ticket(
         call, rpc_state.sequence_number, None, None, None, None, None, None,
-        payload, None, None, None, termination)
+        payload, None, None, None, termination, None)
     rpc_state.sequence_number += 1
     self._relay.add_value(ticket)
 
@@ -170,13 +192,15 @@ class _Kernel(object):
     if rpc_state.high_write is _HighWrite.CLOSED:
       if rpc_state.terminal_metadata is not None:
         _metadatafy(call, rpc_state.terminal_metadata)
-      call.status(
-          _intermediary_low.Status(rpc_state.code, rpc_state.message), call)
+      status = _status(
+          links.Ticket.Termination.COMPLETION, rpc_state.code,
+          rpc_state.message)
+      call.status(status, call)
       rpc_state.low_write = _LowWrite.CLOSED
     else:
       ticket = links.Ticket(
           call, rpc_state.sequence_number, None, None, None, None, 1, None,
-          None, None, None, None, None)
+          None, None, None, None, None, None)
       rpc_state.sequence_number += 1
       self._relay.add_value(ticket)
       rpc_state.low_write = _LowWrite.OPEN
@@ -198,7 +222,7 @@ class _Kernel(object):
       termination = links.Ticket.Termination.TRANSMISSION_FAILURE
     ticket = links.Ticket(
         call, rpc_state.sequence_number, None, None, None, None, None, None,
-        None, None, None, None, termination)
+        None, None, None, None, termination, None)
     rpc_state.sequence_number += 1
     self._relay.add_value(ticket)
 
@@ -239,7 +263,7 @@ class _Kernel(object):
       elif not rpc_state.premetadataed:
         if (ticket.terminal_metadata is not None or
             ticket.payload is not None or
-            ticket.termination is links.Ticket.Termination.COMPLETION or
+            ticket.termination is not None or
             ticket.code is not None or
             ticket.message is not None):
           call.premetadata()
@@ -257,11 +281,11 @@ class _Kernel(object):
             termination = None
           else:
             termination = links.Ticket.Termination.COMPLETION
-          ticket = links.Ticket(
+          early_read_ticket = links.Ticket(
               call, rpc_state.sequence_number, None, None, None, None, None,
-              None, payload, None, None, None, termination)
+              None, payload, None, None, None, termination, None)
           rpc_state.sequence_number += 1
-          self._relay.add_value(ticket)
+          self._relay.add_value(early_read_ticket)
 
       if ticket.payload is not None:
         call.write(rpc_state.response_serializer(ticket.payload), call)
@@ -279,14 +303,17 @@ class _Kernel(object):
         if rpc_state.low_write is _LowWrite.OPEN:
           if rpc_state.terminal_metadata is not None:
             _metadatafy(call, rpc_state.terminal_metadata)
-          status = _intermediary_low.Status(
-              _intermediary_low.Code.OK
-              if rpc_state.code is None else rpc_state.code,
-              '' if rpc_state.message is None else rpc_state.message)
+          status = _status(
+              links.Ticket.Termination.COMPLETION, rpc_state.code,
+              rpc_state.message)
           call.status(status, call)
           rpc_state.low_write = _LowWrite.CLOSED
       elif ticket.termination is not None:
-        call.cancel()
+        if rpc_state.terminal_metadata is not None:
+          _metadatafy(call, rpc_state.terminal_metadata)
+        status = _status(
+            ticket.termination, rpc_state.code, rpc_state.message)
+        call.status(status, call)
         self._rpc_states.pop(call, None)
 
   def add_port(self, port, server_credentials):

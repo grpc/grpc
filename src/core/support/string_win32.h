@@ -42,6 +42,6 @@
 LPTSTR gpr_char_to_tchar(LPCSTR input);
 LPSTR gpr_tchar_to_char(LPCTSTR input);
 
-#endif  /* GPR_WIN32 */
+#endif /* GPR_WIN32 */
 
-#endif  /* GRPC_INTERNAL_CORE_SUPPORT_STRING_WIN32_H */
+#endif /* GRPC_INTERNAL_CORE_SUPPORT_STRING_WIN32_H */
