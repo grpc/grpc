@@ -36,9 +36,9 @@
 #include <chrono>
 #include <thread>
 
+#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
-#include <gflags/gflags.h>
 
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/util/test_config.h"

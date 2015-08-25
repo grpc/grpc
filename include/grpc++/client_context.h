@@ -42,16 +42,16 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc++/auth_context.h>
-#include <grpc++/config.h>
-#include <grpc++/status.h>
-#include <grpc++/time.h>
+#include <grpc++/support/auth_context.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/time.h>
 
 struct census_context;
 
 namespace grpc {
 
-class ChannelInterface;
+class Channel;
 class CompletionQueue;
 class Credentials;
 class RpcMethod;
@@ -121,6 +121,10 @@ class PropagationOptions {
   gpr_uint32 propagate_;
 };
 
+namespace testing {
+class InteropClientContextInspector;
+}  // namespace testing
+
 class ClientContext {
  public:
   ClientContext();
@@ -181,7 +185,9 @@ class ClientContext {
 
   // Get and set census context
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
-  struct census_context* census_context() const { return census_context_; }
+  struct census_context* census_context() const {
+    return census_context_;
+  }
 
   void TryCancel();
 
@@ -190,6 +196,7 @@ class ClientContext {
   ClientContext(const ClientContext&);
   ClientContext& operator=(const ClientContext&);
 
+  friend class ::grpc::testing::InteropClientContextInspector;
   friend class CallOpClientRecvStatus;
   friend class CallOpRecvInitialMetadata;
   friend class Channel;
@@ -208,20 +215,18 @@ class ClientContext {
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(ChannelInterface* channel,
-                                  const RpcMethod& method,
+  friend Status BlockingUnaryCall(Channel* channel, const RpcMethod& method,
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);
 
   grpc_call* call() { return call_; }
-  void set_call(grpc_call* call,
-                const std::shared_ptr<ChannelInterface>& channel);
+  void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
   grpc::string authority() { return authority_; }
 
   bool initial_metadata_received_;
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
   grpc_call* call_;
   gpr_timespec deadline_;
   grpc::string authority_;

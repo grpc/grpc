@@ -66,15 +66,15 @@ static gpr_timespec n_seconds_time(int n) {
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, n_seconds_time(5));
+    ev = grpc_completion_queue_next(cq, n_seconds_time(5), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -124,12 +124,13 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   grpc_byte_buffer *response_payload_recv = NULL;
   grpc_call_details call_details;
   grpc_status_code status;
+  grpc_call_error error;
   char *details = NULL;
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline);
+                               "/foo", "foo.test.google.fr", deadline, NULL);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -141,21 +142,26 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = request_payload;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &response_payload_recv;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
@@ -163,12 +169,15 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
+  error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 f.server, &s, &call_details,
-                                 &request_metadata_recv, f.cq, f.cq, tag(101)));
+  error =
+      grpc_server_request_call(f.server, &s, &call_details,
+                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
@@ -176,12 +185,15 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message = &request_payload_recv;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(102)));
+  error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(102), 1);
   cq_verify(cqv);
@@ -190,18 +202,22 @@ static void test_invoke_large_request(grpc_end2end_test_config config) {
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message = response_payload;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
   op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
+  op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(s, ops, op - ops, tag(103)));
+  error = grpc_call_start_batch(s, ops, op - ops, tag(103), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(103), 1);
   cq_expect_completion(cqv, tag(1), 1);

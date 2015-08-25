@@ -7,6 +7,9 @@
     <ClCompile Include="..\..\src\core\census\grpc_context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\grpc_filter.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -179,6 +182,9 @@
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\udp_server.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_eventfd.c">
@@ -377,8 +383,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\channel\census_filter.h">
-      <Filter>src\core\channel</Filter>
+    <ClInclude Include="..\..\src\core\census\grpc_filter.h">
+      <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\channel_args.h">
       <Filter>src\core\channel</Filter>
@@ -548,6 +554,9 @@
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\udp_server.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -571,6 +580,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\core\profiling\timers_preciseclock.h">
       <Filter>src\core\profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\statistics\census_interface.h">
+      <Filter>src\core\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h">
+      <Filter>src\core\statistics</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h">
       <Filter>src\core\surface</Filter>
@@ -730,6 +745,9 @@
     </Filter>
     <Filter Include="src\core\profiling">
       <UniqueIdentifier>{7f91d9bf-c9de-835a-d74d-b16f843b89a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\statistics">
+      <UniqueIdentifier>{e084164c-a069-00e3-db35-4e0b1cd6f0b7}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\surface">
       <UniqueIdentifier>{6cd0127e-c24b-d43c-38f5-198db8d4322a}</UniqueIdentifier>

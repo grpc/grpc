@@ -153,4 +153,50 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
   public function testGetTarget() {
     $this->assertTrue(is_string($this->channel->getTarget()));
   }
+
+  public function testGetConnectivityState() {
+    $this->assertTrue($this->channel->getConnectivityState() == Grpc\CHANNEL_IDLE);
+  }
+
+  public function testWatchConnectivityStateFailed() {
+    $idle_state = $this->channel->getConnectivityState(true);
+    $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+
+    $now = Grpc\Timeval::now();
+    $delta = new Grpc\Timeval(1);
+    $deadline = $now->add($delta);
+
+    $this->assertFalse($this->channel->watchConnectivityState(
+        $idle_state, $deadline));
+  }
+
+  public function testWatchConnectivityStateSuccess() {
+    $idle_state = $this->channel->getConnectivityState(true);
+    $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+
+    $now = Grpc\Timeval::now();
+    $delta = new Grpc\Timeval(3000000); // should finish well before
+    $deadline = $now->add($delta);
+
+    $this->assertTrue($this->channel->watchConnectivityState(
+        $idle_state, $deadline));
+
+    $new_state = $this->channel->getConnectivityState();
+    $this->assertTrue($idle_state != $new_state);
+  }
+
+  public function testWatchConnectivityStateDoNothing() {
+    $idle_state = $this->channel->getConnectivityState();
+    $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
+
+    $now = Grpc\Timeval::now();
+    $delta = new Grpc\Timeval(100000);
+    $deadline = $now->add($delta);
+
+    $this->assertFalse($this->channel->watchConnectivityState(
+        $idle_state, $deadline));
+
+    $new_state = $this->channel->getConnectivityState();
+    $this->assertTrue($new_state == Grpc\CHANNEL_IDLE);
+  }
 }
