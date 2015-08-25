@@ -90,6 +90,7 @@ static grpc_resolver_factory *resolve_factory(const char *target,
   char *tmp;
   grpc_resolver_factory *factory = NULL;
 
+  GPR_ASSERT(uri);
   *uri = grpc_uri_parse(target, 1);
   factory = lookup_factory(*uri);
   if (factory == NULL) {
