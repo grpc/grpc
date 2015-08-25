@@ -42,6 +42,7 @@ _REMOTE_TICKET_TERMINATION_TO_LOCAL_OUTCOME = {
     links.Ticket.Termination.TRANSMISSION_FAILURE:
         base.Outcome.TRANSMISSION_FAILURE,
     links.Ticket.Termination.LOCAL_FAILURE: base.Outcome.REMOTE_FAILURE,
+    links.Ticket.Termination.REMOTE_FAILURE: base.Outcome.LOCAL_FAILURE,
 }
 
 
@@ -70,9 +71,10 @@ class ReceptionManager(_interfaces.ReceptionManager):
 
   def _abort(self, outcome):
     self._aborted = True
-    self._termination_manager.abort(outcome)
-    self._transmission_manager.abort(outcome)
-    self._expiration_manager.terminate()
+    if self._termination_manager.outcome is None:
+      self._termination_manager.abort(outcome)
+      self._transmission_manager.abort(None)
+      self._expiration_manager.terminate()
 
   def _sequence_failure(self, ticket):
     """Determines a just-arrived ticket's sequential legitimacy.
