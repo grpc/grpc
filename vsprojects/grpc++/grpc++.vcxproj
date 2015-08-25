@@ -248,6 +248,7 @@
     <ClInclude Include="..\..\include\grpc++\support\slice.h" />
     <ClInclude Include="..\..\include\grpc++\support\status.h" />
     <ClInclude Include="..\..\include\grpc++\support\status_code_enum.h" />
+    <ClInclude Include="..\..\include\grpc++\support\string_ref.h" />
     <ClInclude Include="..\..\include\grpc++\support\stub_options.h" />
     <ClInclude Include="..\..\include\grpc++\support\sync_stream.h" />
     <ClInclude Include="..\..\include\grpc++\support\time.h" />
@@ -322,6 +323,8 @@
     <ClCompile Include="..\..\src\cpp\util\slice.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\util\status.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\src\cpp\util\string_ref.cc">
     </ClCompile>
     <ClCompile Include="..\..\src\cpp\util\time.cc">
     </ClCompile>

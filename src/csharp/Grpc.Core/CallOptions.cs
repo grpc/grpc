@@ -118,6 +118,7 @@ namespace Grpc.Core
         /// Returns new instance of <see cref="CallOptions"/> with
         /// <c>Headers</c> set to the value provided. Values of all other fields are preserved.
         /// </summary>
+        /// <param name="headers">The headers.</param>
         public CallOptions WithHeaders(Metadata headers)
         {
             var newOptions = this;
@@ -129,6 +130,7 @@ namespace Grpc.Core
         /// Returns new instance of <see cref="CallOptions"/> with
         /// <c>Deadline</c> set to the value provided. Values of all other fields are preserved.
         /// </summary>
+        /// <param name="deadline">The deadline.</param>
         public CallOptions WithDeadline(DateTime deadline)
         {
             var newOptions = this;
@@ -140,6 +142,7 @@ namespace Grpc.Core
         /// Returns new instance of <see cref="CallOptions"/> with
         /// <c>CancellationToken</c> set to the value provided. Values of all other fields are preserved.
         /// </summary>
+        /// <param name="cancellationToken">The cancellation token.</param>
         public CallOptions WithCancellationToken(CancellationToken cancellationToken)
         {
             var newOptions = this;

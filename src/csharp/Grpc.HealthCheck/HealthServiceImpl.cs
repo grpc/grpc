@@ -95,6 +95,12 @@ namespace Grpc.HealthCheck
             }
         }
 
+        /// <summary>
+        /// Performs a health status check.
+        /// </summary>
+        /// <param name="request">The check request.</param>
+        /// <param name="context">The call context.</param>
+        /// <returns>The asynchronous response.</returns>
         public Task<HealthCheckResponse> Check(HealthCheckRequest request, ServerCallContext context)
         {
             lock (myLock)
