@@ -34,10 +34,10 @@
 #ifndef GRPCXX_IMPL_SERVICE_TYPE_H
 #define GRPCXX_IMPL_SERVICE_TYPE_H
 
-#include <grpc++/config.h>
 #include <grpc++/impl/serialization_traits.h>
 #include <grpc++/server.h>
-#include <grpc++/status.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
 
 namespace grpc {
 
