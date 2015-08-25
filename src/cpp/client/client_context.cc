@@ -71,7 +71,7 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
 }
 
 void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<ChannelInterface>& channel) {
+                             const std::shared_ptr<Channel>& channel) {
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;

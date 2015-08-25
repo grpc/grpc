@@ -36,7 +36,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc++/byte_buffer.h>
 #include <grpc++/client_context.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 
 #include "src/core/profiling/timers.h"
 

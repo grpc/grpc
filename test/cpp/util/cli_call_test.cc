@@ -35,11 +35,10 @@
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/echo.grpc.pb.h"
 #include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/dynamic_thread_pool.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
@@ -75,7 +74,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
 
 class CliCallTest : public ::testing::Test {
  protected:
-  CliCallTest() : thread_pool_(2) {}
+  CliCallTest() {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
@@ -85,7 +84,6 @@ class CliCallTest : public ::testing::Test {
     builder.AddListeningPort(server_address_.str(),
                              InsecureServerCredentials());
     builder.RegisterService(&service_);
-    builder.SetThreadPool(&thread_pool_);
     server_ = builder.BuildAndStart();
   }
 
@@ -97,12 +95,11 @@ class CliCallTest : public ::testing::Test {
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;
-  DynamicThreadPool thread_pool_;
 };
 
 // Send a rpc with a normal stub and then a CliCall. Verify they match.

@@ -119,7 +119,8 @@ namespace Grpc.Core
         internal static string GetAuthUriBase(string target)
         {
             var match = ChannelTargetPattern.Match(target);
-            if (!match.Success) {
+            if (!match.Success)
+            {
                 return null;
             }
             return "https://" + match.Groups[2].Value + "/";

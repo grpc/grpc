@@ -31,47 +31,16 @@
  *
  */
 
-#include <condition_variable>
-#include <functional>
-#include <mutex>
+#include <memory>
 
-#include <grpc++/dynamic_thread_pool.h>
-#include <gtest/gtest.h>
+#include <grpc++/channel.h>
+
+struct grpc_channel;
 
 namespace grpc {
 
-class DynamicThreadPoolTest : public ::testing::Test {
- public:
-  DynamicThreadPoolTest() : thread_pool_(0) {}
-
- protected:
-  DynamicThreadPool thread_pool_;
-};
-
-void Callback(std::mutex* mu, std::condition_variable* cv, bool* done) {
-  std::unique_lock<std::mutex> lock(*mu);
-  *done = true;
-  cv->notify_all();
+std::shared_ptr<Channel> CreateChannelInternal(const grpc::string& host,
+                                               grpc_channel* c_channel) {
+  return std::shared_ptr<Channel>(new Channel(host, c_channel));
 }
-
-TEST_F(DynamicThreadPoolTest, Add) {
-  std::mutex mu;
-  std::condition_variable cv;
-  bool done = false;
-  std::function<void()> callback = std::bind(Callback, &mu, &cv, &done);
-  thread_pool_.Add(callback);
-
-  // Wait for the callback to finish.
-  std::unique_lock<std::mutex> lock(mu);
-  while (!done) {
-    cv.wait(lock);
-  }
-}
-
 }  // namespace grpc
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int result = RUN_ALL_TESTS();
-  return result;
-}

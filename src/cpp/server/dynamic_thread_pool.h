@@ -31,50 +31,54 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H
-#define GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H
+#ifndef GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
+#define GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H
 
-#include <memory>
-
-#include <grpc++/channel_interface.h>
 #include <grpc++/config.h>
-#include <grpc++/impl/grpc_library.h>
 
-struct grpc_channel;
+#include <grpc++/impl/sync.h>
+#include <grpc++/impl/thd.h>
+
+#include <list>
+#include <memory>
+#include <queue>
+
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
-class Call;
-class CallOpSetInterface;
-class ChannelArguments;
-class CompletionQueue;
-class Credentials;
-class StreamContextInterface;
 
-class Channel GRPC_FINAL : public GrpcLibrary, public ChannelInterface {
+class DynamicThreadPool GRPC_FINAL : public ThreadPoolInterface {
  public:
-  explicit Channel(grpc_channel* c_channel);
-  Channel(const grpc::string& host, grpc_channel* c_channel);
-  ~Channel() GRPC_OVERRIDE;
+  explicit DynamicThreadPool(int reserve_threads);
+  ~DynamicThreadPool();
 
-  void* RegisterMethod(const char* method) GRPC_OVERRIDE;
-  Call CreateCall(const RpcMethod& method, ClientContext* context,
-                  CompletionQueue* cq) GRPC_OVERRIDE;
-  void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) GRPC_OVERRIDE;
-
-  grpc_connectivity_state GetState(bool try_to_connect) GRPC_OVERRIDE;
+  void Add(const std::function<void()>& callback) GRPC_OVERRIDE;
 
  private:
-  void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
-                               gpr_timespec deadline, CompletionQueue* cq,
-                               void* tag) GRPC_OVERRIDE;
+  class DynamicThread {
+   public:
+    DynamicThread(DynamicThreadPool* pool);
+    ~DynamicThread();
 
-  bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
-                              gpr_timespec deadline) GRPC_OVERRIDE;
+   private:
+    DynamicThreadPool* pool_;
+    std::unique_ptr<grpc::thread> thd_;
+    void ThreadFunc();
+  };
+  grpc::mutex mu_;
+  grpc::condition_variable cv_;
+  grpc::condition_variable shutdown_cv_;
+  bool shutdown_;
+  std::queue<std::function<void()>> callbacks_;
+  int reserve_threads_;
+  int nthreads_;
+  int threads_waiting_;
+  std::list<DynamicThread*> dead_threads_;
 
-  const grpc::string host_;
-  grpc_channel* const c_channel_;  // owned
+  void ThreadFunc();
+  static void ReapThreads(std::list<DynamicThread*>* tlist);
 };
 
 }  // namespace grpc
 
-#endif  // GRPC_INTERNAL_CPP_CLIENT_CHANNEL_H
+#endif  // GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H

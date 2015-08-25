@@ -38,7 +38,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/status.h>
 #include <grpc++/stream.h>

@@ -31,27 +31,28 @@
  *
  */
 
-extern "C" {
-#include "test/core/util/test_config.h"
-#include "test/core/util/port.h"
-#include "src/core/support/env.h"
-#include "src/core/httpcli/httpcli.h"
-}
-#include "test/cpp/util/echo.grpc.pb.h"
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
+#include <grpc++/channel_arguments.h>
 #include <grpc++/credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
 #include <gtest/gtest.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_etcd.h>
 #include <grpc/support/string_util.h>
+
+#include "test/core/util/test_config.h"
+#include "test/core/util/port.h"
+#include "test/cpp/util/echo.grpc.pb.h"
+#include "src/core/support/env.h"
+
+extern "C" {
+#include "src/core/httpcli/httpcli.h"
+}
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
@@ -170,8 +171,7 @@ class EtcdTest : public ::testing::Test {
     gpr_mu_lock(GRPC_POLLSET_MU(&pollset));
     while (http_done == 0) {
       grpc_pollset_worker worker;
-      grpc_pollset_work(&pollset, &worker,
-                        GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20));
+      grpc_pollset_work(&pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20));
     }
     gpr_mu_unlock(GRPC_POLLSET_MU(&pollset));
     gpr_free(request.host);
@@ -222,7 +222,7 @@ class EtcdTest : public ::testing::Test {
     return strs.str();
   }
 
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server1_;
   std::unique_ptr<Server> server2_;

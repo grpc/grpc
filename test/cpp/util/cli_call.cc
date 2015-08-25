@@ -36,7 +36,7 @@
 #include <iostream>
 
 #include <grpc++/byte_buffer.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/generic_stub.h>
 #include <grpc++/status.h>
@@ -52,7 +52,7 @@ namespace {
 void* tag(int i) { return (void*)(gpr_intptr)i; }
 }  // namespace
 
-Status CliCall::Call(std::shared_ptr<grpc::ChannelInterface> channel,
+Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
                      const grpc::string& method, const grpc::string& request,
                      grpc::string* response, const MetadataContainer& metadata,
                      MetadataContainer* server_initial_metadata,

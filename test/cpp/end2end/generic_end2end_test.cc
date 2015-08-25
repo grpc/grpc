@@ -41,7 +41,7 @@
 #include <grpc++/async_unary_call.h>
 #include <grpc++/byte_buffer.h>
 #include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
@@ -127,7 +127,7 @@ class GenericEnd2endTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel = CreateChannel(
+    std::shared_ptr<Channel> channel = CreateChannel(
         server_address_.str(), InsecureCredentials(), ChannelArguments());
     generic_stub_.reset(new GenericStub(channel));
   }
