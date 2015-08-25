@@ -158,11 +158,13 @@ class TestServiceImpl : public TestService::Service {
     SetResponseCompression(context, *request);
     StreamingOutputCallResponse response;
     bool write_success = true;
-    response.mutable_payload()->set_type(request->response_type());
     for (int i = 0; write_success && i < request->response_parameters_size();
          i++) {
-      response.mutable_payload()->set_body(
-          grpc::string(request->response_parameters(i).size(), '\0'));
+      if (!SetPayload(request->response_type(),
+                      request->response_parameters(i).size(),
+                      response.mutable_payload())) {
+        return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+      }
       write_success = writer->Write(response);
     }
     if (write_success) {
