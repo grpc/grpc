@@ -72,7 +72,13 @@ namespace Grpc.Core.Internal
             call.StartReadMessage(taskSource.CompletionDelegate);
             var result = await taskSource.Task;
             this.current = result;
-            return result != null;
+
+            if (result == null)
+            {
+                await call.StreamingCallFinishedTask;
+                return false;
+            }
+            return true;
         }
 
         public void Dispose()

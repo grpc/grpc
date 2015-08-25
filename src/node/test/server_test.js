@@ -70,7 +70,9 @@ describe('server', function() {
       var pem_path = path.join(__dirname, '../test/data/server1.pem');
       var key_data = fs.readFileSync(key_path);
       var pem_data = fs.readFileSync(pem_path);
-      var creds = grpc.ServerCredentials.createSsl(null, key_data, pem_data);
+      var creds = grpc.ServerCredentials.createSsl(null,
+                                                   [{private_key: key_data,
+                                                     cert_chain: pem_data}]);
       assert.doesNotThrow(function() {
         port = server.addHttp2Port('0.0.0.0:0', creds);
       });
@@ -83,7 +85,7 @@ describe('server', function() {
       server = new grpc.Server();
     });
   });
-  describe('listen', function() {
+  describe('start', function() {
     var server;
     before(function() {
       server = new grpc.Server();
@@ -92,7 +94,7 @@ describe('server', function() {
     after(function() {
       server.shutdown();
     });
-    it('should listen without error', function() {
+    it('should start without error', function() {
       assert.doesNotThrow(function() {
         server.start();
       });

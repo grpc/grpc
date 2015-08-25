@@ -37,12 +37,11 @@
 #include <cfloat>
 
 #include <grpc/grpc.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/support/channel_arguments.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/status.h>
 #include "test/cpp/qps/perf_db.grpc.pb.h"
 
 namespace grpc {
@@ -65,7 +64,7 @@ class PerfDbClient {
     client_user_time_ = DBL_MIN;
   }
 
-  void init(std::shared_ptr<ChannelInterface> channel) {
+  void init(std::shared_ptr<Channel> channel) {
     stub_ = PerfDbTransfer::NewStub(channel);
   }
 
@@ -82,9 +81,8 @@ class PerfDbClient {
   void setQpsPerCore(double qps_per_core);
 
   // sets the 50th, 90th, 95th, 99th and 99.9th percentile latency
-  void setLatencies(double perc_lat_50, double perc_lat_90,
-                    double perc_lat_95, double perc_lat_99,
-                    double perc_lat_99_point_9);
+  void setLatencies(double perc_lat_50, double perc_lat_90, double perc_lat_95,
+                    double perc_lat_99, double perc_lat_99_point_9);
 
   // sets the server and client, user and system times
   void setTimes(double server_system_time, double server_user_time,

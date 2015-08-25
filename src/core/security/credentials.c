@@ -793,16 +793,16 @@ void on_simulated_token_fetch_done(void *user_data, int success) {
       (grpc_credentials_metadata_request *)user_data;
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)r->creds;
   GPR_ASSERT(success);
-  r->cb(r->user_data, c->md_store->entries,
-        c->md_store->num_entries, GRPC_CREDENTIALS_OK);
+  r->cb(r->user_data, c->md_store->entries, c->md_store->num_entries,
+        GRPC_CREDENTIALS_OK);
   grpc_credentials_metadata_request_destroy(r);
 }
 
 static void md_only_test_get_request_metadata(grpc_credentials *creds,
-                                             grpc_pollset *pollset,
-                                             const char *service_url,
-                                             grpc_credentials_metadata_cb cb,
-                                             void *user_data) {
+                                              grpc_pollset *pollset,
+                                              const char *service_url,
+                                              grpc_credentials_metadata_cb cb,
+                                              void *user_data) {
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
 
   if (c->is_async) {
@@ -854,10 +854,10 @@ static int access_token_has_request_metadata_only(
 }
 
 static void access_token_get_request_metadata(grpc_credentials *creds,
-                                             grpc_pollset *pollset,
-                                             const char *service_url,
-                                             grpc_credentials_metadata_cb cb,
-                                             void *user_data) {
+                                              grpc_pollset *pollset,
+                                              const char *service_url,
+                                              grpc_credentials_metadata_cb cb,
+                                              void *user_data) {
   grpc_access_token_credentials *c = (grpc_access_token_credentials *)creds;
   cb(user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK);
 }

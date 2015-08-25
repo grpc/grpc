@@ -106,4 +106,4 @@ void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
   gpr_free(winsocket);
 }
 
-#endif  /* GPR_WINSOCK_SOCKET */
+#endif /* GPR_WINSOCK_SOCKET */

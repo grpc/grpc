@@ -112,18 +112,18 @@ grpc::string GetHeaderPrologue(const grpc::protobuf::FileDescriptor *file,
 grpc::string GetHeaderIncludes(const grpc::protobuf::FileDescriptor *file,
                                const Parameters &params) {
   grpc::string temp =
-      "#include <grpc++/impl/internal_stub.h>\n"
+      "#include <grpc++/support/async_stream.h>\n"
       "#include <grpc++/impl/rpc_method.h>\n"
       "#include <grpc++/impl/proto_utils.h>\n"
       "#include <grpc++/impl/service_type.h>\n"
-      "#include <grpc++/async_unary_call.h>\n"
-      "#include <grpc++/status.h>\n"
-      "#include <grpc++/stream.h>\n"
-      "#include <grpc++/stub_options.h>\n"
+      "#include <grpc++/support/async_unary_call.h>\n"
+      "#include <grpc++/support/status.h>\n"
+      "#include <grpc++/support/stub_options.h>\n"
+      "#include <grpc++/support/sync_stream.h>\n"
       "\n"
       "namespace grpc {\n"
       "class CompletionQueue;\n"
-      "class ChannelInterface;\n"
+      "class Channel;\n"
       "class RpcService;\n"
       "class ServerCompletionQueue;\n"
       "class ServerContext;\n"
@@ -554,17 +554,17 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
   printer->Outdent();
   printer->Print("};\n");
   printer->Print(
-      "class Stub GRPC_FINAL : public StubInterface,"
-      " public ::grpc::InternalStub {\n public:\n");
+      "class Stub GRPC_FINAL : public StubInterface"
+      " {\n public:\n");
   printer->Indent();
-  printer->Print(
-      "Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);\n");
+  printer->Print("Stub(const std::shared_ptr< ::grpc::Channel>& channel);\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethod(printer, service->method(i), vars, true);
   }
   printer->Outdent();
   printer->Print("\n private:\n");
   printer->Indent();
+  printer->Print("std::shared_ptr< ::grpc::Channel> channel_;\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethod(printer, service->method(i), vars, false);
   }
@@ -575,7 +575,7 @@ void PrintHeaderService(grpc::protobuf::io::Printer *printer,
   printer->Print("};\n");
   printer->Print(
       "static std::unique_ptr<Stub> NewStub(const std::shared_ptr< "
-      "::grpc::ChannelInterface>& channel, "
+      "::grpc::Channel>& channel, "
       "const ::grpc::StubOptions& options = ::grpc::StubOptions());\n");
 
   printer->Print("\n");
@@ -702,12 +702,13 @@ grpc::string GetSourceIncludes(const grpc::protobuf::FileDescriptor *file,
     grpc::protobuf::io::Printer printer(&output_stream, '$');
     std::map<grpc::string, grpc::string> vars;
 
-    printer.Print(vars, "#include <grpc++/async_unary_call.h>\n");
-    printer.Print(vars, "#include <grpc++/channel_interface.h>\n");
+    printer.Print(vars, "#include <grpc++/channel.h>\n");
     printer.Print(vars, "#include <grpc++/impl/client_unary_call.h>\n");
     printer.Print(vars, "#include <grpc++/impl/rpc_service_method.h>\n");
     printer.Print(vars, "#include <grpc++/impl/service_type.h>\n");
-    printer.Print(vars, "#include <grpc++/stream.h>\n");
+    printer.Print(vars, "#include <grpc++/support/async_unary_call.h>\n");
+    printer.Print(vars, "#include <grpc++/support/async_stream.h>\n");
+    printer.Print(vars, "#include <grpc++/support/sync_stream.h>\n");
 
     if (!file->package().empty()) {
       std::vector<grpc::string> parts =
@@ -738,7 +739,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
                    "::grpc::ClientContext* context, "
                    "const $Request$& request, $Response$* response) {\n");
     printer->Print(*vars,
-                   "  return ::grpc::BlockingUnaryCall(channel(), "
+                   "  return ::grpc::BlockingUnaryCall(channel_.get(), "
                    "rpcmethod_$Method$_, "
                    "context, request, response);\n"
                    "}\n\n");
@@ -751,7 +752,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "  return new "
                    "::grpc::ClientAsyncResponseReader< $Response$>("
-                   "channel(), cq, "
+                   "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, request);\n"
                    "}\n\n");
@@ -762,7 +763,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
                    "::grpc::ClientContext* context, $Response$* response) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientWriter< $Request$>("
-                   "channel(), "
+                   "channel_.get(), "
                    "rpcmethod_$Method$_, "
                    "context, response);\n"
                    "}\n\n");
@@ -773,7 +774,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientAsyncWriter< $Request$>("
-                   "channel(), cq, "
+                   "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, response, tag);\n"
                    "}\n\n");
@@ -785,7 +786,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
         "::grpc::ClientContext* context, const $Request$& request) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientReader< $Response$>("
-                   "channel(), "
+                   "channel_.get(), "
                    "rpcmethod_$Method$_, "
                    "context, request);\n"
                    "}\n\n");
@@ -796,7 +797,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
                    "::grpc::CompletionQueue* cq, void* tag) {\n");
     printer->Print(*vars,
                    "  return new ::grpc::ClientAsyncReader< $Response$>("
-                   "channel(), cq, "
+                   "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, request, tag);\n"
                    "}\n\n");
@@ -808,7 +809,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "  return new ::grpc::ClientReaderWriter< "
                    "$Request$, $Response$>("
-                   "channel(), "
+                   "channel_.get(), "
                    "rpcmethod_$Method$_, "
                    "context);\n"
                    "}\n\n");
@@ -820,7 +821,7 @@ void PrintSourceClientMethod(grpc::protobuf::io::Printer *printer,
     printer->Print(*vars,
                    "  return new "
                    "::grpc::ClientAsyncReaderWriter< $Request$, $Response$>("
-                   "channel(), cq, "
+                   "channel_.get(), cq, "
                    "rpcmethod_$Method$_, "
                    "context, tag);\n"
                    "}\n\n");
@@ -964,20 +965,19 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
   }
   printer->Print(*vars, "};\n\n");
 
-  printer->Print(
-      *vars,
-      "std::unique_ptr< $ns$$Service$::Stub> $ns$$Service$::NewStub("
-      "const std::shared_ptr< ::grpc::ChannelInterface>& channel, "
-      "const ::grpc::StubOptions& options) {\n"
-      "  std::unique_ptr< $ns$$Service$::Stub> stub(new "
-      "$ns$$Service$::Stub(channel));\n"
-      "  return stub;\n"
-      "}\n\n");
+  printer->Print(*vars,
+                 "std::unique_ptr< $ns$$Service$::Stub> $ns$$Service$::NewStub("
+                 "const std::shared_ptr< ::grpc::Channel>& channel, "
+                 "const ::grpc::StubOptions& options) {\n"
+                 "  std::unique_ptr< $ns$$Service$::Stub> stub(new "
+                 "$ns$$Service$::Stub(channel));\n"
+                 "  return stub;\n"
+                 "}\n\n");
   printer->Print(*vars,
                  "$ns$$Service$::Stub::Stub(const std::shared_ptr< "
-                 "::grpc::ChannelInterface>& channel)\n");
+                 "::grpc::Channel>& channel)\n");
   printer->Indent();
-  printer->Print(": ::grpc::InternalStub(channel)");
+  printer->Print(": channel_(channel)");
   for (int i = 0; i < service->method_count(); ++i) {
     const grpc::protobuf::MethodDescriptor *method = service->method(i);
     (*vars)["Method"] = method->name();
@@ -991,13 +991,12 @@ void PrintSourceService(grpc::protobuf::io::Printer *printer,
     } else {
       (*vars)["StreamingType"] = "BIDI_STREAMING";
     }
-    printer->Print(
-        *vars,
-        ", rpcmethod_$Method$_("
-        "$prefix$$Service$_method_names[$Idx$], "
-        "::grpc::RpcMethod::$StreamingType$, "
-        "channel->RegisterMethod($prefix$$Service$_method_names[$Idx$])"
-        ")\n");
+    printer->Print(*vars,
+                   ", rpcmethod_$Method$_("
+                   "$prefix$$Service$_method_names[$Idx$], "
+                   "::grpc::RpcMethod::$StreamingType$, "
+                   "channel"
+                   ")\n");
   }
   printer->Print("{}\n\n");
   printer->Outdent();

@@ -66,7 +66,7 @@ static testing_pair testing_pairs[] = {
     {"\"\\ud834\\udd1e\"", "\"\\ud834\\udd1e\""},
     /* Testing nested empty containers. */
     {
-     " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
+        " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
     },
     /* Testing escapes and control chars in key strings. */
     {" { \"\x7f\\n\\\\a , b\": 1, \"\": 0 } ",
