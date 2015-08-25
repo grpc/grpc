@@ -129,10 +129,14 @@ void census_set_trace_mask(int trace_mask);
    each logical operation. */
 
 /**
-  This structure (opaquely) represents a timestamp as used by census to
-  record the time at which an RPC operation begins.
+  This structure represents a timestamp as used by census to record the time
+  at which an operation begins.
 */
-typedef struct census_timestamp census_timestamp;
+typedef struct {
+  /* Use gpr_timespec for default implementation. High performance
+   * implementations should use a cycle-counter based timestamp. */
+  gpr_timespec ts;
+} census_timestamp;
 
 /**
   Mark the beginning of an RPC operation. The information required to call the
@@ -148,7 +152,7 @@ typedef struct census_timestamp census_timestamp;
 
   @return A timestamp representing the operation start time.
 */
-census_timestamp *census_start_rpc_op_timestamp(void);
+census_timestamp census_start_rpc_op_timestamp(void);
 
 /**
   Represent functions to map RPC name ID to service/method names. Census

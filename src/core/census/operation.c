@@ -34,7 +34,13 @@
 
 /* TODO(aveitch): These are all placeholder implementations. */
 
-census_timestamp *census_start_rpc_op_timestamp(void) { return NULL; }
+census_timestamp census_start_rpc_op_timestamp(void) {
+  census_timestamp ct;
+  /* TODO(aveitch): assumes gpr_timespec implementation of census_timestamp. */
+  ct.ts = gpr_now(GPR_CLOCK_MONOTONIC);
+  return ct;
+}
+
 census_context *census_start_client_rpc_op(
     const census_context *context, gpr_int64 rpc_name_id,
     const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
