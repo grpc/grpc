@@ -46,8 +46,8 @@ _TIMEOUT = 32
 # TODO(nathaniel): End-to-end metadata testing.
 def _transform_metadata(unused_metadata):
   return (
-      ('one unused key', 'one unused value'),
-      ('another unused key', 'another unused value'),
+      ('one_unused_key', 'one unused value'),
+      ('another_unused_key', 'another unused value'),
 )
 
 
