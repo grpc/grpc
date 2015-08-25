@@ -41,4 +41,4 @@
 #include <netdb.h>
 #include <unistd.h>
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_POSIX_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_POSIX_H */

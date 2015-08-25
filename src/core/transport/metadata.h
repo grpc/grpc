@@ -95,7 +95,8 @@ size_t grpc_mdctx_get_mdtab_free_test_only(grpc_mdctx *mdctx);
 
 /* Constructors for grpc_mdstr instances; take a variety of data types that
    clients may have handy */
-grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str, int perform_key_canonicalization);
+grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str,
+                                   int perform_key_canonicalization);
 /* Unrefs the slice. */
 grpc_mdstr *grpc_mdstr_from_slice(grpc_mdctx *ctx, gpr_slice slice);
 grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *str,
@@ -153,6 +154,7 @@ void grpc_mdelem_unref(grpc_mdelem *md);
 const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 
 int grpc_mdstr_is_legal_header(grpc_mdstr *s);
+int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s);
 int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 
 /* Batch mode metadata functions.
@@ -179,4 +181,4 @@ void grpc_mdctx_unlock(grpc_mdctx *ctx);
 
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 
-#endif  /* GRPC_INTERNAL_CORE_TRANSPORT_METADATA_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_METADATA_H */

@@ -66,7 +66,7 @@ class LonelyInvocationLinkTest(unittest.TestCase):
     ticket = links.Ticket(
         test_operation_id, 0, test_group, test_method,
         links.Ticket.Subscription.FULL, test_constants.SHORT_TIMEOUT, 1, None,
-        None, None, None, None, termination)
+        None, None, None, None, termination, None)
     invocation_link.accept_ticket(ticket)
     invocation_link_mate.block_until_tickets_satisfy(test_cases.terminated)
 

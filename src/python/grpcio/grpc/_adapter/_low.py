@@ -124,3 +124,6 @@ class Server(_types.Server):
 
   def request_call(self, completion_queue, tag):
     return self.server.request_call(completion_queue.completion_queue, tag)
+
+  def cancel_all_calls(self):
+    return self.server.cancel_all_calls()

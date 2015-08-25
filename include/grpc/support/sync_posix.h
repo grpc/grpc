@@ -44,4 +44,4 @@ typedef pthread_once_t gpr_once;
 
 #define GPR_ONCE_INIT PTHREAD_ONCE_INIT
 
-#endif  /* GRPC_SUPPORT_SYNC_POSIX_H */
+#endif /* GRPC_SUPPORT_SYNC_POSIX_H */
