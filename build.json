@@ -65,6 +65,7 @@
         "include/grpc++/support/slice.h",
         "include/grpc++/support/status.h",
         "include/grpc++/support/status_code_enum.h",
+        "include/grpc++/support/string_ref.h",
         "include/grpc++/support/stub_options.h",
         "include/grpc++/support/sync_stream.h",
         "include/grpc++/support/time.h"
@@ -101,6 +102,7 @@
         "src/cpp/util/byte_buffer.cc",
         "src/cpp/util/slice.cc",
         "src/cpp/util/status.cc",
+        "src/cpp/util/string_ref.cc",
         "src/cpp/util/time.cc"
       ]
     },
@@ -2126,6 +2128,17 @@
         "grpc",
         "gpr_test_util",
         "gpr"
+      ]
+    },
+    {
+      "name": "cxx_string_ref_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/util/string_ref_test.cc"
+      ],
+      "deps": [
+        "grpc++"
       ]
     },
     {
