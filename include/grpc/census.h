@@ -187,8 +187,8 @@ typedef enum {
   the results it provides. The following structures allow us to use a generic
   type for each of those.
 
-  Types referenced (one for each stat type in census_stat_type):
-*/
+  Types referenced (one for each stat type in census_stat_type, by creation
+  arguments, output blob, and object representation. */
 
 typedef struct census_stat_scalar_create_arg census_stat_scalar_create_arg;
 typedef struct census_stat_distribution_create_arg
