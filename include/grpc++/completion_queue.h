@@ -31,6 +31,13 @@
  *
  */
 
+
+/// A completion queue implements a producer-consumer queue, with two main
+/// methods:
+///
+/// - Next
+/// - AsyncNext XXX
+///
 #ifndef GRPCXX_COMPLETION_QUEUE_H
 #define GRPCXX_COMPLETION_QUEUE_H
 
@@ -67,22 +74,12 @@ class UnknownMethodHandler;
 
 class ChannelInterface;
 class ClientContext;
+class CompletionQueueTag;
 class CompletionQueue;
 class RpcMethod;
 class Server;
 class ServerBuilder;
 class ServerContext;
-
-class CompletionQueueTag {
- public:
-  virtual ~CompletionQueueTag() {}
-  // Called prior to returning from Next(), return value
-  // is the status of the operation (return status is the default thing
-  // to do)
-  // If this function returns false, the tag is dropped and not returned
-  // from the completion queue
-  virtual bool FinalizeResult(void** tag, bool* status) = 0;
-};
 
 // grpc_completion_queue wrapper class
 class CompletionQueue : public GrpcLibrary {
@@ -104,7 +101,6 @@ class CompletionQueue : public GrpcLibrary {
 
   // Blocking read from queue.
   // Returns false if the queue is ready for destruction, true if event
-
   bool Next(void** tag, bool* ok) {
     return (AsyncNextInternal(tag, ok, gpr_inf_future(GPR_CLOCK_REALTIME)) !=
             SHUTDOWN);
@@ -159,6 +155,17 @@ class CompletionQueue : public GrpcLibrary {
   void TryPluck(CompletionQueueTag* tag);
 
   grpc_completion_queue* cq_;  // owned
+};
+
+class CompletionQueueTag {
+ public:
+  virtual ~CompletionQueueTag() {}
+  // Called prior to returning from Next(), return value
+  // is the status of the operation (return status is the default thing
+  // to do)
+  // If this function returns false, the tag is dropped and not returned
+  // from the completion queue
+  virtual bool FinalizeResult(void** tag, bool* status) = 0;
 };
 
 class ServerCompletionQueue : public CompletionQueue {
