@@ -39,7 +39,7 @@
 
 namespace grpc {
 
-constexpr size_t string_ref::npos;
+size_t string_ref::npos;
 
 string_ref& string_ref::operator=(const string_ref& rhs) {
   data_ = rhs.data_;
