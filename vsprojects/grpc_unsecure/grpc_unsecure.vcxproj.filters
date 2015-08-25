@@ -578,18 +578,12 @@
     <ClInclude Include="..\..\src\core\profiling\timers.h">
       <Filter>src\core\profiling</Filter>
     </ClInclude>
-<<<<<<< HEAD
-=======
-    <ClInclude Include="..\..\src\core\profiling\timers_preciseclock.h">
-      <Filter>src\core\profiling</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h">
       <Filter>src\core\statistics</Filter>
     </ClInclude>
->>>>>>> upstream/master
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>

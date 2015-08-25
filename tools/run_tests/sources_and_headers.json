@@ -12818,12 +12818,8 @@
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
       "src/core/profiling/timers.h", 
-<<<<<<< HEAD
-=======
-      "src/core/profiling/timers_preciseclock.h", 
       "src/core/statistics/census_interface.h", 
       "src/core/statistics/census_rpc_stats.h", 
->>>>>>> upstream/master
       "src/core/surface/byte_buffer_queue.h", 
       "src/core/surface/call.h", 
       "src/core/surface/channel.h", 
@@ -13009,12 +13005,8 @@
       "src/core/profiling/basic_timers.c", 
       "src/core/profiling/stap_timers.c", 
       "src/core/profiling/timers.h", 
-<<<<<<< HEAD
-=======
-      "src/core/profiling/timers_preciseclock.h", 
       "src/core/statistics/census_interface.h", 
       "src/core/statistics/census_rpc_stats.h", 
->>>>>>> upstream/master
       "src/core/surface/byte_buffer.c", 
       "src/core/surface/byte_buffer_queue.c", 
       "src/core/surface/byte_buffer_queue.h", 
