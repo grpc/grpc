@@ -37,7 +37,8 @@
 #include <memory>
 #include <set>
 #include <vector>
-#include <grpc++/config.h>
+
+#include <grpc++/support/config.h>
 
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/qpstest.grpc.pb.h"

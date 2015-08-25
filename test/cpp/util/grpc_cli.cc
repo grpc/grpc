@@ -64,14 +64,13 @@
 #include <sstream>
 
 #include <gflags/gflags.h>
-#include "test/cpp/util/cli_call.h"
-#include "test/cpp/util/test_config.h"
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc/grpc.h>
+#include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
 
-#include <grpc/grpc.h>
+#include "test/cpp/util/cli_call.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_bool(enable_ssl, true, "Whether to use ssl/tls.");
 DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
@@ -154,7 +153,7 @@ int main(int argc, char** argv) {
       creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
     }
   }
-  std::shared_ptr<grpc::ChannelInterface> channel =
+  std::shared_ptr<grpc::Channel> channel =
       grpc::CreateChannel(server_address, creds, grpc::ChannelArguments());
 
   grpc::string response;

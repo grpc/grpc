@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc++/status.h>
+#include <grpc++/support/status.h>
 
 namespace grpc {
 

@@ -50,7 +50,7 @@ namespace grpc {
 namespace examples {
 namespace pubsub {
 
-Publisher::Publisher(std::shared_ptr<ChannelInterface> channel)
+Publisher::Publisher(std::shared_ptr<Channel> channel)
     : stub_(PublisherService::NewStub(channel)) {}
 
 void Publisher::Shutdown() { stub_.reset(); }
