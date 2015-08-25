@@ -92,20 +92,23 @@ static grpc_resolver_factory *resolve_factory(const char *target,
 
   *uri = grpc_uri_parse(target, 1);
   factory = lookup_factory(*uri);
-  if (factory == NULL && g_default_resolver_prefix != NULL) {
-    grpc_uri_destroy(*uri);
-    gpr_asprintf(&tmp, "%s%s", g_default_resolver_prefix, target);
-    *uri = grpc_uri_parse(tmp, 1);
-    factory = lookup_factory(*uri);
-    if (factory == NULL) {
+  if (factory == NULL) {
+    if (g_default_resolver_prefix != NULL) {
+      grpc_uri_destroy(*uri);
+      gpr_asprintf(&tmp, "%s%s", g_default_resolver_prefix, target);
+      *uri = grpc_uri_parse(tmp, 1);
+      factory = lookup_factory(*uri);
+      if (factory == NULL) {
+        grpc_uri_destroy(grpc_uri_parse(target, 0));
+        grpc_uri_destroy(grpc_uri_parse(tmp, 0));
+        gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target,
+                tmp);
+      }
+      gpr_free(tmp);
+    } else {
       grpc_uri_destroy(grpc_uri_parse(target, 0));
-      grpc_uri_destroy(grpc_uri_parse(tmp, 0));
-      gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target, tmp);
+      gpr_log(GPR_ERROR, "don't know how to resolve '%s'", target);
     }
-    gpr_free(tmp);
-  } else if (factory == NULL) {
-    grpc_uri_destroy(grpc_uri_parse(target, 0));
-    gpr_log(GPR_ERROR, "don't know how to resolve '%s'", target);
   }
   return factory;
 }
