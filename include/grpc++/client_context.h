@@ -45,6 +45,7 @@
 #include <grpc++/support/auth_context.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
+#include <grpc++/support/string_ref.h>
 #include <grpc++/support/time.h>
 
 struct census_context;

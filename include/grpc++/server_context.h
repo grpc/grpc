@@ -41,6 +41,7 @@
 #include <grpc/support/time.h>
 #include <grpc++/support/auth_context.h>
 #include <grpc++/support/config.h>
+#include <grpc++/support/string_ref.h>
 #include <grpc++/support/time.h>
 
 struct gpr_timespec;
