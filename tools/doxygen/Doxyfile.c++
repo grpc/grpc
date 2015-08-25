@@ -795,6 +795,7 @@ include/grpc++/support/config_protobuf.h \
 include/grpc++/support/slice.h \
 include/grpc++/support/status.h \
 include/grpc++/support/status_code_enum.h \
+include/grpc++/support/string_ref.h \
 include/grpc++/support/stub_options.h \
 include/grpc++/support/sync_stream.h \
 include/grpc++/support/time.h
