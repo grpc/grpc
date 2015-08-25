@@ -103,7 +103,7 @@ class ServerContext {
 
   bool IsCancelled() const;
 
-  const std::multimap<grpc::string, grpc::string>& client_metadata() {
+  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata() {
     return client_metadata_;
   }
 
@@ -185,7 +185,7 @@ class ServerContext {
   CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
-  std::multimap<grpc::string, grpc::string> client_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref> client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 
