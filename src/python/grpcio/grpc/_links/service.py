@@ -239,7 +239,7 @@ class _Kernel(object):
       elif not rpc_state.premetadataed:
         if (ticket.terminal_metadata is not None or
             ticket.payload is not None or
-            ticket.termination is links.Ticket.Termination.COMPLETION or
+            ticket.termination is not None or
             ticket.code is not None or
             ticket.message is not None):
           call.premetadata()
@@ -257,11 +257,11 @@ class _Kernel(object):
             termination = None
           else:
             termination = links.Ticket.Termination.COMPLETION
-          ticket = links.Ticket(
+          early_read_ticket = links.Ticket(
               call, rpc_state.sequence_number, None, None, None, None, None,
               None, payload, None, None, None, termination, None)
           rpc_state.sequence_number += 1
-          self._relay.add_value(ticket)
+          self._relay.add_value(early_read_ticket)
 
       if ticket.payload is not None:
         call.write(rpc_state.response_serializer(ticket.payload), call)
