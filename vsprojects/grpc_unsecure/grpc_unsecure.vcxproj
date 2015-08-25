@@ -225,7 +225,7 @@
     <ClInclude Include="..\..\include\grpc\census.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\channel\census_filter.h" />
+    <ClInclude Include="..\..\src\core\census\grpc_filter.h" />
     <ClInclude Include="..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\src\core\channel\channel_stack.h" />
     <ClInclude Include="..\..\src\core\channel\client_channel.h" />
@@ -282,6 +282,7 @@
     <ClInclude Include="..\..\src\core\iomgr\tcp_server.h" />
     <ClInclude Include="..\..\src\core\iomgr\tcp_windows.h" />
     <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h" />
+    <ClInclude Include="..\..\src\core\iomgr\udp_server.h" />
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h" />
     <ClInclude Include="..\..\src\core\json\json.h" />
@@ -290,6 +291,8 @@
     <ClInclude Include="..\..\src\core\json\json_writer.h" />
     <ClInclude Include="..\..\src\core\profiling\timers.h" />
     <ClInclude Include="..\..\src\core\profiling\timers_preciseclock.h" />
+    <ClInclude Include="..\..\src\core\statistics\census_interface.h" />
+    <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h" />
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\src\core\surface\channel.h" />
@@ -331,6 +334,8 @@
     <ClCompile Include="..\..\src\core\surface\init_unsecure.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\grpc_context.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\grpc_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
     </ClCompile>
@@ -447,6 +452,8 @@
     <ClCompile Include="..\..\src\core\iomgr\tcp_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\udp_server.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_eventfd.c">
     </ClCompile>

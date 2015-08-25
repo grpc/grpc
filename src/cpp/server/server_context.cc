@@ -38,7 +38,7 @@
 #include <grpc/support/log.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/sync.h>
-#include <grpc++/time.h>
+#include <grpc++/support/time.h>
 
 #include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
@@ -50,7 +50,12 @@ namespace grpc {
 class ServerContext::CompletionOp GRPC_FINAL : public CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
-  CompletionOp() : has_tag_(false), tag_(nullptr), refs_(2), finalized_(false), cancelled_(0) {}
+  CompletionOp()
+      : has_tag_(false),
+        tag_(nullptr),
+        refs_(2),
+        finalized_(false),
+        cancelled_(0) {}
 
   void FillOps(grpc_op* ops, size_t* nops) GRPC_OVERRIDE;
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
@@ -91,6 +96,7 @@ void ServerContext::CompletionOp::FillOps(grpc_op* ops, size_t* nops) {
   ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops->data.recv_close_on_server.cancelled = &cancelled_;
   ops->flags = 0;
+  ops->reserved = NULL;
   *nops = 1;
 }
 

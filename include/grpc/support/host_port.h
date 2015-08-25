@@ -61,4 +61,4 @@ int gpr_split_host_port(const char *name, char **host, char **port);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_HOST_PORT_H */
+#endif /* GRPC_SUPPORT_HOST_PORT_H */

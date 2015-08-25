@@ -85,9 +85,8 @@ namespace Grpc.IntegrationTesting
         [TestFixtureTearDown]
         public void Cleanup()
         {
-            channel.Dispose();
+            channel.ShutdownAsync().Wait();
             server.ShutdownAsync().Wait();
-            GrpcEnvironment.Shutdown();
         }
 
         [Test]

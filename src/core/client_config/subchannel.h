@@ -91,8 +91,10 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
                                             grpc_connectivity_state *state,
                                             grpc_iomgr_closure *notify);
 
+/** express interest in \a channel's activities through \a pollset. */
 void grpc_subchannel_add_interested_party(grpc_subchannel *channel,
                                           grpc_pollset *pollset);
+/** stop following \a channel's activity through \a pollset. */
 void grpc_subchannel_del_interested_party(grpc_subchannel *channel,
                                           grpc_pollset *pollset);
 

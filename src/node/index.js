@@ -135,9 +135,19 @@ exports.Server = server.Server;
 exports.status = grpc.status;
 
 /**
+ * Propagate flag name to number mapping
+ */
+exports.propagate = grpc.propagate;
+
+/**
  * Call error name to code number mapping
  */
 exports.callError = grpc.callError;
+
+/**
+ * Write flag name to code number mapping
+ */
+exports.writeFlags = grpc.writeFlags;
 
 /**
  * Credentials factories

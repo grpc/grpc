@@ -38,7 +38,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc++/credentials.h>
 #include <grpc++/server_context.h>
-#include <grpc++/time.h>
+#include <grpc++/support/time.h>
 
 #include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
@@ -71,25 +71,25 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
 }
 
 void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<ChannelInterface>& channel) {
+                             const std::shared_ptr<Channel>& channel) {
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;
   if (creds_ && !creds_->ApplyToCall(call_)) {
     grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
-                                 "Failed to set credentials to rpc.");
+                                 "Failed to set credentials to rpc.", nullptr);
   }
 }
 
 void ClientContext::set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
-  char* algorithm_name = NULL;
+  char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
     gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
             algorithm);
     abort();
   }
-  GPR_ASSERT(algorithm_name != NULL);
+  GPR_ASSERT(algorithm_name != nullptr);
   AddMetadata(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, algorithm_name);
 }
 
@@ -102,7 +102,7 @@ std::shared_ptr<const AuthContext> ClientContext::auth_context() const {
 
 void ClientContext::TryCancel() {
   if (call_) {
-    grpc_call_cancel(call_);
+    grpc_call_cancel(call_, nullptr);
   }
 }
 
