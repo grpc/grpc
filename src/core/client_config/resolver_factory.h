@@ -51,12 +51,15 @@ struct grpc_resolver_factory_vtable {
   void (*ref)(grpc_resolver_factory *factory);
   void (*unref)(grpc_resolver_factory *factory);
 
+  /** Implementation of grpc_resolver_factory_create_resolver */
   grpc_resolver *(*create_resolver)(
       grpc_resolver_factory *factory, grpc_uri *uri,
       grpc_subchannel_factory *subchannel_factory);
 
+  /** Implementation of grpc_resolver_factory_get_default_authority */
   char *(*get_default_authority)(grpc_resolver_factory *factory, grpc_uri *uri);
 
+  /** URI scheme that this factory implements */
   const char *scheme;
 };
 
