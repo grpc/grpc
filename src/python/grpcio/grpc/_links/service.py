@@ -239,7 +239,7 @@ class _Kernel(object):
       elif not rpc_state.premetadataed:
         if (ticket.terminal_metadata is not None or
             ticket.payload is not None or
-            ticket.termination is links.Ticket.Termination.COMPLETION or
+            ticket.termination is not None or
             ticket.code is not None or
             ticket.message is not None):
           call.premetadata()
