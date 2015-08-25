@@ -62,4 +62,4 @@
 
 extern const grpc_channel_filter grpc_compress_filter;
 
-#endif  /* GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H */
+#endif /* GRPC_INTERNAL_CORE_CHANNEL_COMPRESS_FILTER_H */

@@ -36,7 +36,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc++/time.h>
+#include <grpc++/support/time.h>
 
 namespace grpc {
 

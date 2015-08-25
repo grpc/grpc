@@ -44,14 +44,16 @@ namespace Grpc.Core
     {
         readonly IClientStreamWriter<TRequest> requestStream;
         readonly Task<TResponse> responseAsync;
+        readonly Task<Metadata> responseHeadersAsync;
         readonly Func<Status> getStatusFunc;
         readonly Func<Metadata> getTrailersFunc;
         readonly Action disposeAction;
 
-        public AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> responseAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
+        public AsyncClientStreamingCall(IClientStreamWriter<TRequest> requestStream, Task<TResponse> responseAsync, Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
         {
             this.requestStream = requestStream;
             this.responseAsync = responseAsync;
+            this.responseHeadersAsync = responseHeadersAsync;
             this.getStatusFunc = getStatusFunc;
             this.getTrailersFunc = getTrailersFunc;
             this.disposeAction = disposeAction;
@@ -65,6 +67,17 @@ namespace Grpc.Core
             get
             {
                 return this.responseAsync;
+            }
+        }
+
+        /// <summary>
+        /// Asynchronous access to response headers.
+        /// </summary>
+        public Task<Metadata> ResponseHeadersAsync
+        {
+            get
+            {
+                return this.responseHeadersAsync;
             }
         }
 
@@ -86,6 +99,24 @@ namespace Grpc.Core
         public TaskAwaiter<TResponse> GetAwaiter()
         {
             return responseAsync.GetAwaiter();
+        }
+
+        /// <summary>
+        /// Gets the call status if the call has already finished.
+        /// Throws InvalidOperationException otherwise.
+        /// </summary>
+        public Status GetStatus()
+        {
+            return getStatusFunc();
+        }
+
+        /// <summary>
+        /// Gets the call trailing metadata if the call has already finished.
+        /// Throws InvalidOperationException otherwise.
+        /// </summary>
+        public Metadata GetTrailers()
+        {
+            return getTrailersFunc();
         }
 
         /// <summary>

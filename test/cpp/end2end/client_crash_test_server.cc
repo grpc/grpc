@@ -40,7 +40,6 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
 #include "test/cpp/util/echo.grpc.pb.h"
 
 DEFINE_string(address, "", "Address to bind to");
@@ -58,7 +57,8 @@ using namespace gflags;
 namespace grpc {
 namespace testing {
 
-class ServiceImpl GRPC_FINAL : public ::grpc::cpp::test::util::TestService::Service {
+class ServiceImpl GRPC_FINAL
+    : public ::grpc::cpp::test::util::TestService::Service {
   Status BidiStream(ServerContext* context,
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE {

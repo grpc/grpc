@@ -34,8 +34,7 @@
 #ifndef GRPC_EXAMPLES_PUBSUB_SUBSCRIBER_H
 #define GRPC_EXAMPLES_PUBSUB_SUBSCRIBER_H
 
-#include <grpc++/channel_interface.h>
-#include <grpc++/status.h>
+#include <grpc++/channel.h>
 
 #include "examples/pubsub/pubsub.grpc.pb.h"
 
@@ -45,7 +44,7 @@ namespace pubsub {
 
 class Subscriber {
  public:
-  Subscriber(std::shared_ptr<ChannelInterface> channel);
+  Subscriber(std::shared_ptr<Channel> channel);
   void Shutdown();
 
   Status CreateSubscription(const grpc::string& topic,

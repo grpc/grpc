@@ -34,8 +34,7 @@
 #ifndef GRPC_EXAMPLES_PUBSUB_PUBLISHER_H
 #define GRPC_EXAMPLES_PUBSUB_PUBLISHER_H
 
-#include <grpc++/channel_interface.h>
-#include <grpc++/status.h>
+#include <grpc++/channel.h>
 
 #include "examples/pubsub/pubsub.grpc.pb.h"
 
@@ -45,7 +44,7 @@ namespace pubsub {
 
 class Publisher {
  public:
-  Publisher(std::shared_ptr<ChannelInterface> channel);
+  Publisher(std::shared_ptr<Channel> channel);
   void Shutdown();
 
   Status CreateTopic(const grpc::string& topic);

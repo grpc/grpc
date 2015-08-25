@@ -38,11 +38,11 @@
 #include <memory>
 
 #include <grpc++/completion_queue.h>
-#include <grpc++/config.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/sync.h>
-#include <grpc++/status.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
 
 struct grpc_server;
 
@@ -63,7 +63,14 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   ~Server();
 
   // Shutdown the server, block until all rpc processing finishes.
-  void Shutdown();
+  // Forcefully terminate pending calls after deadline expires.
+  template <class T>
+  void Shutdown(const T& deadline) {
+    ShutdownInternal(TimePoint<T>(deadline).raw_time());
+  }
+
+  // Shutdown the server, waiting for all rpc processing to finish.
+  void Shutdown() { ShutdownInternal(gpr_inf_future(GPR_CLOCK_MONOTONIC)); }
 
   // Block waiting for all work to complete (the server must either
   // be shutting down or some other thread must call Shutdown for this
@@ -84,13 +91,14 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
          int max_message_size);
   // Register a service. This call does not take ownership of the service.
   // The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const grpc::string *host, RpcService* service);
-  bool RegisterAsyncService(const grpc::string *host, AsynchronousService* service);
+  bool RegisterService(const grpc::string* host, RpcService* service);
+  bool RegisterAsyncService(const grpc::string* host,
+                            AsynchronousService* service);
   void RegisterAsyncGenericService(AsyncGenericService* service);
   // Add a listening port. Can be called multiple times.
   int AddListeningPort(const grpc::string& addr, ServerCredentials* creds);
   // Start the server.
-  bool Start();
+  bool Start(ServerCompletionQueue** cqs, size_t num_cqs);
 
   void HandleQueueClosed();
   void RunRpc();
@@ -98,11 +106,14 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
 
   void PerformOpsOnCall(CallOpSetInterface* ops, Call* call) GRPC_OVERRIDE;
 
+  void ShutdownInternal(gpr_timespec deadline);
+
   class BaseAsyncRequest : public CompletionQueueTag {
    public:
     BaseAsyncRequest(Server* server, ServerContext* context,
                      ServerAsyncStreamingInterface* stream,
-                     CompletionQueue* call_cq, void* tag);
+                     CompletionQueue* call_cq, void* tag,
+                     bool delete_on_finalize);
     virtual ~BaseAsyncRequest();
 
     bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
@@ -113,6 +124,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
     ServerAsyncStreamingInterface* const stream_;
     CompletionQueue* const call_cq_;
     void* const tag_;
+    const bool delete_on_finalize_;
     grpc_call* call_;
     grpc_metadata_array initial_metadata_array_;
   };
@@ -174,18 +186,23 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
     Message* const request_;
   };
 
-  class GenericAsyncRequest GRPC_FINAL : public BaseAsyncRequest {
+  class GenericAsyncRequest : public BaseAsyncRequest {
    public:
     GenericAsyncRequest(Server* server, GenericServerContext* context,
                         ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
-                        ServerCompletionQueue* notification_cq, void* tag);
+                        ServerCompletionQueue* notification_cq, void* tag,
+                        bool delete_on_finalize);
 
     bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
 
    private:
     grpc_call_details call_details_;
   };
+
+  class UnimplementedAsyncRequestContext;
+  class UnimplementedAsyncRequest;
+  class UnimplementedAsyncResponse;
 
   template <class Message>
   void RequestAsyncCall(void* registered_method, ServerContext* context,
@@ -211,7 +228,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
                                ServerCompletionQueue* notification_cq,
                                void* tag) {
     new GenericAsyncRequest(this, context, stream, call_cq, notification_cq,
-                            tag);
+                            tag, true);
   }
 
   const int max_message_size_;

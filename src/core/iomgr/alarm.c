@@ -105,8 +105,7 @@ void grpc_alarm_list_init(gpr_timespec now) {
 
 void grpc_alarm_list_shutdown(void) {
   int i;
-  while (run_some_expired_alarms(NULL, gpr_inf_future(g_clock_type), NULL,
-                                 0))
+  while (run_some_expired_alarms(NULL, gpr_inf_future(g_clock_type), NULL, 0))
     ;
   for (i = 0; i < NUM_SHARDS; i++) {
     shard_type *shard = &g_shards[i];
@@ -362,7 +361,7 @@ static int run_some_expired_alarms(gpr_mu *drop_mu, gpr_timespec now,
 int grpc_alarm_check(gpr_mu *drop_mu, gpr_timespec now, gpr_timespec *next) {
   GPR_ASSERT(now.clock_type == g_clock_type);
   return run_some_expired_alarms(
-      drop_mu, now, next, 
+      drop_mu, now, next,
       gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0);
 }
 

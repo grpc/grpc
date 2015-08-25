@@ -89,4 +89,4 @@
 #error could not determine platform for atm
 #endif
 
-#endif  /* GRPC_SUPPORT_ATM_H */
+#endif /* GRPC_SUPPORT_ATM_H */

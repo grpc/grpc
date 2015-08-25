@@ -33,7 +33,7 @@
 #include <memory>
 
 #include <grpc/grpc.h>
-#include <grpc++/auth_context.h>
+#include <grpc++/support/auth_context.h>
 
 namespace grpc {
 
