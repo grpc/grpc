@@ -120,13 +120,13 @@ TEST_F(StringRefTest, Capacity) {
   EXPECT_EQ(0, empty.length());
   EXPECT_EQ(0, empty.size());
   EXPECT_EQ(0, empty.max_size());
-  EXPECT_EQ(true, empty.empty());
+  EXPECT_TRUE(empty.empty());
 
   string_ref s(kTestString);
   EXPECT_EQ(strlen(kTestString), s.length());
   EXPECT_EQ(s.length(), s.size());
   EXPECT_EQ(s.max_size(), s.length());
-  EXPECT_EQ(false, s.empty());
+  EXPECT_FALSE(s.empty());
 }
 
 TEST_F(StringRefTest, Compare) {
