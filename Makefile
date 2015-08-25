@@ -299,11 +299,7 @@ LIBS = m z pthread
 LDFLAGS += -pthread
 endif
 
-ifneq ($(wildcard /usr/src/gtest/src/gtest-all.cc),)
-GTEST_LIB = /usr/src/gtest/src/gtest-all.cc -I/usr/src/gtest
-else
-GTEST_LIB = -lgtest
-endif
+GTEST_LIB = -Ithird_party/googletest/include -Ithird_party/googletest third_party/googletest/src/gtest-all.cc
 GTEST_LIB += -lgflags
 ifeq ($(V),1)
 E = @:
@@ -611,6 +607,8 @@ PROTOBUF_PKG_CONFIG = false
 
 PC_REQUIRES_GRPCXX =
 PC_LIBS_GRPCXX =
+
+CPPFLAGS := -Ithird_party/googletest/include $(CPPFLAGS)
 
 ifeq ($(HAS_SYSTEM_PROTOBUF),true)
 ifeq ($(HAS_PKG_CONFIG),true)
@@ -4081,6 +4079,7 @@ LIBGRPC_SRC = \
     src/core/tsi/ssl_transport_security.c \
     src/core/tsi/transport_security.c \
     src/core/census/grpc_context.c \
+    src/core/census/grpc_filter.c \
     src/core/channel/channel_args.c \
     src/core/channel/channel_stack.c \
     src/core/channel/client_channel.c \
@@ -4354,6 +4353,7 @@ endif
 LIBGRPC_UNSECURE_SRC = \
     src/core/surface/init_unsecure.c \
     src/core/census/grpc_context.c \
+    src/core/census/grpc_filter.c \
     src/core/channel/channel_args.c \
     src/core/channel/channel_stack.c \
     src/core/channel/client_channel.c \

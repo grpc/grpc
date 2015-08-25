@@ -7,6 +7,9 @@
     <ClCompile Include="..\..\src\core\census\grpc_context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\grpc_filter.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -380,8 +383,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\core\channel\census_filter.h">
-      <Filter>src\core\channel</Filter>
+    <ClInclude Include="..\..\src\core\census\grpc_filter.h">
+      <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\channel_args.h">
       <Filter>src\core\channel</Filter>
