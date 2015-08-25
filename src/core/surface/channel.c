@@ -141,8 +141,27 @@ grpc_channel *grpc_channel_create_from_filters(
           gpr_log(GPR_ERROR, "%s: must be an string",
                   GRPC_ARG_DEFAULT_AUTHORITY);
         } else {
+          if (channel->default_authority) {
+            /* setting this takes precedence over anything else */
+            GRPC_MDELEM_UNREF(channel->default_authority);
+          }
           channel->default_authority = grpc_mdelem_from_strings(
               mdctx, ":authority", args->args[i].value.string);
+        }
+      } else if (0 ==
+                 strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
+        if (args->args[i].type != GRPC_ARG_STRING) {
+          gpr_log(GPR_ERROR, "%s: must be an string",
+                  GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+        } else {
+          if (channel->default_authority) {
+            /* other ways of setting this (notably ssl) take precedence */
+            gpr_log(GPR_ERROR, "%s: default host already set some other way",
+                    GRPC_ARG_DEFAULT_AUTHORITY);
+          } else {
+            channel->default_authority = grpc_mdelem_from_strings(
+                mdctx, ":authority", args->args[i].value.string);
+          }
         }
       }
     }
