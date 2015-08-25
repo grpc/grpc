@@ -81,9 +81,17 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
 
 /* Simple starter implementation */
 void gpr_default_log(gpr_log_func_args *args) {
+  char *final_slash;
+  const char *display_file;
   char time_buffer[64];
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
+
+  final_slash = strrchr(args->file, '\\');
+  if (final_slash == NULL)
+    display_file = args->file;
+  else
+    display_file = final_slash + 1;
 
   if (localtime_s(&tm, &now.tv_sec)) {
     strcpy(time_buffer, "error:localtime");
@@ -94,7 +102,7 @@ void gpr_default_log(gpr_log_func_args *args) {
 
   fprintf(stderr, "%s%s.%09u %5lu %s:%d] %s\n",
           gpr_log_severity_string(args->severity), time_buffer,
-          (int)(now.tv_nsec), GetCurrentThreadId(), args->file, args->line,
+          (int)(now.tv_nsec), GetCurrentThreadId(), display_file, args->line,
           args->message);
 }
 
