@@ -1,0 +1,18 @@
+/* Start ZH-CN locale-specific CSS */
+body
+{
+	font-family: MS YaHei, Simsun, Segoe UI, Verdana, Arial;
+}
+pre
+{
+  font-family: Consolas, Courier, monospace, 新宋体;
+}
+span.tt
+{
+  font-family: Consolas, Courier, monospace, 新宋体;
+}
+span.code
+{
+	font-family: Consolas, Courier, monospace, 新宋体;
+}
+/* End locale-specific CSS */
