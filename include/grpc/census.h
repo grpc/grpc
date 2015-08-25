@@ -170,6 +170,104 @@ typedef struct {
 void census_record_stat(census_context *context, census_stat *stats,
                         size_t nstats);
 
+/* Stats Configuration - Census clients can use these functions and structures
+   to extend and define what stats get recorded for what measurements. */
+
+/** Stats types supported by census. */
+typedef enum {
+  CENSUS_STAT_SCALAR = 0,       /* Simple scalar */
+  CENSUS_STAT_DISTRIBUTION = 1, /* count, average, variance */
+  CENSUS_STAT_HISTOGRAM = 2,    /* Histogram. */
+  CENSUS_STAT_WINDOW = 3,       /* Count over a time window. */
+  CENSUS_STAT_NSTATS = 4        /* Total number of stats types. */
+} census_stat_type;
+
+/*
+  Each stats type differs in how it is initialized, how it is represented, and
+  the results it provides. The following structures allow us to use a generic
+  type for each of those.
+
+  Types referenced (one for each stat type in census_stat_type):
+*/
+
+typedef struct census_stat_scalar_create_arg census_stat_scalar_create_arg;
+typedef struct census_stat_distribution_create_arg
+    census_stat_distribution_create_arg;
+typedef struct census_stat_histogram_create_arg
+    census_stat_histogram_create_arg;
+typedef struct census_stat_window_create_arg census_stat_window_create_arg;
+
+/**
+  Type for representing information to construct a new instance of a given
+  stats type (e.g. histogram bucket boundaries).
+*/
+typedef struct {
+  census_stat_type stat_type; /* The "real" type of the stat. */
+  union {
+    const census_stat_scalar_create_arg *scalar_arg;
+    const census_stat_distribution_create_arg *distribution_arg;
+    const census_stat_histogram_create_arg *histogram_arg;
+    const census_stat_window_create_arg *window_arg;
+  }
+} census_stat_create_arg;
+
+/**
+  Type for representing a single stats result. */
+typedef struct {
+  const census_tag_set *view; /* Unique tags associated with this result. */
+  census_stat_type stat_type;
+  union {
+    const census_stat_scalar_result *scalar_result;
+    const census_stat_distribution_result *distribution_result;
+    const census_stat_histogram_result *histogram_result;
+    const census_stat_window_result *window_result;
+  }
+} census_stat_result;
+
+/**
+  Generic type for representing a stat "object".
+*/
+typdef struct {
+  census_stat_type stat_type;
+  union {
+    census_stat_scalar *scalar;
+    census_stat_distribution *distribution;
+    census_stat_histogram *histogram;
+    census_stat_window *window;
+  }
+} census_stat;
+
+/**
+  Structure holding function pointers and associated information needed to
+  manipulate a statstics "object". Every stats type must provide an instance
+  of this structure. */
+typedef struct {
+  /* Create a new statistic. The pointer returned can be used in future calls
+     to clone_stat(), destroy_stat(), record_stat() and get_stats(). */
+  (census_stat *) (*create_stat)(const census_stat_create_arg *create_arg);
+  /* Create a new statistic, using an existing one as base. */
+  (census_stat *) (*clone_stat)(const census_stat *stat);
+  /* destroy a stats object created by {create,clone}_stat(). */
+  (void) (*destroy_stat)(census_stat *stat);
+  /* Record a new value against a given statistics object instance. */
+  (void) (*record_stat)(census_stat *stat, double value);
+  /* Return current state of a stat. The object returned can be freed by
+     using destroy_stats_result(). */
+  (const census_stat_result *) (*get_stat)(const census_stat *stat);
+  /* destroy a stats result object, as returned from get_stat(). */
+  (void) (*destroy_stats_result)(census_stat_result *result);
+  /* Reset a stats values. */
+  (void) (*reset_stat)(census_stat *stat);
+} census_stat;
+
+gpr_int32 census_define_view(const census_tag_set *view);
+
+gpr_int32 census_define_stat(gpr_int32 metric_id, gpr_int32 view_id,
+                             const census_stat *stat,
+                             const census_stat_create_arg *create_arg);
+
+census_stat_result *census_get_stat(gpr_int32 stat_id, gpr_int32 *nstats);
+
 #ifdef __cplusplus
 }
 #endif
