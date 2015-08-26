@@ -252,8 +252,7 @@ Now we can use the channel to create our stub using the `NewStub` method provide
 
 ```cpp
  public:
-  RouteGuideClient(std::shared_ptr<ChannelInterface> channel,
-                   const std::string& db)
+  RouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db)
       : stub_(RouteGuide::NewStub(channel)) {
     ...
   }

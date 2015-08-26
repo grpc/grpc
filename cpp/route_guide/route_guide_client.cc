@@ -39,18 +39,15 @@
 #include <thread>
 
 #include <grpc/grpc.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
 #include "helper.h"
 #include "route_guide.grpc.pb.h"
 
+using grpc::Channel;
 using grpc::ChannelArguments;
-using grpc::ChannelInterface;
 using grpc::ClientContext;
 using grpc::ClientReader;
 using grpc::ClientReaderWriter;
@@ -88,8 +85,7 @@ RouteNote MakeRouteNote(const std::string& message,
 
 class RouteGuideClient {
  public:
-  RouteGuideClient(std::shared_ptr<ChannelInterface> channel,
-                   const std::string& db)
+  RouteGuideClient(std::shared_ptr<Channel> channel, const std::string& db)
       : stub_(RouteGuide::NewStub(channel)) {
     examples::ParseDb(db, &feature_list_);
   }

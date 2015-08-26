@@ -37,18 +37,15 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc++/async_unary_call.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/status.h>
 #include "helloworld.grpc.pb.h"
 
+using grpc::Channel;
 using grpc::ChannelArguments;
-using grpc::ChannelInterface;
 using grpc::ClientAsyncResponseReader;
 using grpc::ClientContext;
 using grpc::CompletionQueue;
@@ -59,7 +56,7 @@ using helloworld::Greeter;
 
 class GreeterClient {
  public:
-  explicit GreeterClient(std::shared_ptr<ChannelInterface> channel)
+  explicit GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
 
   std::string SayHello(const std::string& user) {
