@@ -35,7 +35,6 @@
 #include "test/core/util/test_config.h"
 #if defined(GPR_WINSOCK_SOCKET) && defined(GRPC_TEST_PICK_PORT)
 
-#include "src/core/iomgr/sockaddr_utils.h"
 #include "test/core/util/port.h"
 
 #include <process.h>
@@ -43,7 +42,13 @@
 #include <errno.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+
+#include "src/core/support/env.h"
+#include "src/core/httpcli/httpcli.h"
+#include "src/core/iomgr/sockaddr_utils.h"
 
 #define NUM_RANDOM_PORTS_TO_PICK 100
 
@@ -98,6 +103,11 @@ static int is_port_available(int *port, int is_tcp) {
   closesocket(fd);
   return 1;
 }
+
+typedef struct portreq {
+  grpc_pollset pollset;
+  int port;
+} portreq;
 
 static void got_port_from_server(void *arg,
                                  const grpc_httpcli_response *response) {
