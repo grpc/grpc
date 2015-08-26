@@ -146,6 +146,7 @@ typedef struct Server {
   PyObject_HEAD
   grpc_server *c_serv;
   CompletionQueue *cq;
+  int shutdown_called;
 } Server;
 Server *pygrpc_Server_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
 void pygrpc_Server_dealloc(Server *self);
@@ -156,6 +157,7 @@ PyObject *pygrpc_Server_add_http2_port(
 PyObject *pygrpc_Server_start(Server *self, PyObject *ignored);
 PyObject *pygrpc_Server_shutdown(
     Server *self, PyObject *args, PyObject *kwargs);
+PyObject *pygrpc_Server_cancel_all_calls(Server *self, PyObject *unused);
 extern PyTypeObject pygrpc_Server_type;
 
 /*=========*/

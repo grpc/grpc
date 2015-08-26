@@ -46,14 +46,12 @@
 #include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 #include <gflags/gflags.h>
-#include <grpc++/async_unary_call.h>
 #include <grpc++/client_context.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include "test/cpp/util/create_test_channel.h"
+
 #include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/qps/client.h"
+#include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {
 namespace testing {

@@ -66,11 +66,18 @@ namespace Grpc.Core
             
         private WriteFlags flags;
 
+        /// <summary>
+        /// Initializes a new instance of <c>WriteOptions</c> class.
+        /// </summary>
+        /// <param name="flags">The write flags.</param>
         public WriteOptions(WriteFlags flags = default(WriteFlags))
         {
             this.flags = flags;
         }
 
+        /// <summary>
+        /// Gets the write flags.
+        /// </summary>
         public WriteFlags Flags
         {
             get
