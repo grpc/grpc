@@ -47,4 +47,4 @@ source "python"$PYVER"_virtual_environment"/bin/activate
 "python"$PYVER -m grpc_test._core_over_links_base_interface_test
 "python"$PYVER -m grpc_test.framework.core._base_interface_test
 
-"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml"
+"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml --timeout=300"

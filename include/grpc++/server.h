@@ -38,11 +38,11 @@
 #include <memory>
 
 #include <grpc++/completion_queue.h>
-#include <grpc++/config.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/impl/sync.h>
-#include <grpc++/status.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
 
 struct grpc_server;
 

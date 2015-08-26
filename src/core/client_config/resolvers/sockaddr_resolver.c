@@ -60,9 +60,12 @@ typedef struct {
   grpc_lb_policy *(*lb_policy_factory)(grpc_subchannel **subchannels,
                                        size_t num_subchannels);
 
-  /** the address that we've 'resolved' */
-  struct sockaddr_storage addr;
-  int addr_len;
+  /** the addresses that we've 'resolved' */
+  struct sockaddr_storage *addrs;
+  /** the corresponding length of the addresses */
+  int *addrs_len;
+  /** how many elements in \a addrs */
+  size_t num_addrs;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -119,17 +122,22 @@ static void sockaddr_next(grpc_resolver *resolver,
 static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r) {
   grpc_client_config *cfg;
   grpc_lb_policy *lb_policy;
-  grpc_subchannel *subchannel;
+  grpc_subchannel **subchannels;
   grpc_subchannel_args args;
 
   if (r->next_completion != NULL && !r->published) {
+    size_t i;
     cfg = grpc_client_config_create();
-    memset(&args, 0, sizeof(args));
-    args.addr = (struct sockaddr *)&r->addr;
-    args.addr_len = r->addr_len;
-    subchannel =
-        grpc_subchannel_factory_create_subchannel(r->subchannel_factory, &args);
-    lb_policy = r->lb_policy_factory(&subchannel, 1);
+    subchannels = gpr_malloc(sizeof(grpc_subchannel *) * r->num_addrs);
+    for (i = 0; i < r->num_addrs; i++) {
+      memset(&args, 0, sizeof(args));
+      args.addr = (struct sockaddr *)&r->addrs[i];
+      args.addr_len = r->addrs_len[i];
+      subchannels[i] = grpc_subchannel_factory_create_subchannel(
+          r->subchannel_factory, &args);
+    }
+    lb_policy = r->lb_policy_factory(subchannels, r->num_addrs);
+    gpr_free(subchannels);
     grpc_client_config_set_lb_policy(cfg, lb_policy);
     GRPC_LB_POLICY_UNREF(lb_policy, "unix");
     r->published = 1;
@@ -143,6 +151,8 @@ static void sockaddr_destroy(grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
   grpc_subchannel_factory_unref(r->subchannel_factory);
+  gpr_free(r->addrs);
+  gpr_free(r->addrs_len);
   gpr_free(r);
 }
 
@@ -156,7 +166,28 @@ static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, int *len) {
 
   return 1;
 }
+
+static char *unix_get_default_authority(grpc_resolver_factory *factory,
+                                        grpc_uri *uri) {
+  return gpr_strdup("localhost");
+}
 #endif
+
+static char *ip_get_default_authority(grpc_uri *uri) {
+  const char *path = uri->path;
+  if (path[0] == '/') ++path;
+  return gpr_strdup(path);
+}
+
+static char *ipv4_get_default_authority(grpc_resolver_factory *factory,
+                                        grpc_uri *uri) {
+  return ip_get_default_authority(uri);
+}
+
+static char *ipv6_get_default_authority(grpc_resolver_factory *factory,
+                                        grpc_uri *uri) {
+  return ip_get_default_authority(uri);
+}
 
 static int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr, int *len) {
   const char *host_port = uri->path;
@@ -238,13 +269,18 @@ done:
   return result;
 }
 
+static void do_nothing(void *ignored) {}
 static grpc_resolver *sockaddr_create(
     grpc_uri *uri,
     grpc_lb_policy *(*lb_policy_factory)(grpc_subchannel **subchannels,
                                          size_t num_subchannels),
     grpc_subchannel_factory *subchannel_factory,
     int parse(grpc_uri *uri, struct sockaddr_storage *dst, int *len)) {
+  size_t i;
+  int errors_found = 0; /* GPR_FALSE */
   sockaddr_resolver *r;
+  gpr_slice path_slice;
+  gpr_slice_buffer path_parts;
 
   if (0 != strcmp(uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported");
@@ -253,7 +289,29 @@ static grpc_resolver *sockaddr_create(
 
   r = gpr_malloc(sizeof(sockaddr_resolver));
   memset(r, 0, sizeof(*r));
-  if (!parse(uri, &r->addr, &r->addr_len)) {
+
+  path_slice = gpr_slice_new(uri->path, strlen(uri->path), do_nothing);
+  gpr_slice_buffer_init(&path_parts);
+
+  gpr_slice_split(path_slice, ",", &path_parts);
+  r->num_addrs = path_parts.count;
+  r->addrs = gpr_malloc(sizeof(struct sockaddr_storage) * r->num_addrs);
+  r->addrs_len = gpr_malloc(sizeof(int) * r->num_addrs);
+
+  for(i = 0; i < r->num_addrs; i++) {
+    grpc_uri ith_uri = *uri;
+    char* part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
+    ith_uri.path = part_str;
+    if (!parse(&ith_uri, &r->addrs[i], &r->addrs_len[i])) {
+      errors_found = 1; /* GPR_TRUE */
+    }
+    gpr_free(part_str);
+    if (errors_found) break;
+  }
+
+  gpr_slice_buffer_destroy(&path_parts);
+  gpr_slice_unref(path_slice);
+  if (errors_found) {
     gpr_free(r);
     return NULL;
   }
@@ -276,20 +334,20 @@ static void sockaddr_factory_ref(grpc_resolver_factory *factory) {}
 
 static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
 
-#define DECL_FACTORY(name)                                            \
-  static grpc_resolver *name##_factory_create_resolver(               \
-      grpc_resolver_factory *factory, grpc_uri *uri,                  \
-      grpc_subchannel_factory *subchannel_factory) {                  \
-    return sockaddr_create(uri, grpc_create_pick_first_lb_policy,     \
-                           subchannel_factory, parse_##name);         \
-  }                                                                   \
-  static const grpc_resolver_factory_vtable name##_factory_vtable = { \
-      sockaddr_factory_ref, sockaddr_factory_unref,                   \
-      name##_factory_create_resolver};                                \
-  static grpc_resolver_factory name##_resolver_factory = {            \
-      &name##_factory_vtable};                                        \
-  grpc_resolver_factory *grpc_##name##_resolver_factory_create() {    \
-    return &name##_resolver_factory;                                  \
+#define DECL_FACTORY(name)                                                  \
+  static grpc_resolver *name##_factory_create_resolver(                     \
+      grpc_resolver_factory *factory, grpc_uri *uri,                        \
+      grpc_subchannel_factory *subchannel_factory) {                        \
+    return sockaddr_create(uri, grpc_create_pick_first_lb_policy,           \
+                           subchannel_factory, parse_##name);               \
+  }                                                                         \
+  static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
+      sockaddr_factory_ref, sockaddr_factory_unref,                         \
+      name##_factory_create_resolver, name##_get_default_authority, #name}; \
+  static grpc_resolver_factory name##_resolver_factory = {                  \
+      &name##_factory_vtable};                                              \
+  grpc_resolver_factory *grpc_##name##_resolver_factory_create() {          \
+    return &name##_resolver_factory;                                        \
   }
 
 #ifdef GPR_POSIX_SOCKET

@@ -43,7 +43,9 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
-    /// gRPC Channel
+    /// Represents a gRPC channel. Channels are an abstraction of long-lived connections to remote servers.
+    /// More client objects can reuse the same channel. Creating a channel is an expensive operation compared to invoking
+    /// a remote call so in general you should reuse a single channel for as many calls as possible.
     /// </summary>
     public class Channel
     {
@@ -161,6 +163,7 @@ namespace Grpc.Core
         /// There is no need to call this explicitly unless your use case requires that.
         /// Starting an RPC on a new channel will request connection implicitly.
         /// </summary>
+        /// <param name="deadline">The deadline. <c>null</c> indicates no deadline.</param>
         public async Task ConnectAsync(DateTime? deadline = null)
         {
             var currentState = handle.CheckConnectivityState(true);

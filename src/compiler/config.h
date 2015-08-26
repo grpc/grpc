@@ -34,8 +34,8 @@
 #ifndef SRC_COMPILER_CONFIG_H
 #define SRC_COMPILER_CONFIG_H
 
-#include <grpc++/config.h>
-#include <grpc++/config_protobuf.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/config_protobuf.h>
 
 #ifndef GRPC_CUSTOM_DESCRIPTOR
 #include <google/protobuf/descriptor.h>

@@ -40,6 +40,7 @@ namespace Grpc.Core
     /// <summary>
     /// Return type for single request - single response call.
     /// </summary>
+    /// <typeparam name="TResponse">Response message type for this call.</typeparam>
     public sealed class AsyncUnaryCall<TResponse> : IDisposable
     {
         readonly Task<TResponse> responseAsync;
@@ -48,7 +49,7 @@ namespace Grpc.Core
         readonly Func<Metadata> getTrailersFunc;
         readonly Action disposeAction;
 
-        public AsyncUnaryCall(Task<TResponse> responseAsync, Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
+        internal AsyncUnaryCall(Task<TResponse> responseAsync, Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc, Func<Metadata> getTrailersFunc, Action disposeAction)
         {
             this.responseAsync = responseAsync;
             this.responseHeadersAsync = responseHeadersAsync;
