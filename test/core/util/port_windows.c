@@ -99,6 +99,62 @@ static int is_port_available(int *port, int is_tcp) {
   return 1;
 }
 
+static void got_port_from_server(void *arg,
+                                 const grpc_httpcli_response *response) {
+  size_t i;
+  int port = 0;
+  portreq *pr = arg;
+  GPR_ASSERT(response);
+  GPR_ASSERT(response->status == 200);
+  for (i = 0; i < response->body_length; i++) {
+    GPR_ASSERT(response->body[i] >= '0' && response->body[i] <= '9');
+    port = port * 10 + response->body[i] - '0';
+  }
+  GPR_ASSERT(port > 1024);
+  gpr_mu_lock(GRPC_POLLSET_MU(&pr->pollset));
+  pr->port = port;
+  grpc_pollset_kick(&pr->pollset, NULL);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&pr->pollset));
+}
+
+static void destroy_pollset_and_shutdown(void *p) {
+  grpc_pollset_destroy(p);
+  grpc_shutdown();
+}
+
+static int pick_port_using_server(char *server) {
+  grpc_httpcli_context context;
+  grpc_httpcli_request req;
+  portreq pr;
+
+  grpc_init();
+
+  memset(&pr, 0, sizeof(pr));
+  memset(&req, 0, sizeof(req));
+  grpc_pollset_init(&pr.pollset);
+  pr.port = -1;
+
+  req.host = server;
+  req.path = "/get";
+
+  grpc_httpcli_context_init(&context);
+  grpc_httpcli_get(&context, &pr.pollset, &req,
+                   GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10), got_port_from_server,
+                   &pr);
+  gpr_mu_lock(GRPC_POLLSET_MU(&pr.pollset));
+  while (pr.port == -1) {
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&pr.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
+  }
+  gpr_mu_unlock(GRPC_POLLSET_MU(&pr.pollset));
+
+  grpc_httpcli_context_destroy(&context);
+  grpc_pollset_shutdown(&pr.pollset, destroy_pollset_and_shutdown, &pr.pollset);
+
+  return pr.port;
+}
+
 int grpc_pick_unused_port(void) {
   /* We repeatedly pick a port and then see whether or not it is
      available for use both as a TCP socket and a UDP socket.  First, we
@@ -108,22 +164,29 @@ int grpc_pick_unused_port(void) {
      races with other processes on kernels that want to reuse the same
      port numbers over and over. */
 
-  /* In alternating iterations we try UDP ports before TCP ports UDP
+  /* In alternating iterations we trial UDP ports before TCP ports UDP
      ports -- it could be the case that this machine has been using up
      UDP ports and they are scarcer. */
 
   /* Type of port to first pick in next iteration */
   int is_tcp = 1;
-  int try
-    = 0;
+  int trial = 0;
+
+  char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
+  if (env) {
+    int port = pick_port_using_server(env);
+    gpr_free(env);
+    if (port != 0) {
+      return port;
+    }
+  }
 
   for (;;) {
     int port;
-    try
-      ++;
-    if (try == 1) {
+    trial++;
+    if (trial == 1) {
       port = _getpid() % (65536 - 30000) + 30000;
-    } else if (try <= NUM_RANDOM_PORTS_TO_PICK) {
+    } else if (trial <= NUM_RANDOM_PORTS_TO_PICK) {
       port = rand() % (65536 - 30000) + 30000;
     } else {
       port = 0;
@@ -136,7 +199,7 @@ int grpc_pick_unused_port(void) {
     GPR_ASSERT(port > 0);
     /* Check that the port # is free for the other type of socket also */
     if (!is_port_available(&port, !is_tcp)) {
-      /* In the next iteration try to bind to the other type first
+      /* In the next iteration trial to bind to the other type first
          because perhaps it is more rare. */
       is_tcp = !is_tcp;
       continue;
