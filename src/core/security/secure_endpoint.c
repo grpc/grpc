@@ -332,7 +332,7 @@ static void endpoint_add_to_pollset(grpc_endpoint *secure_ep,
 }
 
 static void endpoint_add_to_pollset_set(grpc_endpoint *secure_ep,
-                                    grpc_pollset_set *pollset_set) {
+                                        grpc_pollset_set *pollset_set) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   grpc_endpoint_add_to_pollset_set(ep->wrapped_ep, pollset_set);
 }

@@ -105,24 +105,34 @@ static grpc_mdelem *remove_consumed_md(void *user_data, grpc_mdelem *md) {
   return md;
 }
 
-static void on_md_processing_done(void *user_data,
-                                  const grpc_metadata *consumed_md,
-                                  size_t num_consumed_md, int success) {
+static void on_md_processing_done(
+    void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
+    const grpc_metadata *response_md, size_t num_response_md,
+    grpc_status_code status, const char *error_details) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
 
-  if (success) {
+  /* TODO(jboeuf): Implement support for response_md. */
+  if (response_md != NULL && num_response_md > 0) {
+    gpr_log(GPR_INFO,
+            "response_md in auth metadata processing not supported for now. "
+            "Ignoring...");
+  }
+
+  if (status == GRPC_STATUS_OK) {
     calld->consumed_md = consumed_md;
     calld->num_consumed_md = num_consumed_md;
     grpc_metadata_batch_filter(&calld->md_op->data.metadata, remove_consumed_md,
                                elem);
-    calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
+    calld->on_done_recv->cb(calld->on_done_recv->cb_arg, 1);
   } else {
-    gpr_slice message = gpr_slice_from_copied_string(
-        "Authentication metadata processing failed.");
+    gpr_slice message;
+    error_details = error_details != NULL
+                    ? error_details
+                    : "Authentication metadata processing failed.";
+    message = gpr_slice_from_copied_string(error_details);
     grpc_sopb_reset(calld->recv_ops);
-    grpc_transport_stream_op_add_close(&calld->transport_op,
-                                       GRPC_STATUS_UNAUTHENTICATED, &message);
+    grpc_transport_stream_op_add_close(&calld->transport_op, status, &message);
     grpc_call_next_op(elem, &calld->transport_op);
   }
   grpc_metadata_array_destroy(&calld->md);
@@ -212,8 +222,7 @@ static void init_call_elem(grpc_call_element *elem,
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem) {
-}
+static void destroy_call_elem(grpc_call_element *elem) {}
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,

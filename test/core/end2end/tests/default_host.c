@@ -77,9 +77,8 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -136,13 +135,16 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
@@ -150,13 +152,14 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
   GPR_ASSERT(error == GRPC_CALL_OK);
 
-  error = grpc_server_request_call(f.server, &s, &call_details,
-                                   &request_metadata_recv, f.cq, f.cq,
-                                   tag(101));
+  error =
+      grpc_server_request_call(f.server, &s, &call_details,
+                               &request_metadata_recv, f.cq, f.cq, tag(101));
   GPR_ASSERT(error == GRPC_CALL_OK);
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
@@ -174,16 +177,19 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
   op->data.send_status_from_server.status_details = "xyz";
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
   GPR_ASSERT(error == GRPC_CALL_OK);
@@ -220,7 +226,9 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION) != 0) return;
-  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) == 0) return;
+  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION) != 0)
+    return;
+  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) == 0)
+    return;
   test_invoke_simple_request(config);
 }

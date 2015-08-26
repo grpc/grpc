@@ -36,9 +36,8 @@
 
 #include <map>
 
-#include <grpc++/channel_interface.h>
-#include <grpc++/config.h>
-#include <grpc++/status.h>
+#include <grpc++/channel.h>
+#include <grpc++/support/status.h>
 
 namespace grpc {
 namespace testing {
@@ -46,7 +45,7 @@ namespace testing {
 class CliCall GRPC_FINAL {
  public:
   typedef std::multimap<grpc::string, grpc::string> MetadataContainer;
-  static Status Call(std::shared_ptr<grpc::ChannelInterface> channel,
+  static Status Call(std::shared_ptr<grpc::Channel> channel,
                      const grpc::string& method, const grpc::string& request,
                      grpc::string* response, const MetadataContainer& metadata,
                      MetadataContainer* server_initial_metadata,

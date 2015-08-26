@@ -32,7 +32,6 @@
  */
 
 #include <grpc++/impl/proto_utils.h>
-#include <grpc++/config.h>
 
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
@@ -40,6 +39,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/port_platform.h>
+#include <grpc++/support/config.h>
 
 const int kMaxBufferLength = 8192;
 
@@ -154,18 +154,18 @@ class GrpcBufferReader GRPC_FINAL
 
 namespace grpc {
 
-Status SerializeProto(const grpc::protobuf::Message& msg, grpc_byte_buffer** bp) {
+Status SerializeProto(const grpc::protobuf::Message& msg,
+                      grpc_byte_buffer** bp) {
   GrpcBufferWriter writer(bp);
   return msg.SerializeToZeroCopyStream(&writer)
              ? Status::OK
-             : Status(StatusCode::INVALID_ARGUMENT,
-                      "Failed to serialize message");
+             : Status(StatusCode::INTERNAL, "Failed to serialize message");
 }
 
 Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
                         int max_message_size) {
   if (!buffer) {
-    return Status(StatusCode::INVALID_ARGUMENT, "No payload");
+    return Status(StatusCode::INTERNAL, "No payload");
   }
   GrpcBufferReader reader(buffer);
   ::grpc::protobuf::io::CodedInputStream decoder(&reader);
@@ -173,11 +173,10 @@ Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
     decoder.SetTotalBytesLimit(max_message_size, max_message_size);
   }
   if (!msg->ParseFromCodedStream(&decoder)) {
-    return Status(StatusCode::INVALID_ARGUMENT,
-                  msg->InitializationErrorString());
+    return Status(StatusCode::INTERNAL, msg->InitializationErrorString());
   }
   if (!decoder.ConsumedEntireMessage()) {
-    return Status(StatusCode::INVALID_ARGUMENT, "Did not read entire message");
+    return Status(StatusCode::INTERNAL, "Did not read entire message");
   }
   return Status::OK;
 }

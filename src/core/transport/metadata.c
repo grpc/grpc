@@ -133,8 +133,8 @@ static void unlock(grpc_mdctx *ctx) {
      case), since otherwise we can be stuck waiting for a garbage collection
      that will never happen. */
   if (ctx->refs == 0) {
-    /* uncomment if you're having trouble diagnosing an mdelem leak to make
-       things clearer (slows down destruction a lot, however) */
+/* uncomment if you're having trouble diagnosing an mdelem leak to make
+   things clearer (slows down destruction a lot, however) */
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
     gc_mdtab(ctx);
 #endif
@@ -311,7 +311,8 @@ static void slice_unref(void *p) {
   unlock(ctx);
 }
 
-grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str, int canonicalize_key) {
+grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str,
+                                   int canonicalize_key) {
   if (canonicalize_key) {
     size_t len;
     size_t i;
@@ -522,9 +523,9 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
 
 grpc_mdelem *grpc_mdelem_from_strings(grpc_mdctx *ctx, const char *key,
                                       const char *value) {
-  return grpc_mdelem_from_metadata_strings(ctx,
-                                           grpc_mdstr_from_string(ctx, key, 0),
-                                           grpc_mdstr_from_string(ctx, value, 0));
+  return grpc_mdelem_from_metadata_strings(
+      ctx, grpc_mdstr_from_string(ctx, key, 0),
+      grpc_mdstr_from_string(ctx, value, 0));
 }
 
 grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,

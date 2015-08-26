@@ -123,27 +123,29 @@ class CLanguage(object):
   def __init__(self, make_target, test_lang):
     self.make_target = make_target
     self.platform = platform_string()
-    with open('tools/run_tests/tests.json') as f:
-      js = json.load(f)
-      self.binaries = [tgt
-                       for tgt in js
-                       if tgt['language'] == test_lang and
-                          platform_string() in tgt['platforms']]
-      self.ci_binaries = [tgt
-                         for tgt in js
-                         if tgt['language'] == test_lang and
-                            platform_string() in tgt['ci_platforms']]
+    self.test_lang = test_lang
 
   def test_specs(self, config, travis):
     out = []
-    for target in (self.ci_binaries if travis else self.binaries):
+    with open('tools/run_tests/tests.json') as f:
+      js = json.load(f)
+      platforms_str = 'ci_platforms' if travis else 'platforms'
+      binaries = [tgt
+                  for tgt in js
+                  if tgt['language'] == self.test_lang and
+                      config.build_config not in tgt['exclude_configs'] and
+                      platform_string() in tgt[platforms_str]]
+    for target in binaries:
       if travis and target['flaky']:
         continue
       if self.platform == 'windows':
         binary = 'vsprojects/test_bin/%s.exe' % (target['name'])
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
-      out.append(config.job_spec([binary], [binary]))
+      if os.path.isfile(binary):
+        out.append(config.job_spec([binary], [binary]))
+      else:
+        print "\nWARNING: binary not found, skipping", binary
     return sorted(out)
 
   def make_targets(self):
@@ -470,7 +472,8 @@ else:
                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
                                args.slowdown,
-                           'CONFIG=%s' % cfg] + targets)
+                           'CONFIG=%s' % cfg] + targets,
+                          timeout_seconds=30*60)
 
 build_steps = [make_jobspec(cfg,
                             list(set(itertools.chain.from_iterable(
@@ -481,12 +484,6 @@ build_steps.extend(set(
                    for cfg in build_configs
                    for l in languages
                    for cmdline in l.build_steps()))
-one_run = set(
-    spec
-    for config in run_configs
-    for language in languages
-    for spec in language.test_specs(config, args.travis)
-    if re.search(args.regex, spec.shortname))
 
 runs_per_test = args.runs_per_test
 forever = args.forever
@@ -582,6 +579,12 @@ def _build_and_run(
   _start_port_server(port_server_port)
   try:
     infinite_runs = runs_per_test == 0
+    one_run = set(
+      spec
+      for config in run_configs
+      for language in languages
+      for spec in language.test_specs(config, args.travis)
+      if re.search(args.regex, spec.shortname))
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.
     if travis:

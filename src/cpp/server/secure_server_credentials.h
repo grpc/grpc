@@ -36,10 +36,11 @@
 
 #include <memory>
 
+#include <grpc++/server_credentials.h>
+
 #include <grpc/grpc_security.h>
 
-#include <grpc++/server_credentials.h>
-#include <grpc++/thread_pool_interface.h>
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
 

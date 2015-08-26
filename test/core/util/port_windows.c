@@ -63,7 +63,8 @@ static int is_port_available(int *port, int is_tcp) {
   }
 
   /* Reuseaddr lets us start up a server immediately after it exits */
-  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&one, sizeof(one)) < 0) {
+  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char *)&one,
+                 sizeof(one)) < 0) {
     gpr_log(GPR_ERROR, "setsockopt() failed: %s", strerror(errno));
     closesocket(fd);
     return 0;
@@ -75,14 +76,14 @@ static int is_port_available(int *port, int is_tcp) {
   addr.sin_port = htons(*port);
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
-	closesocket(fd);
+    closesocket(fd);
     return 0;
   }
 
   /* Get the bound port number */
   if (getsockname(fd, (struct sockaddr *)&addr, &alen) < 0) {
     gpr_log(GPR_ERROR, "getsockname() failed: %s", strerror(errno));
-	closesocket(fd);
+    closesocket(fd);
     return 0;
   }
   GPR_ASSERT(alen <= sizeof(addr));
@@ -113,11 +114,13 @@ int grpc_pick_unused_port(void) {
 
   /* Type of port to first pick in next iteration */
   int is_tcp = 1;
-  int try = 0;
+  int try
+    = 0;
 
   for (;;) {
     int port;
-    try++;
+    try
+      ++;
     if (try == 1) {
       port = _getpid() % (65536 - 30000) + 30000;
     } else if (try <= NUM_RANDOM_PORTS_TO_PICK) {

@@ -38,4 +38,4 @@
 
 gpr_slice parse_hexstring(const char *hexstring);
 
-#endif  /* GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H */
+#endif /* GRPC_TEST_CORE_UTIL_PARSE_HEXSTRING_H */
