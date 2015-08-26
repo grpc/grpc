@@ -103,7 +103,7 @@ static void tcp_free(grpc_tcp *tcp) {
   gpr_free(tcp);
 }
 
-#define GRPC_TCP_REFCOUNT_DEBUG
+/*#define GRPC_TCP_REFCOUNT_DEBUG*/
 #ifdef GRPC_TCP_REFCOUNT_DEBUG
 #define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
