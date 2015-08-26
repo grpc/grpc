@@ -31,32 +31,14 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_UTIL_CLI_CALL_H
-#define GRPC_TEST_CPP_UTIL_CLI_CALL_H
-
-#include <map>
-
-#include <grpc++/channel.h>
-#include <grpc++/support/status.h>
-#include <grpc++/support/string_ref.h>
+#include "test/cpp/util/string_ref_helper.h"
 
 namespace grpc {
 namespace testing {
 
-class CliCall GRPC_FINAL {
- public:
-  typedef std::multimap<grpc::string, grpc::string> OutgoingMetadataContainer;
-  typedef std::multimap<grpc::string_ref, grpc::string_ref>
-      IncomingMetadataContainer;
-  static Status Call(std::shared_ptr<grpc::Channel> channel,
-                     const grpc::string& method, const grpc::string& request,
-                     grpc::string* response,
-                     const OutgoingMetadataContainer& metadata,
-                     IncomingMetadataContainer* server_initial_metadata,
-                     IncomingMetadataContainer* server_trailing_metadata);
-};
+grpc::string ToString(const grpc::string_ref& r) {
+  return grpc::string(r.data(), r.size());
+}
 
 }  // namespace testing
 }  // namespace grpc
-
-#endif  // GRPC_TEST_CPP_UTIL_CLI_CALL_H
