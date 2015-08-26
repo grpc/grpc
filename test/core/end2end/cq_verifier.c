@@ -146,7 +146,7 @@ static int byte_buffer_eq_slice(grpc_byte_buffer *bb, gpr_slice b) {
 
 int byte_buffer_eq_string(grpc_byte_buffer *bb, const char *str) {
   grpc_byte_buffer_reader reader;
-  grpc_byte_buffer* rbb;
+  grpc_byte_buffer *rbb;
   int res;
 
   grpc_byte_buffer_reader_init(&reader, bb);

@@ -105,8 +105,8 @@ static void test_shutdown_then_next_polling(void) {
 
   cc = grpc_completion_queue_create(NULL);
   grpc_completion_queue_shutdown(cc);
-  event = grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME),
-                                     NULL);
+  event =
+      grpc_completion_queue_next(cc, gpr_inf_past(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(event.type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }
@@ -118,8 +118,8 @@ static void test_shutdown_then_next_with_timeout(void) {
 
   cc = grpc_completion_queue_create(NULL);
   grpc_completion_queue_shutdown(cc);
-  event = grpc_completion_queue_next(cc, gpr_inf_future(GPR_CLOCK_REALTIME),
-                                     NULL);
+  event =
+      grpc_completion_queue_next(cc, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   GPR_ASSERT(event.type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cc);
 }

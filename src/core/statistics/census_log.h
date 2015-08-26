@@ -88,4 +88,4 @@ size_t census_log_remaining_space(void);
    out-of-space. */
 int census_log_out_of_space_count(void);
 
-#endif  /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H */
+#endif /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H */

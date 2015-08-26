@@ -73,7 +73,6 @@ typedef struct {
   size_t allocated;
 } json_writer_userdata;
 
-
 /* This function checks if there's enough space left in the output buffer,
  * and will enlarge it if necessary. We're only allocating chunks of 256
  * bytes at a time (or multiples thereof).
@@ -97,8 +96,8 @@ static void json_writer_output_char(void* userdata, char c) {
   state->free_space--;
 }
 
-static void json_writer_output_string_with_len(void* userdata,
-                                               const char* str, size_t len) {
+static void json_writer_output_string_with_len(void* userdata, const char* str,
+                                               size_t len) {
   json_writer_userdata* state = userdata;
   json_writer_output_check(userdata, len);
   memcpy(state->output + state->string_len, str, len);
@@ -106,8 +105,7 @@ static void json_writer_output_string_with_len(void* userdata,
   state->free_space -= len;
 }
 
-static void json_writer_output_string(void* userdata,
-                                           const char* str) {
+static void json_writer_output_string(void* userdata, const char* str) {
   size_t len = strlen(str);
   json_writer_output_string_with_len(userdata, str, len);
 }
@@ -184,8 +182,7 @@ static gpr_uint32 json_reader_read_char(void* userdata) {
 /* Helper function to create a new grpc_json object and link it into
  * our tree-in-progress inside our opaque structure.
  */
-static grpc_json* json_create_and_link(void* userdata,
-                                       grpc_json_type type) {
+static grpc_json* json_create_and_link(void* userdata, grpc_json_type type) {
   json_reader_userdata* state = userdata;
   grpc_json* json = grpc_json_create(type);
 
@@ -201,7 +198,7 @@ static grpc_json* json_create_and_link(void* userdata,
       json->parent->child = json;
     }
     if (json->parent->type == GRPC_JSON_OBJECT) {
-      json->key = (char*) state->key;
+      json->key = (char*)state->key;
     }
   }
   if (!state->top) {
@@ -261,13 +258,13 @@ static void json_reader_set_key(void* userdata) {
 static void json_reader_set_string(void* userdata) {
   json_reader_userdata* state = userdata;
   grpc_json* json = json_create_and_link(userdata, GRPC_JSON_STRING);
-  json->value = (char*) state->string;
+  json->value = (char*)state->string;
 }
 
 static int json_reader_set_number(void* userdata) {
   json_reader_userdata* state = userdata;
   grpc_json* json = json_create_and_link(userdata, GRPC_JSON_NUMBER);
-  json->value = (char*) state->string;
+  json->value = (char*)state->string;
   return 1;
 }
 
@@ -287,32 +284,25 @@ static void json_reader_set_null(void* userdata) {
 }
 
 static grpc_json_reader_vtable reader_vtable = {
-  json_reader_string_clear,
-  json_reader_string_add_char,
-  json_reader_string_add_utf32,
-  json_reader_read_char,
-  json_reader_container_begins,
-  json_reader_container_ends,
-  json_reader_set_key,
-  json_reader_set_string,
-  json_reader_set_number,
-  json_reader_set_true,
-  json_reader_set_false,
-  json_reader_set_null
-};
+    json_reader_string_clear,     json_reader_string_add_char,
+    json_reader_string_add_utf32, json_reader_read_char,
+    json_reader_container_begins, json_reader_container_ends,
+    json_reader_set_key,          json_reader_set_string,
+    json_reader_set_number,       json_reader_set_true,
+    json_reader_set_false,        json_reader_set_null};
 
 /* And finally, let's define our public API. */
 grpc_json* grpc_json_parse_string_with_len(char* input, size_t size) {
   grpc_json_reader reader;
   json_reader_userdata state;
-  grpc_json *json = NULL;
+  grpc_json* json = NULL;
   grpc_json_reader_status status;
 
   if (!input) return NULL;
 
   state.top = state.current_container = state.current_value = NULL;
   state.string = state.key = NULL;
-  state.string_ptr = state.input = (gpr_uint8*) input;
+  state.string_ptr = state.input = (gpr_uint8*)input;
   state.remaining_input = size;
   grpc_json_reader_init(&reader, &reader_vtable, &state);
 
@@ -333,8 +323,8 @@ grpc_json* grpc_json_parse_string(char* input) {
   return grpc_json_parse_string_with_len(input, UNBOUND_JSON_STRING_LENGTH);
 }
 
-static void json_dump_recursive(grpc_json_writer* writer,
-                                grpc_json* json, int in_object) {
+static void json_dump_recursive(grpc_json_writer* writer, grpc_json* json,
+                                int in_object) {
   while (json) {
     if (in_object) grpc_json_writer_object_key(writer, json->key);
 
@@ -370,10 +360,8 @@ static void json_dump_recursive(grpc_json_writer* writer,
 }
 
 static grpc_json_writer_vtable writer_vtable = {
-  json_writer_output_char,
-  json_writer_output_string,
-  json_writer_output_string_with_len
-};
+    json_writer_output_char, json_writer_output_string,
+    json_writer_output_string_with_len};
 
 char* grpc_json_dump_to_string(grpc_json* json, int indent) {
   grpc_json_writer writer;

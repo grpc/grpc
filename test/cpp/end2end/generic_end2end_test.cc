@@ -33,32 +33,26 @@
 
 #include <memory>
 
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/cpp/util/echo.grpc.pb.h"
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 #include <grpc++/impl/proto_utils.h>
-#include <grpc++/async_generic_service.h>
-#include <grpc++/async_unary_call.h>
-#include <grpc++/byte_buffer.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/generic_stub.h>
+#include <grpc++/generic/async_generic_service.h>
+#include <grpc++/generic/generic_stub.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/slice.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include <grpc++/time.h>
+#include <grpc++/support/slice.h>
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/util/echo.grpc.pb.h"
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
@@ -68,7 +62,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return (void*)(gpr_intptr) i; }
+void* tag(int i) { return (void*)(gpr_intptr)i; }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
@@ -107,7 +101,8 @@ class GenericEnd2endTest : public ::testing::Test {
     server_address_ << server_host_ << ":" << port;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
+    builder.AddListeningPort(server_address_.str(),
+                             InsecureServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
     srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
@@ -126,7 +121,7 @@ class GenericEnd2endTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel = CreateChannel(
+    std::shared_ptr<Channel> channel = CreateChannel(
         server_address_.str(), InsecureCredentials(), ChannelArguments());
     generic_stub_.reset(new GenericStub(channel));
   }
@@ -165,7 +160,7 @@ class GenericEnd2endTest : public ::testing::Test {
                                    srv_cq_.get(), tag(4));
 
       verify_ok(srv_cq_.get(), 4, true);
-      EXPECT_EQ(server_host_, srv_ctx.host());
+      EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
       EXPECT_EQ(kMethodName, srv_ctx.method());
       ByteBuffer recv_buffer;
       stream.Read(&recv_buffer, tag(5));
@@ -238,7 +233,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
                                srv_cq_.get(), tag(2));
 
   verify_ok(srv_cq_.get(), 2, true);
-  EXPECT_EQ(server_host_, srv_ctx.host());
+  EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
   EXPECT_EQ(kMethodName, srv_ctx.method());
 
   std::unique_ptr<ByteBuffer> send_buffer =

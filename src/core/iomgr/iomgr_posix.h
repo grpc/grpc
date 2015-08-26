@@ -39,4 +39,4 @@
 void grpc_pollset_global_init(void);
 void grpc_pollset_global_shutdown(void);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_POSIX_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_POSIX_H */

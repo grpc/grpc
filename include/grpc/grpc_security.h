@@ -142,15 +142,6 @@ grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
 
 /* --- Secure channel creation. --- */
 
-/* The caller of the secure_channel_create functions may override the target
-   name used for SSL host name checking using this channel argument which is of
-   type GRPC_ARG_STRING. This *should* be used for testing only.
-   If this argument is not specified, the name used for SSL host name checking
-   will be the target parameter (assuming that the secure channel is an SSL
-   channel). If this parameter is specified and the underlying is not an SSL
-   channel, it will just be ignored. */
-#define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
-
 /* Creates a secure channel using the passed-in credentials. */
 grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
                                          const char *target,
@@ -275,12 +266,18 @@ int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context *ctx,
 /* --- Auth Metadata Processing --- */
 
 /* Callback function that is called when the metadata processing is done.
-   success is 1 if processing succeeded, 0 otherwise.
-   Consumed metadata will be removed from the set of metadata available on the
-   call. */
+   - Consumed metadata will be removed from the set of metadata available on the
+     call. consumed_md may be NULL if no metadata has been consumed.
+   - Response metadata will be set on the response. response_md may be NULL.
+   - status is GRPC_STATUS_OK for success or a specific status for an error.
+     Common error status for auth metadata processing is either
+     GRPC_STATUS_UNAUTHENTICATED in case of an authentication failure or
+     GRPC_STATUS PERMISSION_DENIED in case of an authorization failure.
+   - error_details gives details about the error. May be NULL. */
 typedef void (*grpc_process_auth_metadata_done_cb)(
     void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
-    int success);
+    const grpc_metadata *response_md, size_t num_response_md,
+    grpc_status_code status, const char *error_details);
 
 /* Pluggable server-side metadata processor object. */
 typedef struct {

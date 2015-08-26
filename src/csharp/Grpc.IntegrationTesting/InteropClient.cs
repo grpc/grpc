@@ -41,9 +41,10 @@ using Grpc.Auth;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Testing;
-using NUnit.Framework;
 using Google.Protobuf;
 using Google.Apis.Auth.OAuth2;
+
+using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting
 {
@@ -118,12 +119,10 @@ namespace Grpc.IntegrationTesting
                 };
             }
 
-            using (Channel channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelOptions))
-            {
-                TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
-                await RunTestCaseAsync(options.testCase, client);
-            }
-            GrpcEnvironment.Shutdown();
+            var channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelOptions);
+            TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
+            await RunTestCaseAsync(options.testCase, client);
+            channel.ShutdownAsync().Wait();
         }
 
         private async Task RunTestCaseAsync(string testCase, TestService.TestServiceClient client)
@@ -168,6 +167,9 @@ namespace Grpc.IntegrationTesting
                     break;
                 case "cancel_after_first_response":
                     await RunCancelAfterFirstResponseAsync(client);
+                    break;
+                case "timeout_on_sleeping_server":
+                    await RunTimeoutOnSleepingServerAsync(client);
                     break;
                 case "benchmark_empty_unary":
                     RunBenchmarkEmptyUnary(client);
@@ -317,7 +319,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("running service_account_creds");
             var credential = await GoogleCredential.GetApplicationDefaultAsync();
             credential = credential.CreateScoped(new[] { AuthScope });
-            client.HeaderInterceptor = OAuth2Interceptors.FromCredential(credential);
+            client.HeaderInterceptor = AuthInterceptors.FromCredential(credential);
 
             var request = new SimpleRequest
             {
@@ -342,7 +344,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("running compute_engine_creds");
             var credential = await GoogleCredential.GetApplicationDefaultAsync();
             Assert.IsFalse(credential.IsCreateScopedRequired);
-            client.HeaderInterceptor = OAuth2Interceptors.FromCredential(credential);
+            client.HeaderInterceptor = AuthInterceptors.FromCredential(credential);
             
             var request = new SimpleRequest
             {
@@ -368,7 +370,7 @@ namespace Grpc.IntegrationTesting
             var credential = await GoogleCredential.GetApplicationDefaultAsync();
             // check this a credential with scope support, but don't add the scope.
             Assert.IsTrue(credential.IsCreateScopedRequired);
-            client.HeaderInterceptor = OAuth2Interceptors.FromCredential(credential);
+            client.HeaderInterceptor = AuthInterceptors.FromCredential(credential);
 
             var request = new SimpleRequest
             {
@@ -393,7 +395,7 @@ namespace Grpc.IntegrationTesting
             ITokenAccess credential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { AuthScope });
             string oauth2Token = await credential.GetAccessTokenForRequestAsync();
 
-            client.HeaderInterceptor = OAuth2Interceptors.FromAccessToken(oauth2Token);
+            client.HeaderInterceptor = AuthInterceptors.FromAccessToken(oauth2Token);
 
             var request = new SimpleRequest
             {
@@ -414,7 +416,7 @@ namespace Grpc.IntegrationTesting
 
             ITokenAccess credential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { AuthScope });
             string oauth2Token = await credential.GetAccessTokenForRequestAsync();
-            var headerInterceptor = OAuth2Interceptors.FromAccessToken(oauth2Token);
+            var headerInterceptor = AuthInterceptors.FromAccessToken(oauth2Token);
 
             var request = new SimpleRequest
             {
@@ -423,7 +425,7 @@ namespace Grpc.IntegrationTesting
             };
 
             var headers = new Metadata();
-            headerInterceptor("", headers);
+            headerInterceptor(null, "", headers);
             var response = client.UnaryCall(request, headers: headers);
 
             Assert.AreEqual(AuthScopeResponse, response.OauthScope);
@@ -470,6 +472,28 @@ namespace Grpc.IntegrationTesting
 
                 var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
                 Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            }
+            Console.WriteLine("Passed!");
+        }
+
+        public static async Task RunTimeoutOnSleepingServerAsync(TestService.ITestServiceClient client)
+        {
+            Console.WriteLine("running timeout_on_sleeping_server");
+
+            var deadline = DateTime.UtcNow.AddMilliseconds(1);
+            using (var call = client.FullDuplexCall(deadline: deadline))
+            {
+                try
+                {
+                    await call.RequestStream.WriteAsync(new StreamingOutputCallRequest { Payload = CreateZerosPayload(27182) });
+                }
+                catch (InvalidOperationException)
+                {
+                    // Deadline was reached before write has started. Eat the exception and continue.
+                }
+
+                var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.MoveNext());
+                Assert.AreEqual(StatusCode.DeadlineExceeded, ex.Status.StatusCode);
             }
             Console.WriteLine("Passed!");
         }

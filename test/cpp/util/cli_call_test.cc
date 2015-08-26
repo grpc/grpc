@@ -31,24 +31,23 @@
  *
  */
 
-#include "test/core/util/test_config.h"
 #include "test/cpp/util/cli_call.h"
-#include "test/cpp/util/echo.grpc.pb.h"
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+
+#include <grpc/grpc.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/dynamic_thread_pool.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include "test/core/util/port.h"
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/util/echo.grpc.pb.h"
+#include "test/cpp/util/string_ref_helper.h"
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
@@ -61,10 +60,11 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
     if (!context->client_metadata().empty()) {
-      for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
-               context->client_metadata().begin();
+      for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
+               iter = context->client_metadata().begin();
            iter != context->client_metadata().end(); ++iter) {
-        context->AddInitialMetadata(iter->first, iter->second);
+        context->AddInitialMetadata(ToString(iter->first),
+                                    ToString(iter->second));
       }
     }
     context->AddTrailingMetadata("trailing_key", "trailing_value");
@@ -75,7 +75,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
 
 class CliCallTest : public ::testing::Test {
  protected:
-  CliCallTest() : thread_pool_(2) {}
+  CliCallTest() {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
@@ -85,7 +85,6 @@ class CliCallTest : public ::testing::Test {
     builder.AddListeningPort(server_address_.str(),
                              InsecureServerCredentials());
     builder.RegisterService(&service_);
-    builder.SetThreadPool(&thread_pool_);
     server_ = builder.BuildAndStart();
   }
 
@@ -97,12 +96,11 @@ class CliCallTest : public ::testing::Test {
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::ostringstream server_address_;
   TestServiceImpl service_;
-  DynamicThreadPool thread_pool_;
 };
 
 // Send a rpc with a normal stub and then a CliCall. Verify they match.
@@ -123,8 +121,9 @@ TEST_F(CliCallTest, SimpleRpc) {
   grpc::string request_bin, response_bin, expected_response_bin;
   EXPECT_TRUE(request.SerializeToString(&request_bin));
   EXPECT_TRUE(response.SerializeToString(&expected_response_bin));
-  std::multimap<grpc::string, grpc::string> client_metadata,
-      server_initial_metadata, server_trailing_metadata;
+  std::multimap<grpc::string, grpc::string> client_metadata;
+  std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata,
+      server_trailing_metadata;
   client_metadata.insert(std::pair<grpc::string, grpc::string>("key1", "val1"));
   Status s2 = CliCall::Call(channel_, kMethod, request_bin, &response_bin,
                             client_metadata, &server_initial_metadata,

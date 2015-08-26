@@ -49,6 +49,7 @@
     <Compile Include="AsyncDuplexStreamingCall.cs" />
     <Compile Include="AsyncServerStreamingCall.cs" />
     <Compile Include="IClientStreamWriter.cs" />
+    <Compile Include="Internal\INativeCall.cs" />
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
     <Compile Include="IAsyncStreamReader.cs" />

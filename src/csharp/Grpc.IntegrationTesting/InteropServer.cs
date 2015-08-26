@@ -106,8 +106,6 @@ namespace Grpc.IntegrationTesting
             server.Start();
 
             server.ShutdownTask.Wait();
-
-            GrpcEnvironment.Shutdown();
         }
 
         private static ServerOptions ParseArguments(string[] args)
