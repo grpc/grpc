@@ -194,7 +194,7 @@ grpc_credentials *grpc_google_default_credentials_create(void) {
     int need_compute_engine_creds = is_stack_running_on_compute_engine();
     compute_engine_detection_done = 1;
     if (need_compute_engine_creds) {
-      result = grpc_compute_engine_credentials_create(NULL);
+      result = grpc_google_compute_engine_credentials_create(NULL);
     }
   }
 
