@@ -44,6 +44,8 @@ var grpc = require('bindings')('grpc.node');
 
 var common = require('./common');
 
+var Metadata = require('./metadata');
+
 var stream = require('stream');
 
 var Readable = stream.Readable;
@@ -60,10 +62,10 @@ var EventEmitter = require('events').EventEmitter;
  * @param {Object} error The error object
  */
 function handleError(call, error) {
+  var statusMetadata = new Metadata();
   var status = {
     code: grpc.status.UNKNOWN,
-    details: 'Unknown Error',
-    metadata: {}
+    details: 'Unknown Error'
   };
   if (error.hasOwnProperty('message')) {
     status.details = error.message;
@@ -75,11 +77,13 @@ function handleError(call, error) {
     }
   }
   if (error.hasOwnProperty('metadata')) {
-    status.metadata = error.metadata;
+    statusMetadata = error.metadata;
   }
+  status.metadata = statusMetadata._getCoreRepresentation();
   var error_batch = {};
   if (!call.metadataSent) {
-    error_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+    error_batch[grpc.opType.SEND_INITIAL_METADATA] =
+        (new Metadata())._getCoreRepresentation();
   }
   error_batch[grpc.opType.SEND_STATUS_FROM_SERVER] = status;
   call.startBatch(error_batch, function(){});
@@ -114,22 +118,24 @@ function waitForCancel(call, emitter) {
  * @param {*} value The value to respond with
  * @param {function(*):Buffer=} serialize Serialization function for the
  *     response
- * @param {Object=} metadata Optional trailing metadata to send with status
+ * @param {Metadata=} metadata Optional trailing metadata to send with status
  * @param {number=} flags Flags for modifying how the message is sent.
  *     Defaults to 0.
  */
 function sendUnaryResponse(call, value, serialize, metadata, flags) {
   var end_batch = {};
+  var statusMetadata = new Metadata();
   var status = {
     code: grpc.status.OK,
-    details: 'OK',
-    metadata: {}
+    details: 'OK'
   };
   if (metadata) {
-    status.metadata = metadata;
+    statusMetadata = metadata;
   }
+  status.metadata = statusMetadata._getCoreRepresentation();
   if (!call.metadataSent) {
-    end_batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+    end_batch[grpc.opType.SEND_INITIAL_METADATA] =
+        (new Metadata())._getCoreRepresentation();
     call.metadataSent = true;
   }
   var message = serialize(value);
@@ -151,14 +157,19 @@ function setUpWritable(stream, serialize) {
   stream.status = {
     code : grpc.status.OK,
     details : 'OK',
-    metadata : {}
+    metadata : new Metadata()
   };
   stream.serialize = common.wrapIgnoreNull(serialize);
   function sendStatus() {
     var batch = {};
     if (!stream.call.metadataSent) {
       stream.call.metadataSent = true;
-      batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+      batch[grpc.opType.SEND_INITIAL_METADATA] =
+          (new Metadata())._getCoreRepresentation();
+    }
+
+    if (stream.status.metadata) {
+      stream.status.metadata = stream.status.metadata._getCoreRepresentation();
     }
     batch[grpc.opType.SEND_STATUS_FROM_SERVER] = stream.status;
     stream.call.startBatch(batch, function(){});
@@ -173,7 +184,7 @@ function setUpWritable(stream, serialize) {
   function setStatus(err) {
     var code = grpc.status.UNKNOWN;
     var details = 'Unknown Error';
-    var metadata = {};
+    var metadata = new Metadata();
     if (err.hasOwnProperty('message')) {
       details = err.message;
     }
@@ -203,7 +214,7 @@ function setUpWritable(stream, serialize) {
   /**
    * Override of Writable#end method that allows for sending metadata with a
    * success status.
-   * @param {Object=} metadata Metadata to send with the status
+   * @param {Metadata=} metadata Metadata to send with the status
    */
   stream.end = function(metadata) {
     if (metadata) {
@@ -266,7 +277,8 @@ function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
   if (!this.call.metadataSent) {
-    batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+    batch[grpc.opType.SEND_INITIAL_METADATA] =
+        (new Metadata())._getCoreRepresentation();
     this.call.metadataSent = true;
   }
   var message = this.serialize(chunk);
@@ -289,15 +301,15 @@ ServerWritableStream.prototype._write = _write;
 
 /**
  * Send the initial metadata for a writable stream.
- * @param {Object<String, Array<(String|Buffer)>>} responseMetadata Metadata
- *   to send
+ * @param {Metadata} responseMetadata Metadata to send
  */
 function sendMetadata(responseMetadata) {
   /* jshint validthis: true */
   if (!this.call.metadataSent) {
     this.call.metadataSent = true;
     var batch = [];
-    batch[grpc.opType.SEND_INITIAL_METADATA] = responseMetadata;
+    batch[grpc.opType.SEND_INITIAL_METADATA] =
+        responseMetadata._getCoreRepresentation();
     this.call.startBatch(batch, function(err) {
       if (err) {
         this.emit('error', err);
@@ -422,7 +434,7 @@ ServerDuplexStream.prototype.getPeer = getPeer;
  * @access private
  * @param {grpc.Call} call The call to handle
  * @param {Object} handler Request handler object for the method that was called
- * @param {Object} metadata Metadata from the client
+ * @param {Metadata} metadata Metadata from the client
  */
 function handleUnary(call, handler, metadata) {
   var emitter = new EventEmitter();
@@ -430,7 +442,8 @@ function handleUnary(call, handler, metadata) {
     if (!call.metadataSent) {
       call.metadataSent = true;
       var batch = {};
-      batch[grpc.opType.SEND_INITIAL_METADATA] = responseMetadata;
+      batch[grpc.opType.SEND_INITIAL_METADATA] =
+          responseMetadata._getCoreRepresentation();
       call.startBatch(batch, function() {});
     }
   };
@@ -478,7 +491,7 @@ function handleUnary(call, handler, metadata) {
  * @access private
  * @param {grpc.Call} call The call to handle
  * @param {Object} handler Request handler object for the method that was called
- * @param {Object} metadata Metadata from the client
+ * @param {Metadata} metadata Metadata from the client
  */
 function handleServerStreaming(call, handler, metadata) {
   var stream = new ServerWritableStream(call, handler.serialize);
@@ -507,7 +520,7 @@ function handleServerStreaming(call, handler, metadata) {
  * @access private
  * @param {grpc.Call} call The call to handle
  * @param {Object} handler Request handler object for the method that was called
- * @param {Object} metadata Metadata from the client
+ * @param {Metadata} metadata Metadata from the client
  */
 function handleClientStreaming(call, handler, metadata) {
   var stream = new ServerReadableStream(call, handler.deserialize);
@@ -515,7 +528,8 @@ function handleClientStreaming(call, handler, metadata) {
     if (!call.metadataSent) {
       call.metadataSent = true;
       var batch = {};
-      batch[grpc.opType.SEND_INITIAL_METADATA] = responseMetadata;
+      batch[grpc.opType.SEND_INITIAL_METADATA] =
+          responseMetadata._getCoreRepresentation();
       call.startBatch(batch, function() {});
     }
   };
@@ -542,7 +556,7 @@ function handleClientStreaming(call, handler, metadata) {
  * @access private
  * @param {grpc.Call} call The call to handle
  * @param {Object} handler Request handler object for the method that was called
- * @param {Object} metadata Metadata from the client
+ * @param {Metadata} metadata Metadata from the client
  */
 function handleBidiStreaming(call, handler, metadata) {
   var stream = new ServerDuplexStream(call, handler.serialize,
@@ -599,7 +613,7 @@ function Server(options) {
       var details = event.new_call;
       var call = details.call;
       var method = details.method;
-      var metadata = details.metadata;
+      var metadata = Metadata._fromCoreRepresentation(details.metadata);
       if (method === null) {
         return;
       }
@@ -609,7 +623,8 @@ function Server(options) {
         handler = handlers[method];
       } else {
         var batch = {};
-        batch[grpc.opType.SEND_INITIAL_METADATA] = {};
+        batch[grpc.opType.SEND_INITIAL_METADATA] =
+            (new Metadata())._getCoreRepresentation();
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
           code: grpc.status.UNIMPLEMENTED,
           details: 'This method is not available on this server.',
@@ -623,11 +638,26 @@ function Server(options) {
     }
     server.requestCall(handleNewCall);
   };
+
   /**
-   * Shuts down the server.
+   * Gracefully shuts down the server. The server will stop receiving new calls,
+   * and any pending calls will complete. The callback will be called when all
+   * pending calls have completed and the server is fully shut down. This method
+   * is idempotent with itself and forceShutdown.
+   * @param {function()} callback The shutdown complete callback
    */
-  this.shutdown = function() {
-    server.shutdown();
+  this.tryShutdown = function(callback) {
+    server.tryShutdown(callback);
+  };
+
+  /**
+   * Forcibly shuts down the server. The server will stop receiving new calls
+   * and cancel all pending calls. When it returns, the server has shut down.
+   * This method is idempotent with itself and tryShutdown, and it will trigger
+   * any outstanding tryShutdown callbacks.
+   */
+  this.forceShutdown = function() {
+    server.forceShutdown();
   };
 }
 

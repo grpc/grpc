@@ -70,7 +70,7 @@ describe('end-to-end', function() {
     channel = new grpc.Channel('localhost:' + port_num, insecureCreds);
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   it('should start and end a request without error', function(complete) {
     var done = multiDone(complete, 2);
