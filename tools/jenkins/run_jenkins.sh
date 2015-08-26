@@ -79,6 +79,7 @@ then
     -e "config=$config" \
     -e "language=$language" \
     -e "arch=$arch" \
+    -e "GRPC_ZOOKEEPER_SERVER_TEST=grpc-jenkins-master:2181" \
     -e CCACHE_DIR=/tmp/ccache \
     -i \
     -v "$git_root:/var/local/jenkins/grpc" \
@@ -88,8 +89,12 @@ then
     bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_jenkins.sh || DOCKER_FAILED="true"
 
   DOCKER_CID=`cat docker.cid`
-  docker kill $DOCKER_CID
+  # forcefully kill the instance if it's still running, otherwise
+  # continue 
+  # (failure to kill something that's already dead => things are dead)
+  docker kill $DOCKER_CID || true
   docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
+  # TODO(ctiller): why?
   sleep 4
   docker rm $DOCKER_CID || true
 elif [ "$platform" == "interop" ]

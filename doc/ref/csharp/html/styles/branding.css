@@ -1,0 +1,561 @@
+/* General styles */
+body {
+	font-family: 'Segoe UI' , 'Lucida Grande' , Verdana, Arial, Helvetica, sans-serif;
+	font-size: 15px;
+	padding: 0;
+	margin: 0;
+	margin-left: auto;
+	margin-right: auto;
+	color: #000;
+}
+h1 {
+	font-family: 'Segoe UI' , 'Lucida Grande' , Verdana, Arial, Helvetica, sans-serif;
+	font-size: 2.5em;
+	font-weight: normal;
+	margin-top: 0;
+	color: #000;
+}
+h2, h3 {
+	font-family: 'Segoe UI Semibold' , 'Segoe UI' , 'Lucida Grande' , Verdana, Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	margin: 0;
+	padding-bottom: 5px;
+	padding-top: 5px;
+	color: #000;
+}
+h2 {
+	font-size: 1.769em;
+}
+h3 {
+	font-size: 1.231em;
+}
+h4, .subHeading {
+	font-family: 'Segoe UI Semibold' , 'Segoe UI' , 'Lucida Grande' , Verdana, Arial, Helvetica, sans-serif;
+	font-size: 1.077em;
+	font-weight: normal;
+	margin: 0;
+	color: #000;
+}
+.subHeading {
+	margin-top: 5px;
+}
+h5, h6 {
+	font-family: 'Segoe UI Semibold' , 'Segoe UI' , 'Lucida Grande' , Verdana, Arial, Helvetica, sans-serif;
+	font-size: 1em;
+	font-weight: normal;
+	line-height: 130%;
+	margin: 0;
+	color: #000;
+}
+a, a:link {
+	text-decoration: none;
+	color: #1364c4;
+}
+a:visited, a:active {
+	text-decoration: none;
+	color: #03697a;
+}
+a:hover {
+	text-decoration: none;
+	color: #3390b1;
+}
+img {
+	border: 0;
+}
+p {
+	margin-top: 0;
+	margin-bottom: 0;
+	padding-bottom: 15px;
+	line-height: 18px;
+}
+q {
+	font-style: italic;
+}
+blockquote {
+	margin-top: 0px;
+}
+table {
+	border-collapse: collapse;
+	padding: 0;
+	margin-bottom: 15px;
+	font-size: 15px;
+	width: 100%;
+}
+td, th {
+	border-bottom: 1px solid #dbdbdb;
+	margin: 10px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	padding-right: 8px;
+	padding-left: 8px;
+}
+th {
+	background-color: #ededed;
+	color: #636363;
+	text-align: left;
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+td {
+	color: #2a2a2a;
+	vertical-align: top;
+}
+table p:last-child {
+	padding-bottom: 0;
+}
+table.members {
+	width: 100%;
+}
+table.members td {
+	min-width: 72px;
+}
+table.members img {
+	padding-right: 5px;
+}
+div.alert img {
+	padding-right: 5px;
+}
+ol {
+	margin-top: 0px;
+	margin-bottom: 10px;
+}
+ol ol {
+	list-style-type: lower-alpha;
+}
+ol ol ol {
+	list-style-type: lower-roman;
+}
+ul {
+	margin-top: 0px;
+	margin-bottom: 10px;
+}
+.noBullet {
+	list-style-type: none;
+	padding-left: 20px;
+}
+ul ul {
+	list-style-type: circle;
+}
+ul ul ul {
+	list-style-type: square;
+}
+dt {
+	font-weight: 600;
+}
+pre {
+	font-family: Consolas, Courier, monospace;
+	overflow: hidden;
+}
+.pageHeader {
+	font-family: 'Segoe UI' , Tahoma, Helvetica, Sans-Serif;
+	background-color: #333333;
+	color: #d0d0d0;
+	padding: 5px 10px;
+	vertical-align: middle;
+	height: 25px;
+}
+.pageBody {
+	padding: 0px;
+}
+.topicContent {
+	padding: 10px 10px 15px 10px;
+	overflow: visible;
+	border-left: 1px solid #bbb;
+}
+.pageFooter {
+	clear: both;
+	border-top: solid 1px #bbb;
+	padding: 10px;
+}
+.feedbackLink {
+}
+.iconColumn {
+	width: 100px;
+}
+.seeAlsoStyle {
+}
+table.titleTable td {
+	padding-top: 0px;
+	border-width: 0px;
+}
+td.titleColumn {
+	font-family: 'Segoe UI' , 'Lucida Grande' , Verdana, Arial, Helvetica, sans-serif;
+	font-size: 2.5em;
+	font-weight: normal;
+	margin-top: 0px;
+	padding-left: 0px;
+	color: #000;
+	vertical-align: middle;
+}
+td.logoColumn {
+	padding-left: 0px;
+	padding-right: 10px;
+	vertical-align: middle;
+	width: 1px;
+}
+td.logoColumnAbove {
+	padding: 0px 10px 0px 0px;
+	vertical-align: middle;
+}
+span.selflink {
+	color: #000066;
+}
+div.preliminary {
+	margin-top: 1em;
+	margin-bottom: 1em;
+	font-weight: bold;
+	color: #333333;
+}
+div.caption {
+	font-weight: bold;
+	font-size: 1em; /*12pt*/
+	color: #003399;
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+.procedureSubHeading {
+	font-size: 1.1em; /*13.5pt*/
+	font-weight: bold;
+}
+.summary {
+}
+
+/* Collapsible region styles */
+.collapsibleAreaRegion {
+	margin-top: 15px;
+	margin-bottom: 15px;
+}
+.collapseToggle {
+	padding-right: 5px;
+}
+.collapsibleRegionTitle {
+	font-family: 'Segoe UI Semibold' , 'Segoe UI' , 'Lucida Grande' , Verdana, Arial, Helvetica, sans-serif !important;
+	font-style: normal !important;
+	font-size: 1.769em;
+	margin-top: 9px;
+	margin-bottom: 19px;
+	padding-top: 20px;
+	padding-bottom: 5px;
+	cursor: pointer;
+}
+.collapsibleSection {
+	padding: 0 0 0 20px;
+}
+
+/* Syntax and code snippet styles */
+.codeSnippetContainer {
+	min-width: 260px;
+	margin-top: 10px;
+}
+.codeSnippetContainerTabs {
+	height: 23px;
+	vertical-align: middle;
+	position: relative;
+	z-index: 1;
+}
+.codeSnippetContainerTab {
+	padding: 0px 15px;
+	width: auto;
+	height: 22px;
+	color: #2a2a2a;
+	font-family: "Segoe UI" , "Lucida Grande" , Verdana, Arial, Helvetica, sans-serif !important;
+	font-size: 12px;
+	font-style: normal !important;
+	vertical-align: baseline;
+	float: left;
+}
+.codeSnippetContainerTabActive {
+	background: #f8f8f8;
+	padding: 0px 15px;
+	width: auto;
+	height: 22px;
+	color: #000000;
+	font-family: "Segoe UI" , "Lucida Grande" , Verdana, Arial, Helvetica, sans-serif !important;
+	font-size: 12px;
+	font-style: normal !important;
+	vertical-align: baseline;
+	border-top-color: #939393;
+	border-right-color: #939393;
+	border-left-color: #939393;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-left-width: 1px;
+	border-top-style: solid;
+	border-right-style: solid;
+	border-left-style: solid;
+	float: left;
+}
+.codeSnippetContainerTabPhantom {
+	background: #f8f8f8;
+	padding: 0px 15px;
+	width: auto;
+	height: 22px;
+	color: #000000;
+	font-family: "Segoe UI" , "Lucida Grande" , Verdana, Arial, Helvetica, sans-serif !important;
+	font-size: 12px;
+	font-style: normal !important;
+	vertical-align: baseline;
+	border-top-color: #939393;
+	border-right-color: #939393;
+	border-left-color: #939393;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-left-width: 1px;
+	border-top-style: solid;
+	border-right-style: solid;
+	border-left-style: solid;
+	float: left;
+	display: none;
+}
+.codeSnippetContainerTabSingle {
+	background: #f8f8f8;
+	padding: 2px 15px 0px 15px;
+	width: auto;
+	height: 20px;
+	color: #000000;
+	font-family: "Segoe UI" , "Lucida Grande" , Verdana, Arial, Helvetica, sans-serif !important;
+	font-size: 12px;
+	font-weight: bold;
+	font-style: normal !important;
+	vertical-align: baseline;
+	border-top-color: #939393;
+	border-right-color: #939393;
+	border-left-color: #939393;
+	border-top-width: 1px;
+	border-right-width: 1px;
+	border-left-width: 1px;
+	border-top-style: solid;
+	border-right-style: solid;
+	border-left-style: solid;
+	float: left;
+}
+.codeSnippetContainerTab a {
+	top: 2px;
+	color: #000000;
+	font-weight: bold;
+	text-decoration: none;
+	position: relative;
+}
+.codeSnippetContainerTab a:link {
+	color: #000000;
+}
+.codeSnippetContainerTab a:hover {
+	color: #136460;
+}
+.codeSnippetContainerTabActive a {
+	top: 2px;
+	color: #000000;
+	font-weight: bold;
+	text-decoration: none;
+	position: relative;
+	cursor: default;
+}
+.codeSnippetContainerTabActive a:link {
+	color: #000000;
+}
+.codeSnippetContainerTabActive a:hover {
+	color: #000000;
+}
+.codeSnippetContainerTabPhantom a {
+	top: 2px;
+	color: #000000;
+	font-weight: bold;
+	text-decoration: none;
+	position: relative;
+	cursor: default;
+}
+.codeSnippetContainerTabPhantom a:link {
+	color: #000000;
+}
+.codeSnippetContainerCodeContainer {
+	border: 1px solid #939393;
+	top: -1px;
+	margin-bottom: 12px;
+	position: relative;
+}
+.codeSnippetToolBar {
+	width: auto;
+	height: auto;
+}
+.codeSnippetToolBarText {
+	top: -8px;
+	width: auto;
+	height: 0px;
+	padding-right: 0px;
+	padding-left: 0px;
+	vertical-align: top;
+	float: right;
+	position: relative;
+}
+.codeSnippetToolBarText a {
+	color: #1364c4;
+	text-decoration: none;
+	padding-left: 8px;
+	padding-right: 8px;
+	font-family: "Segoe UI" , "Lucida Grande" , Verdana, Arial, Helvetica, sans-serif !important;
+	font-size: 10px;
+	font-style: normal !important;
+	text-decoration: none;
+	margin-right: 10px;
+	margin-left: 0px;
+	background-color: #ffffff;
+}
+.codeSnippetToolBarText a:link {
+	color: #1364c4;
+}
+.codeSnippetContainerCode {
+	margin: 0px;
+	padding: 10px;
+	width: auto;
+}
+.codeSnippetContainerCode div {
+	margin: 0px;
+	padding: 0px;
+}
+.codeSnippetContainerCode pre {
+	margin: 0px;
+	padding: 5px;
+	overflow: auto;
+	font-family: Consolas, Courier, monospace !important;
+	font-style: normal;
+	font-weight: normal;
+	-ms-word-wrap: normal;
+}
+.codeSnippetContainerCode .keyword {
+	color: #0000ff;
+	font-weight: normal;
+}
+
+/* Keyword and phrase styles */
+span.code, span.command {
+	font-family: Consolas, Courier, monospace;
+	color: #000066;
+}
+span.ui {
+	font-weight: bold;
+}
+span.math {
+	font-style: italic;
+}
+span.input {
+	font-weight: bold;
+}
+span.term {
+	font-style: italic;
+}
+span.label {
+	font-weight: bold;
+}
+span.foreignPhrase, span.phrase {
+	font-style: italic;
+}
+span.placeholder {
+	font-style: italic;
+}
+span.typeparameter {
+	font-style: italic;
+}
+span.identifier {
+}
+span.keyword {
+	font-weight: bold;
+}
+span.parameter {
+	font-style: italic;
+}
+dt span.parameter {
+	font-weight: normal;
+}
+span.literal, span.literalValue {
+	color: #cc0000;
+}
+span.comment {
+	color: #006633;
+}
+span.introStyle {
+	color: #a9a9a9;
+}
+span.nolink {
+	font-weight: bold;
+}
+
+/* Auto-outline styles */
+ul.autoOutline {
+}
+li.outlineSectionEntry {
+}
+div.outlineSectionEntrySummary {
+}
+
+/* Media  styles */
+div.mediaNear {
+	text-align: left;
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+div.mediaFar {
+	text-align: right;
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+div.mediaCenter {
+	text-align: center;
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+span.captionLead {
+	font-weight: bold;
+	margin-right: .5em;
+}
+span.media img {
+	vertical-align: top;
+}
+
+/* Glossary styles */
+div.glossaryDiv {
+}
+div.glossaryLetterBar {
+}
+hr.glossaryRule {
+}
+h3.glossaryGroupHeading {
+	color: #808080;
+}
+div.glossaryGroup {
+}
+dl.glossaryGroupList {
+	margin: 0;
+	color: Black;
+}
+dt.glossaryEntry {
+	margin-left: 2em;
+}
+dd.glossaryEntry {
+	margin-left: 2em;
+	margin-bottom: 2em;
+}
+div.relatedEntry {
+	margin-bottom: 4px;
+}
+
+/* Bibliography styles */
+div.bibliographStyle {
+	padding-top: 5px;
+}
+span.bibliographyNumber {
+}
+span.bibliographyAuthor {
+	font-weight: bold;
+}
+span.bibliographyTitle {
+	font-style: italic;
+}
+span.bibliographyPublisher {
+}
+sup.citation a:link a:visited a:active {
+	text-decoration: none;
+}
+
+/* Placeholder for the Help 1 user data style class */
+.userDataStyle {
+}

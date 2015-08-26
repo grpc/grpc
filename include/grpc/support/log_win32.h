@@ -48,4 +48,4 @@ char *gpr_format_message(DWORD messageid);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_LOG_WIN32_H */
+#endif /* GRPC_SUPPORT_LOG_WIN32_H */

@@ -74,7 +74,7 @@ namespace Grpc.Core
         {
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             var asyncResult = asyncCall.UnaryCallAsync(req);
-            return new AsyncUnaryCall<TResponse>(asyncResult, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncUnaryCall<TResponse>(asyncResult, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
 
         /// <summary>
@@ -93,13 +93,14 @@ namespace Grpc.Core
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             asyncCall.StartServerStreamingCall(req);
             var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
-            return new AsyncServerStreamingCall<TResponse>(responseStream, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncServerStreamingCall<TResponse>(responseStream, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
 
         /// <summary>
         /// Invokes a client streaming call asynchronously.
         /// In client streaming scenario, client sends a stream of requests and server responds with a single response.
         /// </summary>
+        /// <param name="call">The call defintion.</param>
         /// <returns>An awaitable call object providing access to the response.</returns>
         /// <typeparam name="TRequest">Type of request messages.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>
@@ -110,7 +111,7 @@ namespace Grpc.Core
             var asyncCall = new AsyncCall<TRequest, TResponse>(call);
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
-            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
 
         /// <summary>
@@ -130,7 +131,7 @@ namespace Grpc.Core
             asyncCall.StartDuplexStreamingCall();
             var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
             var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
-            return new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+            return new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
     }
 }

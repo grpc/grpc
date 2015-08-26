@@ -49,4 +49,4 @@ int grpc_pick_unused_port_or_die();
 }
 #endif
 
-#endif  /* GRPC_TEST_CORE_UTIL_PORT_H */
+#endif /* GRPC_TEST_CORE_UTIL_PORT_H */

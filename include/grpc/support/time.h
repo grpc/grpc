@@ -52,6 +52,9 @@ typedef enum {
   /* Realtime clock. May jump forwards or backwards. Settable by
      the system administrator. Has its epoch at 0:00:00 UTC 1 Jan 1970. */
   GPR_CLOCK_REALTIME,
+  /* CPU cycle time obtained by rdtsc instruction on x86 platforms. Epoch
+     undefined. Degrades to GPR_CLOCK_REALTIME on other platforms. */
+  GPR_CLOCK_PRECISE,
   /* Unmeasurable clock type: no base, created by taking the difference
      between two times */
   GPR_TIMESPAN
@@ -84,7 +87,8 @@ void gpr_time_init(void);
 gpr_timespec gpr_now(gpr_clock_type clock);
 
 /* Convert a timespec from one clock to another */
-gpr_timespec gpr_convert_clock_type(gpr_timespec t, gpr_clock_type target_clock);
+gpr_timespec gpr_convert_clock_type(gpr_timespec t,
+                                    gpr_clock_type target_clock);
 
 /* Return -ve, 0, or +ve according to whether a < b, a == b, or a > b
    respectively.  */

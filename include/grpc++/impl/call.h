@@ -34,18 +34,17 @@
 #ifndef GRPCXX_IMPL_CALL_H
 #define GRPCXX_IMPL_CALL_H
 
-#include <grpc/support/alloc.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/config.h>
-#include <grpc++/status.h>
-#include <grpc++/impl/serialization_traits.h>
-
 #include <functional>
 #include <memory>
 #include <map>
+#include <cstring>
 
-#include <string.h>
+#include <grpc/support/alloc.h>
+#include <grpc++/client_context.h>
+#include <grpc++/completion_queue.h>
+#include <grpc++/impl/serialization_traits.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
 
 struct grpc_call;
 struct grpc_op;
@@ -55,8 +54,9 @@ namespace grpc {
 class ByteBuffer;
 class Call;
 
-void FillMetadataMap(grpc_metadata_array* arr,
-                     std::multimap<grpc::string, grpc::string>* metadata);
+void FillMetadataMap(
+    grpc_metadata_array* arr,
+    std::multimap<grpc::string_ref, grpc::string_ref>* metadata);
 grpc_metadata* FillMetadataArray(
     const std::multimap<grpc::string, grpc::string>& metadata);
 
@@ -67,14 +67,10 @@ class WriteOptions {
   WriteOptions(const WriteOptions& other) : flags_(other.flags_) {}
 
   /// Clear all flags.
-  inline void Clear() {
-    flags_ = 0;
-  }
+  inline void Clear() { flags_ = 0; }
 
   /// Returns raw flags bitset.
-  inline gpr_uint32 flags() const {
-    return flags_;
-  }
+  inline gpr_uint32 flags() const { return flags_; }
 
   /// Sets flag for the disabling of compression for the next message write.
   ///
@@ -122,9 +118,7 @@ class WriteOptions {
   /// not go out on the wire immediately.
   ///
   /// \sa GRPC_WRITE_BUFFER_HINT
-  inline bool get_buffer_hint() const {
-    return GetBit(GRPC_WRITE_BUFFER_HINT);
-  }
+  inline bool get_buffer_hint() const { return GetBit(GRPC_WRITE_BUFFER_HINT); }
 
   WriteOptions& operator=(const WriteOptions& rhs) {
     flags_ = rhs.flags_;
@@ -132,17 +126,11 @@ class WriteOptions {
   }
 
  private:
-  void SetBit(const gpr_int32 mask) {
-    flags_ |= mask;
-  }
+  void SetBit(const gpr_int32 mask) { flags_ |= mask; }
 
-  void ClearBit(const gpr_int32 mask) {
-    flags_ &= ~mask;
-  }
+  void ClearBit(const gpr_int32 mask) { flags_ &= ~mask; }
 
-  bool GetBit(const gpr_int32 mask) const {
-    return flags_ & mask;
-  }
+  bool GetBit(const gpr_int32 mask) const { return flags_ & mask; }
 
   gpr_uint32 flags_;
 };
@@ -431,7 +419,7 @@ class CallOpRecvInitialMetadata {
   }
 
  private:
-  std::multimap<grpc::string, grpc::string>* recv_initial_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref>* recv_initial_metadata_;
   grpc_metadata_array recv_initial_metadata_arr_;
 };
 
@@ -474,7 +462,7 @@ class CallOpClientRecvStatus {
   }
 
  private:
-  std::multimap<grpc::string, grpc::string>* recv_trailing_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref>* recv_trailing_metadata_;
   Status* recv_status_;
   grpc_metadata_array recv_trailing_metadata_arr_;
   grpc_status_code status_code_;
@@ -553,8 +541,7 @@ class CallOpSet : public CallOpSetInterface,
 template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>,
           class Op3 = CallNoOp<3>, class Op4 = CallNoOp<4>,
           class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
-class SneakyCallOpSet GRPC_FINAL
-    : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
+class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
  public:
   bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
     typedef CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> Base;

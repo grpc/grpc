@@ -134,6 +134,14 @@ typedef struct {
 /** Secondary user agent: goes at the end of the user-agent metadata
     sent on each request */
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
+/* The caller of the secure_channel_create functions may override the target
+   name used for SSL host name checking using this channel argument which is of
+   type GRPC_ARG_STRING. This *should* be used for testing only.
+   If this argument is not specified, the name used for SSL host name checking
+   will be the target parameter (assuming that the secure channel is an SSL
+   channel). If this parameter is specified and the underlying is not an SSL
+   channel, it will just be ignored. */
+#define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
 
 /** Connectivity state of a channel. */
 typedef enum {
@@ -376,6 +384,16 @@ typedef struct grpc_op {
   } data;
 } grpc_op;
 
+/** Registers a plugin to be initialized and destroyed with the library.
+
+    The \a init and \a destroy functions will be invoked as part of
+    \a grpc_init() and \a grpc_shutdown(), respectively.
+    Note that these functions can be invoked an arbitrary number of times
+    (and hence so will \a init and \a destroy).
+    It is safe to pass NULL to either argument. Plugins are destroyed in
+    the reverse order they were initialized. */
+void grpc_register_plugin(void (*init)(void), void (*destroy)(void));
+
 /* Propagation bits: this can be bitwise or-ed to form propagation_mask for
  * grpc_call */
 /** Propagate deadline */
@@ -388,8 +406,8 @@ typedef struct grpc_op {
 
 /* Default propagation mask: clients of the core API are encouraged to encode
    deltas from this in their implementations... ie write:
-   GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline 
-   propagation. Doing so gives flexibility in the future to define new 
+   GRPC_PROPAGATE_DEFAULTS & ~GRPC_PROPAGATE_DEADLINE to disable deadline
+   propagation. Doing so gives flexibility in the future to define new
    propagation types that are default inherited or not. */
 #define GRPC_PROPAGATE_DEFAULTS                                                \
   ((gpr_uint32)((                                                              \
@@ -436,8 +454,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
     otherwise a grpc_event describing the event that occurred.
 
     Callers must not call grpc_completion_queue_next and
-    grpc_completion_queue_pluck simultaneously on the same completion queue. 
-    
+    grpc_completion_queue_pluck simultaneously on the same completion queue.
+
     Completion queues support a maximum of GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
     concurrently executing plucks at any time. */
 grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cq, void *tag,
@@ -477,7 +495,7 @@ void grpc_channel_watch_connectivity_state(
     completions are sent to 'completion_queue'. 'method' and 'host' need only
     live through the invocation of this function.
     If parent_call is non-NULL, it must be a server-side call. It will be used
-    to propagate properties from the server call to this new client call. 
+    to propagate properties from the server call to this new client call.
     */
 grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_call *parent_call,
@@ -544,7 +562,9 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
                                            void *reserved);
 
 /** Create a lame client: this client fails every operation attempted on it. */
-grpc_channel *grpc_lame_client_channel_create(const char *target);
+grpc_channel *grpc_lame_client_channel_create(const char *target,
+                                              grpc_status_code error_code,
+                                              const char *error_message);
 
 /** Close and destroy a grpc channel */
 void grpc_channel_destroy(grpc_channel *channel);
@@ -577,9 +597,14 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
     THREAD SAFETY: grpc_call_destroy is thread-compatible */
 void grpc_call_destroy(grpc_call *call);
 
-/** Request notification of a new call. 'cq_for_notification' must
-    have been registered to the server via
-    grpc_server_register_completion_queue. */
+/** Request notification of a new call.
+    Once a call is received, a notification tagged with \a tag_new is added to 
+    \a cq_for_notification. \a call, \a details and \a request_metadata are 
+    updated with the appropriate call information. \a cq_bound_to_call is bound
+    to \a call, and batch operation notifications for that call will be posted
+    to \a cq_bound_to_call.
+    Note that \a cq_for_notification must have been registered to the server via
+    \a grpc_server_register_completion_queue. */
 grpc_call_error grpc_server_request_call(
     grpc_server *server, grpc_call **call, grpc_call_details *details,
     grpc_metadata_array *request_metadata,
@@ -610,8 +635,7 @@ grpc_call_error grpc_server_request_registered_call(
     be specified with args. If no additional configuration is needed, args can
     be NULL. See grpc_channel_args for more. The data in 'args' need only live
     through the invocation of this function. */
-grpc_server *grpc_server_create(const grpc_channel_args *args,
-                                void *reserved);
+grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved);
 
 /** Register a completion queue with the server. Must be done for any
     notification completion queue that is passed to grpc_server_request_*_call
