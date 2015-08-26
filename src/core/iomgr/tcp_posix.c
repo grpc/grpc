@@ -85,8 +85,6 @@ typedef struct {
   grpc_iomgr_closure read_closure;
   grpc_iomgr_closure write_closure;
 
-  grpc_iomgr_closure handle_read_closure;
-
   char *peer_string;
 } grpc_tcp;
 
@@ -235,6 +233,7 @@ static void tcp_handle_read(void *arg /* grpc_tcp */, int success) {
   GPR_ASSERT(!tcp->finished_edge);
 
   if (!success) {
+    gpr_slice_buffer_reset_and_unref(tcp->incoming_buffer);
     call_read_cb(tcp, 0);
     TCP_UNREF(tcp, "read");
   } else {
@@ -255,8 +254,7 @@ static grpc_endpoint_op_status tcp_read(grpc_endpoint *ep,
     tcp->finished_edge = 0;
     grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
   } else {
-    tcp->handle_read_closure.cb_arg = tcp;
-    grpc_iomgr_add_delayed_callback(&tcp->handle_read_closure, 1);
+    grpc_iomgr_add_delayed_callback(&tcp->read_closure, 1);
   }
   /* TODO(ctiller): immediate return */
   return GRPC_ENDPOINT_PENDING;
@@ -447,7 +445,6 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   tcp->write_closure.cb = tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
 
-  tcp->handle_read_closure.cb = tcp_handle_read;
   return &tcp->base;
 }
 
