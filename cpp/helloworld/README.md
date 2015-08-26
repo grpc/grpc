@@ -89,8 +89,172 @@ $ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
 
 ### Writing a client
 
-This is an incomplete tutorial. For now the reader should refer to [greeter_client.cc](https://github.com/grpc/grpc-common/blob/master/cpp/helloworld/greeter_client.cc).
+- Create a channel. A channel is a logical connection to an endpoint. A gRPC
+  channel can be created with the target address, credentials to use and
+  arguments as follows
+
+    ```
+    auto channel = CreateChannel("localhost:50051", InsecureCredentials(), ChannelArguments());
+    ```
+
+- Create a stub. A stub implements the rpc methods of a service and in the
+  generated code, a method is provided to created a stub with a channel:
+
+    ```
+    auto stub = helloworld::Greeter::NewStub(channel);
+    ```
+
+- Make a unary rpc, with `ClientContext` and request/response proto messages.
+
+    ```
+    ClientContext context;
+    HelloRequest request;
+    request.set_name("hello");
+    HelloReply reply;
+    Status status = stub->SayHello(&context, request, &reply);
+    ```
+
+- Check returned status and response.
+
+    ```
+    if (status.ok()) {
+      // check reply.message()
+    } else {
+      // rpc failed.
+    }
+    ```
+
+For a working example, refer to [greeter_client.cc](https://github.com/grpc/grpc-common/blob/master/cpp/helloworld/greeter_client.cc).
 
 ### Writing a server
 
-This is an incomplete tutorial. For now the reader should refer to [greeter_server.cc](https://github.com/grpc/grpc-common/blob/master/cpp/helloworld/greeter_server.cc).
+- Implement the service interface
+
+    ```
+    class GreeterServiceImpl final : public Greeter::Service {
+      Status SayHello(ServerContext* context, const HelloRequest* request,
+          HelloReply* reply) override {
+        std::string prefix("Hello ");
+        reply->set_message(prefix + request->name());
+        return Status::OK;
+      }
+    };
+
+    ```
+
+- Build a server exporting the service
+
+    ```
+    GreeterServiceImpl service;
+    ServerBuilder builder;
+    builder.AddListeningPort("0.0.0.0:50051", grpc::InsecureServerCredentials());
+    builder.RegisterService(&service);
+    std::unique_ptr<Server> server(builder.BuildAndStart());
+    ```
+
+For a working example, refer to [greeter_server.cc](https://github.com/grpc/grpc-common/blob/master/cpp/helloworld/greeter_server.cc).
+
+### Writing asynchronous client and server
+
+gRPC uses `CompletionQueue` API for asynchronous operations. The basic work flow
+is
+- bind a `CompletionQueue` to a rpc call
+- do something like a read or write, present with a unique `void*` tag
+- call `CompletionQueue::Next` to poll the events. If the tag appears, the
+  previous operation finishes.
+
+#### Async client
+
+The channel and stub creation code is the same as the sync client.
+
+- Initiate the rpc and create a handle for the rpc. Bind a `CompletionQueue` to
+  it.
+
+    ```
+    CompletionQueue cq;
+    auto rpc = stub->AsyncSayHello(&context, request, &cq);
+    ```
+
+- Ask for reply and final status, with a unique tag
+
+    ```
+    Status status;
+    rpc->Finish(&reply, &status, (void*)1);
+    ```
+
+- Poll the completion queue for the tag. The reply and status are ready once the
+  tag is returned.
+
+    ```
+    void* got_tag;
+    bool ok = false;
+    cq.Next(&got_tag, &ok);
+    if (ok && got_tag == (void*)1) {
+      // check reply and status
+    }
+    ```
+
+For a working example, refer to [greeter_async_client.cc](https://github.com/grpc/grpc-common/blob/master/cpp/helloworld/greeter_async_client.cc).
+
+#### Async server
+
+The server implementation requests a rpc call with a tag and then poll the
+completion queue for the tag. The basic flow is
+
+- Build a server exporting the async service
+
+    ```
+    helloworld::Greeter::AsyncService service;
+    ServerBuilder builder;
+    builder.AddListeningPort("0.0.0.0:50051", InsecureServerCredentials());
+    builder.RegisterAsyncService(&service);
+    auto cq = builder.AddCompletionQueue();
+    auto server = builder.BuildAndStart();
+    ```
+
+- Request one rpc
+
+    ```
+    ServerContext context;
+    HelloRequest request;
+    ServerAsyncResponseWriter<HelloReply> responder;
+    service.RequestSayHello(&context, &request, &responder, &cq, &cq, (void*)1);
+    ```
+
+- Poll the completion queue for the tag. The context, request and responder are
+  ready once the tag is retrieved.
+
+    ```
+    HelloReply reply;
+    Status status;
+    void* got_tag;
+    bool ok = false;
+    cq.Next(&got_tag, &ok);
+    if (ok && got_tag == (void*)1) {
+      // set reply and status
+      responder.Finish(reply, status, (void*)2);
+    }
+    ```
+
+- Poll the completion queue for the tag. The rpc is finished when the tag is
+  back.
+
+    ```
+    void* got_tag;
+    bool ok = false;
+    cq.Next(&got_tag, &ok);
+    if (ok && got_tag == (void*)2) {
+      // clean up
+    }
+    ```
+
+To handle multiple rpcs, the async server creates an object `CallData` to
+maintain the state of each rpc and use the address of it as the unique tag. For
+simplicity the server only uses one completion queue for all events, and runs a
+main loop in `HandleRpcs` to query the queue.
+
+For a working example, refer to [greeter_async_server.cc](https://github.com/grpc/grpc-common/blob/master/cpp/helloworld/greeter_async_server.cc).
+
+
+
+
