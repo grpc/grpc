@@ -329,7 +329,7 @@ static void check_iam_metadata(void *user_data, grpc_credentials_md *md_elems,
 
 static void test_iam_creds(void) {
   grpc_credentials *creds = grpc_iam_credentials_create(
-      test_iam_authorization_token, test_iam_authority_selector);
+      test_iam_authorization_token, test_iam_authority_selector, NULL);
   GPR_ASSERT(grpc_credentials_has_request_metadata(creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(creds));
   grpc_credentials_get_request_metadata(creds, NULL, test_service_url,
@@ -349,7 +349,7 @@ static void check_access_token_metadata(void *user_data,
 }
 
 static void test_access_token_creds(void) {
-  grpc_credentials *creds = grpc_access_token_credentials_create("blah");
+  grpc_credentials *creds = grpc_access_token_credentials_create("blah", NULL);
   GPR_ASSERT(grpc_credentials_has_request_metadata(creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(creds));
   GPR_ASSERT(strcmp(creds->type, GRPC_CREDENTIALS_TYPE_OAUTH2) == 0);
@@ -371,12 +371,12 @@ static void check_ssl_oauth2_composite_metadata(
 
 static void test_ssl_oauth2_composite_creds(void) {
   grpc_credentials *ssl_creds =
-      grpc_ssl_credentials_create(test_root_cert, NULL);
+      grpc_ssl_credentials_create(test_root_cert, NULL, NULL);
   const grpc_credentials_array *creds_array;
   grpc_credentials *oauth2_creds = grpc_md_only_test_credentials_create(
       "Authorization", test_oauth2_bearer_token, 0);
   grpc_credentials *composite_creds =
-      grpc_composite_credentials_create(ssl_creds, oauth2_creds);
+      grpc_composite_credentials_create(ssl_creds, oauth2_creds, NULL);
   grpc_credentials_unref(ssl_creds);
   grpc_credentials_unref(oauth2_creds);
   GPR_ASSERT(strcmp(composite_creds->type, GRPC_CREDENTIALS_TYPE_COMPOSITE) ==
@@ -395,13 +395,13 @@ static void test_ssl_oauth2_composite_creds(void) {
 }
 
 void test_ssl_fake_transport_security_composite_creds_failure(void) {
-  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL);
+  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL, NULL);
   grpc_credentials *fake_transport_security_creds =
       grpc_fake_transport_security_credentials_create();
 
   /* 2 connector credentials: should not work. */
   GPR_ASSERT(grpc_composite_credentials_create(
-                 ssl_creds, fake_transport_security_creds) == NULL);
+                 ssl_creds, fake_transport_security_creds, NULL) == NULL);
   grpc_credentials_unref(ssl_creds);
   grpc_credentials_unref(fake_transport_security_creds);
 }
@@ -422,16 +422,16 @@ static void check_ssl_oauth2_iam_composite_metadata(
 
 static void test_ssl_oauth2_iam_composite_creds(void) {
   grpc_credentials *ssl_creds =
-      grpc_ssl_credentials_create(test_root_cert, NULL);
+      grpc_ssl_credentials_create(test_root_cert, NULL, NULL);
   const grpc_credentials_array *creds_array;
   grpc_credentials *oauth2_creds = grpc_md_only_test_credentials_create(
       "Authorization", test_oauth2_bearer_token, 0);
   grpc_credentials *aux_creds =
-      grpc_composite_credentials_create(ssl_creds, oauth2_creds);
+      grpc_composite_credentials_create(ssl_creds, oauth2_creds, NULL);
   grpc_credentials *iam_creds = grpc_iam_credentials_create(
-      test_iam_authorization_token, test_iam_authority_selector);
+      test_iam_authorization_token, test_iam_authority_selector, NULL);
   grpc_credentials *composite_creds =
-      grpc_composite_credentials_create(aux_creds, iam_creds);
+      grpc_composite_credentials_create(aux_creds, iam_creds, NULL);
   grpc_credentials_unref(ssl_creds);
   grpc_credentials_unref(oauth2_creds);
   grpc_credentials_unref(aux_creds);
@@ -524,7 +524,7 @@ static int httpcli_get_should_not_be_called(
 
 static void test_compute_engine_creds_success(void) {
   grpc_credentials *compute_engine_creds =
-      grpc_compute_engine_credentials_create();
+      grpc_compute_engine_credentials_create(NULL);
   GPR_ASSERT(grpc_credentials_has_request_metadata(compute_engine_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(compute_engine_creds));
 
@@ -548,7 +548,7 @@ static void test_compute_engine_creds_success(void) {
 
 static void test_compute_engine_creds_failure(void) {
   grpc_credentials *compute_engine_creds =
-      grpc_compute_engine_credentials_create();
+      grpc_compute_engine_credentials_create(NULL);
   grpc_httpcli_set_override(compute_engine_httpcli_get_failure_override,
                             httpcli_post_should_not_be_called);
   GPR_ASSERT(grpc_credentials_has_request_metadata(compute_engine_creds));
@@ -605,7 +605,7 @@ static int refresh_token_httpcli_post_failure(
 
 static void test_refresh_token_creds_success(void) {
   grpc_credentials *refresh_token_creds =
-      grpc_refresh_token_credentials_create(test_refresh_token_str);
+      grpc_refresh_token_credentials_create(test_refresh_token_str, NULL);
   GPR_ASSERT(grpc_credentials_has_request_metadata(refresh_token_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(refresh_token_creds));
 
@@ -629,7 +629,7 @@ static void test_refresh_token_creds_success(void) {
 
 static void test_refresh_token_creds_failure(void) {
   grpc_credentials *refresh_token_creds =
-      grpc_refresh_token_credentials_create(test_refresh_token_str);
+      grpc_refresh_token_credentials_create(test_refresh_token_str, NULL);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             refresh_token_httpcli_post_failure);
   GPR_ASSERT(grpc_credentials_has_request_metadata(refresh_token_creds));
@@ -731,7 +731,7 @@ static void test_service_account_creds_success(void) {
   char *json_key_string = test_json_key_str();
   grpc_credentials *service_account_creds =
       grpc_service_account_credentials_create(json_key_string, test_scope,
-                                              grpc_max_auth_token_lifetime);
+                                              grpc_max_auth_token_lifetime, NULL);
   GPR_ASSERT(grpc_credentials_has_request_metadata(service_account_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(service_account_creds));
 
@@ -761,8 +761,8 @@ static void test_service_account_creds_success(void) {
 static void test_service_account_creds_http_failure(void) {
   char *json_key_string = test_json_key_str();
   grpc_credentials *service_account_creds =
-      grpc_service_account_credentials_create(json_key_string, test_scope,
-                                              grpc_max_auth_token_lifetime);
+      grpc_service_account_credentials_create(
+          json_key_string, test_scope, grpc_max_auth_token_lifetime, NULL);
   GPR_ASSERT(grpc_credentials_has_request_metadata(service_account_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(service_account_creds));
 
@@ -781,8 +781,8 @@ static void test_service_account_creds_http_failure(void) {
 static void test_service_account_creds_signing_failure(void) {
   char *json_key_string = test_json_key_str();
   grpc_credentials *service_account_creds =
-      grpc_service_account_credentials_create(json_key_string, test_scope,
-                                              grpc_max_auth_token_lifetime);
+      grpc_service_account_credentials_create(
+          json_key_string, test_scope, grpc_max_auth_token_lifetime, NULL);
   GPR_ASSERT(grpc_credentials_has_request_metadata(service_account_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(service_account_creds));
 
@@ -828,7 +828,7 @@ static void test_jwt_creds_success(void) {
   char *json_key_string = test_json_key_str();
   grpc_credentials *jwt_creds =
       grpc_service_account_jwt_access_credentials_create(
-          json_key_string, grpc_max_auth_token_lifetime);
+          json_key_string, grpc_max_auth_token_lifetime, NULL);
   GPR_ASSERT(grpc_credentials_has_request_metadata(jwt_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(jwt_creds));
 
@@ -861,7 +861,7 @@ static void test_jwt_creds_signing_failure(void) {
   char *json_key_string = test_json_key_str();
   grpc_credentials *jwt_creds =
       grpc_service_account_jwt_access_credentials_create(
-          json_key_string, grpc_max_auth_token_lifetime);
+          json_key_string, grpc_max_auth_token_lifetime, NULL);
   GPR_ASSERT(grpc_credentials_has_request_metadata(jwt_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(jwt_creds));
 

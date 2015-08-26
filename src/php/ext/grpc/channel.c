@@ -169,7 +169,7 @@ PHP_METHOD(Channel, __construct) {
     } else {
       gpr_log(GPR_DEBUG, "Initialized secure channel");
       channel->wrapped =
-          grpc_secure_channel_create(creds->wrapped, target, &args);
+          grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
     }
     efree(args.args);
   }
