@@ -81,26 +81,10 @@ std::shared_ptr<Credentials> SslCredentials(
 }
 
 // Builds credentials for use when running in GCE
-std::shared_ptr<Credentials> ComputeEngineCredentials() {
+std::shared_ptr<Credentials> GoogleComputeEngineCredentials() {
   GrpcLibrary init;  // To call grpc_init().
-  return WrapCredentials(grpc_compute_engine_credentials_create(nullptr));
-}
-
-// Builds service account credentials.
-std::shared_ptr<Credentials> ServiceAccountCredentials(
-    const grpc::string& json_key, const grpc::string& scope,
-    long token_lifetime_seconds) {
-  GrpcLibrary init;  // To call grpc_init().
-  if (token_lifetime_seconds <= 0) {
-    gpr_log(GPR_ERROR,
-            "Trying to create ServiceAccountCredentials "
-            "with non-positive lifetime");
-    return WrapCredentials(nullptr);
-  }
-  gpr_timespec lifetime =
-      gpr_time_from_seconds(token_lifetime_seconds, GPR_TIMESPAN);
-  return WrapCredentials(grpc_service_account_credentials_create(
-      json_key.c_str(), scope.c_str(), lifetime, nullptr));
+  return WrapCredentials(
+      grpc_google_compute_engine_credentials_create(nullptr));
 }
 
 // Builds JWT credentials.
@@ -119,10 +103,10 @@ std::shared_ptr<Credentials> ServiceAccountJWTAccessCredentials(
 }
 
 // Builds refresh token credentials.
-std::shared_ptr<Credentials> RefreshTokenCredentials(
+std::shared_ptr<Credentials> GoogleRefreshTokenCredentials(
     const grpc::string& json_refresh_token) {
   GrpcLibrary init;  // To call grpc_init().
-  return WrapCredentials(grpc_refresh_token_credentials_create(
+  return WrapCredentials(grpc_google_refresh_token_credentials_create(
       json_refresh_token.c_str(), nullptr));
 }
 
@@ -135,11 +119,11 @@ std::shared_ptr<Credentials> AccessTokenCredentials(
 }
 
 // Builds IAM credentials.
-std::shared_ptr<Credentials> IAMCredentials(
+std::shared_ptr<Credentials> GoogleIAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector) {
   GrpcLibrary init;  // To call grpc_init().
-  return WrapCredentials(grpc_iam_credentials_create(
+  return WrapCredentials(grpc_google_iam_credentials_create(
       authorization_token.c_str(), authority_selector.c_str(), nullptr));
 }
 

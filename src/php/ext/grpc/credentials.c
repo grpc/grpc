@@ -170,7 +170,7 @@ PHP_METHOD(Credentials, createComposite) {
  * @return Credentials The new GCE credentials object
  */
 PHP_METHOD(Credentials, createGce) {
-  grpc_credentials *creds = grpc_compute_engine_credentials_create(NULL);
+  grpc_credentials *creds = grpc_google_compute_engine_credentials_create(NULL);
   zval *creds_object = grpc_php_wrap_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
