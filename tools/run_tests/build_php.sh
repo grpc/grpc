@@ -37,6 +37,7 @@ cd $(dirname $0)/../..
 
 root=`pwd`
 export GRPC_LIB_SUBDIR=libs/$CONFIG
+export CFLAGS="-Wno-parentheses-equality"
 
 # build php
 cd src/php
