@@ -39,10 +39,10 @@
 /// - Initial and trailing metadata coming from the server.
 /// - Get performance metrics (ie, census).
 ///
-/// Context settings are only relevant to the previous/next call (depending on
-/// the method semantics), that is to say, they aren't sticky. Some of these
-/// settings, such as the compression options, can be made persistant at channel
-/// construction time (see \a grpc::CreateChannel).
+/// Context settings are only relevant to the call they are invoked with, that
+/// is to say, they aren't sticky. Some of these settings, such as the
+/// compression options, can be made persistant at channel construction time
+/// (see \a grpc::CreateChannel).
 
 #ifndef GRPCXX_CLIENT_CONTEXT_H
 #define GRPCXX_CLIENT_CONTEXT_H
@@ -148,8 +148,8 @@ class ClientContext {
   ClientContext();
   ~ClientContext();
 
-  /// Create a new \a ClientContext according to \a options (\see
-  /// PropagationOptions).
+  /// Create a new \a ClientContext as a child of an incoming server call,
+  /// according to \a options (\see PropagationOptions).
   ///
   /// \param server_context The source server context to use as the basis for
   /// constructing the client context.
@@ -166,6 +166,8 @@ class ClientContext {
   /// a client call. These are made available at the server side by the \a
   /// grpc::ServerContext::client_metadata() method.
   ///
+  /// \warning This method should only be called before invoking the rpc.
+  ///
   /// \param meta_key The metadata key. If \a meta_value is binary data, it must
   /// end in "-bin".
   /// \param meta_value The metadata value. If its value is binary, it must be
@@ -177,7 +179,9 @@ class ClientContext {
   /// Return a collection of initial metadata key-value pairs. Note that keys
   /// may happen more than once (ie, a \a std::multimap is returned).
   ///
-  /// This should only be called upon a successful reply from the server.
+  /// \warning This method should only be called after initial metadata has been
+  /// received. For streaming calls, see \a
+  /// ClientReaderInterface::WaitForInitialMetadata().
   ///
   /// \return A multimap of initial metadata key-value pairs from the server.
   const std::multimap<grpc::string, grpc::string>& GetServerInitialMetadata() {
@@ -189,6 +193,8 @@ class ClientContext {
   /// Return a collection of trailing metadata key-value pairs. Note that keys
   /// may happen more than once (ie, a \a std::multimap is returned).
   ///
+  /// \warning This method is only callable once the stream has finished.
+  ///
   /// \return A multimap of metadata trailing key-value pairs from the server.
   const std::multimap<grpc::string, grpc::string>& GetServerTrailingMetadata() {
     // TODO(yangg) check finished
@@ -196,6 +202,8 @@ class ClientContext {
   }
 
   /// Set the deadline for the client call.
+  ///
+  /// \warning This method should only be called before invoking the rpc.
   ///
   /// \param deadline the deadline for the client call. Units are determined by
   /// the type used.

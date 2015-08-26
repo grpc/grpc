@@ -44,10 +44,6 @@
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
 
-/// The \a Server class models a gRPC server.
-///
-/// Servers are configured and started via \a grpc::ServerBuilder.
-
 struct grpc_server;
 
 namespace grpc {
@@ -61,6 +57,9 @@ class ServerAsyncStreamingInterface;
 class ServerCredentials;
 class ThreadPoolInterface;
 
+/// Models a gRPC server.
+///
+/// Servers are configured and started via \a grpc::ServerBuilder.
 class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
  public:
   ~Server();
@@ -126,7 +125,6 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   /// \return bound port number on sucess, 0 on failure.
   ///
   /// \warning It's an error to call this method on an already started server.
-  // TODO(dgq): the "port" part seems to be a misnomer.
   int AddListeningPort(const grpc::string& addr, ServerCredentials* creds);
 
   /// Start the server.
