@@ -41,6 +41,8 @@ var client = require('./src/client.js');
 
 var server = require('./src/server.js');
 
+var Metadata = require('./src/metadata.js');
+
 var grpc = require('bindings')('grpc');
 
 /**
@@ -107,18 +109,12 @@ exports.getGoogleAuthDelegate = function getGoogleAuthDelegate(credential) {
    * @param {function(Error, Object)} callback
    */
   return function updateMetadata(authURI, metadata, callback) {
-    metadata = _.clone(metadata);
-    if (metadata.Authorization) {
-      metadata.Authorization = _.clone(metadata.Authorization);
-    } else {
-      metadata.Authorization = [];
-    }
     credential.getRequestMetadata(authURI, function(err, header) {
       if (err) {
         callback(err);
         return;
       }
-      metadata.Authorization.push(header.Authorization);
+      metadata.add('authorization', header.Authorization);
       callback(null, metadata);
     });
   };
@@ -128,6 +124,11 @@ exports.getGoogleAuthDelegate = function getGoogleAuthDelegate(credential) {
  * @see module:src/server.Server
  */
 exports.Server = server.Server;
+
+/**
+ * @see module:src/metadata
+ */
+exports.Metadata = Metadata;
 
 /**
  * Status name to code number mapping
