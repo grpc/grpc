@@ -35,6 +35,7 @@
 #define GRPCXX_STRING_REF_H
 
 #include <iterator>
+#include <iosfwd>
 
 #include <grpc++/support/config.h>
 
@@ -109,6 +110,8 @@ bool operator<(string_ref x, string_ref y);
 bool operator>(string_ref x, string_ref y);
 bool operator<=(string_ref x, string_ref y);
 bool operator>=(string_ref x, string_ref y);
+
+std::ostream& operator<<(std::ostream& stream, const string_ref& string);
 
 }  // namespace grpc
 
