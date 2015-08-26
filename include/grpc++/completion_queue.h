@@ -94,7 +94,12 @@ class CompletionQueue : public GrpcLibrary {
   ~CompletionQueue() GRPC_OVERRIDE;
 
   /// Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.
-  enum NextStatus { SHUTDOWN, GOT_EVENT, TIMEOUT };
+  enum NextStatus {
+    SHUTDOWN,  ///< The completion queue has been shutdown.
+    GOT_EVENT,  ///< Got a new event; \a tag will be filled in with its
+                ///< associated value; \a ok indicating its success.
+    TIMEOUT  ///< deadline was reached.
+  };
 
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
   /// Both \a tag and \a ok are updated upon success (if an event is available
@@ -196,7 +201,7 @@ class CompletionQueueTag {
 };
 
 /// A specific type of completion queue used by the processing of notifications
-/// by servers.
+/// by servers. Instantiated by \a ServerBuilder.
 class ServerCompletionQueue : public CompletionQueue {
  private:
   friend class ServerBuilder;
