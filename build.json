@@ -535,8 +535,7 @@
         "gpr",
         "grpc"
       ],
-      "secure": "no",
-      "vs_project_guid": "{F3089A9A-1C12-4315-A4F5-92D6736F8DDD}"
+      "secure": "no"
     },
     {
       "name": "grpc_test_util",
