@@ -108,4 +108,8 @@ bool operator>=(string_ref x, string_ref y) {
   return x.compare(y) >= 0;
 }
 
+std::ostream& operator<<(std::ostream& out, const string_ref& string) {
+  return out << grpc::string(string.begin(), string.end());
+}
+
 }  // namespace grpc
