@@ -46,9 +46,9 @@ namespace testing {
 class ChannelArgumentsTest;
 }  // namespace testing
 
-// Options for channel creation. The user can use generic setters to pass
-// key value pairs down to c channel creation code. For grpc related options,
-// concrete setters are provided.
+/// Options for channel creation. The user can use generic setters to pass
+/// key value pairs down to c channel creation code. For grpc related options,
+/// concrete setters are provided.
 class ChannelArguments {
  public:
   ChannelArguments() {}
@@ -62,20 +62,25 @@ class ChannelArguments {
 
   void Swap(ChannelArguments& other);
 
-  // grpc specific channel argument setters
-  // Set target name override for SSL host name checking.
+  /// Populates this instance with the arguments from \a channel_args. Does not
+  /// take ownership of \a channel_args.
+  ///
+  /// Note that the underlying arguments are shared. Changes made to either \a
+  /// channel_args or this instance would be reflected on both.
+  void SetChannelArgs(grpc_channel_args* channel_args) const;
+
+  // gRPC specific channel argument setters
+  /// Set target name override for SSL host name checking.
   void SetSslTargetNameOverride(const grpc::string& name);
   // TODO(yangg) add flow control options
-
-  // Set the compression algorithm for the channel.
+  /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
 
   // Generic channel argument setters. Only for advanced use cases.
+  /// Set an integer argument \a value under \a key.
   void SetInt(const grpc::string& key, int value);
+  /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);
-
-  // Populates given channel_args with args_, does not take ownership.
-  void SetChannelArgs(grpc_channel_args* channel_args) const;
 
  private:
   friend class SecureCredentials;
