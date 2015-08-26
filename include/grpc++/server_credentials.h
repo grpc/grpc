@@ -11,7 +11,7 @@
  * notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above
  * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
+ a * in the documentation and/or other materials provided with the
  * distribution.
  *     * Neither the name of Google Inc. nor the names of its
  * contributors may be used to endorse or promote products derived from
@@ -44,7 +44,7 @@ struct grpc_server;
 namespace grpc {
 class Server;
 
-// grpc_server_credentials wrapper class.
+// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
 class ServerCredentials {
  public:
   virtual ~ServerCredentials();
@@ -52,11 +52,16 @@ class ServerCredentials {
  private:
   friend class ::grpc::Server;
 
+  /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
+  /// 192.168.1.1:31416, [::1]:27182, etc.)
+  ///
+  /// \return bound port number on sucess, 0 on failure.
+  // TODO(dgq): the "port" part seems to be a misnomer.
   virtual int AddPortToServer(const grpc::string& addr,
                               grpc_server* server) = 0;
 };
 
-// Options to create ServerCredentials with SSL
+/// Options to create ServerCredentials with SSL
 struct SslServerCredentialsOptions {
   SslServerCredentialsOptions() : force_client_auth(false) {}
 
@@ -69,10 +74,11 @@ struct SslServerCredentialsOptions {
   bool force_client_auth;
 };
 
-// Builds SSL ServerCredentials given SSL specific options
+/// Builds SSL ServerCredentials given SSL specific options
 std::shared_ptr<ServerCredentials> SslServerCredentials(
     const SslServerCredentialsOptions& options);
 
+/// Builds insecure server credentials.
 std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
 }  // namespace grpc

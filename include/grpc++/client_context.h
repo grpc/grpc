@@ -206,21 +206,32 @@ class ClientContext {
   }
 
 #ifndef GRPC_CXX0X_NO_CHRONO
+  /// Return the deadline for the client call.
   std::chrono::system_clock::time_point deadline() {
     return Timespec2Timepoint(deadline_);
   }
 #endif  // !GRPC_CXX0X_NO_CHRONO
 
-  /// XXX: what's raw about this? is it absolute time?
+  /// Return a \a gpr_timespec representation of the client call's deadline.
   gpr_timespec raw_deadline() { return deadline_; }
 
-  /// XXX what's an authority?
+  /// Set the per call authority header (see
+  /// https://tools.ietf.org/html/rfc7540#section-8.1.2.3).
   void set_authority(const grpc::string& authority) { authority_ = authority; }
 
-  /// XXX: what's an auth context? what is it used for?
+  /// Return the authentication context for this client call.
+  ///
+  /// \see grpc::AuthContext.
   std::shared_ptr<const AuthContext> auth_context() const;
 
-  /// Set credentials for the rpc. XXX: how do credentials work?
+  /// Set credentials for the client call.
+  ///
+  /// A credentials object encapsulates all the state needed by a client to
+  /// authenticate with a server and make various assertions, e.g., about the
+  /// client’s identity, role, or whether it is authorized to make a particular
+  /// call.
+  ///
+  /// \see https://github.com/grpc/grpc-common/blob/master/grpc-auth-support.md
   void set_credentials(const std::shared_ptr<Credentials>& creds) {
     creds_ = creds;
   }

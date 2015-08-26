@@ -72,20 +72,26 @@ class AuthPropertyIterator
   const char* name_;
 };
 
+/// Class encapsulating the Authentication Information.
+/// 
+/// It includes the secure identity of the peer, the type of secure transport
+/// used as well as any other properties required by the authorization layer.
 class AuthContext {
  public:
   virtual ~AuthContext() {}
 
-  // A peer identity, in general is one or more properties (in which case they
-  // have the same name).
+  /// A peer identity. 
+  ///
+  /// It is, in general, comprised of one or more properties (in which case they
+  /// have the same name).
   virtual std::vector<grpc::string> GetPeerIdentity() const = 0;
   virtual grpc::string GetPeerIdentityPropertyName() const = 0;
 
-  // Returns all the property values with the given name.
+  /// Returns all the property values with the given name.
   virtual std::vector<grpc::string> FindPropertyValues(
       const grpc::string& name) const = 0;
 
-  // Iteration over all the properties.
+  /// Iteration over all the properties.
   virtual AuthPropertyIterator begin() const = 0;
   virtual AuthPropertyIterator end() const = 0;
 };
