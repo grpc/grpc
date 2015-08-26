@@ -154,6 +154,7 @@ void grpc_mdelem_unref(grpc_mdelem *md);
 const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 
 int grpc_mdstr_is_legal_header(grpc_mdstr *s);
+int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s);
 int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 
 /* Batch mode metadata functions.

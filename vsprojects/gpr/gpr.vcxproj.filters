@@ -218,6 +218,9 @@
     <ClInclude Include="..\..\src\core\support\thd_internal.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\support\time_precise.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
   </ItemGroup>
 
   <ItemGroup>
