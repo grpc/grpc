@@ -161,7 +161,7 @@ NAN_METHOD(Channel::New) {
                                                      NULL);
     } else {
       wrapped_channel =
-          grpc_secure_channel_create(creds, *host, channel_args_ptr);
+          grpc_secure_channel_create(creds, *host, channel_args_ptr, NULL);
     }
     if (channel_args_ptr != NULL) {
       free(channel_args_ptr->args);

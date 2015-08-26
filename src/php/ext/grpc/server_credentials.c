@@ -118,7 +118,7 @@ PHP_METHOD(ServerCredentials, createSsl) {
   /* TODO: add a force_client_auth field in ServerCredentials and pass it as
    * the last parameter. */
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create(
-      pem_root_certs, &pem_key_cert_pair, 1, 0);
+      pem_root_certs, &pem_key_cert_pair, 1, 0, NULL);
   zval *creds_object = grpc_php_wrap_server_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }

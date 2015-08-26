@@ -131,7 +131,7 @@ ServerCredentials *pygrpc_ServerCredentials_ssl(
   /* TODO: Add a force_client_auth parameter in the python object and pass it
      here as the last arg. */
   self->c_creds = grpc_ssl_server_credentials_create(
-      root_certs, key_cert_pairs, num_key_cert_pairs, 0);
+      root_certs, key_cert_pairs, num_key_cert_pairs, 0, NULL);
   gpr_free(key_cert_pairs);
   return self;
 }

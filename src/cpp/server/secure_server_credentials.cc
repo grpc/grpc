@@ -52,7 +52,7 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
   grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
       &pem_key_cert_pairs[0], pem_key_cert_pairs.size(),
-      options.force_client_auth);
+      options.force_client_auth, nullptr);
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(c_creds));
 }
