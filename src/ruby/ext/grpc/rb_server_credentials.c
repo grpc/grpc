@@ -178,10 +178,11 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
   key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
   /* TODO Add a force_client_auth parameter and pass it here. */
   if (pem_root_certs == Qnil) {
-    creds = grpc_ssl_server_credentials_create(NULL, &key_cert_pair, 1, 0);
+    creds =
+        grpc_ssl_server_credentials_create(NULL, &key_cert_pair, 1, 0, NULL);
   } else {
     creds = grpc_ssl_server_credentials_create(RSTRING_PTR(pem_root_certs),
-                                               &key_cert_pair, 1, 0);
+                                               &key_cert_pair, 1, 0, NULL);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
