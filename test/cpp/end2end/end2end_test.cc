@@ -81,10 +81,10 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
 
 void CheckServerAuthContext(const ServerContext* context) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
-  std::vector<grpc::string> ssl =
+  std::vector<grpc::string_ref> ssl =
       auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1u, ssl.size());
-  EXPECT_EQ("ssl", ssl[0]);
+  EXPECT_EQ("ssl", ToString(ssl[0]));
   EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
   EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
 }
@@ -840,16 +840,17 @@ TEST_F(End2endTest, ClientAuthContext) {
   EXPECT_TRUE(s.ok());
 
   std::shared_ptr<const AuthContext> auth_ctx = context.auth_context();
-  std::vector<grpc::string> ssl =
+  std::vector<grpc::string_ref> ssl =
       auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1u, ssl.size());
-  EXPECT_EQ("ssl", ssl[0]);
+  EXPECT_EQ("ssl", ToString(ssl[0]));
   EXPECT_EQ("x509_subject_alternative_name",
             auth_ctx->GetPeerIdentityPropertyName());
   EXPECT_EQ(3u, auth_ctx->GetPeerIdentity().size());
-  EXPECT_EQ("*.test.google.fr", auth_ctx->GetPeerIdentity()[0]);
-  EXPECT_EQ("waterzooi.test.google.be", auth_ctx->GetPeerIdentity()[1]);
-  EXPECT_EQ("*.test.youtube.com", auth_ctx->GetPeerIdentity()[2]);
+  EXPECT_EQ("*.test.google.fr", ToString(auth_ctx->GetPeerIdentity()[0]));
+  EXPECT_EQ("waterzooi.test.google.be",
+            ToString(auth_ctx->GetPeerIdentity()[1]));
+  EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
 }
 
 // Make the response larger than the flow control window.
