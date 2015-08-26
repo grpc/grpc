@@ -38,6 +38,8 @@ namespace Grpc.Core
     /// <summary>
     /// Server-side handler for unary call.
     /// </summary>
+    /// <typeparam name="TRequest">Request message type for this method.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this method.</typeparam>
     public delegate Task<TResponse> UnaryServerMethod<TRequest, TResponse>(TRequest request, ServerCallContext context)
         where TRequest : class
         where TResponse : class;
@@ -45,6 +47,8 @@ namespace Grpc.Core
     /// <summary>
     /// Server-side handler for client streaming call.
     /// </summary>
+    /// <typeparam name="TRequest">Request message type for this method.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this method.</typeparam>
     public delegate Task<TResponse> ClientStreamingServerMethod<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, ServerCallContext context)
         where TRequest : class
         where TResponse : class;
@@ -52,6 +56,8 @@ namespace Grpc.Core
     /// <summary>
     /// Server-side handler for server streaming call.
     /// </summary>
+    /// <typeparam name="TRequest">Request message type for this method.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this method.</typeparam>
     public delegate Task ServerStreamingServerMethod<TRequest, TResponse>(TRequest request, IServerStreamWriter<TResponse> responseStream, ServerCallContext context)
         where TRequest : class
         where TResponse : class;
@@ -59,6 +65,8 @@ namespace Grpc.Core
     /// <summary>
     /// Server-side handler for bidi streaming call.
     /// </summary>
+    /// <typeparam name="TRequest">Request message type for this method.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this method.</typeparam>
     public delegate Task DuplexStreamingServerMethod<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream, ServerCallContext context)
         where TRequest : class
         where TResponse : class;

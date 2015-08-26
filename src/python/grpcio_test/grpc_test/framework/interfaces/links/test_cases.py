@@ -300,7 +300,7 @@ class TransmissionTest(object):
         invocation_operation_id, 0, _TRANSMISSION_GROUP, _TRANSMISSION_METHOD,
         links.Ticket.Subscription.FULL, timeout, 0, invocation_initial_metadata,
         invocation_payload, invocation_terminal_metadata, invocation_code,
-        invocation_message, links.Ticket.Termination.COMPLETION)
+        invocation_message, links.Ticket.Termination.COMPLETION, None)
     self._invocation_link.accept_ticket(original_invocation_ticket)
 
     self._service_mate.block_until_tickets_satisfy(
@@ -317,7 +317,7 @@ class TransmissionTest(object):
         service_operation_id, 0, None, None, links.Ticket.Subscription.FULL,
         timeout, 0, service_initial_metadata, service_payload,
         service_terminal_metadata, service_code, service_message,
-        links.Ticket.Termination.COMPLETION)
+        links.Ticket.Termination.COMPLETION, None)
     self._service_link.accept_ticket(original_service_ticket)
     self._invocation_mate.block_until_tickets_satisfy(terminated)
     self._assert_is_valid_service_sequence(
