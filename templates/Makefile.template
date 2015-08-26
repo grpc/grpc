@@ -859,8 +859,8 @@ else
 	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./config no-asm $(OPENSSL_CONFIG_$(CONFIG)))
 endif
 endif
-	$(Q)$(MAKE) -C third_party/openssl clean
-	$(Q)(unset CPPFLAGS; $(MAKE) -C third_party/openssl build_crypto build_ssl)
+	$(Q)$(MAKE) -j 1 -C third_party/openssl clean
+	$(Q)(unset CPPFLAGS; $(MAKE) -j 1 -C third_party/openssl build_crypto build_ssl)
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/openssl
 	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a $(LIBDIR)/$(CONFIG)/openssl
 

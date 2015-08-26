@@ -158,6 +158,7 @@
     <ClInclude Include="..\..\src\core\support\string.h" />
     <ClInclude Include="..\..\src\core\support\string_win32.h" />
     <ClInclude Include="..\..\src\core\support\thd_internal.h" />
+    <ClInclude Include="..\..\src\core\support\time_precise.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\support\alloc.c">

@@ -12168,7 +12168,8 @@
       "src/core/support/stack_lockfree.h", 
       "src/core/support/string.h", 
       "src/core/support/string_win32.h", 
-      "src/core/support/thd_internal.h"
+      "src/core/support/thd_internal.h", 
+      "src/core/support/time_precise.h"
     ], 
     "language": "c", 
     "name": "gpr", 
@@ -12242,6 +12243,7 @@
       "src/core/support/thd_win32.c", 
       "src/core/support/time.c", 
       "src/core/support/time_posix.c", 
+      "src/core/support/time_precise.h", 
       "src/core/support/time_win32.c", 
       "src/core/support/tls_pthread.c"
     ]
@@ -12339,7 +12341,6 @@
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
       "src/core/profiling/timers.h", 
-      "src/core/profiling/timers_preciseclock.h", 
       "src/core/security/auth_filters.h", 
       "src/core/security/base64.h", 
       "src/core/security/credentials.h", 
@@ -12542,7 +12543,6 @@
       "src/core/profiling/basic_timers.c", 
       "src/core/profiling/stap_timers.c", 
       "src/core/profiling/timers.h", 
-      "src/core/profiling/timers_preciseclock.h", 
       "src/core/security/auth_filters.h", 
       "src/core/security/base64.c", 
       "src/core/security/base64.h", 
@@ -12818,7 +12818,6 @@
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
       "src/core/profiling/timers.h", 
-      "src/core/profiling/timers_preciseclock.h", 
       "src/core/statistics/census_interface.h", 
       "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/byte_buffer_queue.h", 
@@ -13006,7 +13005,6 @@
       "src/core/profiling/basic_timers.c", 
       "src/core/profiling/stap_timers.c", 
       "src/core/profiling/timers.h", 
-      "src/core/profiling/timers_preciseclock.h", 
       "src/core/statistics/census_interface.h", 
       "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/byte_buffer.c", 
@@ -13289,6 +13287,7 @@
       "test/cpp/util/echo_duplicate.pb.h", 
       "test/cpp/util/messages.grpc.pb.h", 
       "test/cpp/util/messages.pb.h", 
+      "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.h"
     ], 
     "language": "c++", 
@@ -13298,6 +13297,8 @@
       "test/cpp/util/cli_call.h", 
       "test/cpp/util/create_test_channel.cc", 
       "test/cpp/util/create_test_channel.h", 
+      "test/cpp/util/string_ref_helper.cc", 
+      "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.cc", 
       "test/cpp/util/subprocess.h"
     ]

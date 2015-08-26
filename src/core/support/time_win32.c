@@ -38,6 +38,7 @@
 #ifdef GPR_WIN32
 
 #include <grpc/support/time.h>
+#include <src/core/support/time_precise.h>
 #include <sys/timeb.h>
 
 static LARGE_INTEGER g_start_time;
@@ -67,6 +68,9 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
       now_dbl = (timestamp.QuadPart - g_start_time.QuadPart) * g_time_scale;
       now_tv.tv_sec = (time_t)now_dbl;
       now_tv.tv_nsec = (int)((now_dbl - (double)now_tv.tv_sec) * 1e9);
+      break;
+    case GPR_CLOCK_PRECISE:
+      gpr_precise_clock_now(&now_tv);
       break;
   }
   return now_tv;
