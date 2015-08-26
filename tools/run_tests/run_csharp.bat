@@ -8,7 +8,7 @@ cd /d %~dp0\..\..\src\csharp
 @rem set UUID variable to a random GUID, we will use it to put TestResults.xml to a dedicated directory, so that parallel test runs don't collide
 for /F %%i in ('powershell -Command "[guid]::NewGuid().ToString()"') do (set UUID=%%i)
 
-packages\NUnit.Runners.2.6.4\tools\nunit-console-x86.exe -labels "%1/bin/Debug/%1.dll" -work test-results/%UUID% || goto :error
+packages\NUnit.Runners.2.6.4\tools\nunit-console-x86.exe /domain:None -labels "%1/bin/Debug/%1.dll" -work test-results/%UUID% || goto :error
 
 endlocal
 
