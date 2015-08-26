@@ -2029,8 +2029,11 @@
         "test/cpp/common/auth_property_iterator_test.cc"
       ],
       "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
         "grpc++",
         "grpc",
+        "gpr_test_util",
         "gpr"
       ]
     },
@@ -2581,8 +2584,11 @@
         "test/cpp/common/secure_auth_context_test.cc"
       ],
       "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
         "grpc++",
         "grpc",
+        "gpr_test_util",
         "gpr"
       ]
     },
