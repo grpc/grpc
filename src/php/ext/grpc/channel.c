@@ -148,7 +148,7 @@ PHP_METHOD(Channel, __construct) {
     return;
   }
   if (args_array == NULL) {
-    channel->wrapped = grpc_insecure_channel_create(target, NULL, NULL, NULL);
+    channel->wrapped = grpc_insecure_channel_create(target, NULL, NULL);
   } else {
     array_hash = Z_ARRVAL_P(args_array);
     if (zend_hash_find(array_hash, "credentials", sizeof("credentials"),
