@@ -219,6 +219,7 @@ static grpc_endpoint_op_status win_read(grpc_endpoint *ep,
   tcp->socket->read_info.outstanding = 1;
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
+  gpr_slice_buffer_reset_and_unref(read_slices);
 
   tcp->read_slice = gpr_slice_malloc(8192);
 
