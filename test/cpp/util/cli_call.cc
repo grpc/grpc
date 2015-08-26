@@ -35,16 +35,13 @@
 
 #include <iostream>
 
-#include <grpc++/byte_buffer.h>
-#include <grpc++/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/generic_stub.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
+#include <grpc++/support/byte_buffer.h>
+#include <grpc++/channel.h>
+#include <grpc++/client_context.h>
+#include <grpc++/generic/generic_stub.h>
 
 namespace grpc {
 namespace testing {
@@ -52,16 +49,16 @@ namespace {
 void* tag(int i) { return (void*)(gpr_intptr)i; }
 }  // namespace
 
-Status CliCall::Call(std::shared_ptr<grpc::ChannelInterface> channel,
+Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
                      const grpc::string& method, const grpc::string& request,
-                     grpc::string* response, const MetadataContainer& metadata,
-                     MetadataContainer* server_initial_metadata,
-                     MetadataContainer* server_trailing_metadata) {
+                     grpc::string* response,
+                     const OutgoingMetadataContainer& metadata,
+                     IncomingMetadataContainer* server_initial_metadata,
+                     IncomingMetadataContainer* server_trailing_metadata) {
   std::unique_ptr<grpc::GenericStub> stub(new grpc::GenericStub(channel));
   grpc::ClientContext ctx;
   if (!metadata.empty()) {
-    for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
-             metadata.begin();
+    for (OutgoingMetadataContainer::const_iterator iter = metadata.begin();
          iter != metadata.end(); ++iter) {
       ctx.AddMetadata(iter->first, iter->second);
     }

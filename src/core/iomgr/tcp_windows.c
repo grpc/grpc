@@ -144,6 +144,7 @@ static int on_read(grpc_tcp *tcp, int from_iocp) {
       gpr_free(utf8_message);
     }
     success = 0;
+    gpr_slice_unref(tcp->read_slice);
   } else {
     if (info->bytes_transfered != 0) {
       sub = gpr_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);

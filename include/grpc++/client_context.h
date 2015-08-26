@@ -42,16 +42,17 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc++/auth_context.h>
-#include <grpc++/config.h>
-#include <grpc++/status.h>
-#include <grpc++/time.h>
+#include <grpc++/support/auth_context.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/string_ref.h>
+#include <grpc++/support/time.h>
 
 struct census_context;
 
 namespace grpc {
 
-class ChannelInterface;
+class Channel;
 class CompletionQueue;
 class Credentials;
 class RpcMethod;
@@ -138,12 +139,14 @@ class ClientContext {
   void AddMetadata(const grpc::string& meta_key,
                    const grpc::string& meta_value);
 
-  const std::multimap<grpc::string, grpc::string>& GetServerInitialMetadata() {
+  const std::multimap<grpc::string_ref, grpc::string_ref>&
+  GetServerInitialMetadata() {
     GPR_ASSERT(initial_metadata_received_);
     return recv_initial_metadata_;
   }
 
-  const std::multimap<grpc::string, grpc::string>& GetServerTrailingMetadata() {
+  const std::multimap<grpc::string_ref, grpc::string_ref>&
+  GetServerTrailingMetadata() {
     // TODO(yangg) check finished
     return trailing_metadata_;
   }
@@ -215,20 +218,18 @@ class ClientContext {
   template <class R>
   friend class ::grpc::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
-  friend Status BlockingUnaryCall(ChannelInterface* channel,
-                                  const RpcMethod& method,
+  friend Status BlockingUnaryCall(Channel* channel, const RpcMethod& method,
                                   ClientContext* context,
                                   const InputMessage& request,
                                   OutputMessage* result);
 
   grpc_call* call() { return call_; }
-  void set_call(grpc_call* call,
-                const std::shared_ptr<ChannelInterface>& channel);
+  void set_call(grpc_call* call, const std::shared_ptr<Channel>& channel);
 
   grpc::string authority() { return authority_; }
 
   bool initial_metadata_received_;
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
   grpc_call* call_;
   gpr_timespec deadline_;
   grpc::string authority_;
@@ -236,8 +237,8 @@ class ClientContext {
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
-  std::multimap<grpc::string, grpc::string> recv_initial_metadata_;
-  std::multimap<grpc::string, grpc::string> trailing_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref> recv_initial_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref> trailing_metadata_;
 
   grpc_call* propagate_from_call_;
   PropagationOptions propagation_options_;

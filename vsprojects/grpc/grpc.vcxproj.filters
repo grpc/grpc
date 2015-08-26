@@ -67,6 +67,9 @@
     <ClCompile Include="..\..\src\core\census\grpc_context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\grpc_filter.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\channel\channel_args.c">
       <Filter>src\core\channel</Filter>
     </ClCompile>
@@ -482,8 +485,8 @@
     <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h">
       <Filter>src\core\tsi</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\channel\census_filter.h">
-      <Filter>src\core\channel</Filter>
+    <ClInclude Include="..\..\src\core\census\grpc_filter.h">
+      <Filter>src\core\census</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\channel\channel_args.h">
       <Filter>src\core\channel</Filter>
@@ -677,8 +680,11 @@
     <ClInclude Include="..\..\src\core\profiling\timers.h">
       <Filter>src\core\profiling</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\profiling\timers_preciseclock.h">
-      <Filter>src\core\profiling</Filter>
+    <ClInclude Include="..\..\src\core\statistics\census_interface.h">
+      <Filter>src\core\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h">
+      <Filter>src\core\statistics</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h">
       <Filter>src\core\surface</Filter>
@@ -841,6 +847,9 @@
     </Filter>
     <Filter Include="src\core\security">
       <UniqueIdentifier>{1d850ac6-e639-4eab-5338-4ba40272fcc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\statistics">
+      <UniqueIdentifier>{0ef49896-2313-4a3f-1ce2-716fa0e5c6ca}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\surface">
       <UniqueIdentifier>{aeb18e82-5d25-0aad-8b02-a0a3470073ce}</UniqueIdentifier>

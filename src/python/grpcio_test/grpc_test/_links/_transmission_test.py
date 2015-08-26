@@ -66,9 +66,9 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
 
   def create_invocation_initial_metadata(self):
     return (
-        ('first invocation initial metadata key', 'just a string value'),
-        ('second invocation initial metadata key', '0123456789'),
-        ('third invocation initial metadata key-bin', '\x00\x57' * 100),
+        ('first_invocation_initial_metadata_key', 'just a string value'),
+        ('second_invocation_initial_metadata_key', '0123456789'),
+        ('third_invocation_initial_metadata_key-bin', '\x00\x57' * 100),
     )
 
   def create_invocation_terminal_metadata(self):
@@ -76,16 +76,16 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
 
   def create_service_initial_metadata(self):
     return (
-        ('first service initial metadata key', 'just another string value'),
-        ('second service initial metadata key', '9876543210'),
-        ('third service initial metadata key-bin', '\x00\x59\x02' * 100),
+        ('first_service_initial_metadata_key', 'just another string value'),
+        ('second_service_initial_metadata_key', '9876543210'),
+        ('third_service_initial_metadata_key-bin', '\x00\x59\x02' * 100),
     )
 
   def create_service_terminal_metadata(self):
     return (
-        ('first service terminal metadata key', 'yet another string value'),
-        ('second service terminal metadata key', 'abcdefghij'),
-        ('third service terminal metadata key-bin', '\x00\x37' * 100),
+        ('first_service_terminal_metadata_key', 'yet another string value'),
+        ('second_service_terminal_metadata_key', 'abcdefghij'),
+        ('third_service_terminal_metadata_key-bin', '\x00\x37' * 100),
     )
 
   def create_invocation_completion(self):
@@ -128,14 +128,14 @@ class RoundTripTest(unittest.TestCase):
     invocation_ticket = links.Ticket(
         test_operation_id, 0, test_group, test_method,
         links.Ticket.Subscription.FULL, test_constants.LONG_TIMEOUT, None, None,
-        None, None, None, None, links.Ticket.Termination.COMPLETION)
+        None, None, None, None, links.Ticket.Termination.COMPLETION, None)
     invocation_link.accept_ticket(invocation_ticket)
     service_mate.block_until_tickets_satisfy(test_cases.terminated)
 
     service_ticket = links.Ticket(
         service_mate.tickets()[-1].operation_id, 0, None, None, None, None,
         None, None, None, None, test_code, test_message,
-        links.Ticket.Termination.COMPLETION)
+        links.Ticket.Termination.COMPLETION, None)
     service_link.accept_ticket(service_ticket)
     invocation_mate.block_until_tickets_satisfy(test_cases.terminated)
 
@@ -174,33 +174,34 @@ class RoundTripTest(unittest.TestCase):
     invocation_ticket = links.Ticket(
         test_operation_id, 0, test_group, test_method,
         links.Ticket.Subscription.FULL, test_constants.LONG_TIMEOUT, None, None,
-        None, None, None, None, None)
+        None, None, None, None, None, None)
     invocation_link.accept_ticket(invocation_ticket)
     requests = scenario.requests()
     for request_index, request in enumerate(requests):
       request_ticket = links.Ticket(
           test_operation_id, 1 + request_index, None, None, None, None, 1, None,
-          request, None, None, None, None)
+          request, None, None, None, None, None)
       invocation_link.accept_ticket(request_ticket)
       service_mate.block_until_tickets_satisfy(
           test_cases.at_least_n_payloads_received_predicate(1 + request_index))
       response_ticket = links.Ticket(
           service_mate.tickets()[0].operation_id, request_index, None, None,
           None, None, 1, None, scenario.response_for_request(request), None,
-          None, None, None)
+          None, None, None, None)
       service_link.accept_ticket(response_ticket)
       invocation_mate.block_until_tickets_satisfy(
           test_cases.at_least_n_payloads_received_predicate(1 + request_index))
     request_count = len(requests)
     invocation_completion_ticket = links.Ticket(
         test_operation_id, request_count + 1, None, None, None, None, None,
-        None, None, None, None, None, links.Ticket.Termination.COMPLETION)
+        None, None, None, None, None, links.Ticket.Termination.COMPLETION,
+        None)
     invocation_link.accept_ticket(invocation_completion_ticket)
     service_mate.block_until_tickets_satisfy(test_cases.terminated)
     service_completion_ticket = links.Ticket(
         service_mate.tickets()[0].operation_id, request_count, None, None, None,
         None, None, None, None, None, test_code, test_message,
-        links.Ticket.Termination.COMPLETION)
+        links.Ticket.Termination.COMPLETION, None)
     service_link.accept_ticket(service_completion_ticket)
     invocation_mate.block_until_tickets_satisfy(test_cases.terminated)
 

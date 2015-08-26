@@ -37,18 +37,16 @@
 #include <string>
 #include <thread>
 
+#include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <gflags/gflags.h>
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
-#include <grpc++/status.h>
-#include "test/cpp/util/test_config.h"
 
 #include "examples/pubsub/publisher.h"
 #include "examples/pubsub/subscriber.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_int32(server_port, 443, "Server port.");
 DEFINE_string(server_host, "pubsub-staging.googleapis.com",
@@ -72,7 +70,7 @@ int main(int argc, char** argv) {
   ss << FLAGS_server_host << ":" << FLAGS_server_port;
 
   std::shared_ptr<grpc::Credentials> creds = grpc::GoogleDefaultCredentials();
-  std::shared_ptr<grpc::ChannelInterface> channel =
+  std::shared_ptr<grpc::Channel> channel =
       grpc::CreateChannel(ss.str(), creds, grpc::ChannelArguments());
 
   grpc::examples::pubsub::Publisher publisher(channel);

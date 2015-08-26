@@ -32,18 +32,19 @@
  */
 
 #include <grpc++/server.h>
+
 #include <utility>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
-#include <grpc++/async_generic_service.h>
+#include <grpc++/generic/async_generic_service.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/time.h>
+#include <grpc++/support/time.h>
 
 #include "src/core/profiling/timers.h"
 #include "src/cpp/server/thread_pool_interface.h"
@@ -438,11 +439,12 @@ Server::BaseAsyncRequest::~BaseAsyncRequest() {}
 bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
   if (*status) {
     for (size_t i = 0; i < initial_metadata_array_.count; i++) {
-      context_->client_metadata_.insert(std::make_pair(
-          grpc::string(initial_metadata_array_.metadata[i].key),
-          grpc::string(initial_metadata_array_.metadata[i].value,
-                       initial_metadata_array_.metadata[i].value +
-                           initial_metadata_array_.metadata[i].value_length)));
+      context_->client_metadata_.insert(
+          std::pair<grpc::string_ref, grpc::string_ref>(
+              initial_metadata_array_.metadata[i].key,
+              grpc::string_ref(
+                  initial_metadata_array_.metadata[i].value,
+                  initial_metadata_array_.metadata[i].value_length)));
     }
   }
   grpc_metadata_array_destroy(&initial_metadata_array_);

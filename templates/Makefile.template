@@ -313,11 +313,7 @@ LIBS = m z pthread
 LDFLAGS += -pthread
 endif
 
-ifneq ($(wildcard /usr/src/gtest/src/gtest-all.cc),)
-GTEST_LIB = /usr/src/gtest/src/gtest-all.cc -I/usr/src/gtest
-else
-GTEST_LIB = -lgtest
-endif
+GTEST_LIB = -Ithird_party/googletest/include -Ithird_party/googletest third_party/googletest/src/gtest-all.cc
 GTEST_LIB += -lgflags
 ifeq ($(V),1)
 E = @:
@@ -637,6 +633,8 @@ PROTOBUF_PKG_CONFIG = false
 PC_REQUIRES_GRPCXX =
 PC_LIBS_GRPCXX =
 
+CPPFLAGS := -Ithird_party/googletest/include $(CPPFLAGS)
+
 ifeq ($(HAS_SYSTEM_PROTOBUF),true)
 ifeq ($(HAS_PKG_CONFIG),true)
 PROTOBUF_PKG_CONFIG = true
@@ -861,8 +859,8 @@ else
 	$(Q)(cd third_party/openssl ; CC="$(CC) $(PIC_CPPFLAGS) -fvisibility=hidden $(CPPFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_$(CONFIG)) $(OPENSSL_CFLAGS_EXTRA)" ./config no-asm $(OPENSSL_CONFIG_$(CONFIG)))
 endif
 endif
-	$(Q)$(MAKE) -C third_party/openssl clean
-	$(Q)(unset CPPFLAGS; $(MAKE) -C third_party/openssl build_crypto build_ssl)
+	$(Q)$(MAKE) -j 1 -C third_party/openssl clean
+	$(Q)(unset CPPFLAGS; $(MAKE) -j 1 -C third_party/openssl build_crypto build_ssl)
 	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/openssl
 	$(Q)cp third_party/openssl/libssl.a third_party/openssl/libcrypto.a $(LIBDIR)/$(CONFIG)/openssl
 
