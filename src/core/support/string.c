@@ -125,7 +125,6 @@ char *gpr_dump_slice(gpr_slice s, gpr_uint32 flags) {
                   flags);
 }
 
-
 int gpr_parse_bytes_to_uint32(const char *buf, size_t len, gpr_uint32 *result) {
   gpr_uint32 out = 0;
   gpr_uint32 new;
@@ -187,9 +186,9 @@ char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
   for (i = 0; i < nstrs; i++) {
     out_length += strlen(strs[i]);
   }
-  out_length += 1;  /* null terminator */
+  out_length += 1; /* null terminator */
   if (nstrs > 0) {
-    out_length += sep_len * (nstrs - 1);  /* separators */
+    out_length += sep_len * (nstrs - 1); /* separators */
   }
   out = gpr_malloc(out_length);
   out_length = 0;
@@ -214,10 +213,8 @@ char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
  * str.
  *
  * Returns 1 and updates \a begin and \a end. Returns 0 otherwise. */
-static int slice_find_separator_offset(const gpr_slice str,
-                                       const char *sep,
-                                       const size_t read_offset,
-                                       size_t *begin,
+static int slice_find_separator_offset(const gpr_slice str, const char *sep,
+                                       const size_t read_offset, size_t *begin,
                                        size_t *end) {
   size_t i;
   const gpr_uint8 *str_ptr = GPR_SLICE_START_PTR(str) + read_offset;
@@ -255,9 +252,7 @@ void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst) {
   }
 }
 
-void gpr_strvec_init(gpr_strvec *sv) {
-  memset(sv, 0, sizeof(*sv));
-}
+void gpr_strvec_init(gpr_strvec *sv) { memset(sv, 0, sizeof(*sv)); }
 
 void gpr_strvec_destroy(gpr_strvec *sv) {
   size_t i;
@@ -270,11 +265,11 @@ void gpr_strvec_destroy(gpr_strvec *sv) {
 void gpr_strvec_add(gpr_strvec *sv, char *str) {
   if (sv->count == sv->capacity) {
     sv->capacity = GPR_MAX(sv->capacity + 8, sv->capacity * 2);
-    sv->strs = gpr_realloc(sv->strs, sizeof(char*) * sv->capacity);
+    sv->strs = gpr_realloc(sv->strs, sizeof(char *) * sv->capacity);
   }
   sv->strs[sv->count++] = str;
 }
 
 char *gpr_strvec_flatten(gpr_strvec *sv, size_t *final_length) {
-  return gpr_strjoin((const char**)sv->strs, sv->count, final_length);
+  return gpr_strjoin((const char **)sv->strs, sv->count, final_length);
 }

@@ -37,7 +37,7 @@
 #include <memory>
 #include <vector>
 
-#include <grpc++/config.h>
+#include <grpc++/support/config.h>
 #include <grpc++/auth_metadata_processor.h>
 
 struct grpc_server;

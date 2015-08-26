@@ -37,7 +37,7 @@
 #include <map>
 #include <string>
 
-#include <grpc++/auth_context.h>
+#include <grpc++/support/auth_context.h>
 
 namespace grpc {
 

@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 #define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 
-#include <grpc++/auth_context.h>
+#include <grpc++/support/auth_context.h>
 
 struct grpc_auth_context;
 

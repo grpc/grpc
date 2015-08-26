@@ -271,7 +271,7 @@ function cancelAfterFirstResponse($stub) {
 }
 
 function timeoutOnSleepingServer($stub) {
-  $call = $stub->FullDuplexCall(array('timeout' => 500000));
+  $call = $stub->FullDuplexCall(array('timeout' => 1000));
   $request = new grpc\testing\StreamingOutputCallRequest();
   $request->setResponseType(grpc\testing\PayloadType::COMPRESSABLE);
   $response_parameters = new grpc\testing\ResponseParameters();

@@ -203,8 +203,8 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch *batch) {
 #endif /* NDEBUG */
 
 void grpc_metadata_batch_init(grpc_metadata_batch *batch) {
-  batch->list.head = batch->list.tail = batch->garbage.head = batch->garbage.tail =
-      NULL;
+  batch->list.head = batch->list.tail = batch->garbage.head =
+      batch->garbage.tail = NULL;
   batch->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
@@ -288,7 +288,7 @@ void grpc_metadata_batch_merge(grpc_metadata_batch *target,
 }
 
 void grpc_metadata_batch_move(grpc_metadata_batch *dst,
-                               grpc_metadata_batch *src) {
+                              grpc_metadata_batch *src) {
   *dst = *src;
   memset(src, 0, sizeof(grpc_metadata_batch));
 }

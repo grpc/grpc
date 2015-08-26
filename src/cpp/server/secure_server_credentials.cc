@@ -49,7 +49,7 @@ void AuthMetadataProcessorAyncWrapper::Process(
   auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
   if (w->processor_ == nullptr) {
     // Early exit.
-    cb(user_data, NULL, 0, 1);
+    cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_OK, nullptr);
     return;
   }
   if (w->processor_->IsBlocking()) {
@@ -83,14 +83,15 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
                              0,
                              {{nullptr, nullptr, nullptr, nullptr}}});
     }
-    cb(user_data, &consumed_md[0], consumed_md.size(), 1);
+    cb(user_data, &consumed_md[0], consumed_md.size(), nullptr, 0,
+       GRPC_STATUS_OK, nullptr);
   } else {
-    cb(user_data, nullptr, 0, 0);
+    cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 }
 
-int SecureServerCredentials::AddPortToServer(
-    const grpc::string& addr, grpc_server* server) {
+int SecureServerCredentials::AddPortToServer(const grpc::string& addr,
+                                             grpc_server* server) {
   return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
 }
 

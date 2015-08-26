@@ -38,7 +38,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc++/credentials.h>
 #include <grpc++/server_context.h>
-#include <grpc++/time.h>
+#include <grpc++/support/time.h>
 
 #include "src/core/channel/compress_filter.h"
 #include "src/cpp/common/create_auth_context.h"
@@ -71,7 +71,7 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
 }
 
 void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<ChannelInterface>& channel) {
+                             const std::shared_ptr<Channel>& channel) {
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;

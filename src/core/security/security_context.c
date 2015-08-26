@@ -204,8 +204,7 @@ int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context *ctx,
   return 1;
 }
 
-int grpc_auth_context_peer_is_authenticated(
-    const grpc_auth_context *ctx) {
+int grpc_auth_context_peer_is_authenticated(const grpc_auth_context *ctx) {
   return ctx->peer_identity_property_name == NULL ? 0 : 1;
 }
 
@@ -326,4 +325,3 @@ grpc_auth_metadata_processor *grpc_find_auth_metadata_processor_in_args(
   }
   return NULL;
 }
-
