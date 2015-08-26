@@ -465,7 +465,8 @@ if len(build_configs) > 1:
 if platform.system() == 'Windows':
   def make_jobspec(cfg, targets):
     return jobset.JobSpec(['make.bat', 'CONFIG=%s' % cfg] + targets,
-                          cwd='vsprojects', shell=True)
+                          cwd='vsprojects', shell=True, 
+                          timeout_seconds=30*60)
 else:
   def make_jobspec(cfg, targets):
     return jobset.JobSpec([os.getenv('MAKE', 'make'),
@@ -535,7 +536,8 @@ def _start_port_server(port_server_port):
   # if not running ==> start a new one
   # otherwise, leave it up
   try:
-    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port).read()
+    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port,
+                              timeout=1).read()
     running = True
   except Exception:
     running = False
@@ -553,12 +555,20 @@ def _start_port_server(port_server_port):
         stderr=subprocess.STDOUT,
         stdout=port_log)
     # ensure port server is up
+    waits = 0
     while True:
+      if waits > 10:
+        port_server.kill()
+        print "port_server failed to start"
+        sys.exit(1)
       try:
-        urllib2.urlopen('http://localhost:%d/get' % port_server_port).read()
+        urllib2.urlopen('http://localhost:%d/get' % port_server_port,
+                        timeout=1).read()
         break
       except urllib2.URLError:
+        print "waiting for port_server"
         time.sleep(0.5)
+        waits += 1
       except:
         port_server.kill()
         raise

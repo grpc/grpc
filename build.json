@@ -181,7 +181,6 @@
         "src/core/json/json_reader.h",
         "src/core/json/json_writer.h",
         "src/core/profiling/timers.h",
-        "src/core/profiling/timers_preciseclock.h",
         "src/core/statistics/census_interface.h",
         "src/core/statistics/census_rpc_stats.h",
         "src/core/surface/byte_buffer_queue.h",
@@ -404,7 +403,8 @@
         "src/core/support/stack_lockfree.h",
         "src/core/support/string.h",
         "src/core/support/string_win32.h",
-        "src/core/support/thd_internal.h"
+        "src/core/support/thd_internal.h",
+        "src/core/support/time_precise.h"
       ],
       "src": [
         "src/core/support/alloc.c",
@@ -1149,6 +1149,15 @@
         "gpr",
         "grpc"
       ]
+    },
+    {
+      "name": "gen_legal_metadata_characters",
+      "build": "tool",
+      "language": "c",
+      "src": [
+        "tools/codegen/core/gen_legal_metadata_characters.c"
+      ],
+      "deps": []
     },
     {
       "name": "gpr_cmdline_test",
