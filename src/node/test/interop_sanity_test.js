@@ -51,7 +51,7 @@ describe('Interop tests', function() {
     done();
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   // This depends on not using a binary stream
   it('should pass empty_unary', function(done) {

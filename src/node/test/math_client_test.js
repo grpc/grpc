@@ -59,7 +59,7 @@ describe('Math client', function() {
     done();
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   it('should handle a single request', function(done) {
     var arg = {dividend: 7, divisor: 4};
