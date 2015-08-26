@@ -41,13 +41,14 @@
 
 namespace grpc {
 
-void FillMetadataMap(grpc_metadata_array* arr,
-                     std::multimap<grpc::string, grpc::string>* metadata) {
+void FillMetadataMap(
+    grpc_metadata_array* arr,
+    std::multimap<grpc::string_ref, grpc::string_ref>* metadata) {
   for (size_t i = 0; i < arr->count; i++) {
     // TODO(yangg) handle duplicates?
-    metadata->insert(std::pair<grpc::string, grpc::string>(
-        arr->metadata[i].key,
-        grpc::string(arr->metadata[i].value, arr->metadata[i].value_length)));
+    metadata->insert(std::pair<grpc::string_ref, grpc::string_ref>(
+        arr->metadata[i].key, grpc::string_ref(arr->metadata[i].value,
+                                               arr->metadata[i].value_length)));
   }
   grpc_metadata_array_destroy(arr);
   grpc_metadata_array_init(arr);
