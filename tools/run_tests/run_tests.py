@@ -536,7 +536,8 @@ def _start_port_server(port_server_port):
   # if not running ==> start a new one
   # otherwise, leave it up
   try:
-    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port).read()
+    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port,
+                              timeout=1).read()
     running = True
   except Exception:
     running = False
@@ -553,13 +554,21 @@ def _start_port_server(port_server_port):
         ['python', 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port],
         stderr=subprocess.STDOUT,
         stdout=port_log)
-    # ensure port server is up
+    # ensure port server is 
+    waits = 0
     while True:
+      if waits > 10:
+        port_server.kill()
+        print "port_server failed to start"
+        sys.exit(1)
       try:
-        urllib2.urlopen('http://localhost:%d/get' % port_server_port).read()
+        urllib2.urlopen('http://localhost:%d/get' % port_server_port,
+                        timeout=1).read()
         break
       except urllib2.URLError:
+        print "waiting for port_server"
         time.sleep(0.5)
+        waits += 1
       except:
         port_server.kill()
         raise
