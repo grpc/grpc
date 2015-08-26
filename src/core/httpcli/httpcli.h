@@ -118,9 +118,9 @@ void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
                       grpc_httpcli_response_cb on_response, void *user_data);
 
 /* Asynchronously perform a HTTP DELETE.
-   'context' specifies the http context under which to do the get
+   'context' specifies the http context under which to do the delete
    'pollset' indicates a grpc_pollset that is interested in the result
-     of the get - work on this pollset may be used to progress the get
+     of the delete - work on this pollset may be used to progress the delete
      operation
    'request' contains request parameters - these are caller owned and can be
      destroyed once the call returns
@@ -133,13 +133,13 @@ void grpc_httpcli_delete(grpc_httpcli_context *context, grpc_pollset *pollset,
                          grpc_httpcli_response_cb on_response, void *user_data);
 
 /* Asynchronously perform a HTTP PUT.
-   'context' specifies the http context under which to do the post
+   'context' specifies the http context under which to do the put
    'pollset' indicates a grpc_pollset that is interested in the result
-     of the post - work on this pollset may be used to progress the post
+     of the put - work on this pollset may be used to progress the put
      operation
    'request' contains request parameters - these are caller owned and can be
      destroyed once the call returns
-   'body_bytes' and 'body_size' specify the payload for the post.
+   'body_bytes' and 'body_size' specify the payload for the put.
      When there is no body, pass in NULL as body_bytes.
    'deadline' contains a deadline for the request (or gpr_inf_future)
    'em' points to a caller owned event manager that must be alive for the
