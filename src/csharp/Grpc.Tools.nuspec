@@ -16,6 +16,6 @@
     <tags>gRPC RPC Protocol HTTP/2</tags>
   </metadata>
   <files>
-    <file src="grpc_csharp_plugin.exe" target="tools" />
+    <file src="..\..\vsprojects\Release\grpc_csharp_plugin.exe" target="tools" />
   </files>
 </package>

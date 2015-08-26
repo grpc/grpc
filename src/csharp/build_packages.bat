@@ -1,9 +1,9 @@
 @rem Builds gRPC NuGet packages
 
 @rem Current package versions
-set VERSION=0.7.0-preview20150813
-set CORE_VERSION=0.11.0-preview20150813
-set PROTOBUF_VERSION=3.0.0-a20150813-2093749ca
+set VERSION=0.7.0-preview20150826
+set CORE_VERSION=0.11.0-preview20150826
+set PROTOBUF_VERSION=3.0.0-a20150826-7e05a2d
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
@@ -14,6 +14,8 @@ cd ..\..\vsprojects\nuget_package
 endlocal
 
 @call buildall.bat BUILD_SIGNED || goto :error
+
+@call ..\..\vsprojects\build_plugins.bat || goto :error
 
 %NUGET% pack ..\..\vsprojects\nuget_package\grpc.native.csharp_ext.nuspec -Version %CORE_VERSION% || goto :error
 %NUGET% pack Grpc.Auth\Grpc.Auth.nuspec -Symbols -Version %VERSION% || goto :error
