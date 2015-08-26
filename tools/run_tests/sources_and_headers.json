@@ -1668,6 +1668,22 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "streaming_throughput_test", 
+    "src": [
+      "test/cpp/end2end/streaming_throughput_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
     ], 

@@ -2647,14 +2647,13 @@
       ]
     },
     {
-      "name": "streaming_throughput_test",
+      "name": "status_test",
       "build": "test",
       "language": "c++",
       "src": [
-        "test/cpp/end2end/streaming_throughput_test.cc"
+        "test/cpp/util/status_test.cc"
       ],
       "deps": [
-        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
@@ -2663,13 +2662,14 @@
       ]
     },
     {
-      "name": "status_test",
+      "name": "streaming_throughput_test",
       "build": "test",
       "language": "c++",
       "src": [
-        "test/cpp/util/status_test.cc"
+        "test/cpp/end2end/streaming_throughput_test.cc"
       ],
       "deps": [
+        "grpc++_test_util",
         "grpc_test_util",
         "grpc++",
         "grpc",
