@@ -44,9 +44,17 @@ class ChannelArguments;
 class Channel;
 class SecureCredentials;
 
+/// A credentials object encapsulates all the state needed by a client to
+/// authenticate with a server and make various assertions, e.g., about the
+/// client’s identity, role, or whether it is authorized to make a particular
+/// call.
+///
+/// \see https://github.com/grpc/grpc-common/blob/master/grpc-auth-support.md
 class Credentials : public GrpcLibrary {
  public:
   ~Credentials() GRPC_OVERRIDE;
+
+  /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
 
  protected:
@@ -65,78 +73,78 @@ class Credentials : public GrpcLibrary {
       const grpc::string& target, const ChannelArguments& args) = 0;
 };
 
-// Options used to build SslCredentials
-// pem_roots_cert is the buffer containing the PEM encoding of the server root
-// certificates. If this parameter is empty, the default roots will be used.
-// pem_private_key is the buffer containing the PEM encoding of the client's
-// private key. This parameter can be empty if the client does not have a
-// private key.
-// pem_cert_chain is the buffer containing the PEM encoding of the client's
-// certificate chain. This parameter can be empty if the client does not have
-// a certificate chain.
+/// Options used to build SslCredentials.
+///
+/// pem_roots_cert is the buffer containing the PEM encoding of the server root
+/// certificates. If this parameter is empty, the default roots will be used.
+/// pem_private_key is the buffer containing the PEM encoding of the client's
+/// private key. This parameter can be empty if the client does not have a
+/// private key.
+/// pem_cert_chain is the buffer containing the PEM encoding of the client's
+/// certificate chain. This parameter can be empty if the client does not have
+/// a certificate chain.
 struct SslCredentialsOptions {
   grpc::string pem_root_certs;
   grpc::string pem_private_key;
   grpc::string pem_cert_chain;
 };
 
-// Factories for building different types of Credentials
-// The functions may return empty shared_ptr when credentials cannot be created.
-// If a Credentials pointer is returned, it can still be invalid when used to
-// create a channel. A lame channel will be created then and all rpcs will
-// fail on it.
+// Factories for building different types of Credentials The functions may
+// return empty shared_ptr when credentials cannot be created. If a
+// Credentials pointer is returned, it can still be invalid when used to create
+// a channel. A lame channel will be created then and all rpcs will fail on it.
 
-// Builds credentials with reasonable defaults.
+/// Builds credentials with reasonable defaults.
 std::shared_ptr<Credentials> GoogleDefaultCredentials();
 
-// Builds SSL Credentials given SSL specific options
+/// Builds SSL Credentials given SSL specific options
 std::shared_ptr<Credentials> SslCredentials(
     const SslCredentialsOptions& options);
 
-// Builds credentials for use when running in GCE
+/// Builds credentials for use when running in GCE
 std::shared_ptr<Credentials> ComputeEngineCredentials();
 
-// Builds service account credentials.
-// json_key is the JSON key string containing the client's private key.
-// scope is a space-delimited list of the requested permissions.
-// token_lifetime_seconds is the lifetime in seconds of each token acquired
-// through this service account credentials. It should be positive and should
-// not exceed grpc_max_auth_token_lifetime or will be cropped to this value.
+/// Builds service account credentials.
+/// json_key is the JSON key string containing the client's private key.
+/// scope is a space-delimited list of the requested permissions.
+/// token_lifetime_seconds is the lifetime in seconds of each token acquired
+/// through this service account credentials. It should be positive and should
+/// not exceed grpc_max_auth_token_lifetime or will be cropped to this value.
 std::shared_ptr<Credentials> ServiceAccountCredentials(
     const grpc::string& json_key, const grpc::string& scope,
     long token_lifetime_seconds);
 
-// Builds Service Account JWT Access credentials.
-// json_key is the JSON key string containing the client's private key.
-// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
-// (JWT) created with this credentials. It should not exceed
-// grpc_max_auth_token_lifetime or will be cropped to this value.
+/// Builds Service Account JWT Access credentials.
+/// json_key is the JSON key string containing the client's private key.
+/// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
+/// (JWT) created with this credentials. It should not exceed
+/// grpc_max_auth_token_lifetime or will be cropped to this value.
 std::shared_ptr<Credentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key, long token_lifetime_seconds);
 
-// Builds refresh token credentials.
-// json_refresh_token is the JSON string containing the refresh token along
-// with a client_id and client_secret.
+/// Builds refresh token credentials.
+/// json_refresh_token is the JSON string containing the refresh token along
+/// with a client_id and client_secret.
 std::shared_ptr<Credentials> RefreshTokenCredentials(
     const grpc::string& json_refresh_token);
 
-// Builds access token credentials.
-// access_token is an oauth2 access token that was fetched using an out of band
-// mechanism.
+/// Builds access token credentials.
+/// access_token is an oauth2 access token that was fetched using an out of band
+/// mechanism.
 std::shared_ptr<Credentials> AccessTokenCredentials(
     const grpc::string& access_token);
 
-// Builds IAM credentials.
+/// Builds IAM credentials.
 std::shared_ptr<Credentials> IAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector);
 
-// Combines two credentials objects into a composite credentials
+/// Combines two credentials objects into a composite credentials
 std::shared_ptr<Credentials> CompositeCredentials(
     const std::shared_ptr<Credentials>& creds1,
     const std::shared_ptr<Credentials>& creds2);
 
-// Credentials for an unencrypted, unauthenticated channel
+/// Credentials for an unencrypted, unauthenticated channel
 std::shared_ptr<Credentials> InsecureCredentials();
 
 }  // namespace grpc
