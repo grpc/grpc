@@ -439,11 +439,12 @@ Server::BaseAsyncRequest::~BaseAsyncRequest() {}
 bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
   if (*status) {
     for (size_t i = 0; i < initial_metadata_array_.count; i++) {
-      context_->client_metadata_.insert(std::make_pair(
-          grpc::string(initial_metadata_array_.metadata[i].key),
-          grpc::string(initial_metadata_array_.metadata[i].value,
-                       initial_metadata_array_.metadata[i].value +
-                           initial_metadata_array_.metadata[i].value_length)));
+      context_->client_metadata_.insert(
+          std::pair<grpc::string_ref, grpc::string_ref>(
+              initial_metadata_array_.metadata[i].key,
+              grpc::string_ref(
+                  initial_metadata_array_.metadata[i].value,
+                  initial_metadata_array_.metadata[i].value_length)));
     }
   }
   grpc_metadata_array_destroy(&initial_metadata_array_);
