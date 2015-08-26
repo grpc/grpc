@@ -42,9 +42,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\BouncyCastle.1.7.0\lib\Net40-Client\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
-    <Reference Include="Google.Protobuf">
-      <HintPath>..\packages\Google.Protobuf.3.0.0-a20150813-2093749ca\lib\portable-net45+netcore45+wpa81+wp8\Google.Protobuf.dll</HintPath>
-    </Reference>
     <Reference Include="Google.Apis.Auth, Version=1.9.3.19379, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Google.Apis.Auth.1.9.3\lib\net40\Google.Apis.Auth.dll</HintPath>
@@ -56,6 +53,10 @@
     <Reference Include="Google.Apis.Core, Version=1.9.3.19379, Culture=neutral, PublicKeyToken=4b01fa6e34db77ab, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Google.Apis.Core.1.9.3\lib\portable-net40+sl50+win+wpa81+wp80\Google.Apis.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Google.Protobuf, Version=3.0.0.0, Culture=neutral, PublicKeyToken=a7d26565bac4d604, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Google.Protobuf.3.0.0-a20150826-7e05a2d\lib\portable-net45+netcore45+wpa81+wp8\Google.Protobuf.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Threading.Tasks, Version=1.0.12.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
