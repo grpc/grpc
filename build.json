@@ -2647,6 +2647,22 @@
       ]
     },
     {
+      "name": "streaming_throughput_test",
+      "build": "test",
+      "language": "c++",
+      "src": [
+        "test/cpp/end2end/streaming_throughput_test.cc"
+      ],
+      "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
+        "grpc++",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "status_test",
       "build": "test",
       "language": "c++",
