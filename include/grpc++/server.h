@@ -130,6 +130,11 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   int AddListeningPort(const grpc::string& addr, ServerCredentials* creds);
 
   /// Start the server.
+  /// 
+  /// \param cqs Completion queues for handling asynchronous services. The
+  /// caller is required to keep all completion queues live until the server is
+  /// destroyed.
+  /// \param num_cqs How many completion queues does \a cqs hold.
   ///
   /// \return true on a successful shutdown.
   bool Start(ServerCompletionQueue** cqs, size_t num_cqs);
