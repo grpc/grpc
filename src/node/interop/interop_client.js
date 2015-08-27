@@ -49,8 +49,8 @@ var AUTH_USER = ('155450119199-3psnrh1sdr3d8cpj1v46naggf81mhdnk' +
 var COMPUTE_ENGINE_USER = ('155450119199-r5aaqa2vqoa9g5mv2m6s3m1l293rlmel' +
     '@developer.gserviceaccount.com');
 
-var ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
-var ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
+var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
+var ECHO_TRAILING_KEY = 'x-grpc-test-echo-trailing-bin';
 
 /**
  * Create a buffer filled with size zeroes
@@ -324,7 +324,7 @@ function customMetadata(client, done) {
   unary.on('status', function(status) {
     var echo_trailer = status.metadata.get(ECHO_TRAILING_KEY);
     assert(echo_trailer.length > 0);
-    assert.strictEqual(echo_trailer.toString('hex'), 'ababab');
+    assert.strictEqual(echo_trailer[0].toString('hex'), 'ababab');
     done();
   });
   var stream = client.fullDuplexCall(metadata);
@@ -336,7 +336,7 @@ function customMetadata(client, done) {
   stream.on('status', function(status) {
     var echo_trailer = status.metadata.get(ECHO_TRAILING_KEY);
     assert(echo_trailer.length > 0);
-    assert.strictEqual(echo_trailer.toString('hex'), 'ababab');
+    assert.strictEqual(echo_trailer[0].toString('hex'), 'ababab');
     done();
   });
   stream.write(streaming_arg);
