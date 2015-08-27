@@ -37,13 +37,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Google.Apis.Auth.OAuth2;
-using Google.ProtocolBuffers;
-
-using grpc.testing;
 using Grpc.Auth;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Grpc.Testing;
+using Google.Protobuf;
+using Google.Apis.Auth.OAuth2;
 
 using NUnit.Framework;
 
@@ -183,7 +182,7 @@ namespace Grpc.IntegrationTesting
         public static void RunEmptyUnary(TestService.ITestServiceClient client)
         {
             Console.WriteLine("running empty_unary");
-            var response = client.EmptyCall(Empty.DefaultInstance);
+            var response = client.EmptyCall(new Empty());
             Assert.IsNotNull(response);
             Console.WriteLine("Passed!");
         }
@@ -191,11 +190,12 @@ namespace Grpc.IntegrationTesting
         public static void RunLargeUnary(TestService.ITestServiceClient client)
         {
             Console.WriteLine("running large_unary");
-            var request = SimpleRequest.CreateBuilder()
-                    .SetResponseType(PayloadType.COMPRESSABLE)
-                    .SetResponseSize(314159)
-                    .SetPayload(CreateZerosPayload(271828))
-                    .Build();
+            var request = new SimpleRequest
+            {
+                ResponseType = PayloadType.COMPRESSABLE,
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828)
+            };
 
             var response = client.UnaryCall(request);
 
@@ -208,7 +208,7 @@ namespace Grpc.IntegrationTesting
         {
             Console.WriteLine("running client_streaming");
 
-            var bodySizes = new List<int> { 27182, 8, 1828, 45904 }.ConvertAll((size) => StreamingInputCallRequest.CreateBuilder().SetPayload(CreateZerosPayload(size)).Build());
+            var bodySizes = new List<int> { 27182, 8, 1828, 45904 }.ConvertAll((size) => new StreamingInputCallRequest { Payload = CreateZerosPayload(size) });
 
             using (var call = client.StreamingInputCall())
             {
@@ -226,11 +226,11 @@ namespace Grpc.IntegrationTesting
 
             var bodySizes = new List<int> { 31415, 9, 2653, 58979 };
 
-            var request = StreamingOutputCallRequest.CreateBuilder()
-            .SetResponseType(PayloadType.COMPRESSABLE)
-            .AddRangeResponseParameters(bodySizes.ConvertAll(
-                (size) => ResponseParameters.CreateBuilder().SetSize(size).Build()))
-            .Build();
+            var request = new StreamingOutputCallRequest
+            {
+                ResponseType = PayloadType.COMPRESSABLE,
+                ResponseParameters = { bodySizes.ConvertAll((size) => new ResponseParameters { Size = size }) }
+            };
 
             using (var call = client.StreamingOutputCall(request))
             {
@@ -250,37 +250,45 @@ namespace Grpc.IntegrationTesting
 
             using (var call = client.FullDuplexCall())
             {
-                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                .SetResponseType(PayloadType.COMPRESSABLE)
-                .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
-                .SetPayload(CreateZerosPayload(27182)).Build());
+                await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 31415 } },
+                    Payload = CreateZerosPayload(27182)
+                });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
 
-                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                            .SetResponseType(PayloadType.COMPRESSABLE)
-                            .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(9))
-                            .SetPayload(CreateZerosPayload(8)).Build());
+                await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 9 } },
+                    Payload = CreateZerosPayload(8)
+                });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(9, call.ResponseStream.Current.Payload.Body.Length);
 
-                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                            .SetResponseType(PayloadType.COMPRESSABLE)
-                            .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(2653))
-                            .SetPayload(CreateZerosPayload(1828)).Build());
+                await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 2653 } },
+                    Payload = CreateZerosPayload(1828)
+                });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(2653, call.ResponseStream.Current.Payload.Body.Length);
 
-                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                            .SetResponseType(PayloadType.COMPRESSABLE)
-                            .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(58979))
-                            .SetPayload(CreateZerosPayload(45904)).Build());
+                await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 58979 } },
+                    Payload = CreateZerosPayload(45904)
+                });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
@@ -313,13 +321,14 @@ namespace Grpc.IntegrationTesting
             credential = credential.CreateScoped(new[] { AuthScope });
             client.HeaderInterceptor = AuthInterceptors.FromCredential(credential);
 
-            var request = SimpleRequest.CreateBuilder()
-                .SetResponseType(PayloadType.COMPRESSABLE)
-                    .SetResponseSize(314159)
-                    .SetPayload(CreateZerosPayload(271828))
-                    .SetFillUsername(true)
-                    .SetFillOauthScope(true)
-                    .Build();
+            var request = new SimpleRequest
+            {
+                ResponseType = PayloadType.COMPRESSABLE,
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828),
+                FillUsername = true,
+                FillOauthScope = true
+            };
 
             var response = client.UnaryCall(request);
 
@@ -337,13 +346,14 @@ namespace Grpc.IntegrationTesting
             Assert.IsFalse(credential.IsCreateScopedRequired);
             client.HeaderInterceptor = AuthInterceptors.FromCredential(credential);
             
-            var request = SimpleRequest.CreateBuilder()
-                .SetResponseType(PayloadType.COMPRESSABLE)
-                    .SetResponseSize(314159)
-                    .SetPayload(CreateZerosPayload(271828))
-                    .SetFillUsername(true)
-                    .SetFillOauthScope(true)
-                    .Build();
+            var request = new SimpleRequest
+            {
+                ResponseType = PayloadType.COMPRESSABLE,
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828),
+                FillUsername = true,
+                FillOauthScope = true
+            };
 
             var response = client.UnaryCall(request);
 
@@ -362,13 +372,14 @@ namespace Grpc.IntegrationTesting
             Assert.IsTrue(credential.IsCreateScopedRequired);
             client.HeaderInterceptor = AuthInterceptors.FromCredential(credential);
 
-            var request = SimpleRequest.CreateBuilder()
-                .SetResponseType(PayloadType.COMPRESSABLE)
-                    .SetResponseSize(314159)
-                    .SetPayload(CreateZerosPayload(271828))
-                    .SetFillUsername(true)
-                    .SetFillOauthScope(true)
-                    .Build();
+            var request = new SimpleRequest
+            {
+                ResponseType = PayloadType.COMPRESSABLE,
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828),
+                FillUsername = true,
+                FillOauthScope = true
+            };
 
             var response = client.UnaryCall(request);
 
@@ -386,10 +397,11 @@ namespace Grpc.IntegrationTesting
 
             client.HeaderInterceptor = AuthInterceptors.FromAccessToken(oauth2Token);
 
-            var request = SimpleRequest.CreateBuilder()
-                .SetFillUsername(true)
-                .SetFillOauthScope(true)
-                .Build();
+            var request = new SimpleRequest
+            {
+                FillUsername = true,
+                FillOauthScope = true
+            };
 
             var response = client.UnaryCall(request);
 
@@ -406,10 +418,11 @@ namespace Grpc.IntegrationTesting
             string oauth2Token = await credential.GetAccessTokenForRequestAsync();
             var headerInterceptor = AuthInterceptors.FromAccessToken(oauth2Token);
 
-            var request = SimpleRequest.CreateBuilder()
-                .SetFillUsername(true)
-                .SetFillOauthScope(true)
-                .Build();
+            var request = new SimpleRequest
+            {
+                FillUsername = true,
+                FillOauthScope = true
+            };
 
             var headers = new Metadata();
             headerInterceptor(null, "", headers);
@@ -444,10 +457,12 @@ namespace Grpc.IntegrationTesting
             var cts = new CancellationTokenSource();
             using (var call = client.FullDuplexCall(cancellationToken: cts.Token))
             {
-                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                    .SetResponseType(PayloadType.COMPRESSABLE)
-                    .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
-                    .SetPayload(CreateZerosPayload(27182)).Build());
+                await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 31415 } },
+                    Payload = CreateZerosPayload(27182)
+                });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
@@ -470,8 +485,7 @@ namespace Grpc.IntegrationTesting
             {
                 try
                 {
-                    await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                        .SetPayload(CreateZerosPayload(27182)).Build());
+                    await call.RequestStream.WriteAsync(new StreamingOutputCallRequest { Payload = CreateZerosPayload(27182) });
                 }
                 catch (InvalidOperationException)
                 {
@@ -488,12 +502,12 @@ namespace Grpc.IntegrationTesting
         public static void RunBenchmarkEmptyUnary(TestService.ITestServiceClient client)
         {
             BenchmarkUtil.RunBenchmark(10000, 10000,
-                                       () => { client.EmptyCall(Empty.DefaultInstance); });
+                                       () => { client.EmptyCall(new Empty()); });
         }
 
         private static Payload CreateZerosPayload(int size)
         {
-            return Payload.CreateBuilder().SetBody(ByteString.CopyFrom(new byte[size])).Build();
+            return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
         }
 
         private static ClientOptions ParseArguments(string[] args)

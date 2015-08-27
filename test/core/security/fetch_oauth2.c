@@ -56,7 +56,7 @@ static grpc_credentials *create_service_account_creds(
   }
   return grpc_service_account_credentials_create(
       (const char *)GPR_SLICE_START_PTR(json_key), scope,
-      grpc_max_auth_token_lifetime);
+      grpc_max_auth_token_lifetime, NULL);
 }
 
 static grpc_credentials *create_refresh_token_creds(
@@ -69,7 +69,7 @@ static grpc_credentials *create_refresh_token_creds(
     exit(1);
   }
   return grpc_refresh_token_credentials_create(
-      (const char *)GPR_SLICE_START_PTR(refresh_token));
+      (const char *)GPR_SLICE_START_PTR(refresh_token), NULL);
 }
 
 int main(int argc, char **argv) {
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
               "Ignoring json key and scope to get a token from the GCE "
               "metadata server.");
     }
-    creds = grpc_compute_engine_credentials_create();
+    creds = grpc_compute_engine_credentials_create(NULL);
     if (creds == NULL) {
       gpr_log(GPR_ERROR, "Could not create gce credentials.");
       exit(1);

@@ -117,7 +117,7 @@
         "include/grpc/status.h"
       ],
       "headers": [
-        "src/core/channel/census_filter.h",
+        "src/core/census/grpc_filter.h",
         "src/core/channel/channel_args.h",
         "src/core/channel/channel_stack.h",
         "src/core/channel/client_channel.h",
@@ -182,7 +182,8 @@
         "src/core/json/json_reader.h",
         "src/core/json/json_writer.h",
         "src/core/profiling/timers.h",
-        "src/core/profiling/timers_preciseclock.h",
+        "src/core/statistics/census_interface.h",
+        "src/core/statistics/census_rpc_stats.h",
         "src/core/surface/byte_buffer_queue.h",
         "src/core/surface/call.h",
         "src/core/surface/channel.h",
@@ -220,6 +221,7 @@
       ],
       "src": [
         "src/core/census/grpc_context.c",
+        "src/core/census/grpc_filter.c",
         "src/core/channel/channel_args.c",
         "src/core/channel/channel_stack.c",
         "src/core/channel/client_channel.c",
@@ -402,7 +404,8 @@
         "src/core/support/stack_lockfree.h",
         "src/core/support/string.h",
         "src/core/support/string_win32.h",
-        "src/core/support/thd_internal.h"
+        "src/core/support/thd_internal.h",
+        "src/core/support/time_precise.h"
       ],
       "src": [
         "src/core/support/alloc.c",
@@ -661,6 +664,7 @@
       "headers": [
         "test/cpp/util/cli_call.h",
         "test/cpp/util/create_test_channel.h",
+        "test/cpp/util/string_ref_helper.h",
         "test/cpp/util/subprocess.h"
       ],
       "src": [
@@ -669,6 +673,7 @@
         "test/cpp/util/echo_duplicate.proto",
         "test/cpp/util/cli_call.cc",
         "test/cpp/util/create_test_channel.cc",
+        "test/cpp/util/string_ref_helper.cc",
         "test/cpp/util/subprocess.cc"
       ],
       "deps": [
@@ -1145,6 +1150,15 @@
         "gpr",
         "grpc"
       ]
+    },
+    {
+      "name": "gen_legal_metadata_characters",
+      "build": "tool",
+      "language": "c",
+      "src": [
+        "tools/codegen/core/gen_legal_metadata_characters.c"
+      ],
+      "deps": []
     },
     {
       "name": "gpr_cmdline_test",
@@ -2016,8 +2030,11 @@
         "test/cpp/common/auth_property_iterator_test.cc"
       ],
       "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
         "grpc++",
         "grpc",
+        "gpr_test_util",
         "gpr"
       ]
     },
@@ -2568,8 +2585,11 @@
         "test/cpp/common/secure_auth_context_test.cc"
       ],
       "deps": [
+        "grpc++_test_util",
+        "grpc_test_util",
         "grpc++",
         "grpc",
+        "gpr_test_util",
         "gpr"
       ]
     },

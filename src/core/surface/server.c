@@ -41,7 +41,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/channel/census_filter.h"
+#include "src/core/census/grpc_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/connected_channel.h"
 #include "src/core/iomgr/iomgr.h"
@@ -821,10 +821,9 @@ grpc_server *grpc_server_create_from_filters(
   server->channel_filters =
       gpr_malloc(server->channel_filter_count * sizeof(grpc_channel_filter *));
   server->channel_filters[0] = &server_surface_filter;
-  /* TODO(census): restore this once we rework census filter
   if (census_enabled) {
     server->channel_filters[1] = &grpc_server_census_filter;
-    } */
+  }
   for (i = 0; i < filter_count; i++) {
     server->channel_filters[i + 1 + census_enabled] = filters[i];
   }

@@ -86,11 +86,11 @@ void grpc_init(void) {
   if (++g_initializations == 1) {
     gpr_time_init();
     grpc_resolver_registry_init("dns:///");
-    grpc_register_resolver_type("dns", grpc_dns_resolver_factory_create());
-    grpc_register_resolver_type("ipv4", grpc_ipv4_resolver_factory_create());
-    grpc_register_resolver_type("ipv6", grpc_ipv6_resolver_factory_create());
+    grpc_register_resolver_type(grpc_dns_resolver_factory_create());
+    grpc_register_resolver_type(grpc_ipv4_resolver_factory_create());
+    grpc_register_resolver_type(grpc_ipv6_resolver_factory_create());
 #ifdef GPR_POSIX_SOCKET
-    grpc_register_resolver_type("unix", grpc_unix_resolver_factory_create());
+    grpc_register_resolver_type(grpc_unix_resolver_factory_create());
 #endif
     grpc_register_tracer("channel", &grpc_trace_channel);
     grpc_register_tracer("surface", &grpc_surface_trace);

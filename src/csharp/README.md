@@ -19,7 +19,7 @@ Usage: Windows
   That will also pull all the transitive dependencies (including the native libraries that
   gRPC C# is internally using).
 
-- Helloworld project example can be found in https://github.com/grpc/grpc-common/tree/master/csharp.
+- Helloworld project example can be found in https://github.com/grpc/grpc/tree/master/examples/csharp.
 
 Usage: Linux (Mono)
 --------------
@@ -50,7 +50,7 @@ Usage: Linux (Mono)
 
 - Add NuGet package `Grpc` as a dependency (Project -> Add NuGet packages).
 
-- Helloworld project example can be found in https://github.com/grpc/grpc-common/tree/master/csharp.
+- Helloworld project example can be found in https://github.com/grpc/grpc/tree/master/examples/csharp.
 
 Usage: MacOS (Mono)
 --------------
@@ -73,7 +73,7 @@ Usage: MacOS (Mono)
 - *You will be able to build your project in Xamarin Studio, but to run or test it,
   you will need to run it under 64-bit version of Mono.*
 
-- Helloworld project example can be found in https://github.com/grpc/grpc-common/tree/master/csharp.
+- Helloworld project example can be found in https://github.com/grpc/grpc/tree/master/examples/csharp.
 
 Building: Windows
 -----------------

@@ -73,7 +73,7 @@ class _ExpirationManager(_interfaces.ExpirationManager):
         if self._future is not None and index == self._index:
           self._future = None
           self._termination_manager.expire()
-          self._transmission_manager.abort(base.Outcome.EXPIRED)
+          self._transmission_manager.abort(base.Outcome.EXPIRED, None, None)
     return expire
 
   def start(self):

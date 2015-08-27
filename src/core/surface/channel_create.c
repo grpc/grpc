@@ -38,6 +38,7 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/census/grpc_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/compress_filter.h"
@@ -165,10 +166,9 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   grpc_mdctx *mdctx = grpc_mdctx_create();
   int n = 0;
   GPR_ASSERT(!reserved);
-  /* TODO(census)
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
-    } */
+  }
   filters[n++] = &grpc_compress_filter;
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
