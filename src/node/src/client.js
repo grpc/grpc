@@ -146,7 +146,8 @@ function _read(size) {
     try {
       deserialized = self.deserialize(data);
     } catch (e) {
-      self.cancel();
+      self.call.cancelWithStatus(grpc.status.INTERNAL,
+                                 'Failed to parse server response');
     }
     if (self.push(deserialized) && data !== null) {
       var read_batch = {};
