@@ -39,8 +39,8 @@ var _ = require('lodash');
 var grpc = require('..');
 var testProto = grpc.load(__dirname + '/test.proto').grpc.testing;
 
-var ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
-var ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
+var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
+var ECHO_TRAILING_KEY = 'x-grpc-test-echo-trailing-bin';
 
 /**
  * Create a buffer filled with size zeroes
