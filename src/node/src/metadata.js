@@ -147,7 +147,9 @@ Metadata.prototype.getMap = function() {
  */
 Metadata.prototype.clone = function() {
   var copy = new Metadata();
-  copy._internal_repr = _.cloneDeep(this._internal_repr);
+  _.forOwn(this._internal_repr, function(value, key) {
+    copy._internal_repr[key] = _.clone(value);
+  });
   return copy;
 };
 
