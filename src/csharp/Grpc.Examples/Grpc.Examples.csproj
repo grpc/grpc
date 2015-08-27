@@ -40,6 +40,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Grpc.Core\Version.cs">
+      <Link>Version.cs</Link>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Math.cs" />
     <Compile Include="MathGrpc.cs" />
