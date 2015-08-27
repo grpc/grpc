@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef GRPCXX_STRING_REF_H
-#define GRPCXX_STRING_REF_H
+#ifndef GRPCXX_SUPPORT_STRING_REF_H
+#define GRPCXX_SUPPORT_STRING_REF_H
 
 #include <iterator>
 #include <iosfwd>
@@ -44,6 +44,8 @@ namespace grpc {
 // This class is a non owning reference to a string.
 // It should be a strict subset of the upcoming std::string_ref. See:
 // http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3442.html
+// The constexpr is dropped or replaced with const for legacy compiler
+// compatibility.
 class string_ref {
  public:
   // types
@@ -115,6 +117,4 @@ std::ostream& operator<<(std::ostream& stream, const string_ref& string);
 
 }  // namespace grpc
 
-#endif  // GRPCXX_STRING_REF_H
-
-
+#endif  // GRPCXX_SUPPORT_STRING_REF_H

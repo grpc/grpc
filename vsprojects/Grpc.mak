@@ -623,10 +623,10 @@ async_end2end_test: async_end2end_test.exe
 	echo Running async_end2end_test
 	$(OUT_DIR)\async_end2end_test.exe
 
-auth_property_iterator_test.exe: build_grpc++ build_grpc build_gpr $(OUT_DIR)
+auth_property_iterator_test.exe: Debug\grpc++_test_util.lib build_grpc_test_util build_grpc++ build_grpc build_gpr_test_util build_gpr $(OUT_DIR)
 	echo Building auth_property_iterator_test
     $(CC) $(CXXFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\cpp\common\auth_property_iterator_test.cc 
-	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\auth_property_iterator_test.exe" Debug\grpc++.lib Debug\grpc.lib Debug\gpr.lib $(CXX_LIBS) $(LIBS) $(OUT_DIR)\auth_property_iterator_test.obj 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\auth_property_iterator_test.exe" Debug\grpc++_test_util.lib Debug\grpc_test_util.lib Debug\grpc++.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(CXX_LIBS) $(LIBS) $(OUT_DIR)\auth_property_iterator_test.obj 
 auth_property_iterator_test: auth_property_iterator_test.exe
 	echo Running auth_property_iterator_test
 	$(OUT_DIR)\auth_property_iterator_test.exe
@@ -759,10 +759,10 @@ reconnect_interop_server: reconnect_interop_server.exe
 	echo Running reconnect_interop_server
 	$(OUT_DIR)\reconnect_interop_server.exe
 
-secure_auth_context_test.exe: build_grpc++ build_grpc build_gpr $(OUT_DIR)
+secure_auth_context_test.exe: Debug\grpc++_test_util.lib build_grpc_test_util build_grpc++ build_grpc build_gpr_test_util build_gpr $(OUT_DIR)
 	echo Building secure_auth_context_test
     $(CC) $(CXXFLAGS) /Fo:$(OUT_DIR)\ $(REPO_ROOT)\test\cpp\common\secure_auth_context_test.cc 
-	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\secure_auth_context_test.exe" Debug\grpc++.lib Debug\grpc.lib Debug\gpr.lib $(CXX_LIBS) $(LIBS) $(OUT_DIR)\secure_auth_context_test.obj 
+	$(LINK) $(LFLAGS) /OUT:"$(OUT_DIR)\secure_auth_context_test.exe" Debug\grpc++_test_util.lib Debug\grpc_test_util.lib Debug\grpc++.lib Debug\grpc.lib Debug\gpr_test_util.lib Debug\gpr.lib $(CXX_LIBS) $(LIBS) $(OUT_DIR)\secure_auth_context_test.obj 
 secure_auth_context_test: secure_auth_context_test.exe
 	echo Running secure_auth_context_test
 	$(OUT_DIR)\secure_auth_context_test.exe

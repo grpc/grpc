@@ -80,7 +80,7 @@ size_t string_ref::find(string_ref s) const {
 }
 
 size_t string_ref::find(char c) const {
-  auto it = std::find_if(cbegin(), cend(), [c](char cc) { return cc == c; });
+  auto it = std::find(cbegin(), cend(), c);
   return it == cend() ? npos : std::distance(cbegin(), it);
 }
 
