@@ -18,13 +18,13 @@ INSTALL
  - Clone this repository
 
    ```sh
-   $ git clone https://github.com/grpc/grpc-common.git
+   $ git clone https://github.com/grpc/grpc.git
    ```
 
  - Install this package's dependencies
 
    ```sh
-   $ cd grpc-common/node
+   $ cd examples/node
    $ npm install
    ```
 
@@ -57,4 +57,4 @@ You can find a more detailed tutorial in [gRPC Basics: Node.js][]
 [homebrew]:http://brew.sh
 [linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
-[gRPC Basics: Node.js]:https://github.com/grpc/grpc-common/blob/master/node/route_guide/README.md
+[gRPC Basics: Node.js]:https://github.com/grpc/grpc/blob/master/examples/node/route_guide/README.md

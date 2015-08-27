@@ -7,21 +7,21 @@ To install gRPC on your system, follow the instructions here:
 
 ## Hello C++ gRPC!
 
-Here's how to build and run the C++ implementation of the [Hello World](https://github.com/grpc/grpc-common/blob/master/protos/helloworld.proto) example used in [Getting started](https://github.com/grpc/grpc-common).
+Here's how to build and run the C++ implementation of the [Hello World](examples/protos/helloworld.proto) example used in [Getting started](https://github.com/grpc/grpc/tree/master/examples).
 
-The example code for this and our other examples lives in the `grpc-common`
-GitHub repository. Clone this repository to your local machine by running the
+The example code for this and our other examples lives in the `examples`
+directory. Clone this repository to your local machine by running the
 following command:
 
 
 ```sh
-$ git clone https://github.com/grpc/grpc-common.git
+$ git clone https://github.com/grpc/grpc.git
 ```
 
-Change your current directory to grpc-common/cpp/helloworld
+Change your current directory to examples/cpp/helloworld
 
 ```sh
-$ cd grpc-common/cpp/helloworld/
+$ cd examples/cpp/helloworld/
 ```
 
 
@@ -41,9 +41,9 @@ $ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
 
 ### Client and server implementations
 
-The client implementation is at [greeter_client.cc](https://github.com/grpc/grpc-common/blob/master/cpp/helloworld/greeter_client.cc).
+The client implementation is at [greeter_client.cc](examples/cpp/helloworld/greeter_client.cc).
 
-The server implementation is at [greeter_server.cc](https://github.com/grpc/grpc-common/blob/master/cpp/helloworld/greeter_server.cc).
+The server implementation is at [greeter_server.cc](examples/cpp/helloworld/greeter_server.cc).
 
 ### Try it!
 Build client and server:
@@ -62,4 +62,4 @@ If things go smoothly, you will see the "Greeter received: Hello world" in the c
 
 ## Tutorial
 
-You can find a more detailed tutorial in [gRPC Basics: C++](https://github.com/grpc/grpc-common/blob/master/cpp/cpptutorial.md)
+You can find a more detailed tutorial in [gRPC Basics: C++](examples/cpp/cpptutorial.md)

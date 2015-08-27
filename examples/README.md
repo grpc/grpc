@@ -10,19 +10,20 @@ Hello World example. You'll find more tutorials and reference docs in this repos
 <a name="quickstart"></a>
 ## Quick start
 You can find quick start guides for each language, including installation instructions, examples, and tutorials here:
-* [C++](https://github.com/grpc/grpc-common/tree/master/cpp)
-* [Java](https://github.com/grpc/grpc-common/tree/master/java)
-* [Go](https://github.com/grpc/grpc-common/tree/master/go)
-* [Ruby](https://github.com/grpc/grpc-common/tree/master/ruby)
-* [Node.js](https://github.com/grpc/grpc-common/tree/master/node)
-* [Android Java](https://github.com/grpc/grpc-common/tree/master/java/android)
-* [Python](https://github.com/grpc/grpc-common/tree/master/python/helloworld)
-* [C#](https://github.com/grpc/grpc-common/tree/master/csharp)
-* [Objective-C](https://github.com/grpc/grpc-common/tree/master/objective-c/route_guide)
+* [C++](examples/cpp)
+* [Java](https://github.com/grpc/grpc-java/tree/master/examples)
+* [Go](https://github.com/grpc/grpc-go/tree/master/examples)
+* [Ruby](examples/ruby)
+* [Node.js](examples/node)
+* [Android Java](examples/java/android)
+* [Python](examples/python/helloworld)
+* [C#](examples/csharp)
+* [Objective-C](examples/objective-c/route_guide)
+* [PHP](examples/php)
 
 ## What's in this repository?
 
-The `grpc-common` repository contains documentation, resources, and examples
+The `examples` directory contains documentation, resources, and examples
 for all gRPC users. You can find examples and instructions specific to your
 favourite language in the relevant subdirectory.
 
@@ -93,8 +94,8 @@ Hello World method.
 - Create a Go client that accesses
 the same Java server.
 
-The complete code for the example is available in the `grpc-common` GitHub
-repository. We use the Git versioning system for source code management:
+The complete code for the example is available in the `examples`
+directory. We use the Git versioning system for source code management:
 however, you don't need to know anything about Git to follow along other
 than how to install and run a few git commands.
 
@@ -400,8 +401,8 @@ and client uses interface code generated from the same proto
 that we used for the Java example.
 
 So, for example, if we visit the [`go` example
-directory](https://github.com/grpc/grpc-common/tree/master/go) and look at the
-[`greeter_client`](https://github.com/grpc/grpc-common/blob/master/go/greeter_client/main.go),
+directory](https://github.com/grpc/grpc-go/tree/master/examples) and look at the
+[`greeter_client`](https://github.com/grpc/grpc-go/blob/master/examples/greeter_client/main.go),
 we can see that like the Java client, it connects to a `Greeter` service
 at `localhost:50051` and uses a stub to call the `SayHello` method with a
 `HelloRequest`:
@@ -446,4 +447,4 @@ $ greeter_client
 ## Read more!
 
 - You can find links to language-specific tutorials, examples, and other docs in each language's [quick start](#quickstart).
-- [gRPC Authentication Support](https://github.com/grpc/grpc-common/blob/master/grpc-auth-support.md) introduces authentication support in gRPC with supported mechanisms and examples.
+- [gRPC Authentication Support](doc/grpc-auth-support.md) introduces authentication support in gRPC with supported mechanisms and examples.

@@ -8,21 +8,21 @@ testing). You can obtain the latter by following [these setup instructions](http
 
 ## Hello Objective-C gRPC!
 
-Here's how to build and run the Objective-C implementation of the [Hello World](https://github.com/grpc/grpc-common/blob/master/protos/helloworld.proto)
-example used in [Getting started](https://github.com/grpc/grpc-common).
+Here's how to build and run the Objective-C implementation of the [Hello World](examples/protos/helloworld.proto)
+example used in [Getting started](https://github.com/grpc/grpc/tree/master/examples).
 
-The example code for this and our other examples lives in the `grpc-common` GitHub repository. Clone
+The example code for this and our other examples lives in the `examples` directory. Clone
 this repository to your local machine by running the following command:
 
 
 ```sh
-$ git clone https://github.com/grpc/grpc-common.git
+$ git clone https://github.com/grpc/grpc.git
 ```
 
-Change your current directory to `grpc-common/objective-c/helloworld`
+Change your current directory to `examples/objective-c/helloworld`
 
 ```sh
-$ cd grpc-common/objective-c/helloworld
+$ cd examples/objective-c/helloworld
 ```
 
 ### Try it!
@@ -53,4 +53,4 @@ responds with a `HLWHelloResponse`, which contains a string that is then output 
 
 ## Tutorial
 
-You can find a more detailed tutorial in [gRPC Basics: Objective-C](https://github.com/grpc/grpc-common/blob/master/objective-c/route_guide/README.md).
+You can find a more detailed tutorial in [gRPC Basics: Objective-C](examples/objective-c/route_guide/README.md).

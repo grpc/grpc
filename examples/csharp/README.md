@@ -69,4 +69,4 @@ On Linux or Mac, use `mono GreeterServer.exe` and `mono GreeterClient.exe` to ru
 Tutorial
 --------
 
-You can find a more detailed tutorial in [gRPC Basics: C#](https://github.com/grpc/grpc-common/blob/master/csharp/route_guide/README.md)
+You can find a more detailed tutorial in [gRPC Basics: C#](examples/csharp/route_guide/README.md)

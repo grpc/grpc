@@ -9,8 +9,8 @@ headers.
 - Read response metadata from a call, which is equivalent to HTTP response headers and trailers.
 
 It assumes you know the basics on how to make gRPC API calls using the Objective-C client library,
-as shown in the [Hello World](https://github.com/grpc/grpc-common/tree/master/objective-c/helloworld)
-or [Route Guide](https://github.com/grpc/grpc-common/tree/master/objective-c/route_guide) tutorials,
+as shown in the [Hello World](examples/objective-c/helloworld)
+or [Route Guide](examples/objective-c/route_guide) tutorials,
 and are familiar with OAuth2 concepts like _access token_.
 
 - [Example code and setup](#setup)
@@ -22,15 +22,15 @@ and are familiar with OAuth2 concepts like _access token_.
 <a name="setup"></a>
 ## Example code and setup
 
-The example code for our tutorial is in [grpc/grpc-common/objective-c/auth_sample](https://github.com/grpc/grpc-common/tree/master/objective-c/auth_sample).
-To download the example, clone the `grpc-common` repository by running the following command:
+The example code for our tutorial is in [examples/objective-c/auth_sample](examples/objective-c/auth_sample).
+To download the example, clone this repository by running the following command:
 ```shell
-$ git clone https://github.com/grpc/grpc-common.git
+$ git clone https://github.com/grpc/grpc.git
 ```
 
-Then change your current directory to `grpc-common/objective-c/auth_sample`:
+Then change your current directory to `examples/objective-c/auth_sample`:
 ```shell
-$ cd grpc-common/objective-c/auth_sample
+$ cd examples/objective-c/auth_sample
 ```
 
 Our example is a simple application with two views. The first one lets a user sign in and out using
