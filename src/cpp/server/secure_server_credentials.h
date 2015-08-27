@@ -55,7 +55,6 @@ class AuthMetadataProcessorAyncWrapper GRPC_FINAL {
       : thread_pool_(CreateDefaultThreadPool()), processor_(processor) {}
 
  private:
-  typedef std::multimap<grpc::string, grpc::string> Metadata;
   void InvokeProcessor(grpc_auth_context* context, const grpc_metadata* md,
                        size_t num_md, grpc_process_auth_metadata_done_cb cb,
                        void* user_data);
