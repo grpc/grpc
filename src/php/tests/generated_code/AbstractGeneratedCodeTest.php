@@ -51,6 +51,18 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase {
     $this->assertTrue(is_string(self::$client->getTarget()));
   }
 
+  public function testWriteFlags() {
+    $div_arg = new math\DivArgs();
+    $div_arg->setDividend(7);
+    $div_arg->setDivisor(4);
+    $call = self::$client->Div($div_arg, array(), array('flags' => Grpc\WRITE_NO_COMPRESS));
+    $this->assertTrue(is_string($call->getPeer()));
+    list($response, $status) = $call->wait();
+    $this->assertSame(1, $response->getQuotient());
+    $this->assertSame(3, $response->getRemainder());
+    $this->assertSame(\Grpc\STATUS_OK, $status->code);
+  }
+
   public function testSimpleRequest() {
     $div_arg = new math\DivArgs();
     $div_arg->setDividend(7);
