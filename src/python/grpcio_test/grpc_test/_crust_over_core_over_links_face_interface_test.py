@@ -27,29 +27,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests Base interface compliance of the core-over-gRPC-links stack."""
+"""Tests Face compliance of the crust-over-core-over-gRPC-links stack."""
 
 import collections
-import logging
-import random
-import time
 import unittest
 
 from grpc._adapter import _intermediary_low
 from grpc._links import invocation
 from grpc._links import service
-from grpc.framework.core import implementations
-from grpc.framework.interfaces.base import utilities
-from grpc_test import test_common as grpc_test_common
+from grpc.framework.core import implementations as core_implementations
+from grpc.framework.crust import implementations as crust_implementations
+from grpc.framework.foundation import logging_pool
+from grpc.framework.interfaces.links import utilities
+from grpc_test import test_common
 from grpc_test.framework.common import test_constants
-from grpc_test.framework.interfaces.base import test_cases
-from grpc_test.framework.interfaces.base import test_interfaces
-
-_INVOCATION_INITIAL_METADATA = ((b'0', b'abc'), (b'1', b'def'), (b'2', b'ghi'),)
-_SERVICE_INITIAL_METADATA = ((b'3', b'jkl'), (b'4', b'mno'), (b'5', b'pqr'),)
-_SERVICE_TERMINAL_METADATA = ((b'6', b'stu'), (b'7', b'vwx'), (b'8', b'yza'),)
-_CODE = _intermediary_low.Code.OK
-_MESSAGE = b'test message'
+from grpc_test.framework.interfaces.face import test_cases
+from grpc_test.framework.interfaces.face import test_interfaces
+from grpc_test.framework.interfaces.links import test_utilities
 
 
 class _SerializationBehaviors(
@@ -60,24 +54,16 @@ class _SerializationBehaviors(
   pass
 
 
-class _Links(
-    collections.namedtuple(
-        '_Links',
-        ('invocation_end_link', 'invocation_grpc_link', 'service_grpc_link',
-         'service_end_link'))):
-  pass
-
-
-def _serialization_behaviors_from_serializations(serializations):
+def _serialization_behaviors_from_test_methods(test_methods):
   request_serializers = {}
   request_deserializers = {}
   response_serializers = {}
   response_deserializers = {}
-  for (group, method), serialization in serializations.iteritems():
-    request_serializers[group, method] = serialization.serialize_request
-    request_deserializers[group, method] = serialization.deserialize_request
-    response_serializers[group, method] = serialization.serialize_response
-    response_deserializers[group, method] = serialization.deserialize_response
+  for (group, method), test_method in test_methods.iteritems():
+    request_serializers[group, method] = test_method.serialize_request
+    request_deserializers[group, method] = test_method.deserialize_request
+    response_serializers[group, method] = test_method.serialize_response
+    response_deserializers[group, method] = test_method.deserialize_response
   return _SerializationBehaviors(
       request_serializers, request_deserializers, response_serializers,
       response_deserializers)
@@ -85,11 +71,15 @@ def _serialization_behaviors_from_serializations(serializations):
 
 class _Implementation(test_interfaces.Implementation):
 
-  def instantiate(self, serializations, servicer):
-    serialization_behaviors = _serialization_behaviors_from_serializations(
-        serializations)
-    invocation_end_link = implementations.invocation_end_link()
-    service_end_link = implementations.service_end_link(
+  def instantiate(
+      self, methods, method_implementations, multi_method_implementation):
+    pool = logging_pool.pool(test_constants.POOL_SIZE)
+    servicer = crust_implementations.servicer(
+        method_implementations, multi_method_implementation, pool)
+    serialization_behaviors = _serialization_behaviors_from_test_methods(
+        methods)
+    invocation_end_link = core_implementations.invocation_end_link()
+    service_end_link = core_implementations.service_end_link(
         servicer, test_constants.DEFAULT_TIMEOUT,
         test_constants.MAXIMUM_TIMEOUT)
     service_grpc_link = service.service_link(
@@ -104,54 +94,59 @@ class _Implementation(test_interfaces.Implementation):
 
     invocation_end_link.join_link(invocation_grpc_link)
     invocation_grpc_link.join_link(invocation_end_link)
-    service_end_link.join_link(service_grpc_link)
     service_grpc_link.join_link(service_end_link)
+    service_end_link.join_link(service_grpc_link)
+    service_end_link.start()
+    invocation_end_link.start()
     invocation_grpc_link.start()
     service_grpc_link.start()
-    return invocation_end_link, service_end_link, (
-        invocation_grpc_link, service_grpc_link)
+
+    generic_stub = crust_implementations.generic_stub(invocation_end_link, pool)
+    # TODO(nathaniel): Add a "groups" attribute to _digest.TestServiceDigest.
+    group = next(iter(methods))[0]
+    # TODO(nathaniel): Add a "cardinalities_by_group" attribute to
+    # _digest.TestServiceDigest.
+    cardinalities = {
+        method: method_object.cardinality()
+        for (group, method), method_object in methods.iteritems()}
+    dynamic_stub = crust_implementations.dynamic_stub(
+        invocation_end_link, group, cardinalities, pool)
+
+    return generic_stub, {group: dynamic_stub}, (
+        invocation_end_link, invocation_grpc_link, service_grpc_link,
+        service_end_link, pool)
 
   def destantiate(self, memo):
-    invocation_grpc_link, service_grpc_link = memo
+    (invocation_end_link, invocation_grpc_link, service_grpc_link,
+     service_end_link, pool) = memo
+    invocation_end_link.stop(0).wait()
     invocation_grpc_link.stop()
     service_grpc_link.stop_gracefully()
+    service_end_link.stop(0).wait()
+    invocation_end_link.join_link(utilities.NULL_LINK)
+    invocation_grpc_link.join_link(utilities.NULL_LINK)
+    service_grpc_link.join_link(utilities.NULL_LINK)
+    service_end_link.join_link(utilities.NULL_LINK)
+    pool.shutdown(wait=True)
 
-  def invocation_initial_metadata(self):
-    return _INVOCATION_INITIAL_METADATA
+  def invocation_metadata(self):
+    return test_common.INVOCATION_INITIAL_METADATA
 
-  def service_initial_metadata(self):
-    return _SERVICE_INITIAL_METADATA
+  def initial_metadata(self):
+    return test_common.SERVICE_INITIAL_METADATA
 
-  def invocation_completion(self):
-    return utilities.completion(None, None, None)
+  def terminal_metadata(self):
+    return test_common.SERVICE_TERMINAL_METADATA
 
-  def service_completion(self):
-    return utilities.completion(_SERVICE_TERMINAL_METADATA, _CODE, _MESSAGE)
+  def code(self):
+    return _intermediary_low.Code.OK
+
+  def details(self):
+    return test_common.DETAILS
 
   def metadata_transmitted(self, original_metadata, transmitted_metadata):
     return original_metadata is None or grpc_test_common.metadata_transmitted(
         original_metadata, transmitted_metadata)
-
-  def completion_transmitted(self, original_completion, transmitted_completion):
-    if (original_completion.terminal_metadata is not None and
-        not grpc_test_common.metadata_transmitted(
-            original_completion.terminal_metadata,
-            transmitted_completion.terminal_metadata)):
-        return False
-    elif original_completion.code is not transmitted_completion.code:
-      return False
-    elif original_completion.message != transmitted_completion.message:
-      return False
-    else:
-      return True
-
-
-def setUpModule():
-  logging.warn('setUpModule!')
-
-
-def tearDownModule():
-  logging.warn('tearDownModule!')
 
 
 def load_tests(loader, tests, pattern):

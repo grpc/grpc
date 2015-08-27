@@ -164,7 +164,7 @@ PyObject *pygrpc_Channel_watch_connectivity_state(
   int last_observed_state;
   CompletionQueue *completion_queue;
   char *keywords[] = {"last_observed_state", "deadline",
-                      "completion_queue", "tag"};
+                      "completion_queue", "tag", NULL};
   if (!PyArg_ParseTupleAndKeywords(
       args, kwargs, "idO!O:watch_connectivity_state", keywords,
       &last_observed_state, &deadline, &pygrpc_CompletionQueue_type,

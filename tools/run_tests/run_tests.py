@@ -70,13 +70,14 @@ def platform_string():
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
-  def __init__(self, config, environ=None):
+  def __init__(self, config, environ=None, timeout_seconds=5*60):
     if environ is None:
       environ = {}
     self.build_config = config
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
+    self.timeout_seconds = timeout_seconds
 
   def job_spec(self, cmdline, hash_targets, shortname=None, environ={}):
     """Construct a jobset.JobSpec for a test under this config
@@ -96,6 +97,7 @@ class SimpleConfig(object):
     return jobset.JobSpec(cmdline=cmdline,
                           shortname=shortname,
                           environ=actual_environ,
+                          timeout_seconds=self.timeout_seconds,
                           hash_targets=hash_targets
                               if self.allow_hashing else None)
 
@@ -354,11 +356,11 @@ class Build(object):
 _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
-    'tsan': SimpleConfig('tsan', environ={
+    'tsan': SimpleConfig('tsan', timeout_seconds=10*60, environ={
         'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
-    'msan': SimpleConfig('msan'),
+    'msan': SimpleConfig('msan', timeout_seconds=7*60),
     'ubsan': SimpleConfig('ubsan'),
-    'asan': SimpleConfig('asan', environ={
+    'asan': SimpleConfig('asan', timeout_seconds=7*60, environ={
         'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt',
         'LSAN_OPTIONS': 'report_objects=1'}),
     'asan-noleaks': SimpleConfig('asan', environ={

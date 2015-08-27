@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,21 +27,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set -ex
+"""A test constant working around issue 3069."""
 
-CONFIG=${CONFIG:-opt}
+# test_constants is referenced from specification in this module.
+from grpc_test.framework.common import test_constants  # pylint: disable=unused-import
 
-# change to grpc repo root
-cd $(dirname $0)/../..
-
-root=`pwd`
-export GRPC_LIB_SUBDIR=libs/$CONFIG
-export CFLAGS="-Wno-parentheses-equality"
-
-# build php
-cd src/php
-
-cd ext/grpc
-phpize
-./configure --enable-grpc=$root
-make
+# TODO(issue 3069): Replace uses of this constant with
+# test_constants.SHORT_TIMEOUT.
+REALLY_SHORT_TIMEOUT = 0.1
