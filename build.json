@@ -1033,6 +1033,20 @@
       ]
     },
     {
+      "name": "endpoint_pair_test",
+      "build": "test",
+      "language": "c",
+      "src": [
+        "test/core/iomgr/endpoint_pair_test.c"
+      ],
+      "deps": [
+        "grpc_test_util",
+        "grpc",
+        "gpr_test_util",
+        "gpr"
+      ]
+    },
+    {
       "name": "fd_conservation_posix_test",
       "build": "test",
       "language": "c",
