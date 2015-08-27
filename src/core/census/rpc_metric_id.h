@@ -36,16 +36,16 @@
 
 /* Metric ID's used for RPC measurements. */
 /* Count of client requests sent. */
-#define CENSUS_METRIC_RPC_CLIENT_REQUESTS ((gpr_int32)0)
+#define CENSUS_METRIC_RPC_CLIENT_REQUESTS ((gpr_uint32)0)
 /* Count of server requests sent. */
-#define CENSUS_METRIC_RPC_SERVER_REQUESTS ((gpr_int32)1)
+#define CENSUS_METRIC_RPC_SERVER_REQUESTS ((gpr_uint32)1)
 /* Client error counts. */
-#define CENSUS_METRIC_RPC_CLIENT_ERRORS ((gpr_int32)2)
+#define CENSUS_METRIC_RPC_CLIENT_ERRORS ((gpr_uint32)2)
 /* Server error counts. */
-#define CENSUS_METRIC_RPC_SERVER_ERRORS ((gpr_int32)3)
+#define CENSUS_METRIC_RPC_SERVER_ERRORS ((gpr_uint32)3)
 /* Client side request latency. */
-#define CENSUS_METRIC_RPC_CLIENT_LATENCY ((gpr_int32)4)
+#define CENSUS_METRIC_RPC_CLIENT_LATENCY ((gpr_uint32)4)
 /* Server side request latency. */
-#define CENSUS_METRIC_RPC_SERVER_LATENCY ((gpr_int32)5)
+#define CENSUS_METRIC_RPC_SERVER_LATENCY ((gpr_uint32)5)
 
 #endif /* CENSUS_RPC_METRIC_ID_H */
