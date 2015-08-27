@@ -104,11 +104,11 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE {
     EchoRequest request;
-    volatile bool should_exit = false;
+    std::atomic<bool> should_exit(false);
     std::thread sender([stream, &should_exit]() {
       EchoResponse response;
       response.set_message(kLargeString);
-      while (!should_exit) {
+      while (!should_exit.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         stream->Write(response);
       }
@@ -117,7 +117,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
     while (stream->Read(&request)) {
       std::this_thread::sleep_for(std::chrono::milliseconds(3));
     }
-    should_exit = true;
+    should_exit.store(true);
     sender.join();
     return Status::OK;
   }
