@@ -43,7 +43,7 @@
 namespace grpc {
 class ChannelArguments;
 
-std::shared_ptr<Channel> CreateCustomChannel(
+std::shared_ptr<Channel> CreateChannel(
     const grpc::string& target, const std::shared_ptr<Credentials>& creds) {
   return CreateCustomChannel(target, creds, ChannelArguments());
 }
