@@ -156,7 +156,8 @@ NAN_METHOD(Credentials::CreateSsl) {
         "createSSl's third argument must be a Buffer if provided");
   }
   grpc_credentials *creds = grpc_ssl_credentials_create(
-      root_certs, key_cert_pair.private_key == NULL ? NULL : &key_cert_pair);
+      root_certs, key_cert_pair.private_key == NULL ? NULL : &key_cert_pair,
+      NULL);
   if (creds == NULL) {
     NanReturnNull();
   }
@@ -176,7 +177,7 @@ NAN_METHOD(Credentials::CreateComposite) {
   Credentials *creds1 = ObjectWrap::Unwrap<Credentials>(args[0]->ToObject());
   Credentials *creds2 = ObjectWrap::Unwrap<Credentials>(args[1]->ToObject());
   grpc_credentials *creds = grpc_composite_credentials_create(
-      creds1->wrapped_credentials, creds2->wrapped_credentials);
+      creds1->wrapped_credentials, creds2->wrapped_credentials, NULL);
   if (creds == NULL) {
     NanReturnNull();
   }
@@ -185,7 +186,7 @@ NAN_METHOD(Credentials::CreateComposite) {
 
 NAN_METHOD(Credentials::CreateGce) {
   NanScope();
-  grpc_credentials *creds = grpc_compute_engine_credentials_create();
+  grpc_credentials *creds = grpc_compute_engine_credentials_create(NULL);
   if (creds == NULL) {
     NanReturnNull();
   }
@@ -202,8 +203,8 @@ NAN_METHOD(Credentials::CreateIam) {
   }
   NanUtf8String auth_token(args[0]);
   NanUtf8String auth_selector(args[1]);
-  grpc_credentials *creds = grpc_iam_credentials_create(*auth_token,
-                                                       *auth_selector);
+  grpc_credentials *creds =
+      grpc_iam_credentials_create(*auth_token, *auth_selector, NULL);
   if (creds == NULL) {
     NanReturnNull();
   }
