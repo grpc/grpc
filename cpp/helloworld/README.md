@@ -160,15 +160,15 @@ gRPC uses `CompletionQueue` API for asynchronous operations. The basic work flow
 is
 - bind a `CompletionQueue` to a rpc call
 - do something like a read or write, present with a unique `void*` tag
-- call `CompletionQueue::Next` to poll the events. If the tag appears, the
-  previous operation finishes.
+- call `CompletionQueue::Next` to wait for operations to complete. If a tag
+  appears, it indicates that the corresponding operation is complete.
 
 #### Async client
 
 The channel and stub creation code is the same as the sync client.
 
-- Initiate the rpc and create a handle for the rpc. Bind a `CompletionQueue` to
-  it.
+- Initiate the rpc and create a handle for the rpc. Bind the rpc to a
+  `CompletionQueue`.
 
     ```
     CompletionQueue cq;
@@ -182,8 +182,8 @@ The channel and stub creation code is the same as the sync client.
     rpc->Finish(&reply, &status, (void*)1);
     ```
 
-- Poll the completion queue for the tag. The reply and status are ready once the
-  tag is returned.
+- Wait for the completion queue to return the next tag. The reply and status are
+  ready once the tag passed into the corresponding `Finish()` call is returned.
 
     ```
     void* got_tag;
@@ -198,8 +198,8 @@ For a working example, refer to [greeter_async_client.cc](https://github.com/grp
 
 #### Async server
 
-The server implementation requests a rpc call with a tag and then poll the
-completion queue for the tag. The basic flow is
+The server implementation requests a rpc call with a tag and then wait for the
+completion queue to return the tag. The basic flow is
 
 - Build a server exporting the async service
 
@@ -221,8 +221,8 @@ completion queue for the tag. The basic flow is
     service.RequestSayHello(&context, &request, &responder, &cq, &cq, (void*)1);
     ```
 
-- Poll the completion queue for the tag. The context, request and responder are
-  ready once the tag is retrieved.
+- Wait for the completion queue to return the tag. The context, request and
+  responder are ready once the tag is retrieved.
 
     ```
     HelloReply reply;
@@ -236,8 +236,8 @@ completion queue for the tag. The basic flow is
     }
     ```
 
-- Poll the completion queue for the tag. The rpc is finished when the tag is
-  back.
+- Wait for the completion queue to return the tag. The rpc is finished when the
+  tag is back.
 
     ```
     void* got_tag;
