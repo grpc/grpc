@@ -507,7 +507,7 @@ static grpc_resolver *etcd_create(
 }
 
 static void etcd_plugin_init() {
-  grpc_register_resolver_type("etcd", grpc_etcd_resolver_factory_create());
+  grpc_register_resolver_type(grpc_etcd_resolver_factory_create());
 }
 
 void grpc_etcd_register() { grpc_register_plugin(etcd_plugin_init, NULL); }
@@ -520,6 +520,11 @@ static void etcd_factory_ref(grpc_resolver_factory *factory) {}
 
 static void etcd_factory_unref(grpc_resolver_factory *factory) {}
 
+static char *etcd_factory_get_default_hostname(grpc_resolver_factory *factory,
+                                               grpc_uri *uri) {
+  return NULL;
+}
+
 static grpc_resolver *etcd_factory_create_resolver(
     grpc_resolver_factory *factory, grpc_uri *uri,
     grpc_subchannel_factory *subchannel_factory) {
@@ -527,7 +532,8 @@ static grpc_resolver *etcd_factory_create_resolver(
 }
 
 static const grpc_resolver_factory_vtable etcd_factory_vtable = {
-    etcd_factory_ref, etcd_factory_unref, etcd_factory_create_resolver};
+    etcd_factory_ref, etcd_factory_unref, etcd_factory_create_resolver,
+    etcd_factory_get_default_hostname, "etcd"};
 static grpc_resolver_factory etcd_resolver_factory = {&etcd_factory_vtable};
 
 grpc_resolver_factory *grpc_etcd_resolver_factory_create() {

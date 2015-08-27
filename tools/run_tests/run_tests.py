@@ -70,13 +70,14 @@ def platform_string():
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
-  def __init__(self, config, environ=None):
+  def __init__(self, config, environ=None, timeout_seconds=5*60):
     if environ is None:
       environ = {}
     self.build_config = config
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
+    self.timeout_seconds = timeout_seconds
 
   def job_spec(self, cmdline, hash_targets, shortname=None, environ={}):
     """Construct a jobset.JobSpec for a test under this config
@@ -96,6 +97,7 @@ class SimpleConfig(object):
     return jobset.JobSpec(cmdline=cmdline,
                           shortname=shortname,
                           environ=actual_environ,
+                          timeout_seconds=self.timeout_seconds,
                           hash_targets=hash_targets
                               if self.allow_hashing else None)
 
@@ -354,11 +356,11 @@ class Build(object):
 _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
-    'tsan': SimpleConfig('tsan', environ={
+    'tsan': SimpleConfig('tsan', timeout_seconds=10*60, environ={
         'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
-    'msan': SimpleConfig('msan'),
+    'msan': SimpleConfig('msan', timeout_seconds=7*60),
     'ubsan': SimpleConfig('ubsan'),
-    'asan': SimpleConfig('asan', environ={
+    'asan': SimpleConfig('asan', timeout_seconds=7*60, environ={
         'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt',
         'LSAN_OPTIONS': 'report_objects=1'}),
     'asan-noleaks': SimpleConfig('asan', environ={
@@ -465,7 +467,8 @@ if len(build_configs) > 1:
 if platform.system() == 'Windows':
   def make_jobspec(cfg, targets):
     return jobset.JobSpec(['make.bat', 'CONFIG=%s' % cfg] + targets,
-                          cwd='vsprojects', shell=True)
+                          cwd='vsprojects', shell=True, 
+                          timeout_seconds=30*60)
 else:
   def make_jobspec(cfg, targets):
     return jobset.JobSpec([os.getenv('MAKE', 'make'),
@@ -535,7 +538,8 @@ def _start_port_server(port_server_port):
   # if not running ==> start a new one
   # otherwise, leave it up
   try:
-    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port).read()
+    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port,
+                              timeout=1).read()
     running = True
   except Exception:
     running = False
@@ -553,12 +557,20 @@ def _start_port_server(port_server_port):
         stderr=subprocess.STDOUT,
         stdout=port_log)
     # ensure port server is up
+    waits = 0
     while True:
+      if waits > 10:
+        port_server.kill()
+        print "port_server failed to start"
+        sys.exit(1)
       try:
-        urllib2.urlopen('http://localhost:%d/get' % port_server_port).read()
+        urllib2.urlopen('http://localhost:%d/get' % port_server_port,
+                        timeout=1).read()
         break
       except urllib2.URLError:
+        print "waiting for port_server"
         time.sleep(0.5)
+        waits += 1
       except:
         port_server.kill()
         raise

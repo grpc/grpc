@@ -142,15 +142,6 @@ grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
 
 /* --- Secure channel creation. --- */
 
-/* The caller of the secure_channel_create functions may override the target
-   name used for SSL host name checking using this channel argument which is of
-   type GRPC_ARG_STRING. This *should* be used for testing only.
-   If this argument is not specified, the name used for SSL host name checking
-   will be the target parameter (assuming that the secure channel is an SSL
-   channel). If this parameter is specified and the underlying is not an SSL
-   channel, it will just be ignored. */
-#define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
-
 /* Creates a secure channel using the passed-in credentials. */
 grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
                                          const char *target,

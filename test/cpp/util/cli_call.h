@@ -38,18 +38,22 @@
 
 #include <grpc++/channel.h>
 #include <grpc++/support/status.h>
+#include <grpc++/support/string_ref.h>
 
 namespace grpc {
 namespace testing {
 
 class CliCall GRPC_FINAL {
  public:
-  typedef std::multimap<grpc::string, grpc::string> MetadataContainer;
+  typedef std::multimap<grpc::string, grpc::string> OutgoingMetadataContainer;
+  typedef std::multimap<grpc::string_ref, grpc::string_ref>
+      IncomingMetadataContainer;
   static Status Call(std::shared_ptr<grpc::Channel> channel,
                      const grpc::string& method, const grpc::string& request,
-                     grpc::string* response, const MetadataContainer& metadata,
-                     MetadataContainer* server_initial_metadata,
-                     MetadataContainer* server_trailing_metadata);
+                     grpc::string* response,
+                     const OutgoingMetadataContainer& metadata,
+                     IncomingMetadataContainer* server_initial_metadata,
+                     IncomingMetadataContainer* server_trailing_metadata);
 };
 
 }  // namespace testing

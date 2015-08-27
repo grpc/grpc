@@ -31,14 +31,14 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_CENSUS_FILTER_H
-#define GRPC_INTERNAL_CORE_CHANNEL_CENSUS_FILTER_H
+#include "test/cpp/util/string_ref_helper.h"
 
-#include "src/core/channel/channel_stack.h"
+namespace grpc {
+namespace testing {
 
-/* Census filters: provides tracing and stats collection functionalities. It
-   needs to reside right below the surface filter in the channel stack. */
-extern const grpc_channel_filter grpc_client_census_filter;
-extern const grpc_channel_filter grpc_server_census_filter;
+grpc::string ToString(const grpc::string_ref& r) {
+  return grpc::string(r.data(), r.size());
+}
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_CENSUS_FILTER_H */
+}  // namespace testing
+}  // namespace grpc

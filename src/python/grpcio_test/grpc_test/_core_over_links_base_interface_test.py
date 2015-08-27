@@ -27,7 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests the RPC Framework Core's implementation of the Base interface."""
+"""Tests Base interface compliance of the core-over-gRPC-links stack."""
 
 import collections
 import logging

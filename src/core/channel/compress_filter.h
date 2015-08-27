@@ -36,7 +36,7 @@
 
 #include "src/core/channel/channel_stack.h"
 
-#define GRPC_COMPRESS_REQUEST_ALGORITHM_KEY "internal:grpc-encoding-request"
+#define GRPC_COMPRESS_REQUEST_ALGORITHM_KEY "grpc-internal-encoding-request"
 
 /** Compression filter for outgoing data.
  *

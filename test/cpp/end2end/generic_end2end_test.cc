@@ -160,7 +160,7 @@ class GenericEnd2endTest : public ::testing::Test {
                                    srv_cq_.get(), tag(4));
 
       verify_ok(srv_cq_.get(), 4, true);
-      EXPECT_EQ(server_host_, srv_ctx.host());
+      EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
       EXPECT_EQ(kMethodName, srv_ctx.method());
       ByteBuffer recv_buffer;
       stream.Read(&recv_buffer, tag(5));
@@ -233,7 +233,7 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
                                srv_cq_.get(), tag(2));
 
   verify_ok(srv_cq_.get(), 2, true);
-  EXPECT_EQ(server_host_, srv_ctx.host());
+  EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
   EXPECT_EQ(kMethodName, srv_ctx.method());
 
   std::unique_ptr<ByteBuffer> send_buffer =
