@@ -159,114 +159,154 @@ int census_tag_set_next(census_tag_set_iterator *it, census_tag_const *tag);
    invalidated, and should not be used once close is called. */
 void census_tag_set_close(census_tag_set_iterator *it);
 
-/* A census statistic to be recorded comprises two parts: an ID for the
- * particular statistic and the value to be recorded against it. */
+/* Core stats collection API's. There following concepts are used:
+   * Aggregation: A collection of values. Census supports the following
+       aggregation types:
+         Scalar - a single scalar value. Typically used for keeping (e.g.)
+           counts of events.
+         Distribution - statistical distribution information, used for
+           recording average, standard deviation etc.
+         Histogram - a histogram of measurements falling in defined bucket
+           boundaries.
+         Window - a count of events that happen in reolling time window.
+     New aggregation types can be added by the user, if desired (see
+     census_register_aggregation()).
+   * Metric: Each measurement is for a single metric. Examples include RPC
+     latency, CPU seconds consumed, and bytes transmitted.
+   * View: A view is a tag set, in which the tag values are regular expressions,
+     combined with an arbitrary number of aggregations and their initialization
+     parameters.
+
+   Each metric can have an arbitrary number of views by which it will be
+   broken down. For every measurement recorded, they are broken down by
+   unique tag combinations, and recorded in each matvhing view/aggregation.
+*/
+
+/* A single value to be recorded comprises two parts: an ID for the particular
+ * metric and the value to be recorded against it. */
 typedef struct {
-  int id;
+  gpr_int32 metric_id;
   double value;
-} census_stat;
+} census_value;
 
-/* Record new stats against the given context. */
-void census_record_stat(census_context *context, census_stat *stats,
-                        size_t nstats);
+/* Record new usage values against the given context. */
+void census_record_usage(census_context *context, census_value *values,
+                         size_t nvalues);
 
-/* Stats Configuration - Census clients can use these functions and structures
-   to extend and define what stats get recorded for what measurements. */
+/** Structure used to describe an aggregation type. */
+typedef struct {
+  /* Create a new aggregation. The pointer returned can be used in future calls
+     to free(), record(), data() and reset(). */
+  void *(*create)(const void *create_arg);
+  /* Destroy an aggregation created by create() */
+  void (*free)(void *aggregation);
+  /* Record a new value against aggregation. */
+  void (*record)(void *aggregation, double value);
+  /* Return current aggregation data. The caller must cast this object into
+     the correct type for the aggregation result. The object returned can be
+     freed by using free_data(). */
+  const void *(*data)(const void *aggregation);
+  /* destroy an aggregation result eturned from get_aggregation(). */
+  void (*free_data)(const void *data);
+  /* Reset an aggregation to default (zero) values. */
+  void (*reset)(void *aggregation);
+} census_aggregation_descriptor;
 
-/** Stats types supported by census. */
-typedef enum {
-  CENSUS_STAT_SCALAR = 0,       /* Simple scalar */
-  CENSUS_STAT_DISTRIBUTION = 1, /* count, average, variance */
-  CENSUS_STAT_HISTOGRAM = 2,    /* Histogram. */
-  CENSUS_STAT_WINDOW = 3,       /* Count over a time window. */
-  CENSUS_STAT_NSTATS = 4        /* Total number of stats types. */
-} census_stat_type;
+/** Register a new aggregation type.
+  @param descriptor Describes aggregation
+  @return An identifier that can be used to identify the aggregation in other
+  census functions. */
+gpr_int32 census_register_aggregation(
+    const census_aggregation_descriptor *descriptor);
 
-/*
-  Each stats type differs in how it is initialized, how it is represented, and
-  the results it provides. The following structures allow us to use a generic
-  type for each of those.
+/* Aggregation Identifiers for built-in census aggregations. */
+#define CENSUS_AGGREGATION_ID_SCALAR ((gpr_int32)0)
+#define CENSUS_AGGREGATION_ID_DISTRIBUTION ((gpr_int32)1)
+#define CENSUS_AGGREGATION_ID_HISTOGRAM ((gpr_int32)2)
+#define CENSUS_AGGREGATION_ID_WINDOW ((gpr_int32)3)
 
-  Types referenced (one for each stat type in census_stat_type, by creation
-  arguments, output blob, and object representation. */
+/** Information needed to instantiate a new aggregation. Used in view
+    construction via census_define_view(). */
+typedef struct {
+  gpr_int32 id; /* aggregation ID */
+  const void
+      *create_arg; /* Argument to be used for aggregation initialization. */
+} census_aggregation;
 
-typedef struct census_stat_scalar_create_arg census_stat_scalar_create_arg;
-typedef struct census_stat_distribution_create_arg
-    census_stat_distribution_create_arg;
-typedef struct census_stat_histogram_create_arg
-    census_stat_histogram_create_arg;
-typedef struct census_stat_window_create_arg census_stat_window_create_arg;
+/** Type representing a single view. */
+typedef struct census_view census_view;
 
-/**
-  Type for representing information to construct a new instance of a given
-  stats type (e.g. histogram bucket boundaries).
+/** Create a new view.
+  @param tags tags that define the view
+  @param aggregations aggregations to associate with the view
+  @param naggregations number of aggregations
+
+  @return A new census view
 */
-typedef struct {
-  census_stat_type stat_type; /* The "real" type of the stat. */
-  union {
-    const census_stat_scalar_create_arg *scalar_arg;
-    const census_stat_distribution_create_arg *distribution_arg;
-    const census_stat_histogram_create_arg *histogram_arg;
-    const census_stat_window_create_arg *window_arg;
-  }
-} census_stat_create_arg;
+const census_view *census_define_view(const census_tag_set *tags,
+                                      const census_aggregation *aggregations,
+                                      size_t naggregations);
 
-/**
-  Type for representing a single stats result. */
-typedef struct {
-  const census_tag_set *view; /* Unique tags associated with this result. */
-  census_stat_type stat_type;
-  union {
-    const census_stat_scalar_result *scalar_result;
-    const census_stat_distribution_result *distribution_result;
-    const census_stat_histogram_result *histogram_result;
-    const census_stat_window_result *window_result;
-  }
-} census_stat_result;
+/** Number of aggregations associated with view. */
+size_t census_view_naggregations(const census_view *view);
 
-/**
-  Generic type for representing a stat "object".
+/** Get tags associated with view. */
+const census_tag_set *census_view_tags(const census_view *view);
+
+/** Get aggregations associated with a view. */
+const census_aggregation *census_view_aggregrations(const census_view *view);
+
+/** Associate a given view with a metric. Every metric can have many different
+    views.
+  @param metric_id Identifier of metric with which to attah the view
+  @param view View to attach to the metric
+  @return A view identifier: can be used to retrieve aggregation data from
+    the view using census_view_data().
 */
-typdef struct {
-  census_stat_type stat_type;
-  union {
-    census_stat_scalar *scalar;
-    census_stat_distribution *distribution;
-    census_stat_histogram *histogram;
-    census_stat_window *window;
-  }
-} census_stat;
+gpr_int64 census_attach_view(gpr_int32 metric_id, const census_view *view);
 
-/**
-  Structure holding function pointers and associated information needed to
-  manipulate a statstics "object". Every stats type must provide an instance
-  of this structure. */
+/** Holds aggregation data, as it applies to a particular view. This structure
+  is used as one component of the data returned from census_get_view_data(). */
 typedef struct {
-  /* Create a new statistic. The pointer returned can be used in future calls
-     to clone_stat(), destroy_stat(), record_stat() and get_stats(). */
-  (census_stat *) (*create_stat)(const census_stat_create_arg *create_arg);
-  /* Create a new statistic, using an existing one as base. */
-  (census_stat *) (*clone_stat)(const census_stat *stat);
-  /* destroy a stats object created by {create,clone}_stat(). */
-  (void) (*destroy_stat)(census_stat *stat);
-  /* Record a new value against a given statistics object instance. */
-  (void) (*record_stat)(census_stat *stat, double value);
-  /* Return current state of a stat. The object returned can be freed by
-     using destroy_stats_result(). */
-  (const census_stat_result *) (*get_stat)(const census_stat *stat);
-  /* destroy a stats result object, as returned from get_stat(). */
-  (void) (*destroy_stats_result)(census_stat_result *result);
-  /* Reset a stats values. */
-  (void) (*reset_stat)(census_stat *stat);
-} census_stat;
+  /** Aggregation index in original view. Use as (e.g.)
+    census_view_aggregations(view)[index] to get the original
+    census_aggregation structure. */
+  size_t index;
+  /** Data as returned from the data() function for the relevant
+    aggregation descriptor. It is the user responsibility to cast this to the
+    correct type for the aggregation. */
+  void *data;
+} census_aggregation_data;
 
-gpr_int32 census_define_view(const census_tag_set *view);
+/** Holds all the aggregation data for a particular view instantiation. Forms
+  part of the data returned by census_get_view_data(). */
+typedef struct {
+  const census_tag_set *tags;          /* Tags for this set of aggregations */
+  size_t naggregations;                /* Number of aggregations in data. */
+  const census_aggregation_data *data; /* Aggregation data */
+} census_view_aggregation_data;
 
-gpr_int32 census_define_stat(gpr_int32 metric_id, gpr_int32 view_id,
-                             const census_stat *stat,
-                             const census_stat_create_arg *create_arg);
+/** Census view data as returned by census_get_view_data(). */
+typedef struct {
+  const census_view *view; /* Original view */
+  size_t n_tag_sets;       /* Number of unique tag sets that matched view. */
+  const census_view_aggregation_data *data; /* n_tag_sets entries */
+} census_view_data;
 
-census_stat_result *census_get_stat(gpr_int32 stat_id, gpr_int32 *nstats);
+/** Get data from aggregations associated with a view.
+  @param view_id View identifier returned from census_attach_view
+  @param aggregation_indices Indexes of aggregations (relative to original view)
+         for which to return current data. This parameter is ignored if
+         nindices == 0.
+  @param nindices. Number of entries in aggregation_indices. If this is set to
+         0, then all aggregations for the current view are returned.
+*/
+const census_view_data *census_get_view_data(gpr_int64 view_id,
+                                             size_t *aggregation_indices,
+                                             size_t nindices);
+
+/** Reset all view data to zero for the specified view id. */
+void census_reset_view_data(gpr_int64 view_id);
 
 #ifdef __cplusplus
 }
