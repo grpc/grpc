@@ -35,14 +35,18 @@
 #define GRPCXX_AUTH_METADATA_PROCESSOR_H_
 
 #include <map>
-#include <string>
 
 #include <grpc++/support/auth_context.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/string_ref.h>
 
 namespace grpc {
 
 class AuthMetadataProcessor {
  public:
+  typedef std::multimap<grpc::string_ref, grpc::string_ref> InputMetadata;
+  typedef std::multimap<grpc::string, grpc::string_ref> OutputMetadata;
+
   virtual ~AuthMetadataProcessor() {}
 
   // If this method returns true, the Process function will be scheduled in
@@ -54,11 +58,11 @@ class AuthMetadataProcessor {
   // from the passed-in auth_metadata.
   // consumed_auth_metadata needs to be filled with metadata that has been
   // consumed by the processor and will be removed from the call.
-  // Returns true if successful.
-  virtual bool Process(
-      const std::multimap<grpc::string, grpc::string>& auth_metadata,
-      AuthContext* context,
-      std::multimap<grpc::string, grpc::string>* consumed_auth_metadata) = 0;
+  // TODO(jboeuf).
+  virtual Status Process(const InputMetadata& auth_metadata,
+                         AuthContext* context,
+                         OutputMetadata* consumed_auth_metadata,
+                         OutputMetadata* response_metadata) = 0;
 };
 
 }  // namespace grpc

@@ -66,28 +66,40 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     grpc_auth_context* ctx,
     const grpc_metadata* md, size_t num_md,
     grpc_process_auth_metadata_done_cb cb, void* user_data) {
-  Metadata metadata;
+  AuthMetadataProcessor::InputMetadata metadata;
   for (size_t i = 0; i < num_md; i++) {
     metadata.insert(std::make_pair(
-        md[i].key, grpc::string(md[i].value, md[i].value_length)));
+        md[i].key, grpc::string_ref(md[i].value, md[i].value_length)));
   }
   SecureAuthContext context(ctx);
-  Metadata consumed_metadata;
-  bool ok = processor_->Process(metadata, &context, &consumed_metadata);
-  if (ok) {
-    std::vector<grpc_metadata> consumed_md(consumed_metadata.size());
-    for (const auto& entry : consumed_metadata) {
-      consumed_md.push_back({entry.first.c_str(),
-                             entry.second.data(),
-                             entry.second.size(),
-                             0,
-                             {{nullptr, nullptr, nullptr, nullptr}}});
-    }
-    cb(user_data, &consumed_md[0], consumed_md.size(), nullptr, 0,
-       GRPC_STATUS_OK, nullptr);
-  } else {
-    cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
+  AuthMetadataProcessor::OutputMetadata consumed_metadata;
+  AuthMetadataProcessor::OutputMetadata response_metadata;
+
+  Status status = processor_->Process(metadata, &context, &consumed_metadata,
+                                      &response_metadata);
+
+  std::vector<grpc_metadata> consumed_md(consumed_metadata.size());
+  for (auto it = consumed_metadata.begin(); it != consumed_metadata.end();
+       ++it) {
+    consumed_md.push_back({it->first.c_str(),
+                           it->second.data(),
+                           it->second.size(),
+                           0,
+                           {{nullptr, nullptr, nullptr, nullptr}}});
   }
+
+  std::vector<grpc_metadata> response_md(response_metadata.size());
+  for (auto it = response_metadata.begin(); it != response_metadata.end();
+       ++it) {
+    response_md.push_back({it->first.c_str(),
+                           it->second.data(),
+                           it->second.size(),
+                           0,
+                           {{nullptr, nullptr, nullptr, nullptr}}});
+  }
+  cb(user_data, &consumed_md[0], consumed_md.size(), &response_md[0],
+     response_md.size(), static_cast<grpc_status_code>(status.error_code()),
+     status.error_message().c_str());
 }
 
 int SecureServerCredentials::AddPortToServer(const grpc::string& addr,
