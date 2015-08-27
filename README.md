@@ -95,7 +95,7 @@ messages are delivered in the order they were sent.
 
 #Protocol
 
-The [gRPC protocol](examples/PROTOCOL-HTTP2.md) specifies the abstract requirements for communication between
+The [gRPC protocol](doc/PROTOCOL-HTTP2.md) specifies the abstract requirements for communication between
 clients and servers. A concrete embedding over HTTP/2 completes the picture by
 fleshing out the details of each of the required operations.
 
