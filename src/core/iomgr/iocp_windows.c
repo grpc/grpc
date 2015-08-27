@@ -127,7 +127,6 @@ static void iocp_loop(void *p) {
     grpc_maybe_call_delayed_callbacks(NULL, 1);
     do_iocp_work();
   }
-  gpr_log(GPR_DEBUG, "iocp_loop is done");
 
   gpr_event_set(&g_iocp_done, (void *)1);
 }
