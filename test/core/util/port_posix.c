@@ -198,13 +198,14 @@ int grpc_pick_unused_port(void) {
      races with other processes on kernels that want to reuse the same
      port numbers over and over. */
 
-  /* In alternating iterations we trial UDP ports before TCP ports UDP
+  /* In alternating iterations we try UDP ports before TCP ports UDP
      ports -- it could be the case that this machine has been using up
      UDP ports and they are scarcer. */
 
   /* Type of port to first pick in next iteration */
   int is_tcp = 1;
-  int trial = 0;
+  int try
+    = 0;
 
   char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
   if (env) {
@@ -217,10 +218,11 @@ int grpc_pick_unused_port(void) {
 
   for (;;) {
     int port;
-    trial++;
-    if (trial == 1) {
+    try
+      ++;
+    if (try == 1) {
       port = getpid() % (65536 - 30000) + 30000;
-    } else if (trial <= NUM_RANDOM_PORTS_TO_PICK) {
+    } else if (try <= NUM_RANDOM_PORTS_TO_PICK) {
       port = rand() % (65536 - 30000) + 30000;
     } else {
       port = 0;
@@ -237,7 +239,7 @@ int grpc_pick_unused_port(void) {
     GPR_ASSERT(port > 0);
     /* Check that the port # is free for the other type of socket also */
     if (!is_port_available(&port, !is_tcp)) {
-      /* In the next iteration trial to bind to the other type first
+      /* In the next iteration try to bind to the other type first
          because perhaps it is more rare. */
       is_tcp = !is_tcp;
       continue;

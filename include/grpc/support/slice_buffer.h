@@ -86,8 +86,6 @@ void gpr_slice_buffer_reset_and_unref(gpr_slice_buffer *sb);
 void gpr_slice_buffer_swap(gpr_slice_buffer *a, gpr_slice_buffer *b);
 /* move all of the elements of src into dst */
 void gpr_slice_buffer_move_into(gpr_slice_buffer *src, gpr_slice_buffer *dst);
-/* remove n bytes from the end of a slice buffer */
-void gpr_slice_buffer_trim_end(gpr_slice_buffer *src, size_t n);
 
 #ifdef __cplusplus
 }
