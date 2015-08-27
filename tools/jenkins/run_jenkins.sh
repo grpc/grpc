@@ -89,6 +89,9 @@ then
     bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_jenkins.sh || DOCKER_FAILED="true"
 
   DOCKER_CID=`cat docker.cid`
+  # forcefully kill the instance if it's still running, otherwise
+  # continue 
+  # (failure to kill something that's already dead => things are dead)
   docker kill $DOCKER_CID || true
   docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
   # TODO(ctiller): why?

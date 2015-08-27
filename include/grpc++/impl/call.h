@@ -54,8 +54,9 @@ namespace grpc {
 class ByteBuffer;
 class Call;
 
-void FillMetadataMap(grpc_metadata_array* arr,
-                     std::multimap<grpc::string, grpc::string>* metadata);
+void FillMetadataMap(
+    grpc_metadata_array* arr,
+    std::multimap<grpc::string_ref, grpc::string_ref>* metadata);
 grpc_metadata* FillMetadataArray(
     const std::multimap<grpc::string, grpc::string>& metadata);
 
@@ -418,7 +419,7 @@ class CallOpRecvInitialMetadata {
   }
 
  private:
-  std::multimap<grpc::string, grpc::string>* recv_initial_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref>* recv_initial_metadata_;
   grpc_metadata_array recv_initial_metadata_arr_;
 };
 
@@ -461,7 +462,7 @@ class CallOpClientRecvStatus {
   }
 
  private:
-  std::multimap<grpc::string, grpc::string>* recv_trailing_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref>* recv_trailing_metadata_;
   Status* recv_status_;
   grpc_metadata_array recv_trailing_metadata_arr_;
   grpc_status_code status_code_;

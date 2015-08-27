@@ -104,7 +104,7 @@ describe('Server.prototype.addProtoService', function() {
     server = new grpc.Server();
   });
   afterEach(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   it('Should succeed with a single service', function() {
     assert.doesNotThrow(function() {
@@ -148,7 +148,7 @@ describe('Client#$waitForReady', function() {
     client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   it('should complete when called alone', function(done) {
     client.$waitForReady(Infinity, function(error) {
@@ -203,7 +203,7 @@ describe('Echo service', function() {
     server.start();
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   it('should echo the recieved message directly', function(done) {
     client.echo({value: 'test value', value2: 3}, function(error, response) {
@@ -248,7 +248,7 @@ describe('Generic client and server', function() {
                           grpc.Credentials.createInsecure());
     });
     after(function() {
-      server.shutdown();
+      server.forceShutdown();
     });
     it('Should respond with a capitalized string', function(done) {
       client.capitalize('abc', function(err, response) {
@@ -296,7 +296,7 @@ describe('Echo metadata', function() {
     server.start();
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   it('with unary call', function(done) {
     var call = client.unary({}, function(err, data) {
@@ -419,7 +419,7 @@ describe('Other conditions', function() {
     server.start();
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   it('channel.getTarget should be available', function() {
     assert.strictEqual(typeof client.channel.getTarget(), 'string');
@@ -681,7 +681,7 @@ describe('Other conditions', function() {
     });
     afterEach(function() {
       console.log('Shutting down server');
-      proxy.shutdown();
+      proxy.forceShutdown();
     });
     describe('Cancellation', function() {
       it('With a unary call', function(done) {
@@ -847,7 +847,7 @@ describe('Cancelling surface client', function() {
     server.start();
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   it('Should correctly cancel a unary call', function(done) {
     var call = client.div({'divisor': 0, 'dividend': 0}, function(err, resp) {

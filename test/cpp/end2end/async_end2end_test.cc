@@ -50,6 +50,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/echo.grpc.pb.h"
+#include "test/cpp/util/string_ref_helper.h"
 
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/iomgr/pollset_posix.h"
@@ -484,8 +485,10 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
   Verifier(GetParam()).Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   auto client_initial_metadata = srv_ctx.client_metadata();
-  EXPECT_EQ(meta1.second, client_initial_metadata.find(meta1.first)->second);
-  EXPECT_EQ(meta2.second, client_initial_metadata.find(meta2.first)->second);
+  EXPECT_EQ(meta1.second,
+            ToString(client_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second,
+            ToString(client_initial_metadata.find(meta2.first)->second));
   EXPECT_GE(client_initial_metadata.size(), static_cast<size_t>(2));
 
   send_response.set_message(recv_request.message());
@@ -532,8 +535,10 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   response_reader->ReadInitialMetadata(tag(4));
   Verifier(GetParam()).Expect(4, true).Verify(cq_.get());
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta1.second, server_initial_metadata.find(meta1.first)->second);
-  EXPECT_EQ(meta2.second, server_initial_metadata.find(meta2.first)->second);
+  EXPECT_EQ(meta1.second,
+            ToString(server_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second,
+            ToString(server_initial_metadata.find(meta2.first)->second));
   EXPECT_EQ(static_cast<size_t>(2), server_initial_metadata.size());
 
   send_response.set_message(recv_request.message());
@@ -586,8 +591,10 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
   auto server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
-  EXPECT_EQ(meta1.second, server_trailing_metadata.find(meta1.first)->second);
-  EXPECT_EQ(meta2.second, server_trailing_metadata.find(meta2.first)->second);
+  EXPECT_EQ(meta1.second,
+            ToString(server_trailing_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second,
+            ToString(server_trailing_metadata.find(meta2.first)->second));
   EXPECT_EQ(static_cast<size_t>(2), server_trailing_metadata.size());
 }
 
@@ -631,8 +638,10 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   Verifier(GetParam()).Expect(2, true).Verify(cq_.get());
   EXPECT_EQ(send_request.message(), recv_request.message());
   auto client_initial_metadata = srv_ctx.client_metadata();
-  EXPECT_EQ(meta1.second, client_initial_metadata.find(meta1.first)->second);
-  EXPECT_EQ(meta2.second, client_initial_metadata.find(meta2.first)->second);
+  EXPECT_EQ(meta1.second,
+            ToString(client_initial_metadata.find(meta1.first)->second));
+  EXPECT_EQ(meta2.second,
+            ToString(client_initial_metadata.find(meta2.first)->second));
   EXPECT_GE(client_initial_metadata.size(), static_cast<size_t>(2));
 
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
@@ -642,8 +651,10 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   response_reader->ReadInitialMetadata(tag(4));
   Verifier(GetParam()).Expect(4, true).Verify(cq_.get());
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
-  EXPECT_EQ(meta3.second, server_initial_metadata.find(meta3.first)->second);
-  EXPECT_EQ(meta4.second, server_initial_metadata.find(meta4.first)->second);
+  EXPECT_EQ(meta3.second,
+            ToString(server_initial_metadata.find(meta3.first)->second));
+  EXPECT_EQ(meta4.second,
+            ToString(server_initial_metadata.find(meta4.first)->second));
   EXPECT_GE(server_initial_metadata.size(), static_cast<size_t>(2));
 
   send_response.set_message(recv_request.message());
@@ -658,8 +669,10 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   EXPECT_EQ(send_response.message(), recv_response.message());
   EXPECT_TRUE(recv_status.ok());
   auto server_trailing_metadata = cli_ctx.GetServerTrailingMetadata();
-  EXPECT_EQ(meta5.second, server_trailing_metadata.find(meta5.first)->second);
-  EXPECT_EQ(meta6.second, server_trailing_metadata.find(meta6.first)->second);
+  EXPECT_EQ(meta5.second,
+            ToString(server_trailing_metadata.find(meta5.first)->second));
+  EXPECT_EQ(meta6.second,
+            ToString(server_trailing_metadata.find(meta6.first)->second));
   EXPECT_GE(server_trailing_metadata.size(), static_cast<size_t>(2));
 }
 

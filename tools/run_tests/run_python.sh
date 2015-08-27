@@ -45,6 +45,8 @@ source "python"$PYVER"_virtual_environment"/bin/activate
 # py.test (or find another tool or *something*) that's acceptable to the rest of
 # the team...
 "python"$PYVER -m grpc_test._core_over_links_base_interface_test
+"python"$PYVER -m grpc_test._crust_over_core_over_links_face_interface_test
+"python"$PYVER -m grpc_test.framework._crust_over_core_face_interface_test
 "python"$PYVER -m grpc_test.framework.core._base_interface_test
 
-"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml"
+"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml --timeout=300"

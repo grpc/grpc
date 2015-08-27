@@ -37,6 +37,7 @@ from grpc.framework.interfaces.face import face
 from grpc_test.framework.common import test_constants
 from grpc_test.framework.common import test_control
 from grpc_test.framework.common import test_coverage
+from grpc_test.framework.interfaces.face import _3069_test_constant
 from grpc_test.framework.interfaces.face import _digest
 from grpc_test.framework.interfaces.face import _stock_service
 from grpc_test.framework.interfaces.face import test_interfaces  # pylint: disable=unused-import
@@ -170,7 +171,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
         with self._control.pause(), self.assertRaises(
             face.ExpirationError):
           self._invoker.blocking(group, method)(
-              request, test_constants.SHORT_TIMEOUT)
+              request, _3069_test_constant.REALLY_SHORT_TIMEOUT)
 
   def testExpiredUnaryRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
@@ -181,7 +182,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
         with self._control.pause(), self.assertRaises(
             face.ExpirationError):
           response_iterator = self._invoker.blocking(group, method)(
-              request, test_constants.SHORT_TIMEOUT)
+              request, _3069_test_constant.REALLY_SHORT_TIMEOUT)
           list(response_iterator)
 
   def testExpiredStreamRequestUnaryResponse(self):
@@ -193,7 +194,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
         with self._control.pause(), self.assertRaises(
             face.ExpirationError):
           self._invoker.blocking(group, method)(
-              iter(requests), test_constants.SHORT_TIMEOUT)
+              iter(requests), _3069_test_constant.REALLY_SHORT_TIMEOUT)
 
   def testExpiredStreamRequestStreamResponse(self):
     for (group, method), test_messages_sequence in (
@@ -204,7 +205,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
         with self._control.pause(), self.assertRaises(
             face.ExpirationError):
           response_iterator = self._invoker.blocking(group, method)(
-              iter(requests), test_constants.SHORT_TIMEOUT)
+              iter(requests), _3069_test_constant.REALLY_SHORT_TIMEOUT)
           list(response_iterator)
 
   def testFailedUnaryRequestUnaryResponse(self):
