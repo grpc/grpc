@@ -89,16 +89,18 @@ typedef struct {
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair. */
 grpc_credentials *grpc_ssl_credentials_create(
-    const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair);
+    const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
+    void *reserved);
 
 /* Creates a composite credentials object. */
 grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
-                                                    grpc_credentials *creds2);
+                                                    grpc_credentials *creds2,
+                                                    void *reserved);
 
 /* Creates a compute engine credentials object.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. */
-grpc_credentials *grpc_compute_engine_credentials_create(void);
+grpc_credentials *grpc_compute_engine_credentials_create(void *reserved);
 
 extern const gpr_timespec grpc_max_auth_token_lifetime;
 
@@ -112,7 +114,8 @@ extern const gpr_timespec grpc_max_auth_token_lifetime;
      account credentials.  It should not exceed grpc_max_auth_token_lifetime
      or will be cropped to this value.  */
 grpc_credentials *grpc_service_account_credentials_create(
-    const char *json_key, const char *scope, gpr_timespec token_lifetime);
+    const char *json_key, const char *scope, gpr_timespec token_lifetime,
+    void *reserved);
 
 /* Creates a JWT credentials object. May return NULL if the input is invalid.
    - json_key is the JSON key string containing the client's private key.
@@ -120,7 +123,7 @@ grpc_credentials *grpc_service_account_credentials_create(
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
      will be cropped to this value.  */
 grpc_credentials *grpc_service_account_jwt_access_credentials_create(
-    const char *json_key, gpr_timespec token_lifetime);
+    const char *json_key, gpr_timespec token_lifetime, void *reserved);
 
 /* Creates an Oauth2 Refresh Token credentials object. May return NULL if the
    input is invalid.
@@ -129,23 +132,25 @@ grpc_credentials *grpc_service_account_jwt_access_credentials_create(
    - json_refresh_token is the JSON string containing the refresh token itself
      along with a client_id and client_secret. */
 grpc_credentials *grpc_refresh_token_credentials_create(
-    const char *json_refresh_token);
+    const char *json_refresh_token, void *reserved);
 
 /* Creates an Oauth2 Access Token credentials with an access token that was
    aquired by an out of band mechanism. */
 grpc_credentials *grpc_access_token_credentials_create(
-    const char *access_token);
+    const char *access_token, void *reserved);
 
 /* Creates an IAM credentials object. */
 grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
-                                              const char *authority_selector);
+                                              const char *authority_selector,
+                                              void *reserved);
 
 /* --- Secure channel creation. --- */
 
 /* Creates a secure channel using the passed-in credentials. */
 grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
                                          const char *target,
-                                         const grpc_channel_args *args);
+                                         const grpc_channel_args *args,
+                                         void *reserved);
 
 /* --- grpc_server_credentials object. ---
 
@@ -171,7 +176,7 @@ void grpc_server_credentials_release(grpc_server_credentials *creds);
      NULL. */
 grpc_server_credentials *grpc_ssl_server_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-    size_t num_key_cert_pairs, int force_client_auth);
+    size_t num_key_cert_pairs, int force_client_auth, void *reserved);
 
 /* --- Server-side secure ports. --- */
 
