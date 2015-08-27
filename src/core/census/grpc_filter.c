@@ -37,7 +37,6 @@
 #include <string.h>
 
 #include "include/grpc/census.h"
-#include "src/core/census/rpc_stat_id.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/noop_filter.h"
 #include "src/core/statistics/census_interface.h"
@@ -173,25 +172,15 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 }
 
 const grpc_channel_filter grpc_client_census_filter = {
-    client_start_transport_op,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    client_init_call_elem,
-    client_destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    grpc_call_next_get_peer,
-    "census-client"};
+    client_start_transport_op, grpc_channel_next_op,
+    sizeof(call_data),         client_init_call_elem,
+    client_destroy_call_elem,  sizeof(channel_data),
+    init_channel_elem,         destroy_channel_elem,
+    grpc_call_next_get_peer,   "census-client"};
 
 const grpc_channel_filter grpc_server_census_filter = {
-    server_start_transport_op,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    server_init_call_elem,
-    server_destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    grpc_call_next_get_peer,
-    "census-server"};
+    server_start_transport_op, grpc_channel_next_op,
+    sizeof(call_data),         server_init_call_elem,
+    server_destroy_call_elem,  sizeof(channel_data),
+    init_channel_elem,         destroy_channel_elem,
+    grpc_call_next_get_peer,   "census-server"};
