@@ -39,6 +39,9 @@ var _ = require('lodash');
 var grpc = require('..');
 var testProto = grpc.load(__dirname + '/test.proto').grpc.testing;
 
+var ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
+var ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
+
 /**
  * Create a buffer filled with size zeroes
  * @param {number} size The length of the buffer
@@ -51,6 +54,34 @@ function zeroBuffer(size) {
 }
 
 /**
+ * Echos a header metadata item as specified in the interop spec.
+ * @param {Call} call The call to echo metadata on
+ */
+function echoHeader(call) {
+  var echo_initial = call.metadata.get(ECHO_INITIAL_KEY);
+  if (echo_initial.length > 0) {
+    var response_metadata = new grpc.Metadata();
+    response_metadata.set(ECHO_INITIAL_KEY, echo_initial[0]);
+    call.sendMetadata(response_metadata);
+  }
+}
+
+/**
+ * Gets the trailer metadata that should be echoed when the call is done,
+ * as specified in the interop spec.
+ * @param {Call} call The call to get metadata from
+ * @return {grpc.Metadata} The metadata to send as a trailer
+ */
+function getEchoTrailer(call) {
+  var echo_trailer = call.metadata.get(ECHO_TRAILING_KEY);
+  var response_trailer = new grpc.Metadata();
+  if (echo_trailer.length > 0) {
+    response_trailer.set(ECHO_TRAILING_KEY, echo_trailer[0]);
+  }
+  return response_trailer;
+}
+
+/**
  * Respond to an empty parameter with an empty response.
  * NOTE: this currently does not work due to issue #137
  * @param {Call} call Call to handle
@@ -58,7 +89,8 @@ function zeroBuffer(size) {
  *     or error
  */
 function handleEmpty(call, callback) {
-  callback(null, {});
+  echoHeader(call);
+  callback(null, {}, getEchoTrailer(call));
 }
 
 /**
@@ -68,6 +100,7 @@ function handleEmpty(call, callback) {
  *     error
  */
 function handleUnary(call, callback) {
+  echoHeader(call);
   var req = call.request;
   var zeros = zeroBuffer(req.response_size);
   var payload_type = req.response_type;
@@ -75,7 +108,8 @@ function handleUnary(call, callback) {
     payload_type = ['COMPRESSABLE',
                     'UNCOMPRESSABLE'][Math.random() < 0.5 ? 0 : 1];
   }
-  callback(null, {payload: {type: payload_type, body: zeros}});
+  callback(null, {payload: {type: payload_type, body: zeros}},
+           getEchoTrailer(call));
 }
 
 /**
@@ -85,12 +119,14 @@ function handleUnary(call, callback) {
  *     error
  */
 function handleStreamingInput(call, callback) {
+  echoHeader(call);
   var aggregate_size = 0;
   call.on('data', function(value) {
     aggregate_size += value.payload.body.length;
   });
   call.on('end', function() {
-    callback(null, {aggregated_payload_size: aggregate_size});
+    callback(null, {aggregated_payload_size: aggregate_size},
+             getEchoTrailer(call));
   });
 }
 
@@ -99,6 +135,7 @@ function handleStreamingInput(call, callback) {
  * @param {Call} call Call to handle
  */
 function handleStreamingOutput(call) {
+  echoHeader(call);
   var req = call.request;
   var payload_type = req.response_type;
   if (payload_type === 'RANDOM') {
@@ -113,7 +150,7 @@ function handleStreamingOutput(call) {
       }
     });
   });
-  call.end();
+  call.end(getEchoTrailer(call));
 }
 
 /**
@@ -122,6 +159,7 @@ function handleStreamingOutput(call) {
  * @param {Call} call Call to handle
  */
 function handleFullDuplex(call) {
+  echoHeader(call);
   call.on('data', function(value) {
     var payload_type = value.response_type;
     if (payload_type === 'RANDOM') {
@@ -138,7 +176,7 @@ function handleFullDuplex(call) {
     });
   });
   call.on('end', function() {
-    call.end();
+    call.end(getEchoTrailer(call));
   });
 }
 
