@@ -214,6 +214,8 @@ typedef struct {
   grpc_chttp2_hpack_compressor hpack_compressor;
   /** is this a client? */
   gpr_uint8 is_client;
+  /** callback for when writing is done */
+  grpc_iomgr_closure done_cb;
 } grpc_chttp2_transport_writing;
 
 struct grpc_chttp2_transport_parsing {
@@ -329,8 +331,11 @@ struct grpc_chttp2_transport {
 
   /** closure to execute writing */
   grpc_iomgr_closure writing_action;
-  /** closure to start reading from the endpoint */
-  grpc_iomgr_closure reading_action;
+  /** closure to finish reading from the endpoint */
+  grpc_iomgr_closure recv_data;
+
+  /** incoming read bytes */
+  gpr_slice_buffer read_buffer;
 
   /** address to place a newly accepted stream - set and unset by
       grpc_chttp2_parsing_accept_stream; used by init_stream to
@@ -463,8 +468,7 @@ int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_global *global,
                                        grpc_chttp2_transport_writing *writing);
 void grpc_chttp2_perform_writes(
     grpc_chttp2_transport_writing *transport_writing, grpc_endpoint *endpoint);
-void grpc_chttp2_terminate_writing(
-    grpc_chttp2_transport_writing *transport_writing, int success);
+void grpc_chttp2_terminate_writing(void *transport_writing, int success);
 void grpc_chttp2_cleanup_writing(grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_writing *writing);
 

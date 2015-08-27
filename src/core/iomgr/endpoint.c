@@ -33,17 +33,16 @@
 
 #include "src/core/iomgr/endpoint.h"
 
-void grpc_endpoint_notify_on_read(grpc_endpoint *ep, grpc_endpoint_read_cb cb,
-                                  void *user_data) {
-  ep->vtable->notify_on_read(ep, cb, user_data);
+grpc_endpoint_op_status grpc_endpoint_read(grpc_endpoint *ep,
+                                           gpr_slice_buffer *slices,
+                                           grpc_iomgr_closure *cb) {
+  return ep->vtable->read(ep, slices, cb);
 }
 
-grpc_endpoint_write_status grpc_endpoint_write(grpc_endpoint *ep,
-                                               gpr_slice *slices,
-                                               size_t nslices,
-                                               grpc_endpoint_write_cb cb,
-                                               void *user_data) {
-  return ep->vtable->write(ep, slices, nslices, cb, user_data);
+grpc_endpoint_op_status grpc_endpoint_write(grpc_endpoint *ep,
+                                            gpr_slice_buffer *slices,
+                                            grpc_iomgr_closure *cb) {
+  return ep->vtable->write(ep, slices, cb);
 }
 
 void grpc_endpoint_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset) {
