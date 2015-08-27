@@ -159,7 +159,7 @@ int census_tag_set_next(census_tag_set_iterator *it, census_tag_const *tag);
    invalidated, and should not be used once close is called. */
 void census_tag_set_close(census_tag_set_iterator *it);
 
-/* Core stats collection API's. There following concepts are used:
+/* Core stats collection API's. The following concepts are used:
    * Aggregation: A collection of values. Census supports the following
        aggregation types:
          Scalar - a single scalar value. Typically used for keeping (e.g.)
@@ -174,18 +174,18 @@ void census_tag_set_close(census_tag_set_iterator *it);
    * Metric: Each measurement is for a single metric. Examples include RPC
      latency, CPU seconds consumed, and bytes transmitted.
    * View: A view is a tag set, in which the tag values are regular expressions,
-     combined with an arbitrary number of aggregations and their initialization
-     parameters.
+     combined with a metric and an arbitrary number of aggregations and their
+     initialization parameters.
 
    Each metric can have an arbitrary number of views by which it will be
    broken down. For every measurement recorded, they are broken down by
-   unique tag combinations, and recorded in each matvhing view/aggregation.
+   unique tag combinations, and recorded in each matching view/aggregation.
 */
 
 /* A single value to be recorded comprises two parts: an ID for the particular
  * metric and the value to be recorded against it. */
 typedef struct {
-  gpr_int32 metric_id;
+  gpr_uint32 metric_id;
   double value;
 } census_value;
 
@@ -210,25 +210,30 @@ typedef struct {
   void (*free_data)(const void *data);
   /* Reset an aggregation to default (zero) values. */
   void (*reset)(void *aggregation);
+  /* Merge 'from' aggregation into 'to'. Both aggregations must be compatible */
+  void (*merge)(void *to, const void *from);
+  /* Fill buffer with printable string version of aggregation contents. For
+   * debugging only. */
+  void (*print)(const void *aggregation, char *buffer, size_t n);
 } census_aggregation_descriptor;
 
 /** Register a new aggregation type.
   @param descriptor Describes aggregation
   @return An identifier that can be used to identify the aggregation in other
   census functions. */
-gpr_int32 census_register_aggregation(
+gpr_uint32 census_register_aggregation(
     const census_aggregation_descriptor *descriptor);
 
 /* Aggregation Identifiers for built-in census aggregations. */
-#define CENSUS_AGGREGATION_ID_SCALAR ((gpr_int32)0)
-#define CENSUS_AGGREGATION_ID_DISTRIBUTION ((gpr_int32)1)
-#define CENSUS_AGGREGATION_ID_HISTOGRAM ((gpr_int32)2)
-#define CENSUS_AGGREGATION_ID_WINDOW ((gpr_int32)3)
+#define CENSUS_AGGREGATION_ID_SCALAR ((gpr_uint32)0)
+#define CENSUS_AGGREGATION_ID_DISTRIBUTION ((gpr_uint32)1)
+#define CENSUS_AGGREGATION_ID_HISTOGRAM ((gpr_uint32)2)
+#define CENSUS_AGGREGATION_ID_WINDOW ((gpr_uint32)3)
 
 /** Information needed to instantiate a new aggregation. Used in view
     construction via census_define_view(). */
 typedef struct {
-  gpr_int32 id; /* aggregation ID */
+  gpr_uint32 id; /* aggregation ID */
   const void
       *create_arg; /* Argument to be used for aggregation initialization. */
 } census_aggregation;
@@ -237,15 +242,20 @@ typedef struct {
 typedef struct census_view census_view;
 
 /** Create a new view.
+  @param metric_id Metric with which this view is associated.
   @param tags tags that define the view
   @param aggregations aggregations to associate with the view
   @param naggregations number of aggregations
 
   @return A new census view
 */
-const census_view *census_define_view(const census_tag_set *tags,
+const census_view *census_define_view(gpr_uint32 metric_id,
+                                      const census_tag_set *tags,
                                       const census_aggregation *aggregations,
                                       size_t naggregations);
+
+/** Metric ID associated with a view */
+size_t census_view_metric(const census_view *view);
 
 /** Number of aggregations associated with view. */
 size_t census_view_naggregations(const census_view *view);
@@ -255,15 +265,6 @@ const census_tag_set *census_view_tags(const census_view *view);
 
 /** Get aggregations associated with a view. */
 const census_aggregation *census_view_aggregrations(const census_view *view);
-
-/** Associate a given view with a metric. Every metric can have many different
-    views.
-  @param metric_id Identifier of metric with which to attah the view
-  @param view View to attach to the metric
-  @return A view identifier: can be used to retrieve aggregation data from
-    the view using census_view_data().
-*/
-gpr_int64 census_attach_view(gpr_int32 metric_id, const census_view *view);
 
 /** Holds aggregation data, as it applies to a particular view. This structure
   is used as one component of the data returned from census_get_view_data(). */
@@ -288,25 +289,23 @@ typedef struct {
 
 /** Census view data as returned by census_get_view_data(). */
 typedef struct {
-  const census_view *view; /* Original view */
-  size_t n_tag_sets;       /* Number of unique tag sets that matched view. */
+  size_t n_tag_sets; /* Number of unique tag sets that matched view. */
   const census_view_aggregation_data *data; /* n_tag_sets entries */
 } census_view_data;
 
 /** Get data from aggregations associated with a view.
-  @param view_id View identifier returned from census_attach_view
-  @param aggregation_indices Indexes of aggregations (relative to original view)
-         for which to return current data. This parameter is ignored if
-         nindices == 0.
+  @param view View from which to get data.
+  @param aggregation_indices Indexes of view aggregations for which to return
+         current data. This parameter is ignored if nindices == 0.
   @param nindices. Number of entries in aggregation_indices. If this is set to
-         0, then all aggregations for the current view are returned.
+         0, then all aggregations are returned.
 */
-const census_view_data *census_get_view_data(gpr_int64 view_id,
+const census_view_data *census_get_view_data(census_view *view,
                                              size_t *aggregation_indices,
                                              size_t nindices);
 
 /** Reset all view data to zero for the specified view id. */
-void census_reset_view_data(gpr_int64 view_id);
+void census_reset_view_data(gpr_uint64 view_id);
 
 #ifdef __cplusplus
 }
