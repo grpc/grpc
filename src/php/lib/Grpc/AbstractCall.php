@@ -92,20 +92,4 @@ abstract class AbstractCall {
     }
     return call_user_func($this->deserialize, $value);
   }
-
-  /**
-   * Get the list of Grpc Write Flags
-   * @param array $options an array of options
-   * @return The list of Grpc Write Flags contained in the input
-   */
-  protected static function getGrpcWriteFlags($options) {
-    $grpc_write_flags = [];
-    foreach ([WRITE_BUFFER_HINT,
-              WRITE_NO_COMPRESS] as $flag) {
-      if (in_array($flag, $options)) {
-        $grpc_write_flags[] = $flag;
-      }
-    }
-    return $grpc_write_flags;
-  }
 }

@@ -42,12 +42,13 @@ class UnaryCall extends AbstractCall {
    * Start the call
    * @param $data The data to send
    * @param array $metadata Metadata to send with the call, if applicable
-   * @param array $options an array of options
+   * @param array $options an array of options, possible keys:
+   *              'flags' => a number
    */
   public function start($data, $metadata = array(), $options = array()) {
     $message_array = ['message' => $data->serialize()];
-    if ($grpc_write_flags = self::getGrpcWriteFlags($options)) {
-      $message_array['flags'] = $grpc_write_flags;
+    if (isset($options['flags'])) {
+      $message_array['flags'] = $options['flags'];
     }
     $event = $this->call->startBatch([
         OP_SEND_INITIAL_METADATA => $metadata,
