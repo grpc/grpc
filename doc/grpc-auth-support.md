@@ -264,7 +264,7 @@ call.requestMetadata[@"Authorization"] = [@"Bearer " stringByAppendingString:acc
 [call start];
 ```
 
-You can see a working example app, with a more detailed explanation, [here](https://github.com/grpc/grpc-common/tree/master/objective-c/auth_sample).
+You can see a working example app, with a more detailed explanation, [here](examples/objective-c/auth_sample).
 
 ### Authenticating with Google (Python)
 ```python

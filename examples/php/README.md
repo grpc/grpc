@@ -18,13 +18,13 @@ INSTALL
  - Clone this repository
 
    ```sh
-   $ git clone https://github.com/grpc/grpc-common.git
+   $ git clone https://github.com/grpc/grpc.git
    ```
 
  - Install composer
 
    ```
-   $ cd grpc-common/php
+   $ cd examples/php
    $ curl -sS https://getcomposer.org/installer | php
    $ php composer.phar install
    ```
@@ -36,14 +36,14 @@ TRY IT!
 
    Please follow the instruction in [Node][] to run the server
    ```
-   $ cd grpc-common/node
+   $ cd examples/node
    $ nodejs greeter_server.js
    ```
 
  - Run the client
 
    ```
-   $ cd grpc-common/php
+   $ cd examples/php
    $ ./run_greeter_client.sh
    ```
 
@@ -61,4 +61,4 @@ Coming soon
 [homebrew]:http://brew.sh
 [linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
-[Node]:https://github.com/grpc/grpc-common/tree/master/node
+[Node]:https://github.com/grpc/grpc/tree/master/examples/node

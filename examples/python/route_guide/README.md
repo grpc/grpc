@@ -6,7 +6,7 @@ This tutorial provides a basic Python programmer's introduction to working with 
 - Generate server and client code using the protocol buffer compiler.
 - Use the Python gRPC API to write a simple client and server for your service.
 
-It assumes that you have read the [Getting started](https://github.com/grpc/grpc-common) guide and are familiar with [protocol buffers] (https://developers.google.com/protocol-buffers/docs/overview). Note that the example in this tutorial uses the proto3 version of the protocol buffers language, which is currently in alpha release:you can find out more in the [proto3 language guide](https://developers.google.com/protocol-buffers/docs/proto3) and see the [release notes](https://github.com/google/protobuf/releases) for the new version in the protocol buffers Github repository.
+It assumes that you have read the [Getting started](https://github.com/grpc/grpc/tree/master/examples) guide and are familiar with [protocol buffers] (https://developers.google.com/protocol-buffers/docs/overview). Note that the example in this tutorial uses the proto3 version of the protocol buffers language, which is currently in alpha release:you can find out more in the [proto3 language guide](https://developers.google.com/protocol-buffers/docs/proto3) and see the [release notes](https://github.com/google/protobuf/releases) for the new version in the protocol buffers Github repository.
 
 This isn't a comprehensive guide to using gRPC in Python: more reference documentation is coming soon.
 
@@ -19,21 +19,21 @@ With gRPC you can define your service once in a .proto file and implement client
 
 ## Example code and setup
 
-The example code for this tutorial is in [grpc/grpc-common/python/route_guide](https://github.com/grpc/grpc-common/tree/master/python/route_guide). To download the example, clone the `grpc-common` repository by running the following command:
+The example code for this tutorial is in [examples/python/route_guide](examples/python/route_guide). To download the example, clone this repository by running the following command:
 ```shell
-$ git clone https://github.com/grpc/grpc-common.git
+$ git clone https://github.com/grpc/grpc.git
 ```
 
-Then change your current directory to `grpc-common/python/route_guide`:
+Then change your current directory to `examples/python/route_guide`:
 ```shell
-$ cd grpc-common/python/route_guide
+$ cd examples/python/route_guide
 ```
 
-You also should have the relevant tools installed to generate the server and client interface code - if you don't already, follow the setup instructions in [the Python quick start guide](https://github.com/grpc/grpc-common/tree/master/python).
+You also should have the relevant tools installed to generate the server and client interface code - if you don't already, follow the setup instructions in [the Python quick start guide](examples/python).
 
 ## Defining the service
 
-Your first step (as you'll know from [Getting started](https://github.com/grpc/grpc-common)) is to define the gRPC *service* and the method *request* and *response* types using [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file in [`grpc-common/protos/route_guide.proto`](https://github.com/grpc/grpc-common/blob/master/protos/route_guide.proto).
+Your first step (as you'll know from [Getting started](https://github.com/grpc/grpc/tree/master/examples)) is to define the gRPC *service* and the method *request* and *response* types using [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file in [`examples/protos/route_guide.proto`](examples/protos/route_guide.proto).
 
 To define a service, you specify a named `service` in your .proto file:
 
@@ -115,7 +115,7 @@ Creating and running a `RouteGuide` server breaks down into two work items:
 - Implementing the servicer interface generated from our service definition with functions that perform the actual "work" of the service.
 - Running a gRPC server to listen for requests from clients and transmit responses.
 
-You can find the example `RouteGuide` server in [grpc-common/python/route_guide/route_guide_server.py](https://github.com/grpc/grpc-common/blob/master/python/route_guide/route_guide_server.py).
+You can find the example `RouteGuide` server in [examples/python/route_guide/route_guide_server.py](examples/python/route_guide/route_guide_server.py).
 
 ### Implementing RouteGuide
 
@@ -222,7 +222,7 @@ Because `start()` does not block you may need to sleep-loop if there is nothing 
 <a name="client"></a>
 ## Creating the client
 
-You can see the complete example client code in [grpc-common/python/route_guide/route_guide_client.py](https://github.com/grpc/grpc-common/blob/master/python/route_guide/route_guide_client.py).
+You can see the complete example client code in [examples/python/route_guide/route_guide_client.py](examples/python/route_guide/route_guide_client.py).
 
 ### Creating a stub
 
