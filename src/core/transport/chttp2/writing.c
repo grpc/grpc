@@ -114,6 +114,10 @@ int grpc_chttp2_unlocking_check_writes(
 
     if (!stream_global->read_closed &&
         stream_global->unannounced_incoming_window > 0) {
+      GPR_ASSERT(stream_writing->announce_window == 0);
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "write", transport_writing, stream_writing, announce_window,
+          stream_global->unannounced_incoming_window);
       stream_writing->announce_window =
           stream_global->unannounced_incoming_window;
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
@@ -198,6 +202,9 @@ static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
           &transport_writing->outbuf,
           grpc_chttp2_window_update_create(stream_writing->id,
                                            stream_writing->announce_window));
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "write", transport_writing, stream_writing, announce_window,
+          -(gpr_int64)stream_writing->announce_window);
       stream_writing->announce_window = 0;
     }
     if (stream_writing->send_closed == GRPC_SEND_CLOSED_WITH_RST_STREAM) {
