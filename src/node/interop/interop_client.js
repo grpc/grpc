@@ -49,6 +49,9 @@ var AUTH_USER = ('155450119199-3psnrh1sdr3d8cpj1v46naggf81mhdnk' +
 var COMPUTE_ENGINE_USER = ('155450119199-r5aaqa2vqoa9g5mv2m6s3m1l293rlmel' +
     '@developer.gserviceaccount.com');
 
+var ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
+var ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
+
 /**
  * Create a buffer filled with size zeroes
  * @param {number} size The length of the buffer
@@ -58,6 +61,27 @@ function zeroBuffer(size) {
   var zeros = new Buffer(size);
   zeros.fill(0);
   return zeros;
+}
+
+/**
+ * This is used for testing functions with multiple asynchronous calls that
+ * can happen in different orders. This should be passed the number of async
+ * function invocations that can occur last, and each of those should call this
+ * function's return value
+ * @param {function()} done The function that should be called when a test is
+ *     complete.
+ * @param {number} count The number of calls to the resulting function if the
+ *     test passes.
+ * @return {function()} The function that should be called at the end of each
+ *     sequence of asynchronous functions.
+ */
+function multiDone(done, count) {
+  return function() {
+    count -= 1;
+    if (count <= 0) {
+      done();
+    }
+  };
 }
 
 /**
@@ -271,6 +295,54 @@ function timeoutOnSleepingServer(client, done) {
   });
 }
 
+function customMetadata(client, done) {
+  done = multiDone(done, 5);
+  var metadata = new grpc.Metadata();
+  metadata.set(ECHO_INITIAL_KEY, 'test_initial_metadata_value');
+  metadata.set(ECHO_TRAILING_KEY, new Buffer('ababab', 'hex'));
+  var arg = {
+    response_type: 'COMPRESSABLE',
+    response_size: 314159,
+    payload: {
+      body: zeroBuffer(271828)
+    }
+  };
+  var streaming_arg = {
+    payload: {
+      body: zeroBuffer(271828)
+    }
+  };
+  var unary = client.unaryCall(arg, function(err, resp) {
+    assert.ifError(err);
+    done();
+  }, metadata);
+  unary.on('metadata', function(metadata) {
+    assert.deepEqual(metadata.get(ECHO_INITIAL_KEY),
+                     ['test_initial_metadata_value']);
+    done();
+  });
+  unary.on('status', function(status) {
+    var echo_trailer = status.metadata.get(ECHO_TRAILING_KEY);
+    assert(echo_trailer.length > 0);
+    assert.strictEqual(echo_trailer.toString('hex'), 'ababab');
+    done();
+  });
+  var stream = client.fullDuplexCall(metadata);
+  stream.on('metadata', function(metadata) {
+    assert.deepEqual(metadata.get(ECHO_INITIAL_KEY),
+                     ['test_initial_metadata_value']);
+    done();
+  });
+  stream.on('status', function(status) {
+    var echo_trailer = status.metadata.get(ECHO_TRAILING_KEY);
+    assert(echo_trailer.length > 0);
+    assert.strictEqual(echo_trailer.toString('hex'), 'ababab');
+    done();
+  });
+  stream.write(streaming_arg);
+  stream.end();
+}
+
 /**
  * Run one of the authentication tests.
  * @param {string} expected_user The expected username in the response
@@ -358,6 +430,7 @@ var test_cases = {
   cancel_after_begin: cancelAfterBegin,
   cancel_after_first_response: cancelAfterFirstResponse,
   timeout_on_sleeping_server: timeoutOnSleepingServer,
+  custom_metadata: customMetadata,
   compute_engine_creds: _.partial(authTest, COMPUTE_ENGINE_USER, null),
   service_account_creds: _.partial(authTest, AUTH_USER, AUTH_SCOPE),
   jwt_token_creds: _.partial(authTest, AUTH_USER, null),

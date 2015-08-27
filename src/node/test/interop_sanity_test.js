@@ -90,4 +90,8 @@ describe('Interop tests', function() {
     interop_client.runTest(port, name_override, 'timeout_on_sleeping_server',
                            true, true, done);
   });
+  it.only('should pass custom_metadata', function(done) {
+    interop_client.runTest(port, name_override, 'custom_metadata',
+                           true, true, done);
+  });
 });
