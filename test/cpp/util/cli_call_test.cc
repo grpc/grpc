@@ -47,6 +47,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo.grpc.pb.h"
+#include "test/cpp/util/string_ref_helper.h"
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
@@ -59,10 +60,11 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) GRPC_OVERRIDE {
     if (!context->client_metadata().empty()) {
-      for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
-               context->client_metadata().begin();
+      for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
+               iter = context->client_metadata().begin();
            iter != context->client_metadata().end(); ++iter) {
-        context->AddInitialMetadata(iter->first, iter->second);
+        context->AddInitialMetadata(ToString(iter->first),
+                                    ToString(iter->second));
       }
     }
     context->AddTrailingMetadata("trailing_key", "trailing_value");
@@ -89,8 +91,7 @@ class CliCallTest : public ::testing::Test {
   void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
-    channel_ = CreateChannel(server_address_.str(), InsecureCredentials(),
-                             ChannelArguments());
+    channel_ = CreateChannel(server_address_.str(), InsecureCredentials());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
@@ -119,8 +120,9 @@ TEST_F(CliCallTest, SimpleRpc) {
   grpc::string request_bin, response_bin, expected_response_bin;
   EXPECT_TRUE(request.SerializeToString(&request_bin));
   EXPECT_TRUE(response.SerializeToString(&expected_response_bin));
-  std::multimap<grpc::string, grpc::string> client_metadata,
-      server_initial_metadata, server_trailing_metadata;
+  std::multimap<grpc::string, grpc::string> client_metadata;
+  std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata,
+      server_trailing_metadata;
   client_metadata.insert(std::pair<grpc::string, grpc::string>("key1", "val1"));
   Status s2 = CliCall::Call(channel_, kMethod, request_bin, &response_bin,
                             client_metadata, &server_initial_metadata,

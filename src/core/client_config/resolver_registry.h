@@ -44,19 +44,22 @@ void grpc_resolver_registry_shutdown(void);
     If \a priority is greater than zero, then the resolver will be eligible
     to resolve names that are passed in with no scheme. Higher priority
     resolvers will be tried before lower priority schemes. */
-void grpc_register_resolver_type(const char *scheme,
-                                 grpc_resolver_factory *factory);
+void grpc_register_resolver_type(grpc_resolver_factory *factory);
 
-/** Create a resolver given \a name.
-    First tries to parse \a name as a URI. If this succeeds, tries
+/** Create a resolver given \a target.
+    First tries to parse \a target as a URI. If this succeeds, tries
     to locate a registered resolver factory based on the URI scheme.
     If parsing or location fails, prefixes default_prefix from
-    grpc_resolver_registry_init to name, and tries again (if default_prefix
+    grpc_resolver_registry_init to target, and tries again (if default_prefix
     was not NULL).
     If a resolver factory was found, use it to instantiate a resolver and
     return it.
     If a resolver factory was not found, return NULL. */
 grpc_resolver *grpc_resolver_create(
-    const char *name, grpc_subchannel_factory *subchannel_factory);
+    const char *target, grpc_subchannel_factory *subchannel_factory);
+
+/** Given a target, return a (freshly allocated with gpr_malloc) string
+    representing the default authority to pass from a client. */
+char *grpc_get_default_authority(const char *target);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_REGISTRY_H */

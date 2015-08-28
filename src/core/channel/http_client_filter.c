@@ -45,7 +45,6 @@ typedef struct call_data {
   grpc_linked_mdelem content_type;
   grpc_linked_mdelem user_agent;
   int sent_initial_metadata;
-  int sent_authority;
 
   int got_initial_metadata;
   grpc_stream_op_buffer *recv_ops;
@@ -64,7 +63,6 @@ typedef struct channel_data {
   grpc_mdelem *scheme;
   grpc_mdelem *content_type;
   grpc_mdelem *status;
-  grpc_mdelem *default_authority;
   /** complete user agent mdelem */
   grpc_mdelem *user_agent;
 } channel_data;
@@ -103,7 +101,6 @@ static void hc_on_recv(void *user_data, int success) {
 
 static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
-  call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
   /* eat the things we'd like to set ourselves */
   if (md->key == channeld->method->key) return NULL;
@@ -111,10 +108,6 @@ static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
   if (md->key == channeld->te_trailers->key) return NULL;
   if (md->key == channeld->content_type->key) return NULL;
   if (md->key == channeld->user_agent->key) return NULL;
-  if (channeld->default_authority &&
-      channeld->default_authority->key == md->key) {
-    calld->sent_authority = 1;
-  }
   return md;
 }
 
@@ -138,11 +131,6 @@ static void hc_mutate_op(grpc_call_element *elem,
                                    GRPC_MDELEM_REF(channeld->method));
       grpc_metadata_batch_add_head(&op->data.metadata, &calld->scheme,
                                    GRPC_MDELEM_REF(channeld->scheme));
-      if (channeld->default_authority && !calld->sent_authority) {
-        grpc_metadata_batch_add_head(
-            &op->data.metadata, &calld->authority,
-            GRPC_MDELEM_REF(channeld->default_authority));
-      }
       grpc_metadata_batch_add_tail(&op->data.metadata, &calld->te_trailers,
                                    GRPC_MDELEM_REF(channeld->te_trailers));
       grpc_metadata_batch_add_tail(&op->data.metadata, &calld->content_type,
@@ -175,7 +163,6 @@ static void init_call_elem(grpc_call_element *elem,
   call_data *calld = elem->call_data;
   calld->sent_initial_metadata = 0;
   calld->got_initial_metadata = 0;
-  calld->sent_authority = 0;
   calld->on_done_recv = NULL;
   grpc_iomgr_closure_init(&calld->hc_on_recv, hc_on_recv, elem);
   if (initial_op) hc_mutate_op(elem, initial_op);
@@ -257,8 +244,6 @@ static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
 static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *channel_args,
                               grpc_mdctx *mdctx, int is_first, int is_last) {
-  size_t i;
-
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
@@ -266,21 +251,6 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
      handle the case that there's no 'next' filter to call on the up or down
      path */
   GPR_ASSERT(!is_last);
-
-  channeld->default_authority = NULL;
-  if (channel_args) {
-    for (i = 0; i < channel_args->num_args; i++) {
-      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
-        if (channel_args->args[i].type != GRPC_ARG_STRING) {
-          gpr_log(GPR_ERROR, "%s: must be an string",
-                  GRPC_ARG_DEFAULT_AUTHORITY);
-        } else {
-          channeld->default_authority = grpc_mdelem_from_strings(
-              mdctx, ":authority", channel_args->args[i].value.string);
-        }
-      }
-    }
-  }
 
   /* initialize members */
   channeld->te_trailers = grpc_mdelem_from_strings(mdctx, "te", "trailers");
@@ -306,9 +276,6 @@ static void destroy_channel_elem(grpc_channel_element *elem) {
   GRPC_MDELEM_UNREF(channeld->content_type);
   GRPC_MDELEM_UNREF(channeld->status);
   GRPC_MDELEM_UNREF(channeld->user_agent);
-  if (channeld->default_authority) {
-    GRPC_MDELEM_UNREF(channeld->default_authority);
-  }
 }
 
 const grpc_channel_filter grpc_http_client_filter = {

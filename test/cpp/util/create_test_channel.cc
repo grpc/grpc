@@ -74,9 +74,9 @@ std::shared_ptr<Channel> CreateTestChannel(
     if (creds.get()) {
       channel_creds = CompositeCredentials(creds, channel_creds);
     }
-    return CreateChannel(connect_to, channel_creds, channel_args);
+    return CreateCustomChannel(connect_to, channel_creds, channel_args);
   } else {
-    return CreateChannel(server, InsecureCredentials(), channel_args);
+    return CreateChannel(server, InsecureCredentials());
   }
 }
 

@@ -134,7 +134,7 @@ class _Servicer(base.Servicer):
       if group != self._group or method != self._method:
         controller.fail(
             '%s != %s or %s != %s' % (group, self._group, method, self._method))
-        raise base.NoSuchMethodError()
+        raise base.NoSuchMethodError(None, None)
       else:
         operator = _Operator(
             controller, controller.on_service_advance, self._pool,

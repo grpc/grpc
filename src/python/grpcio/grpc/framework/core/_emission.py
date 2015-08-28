@@ -82,7 +82,8 @@ class EmissionManager(_interfaces.EmissionManager):
             completion_present and self._completion_seen or
             allowance_present and allowance <= 0):
           self._termination_manager.abort(base.Outcome.LOCAL_FAILURE)
-          self._transmission_manager.abort(base.Outcome.LOCAL_FAILURE)
+          self._transmission_manager.abort(
+              base.Outcome.LOCAL_FAILURE, None, None)
           self._expiration_manager.terminate()
         else:
           self._initial_metadata_seen |= initial_metadata_present

@@ -41,6 +41,7 @@
 #include "src/core/channel/noop_filter.h"
 #include "src/core/statistics/census_interface.h"
 #include "src/core/statistics/census_rpc_stats.h"
+#include <grpc/census.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>

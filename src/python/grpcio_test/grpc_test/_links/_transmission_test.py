@@ -66,9 +66,9 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
 
   def create_invocation_initial_metadata(self):
     return (
-        ('first invocation initial metadata key', 'just a string value'),
-        ('second invocation initial metadata key', '0123456789'),
-        ('third invocation initial metadata key-bin', '\x00\x57' * 100),
+        ('first_invocation_initial_metadata_key', 'just a string value'),
+        ('second_invocation_initial_metadata_key', '0123456789'),
+        ('third_invocation_initial_metadata_key-bin', '\x00\x57' * 100),
     )
 
   def create_invocation_terminal_metadata(self):
@@ -76,16 +76,16 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
 
   def create_service_initial_metadata(self):
     return (
-        ('first service initial metadata key', 'just another string value'),
-        ('second service initial metadata key', '9876543210'),
-        ('third service initial metadata key-bin', '\x00\x59\x02' * 100),
+        ('first_service_initial_metadata_key', 'just another string value'),
+        ('second_service_initial_metadata_key', '9876543210'),
+        ('third_service_initial_metadata_key-bin', '\x00\x59\x02' * 100),
     )
 
   def create_service_terminal_metadata(self):
     return (
-        ('first service terminal metadata key', 'yet another string value'),
-        ('second service terminal metadata key', 'abcdefghij'),
-        ('third service terminal metadata key-bin', '\x00\x37' * 100),
+        ('first_service_terminal_metadata_key', 'yet another string value'),
+        ('second_service_terminal_metadata_key', 'abcdefghij'),
+        ('third_service_terminal_metadata_key-bin', '\x00\x37' * 100),
     )
 
   def create_invocation_completion(self):

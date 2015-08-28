@@ -332,11 +332,7 @@ if (in_array($args['test_case'], array(
   $opts['update_metadata'] = $auth->getUpdateMetadataFunc();
 }
 
-$internal_stub = new Grpc\BaseStub($server_address, $opts);
-hardAssert(is_string($internal_stub->getTarget()),
-           'Unexpected target URI value');
-
-$stub = new grpc\testing\TestServiceClient($internal_stub);
+$stub = new grpc\testing\TestServiceClient($server_address, $opts);
 
 echo "Connecting to $server_address\n";
 echo "Running test case $args[test_case]\n";
@@ -372,6 +368,11 @@ switch ($args['test_case']) {
   case 'jwt_token_creds':
     jwtTokenCreds($stub, $args);
     break;
+  case 'cancel_after_begin':
+    // Currently unimplementable with the current API design
+    // Specifically, in the ClientStreamingCall->start() method, the
+    // messages are sent immediately after metadata is sent. There is
+    // currently no way to cancel before messages are sent.
   default:
     exit(1);
 }

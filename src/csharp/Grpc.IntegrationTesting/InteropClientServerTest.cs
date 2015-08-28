@@ -36,9 +36,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Grpc.Testing;
 using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting

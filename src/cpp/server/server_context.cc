@@ -136,10 +136,9 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata* metadata,
       cq_(nullptr),
       sent_initial_metadata_(false) {
   for (size_t i = 0; i < metadata_count; i++) {
-    client_metadata_.insert(std::make_pair(
-        grpc::string(metadata[i].key),
-        grpc::string(metadata[i].value,
-                     metadata[i].value + metadata[i].value_length)));
+    client_metadata_.insert(std::pair<grpc::string_ref, grpc::string_ref>(
+        metadata[i].key,
+        grpc::string_ref(metadata[i].value, metadata[i].value_length)));
   }
 }
 

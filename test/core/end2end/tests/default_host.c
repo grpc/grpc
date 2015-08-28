@@ -201,7 +201,7 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == strcmp(details, "xyz"));
   GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "localhost"));
+  GPR_ASSERT(0 == strncmp(call_details.host, "localhost", 9));
   GPR_ASSERT(was_cancelled == 1);
 
   gpr_free(details);
