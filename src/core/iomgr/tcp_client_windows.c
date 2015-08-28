@@ -102,7 +102,6 @@ static void on_connect(void *acp, int from_iocp) {
     DWORD flags;
     BOOL wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
                                               &transfered_bytes, FALSE, &flags);
-    info->outstanding = 0;
     GPR_ASSERT(transfered_bytes == 0);
     if (!wsa_success) {
       char *utf8_message = gpr_format_message(WSAGetLastError());
@@ -125,12 +124,10 @@ static void on_connect(void *acp, int from_iocp) {
     return;
   }
 
-  ac->socket->write_info.outstanding = 0;
-
   /* If we don't have an endpoint, it means the connection failed,
      so it doesn't matter if it aborted or failed. We need to orphan
      that socket. */
-  if (!ep || aborted) grpc_winsocket_orphan(ac->socket);
+  if (!ep || aborted) grpc_winsocket_destroy(ac->socket);
   async_connect_cleanup(ac);
   /* If the connection was aborted, the callback was already called when
      the deadline was met. */
@@ -196,7 +193,6 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
 
   socket = grpc_winsocket_create(sock, "client");
   info = &socket->write_info;
-  info->outstanding = 1;
   success = ConnectEx(sock, addr, addr_len, NULL, 0, NULL, &info->overlapped);
 
   /* It wouldn't be unusual to get a success immediately. But we'll still get
@@ -220,7 +216,6 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
 
   grpc_alarm_init(&ac->alarm, deadline, on_alarm, ac,
                   gpr_now(GPR_CLOCK_MONOTONIC));
-  socket->write_info.outstanding = 1;
   grpc_socket_notify_on_write(socket, on_connect, ac);
   return;
 
@@ -229,7 +224,7 @@ failure:
   gpr_log(GPR_ERROR, message, utf8_message);
   gpr_free(utf8_message);
   if (socket) {
-    grpc_winsocket_orphan(socket);
+    grpc_winsocket_destroy(socket);
   } else if (sock != INVALID_SOCKET) {
     closesocket(sock);
   }

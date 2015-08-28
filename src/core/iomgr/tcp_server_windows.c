@@ -116,7 +116,7 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
     sp->shutting_down = 1;
-    s->iomgr_callbacks_pending += grpc_winsocket_shutdown(sp->socket);
+    grpc_winsocket_shutdown(sp->socket);
   }
   /* This happens asynchronously. Wait while that happens. */
   while (s->active_ports || s->iomgr_callbacks_pending) {
@@ -129,7 +129,7 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
      closed by the system. */
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
-    grpc_winsocket_orphan(sp->socket);
+    grpc_winsocket_destroy(sp->socket);
   }
   gpr_free(s->ports);
   gpr_free(s);
@@ -189,7 +189,6 @@ error:
 
 static void decrement_active_ports_and_notify(server_port *sp) {
   sp->shutting_down = 0;
-  sp->socket->read_info.outstanding = 0;
   gpr_mu_lock(&sp->server->mu);
   GPR_ASSERT(sp->server->active_ports > 0);
   if (0 == --sp->server->active_ports) {
@@ -462,7 +461,6 @@ void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollset,
   s->cb = cb;
   s->cb_arg = cb_arg;
   for (i = 0; i < s->nports; i++) {
-    s->ports[i].socket->read_info.outstanding = 1;
     start_accept(s->ports + i);
     s->active_ports++;
   }

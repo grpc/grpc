@@ -222,6 +222,8 @@ static void init_transport(grpc_chttp2_transport *t,
   t->ep = ep;
   /* one ref is for destroy, the other for when ep becomes NULL */
   gpr_ref_init(&t->refs, 2);
+  /* ref is dropped at transport close() */
+  gpr_ref_init(&t->shutdown_ep_refs, 1);
   gpr_mu_init(&t->mu);
   grpc_mdctx_ref(mdctx);
   t->peer_string = grpc_endpoint_get_peer(ep);
@@ -336,13 +338,26 @@ static void destroy_transport(grpc_transport *gt) {
   UNREF_TRANSPORT(t, "destroy");
 }
 
+/** block grpc_endpoint_shutdown being called until a paired 
+    allow_endpoint_shutdown is made */
+static void prevent_endpoint_shutdown(grpc_chttp2_transport *t) {
+  GPR_ASSERT(t->shutdown_ep_refs.count);
+  gpr_ref(&t->shutdown_ep_refs);
+}
+
+static void allow_endpoint_shutdown(grpc_chttp2_transport *t) {
+  if (gpr_unref(&t->shutdown_ep_refs)) {
+    grpc_endpoint_shutdown(t->ep);
+  }
+}
+
 static void close_transport_locked(grpc_chttp2_transport *t) {
   if (!t->closed) {
     t->closed = 1;
     connectivity_state_set(&t->global, GRPC_CHANNEL_FATAL_FAILURE,
                            "close_transport");
     if (t->ep) {
-      grpc_endpoint_shutdown(t->ep);
+      allow_endpoint_shutdown(t);
     }
   }
 }
@@ -471,6 +486,7 @@ static void unlock(grpc_chttp2_transport *t) {
     t->writing_active = 1;
     REF_TRANSPORT(t, "writing");
     grpc_chttp2_schedule_closure(&t->global, &t->writing_action, 1);
+    prevent_endpoint_shutdown(t);
   }
 
   run_closures = t->global.pending_closures_head;
@@ -536,6 +552,7 @@ void grpc_chttp2_terminate_writing(void *transport_writing_ptr, int success) {
 static void writing_action(void *gt, int iomgr_success_ignored) {
   grpc_chttp2_transport *t = gt;
   grpc_chttp2_perform_writes(&t->writing, t->ep);
+  allow_endpoint_shutdown(t);
 }
 
 void grpc_chttp2_add_incoming_goaway(
@@ -1104,21 +1121,28 @@ static int recv_data_loop(grpc_chttp2_transport *t, int *success) {
     read_error_locked(t);
   } else {
     keep_reading = 1;
+    prevent_endpoint_shutdown(t);
   }
   gpr_slice_buffer_reset_and_unref(&t->read_buffer);
   unlock(t);
 
   if (keep_reading) {
+    int ret = -1;
     switch (grpc_endpoint_read(t->ep, &t->read_buffer, &t->recv_data)) {
       case GRPC_ENDPOINT_DONE:
         *success = 1;
-        return 1;
+        ret = 1;
+        break;
       case GRPC_ENDPOINT_ERROR:
         *success = 0;
-        return 1;
+        ret = 1;
+        break;
       case GRPC_ENDPOINT_PENDING:
-        return 0;
+        ret = 0;
+        break;
     }
+    allow_endpoint_shutdown(t);
+    return ret;
   } else {
     UNREF_TRANSPORT(t, "recv_data");
     return 0;

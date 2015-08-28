@@ -97,7 +97,7 @@ typedef struct grpc_tcp {
 } grpc_tcp;
 
 static void tcp_free(grpc_tcp *tcp) {
-  grpc_winsocket_orphan(tcp->socket);
+  grpc_winsocket_destroy(tcp->socket);
   gpr_mu_destroy(&tcp->mu);
   gpr_free(tcp->peer_string);
   gpr_free(tcp);
@@ -135,54 +135,34 @@ static void tcp_ref(grpc_tcp *tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
 /* Asynchronous callback from the IOCP, or the background thread. */
-static int on_read(grpc_tcp *tcp, int from_iocp) {
+static int on_read(grpc_tcp *tcp, int success) {
   grpc_winsocket *socket = tcp->socket;
   gpr_slice sub;
   gpr_slice *slice = NULL;
   size_t nslices = 0;
-  int success;
   grpc_winsocket_callback_info *info = &socket->read_info;
   int do_abort = 0;
 
-  gpr_mu_lock(&tcp->mu);
-  if (!from_iocp || tcp->shutting_down) {
-    /* If we are here with from_iocp set to true, it means we got raced to
-    shutting down the endpoint. No actual abort callback will happen
-    though, so we're going to do it from here. */
-    do_abort = 1;
-  }
-  gpr_mu_unlock(&tcp->mu);
-
-  if (do_abort) {
-    if (from_iocp) {
-      tcp->socket->read_info.outstanding = 0;
-      gpr_slice_unref(tcp->read_slice);
-    }
-    return 0;
-  }
-
-  GPR_ASSERT(tcp->socket->read_info.outstanding);
-
-  if (socket->read_info.wsa_error != 0) {
-    if (socket->read_info.wsa_error != WSAECONNRESET) {
-      char *utf8_message = gpr_format_message(info->wsa_error);
-      gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
-      gpr_free(utf8_message);
-    }
-    success = 0;
-    gpr_slice_unref(tcp->read_slice);
-  } else {
-    if (info->bytes_transfered != 0) {
-      sub = gpr_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);
-      gpr_slice_buffer_add(tcp->read_slices, sub);
-      success = 1;
-    } else {
-      gpr_slice_unref(tcp->read_slice);
+  if (success) {
+    if (socket->read_info.wsa_error != 0) {
+      if (socket->read_info.wsa_error != WSAECONNRESET) {
+        char *utf8_message = gpr_format_message(info->wsa_error);
+        gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
+        gpr_free(utf8_message);
+      }
       success = 0;
+      gpr_slice_unref(tcp->read_slice);
+    } else {
+      if (info->bytes_transfered != 0) {
+        sub = gpr_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);
+        gpr_slice_buffer_add(tcp->read_slices, sub);
+        success = 1;
+      } else {
+        gpr_slice_unref(tcp->read_slice);
+        success = 0;
+      }
     }
   }
-
-  tcp->socket->read_info.outstanding = 0;
 
   return success;
 }
@@ -209,14 +189,10 @@ static grpc_endpoint_op_status win_read(grpc_endpoint *ep,
   DWORD flags = 0;
   WSABUF buffer;
 
-  GPR_ASSERT(!tcp->socket->read_info.outstanding);
   if (tcp->shutting_down) {
     return GRPC_ENDPOINT_ERROR;
   }
 
-  TCP_REF(tcp, "read");
-
-  tcp->socket->read_info.outstanding = 1;
   tcp->read_cb = cb;
   tcp->read_slices = read_slices;
   gpr_slice_buffer_reset_and_unref(read_slices);
@@ -236,9 +212,10 @@ static grpc_endpoint_op_status win_read(grpc_endpoint *ep,
     int ok;
     info->bytes_transfered = bytes_read;
     ok = on_read(tcp, 1);
-    TCP_UNREF(tcp, "read");
     return ok ? GRPC_ENDPOINT_DONE : GRPC_ENDPOINT_ERROR;
   }
+
+  TCP_REF(tcp, "read");
 
   /* Otherwise, let's retry, by queuing a read. */
   memset(&tcp->socket->read_info.overlapped, 0, sizeof(OVERLAPPED));
@@ -260,51 +237,30 @@ static grpc_endpoint_op_status win_read(grpc_endpoint *ep,
 }
 
 /* Asynchronous callback from the IOCP, or the background thread. */
-static void on_write(void *tcpp, int from_iocp) {
+static void on_write(void *tcpp, int success) {
   grpc_tcp *tcp = (grpc_tcp *)tcpp;
   grpc_winsocket *handle = tcp->socket;
   grpc_winsocket_callback_info *info = &handle->write_info;
   grpc_iomgr_closure *cb;
-  int success;
   int do_abort = 0;
 
   gpr_mu_lock(&tcp->mu);
   cb = tcp->write_cb;
   tcp->write_cb = NULL;
-  if (!from_iocp || tcp->shutting_down) {
-    /* If we are here with from_iocp set to true, it means we got raced to
-        shutting down the endpoint. No actual abort callback will happen
-        though, so we're going to do it from here. */
-    do_abort = 1;
-  }
   gpr_mu_unlock(&tcp->mu);
 
-  if (do_abort) {
-    if (from_iocp) {
-      tcp->socket->write_info.outstanding = 0;
+  if (success) {
+    if (info->wsa_error != 0) {
+      if (info->wsa_error != WSAECONNRESET) {
+        char *utf8_message = gpr_format_message(info->wsa_error);
+        gpr_log(GPR_ERROR, "WSASend overlapped error: %s", utf8_message);
+        gpr_free(utf8_message);
+      }
+      success = 0;
+    } else {
+      GPR_ASSERT(info->bytes_transfered == tcp->write_slices->length);
     }
-    TCP_UNREF(tcp, "write");
-    if (cb) {
-      cb->cb(cb->cb_arg, 0);
-    }
-    return;
   }
-
-  GPR_ASSERT(tcp->socket->write_info.outstanding);
-
-  if (info->wsa_error != 0) {
-    if (info->wsa_error != WSAECONNRESET) {
-      char *utf8_message = gpr_format_message(info->wsa_error);
-      gpr_log(GPR_ERROR, "WSASend overlapped error: %s", utf8_message);
-      gpr_free(utf8_message);
-    }
-    success = 0;
-  } else {
-    GPR_ASSERT(info->bytes_transfered == tcp->write_slices->length);
-    success = 1;
-  }
-
-  tcp->socket->write_info.outstanding = 0;
 
   TCP_UNREF(tcp, "write");
   cb->cb(cb->cb_arg, success);
@@ -324,13 +280,10 @@ static grpc_endpoint_op_status win_write(grpc_endpoint *ep,
   WSABUF *allocated = NULL;
   WSABUF *buffers = local_buffers;
 
-  GPR_ASSERT(!tcp->socket->write_info.outstanding);
   if (tcp->shutting_down) {
     return GRPC_ENDPOINT_ERROR;
   }
-  TCP_REF(tcp, "write");
 
-  tcp->socket->write_info.outstanding = 1;
   tcp->write_cb = cb;
   tcp->write_slices = slices;
 
@@ -365,10 +318,10 @@ static grpc_endpoint_op_status win_write(grpc_endpoint *ep,
       }
     }
     if (allocated) gpr_free(allocated);
-    tcp->socket->write_info.outstanding = 0;
-    TCP_UNREF(tcp, "write");
     return ret;
   }
+
+  TCP_REF(tcp, "write");
 
   /* If we got a WSAEWOULDBLOCK earlier, then we need to re-do the same
      operation, this time asynchronously. */
@@ -380,7 +333,6 @@ static grpc_endpoint_op_status win_write(grpc_endpoint *ep,
   if (status != 0) {
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
-      tcp->socket->write_info.outstanding = 0;
       TCP_UNREF(tcp, "write");
       return GRPC_ENDPOINT_ERROR;
     }

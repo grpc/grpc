@@ -293,6 +293,9 @@ struct grpc_chttp2_transport {
   gpr_refcount refs;
   char *peer_string;
 
+  /** when this drops to zero it's safe to shutdown the endpoint */
+  gpr_refcount shutdown_ep_refs;
+
   gpr_mu mu;
 
   /** is the transport destroying itself? */

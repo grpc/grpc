@@ -39,6 +39,7 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
 #include "test/core/util/test_config.h"
 
 /*
@@ -128,6 +129,7 @@ struct read_and_write_test_state {
 static void read_and_write_test_read_handler(void *data, int success) {
   struct read_and_write_test_state *state = data;
 
+loop:
   state->bytes_read += count_slices(
       state->incoming.slices, state->incoming.count, &state->current_read_data);
   if (state->bytes_read == state->target_bytes || !success) {
@@ -140,11 +142,11 @@ static void read_and_write_test_read_handler(void *data, int success) {
     switch (grpc_endpoint_read(state->read_ep, &state->incoming,
                                &state->done_read)) {
       case GRPC_ENDPOINT_ERROR:
-        read_and_write_test_read_handler(data, 0);
-        break;
+        success = 0;
+        goto loop;
       case GRPC_ENDPOINT_DONE:
-        read_and_write_test_read_handler(data, 1);
-        break;
+        success = 1;
+        goto loop;
       case GRPC_ENDPOINT_PENDING:
         break;
     }
@@ -176,16 +178,17 @@ static void read_and_write_test_write_handler(void *data, int success) {
       gpr_slice_buffer_addn(&state->outgoing, slices, nslices);
       write_status = grpc_endpoint_write(state->write_ep, &state->outgoing,
                                          &state->done_write);
-      gpr_log(GPR_DEBUG, "write_status=%d", write_status);
-      GPR_ASSERT(write_status != GRPC_ENDPOINT_ERROR);
       free(slices);
       if (write_status == GRPC_ENDPOINT_PENDING) {
         return;
+      } else if (write_status == GRPC_ENDPOINT_ERROR) {
+        goto cleanup;
       }
     }
     GPR_ASSERT(state->bytes_written == state->target_bytes);
   }
 
+cleanup:
   gpr_log(GPR_INFO, "Write handler done");
   gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
   state->write_done = 1 + success;
@@ -204,6 +207,8 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
   grpc_endpoint_test_fixture f =
       begin_test(config, "read_and_write_test", slice_size);
+  gpr_log(GPR_DEBUG, "num_bytes=%d write_size=%d slice_size=%d shutdown=%d",
+          num_bytes, write_size, slice_size, shutdown);
 
   if (shutdown) {
     gpr_log(GPR_INFO, "Start read and write shutdown test");
@@ -264,11 +269,11 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
 
-  grpc_endpoint_destroy(state.read_ep);
-  grpc_endpoint_destroy(state.write_ep);
+  end_test(config);
   gpr_slice_buffer_destroy(&state.outgoing);
   gpr_slice_buffer_destroy(&state.incoming);
-  end_test(config);
+  grpc_endpoint_destroy(state.read_ep);
+  grpc_endpoint_destroy(state.write_ep);
 }
 
 struct timeout_test_state {
@@ -286,6 +291,7 @@ static void shutdown_during_write_test_read_handler(void *user_data,
                                                     int success) {
   shutdown_during_write_test_state *st = user_data;
 
+loop:
   if (!success) {
     grpc_endpoint_destroy(st->ep);
     gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
@@ -297,11 +303,11 @@ static void shutdown_during_write_test_read_handler(void *user_data,
       case GRPC_ENDPOINT_PENDING:
         break;
       case GRPC_ENDPOINT_ERROR:
-        shutdown_during_write_test_read_handler(user_data, 0);
-        break;
+        success = 0;
+        goto loop;
       case GRPC_ENDPOINT_DONE:
-        shutdown_during_write_test_read_handler(user_data, 1);
-        break;
+        success = 1;
+        goto loop;
     }
   }
 }
@@ -324,86 +330,15 @@ static void shutdown_during_write_test_write_handler(void *user_data,
   gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
 }
 
-static void shutdown_during_write_test(grpc_endpoint_test_config config,
-                                       size_t slice_size) {
-  /* test that shutdown with a pending write creates no leaks */
-  gpr_timespec deadline;
-  size_t size;
-  size_t nblocks;
-  int current_data = 1;
-  shutdown_during_write_test_state read_st;
-  shutdown_during_write_test_state write_st;
-  gpr_slice *slices;
-  gpr_slice_buffer outgoing;
-  grpc_iomgr_closure done_write;
-  grpc_endpoint_test_fixture f =
-      begin_test(config, "shutdown_during_write_test", slice_size);
-
-  gpr_log(GPR_INFO, "testing shutdown during a write");
-
-  read_st.ep = f.client_ep;
-  write_st.ep = f.server_ep;
-  read_st.done = 0;
-  write_st.done = 0;
-
-  grpc_iomgr_closure_init(&done_write, shutdown_during_write_test_write_handler,
-                          &write_st);
-  grpc_iomgr_closure_init(&read_st.done_read,
-                          shutdown_during_write_test_read_handler, &read_st);
-  gpr_slice_buffer_init(&read_st.incoming);
-  gpr_slice_buffer_init(&outgoing);
-
-  GPR_ASSERT(grpc_endpoint_read(read_st.ep, &read_st.incoming,
-                                &read_st.done_read) == GRPC_ENDPOINT_PENDING);
-  for (size = 1;; size *= 2) {
-    slices = allocate_blocks(size, 1, &nblocks, &current_data);
-    gpr_slice_buffer_reset_and_unref(&outgoing);
-    gpr_slice_buffer_addn(&outgoing, slices, nblocks);
-    switch (grpc_endpoint_write(write_st.ep, &outgoing, &done_write)) {
-      case GRPC_ENDPOINT_DONE:
-        break;
-      case GRPC_ENDPOINT_ERROR:
-        gpr_log(GPR_ERROR, "error writing");
-        abort();
-      case GRPC_ENDPOINT_PENDING:
-        grpc_endpoint_shutdown(write_st.ep);
-        deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
-        gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
-        while (!write_st.done) {
-          grpc_pollset_worker worker;
-          GPR_ASSERT(gpr_time_cmp(gpr_now(deadline.clock_type), deadline) < 0);
-          grpc_pollset_work(g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                            deadline);
-        }
-        gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
-        grpc_endpoint_destroy(write_st.ep);
-        gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
-        while (!read_st.done) {
-          grpc_pollset_worker worker;
-          GPR_ASSERT(gpr_time_cmp(gpr_now(deadline.clock_type), deadline) < 0);
-          grpc_pollset_work(g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                            deadline);
-        }
-        gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
-        gpr_free(slices);
-        gpr_slice_buffer_destroy(&read_st.incoming);
-        gpr_slice_buffer_destroy(&outgoing);
-        end_test(config);
-        return;
-    }
-    gpr_free(slices);
-  }
-
-  gpr_log(GPR_ERROR, "should never reach here");
-  abort();
-}
-
 void grpc_endpoint_tests(grpc_endpoint_test_config config,
                          grpc_pollset *pollset) {
+  size_t i;
   g_pollset = pollset;
   read_and_write_test(config, 10000000, 100000, 8192, 0);
   read_and_write_test(config, 1000000, 100000, 1, 0);
   read_and_write_test(config, 100000000, 100000, 1, 1);
-  shutdown_during_write_test(config, 1000);
+  for (i = 1; i < 1000; i = GPR_MAX(i + 1, i * 5 / 4)) {
+    read_and_write_test(config, 40320, i, i, 0);
+  }
   g_pollset = NULL;
 }
