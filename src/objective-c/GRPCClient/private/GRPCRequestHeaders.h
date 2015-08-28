@@ -31,34 +31,21 @@
  *
  */
 
-#import "GRPCCall+OAuth2.h"
-#import "private/GRPCRequestHeaders.h"
+#import <Foundation/Foundation.h>
+#include <grpc/grpc.h>
 
-static NSString * const kAuthorizationHeader = @"authorization";
-static NSString * const kBearerPrefix = @"Bearer ";
-static NSString * const kChallengeHeader = @"www-authenticate";
+@class GRPCCall;
 
-@implementation GRPCCall (OAuth2)
+@interface GRPCRequestHeaders : NSObject
 
-- (NSString *)oauth2AccessToken {
-  NSString *headerValue = self.requestHeaders[kAuthorizationHeader];
-  if ([headerValue hasPrefix:kBearerPrefix]) {
-    return [headerValue substringFromIndex:kBearerPrefix.length];
-  } else {
-    return nil;
-  }
-}
+- (instancetype)initWithCall:(GRPCCall *)call;
 
-- (void)setOauth2AccessToken:(NSString *)token {
-  if (token) {
-    self.requestHeaders[kAuthorizationHeader] = [kBearerPrefix stringByAppendingString:token];
-  } else {
-    [self.requestHeaders removeObjectForKey:kAuthorizationHeader];
-  }
-}
+- (id)objectForKeyedSubscript:(NSString *)key;
+- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
 
-- (NSString *)oauth2ChallengeHeader {
-  return self.responseHeaders[kChallengeHeader];
-}
+- (void)removeAllObjects;
+- (void)removeObjectForKey:(NSString *)aKey;
+
+- (NSDictionary *)asDictionary;
 
 @end
