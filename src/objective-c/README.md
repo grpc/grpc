@@ -30,7 +30,7 @@ proceed.
 ## Write your API declaration in proto format
 
 For this you can consult the [Protocol Buffers][]' official documentation, or learn from a quick
-example [here](https://github.com/grpc/grpc-common#defining-a-service).
+example [here](https://github.com/grpc/grpc/tree/master/examples#defining-a-service).
 
 <a name="cocoapods"></a>
 ## Integrate a proto library in your project

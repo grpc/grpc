@@ -366,10 +366,10 @@ class ServiceLink(links.Link):
     """Adds a port on which to service RPCs after this link has been started.
 
     Args:
-      port: The port on which to service RPCs, or zero to request that a port be
-        automatically selected and used.
-      server_credentials: A ServerCredentials object, or None for insecure
-        service.
+      port: The port on which to service RPCs, or zero to request that a port
+        be automatically selected and used.
+      server_credentials: An _intermediary_low.ServerCredentials object, or
+        None for insecure service.
 
     Returns:
       A port on which RPCs will be serviced after this link has been started.

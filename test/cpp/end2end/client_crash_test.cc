@@ -76,7 +76,7 @@ class CrashTest : public ::testing::Test {
     }));
     GPR_ASSERT(server_);
     return grpc::cpp::test::util::TestService::NewStub(
-        CreateChannel(addr, InsecureCredentials(), ChannelArguments()));
+        CreateChannel(addr, InsecureCredentials()));
   }
 
   void KillServer() { server_.reset(); }
