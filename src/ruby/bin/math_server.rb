@@ -41,8 +41,24 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'forwardable'
 require 'grpc'
+require 'logger'
 require 'math_services'
 require 'optparse'
+
+# RubyLogger defines a logger for gRPC based on the standard ruby logger.
+module RubyLogger
+  def logger
+    LOGGER
+  end
+
+  LOGGER = Logger.new(STDOUT)
+end
+
+# GRPC is the general RPC module
+module GRPC
+  # Inject the noop #logger if no module-level logger method has been injected.
+  extend RubyLogger
+end
 
 # Holds state for a fibonacci series
 class Fibber
