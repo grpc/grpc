@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace examples
+namespace Examples
 {
     /// <summary>
     /// Example implementation of RouteGuide server.
