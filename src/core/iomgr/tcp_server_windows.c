@@ -335,7 +335,7 @@ static void on_accept(void *arg, int from_iocp) {
 
   /* The only time we should call our callback, is where we successfully
      managed to accept a connection, and created an endpoint. */
-  if (ep) sp->server->on_accept_cb(sp->server->cb_arg, ep);
+  if (ep) sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep);
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned
      to the new connection. We need to create a new one for the next
