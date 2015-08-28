@@ -48,8 +48,6 @@ PyMethodDef pygrpc_ClientCredentials_methods[] = {
      METH_CLASS|METH_KEYWORDS, ""},
     {"compute_engine", (PyCFunction)pygrpc_ClientCredentials_compute_engine,
      METH_CLASS|METH_NOARGS, ""},
-    {"service_account", (PyCFunction)pygrpc_ClientCredentials_service_account,
-     METH_CLASS|METH_KEYWORDS, ""},
     {"jwt", (PyCFunction)pygrpc_ClientCredentials_jwt,
      METH_CLASS|METH_KEYWORDS, ""},
     {"refresh_token", (PyCFunction)pygrpc_ClientCredentials_refresh_token,
