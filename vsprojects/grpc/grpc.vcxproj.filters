@@ -686,9 +686,6 @@
     <ClInclude Include="..\..\src\core\profiling\timers.h">
       <Filter>src\core\profiling</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\profiling\timers_preciseclock.h">
-      <Filter>src\core\profiling</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
     </ClInclude>

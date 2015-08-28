@@ -39,7 +39,7 @@
 
 namespace grpc {
 
-constexpr size_t string_ref::npos;
+const size_t string_ref::npos;
 
 string_ref& string_ref::operator=(const string_ref& rhs) {
   data_ = rhs.data_;
@@ -80,7 +80,7 @@ size_t string_ref::find(string_ref s) const {
 }
 
 size_t string_ref::find(char c) const {
-  auto it = std::find_if(cbegin(), cend(), [c](char cc) { return cc == c; });
+  auto it = std::find(cbegin(), cend(), c);
   return it == cend() ? npos : std::distance(cbegin(), it);
 }
 
@@ -106,6 +106,10 @@ bool operator>(string_ref x, string_ref y) {
 
 bool operator>=(string_ref x, string_ref y) {
   return x.compare(y) >= 0;
+}
+
+std::ostream& operator<<(std::ostream& out, const string_ref& string) {
+  return out << grpc::string(string.begin(), string.end());
 }
 
 }  // namespace grpc

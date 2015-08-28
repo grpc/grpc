@@ -60,7 +60,7 @@ class OperationContext(base.OperationContext):
     with self._lock:
       if self._termination_manager.outcome is None:
         self._termination_manager.abort(outcome)
-        self._transmission_manager.abort(outcome)
+        self._transmission_manager.abort(outcome, None, None)
         self._expiration_manager.terminate()
 
   def outcome(self):
