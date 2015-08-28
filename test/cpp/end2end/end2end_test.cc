@@ -361,8 +361,8 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.fr");
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
-    channel_ =
-        CreateChannel(server_address_.str(), SslCredentials(ssl_opts), args);
+    channel_ = CreateCustomChannel(server_address_.str(),
+                                   SslCredentials(ssl_opts), args);
   }
 
   void ResetStub(bool use_proxy) {
@@ -377,8 +377,7 @@ class End2endTest : public ::testing::TestWithParam<bool> {
       builder.RegisterService(proxy_service_.get());
       proxy_server_ = builder.BuildAndStart();
 
-      channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials(),
-                               ChannelArguments());
+      channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials());
     }
 
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
@@ -637,7 +636,7 @@ TEST_F(End2endTest, BadCredentials) {
   std::shared_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
   EXPECT_EQ(static_cast<Credentials*>(nullptr), bad_creds.get());
   std::shared_ptr<Channel> channel =
-      CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
+      CreateChannel(server_address_.str(), bad_creds);
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
       grpc::cpp::test::util::TestService::NewStub(channel));
   EchoRequest request;

@@ -101,7 +101,7 @@ namespace Grpc.HealthCheck.Tests
 
         private static HealthCheckResponse.Types.ServingStatus GetStatusHelper(HealthServiceImpl impl, string host, string service)
         {
-            return impl.Check(new HealthCheckRequest{ Host = host, Service = service}, null).Result.Status;
+            return impl.Check(new HealthCheckRequest { Host = host, Service = service }, null).Result.Status;
         }
     }
 }
