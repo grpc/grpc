@@ -1,0 +1,18 @@
+/* Start JA-JP locale-specific CSS */
+body
+{
+	font-family: Segoe UI, Verdana, Arial, ＭＳ Ｐゴシック;
+}
+pre
+{
+  font-family: Consolas, Courier, monospace, ＭＳ ゴシック;
+}
+span.tt
+{
+  font-family: Consolas, Courier, monospace, ＭＳ ゴシック;
+}
+span.code
+{
+	font-family: Consolas, Courier, monospace, ＭＳ ゴシック;
+}
+/* End locale-specific CSS */
