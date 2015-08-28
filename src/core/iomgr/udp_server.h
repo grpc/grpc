@@ -39,21 +39,15 @@
 /* Forward decl of grpc_udp_server */
 typedef struct grpc_udp_server grpc_udp_server;
 
-/* New server callback: ep is the newly connected connection */
-typedef void (*grpc_udp_server_cb)(void *arg, grpc_endpoint *ep);
-
 /* Called when data is available to read from the socket. */
-typedef void (*grpc_udp_server_read_cb)(int fd,
-                                        grpc_udp_server_cb new_transport_cb,
-                                        void *cb_arg);
+typedef void (*grpc_udp_server_read_cb)(int fd);
 
 /* Create a server, initially not bound to any ports */
 grpc_udp_server *grpc_udp_server_create(void);
 
 /* Start listening to bound ports */
-void grpc_udp_server_start(grpc_udp_server *server, grpc_pollset **pollsets,
-                           size_t pollset_count, grpc_udp_server_cb cb,
-                           void *cb_arg);
+void grpc_udp_server_start(grpc_udp_server *udp_server, grpc_pollset **pollsets,
+                           size_t pollset_count);
 
 int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index);
 
