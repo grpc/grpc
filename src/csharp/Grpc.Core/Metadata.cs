@@ -33,6 +33,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -320,7 +321,7 @@ namespace Grpc.Core
 
             private static string NormalizeKey(string key)
             {
-                return Preconditions.CheckNotNull(key, "key").ToLower();
+                return Preconditions.CheckNotNull(key, "key").ToLower(CultureInfo.InvariantCulture);
             }
         }
     }

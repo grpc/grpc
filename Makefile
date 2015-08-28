@@ -875,9 +875,6 @@ interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
-pubsub_client: $(BINDIR)/$(CONFIG)/pubsub_client
-pubsub_publisher_test: $(BINDIR)/$(CONFIG)/pubsub_publisher_test
-pubsub_subscriber_test: $(BINDIR)/$(CONFIG)/pubsub_subscriber_test
 qps_driver: $(BINDIR)/$(CONFIG)/qps_driver
 qps_interarrival_test: $(BINDIR)/$(CONFIG)/qps_interarrival_test
 qps_openloop_test: $(BINDIR)/$(CONFIG)/qps_openloop_test
@@ -3489,51 +3486,6 @@ $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
 	$(Q) echo "$(GRPCXX_UNSECURE_PC_FILE)" | tr , '\n' >$@
 
 ifeq ($(NO_PROTOC),true)
-$(GENDIR)/examples/pubsub/empty.pb.cc: protoc_dep_error
-$(GENDIR)/examples/pubsub/empty.grpc.pb.cc: protoc_dep_error
-else
-$(GENDIR)/examples/pubsub/empty.pb.cc: examples/pubsub/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
-	$(E) "[PROTOC]  Generating protobuf CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
-
-$(GENDIR)/examples/pubsub/empty.grpc.pb.cc: examples/pubsub/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
-	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
-endif
-
-ifeq ($(NO_PROTOC),true)
-$(GENDIR)/examples/pubsub/label.pb.cc: protoc_dep_error
-$(GENDIR)/examples/pubsub/label.grpc.pb.cc: protoc_dep_error
-else
-$(GENDIR)/examples/pubsub/label.pb.cc: examples/pubsub/label.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
-	$(E) "[PROTOC]  Generating protobuf CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
-
-$(GENDIR)/examples/pubsub/label.grpc.pb.cc: examples/pubsub/label.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
-	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
-endif
-
-ifeq ($(NO_PROTOC),true)
-$(GENDIR)/examples/pubsub/pubsub.pb.cc: protoc_dep_error
-$(GENDIR)/examples/pubsub/pubsub.grpc.pb.cc: protoc_dep_error
-else
-$(GENDIR)/examples/pubsub/pubsub.pb.cc: examples/pubsub/pubsub.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
-	$(E) "[PROTOC]  Generating protobuf CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
-
-$(GENDIR)/examples/pubsub/pubsub.grpc.pb.cc: examples/pubsub/pubsub.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
-	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
-endif
-
-ifeq ($(NO_PROTOC),true)
 $(GENDIR)/test/cpp/qps/perf_db.pb.cc: protoc_dep_error
 $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc: protoc_dep_error
 else
@@ -5205,59 +5157,6 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/server.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
-
-
-LIBPUBSUB_CLIENT_LIB_SRC = \
-    $(GENDIR)/examples/pubsub/label.pb.cc $(GENDIR)/examples/pubsub/label.grpc.pb.cc \
-    $(GENDIR)/examples/pubsub/empty.pb.cc $(GENDIR)/examples/pubsub/empty.grpc.pb.cc \
-    $(GENDIR)/examples/pubsub/pubsub.pb.cc $(GENDIR)/examples/pubsub/pubsub.grpc.pb.cc \
-    examples/pubsub/publisher.cc \
-    examples/pubsub/subscriber.cc \
-
-
-LIBPUBSUB_CLIENT_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBPUBSUB_CLIENT_LIB_SRC))))
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure libraries if you don't have OpenSSL.
-
-$(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a: openssl_dep_error
-
-
-else
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
-
-$(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a: protobuf_dep_error
-
-
-else
-
-$(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(PROTOBUF_DEP) $(LIBPUBSUB_CLIENT_LIB_OBJS)
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a
-	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBPUBSUB_CLIENT_LIB_OBJS)
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a
-endif
-
-
-
-
-endif
-
-endif
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LIBPUBSUB_CLIENT_LIB_OBJS:.o=.dep)
-endif
-endif
-$(OBJDIR)/$(CONFIG)/examples/pubsub/publisher.o: $(GENDIR)/examples/pubsub/label.pb.cc $(GENDIR)/examples/pubsub/label.grpc.pb.cc $(GENDIR)/examples/pubsub/empty.pb.cc $(GENDIR)/examples/pubsub/empty.grpc.pb.cc $(GENDIR)/examples/pubsub/pubsub.pb.cc $(GENDIR)/examples/pubsub/pubsub.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/examples/pubsub/subscriber.o: $(GENDIR)/examples/pubsub/label.pb.cc $(GENDIR)/examples/pubsub/label.grpc.pb.cc $(GENDIR)/examples/pubsub/empty.pb.cc $(GENDIR)/examples/pubsub/empty.grpc.pb.cc $(GENDIR)/examples/pubsub/pubsub.pb.cc $(GENDIR)/examples/pubsub/pubsub.grpc.pb.cc
 
 
 LIBQPS_SRC = \
@@ -9750,126 +9649,6 @@ deps_mock_test: $(MOCK_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(MOCK_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-PUBSUB_CLIENT_SRC = \
-    examples/pubsub/main.cc \
-
-PUBSUB_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBSUB_CLIENT_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/pubsub_client: openssl_dep_error
-
-else
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/pubsub_client: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/pubsub_client: $(PROTOBUF_DEP) $(PUBSUB_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(PUBSUB_CLIENT_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/pubsub_client
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/examples/pubsub/main.o:  $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
-deps_pubsub_client: $(PUBSUB_CLIENT_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(PUBSUB_CLIENT_OBJS:.o=.dep)
-endif
-endif
-
-
-PUBSUB_PUBLISHER_TEST_SRC = \
-    examples/pubsub/publisher_test.cc \
-
-PUBSUB_PUBLISHER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBSUB_PUBLISHER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/pubsub_publisher_test: openssl_dep_error
-
-else
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/pubsub_publisher_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/pubsub_publisher_test: $(PROTOBUF_DEP) $(PUBSUB_PUBLISHER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(PUBSUB_PUBLISHER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/pubsub_publisher_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/examples/pubsub/publisher_test.o:  $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-deps_pubsub_publisher_test: $(PUBSUB_PUBLISHER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(PUBSUB_PUBLISHER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-PUBSUB_SUBSCRIBER_TEST_SRC = \
-    examples/pubsub/subscriber_test.cc \
-
-PUBSUB_SUBSCRIBER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PUBSUB_SUBSCRIBER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/pubsub_subscriber_test: openssl_dep_error
-
-else
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/pubsub_subscriber_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/pubsub_subscriber_test: $(PROTOBUF_DEP) $(PUBSUB_SUBSCRIBER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(PUBSUB_SUBSCRIBER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/pubsub_subscriber_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/examples/pubsub/subscriber_test.o:  $(LIBDIR)/$(CONFIG)/libpubsub_client_lib.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-deps_pubsub_subscriber_test: $(PUBSUB_SUBSCRIBER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(PUBSUB_SUBSCRIBER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -20648,8 +20427,6 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-examples/pubsub/publisher.cc: $(OPENSSL_DEP)
-examples/pubsub/subscriber.cc: $(OPENSSL_DEP)
 src/core/httpcli/httpcli_security_connector.c: $(OPENSSL_DEP)
 src/core/security/base64.c: $(OPENSSL_DEP)
 src/core/security/client_auth_filter.c: $(OPENSSL_DEP)
