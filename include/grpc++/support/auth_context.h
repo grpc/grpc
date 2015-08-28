@@ -37,6 +37,7 @@
 #include <iterator>
 #include <vector>
 
+#include <grpc/grpc_security.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/string_ref.h>
 
@@ -95,6 +96,19 @@ class AuthContext {
   /// Iteration over all the properties.
   virtual AuthPropertyIterator begin() const = 0;
   virtual AuthPropertyIterator end() const = 0;
+
+  static string transport_security_type_property_name() {
+    return GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME;
+  }
+  static string ssl_transport_security_type() {
+    return GRPC_SSL_TRANSPORT_SECURITY_TYPE;
+  }
+  static string x509_cn_property_name() {
+    return GRPC_X509_CN_PROPERTY_NAME;
+  }
+  static string x509_san_property_name() {
+    return GRPC_X509_SAN_PROPERTY_NAME;
+  }
 };
 
 }  // namespace grpc
