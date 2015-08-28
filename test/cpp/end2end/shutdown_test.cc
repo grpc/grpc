@@ -95,7 +95,7 @@ class ShutdownTest : public ::testing::Test {
 
   void ResetStub() {
     string target = "dns:localhost:" + to_string(port_);
-    channel_ = CreateChannel(target, InsecureCredentials(), ChannelArguments());
+    channel_ = CreateChannel(target, InsecureCredentials());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
