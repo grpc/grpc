@@ -104,9 +104,13 @@ class TransmissionManager(_interfaces.TransmissionManager):
           return None
         else:
           self._abortion_outcome = None
+          if self._completion is None:
+            code, message = None, None
+          else:
+            code, message = self._completion.code, self._completion.message
           return links.Ticket(
               self._operation_id, self._lowest_unused_sequence_number, None,
-              None, None, None, None, None, None, None, None, None,
+              None, None, None, None, None, None, None, code, message,
               termination, None)
 
     action = False
@@ -277,7 +281,7 @@ class TransmissionManager(_interfaces.TransmissionManager):
     self._remote_complete = True
     self._local_allowance = 0
 
-  def abort(self, outcome):
+  def abort(self, outcome, code, message):
     """See _interfaces.TransmissionManager.abort for specification."""
     if self._transmitting:
       self._aborted, self._abortion_outcome = True, outcome
@@ -287,8 +291,12 @@ class TransmissionManager(_interfaces.TransmissionManager):
         termination = _constants.ABORTION_OUTCOME_TO_TICKET_TERMINATION[
             outcome]
         if termination is not None:
+          if self._completion is None:
+            code, message = None, None
+          else:
+            code, message = self._completion.code, self._completion.message
           ticket = links.Ticket(
               self._operation_id, self._lowest_unused_sequence_number, None,
-              None, None, None, None, None, None, None, None, None,
+              None, None, None, None, None, None, None, code, message,
               termination, None)
           self._transmit(ticket)
