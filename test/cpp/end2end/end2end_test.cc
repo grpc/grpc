@@ -37,15 +37,15 @@
 #include <grpc/grpc.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <grpc++/auth_metadata_processor.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/auth_metadata_processor.h>
+#include <grpc++/security/credentials.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
 #include <gtest/gtest.h>
 
 #include "src/core/security/credentials.h"

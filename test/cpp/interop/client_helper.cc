@@ -45,7 +45,7 @@
 #include <gflags/gflags.h>
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
 
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"

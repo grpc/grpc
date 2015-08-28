@@ -36,7 +36,7 @@
 
 #include <memory>
 
-#include <grpc++/server_credentials.h>
+#include <grpc++/security/server_credentials.h>
 
 #include <grpc/grpc_security.h>
 
