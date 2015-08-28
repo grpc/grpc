@@ -242,10 +242,10 @@ In this section, we'll look at creating a C++ client for our `RouteGuide` servic
 
 To call service methods, we first need to create a *stub*.
 
-First we need to create a gRPC *channel* for our stub, specifying the server address and port we want to connect to and any special channel arguments - in our case we'll use the default `ChannelArguments` and no SSL:
+First we need to create a gRPC *channel* for our stub, specifying the server address and port we want to connect to without SSL:
 
 ```cpp
-grpc::CreateChannel("localhost:50051", grpc::InsecureCredentials(), ChannelArguments());
+grpc::CreateChannel("localhost:50051", grpc::InsecureCredentials());
 ```
 
 Now we can use the channel to create our stub using the `NewStub` method provided in the `RouteGuide` class we generated from our .proto.

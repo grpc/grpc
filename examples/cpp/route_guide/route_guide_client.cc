@@ -47,7 +47,6 @@
 #include "route_guide.grpc.pb.h"
 
 using grpc::Channel;
-using grpc::ChannelArguments;
 using grpc::ClientContext;
 using grpc::ClientReader;
 using grpc::ClientReaderWriter;
