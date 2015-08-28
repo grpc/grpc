@@ -110,7 +110,8 @@ class _Implementation(test_interfaces.Implementation):
   def destantiate(self, memo):
     invocation_grpc_link, service_grpc_link = memo
     invocation_grpc_link.stop()
-    service_grpc_link.stop_gracefully()
+    service_grpc_link.begin_stop()
+    service_grpc_link.end_stop()
 
   def invocation_initial_metadata(self):
     return grpc_test_common.INVOCATION_INITIAL_METADATA
