@@ -629,7 +629,7 @@ static void init_oauth2_token_fetcher(grpc_oauth2_token_fetcher_credentials *c,
   grpc_httpcli_context_init(&c->httpcli_context);
 }
 
-/* -- ComputeEngine credentials. -- */
+/* -- GoogleComputeEngine credentials. -- */
 
 static grpc_credentials_vtable compute_engine_vtable = {
     oauth2_token_fetcher_destroy, oauth2_token_fetcher_has_request_metadata,
@@ -651,7 +651,8 @@ static void compute_engine_fetch_oauth2(
                    metadata_req);
 }
 
-grpc_credentials *grpc_compute_engine_credentials_create(void *reserved) {
+grpc_credentials *grpc_google_compute_engine_credentials_create(
+    void *reserved) {
   grpc_oauth2_token_fetcher_credentials *c =
       gpr_malloc(sizeof(grpc_oauth2_token_fetcher_credentials));
   GPR_ASSERT(reserved == NULL);
@@ -660,81 +661,11 @@ grpc_credentials *grpc_compute_engine_credentials_create(void *reserved) {
   return &c->base;
 }
 
-/* -- ServiceAccount credentials. -- */
-
-static void service_account_destroy(grpc_credentials *creds) {
-  grpc_service_account_credentials *c =
-      (grpc_service_account_credentials *)creds;
-  if (c->scope != NULL) gpr_free(c->scope);
-  grpc_auth_json_key_destruct(&c->key);
-  oauth2_token_fetcher_destroy(&c->base.base);
-}
-
-static grpc_credentials_vtable service_account_vtable = {
-    service_account_destroy, oauth2_token_fetcher_has_request_metadata,
-    oauth2_token_fetcher_has_request_metadata_only,
-    oauth2_token_fetcher_get_request_metadata, NULL};
-
-static void service_account_fetch_oauth2(
-    grpc_credentials_metadata_request *metadata_req,
-    grpc_httpcli_context *httpcli_context, grpc_pollset *pollset,
-    grpc_httpcli_response_cb response_cb, gpr_timespec deadline) {
-  grpc_service_account_credentials *c =
-      (grpc_service_account_credentials *)metadata_req->creds;
-  grpc_httpcli_header header = {"Content-Type",
-                                "application/x-www-form-urlencoded"};
-  grpc_httpcli_request request;
-  char *body = NULL;
-  char *jwt = grpc_jwt_encode_and_sign(&c->key, GRPC_JWT_OAUTH2_AUDIENCE,
-                                       c->token_lifetime, c->scope);
-  if (jwt == NULL) {
-    grpc_httpcli_response response;
-    memset(&response, 0, sizeof(grpc_httpcli_response));
-    response.status = 400; /* Invalid request. */
-    gpr_log(GPR_ERROR, "Could not create signed jwt.");
-    /* Do not even send the request, just call the response callback. */
-    response_cb(metadata_req, &response);
-    return;
-  }
-  gpr_asprintf(&body, "%s%s", GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX, jwt);
-  memset(&request, 0, sizeof(grpc_httpcli_request));
-  request.host = GRPC_GOOGLE_OAUTH2_SERVICE_HOST;
-  request.path = GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH;
-  request.hdr_count = 1;
-  request.hdrs = &header;
-  request.handshaker = &grpc_httpcli_ssl;
-  grpc_httpcli_post(httpcli_context, pollset, &request, body, strlen(body),
-                    deadline, response_cb, metadata_req);
-  gpr_free(body);
-  gpr_free(jwt);
-}
-
-grpc_credentials *grpc_service_account_credentials_create(
-    const char *json_key, const char *scope, gpr_timespec token_lifetime,
-    void *reserved) {
-  grpc_service_account_credentials *c;
-  grpc_auth_json_key key = grpc_auth_json_key_create_from_string(json_key);
-  GPR_ASSERT(reserved == NULL);
-  if (scope == NULL || (strlen(scope) == 0) ||
-      !grpc_auth_json_key_is_valid(&key)) {
-    gpr_log(GPR_ERROR,
-            "Invalid input for service account credentials creation");
-    return NULL;
-  }
-  c = gpr_malloc(sizeof(grpc_service_account_credentials));
-  memset(c, 0, sizeof(grpc_service_account_credentials));
-  init_oauth2_token_fetcher(&c->base, service_account_fetch_oauth2);
-  c->base.base.vtable = &service_account_vtable;
-  c->scope = gpr_strdup(scope);
-  c->key = key;
-  c->token_lifetime = token_lifetime;
-  return &c->base.base;
-}
-
-/* -- RefreshToken credentials. -- */
+/* -- GoogleRefreshToken credentials. -- */
 
 static void refresh_token_destroy(grpc_credentials *creds) {
-  grpc_refresh_token_credentials *c = (grpc_refresh_token_credentials *)creds;
+  grpc_google_refresh_token_credentials *c =
+      (grpc_google_refresh_token_credentials *)creds;
   grpc_auth_refresh_token_destruct(&c->refresh_token);
   oauth2_token_fetcher_destroy(&c->base.base);
 }
@@ -748,8 +679,8 @@ static void refresh_token_fetch_oauth2(
     grpc_credentials_metadata_request *metadata_req,
     grpc_httpcli_context *httpcli_context, grpc_pollset *pollset,
     grpc_httpcli_response_cb response_cb, gpr_timespec deadline) {
-  grpc_refresh_token_credentials *c =
-      (grpc_refresh_token_credentials *)metadata_req->creds;
+  grpc_google_refresh_token_credentials *c =
+      (grpc_google_refresh_token_credentials *)metadata_req->creds;
   grpc_httpcli_header header = {"Content-Type",
                                 "application/x-www-form-urlencoded"};
   grpc_httpcli_request request;
@@ -768,22 +699,23 @@ static void refresh_token_fetch_oauth2(
   gpr_free(body);
 }
 
-grpc_credentials *grpc_refresh_token_credentials_create_from_auth_refresh_token(
+grpc_credentials *
+grpc_refresh_token_credentials_create_from_auth_refresh_token(
     grpc_auth_refresh_token refresh_token) {
-  grpc_refresh_token_credentials *c;
+  grpc_google_refresh_token_credentials *c;
   if (!grpc_auth_refresh_token_is_valid(&refresh_token)) {
     gpr_log(GPR_ERROR, "Invalid input for refresh token credentials creation");
     return NULL;
   }
-  c = gpr_malloc(sizeof(grpc_refresh_token_credentials));
-  memset(c, 0, sizeof(grpc_refresh_token_credentials));
+  c = gpr_malloc(sizeof(grpc_google_refresh_token_credentials));
+  memset(c, 0, sizeof(grpc_google_refresh_token_credentials));
   init_oauth2_token_fetcher(&c->base, refresh_token_fetch_oauth2);
   c->base.base.vtable = &refresh_token_vtable;
   c->refresh_token = refresh_token;
   return &c->base.base;
 }
 
-grpc_credentials *grpc_refresh_token_credentials_create(
+grpc_credentials *grpc_google_refresh_token_credentials_create(
     const char *json_refresh_token, void *reserved) {
   GPR_ASSERT(reserved == NULL);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(
@@ -1205,7 +1137,7 @@ grpc_credentials *grpc_credentials_contains_type(
 /* -- IAM credentials. -- */
 
 static void iam_destroy(grpc_credentials *creds) {
-  grpc_iam_credentials *c = (grpc_iam_credentials *)creds;
+  grpc_google_iam_credentials *c = (grpc_google_iam_credentials *)creds;
   grpc_credentials_md_store_unref(c->iam_md);
   gpr_free(c);
 }
@@ -1221,7 +1153,7 @@ static void iam_get_request_metadata(grpc_credentials *creds,
                                      const char *service_url,
                                      grpc_credentials_metadata_cb cb,
                                      void *user_data) {
-  grpc_iam_credentials *c = (grpc_iam_credentials *)creds;
+  grpc_google_iam_credentials *c = (grpc_google_iam_credentials *)creds;
   cb(user_data, c->iam_md->entries, c->iam_md->num_entries,
      GRPC_CREDENTIALS_OK);
 }
@@ -1230,15 +1162,14 @@ static grpc_credentials_vtable iam_vtable = {
     iam_destroy, iam_has_request_metadata, iam_has_request_metadata_only,
     iam_get_request_metadata, NULL};
 
-grpc_credentials *grpc_iam_credentials_create(const char *token,
-                                              const char *authority_selector,
-                                              void *reserved) {
-  grpc_iam_credentials *c;
+grpc_credentials *grpc_google_iam_credentials_create(
+    const char *token, const char *authority_selector, void *reserved) {
+  grpc_google_iam_credentials *c;
   GPR_ASSERT(reserved == NULL);
   GPR_ASSERT(token != NULL);
   GPR_ASSERT(authority_selector != NULL);
-  c = gpr_malloc(sizeof(grpc_iam_credentials));
-  memset(c, 0, sizeof(grpc_iam_credentials));
+  c = gpr_malloc(sizeof(grpc_google_iam_credentials));
+  memset(c, 0, sizeof(grpc_google_iam_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_IAM;
   c->base.vtable = &iam_vtable;
   gpr_ref_init(&c->base.refcount, 1);

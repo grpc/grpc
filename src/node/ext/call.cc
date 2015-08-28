@@ -461,6 +461,9 @@ void Call::Init(Handle<Object> exports) {
                           NanNew<FunctionTemplate>(StartBatch)->GetFunction());
   NanSetPrototypeTemplate(tpl, "cancel",
                           NanNew<FunctionTemplate>(Cancel)->GetFunction());
+  NanSetPrototypeTemplate(
+      tpl, "cancelWithStatus",
+      NanNew<FunctionTemplate>(CancelWithStatus)->GetFunction());
   NanSetPrototypeTemplate(tpl, "getPeer",
                           NanNew<FunctionTemplate>(GetPeer)->GetFunction());
   NanAssignPersistent(fun_tpl, tpl);
@@ -640,6 +643,26 @@ NAN_METHOD(Call::Cancel) {
   if (error != GRPC_CALL_OK) {
     return NanThrowError(nanErrorWithCode("cancel failed", error));
   }
+  NanReturnUndefined();
+}
+
+NAN_METHOD(Call::CancelWithStatus) {
+  NanScope();
+  if (!HasInstance(args.This())) {
+    return NanThrowTypeError("cancel can only be called on Call objects");
+  }
+  if (!args[0]->IsUint32()) {
+    return NanThrowTypeError(
+        "cancelWithStatus's first argument must be a status code");
+  }
+  if (!args[1]->IsString()) {
+    return NanThrowTypeError(
+        "cancelWithStatus's second argument must be a string");
+  }
+  Call *call = ObjectWrap::Unwrap<Call>(args.This());
+  grpc_status_code code = static_cast<grpc_status_code>(args[0]->Uint32Value());
+  NanUtf8String details(args[0]);
+  grpc_call_cancel_with_status(call->wrapped_call, code, *details, NULL);
   NanReturnUndefined();
 }
 
