@@ -79,6 +79,9 @@ static void state_unref(grpc_server_secure_state *state) {
     gpr_mu_unlock(&state->mu);
     /* clean up */
     GRPC_SECURITY_CONNECTOR_UNREF(state->sc, "server");
+    if (state->processor.state != NULL && state->processor.destroy != NULL) {
+      state->processor.destroy(state->processor.state);
+    }
     gpr_free(state);
   }
 }
@@ -262,7 +265,13 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   state->server = server;
   state->tcp = tcp;
   state->sc = sc;
+
+  /* Transfer ownership of the processor. */
   state->processor = creds->processor;
+  creds->processor.state = NULL;
+  creds->processor.destroy =  NULL;
+  creds->processor.process = NULL;
+
   state->handshaking_tcp_endpoints = NULL;
   state->is_shutdown = 0;
   gpr_mu_init(&state->mu);

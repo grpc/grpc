@@ -91,13 +91,17 @@ static grpc_mdelem *remove_consumed_md(void *user_data, grpc_mdelem *md) {
   call_data *calld = elem->call_data;
   size_t i;
   for (i = 0; i < calld->num_consumed_md; i++) {
+    const grpc_metadata *consumed_md = &calld->consumed_md[i];
     /* Maybe we could do a pointer comparison but we do not have any guarantee
        that the metadata processor used the same pointers for consumed_md in the
        callback. */
-    if (memcmp(GPR_SLICE_START_PTR(md->key->slice), calld->consumed_md[i].key,
+    if (GPR_SLICE_LENGTH(md->key->slice) != strlen(consumed_md->key) ||
+        GPR_SLICE_LENGTH(md->value->slice) != consumed_md->value_length) {
+      continue;
+    }
+    if (memcmp(GPR_SLICE_START_PTR(md->key->slice), consumed_md->key,
                GPR_SLICE_LENGTH(md->key->slice)) == 0 &&
-        memcmp(GPR_SLICE_START_PTR(md->value->slice),
-               calld->consumed_md[i].value,
+        memcmp(GPR_SLICE_START_PTR(md->value->slice), consumed_md->value,
                GPR_SLICE_LENGTH(md->value->slice)) == 0) {
       return NULL; /* Delete. */
     }

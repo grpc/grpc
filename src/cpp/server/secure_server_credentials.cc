@@ -43,6 +43,11 @@
 
 namespace grpc {
 
+void AuthMetadataProcessorAyncWrapper::Destroy(void *wrapper) {
+  auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
+  delete w;
+}
+
 void AuthMetadataProcessorAyncWrapper::Process(
     void* wrapper, grpc_auth_context* context, const grpc_metadata* md,
     size_t num_md, grpc_process_auth_metadata_done_cb cb, void* user_data) {
@@ -71,14 +76,14 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     metadata.insert(std::make_pair(
         md[i].key, grpc::string_ref(md[i].value, md[i].value_length)));
   }
-  SecureAuthContext context(ctx);
+  SecureAuthContext context(ctx, false);
   AuthMetadataProcessor::OutputMetadata consumed_metadata;
   AuthMetadataProcessor::OutputMetadata response_metadata;
 
   Status status = processor_->Process(metadata, &context, &consumed_metadata,
                                       &response_metadata);
 
-  std::vector<grpc_metadata> consumed_md(consumed_metadata.size());
+  std::vector<grpc_metadata> consumed_md;
   for (auto it = consumed_metadata.begin(); it != consumed_metadata.end();
        ++it) {
     consumed_md.push_back({it->first.c_str(),
@@ -87,8 +92,7 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
                            0,
                            {{nullptr, nullptr, nullptr, nullptr}}});
   }
-
-  std::vector<grpc_metadata> response_md(response_metadata.size());
+  std::vector<grpc_metadata> response_md;
   for (auto it = response_metadata.begin(); it != response_metadata.end();
        ++it) {
     response_md.push_back({it->first.c_str(),
@@ -109,9 +113,10 @@ int SecureServerCredentials::AddPortToServer(const grpc::string& addr,
 
 void SecureServerCredentials::SetAuthMetadataProcessor(
     const std::shared_ptr<AuthMetadataProcessor>& processor) {
-  processor_.reset(new AuthMetadataProcessorAyncWrapper(processor));
+  auto *wrapper = new AuthMetadataProcessorAyncWrapper(processor);
   grpc_server_credentials_set_auth_metadata_processor(
-      creds_, {AuthMetadataProcessorAyncWrapper::Process, processor_.get()});
+      creds_, {AuthMetadataProcessorAyncWrapper::Process,
+               AuthMetadataProcessorAyncWrapper::Destroy, wrapper});
 }
 
 std::shared_ptr<ServerCredentials> SslServerCredentials(
