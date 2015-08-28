@@ -28,7 +28,7 @@ Then change your current directory to `examples/cpp/route_guide`:
 $ cd examples/cpp/route_guide
 ```
 
-You also should have the relevant tools installed to generate the server and client interface code - if you don't already, follow the setup instructions in [the C++ quick start guide](examples/cpp).
+You also should have the relevant tools installed to generate the server and client interface code - if you don't already, follow the setup instructions in [gRPC in 3 minutes](README.md).
 
 
 ## Defining the service
