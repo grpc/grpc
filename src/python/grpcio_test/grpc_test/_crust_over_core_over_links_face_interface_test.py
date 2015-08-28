@@ -121,8 +121,9 @@ class _Implementation(test_interfaces.Implementation):
      service_end_link, pool) = memo
     invocation_end_link.stop(0).wait()
     invocation_grpc_link.stop()
-    service_grpc_link.stop_gracefully()
+    service_grpc_link.begin_stop()
     service_end_link.stop(0).wait()
+    service_grpc_link.end_stop()
     invocation_end_link.join_link(utilities.NULL_LINK)
     invocation_grpc_link.join_link(utilities.NULL_LINK)
     service_grpc_link.join_link(utilities.NULL_LINK)
