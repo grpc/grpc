@@ -60,10 +60,6 @@ class ClientCredentials(object):
     raise NotImplementedError()
 
   @staticmethod
-  def service_account():
-    raise NotImplementedError()
-
-  @staticmethod
   def jwt():
     raise NotImplementedError()
 
