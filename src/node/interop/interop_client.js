@@ -321,13 +321,7 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
     credential.getAccessToken(function(err, token) {
       assert.ifError(err);
       var updateMetadata = function(authURI, metadata, callback) {
-        metadata = _.clone(metadata);
-        if (metadata.Authorization) {
-          metadata.Authorization = _.clone(metadata.Authorization);
-        } else {
-          metadata.Authorization = [];
-        }
-        metadata.Authorization.push('Bearer ' + token);
+        metadata.Add('authorization', 'Bearer ' + token);
         callback(null, metadata);
       };
       var makeTestCall = function(error, client_metadata) {
