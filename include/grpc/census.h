@@ -276,9 +276,53 @@ census_context *census_start_op(census_context *context, const char *family,
 */
 void census_end_op(census_context *context, int status);
 
+#define CENSUS_TRACE_RECORD_START_OP ((gpr_uint32)0)
+#define CENSUS_TRACE_RECORD_END_OP ((gpr_uint32)1)
+
 /** Insert a trace record into the trace stream. The record consists of an
- * arbitrary size buffer, the size of which is provided in 'n'. */
-void census_trace_print(census_context *context, const char *buffer, size_t n);
+    arbitrary size buffer, the size of which is provided in 'n'.
+    @param context Trace context
+    @param type User-defined type to associate with trace entry.
+    @param buffer Pointer to buffer to use
+    @param n Number of bytes in buffer
+*/
+void census_trace_print(census_context *context, gpr_uint32 type,
+                        const char *buffer, size_t n);
+
+/** Trace record. */
+typedef struct {
+  census_timestamp timestamp; /* Time of record creation */
+  gpr_uint64 trace_id;        /* Trace ID associated with record */
+  gpr_uint64 op_id;           /* Operation ID associated with record */
+  gpr_uint32 type;            /* Type (as used in census_trace_print() */
+  const char *buffer;         /* Buffer (from census_trace_print() */
+  size_t buf_size;            /* Number of bytes inside buffer */
+} census_trace_record;
+
+/** Start a scan of existing trace records. While a scan is ongoing, addition
+    of new trace records will be blocked if the underlying trace buffers
+    fill up, so trace processing systems should endeavor to complete
+    reading as soon as possible.
+  @param consume if non-zero, indicates that reading records also "consumes"
+         the previously read record - i.e. releases space in the trace log
+         while scanning is ongoing.
+  @returns 0 on success, non-zero on failure (e.g. if a scan is already ongoing)
+*/
+int census_trace_scan_start(int consume);
+
+/** Get a trace record. The data pointed to by the trace buffer is guaranteed
+    stable until the next census_get_trace_record() call (if the consume
+    argument to census_trace_scan_start was non-zero) or census_trace_scan_end()
+    is called (otherwise).
+  @param trace_record structure that will be filled in with oldest trace record.
+  @returns -1 if an error occurred (e.g. no previous call to
+           census_trace_scan_start()), 0 if there is no more trace data (and
+           trace_record will not be modified) or 1 otherwise.
+*/
+int census_get_trace_record(census_trace_record *trace_record);
+
+/** End a scan previously started by census_trace_scan_start() */
+void census_trace_scan_end();
 
 /* Max number of characters in tag key */
 #define CENSUS_MAX_TAG_KEY_LENGTH 20

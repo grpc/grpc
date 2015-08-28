@@ -41,5 +41,5 @@ int census_trace_mask(const census_context *context) {
 
 void census_set_trace_mask(int trace_mask) {}
 
-void census_trace_print(census_context *context, const char *buffer, size_t n) {
-}
+void census_trace_print(census_context *context, gpr_uint32 type,
+                        const char *buffer, size_t n) {}
