@@ -234,6 +234,7 @@ static VALUE grpc_rb_server_request_call(VALUE self, VALUE cqueue,
                grpc_call_error_detail_of(err), err);
       return Qnil;
     }
+
     ev = grpc_rb_completion_queue_pluck_event(cqueue, tag_new, timeout);
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       grpc_request_call_stack_cleanup(&st);
@@ -298,36 +299,15 @@ static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
   if (s->wrapped != NULL) {
     grpc_server_shutdown_and_notify(s->wrapped, cq, NULL);
     ev = grpc_rb_completion_queue_pluck_event(cqueue, Qnil, timeout);
-
     if (!ev.success) {
-      rb_warn("server shutdown failed, there will be a LEAKED object warning");
-      return Qnil;
-      /*
-         TODO: renable the rb_raise below.
-
-         At the moment if the timeout is INFINITE_FUTURE as recommended, the
-         pluck blocks forever, even though
-
-         the outstanding server_request_calls correctly fail on the other
-         thread that they are running on.
-
-         it's almost as if calls that fail on the other thread do not get
-         cleaned up by shutdown request, even though it caused htem to
-         terminate.
-
-         rb_raise(rb_eRuntimeError, "grpc server shutdown did not succeed");
-         return Qnil;
-
-         The workaround is just to use a timeout and return without really
-         shutting down the server, and rely on the grpc core garbage collection
-         it down as a 'LEAKED OBJECT'.
-
-      */
+      rb_warn("server shutdown failed, cancelling the calls, objects may leak");
+      grpc_server_cancel_all_calls(s->wrapped);
+      return Qfalse;
     }
     grpc_server_destroy(s->wrapped);
     s->wrapped = NULL;
   }
-  return Qnil;
+  return Qtrue;
 }
 
 /*
