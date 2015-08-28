@@ -58,7 +58,10 @@ class AuthMetadataProcessor {
   // from the passed-in auth_metadata.
   // consumed_auth_metadata needs to be filled with metadata that has been
   // consumed by the processor and will be removed from the call.
-  // TODO(jboeuf).
+  // response_metadata is the metadata that will be sent as part of the
+  // response.
+  // If the return value is not Status::OK, the rpc call will be aborted with
+  // the error code and error message sent back to the client.
   virtual Status Process(const InputMetadata& auth_metadata,
                          AuthContext* context,
                          OutputMetadata* consumed_auth_metadata,
