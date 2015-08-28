@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc++/server_credentials.h>
+#include <grpc++/security/server_credentials.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>

@@ -43,7 +43,7 @@
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/support/time.h>
 
 #include "src/core/profiling/timers.h"
@@ -354,7 +354,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
       unknown_method_.reset(new RpcServiceMethod(
           "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
       // Use of emplace_back with just constructor arguments is not accepted
-      // here by gcc-4.4 because it can't match the anonymous nullptr with a 
+      // here by gcc-4.4 because it can't match the anonymous nullptr with a
       // proper constructor implicitly. Construct the object and use push_back.
       sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
     }
@@ -384,7 +384,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Spin, eating requests until the completion queue is completely shutdown.
     // If the deadline expires then cancel anything that's pending and keep
     // spinning forever until the work is actually drained.
-    // Since nothing else needs to touch state guarded by mu_, holding it 
+    // Since nothing else needs to touch state guarded by mu_, holding it
     // through this loop is fine.
     SyncRequest* request;
     bool ok;

@@ -32,7 +32,7 @@
  */
 
 #include <grpc/grpc_security.h>
-#include <grpc++/support/auth_context.h>
+#include <grpc++/security/auth_context.h>
 #include <gtest/gtest.h>
 #include "src/cpp/common/secure_auth_context.h"
 #include "test/cpp/util/string_ref_helper.h"

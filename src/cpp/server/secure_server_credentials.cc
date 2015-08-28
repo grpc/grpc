@@ -39,7 +39,7 @@
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
-#include <grpc++/auth_metadata_processor.h>
+#include <grpc++/security/auth_metadata_processor.h>
 
 namespace grpc {
 
