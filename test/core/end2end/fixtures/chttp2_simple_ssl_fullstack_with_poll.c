@@ -73,14 +73,15 @@ static void process_auth_failure(void *state, grpc_auth_context *ctx,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void *user_data) {
   GPR_ASSERT(state == NULL);
-  cb(user_data, NULL, 0, 0);
+  cb(user_data, NULL, 0, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, NULL);
 }
 
 static void chttp2_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
                                                 grpc_channel_args *client_args,
                                                 grpc_credentials *creds) {
   fullstack_secure_fixture_data *ffd = f->fixture_data;
-  f->client = grpc_secure_channel_create(creds, ffd->localaddr, client_args);
+  f->client =
+      grpc_secure_channel_create(creds, ffd->localaddr, client_args, NULL);
   GPR_ASSERT(f->client != NULL);
   grpc_credentials_release(creds);
 }
@@ -108,7 +109,7 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 static void chttp2_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL);
+  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL, NULL);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                 {"foo.test.google.fr"}};
@@ -135,7 +136,7 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
   grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
-      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0);
+      grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0, NULL);
   if (fail_server_auth_check(server_args)) {
     grpc_auth_metadata_processor processor = {process_auth_failure, NULL};
     grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);

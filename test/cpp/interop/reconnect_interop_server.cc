@@ -31,23 +31,22 @@
  *
  */
 
+#include <signal.h>
+#include <unistd.h>
+
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <sstream>
 
-#include <signal.h>
-#include <unistd.h>
-
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc++/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
+
 #include "test/core/util/reconnect_server.h"
 #include "test/cpp/util/test_config.h"
 #include "test/proto/test.grpc.pb.h"

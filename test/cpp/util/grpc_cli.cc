@@ -64,14 +64,15 @@
 #include <sstream>
 
 #include <gflags/gflags.h>
-#include "test/cpp/util/cli_call.h"
-#include "test/cpp/util/test_config.h"
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc/grpc.h>
+#include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
+#include <grpc++/support/string_ref.h>
 
-#include <grpc/grpc.h>
+#include "test/cpp/util/cli_call.h"
+#include "test/cpp/util/string_ref_helper.h"
+#include "test/cpp/util/test_config.h"
 
 DEFINE_bool(enable_ssl, true, "Whether to use ssl/tls.");
 DEFINE_bool(use_auth, false, "Whether to create default google credentials.");
@@ -105,16 +106,19 @@ void ParseMetadataFlag(
   }
 }
 
-void PrintMetadata(const std::multimap<grpc::string, grpc::string>& m,
-                   const grpc::string& message) {
+template <typename T>
+void PrintMetadata(const T& m, const grpc::string& message) {
   if (m.empty()) {
     return;
   }
   std::cout << message << std::endl;
-  for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
-           m.begin();
-       iter != m.end(); ++iter) {
-    std::cout << iter->first << " : " << iter->second << std::endl;
+  grpc::string pair;
+  for (typename T::const_iterator iter = m.begin(); iter != m.end(); ++iter) {
+    pair.clear();
+    pair.append(iter->first.data(), iter->first.size());
+    pair.append(" : ");
+    pair.append(iter->second.data(), iter->second.size());
+    std::cout << pair << std::endl;
   }
 }
 
@@ -154,12 +158,13 @@ int main(int argc, char** argv) {
       creds = grpc::SslCredentials(grpc::SslCredentialsOptions());
     }
   }
-  std::shared_ptr<grpc::ChannelInterface> channel =
-      grpc::CreateChannel(server_address, creds, grpc::ChannelArguments());
+  std::shared_ptr<grpc::Channel> channel =
+      grpc::CreateChannel(server_address, creds);
 
   grpc::string response;
-  std::multimap<grpc::string, grpc::string> client_metadata,
-      server_initial_metadata, server_trailing_metadata;
+  std::multimap<grpc::string, grpc::string> client_metadata;
+  std::multimap<grpc::string_ref, grpc::string_ref> server_initial_metadata,
+      server_trailing_metadata;
   ParseMetadataFlag(&client_metadata);
   PrintMetadata(client_metadata, "Sending client initial metadata:");
   grpc::Status s = grpc::testing::CliCall::Call(

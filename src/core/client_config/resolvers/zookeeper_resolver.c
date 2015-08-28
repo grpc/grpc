@@ -467,8 +467,7 @@ static grpc_resolver *zookeeper_create(
 }
 
 static void zookeeper_plugin_init() {
-  grpc_register_resolver_type("zookeeper",
-                              grpc_zookeeper_resolver_factory_create());
+  grpc_register_resolver_type(grpc_zookeeper_resolver_factory_create());
 }
 
 void grpc_zookeeper_register() {
@@ -483,6 +482,11 @@ static void zookeeper_factory_ref(grpc_resolver_factory *factory) {}
 
 static void zookeeper_factory_unref(grpc_resolver_factory *factory) {}
 
+static char *zookeeper_factory_get_default_hostname(
+    grpc_resolver_factory *factory, grpc_uri *uri) {
+  return NULL;
+}
+
 static grpc_resolver *zookeeper_factory_create_resolver(
     grpc_resolver_factory *factory, grpc_uri *uri,
     grpc_subchannel_factory *subchannel_factory) {
@@ -492,7 +496,8 @@ static grpc_resolver *zookeeper_factory_create_resolver(
 
 static const grpc_resolver_factory_vtable zookeeper_factory_vtable = {
     zookeeper_factory_ref, zookeeper_factory_unref,
-    zookeeper_factory_create_resolver};
+    zookeeper_factory_create_resolver, zookeeper_factory_get_default_hostname,
+    "zookeeper"};
 static grpc_resolver_factory zookeeper_resolver_factory = {
     &zookeeper_factory_vtable};
 

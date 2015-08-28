@@ -31,12 +31,10 @@
  *
  */
 
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/cpp/util/echo_duplicate.grpc.pb.h"
-#include "test/cpp/util/echo.grpc.pb.h"
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
@@ -44,15 +42,12 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include <grpc++/time.h>
 #include <gtest/gtest.h>
 
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
-
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/util/echo_duplicate.grpc.pb.h"
+#include "test/cpp/util/echo.grpc.pb.h"
 #include "test/cpp/util/subprocess.h"
 
 using grpc::cpp::test::util::EchoRequest;
@@ -81,7 +76,7 @@ class CrashTest : public ::testing::Test {
     }));
     GPR_ASSERT(server_);
     return grpc::cpp::test::util::TestService::NewStub(
-        CreateChannel(addr, InsecureCredentials(), ChannelArguments()));
+        CreateChannel(addr, InsecureCredentials()));
   }
 
   void KillServer() { server_.reset(); }

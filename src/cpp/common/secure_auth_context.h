@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 #define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 
-#include <grpc++/auth_context.h>
+#include <grpc++/support/auth_context.h>
 
 struct grpc_auth_context;
 
@@ -46,12 +46,12 @@ class SecureAuthContext GRPC_FINAL : public AuthContext {
 
   ~SecureAuthContext() GRPC_OVERRIDE;
 
-  std::vector<grpc::string> GetPeerIdentity() const GRPC_OVERRIDE;
+  std::vector<grpc::string_ref> GetPeerIdentity() const GRPC_OVERRIDE;
 
   grpc::string GetPeerIdentityPropertyName() const GRPC_OVERRIDE;
 
-  std::vector<grpc::string> FindPropertyValues(const grpc::string& name) const
-      GRPC_OVERRIDE;
+  std::vector<grpc::string_ref> FindPropertyValues(
+      const grpc::string& name) const GRPC_OVERRIDE;
 
   AuthPropertyIterator begin() const GRPC_OVERRIDE;
 

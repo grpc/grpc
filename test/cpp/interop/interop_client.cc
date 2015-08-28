@@ -33,26 +33,24 @@
 
 #include "test/cpp/interop/interop_client.h"
 
+#include <unistd.h>
+
 #include <fstream>
 #include <memory>
-
-#include <unistd.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
 
+#include "src/core/transport/stream_op.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/proto/test.grpc.pb.h"
 #include "test/proto/empty.grpc.pb.h"
 #include "test/proto/messages.grpc.pb.h"
-#include "src/core/transport/stream_op.h"
 
 namespace grpc {
 namespace testing {
@@ -84,7 +82,7 @@ CompressionType GetInteropCompressionTypeFromCompressionAlgorithm(
 }
 }  // namespace
 
-InteropClient::InteropClient(std::shared_ptr<ChannelInterface> channel)
+InteropClient::InteropClient(std::shared_ptr<Channel> channel)
     : channel_(channel) {}
 
 void InteropClient::AssertOkOrPrintErrorStatus(const Status& s) {
@@ -364,20 +362,37 @@ void InteropClient::DoResponseCompressedStreaming() {
       request.set_response_type(payload_types[i]);
       request.set_response_compression(compression_types[j]);
 
-      for (unsigned int i = 0; i < response_stream_sizes.size(); ++i) {
+      for (size_t k = 0; k < response_stream_sizes.size(); ++k) {
         ResponseParameters* response_parameter =
             request.add_response_parameters();
-        response_parameter->set_size(response_stream_sizes[i]);
+        response_parameter->set_size(response_stream_sizes[k]);
       }
       StreamingOutputCallResponse response;
 
       std::unique_ptr<ClientReader<StreamingOutputCallResponse>> stream(
           stub->StreamingOutputCall(&context, request));
 
-      unsigned int i = 0;
+      size_t k = 0;
       while (stream->Read(&response)) {
-        GPR_ASSERT(response.payload().body() ==
-                   grpc::string(response_stream_sizes[i], '\0'));
+        // Payload related checks.
+        if (request.response_type() != PayloadType::RANDOM) {
+          GPR_ASSERT(response.payload().type() == request.response_type());
+        }
+        switch (response.payload().type()) {
+          case PayloadType::COMPRESSABLE:
+            GPR_ASSERT(response.payload().body() ==
+                       grpc::string(response_stream_sizes[k], '\0'));
+            break;
+          case PayloadType::UNCOMPRESSABLE: {
+            std::ifstream rnd_file(kRandomFile);
+            GPR_ASSERT(rnd_file.good());
+            for (int n = 0; n < response_stream_sizes[k]; n++) {
+              GPR_ASSERT(response.payload().body()[n] == (char)rnd_file.get());
+            }
+          } break;
+          default:
+            GPR_ASSERT(false);
+        }
 
         // Compression related checks.
         GPR_ASSERT(request.response_compression() ==
@@ -393,10 +408,10 @@ void InteropClient::DoResponseCompressedStreaming() {
                      GRPC_WRITE_INTERNAL_COMPRESS);
         }
 
-        ++i;
+        ++k;
       }
 
-      GPR_ASSERT(response_stream_sizes.size() == i);
+      GPR_ASSERT(response_stream_sizes.size() == k);
       Status s = stream->Finish();
 
       AssertOkOrPrintErrorStatus(s);

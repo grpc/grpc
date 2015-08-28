@@ -33,11 +33,11 @@
 
 #ifndef GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
 #define GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
+
 #include <memory>
 
 #include <grpc/grpc.h>
-#include <grpc++/channel_interface.h>
-#include <grpc++/status.h>
+#include <grpc++/channel.h>
 #include "test/proto/messages.grpc.pb.h"
 
 namespace grpc {
@@ -45,10 +45,10 @@ namespace testing {
 
 class InteropClient {
  public:
-  explicit InteropClient(std::shared_ptr<ChannelInterface> channel);
+  explicit InteropClient(std::shared_ptr<Channel> channel);
   ~InteropClient() {}
 
-  void Reset(std::shared_ptr<ChannelInterface> channel) { channel_ = channel; }
+  void Reset(std::shared_ptr<Channel> channel) { channel_ = channel; }
 
   void DoEmpty();
   void DoLargeUnary();
@@ -82,7 +82,7 @@ class InteropClient {
   void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
   void AssertOkOrPrintErrorStatus(const Status& s);
 
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
 };
 
 }  // namespace testing

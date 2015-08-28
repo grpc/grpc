@@ -115,7 +115,7 @@ static int is_stack_running_on_compute_engine(void) {
   gpr_mu_lock(GRPC_POLLSET_MU(&detector.pollset));
   while (!detector.is_done) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&detector.pollset, &worker,
+    grpc_pollset_work(&detector.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
@@ -194,7 +194,7 @@ grpc_credentials *grpc_google_default_credentials_create(void) {
     int need_compute_engine_creds = is_stack_running_on_compute_engine();
     compute_engine_detection_done = 1;
     if (need_compute_engine_creds) {
-      result = grpc_compute_engine_credentials_create();
+      result = grpc_compute_engine_credentials_create(NULL);
     }
   }
 
@@ -202,9 +202,9 @@ end:
   if (!serving_cached_credentials && result != NULL) {
     /* Blend with default ssl credentials and add a global reference so that it
        can be cached and re-served. */
-    grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL);
+    grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL, NULL);
     default_credentials = grpc_credentials_ref(
-        grpc_composite_credentials_create(ssl_creds, result));
+        grpc_composite_credentials_create(ssl_creds, result, NULL));
     GPR_ASSERT(default_credentials != NULL);
     grpc_credentials_unref(ssl_creds);
     grpc_credentials_unref(result);

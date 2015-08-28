@@ -181,7 +181,7 @@ static void multipoll_with_epoll_pollset_maybe_work(
   pfds[1].events = POLLIN;
   pfds[1].revents = 0;
 
-  poll_rv = poll(pfds, 2, timeout_ms);
+  poll_rv = grpc_poll_function(pfds, 2, timeout_ms);
 
   if (poll_rv < 0) {
     if (errno != EINTR) {

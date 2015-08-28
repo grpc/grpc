@@ -32,7 +32,7 @@
  */
 
 #include <grpc/byte_buffer_reader.h>
-#include <grpc++/byte_buffer.h>
+#include <grpc++/support/byte_buffer.h>
 
 namespace grpc {
 

@@ -31,25 +31,27 @@
  *
  */
 
+#include <grpc++/credentials.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-
-#include <grpc++/channel_arguments.h>
-#include <grpc++/config.h>
-#include <grpc++/credentials.h>
-#include "src/cpp/client/channel.h"
+#include <grpc++/channel.h>
+#include <grpc++/support/channel_arguments.h>
+#include <grpc++/support/config.h>
+#include "src/cpp/client/create_channel_internal.h"
 
 namespace grpc {
 
 namespace {
 class InsecureCredentialsImpl GRPC_FINAL : public Credentials {
  public:
-  std::shared_ptr<grpc::ChannelInterface> CreateChannel(
+  std::shared_ptr<grpc::Channel> CreateChannel(
       const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE {
     grpc_channel_args channel_args;
     args.SetChannelArgs(&channel_args);
-    return std::shared_ptr<ChannelInterface>(new Channel(
-        grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr)));
+    return CreateChannelInternal(
+        "",
+        grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr));
   }
 
   // InsecureCredentials should not be applied to a call.

@@ -31,10 +31,9 @@
  *
  */
 
-#include <grpc++/channel_arguments.h>
+#include <grpc++/support/channel_arguments.h>
 
 #include <grpc/support/log.h>
-
 #include "src/core/channel/channel_args.h"
 
 namespace grpc {
