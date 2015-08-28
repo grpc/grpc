@@ -94,9 +94,6 @@ static void unlink_if_unix_domain_socket(const struct sockaddr_un *un) {
 
 /* the overall server */
 struct grpc_udp_server {
-  grpc_udp_server_cb cb;
-  void *cb_arg;
-
   gpr_mu mu;
   gpr_cv cv;
 
@@ -130,8 +127,6 @@ grpc_udp_server *grpc_udp_server_create(void) {
   s->active_ports = 0;
   s->destroyed_ports = 0;
   s->shutdown = 0;
-  s->cb = NULL;
-  s->cb_arg = NULL;
   s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
   s->nports = 0;
   s->port_capacity = INIT_PORT_CAP;
@@ -280,7 +275,7 @@ static void on_read(void *arg, int success) {
 
   /* Tell the registered callback that data is available to read. */
   GPR_ASSERT(sp->read_cb);
-  sp->read_cb(sp->fd, sp->server->cb, sp->server->cb_arg);
+  sp->read_cb(sp->fd);
 
   /* Re-arm the notification event so we get another chance to read. */
   grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
@@ -299,7 +294,6 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
     grpc_sockaddr_to_string(&addr_str, (struct sockaddr *)&addr, 1);
     gpr_asprintf(&name, "udp-server-listener:%s", addr_str);
     gpr_mu_lock(&s->mu);
-    GPR_ASSERT(!s->cb && "must add ports before starting server");
     /* append it to the list under a lock */
     if (s->nports == s->port_capacity) {
       s->port_capacity *= 2;
@@ -405,15 +399,10 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index) {
 }
 
 void grpc_udp_server_start(grpc_udp_server *s, grpc_pollset **pollsets,
-                           size_t pollset_count,
-                           grpc_udp_server_cb new_transport_cb, void *cb_arg) {
+                           size_t pollset_count) {
   size_t i, j;
-  GPR_ASSERT(new_transport_cb);
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(!s->cb);
   GPR_ASSERT(s->active_ports == 0);
-  s->cb = new_transport_cb;
-  s->cb_arg = cb_arg;
   s->pollsets = pollsets;
   for (i = 0; i < s->nports; i++) {
     for (j = 0; j < pollset_count; j++) {
