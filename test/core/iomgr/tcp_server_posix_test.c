@@ -137,7 +137,8 @@ static void test_connect(int n) {
     while (g_nconnects == nconnects_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
       grpc_pollset_worker worker;
-      grpc_pollset_work(&g_pollset, &worker, deadline);
+      grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+                        deadline);
     }
     gpr_log(GPR_DEBUG, "wait done");
 

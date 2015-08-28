@@ -1,0 +1,523 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<HelpTOC>
+
+  <HelpTOCNode Id="99ef1ac3-191d-4e4f-9bc8-74352a862ec4" Title="Namespaces" Url="html/R_Project_Documentation.htm">
+    <HelpTOCNode Id="4fb087a0-0c31-4543-8b29-7b9740334f73" Title="Grpc.Auth" Url="html/N_Grpc_Auth.htm">
+      <HelpTOCNode Id="1987ce1f-94cc-4bce-8e43-19759c74132b" Title="AuthInterceptors Class" Url="html/T_Grpc_Auth_AuthInterceptors.htm">
+        <HelpTOCNode Id="0703fe79-f006-463e-b258-6896e18413c8" Title="AuthInterceptors Methods" Url="html/Methods_T_Grpc_Auth_AuthInterceptors.htm">
+          <HelpTOCNode Title="FromAccessToken Method " Url="html/M_Grpc_Auth_AuthInterceptors_FromAccessToken.htm" />
+          <HelpTOCNode Title="FromCredential Method " Url="html/M_Grpc_Auth_AuthInterceptors_FromCredential.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="b7d00d8c-ddae-4df5-ae4a-9c6b14a57519" Title="Grpc.Core" Url="html/N_Grpc_Core.htm">
+      <HelpTOCNode Id="25ef63ae-1bf8-411e-9808-e60ff5c27062" Title="AsyncClientStreamingCall(TRequest, TResponse) Class" Url="html/T_Grpc_Core_AsyncClientStreamingCall_2.htm">
+        <HelpTOCNode Id="3c82f904-a574-4811-9151-bd9bd00550d6" Title="AsyncClientStreamingCall(TRequest, TResponse) Properties" Url="html/Properties_T_Grpc_Core_AsyncClientStreamingCall_2.htm">
+          <HelpTOCNode Title="RequestStream Property " Url="html/P_Grpc_Core_AsyncClientStreamingCall_2_RequestStream.htm" />
+          <HelpTOCNode Title="ResponseAsync Property " Url="html/P_Grpc_Core_AsyncClientStreamingCall_2_ResponseAsync.htm" />
+          <HelpTOCNode Title="ResponseHeadersAsync Property " Url="html/P_Grpc_Core_AsyncClientStreamingCall_2_ResponseHeadersAsync.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="01928221-e085-4913-8a55-ab2003c07b52" Title="AsyncClientStreamingCall(TRequest, TResponse) Methods" Url="html/Methods_T_Grpc_Core_AsyncClientStreamingCall_2.htm">
+          <HelpTOCNode Title="Dispose Method " Url="html/M_Grpc_Core_AsyncClientStreamingCall_2_Dispose.htm" />
+          <HelpTOCNode Title="GetAwaiter Method " Url="html/M_Grpc_Core_AsyncClientStreamingCall_2_GetAwaiter.htm" />
+          <HelpTOCNode Title="GetStatus Method " Url="html/M_Grpc_Core_AsyncClientStreamingCall_2_GetStatus.htm" />
+          <HelpTOCNode Title="GetTrailers Method " Url="html/M_Grpc_Core_AsyncClientStreamingCall_2_GetTrailers.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="64d758f3-3b89-4445-b9fe-864a1f4ecc09" Title="AsyncDuplexStreamingCall(TRequest, TResponse) Class" Url="html/T_Grpc_Core_AsyncDuplexStreamingCall_2.htm">
+        <HelpTOCNode Id="03ecf596-76d4-4e4b-8aa7-35c74f9c2a4d" Title="AsyncDuplexStreamingCall(TRequest, TResponse) Properties" Url="html/Properties_T_Grpc_Core_AsyncDuplexStreamingCall_2.htm">
+          <HelpTOCNode Title="RequestStream Property " Url="html/P_Grpc_Core_AsyncDuplexStreamingCall_2_RequestStream.htm" />
+          <HelpTOCNode Title="ResponseHeadersAsync Property " Url="html/P_Grpc_Core_AsyncDuplexStreamingCall_2_ResponseHeadersAsync.htm" />
+          <HelpTOCNode Title="ResponseStream Property " Url="html/P_Grpc_Core_AsyncDuplexStreamingCall_2_ResponseStream.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="918a83fd-570e-4e4e-a673-d2df2a41090a" Title="AsyncDuplexStreamingCall(TRequest, TResponse) Methods" Url="html/Methods_T_Grpc_Core_AsyncDuplexStreamingCall_2.htm">
+          <HelpTOCNode Title="Dispose Method " Url="html/M_Grpc_Core_AsyncDuplexStreamingCall_2_Dispose.htm" />
+          <HelpTOCNode Title="GetStatus Method " Url="html/M_Grpc_Core_AsyncDuplexStreamingCall_2_GetStatus.htm" />
+          <HelpTOCNode Title="GetTrailers Method " Url="html/M_Grpc_Core_AsyncDuplexStreamingCall_2_GetTrailers.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="db112032-ef26-407a-8aef-4bd5e9e51b30" Title="AsyncServerStreamingCall(TResponse) Class" Url="html/T_Grpc_Core_AsyncServerStreamingCall_1.htm">
+        <HelpTOCNode Id="d3f8a1be-8ffe-44d1-9c21-361a77a59f26" Title="AsyncServerStreamingCall(TResponse) Properties" Url="html/Properties_T_Grpc_Core_AsyncServerStreamingCall_1.htm">
+          <HelpTOCNode Title="ResponseHeadersAsync Property " Url="html/P_Grpc_Core_AsyncServerStreamingCall_1_ResponseHeadersAsync.htm" />
+          <HelpTOCNode Title="ResponseStream Property " Url="html/P_Grpc_Core_AsyncServerStreamingCall_1_ResponseStream.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="b5c92c91-96d0-4cb5-9ca2-7e2bde39e47c" Title="AsyncServerStreamingCall(TResponse) Methods" Url="html/Methods_T_Grpc_Core_AsyncServerStreamingCall_1.htm">
+          <HelpTOCNode Title="Dispose Method " Url="html/M_Grpc_Core_AsyncServerStreamingCall_1_Dispose.htm" />
+          <HelpTOCNode Title="GetStatus Method " Url="html/M_Grpc_Core_AsyncServerStreamingCall_1_GetStatus.htm" />
+          <HelpTOCNode Title="GetTrailers Method " Url="html/M_Grpc_Core_AsyncServerStreamingCall_1_GetTrailers.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="d2ddfcd9-ebc5-43f2-9054-1697572874d5" Title="AsyncUnaryCall(TResponse) Class" Url="html/T_Grpc_Core_AsyncUnaryCall_1.htm">
+        <HelpTOCNode Id="e6d76953-ca0c-4211-82e5-116c69e5b43e" Title="AsyncUnaryCall(TResponse) Properties" Url="html/Properties_T_Grpc_Core_AsyncUnaryCall_1.htm">
+          <HelpTOCNode Title="ResponseAsync Property " Url="html/P_Grpc_Core_AsyncUnaryCall_1_ResponseAsync.htm" />
+          <HelpTOCNode Title="ResponseHeadersAsync Property " Url="html/P_Grpc_Core_AsyncUnaryCall_1_ResponseHeadersAsync.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="36ce22b5-b6c2-4601-9037-adfe892ed976" Title="AsyncUnaryCall(TResponse) Methods" Url="html/Methods_T_Grpc_Core_AsyncUnaryCall_1.htm">
+          <HelpTOCNode Title="Dispose Method " Url="html/M_Grpc_Core_AsyncUnaryCall_1_Dispose.htm" />
+          <HelpTOCNode Title="GetAwaiter Method " Url="html/M_Grpc_Core_AsyncUnaryCall_1_GetAwaiter.htm" />
+          <HelpTOCNode Title="GetStatus Method " Url="html/M_Grpc_Core_AsyncUnaryCall_1_GetStatus.htm" />
+          <HelpTOCNode Title="GetTrailers Method " Url="html/M_Grpc_Core_AsyncUnaryCall_1_GetTrailers.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="e272cc27-608b-46e6-abe7-9655e6d90df0" Title="CallInvocationDetails(TRequest, TResponse) Structure" Url="html/T_Grpc_Core_CallInvocationDetails_2.htm">
+        <HelpTOCNode Id="c29d79be-04d1-448c-b6b8-cdd08ebe3d4a" Title="CallInvocationDetails(TRequest, TResponse) Constructor " Url="html/Overload_Grpc_Core_CallInvocationDetails_2__ctor.htm">
+          <HelpTOCNode Title="CallInvocationDetails(TRequest, TResponse) Constructor (Channel, Method(TRequest, TResponse), CallOptions)" Url="html/M_Grpc_Core_CallInvocationDetails_2__ctor.htm" />
+          <HelpTOCNode Title="CallInvocationDetails(TRequest, TResponse) Constructor (Channel, Method(TRequest, TResponse), String, CallOptions)" Url="html/M_Grpc_Core_CallInvocationDetails_2__ctor_1.htm" />
+          <HelpTOCNode Title="CallInvocationDetails(TRequest, TResponse) Constructor (Channel, String, String, Marshaller(TRequest), Marshaller(TResponse), CallOptions)" Url="html/M_Grpc_Core_CallInvocationDetails_2__ctor_2.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="473238e3-f673-4b5e-8f28-856e23613981" Title="CallInvocationDetails(TRequest, TResponse) Properties" Url="html/Properties_T_Grpc_Core_CallInvocationDetails_2.htm">
+          <HelpTOCNode Title="Channel Property " Url="html/P_Grpc_Core_CallInvocationDetails_2_Channel.htm" />
+          <HelpTOCNode Title="Host Property " Url="html/P_Grpc_Core_CallInvocationDetails_2_Host.htm" />
+          <HelpTOCNode Title="Method Property " Url="html/P_Grpc_Core_CallInvocationDetails_2_Method.htm" />
+          <HelpTOCNode Title="Options Property " Url="html/P_Grpc_Core_CallInvocationDetails_2_Options.htm" />
+          <HelpTOCNode Title="RequestMarshaller Property " Url="html/P_Grpc_Core_CallInvocationDetails_2_RequestMarshaller.htm" />
+          <HelpTOCNode Title="ResponseMarshaller Property " Url="html/P_Grpc_Core_CallInvocationDetails_2_ResponseMarshaller.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="62c7468b-9b2b-4869-8de0-412744a4da91" Title="CallInvocationDetails(TRequest, TResponse) Methods" Url="html/Methods_T_Grpc_Core_CallInvocationDetails_2.htm">
+          <HelpTOCNode Title="WithOptions Method " Url="html/M_Grpc_Core_CallInvocationDetails_2_WithOptions.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="24946a6a-fd6f-4c40-85ec-50f0fc3f4ffb" Title="CallOptions Structure" Url="html/T_Grpc_Core_CallOptions.htm">
+        <HelpTOCNode Title="CallOptions Constructor " Url="html/M_Grpc_Core_CallOptions__ctor.htm" />
+        <HelpTOCNode Id="a687274d-aad6-48e2-8013-ecf468e6ef2d" Title="CallOptions Properties" Url="html/Properties_T_Grpc_Core_CallOptions.htm">
+          <HelpTOCNode Title="CancellationToken Property " Url="html/P_Grpc_Core_CallOptions_CancellationToken.htm" />
+          <HelpTOCNode Title="Deadline Property " Url="html/P_Grpc_Core_CallOptions_Deadline.htm" />
+          <HelpTOCNode Title="Headers Property " Url="html/P_Grpc_Core_CallOptions_Headers.htm" />
+          <HelpTOCNode Title="PropagationToken Property " Url="html/P_Grpc_Core_CallOptions_PropagationToken.htm" />
+          <HelpTOCNode Title="WriteOptions Property " Url="html/P_Grpc_Core_CallOptions_WriteOptions.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="d9305a3f-a129-407b-9456-492e3a2228a0" Title="CallOptions Methods" Url="html/Methods_T_Grpc_Core_CallOptions.htm">
+          <HelpTOCNode Title="WithCancellationToken Method " Url="html/M_Grpc_Core_CallOptions_WithCancellationToken.htm" />
+          <HelpTOCNode Title="WithDeadline Method " Url="html/M_Grpc_Core_CallOptions_WithDeadline.htm" />
+          <HelpTOCNode Title="WithHeaders Method " Url="html/M_Grpc_Core_CallOptions_WithHeaders.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="ab223075-d269-49b4-92d7-ce69d4ca4b4e" Title="Calls Class" Url="html/T_Grpc_Core_Calls.htm">
+        <HelpTOCNode Id="0706d54b-54c4-44d5-90cf-8ba232d1965a" Title="Calls Methods" Url="html/Methods_T_Grpc_Core_Calls.htm">
+          <HelpTOCNode Title="AsyncClientStreamingCall(TRequest, TResponse) Method " Url="html/M_Grpc_Core_Calls_AsyncClientStreamingCall__2.htm" />
+          <HelpTOCNode Title="AsyncDuplexStreamingCall(TRequest, TResponse) Method " Url="html/M_Grpc_Core_Calls_AsyncDuplexStreamingCall__2.htm" />
+          <HelpTOCNode Title="AsyncServerStreamingCall(TRequest, TResponse) Method " Url="html/M_Grpc_Core_Calls_AsyncServerStreamingCall__2.htm" />
+          <HelpTOCNode Title="AsyncUnaryCall(TRequest, TResponse) Method " Url="html/M_Grpc_Core_Calls_AsyncUnaryCall__2.htm" />
+          <HelpTOCNode Title="BlockingUnaryCall(TRequest, TResponse) Method " Url="html/M_Grpc_Core_Calls_BlockingUnaryCall__2.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="d862ceb3-3a34-47c5-b3aa-2f5616e3cad4" Title="Channel Class" Url="html/T_Grpc_Core_Channel.htm">
+        <HelpTOCNode Id="18933ee0-95a7-4a12-acdb-05803845efc8" Title="Channel Constructor " Url="html/Overload_Grpc_Core_Channel__ctor.htm">
+          <HelpTOCNode Title="Channel Constructor (String, Credentials, IEnumerable(ChannelOption))" Url="html/M_Grpc_Core_Channel__ctor.htm" />
+          <HelpTOCNode Title="Channel Constructor (String, Int32, Credentials, IEnumerable(ChannelOption))" Url="html/M_Grpc_Core_Channel__ctor_1.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="e9257938-4557-4035-8c2d-9d7e8aedd598" Title="Channel Properties" Url="html/Properties_T_Grpc_Core_Channel.htm">
+          <HelpTOCNode Title="ResolvedTarget Property " Url="html/P_Grpc_Core_Channel_ResolvedTarget.htm" />
+          <HelpTOCNode Title="State Property " Url="html/P_Grpc_Core_Channel_State.htm" />
+          <HelpTOCNode Title="Target Property " Url="html/P_Grpc_Core_Channel_Target.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="897e0ff0-8820-47d2-860a-4ca3602f836c" Title="Channel Methods" Url="html/Methods_T_Grpc_Core_Channel.htm">
+          <HelpTOCNode Title="ConnectAsync Method " Url="html/M_Grpc_Core_Channel_ConnectAsync.htm" />
+          <HelpTOCNode Title="ShutdownAsync Method " Url="html/M_Grpc_Core_Channel_ShutdownAsync.htm" />
+          <HelpTOCNode Title="WaitForStateChangedAsync Method " Url="html/M_Grpc_Core_Channel_WaitForStateChangedAsync.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="f0103838-be43-46f6-a022-647b30d4a3df" Title="ChannelOption Class" Url="html/T_Grpc_Core_ChannelOption.htm">
+        <HelpTOCNode Id="419e7c87-a890-494e-a5e0-74e5820f5925" Title="ChannelOption Constructor " Url="html/Overload_Grpc_Core_ChannelOption__ctor.htm">
+          <HelpTOCNode Title="ChannelOption Constructor (String, Int32)" Url="html/M_Grpc_Core_ChannelOption__ctor.htm" />
+          <HelpTOCNode Title="ChannelOption Constructor (String, String)" Url="html/M_Grpc_Core_ChannelOption__ctor_1.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="00f94e4d-e531-4677-bb8d-54a71fe94bd5" Title="ChannelOption Properties" Url="html/Properties_T_Grpc_Core_ChannelOption.htm">
+          <HelpTOCNode Title="IntValue Property " Url="html/P_Grpc_Core_ChannelOption_IntValue.htm" />
+          <HelpTOCNode Title="Name Property " Url="html/P_Grpc_Core_ChannelOption_Name.htm" />
+          <HelpTOCNode Title="StringValue Property " Url="html/P_Grpc_Core_ChannelOption_StringValue.htm" />
+          <HelpTOCNode Title="Type Property " Url="html/P_Grpc_Core_ChannelOption_Type.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="ChannelOption Methods" Url="html/Methods_T_Grpc_Core_ChannelOption.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Title="ChannelOption.OptionType Enumeration" Url="html/T_Grpc_Core_ChannelOption_OptionType.htm" />
+      <HelpTOCNode Id="f20d85db-61c5-4b58-a949-f1f2cd9df295" Title="ChannelOptions Class" Url="html/T_Grpc_Core_ChannelOptions.htm">
+        <HelpTOCNode Id="0b243553-4a9e-41ff-baa3-9a7872003252" Title="ChannelOptions Fields" Url="html/Fields_T_Grpc_Core_ChannelOptions.htm">
+          <HelpTOCNode Title="Census Field" Url="html/F_Grpc_Core_ChannelOptions_Census.htm" />
+          <HelpTOCNode Title="DefaultAuthority Field" Url="html/F_Grpc_Core_ChannelOptions_DefaultAuthority.htm" />
+          <HelpTOCNode Title="Http2InitialSequenceNumber Field" Url="html/F_Grpc_Core_ChannelOptions_Http2InitialSequenceNumber.htm" />
+          <HelpTOCNode Title="MaxConcurrentStreams Field" Url="html/F_Grpc_Core_ChannelOptions_MaxConcurrentStreams.htm" />
+          <HelpTOCNode Title="MaxMessageLength Field" Url="html/F_Grpc_Core_ChannelOptions_MaxMessageLength.htm" />
+          <HelpTOCNode Title="PrimaryUserAgentString Field" Url="html/F_Grpc_Core_ChannelOptions_PrimaryUserAgentString.htm" />
+          <HelpTOCNode Title="SecondaryUserAgentString Field" Url="html/F_Grpc_Core_ChannelOptions_SecondaryUserAgentString.htm" />
+          <HelpTOCNode Title="SslTargetNameOverride Field" Url="html/F_Grpc_Core_ChannelOptions_SslTargetNameOverride.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Title="ChannelState Enumeration" Url="html/T_Grpc_Core_ChannelState.htm" />
+      <HelpTOCNode Id="1ad15b1e-abc8-4dda-860c-22a4462a9c41" Title="ClientBase Class" Url="html/T_Grpc_Core_ClientBase.htm">
+        <HelpTOCNode Title="ClientBase Constructor " Url="html/M_Grpc_Core_ClientBase__ctor.htm" />
+        <HelpTOCNode Id="c304c5ea-13cf-4a02-b3a2-3c2273cba628" Title="ClientBase Properties" Url="html/Properties_T_Grpc_Core_ClientBase.htm">
+          <HelpTOCNode Title="Channel Property " Url="html/P_Grpc_Core_ClientBase_Channel.htm" />
+          <HelpTOCNode Title="HeaderInterceptor Property " Url="html/P_Grpc_Core_ClientBase_HeaderInterceptor.htm" />
+          <HelpTOCNode Title="Host Property " Url="html/P_Grpc_Core_ClientBase_Host.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="a640e9d6-9acc-4fa9-95b7-a4aac2862c65" Title="ClientBase Methods" Url="html/Methods_T_Grpc_Core_ClientBase.htm">
+          <HelpTOCNode Title="CreateCall(TRequest, TResponse) Method " Url="html/M_Grpc_Core_ClientBase_CreateCall__2.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Title="ClientStreamingServerMethod(TRequest, TResponse) Delegate" Url="html/T_Grpc_Core_ClientStreamingServerMethod_2.htm" />
+      <HelpTOCNode Title="CompressionLevel Enumeration" Url="html/T_Grpc_Core_CompressionLevel.htm" />
+      <HelpTOCNode Id="dbd91489-e56f-4cd2-8039-a10c0da5ff4c" Title="ContextPropagationOptions Class" Url="html/T_Grpc_Core_ContextPropagationOptions.htm">
+        <HelpTOCNode Title="ContextPropagationOptions Constructor " Url="html/M_Grpc_Core_ContextPropagationOptions__ctor.htm" />
+        <HelpTOCNode Id="69b7c88c-670e-435c-a274-7aca7e48090f" Title="ContextPropagationOptions Properties" Url="html/Properties_T_Grpc_Core_ContextPropagationOptions.htm">
+          <HelpTOCNode Title="IsPropagateCancellation Property " Url="html/P_Grpc_Core_ContextPropagationOptions_IsPropagateCancellation.htm" />
+          <HelpTOCNode Title="IsPropagateDeadline Property " Url="html/P_Grpc_Core_ContextPropagationOptions_IsPropagateDeadline.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="ContextPropagationOptions Methods" Url="html/Methods_T_Grpc_Core_ContextPropagationOptions.htm" />
+        <HelpTOCNode Id="0b020f8b-4de1-4f03-834b-00e7c8dc8352" Title="ContextPropagationOptions Fields" Url="html/Fields_T_Grpc_Core_ContextPropagationOptions.htm">
+          <HelpTOCNode Title="Default Field" Url="html/F_Grpc_Core_ContextPropagationOptions_Default.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="d40552a2-3013-4004-bade-17e9d4760b86" Title="ContextPropagationToken Class" Url="html/T_Grpc_Core_ContextPropagationToken.htm">
+        <HelpTOCNode Title="ContextPropagationToken Methods" Url="html/Methods_T_Grpc_Core_ContextPropagationToken.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="e5d569d9-b865-4283-8085-20b02c8fe61c" Title="Credentials Class" Url="html/T_Grpc_Core_Credentials.htm">
+        <HelpTOCNode Title="Credentials Constructor " Url="html/M_Grpc_Core_Credentials__ctor.htm" />
+        <HelpTOCNode Id="254817e8-86c9-4ee7-ad0f-7b5e4545e975" Title="Credentials Properties" Url="html/Properties_T_Grpc_Core_Credentials.htm">
+          <HelpTOCNode Title="Insecure Property " Url="html/P_Grpc_Core_Credentials_Insecure.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="Credentials Methods" Url="html/Methods_T_Grpc_Core_Credentials.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Title="DuplexStreamingServerMethod(TRequest, TResponse) Delegate" Url="html/T_Grpc_Core_DuplexStreamingServerMethod_2.htm" />
+      <HelpTOCNode Id="4d583c99-71d3-4807-8c5b-70b084b23f04" Title="GrpcEnvironment Class" Url="html/T_Grpc_Core_GrpcEnvironment.htm">
+        <HelpTOCNode Id="629e105c-2323-458d-826e-7e1ca31a6ca2" Title="GrpcEnvironment Properties" Url="html/Properties_T_Grpc_Core_GrpcEnvironment.htm">
+          <HelpTOCNode Title="Logger Property " Url="html/P_Grpc_Core_GrpcEnvironment_Logger.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="a9a95b9f-e072-48ae-9a7a-d88fead5e886" Title="GrpcEnvironment Methods" Url="html/Methods_T_Grpc_Core_GrpcEnvironment.htm">
+          <HelpTOCNode Title="SetLogger Method " Url="html/M_Grpc_Core_GrpcEnvironment_SetLogger.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Title="HeaderInterceptor Delegate" Url="html/T_Grpc_Core_HeaderInterceptor.htm" />
+      <HelpTOCNode Id="18206bb0-344f-430d-83b0-c82a855bfc4b" Title="IAsyncStreamReader(T) Interface" Url="html/T_Grpc_Core_IAsyncStreamReader_1.htm">
+        <HelpTOCNode Title="IAsyncStreamReader(T) Properties" Url="html/Properties_T_Grpc_Core_IAsyncStreamReader_1.htm" />
+        <HelpTOCNode Title="IAsyncStreamReader(T) Methods" Url="html/Methods_T_Grpc_Core_IAsyncStreamReader_1.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="63fc9314-b1a0-406c-8474-5f3b7e692d38" Title="IAsyncStreamWriter(T) Interface" Url="html/T_Grpc_Core_IAsyncStreamWriter_1.htm">
+        <HelpTOCNode Id="e6af8f5c-023a-456a-8686-3f9bdf051dec" Title="IAsyncStreamWriter(T) Properties" Url="html/Properties_T_Grpc_Core_IAsyncStreamWriter_1.htm">
+          <HelpTOCNode Title="WriteOptions Property " Url="html/P_Grpc_Core_IAsyncStreamWriter_1_WriteOptions.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="f26cd3eb-e88d-45cd-8a92-2b25fd90fde9" Title="IAsyncStreamWriter(T) Methods" Url="html/Methods_T_Grpc_Core_IAsyncStreamWriter_1.htm">
+          <HelpTOCNode Title="WriteAsync Method " Url="html/M_Grpc_Core_IAsyncStreamWriter_1_WriteAsync.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="e5d1afb7-12fa-4ff2-9b22-cb459e04879c" Title="IClientStreamWriter(T) Interface" Url="html/T_Grpc_Core_IClientStreamWriter_1.htm">
+        <HelpTOCNode Title="IClientStreamWriter(T) Properties" Url="html/Properties_T_Grpc_Core_IClientStreamWriter_1.htm" />
+        <HelpTOCNode Id="08735fdd-2533-4dd3-ac72-1868c2b17b66" Title="IClientStreamWriter(T) Methods" Url="html/Methods_T_Grpc_Core_IClientStreamWriter_1.htm">
+          <HelpTOCNode Title="CompleteAsync Method " Url="html/M_Grpc_Core_IClientStreamWriter_1_CompleteAsync.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="42c38dfb-6ad6-4c8e-a8d0-301c86a4cad3" Title="IHasWriteOptions Interface" Url="html/T_Grpc_Core_IHasWriteOptions.htm">
+        <HelpTOCNode Id="1f8fb9be-416e-4276-89d4-960d38df861e" Title="IHasWriteOptions Properties" Url="html/Properties_T_Grpc_Core_IHasWriteOptions.htm">
+          <HelpTOCNode Title="WriteOptions Property " Url="html/P_Grpc_Core_IHasWriteOptions_WriteOptions.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="68a8090b-42dd-4c11-9dc9-d4cf0a0be858" Title="IMethod Interface" Url="html/T_Grpc_Core_IMethod.htm">
+        <HelpTOCNode Id="5d6514b6-f61c-48ba-a888-9c688660d323" Title="IMethod Properties" Url="html/Properties_T_Grpc_Core_IMethod.htm">
+          <HelpTOCNode Title="FullName Property " Url="html/P_Grpc_Core_IMethod_FullName.htm" />
+          <HelpTOCNode Title="Name Property " Url="html/P_Grpc_Core_IMethod_Name.htm" />
+          <HelpTOCNode Title="ServiceName Property " Url="html/P_Grpc_Core_IMethod_ServiceName.htm" />
+          <HelpTOCNode Title="Type Property " Url="html/P_Grpc_Core_IMethod_Type.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="e07e09e1-8b9c-4c33-a6d1-fb0e7988fba7" Title="IServerStreamWriter(T) Interface" Url="html/T_Grpc_Core_IServerStreamWriter_1.htm">
+        <HelpTOCNode Title="IServerStreamWriter(T) Properties" Url="html/Properties_T_Grpc_Core_IServerStreamWriter_1.htm" />
+        <HelpTOCNode Title="IServerStreamWriter(T) Methods" Url="html/Methods_T_Grpc_Core_IServerStreamWriter_1.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="37cb53e6-d613-48d3-86ff-f948208ffaa9" Title="KeyCertificatePair Class" Url="html/T_Grpc_Core_KeyCertificatePair.htm">
+        <HelpTOCNode Title="KeyCertificatePair Constructor " Url="html/M_Grpc_Core_KeyCertificatePair__ctor.htm" />
+        <HelpTOCNode Id="51709b36-11b6-46ef-a59e-807eadf88071" Title="KeyCertificatePair Properties" Url="html/Properties_T_Grpc_Core_KeyCertificatePair.htm">
+          <HelpTOCNode Title="CertificateChain Property " Url="html/P_Grpc_Core_KeyCertificatePair_CertificateChain.htm" />
+          <HelpTOCNode Title="PrivateKey Property " Url="html/P_Grpc_Core_KeyCertificatePair_PrivateKey.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="KeyCertificatePair Methods" Url="html/Methods_T_Grpc_Core_KeyCertificatePair.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="f4008ea4-7966-4c4e-9ffd-05192b1b664d" Title="Marshaller(T) Structure" Url="html/T_Grpc_Core_Marshaller_1.htm">
+        <HelpTOCNode Title="Marshaller(T) Constructor " Url="html/M_Grpc_Core_Marshaller_1__ctor.htm" />
+        <HelpTOCNode Id="2eeb7e1f-3bb9-465a-aff6-6f1941dbad6d" Title="Marshaller(T) Properties" Url="html/Properties_T_Grpc_Core_Marshaller_1.htm">
+          <HelpTOCNode Title="Deserializer Property " Url="html/P_Grpc_Core_Marshaller_1_Deserializer.htm" />
+          <HelpTOCNode Title="Serializer Property " Url="html/P_Grpc_Core_Marshaller_1_Serializer.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="Marshaller(T) Methods" Url="html/Methods_T_Grpc_Core_Marshaller_1.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="c89b726d-3eed-4293-95f6-eae2890c18d2" Title="Marshallers Class" Url="html/T_Grpc_Core_Marshallers.htm">
+        <HelpTOCNode Id="9f6c3cdf-93f2-40e9-bedf-e8fac4307920" Title="Marshallers Properties" Url="html/Properties_T_Grpc_Core_Marshallers.htm">
+          <HelpTOCNode Title="StringMarshaller Property " Url="html/P_Grpc_Core_Marshallers_StringMarshaller.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="24d998e8-0231-430a-ad63-2f71d1f2d83a" Title="Marshallers Methods" Url="html/Methods_T_Grpc_Core_Marshallers.htm">
+          <HelpTOCNode Title="Create(T) Method " Url="html/M_Grpc_Core_Marshallers_Create__1.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="21a41266-1f68-47c3-baf5-4a2f7c282328" Title="Metadata Class" Url="html/T_Grpc_Core_Metadata.htm">
+        <HelpTOCNode Title="Metadata Constructor " Url="html/M_Grpc_Core_Metadata__ctor.htm" />
+        <HelpTOCNode Id="2415b35c-f7b2-41e1-b3ed-1f5f5c134864" Title="Metadata Properties" Url="html/Properties_T_Grpc_Core_Metadata.htm">
+          <HelpTOCNode Title="Count Property " Url="html/P_Grpc_Core_Metadata_Count.htm" />
+          <HelpTOCNode Title="IsReadOnly Property " Url="html/P_Grpc_Core_Metadata_IsReadOnly.htm" />
+          <HelpTOCNode Title="Item Property " Url="html/P_Grpc_Core_Metadata_Item.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="3357228b-5529-42b9-87a4-22ad19c9002c" Title="Metadata Methods" Url="html/Methods_T_Grpc_Core_Metadata.htm">
+          <HelpTOCNode Id="00a82ec2-19f4-476d-9222-17260e2233fe" Title="Add Method " Url="html/Overload_Grpc_Core_Metadata_Add.htm">
+            <HelpTOCNode Title="Add Method (Metadata.Entry)" Url="html/M_Grpc_Core_Metadata_Add.htm" />
+            <HelpTOCNode Title="Add Method (String, Byte[])" Url="html/M_Grpc_Core_Metadata_Add_1.htm" />
+            <HelpTOCNode Title="Add Method (String, String)" Url="html/M_Grpc_Core_Metadata_Add_2.htm" />
+          </HelpTOCNode>
+          <HelpTOCNode Title="Clear Method " Url="html/M_Grpc_Core_Metadata_Clear.htm" />
+          <HelpTOCNode Title="Contains Method " Url="html/M_Grpc_Core_Metadata_Contains.htm" />
+          <HelpTOCNode Title="CopyTo Method " Url="html/M_Grpc_Core_Metadata_CopyTo.htm" />
+          <HelpTOCNode Title="GetEnumerator Method " Url="html/M_Grpc_Core_Metadata_GetEnumerator.htm" />
+          <HelpTOCNode Title="IndexOf Method " Url="html/M_Grpc_Core_Metadata_IndexOf.htm" />
+          <HelpTOCNode Title="Insert Method " Url="html/M_Grpc_Core_Metadata_Insert.htm" />
+          <HelpTOCNode Title="Remove Method " Url="html/M_Grpc_Core_Metadata_Remove.htm" />
+          <HelpTOCNode Title="RemoveAt Method " Url="html/M_Grpc_Core_Metadata_RemoveAt.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="a07312cd-d18c-47f7-9ee3-860b003e328d" Title="Metadata Fields" Url="html/Fields_T_Grpc_Core_Metadata.htm">
+          <HelpTOCNode Title="BinaryHeaderSuffix Field" Url="html/F_Grpc_Core_Metadata_BinaryHeaderSuffix.htm" />
+          <HelpTOCNode Title="Empty Field" Url="html/F_Grpc_Core_Metadata_Empty.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="3083edee-34c1-40dc-a1b9-f14274557eb2" Title="Metadata.Entry Structure" Url="html/T_Grpc_Core_Metadata_Entry.htm">
+        <HelpTOCNode Id="b610d7f5-a63e-4aad-a2f5-7eaf43d66800" Title="Entry Constructor " Url="html/Overload_Grpc_Core_Metadata_Entry__ctor.htm">
+          <HelpTOCNode Title="Metadata.Entry Constructor (String, Byte[])" Url="html/M_Grpc_Core_Metadata_Entry__ctor.htm" />
+          <HelpTOCNode Title="Metadata.Entry Constructor (String, String)" Url="html/M_Grpc_Core_Metadata_Entry__ctor_1.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="8e497e7c-3c8c-48ab-b6d4-c2d72597e88b" Title="Entry Properties" Url="html/Properties_T_Grpc_Core_Metadata_Entry.htm">
+          <HelpTOCNode Title="IsBinary Property " Url="html/P_Grpc_Core_Metadata_Entry_IsBinary.htm" />
+          <HelpTOCNode Title="Key Property " Url="html/P_Grpc_Core_Metadata_Entry_Key.htm" />
+          <HelpTOCNode Title="Value Property " Url="html/P_Grpc_Core_Metadata_Entry_Value.htm" />
+          <HelpTOCNode Title="ValueBytes Property " Url="html/P_Grpc_Core_Metadata_Entry_ValueBytes.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="d0af8c70-509b-4855-81dc-d83bf51b18bf" Title="Entry Methods" Url="html/Methods_T_Grpc_Core_Metadata_Entry.htm">
+          <HelpTOCNode Title="ToString Method " Url="html/M_Grpc_Core_Metadata_Entry_ToString.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="bb42405f-111a-4fb4-a7c0-202e4be0e870" Title="Method(TRequest, TResponse) Class" Url="html/T_Grpc_Core_Method_2.htm">
+        <HelpTOCNode Title="Method(TRequest, TResponse) Constructor " Url="html/M_Grpc_Core_Method_2__ctor.htm" />
+        <HelpTOCNode Id="07799a75-fe79-4c7e-82b2-4d386580bd52" Title="Method(TRequest, TResponse) Properties" Url="html/Properties_T_Grpc_Core_Method_2.htm">
+          <HelpTOCNode Title="FullName Property " Url="html/P_Grpc_Core_Method_2_FullName.htm" />
+          <HelpTOCNode Title="Name Property " Url="html/P_Grpc_Core_Method_2_Name.htm" />
+          <HelpTOCNode Title="RequestMarshaller Property " Url="html/P_Grpc_Core_Method_2_RequestMarshaller.htm" />
+          <HelpTOCNode Title="ResponseMarshaller Property " Url="html/P_Grpc_Core_Method_2_ResponseMarshaller.htm" />
+          <HelpTOCNode Title="ServiceName Property " Url="html/P_Grpc_Core_Method_2_ServiceName.htm" />
+          <HelpTOCNode Title="Type Property " Url="html/P_Grpc_Core_Method_2_Type.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="Method(TRequest, TResponse) Methods" Url="html/Methods_T_Grpc_Core_Method_2.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Title="MethodType Enumeration" Url="html/T_Grpc_Core_MethodType.htm" />
+      <HelpTOCNode Id="996a6829-32fa-4328-8425-a7e36dc06547" Title="RpcException Class" Url="html/T_Grpc_Core_RpcException.htm">
+        <HelpTOCNode Id="ecd3031d-500b-455b-b9e6-e7460c1196d3" Title="RpcException Constructor " Url="html/Overload_Grpc_Core_RpcException__ctor.htm">
+          <HelpTOCNode Title="RpcException Constructor (Status)" Url="html/M_Grpc_Core_RpcException__ctor.htm" />
+          <HelpTOCNode Title="RpcException Constructor (Status, String)" Url="html/M_Grpc_Core_RpcException__ctor_1.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="49925b06-a5ef-4208-aa58-97d01d83ca5a" Title="RpcException Properties" Url="html/Properties_T_Grpc_Core_RpcException.htm">
+          <HelpTOCNode Title="Status Property " Url="html/P_Grpc_Core_RpcException_Status.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="RpcException Methods" Url="html/Methods_T_Grpc_Core_RpcException.htm" />
+        <HelpTOCNode Title="RpcException Events" Url="html/Events_T_Grpc_Core_RpcException.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="202eecd5-04b7-4a5b-bca1-0fc2c886e7e8" Title="Server Class" Url="html/T_Grpc_Core_Server.htm">
+        <HelpTOCNode Title="Server Constructor " Url="html/M_Grpc_Core_Server__ctor.htm" />
+        <HelpTOCNode Id="9597ee15-8833-44e3-9709-3011e02061a3" Title="Server Properties" Url="html/Properties_T_Grpc_Core_Server.htm">
+          <HelpTOCNode Title="Ports Property " Url="html/P_Grpc_Core_Server_Ports.htm" />
+          <HelpTOCNode Title="Services Property " Url="html/P_Grpc_Core_Server_Services.htm" />
+          <HelpTOCNode Title="ShutdownTask Property " Url="html/P_Grpc_Core_Server_ShutdownTask.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="055d4e37-55d1-4272-8ea7-c5c98c597a0b" Title="Server Methods" Url="html/Methods_T_Grpc_Core_Server.htm">
+          <HelpTOCNode Title="KillAsync Method " Url="html/M_Grpc_Core_Server_KillAsync.htm" />
+          <HelpTOCNode Title="ShutdownAsync Method " Url="html/M_Grpc_Core_Server_ShutdownAsync.htm" />
+          <HelpTOCNode Title="Start Method " Url="html/M_Grpc_Core_Server_Start.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="179c4759-49e6-4cde-ad6c-ecbd24f28825" Title="Server.ServerPortCollection Class" Url="html/T_Grpc_Core_Server_ServerPortCollection.htm">
+        <HelpTOCNode Id="5ceab319-6c73-4c06-9f5f-91f96caa185c" Title="ServerPortCollection Methods" Url="html/Methods_T_Grpc_Core_Server_ServerPortCollection.htm">
+          <HelpTOCNode Id="fb5a924b-0557-480a-ac52-69eb05641c43" Title="Add Method " Url="html/Overload_Grpc_Core_Server_ServerPortCollection_Add.htm">
+            <HelpTOCNode Title="Add Method (ServerPort)" Url="html/M_Grpc_Core_Server_ServerPortCollection_Add.htm" />
+            <HelpTOCNode Title="Add Method (String, Int32, ServerCredentials)" Url="html/M_Grpc_Core_Server_ServerPortCollection_Add_1.htm" />
+          </HelpTOCNode>
+          <HelpTOCNode Title="GetEnumerator Method " Url="html/M_Grpc_Core_Server_ServerPortCollection_GetEnumerator.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="6a73d058-4abc-434e-955a-5dbb5319982f" Title="Server.ServiceDefinitionCollection Class" Url="html/T_Grpc_Core_Server_ServiceDefinitionCollection.htm">
+        <HelpTOCNode Id="86683dc1-34bc-4c25-b9c5-d66e88ca16d4" Title="ServiceDefinitionCollection Methods" Url="html/Methods_T_Grpc_Core_Server_ServiceDefinitionCollection.htm">
+          <HelpTOCNode Title="Add Method " Url="html/M_Grpc_Core_Server_ServiceDefinitionCollection_Add.htm" />
+          <HelpTOCNode Title="GetEnumerator Method " Url="html/M_Grpc_Core_Server_ServiceDefinitionCollection_GetEnumerator.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="1eeadbd8-d9fb-4b0d-a569-2e94a2daa1a6" Title="ServerCallContext Class" Url="html/T_Grpc_Core_ServerCallContext.htm">
+        <HelpTOCNode Id="ff06e313-73f4-4c5b-bcdf-f47c0d4226fd" Title="ServerCallContext Properties" Url="html/Properties_T_Grpc_Core_ServerCallContext.htm">
+          <HelpTOCNode Title="CancellationToken Property " Url="html/P_Grpc_Core_ServerCallContext_CancellationToken.htm" />
+          <HelpTOCNode Title="Deadline Property " Url="html/P_Grpc_Core_ServerCallContext_Deadline.htm" />
+          <HelpTOCNode Title="Host Property " Url="html/P_Grpc_Core_ServerCallContext_Host.htm" />
+          <HelpTOCNode Title="Method Property " Url="html/P_Grpc_Core_ServerCallContext_Method.htm" />
+          <HelpTOCNode Title="Peer Property " Url="html/P_Grpc_Core_ServerCallContext_Peer.htm" />
+          <HelpTOCNode Title="RequestHeaders Property " Url="html/P_Grpc_Core_ServerCallContext_RequestHeaders.htm" />
+          <HelpTOCNode Title="ResponseTrailers Property " Url="html/P_Grpc_Core_ServerCallContext_ResponseTrailers.htm" />
+          <HelpTOCNode Title="Status Property " Url="html/P_Grpc_Core_ServerCallContext_Status.htm" />
+          <HelpTOCNode Title="WriteOptions Property " Url="html/P_Grpc_Core_ServerCallContext_WriteOptions.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="69bad7dd-c1d2-4641-86bc-3207683a8f9e" Title="ServerCallContext Methods" Url="html/Methods_T_Grpc_Core_ServerCallContext.htm">
+          <HelpTOCNode Title="CreatePropagationToken Method " Url="html/M_Grpc_Core_ServerCallContext_CreatePropagationToken.htm" />
+          <HelpTOCNode Title="WriteResponseHeadersAsync Method " Url="html/M_Grpc_Core_ServerCallContext_WriteResponseHeadersAsync.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="3fcaac14-82dd-4676-8372-ce9b3a432adf" Title="ServerCredentials Class" Url="html/T_Grpc_Core_ServerCredentials.htm">
+        <HelpTOCNode Title="ServerCredentials Constructor " Url="html/M_Grpc_Core_ServerCredentials__ctor.htm" />
+        <HelpTOCNode Id="260ab535-2687-4ca4-92e1-04f880f5b866" Title="ServerCredentials Properties" Url="html/Properties_T_Grpc_Core_ServerCredentials.htm">
+          <HelpTOCNode Title="Insecure Property " Url="html/P_Grpc_Core_ServerCredentials_Insecure.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="ServerCredentials Methods" Url="html/Methods_T_Grpc_Core_ServerCredentials.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="431525c2-7485-4749-96b4-4b780307e33a" Title="ServerPort Class" Url="html/T_Grpc_Core_ServerPort.htm">
+        <HelpTOCNode Title="ServerPort Constructor " Url="html/M_Grpc_Core_ServerPort__ctor.htm" />
+        <HelpTOCNode Id="63488e69-090c-4dfb-a0ee-b78525f0d6b9" Title="ServerPort Properties" Url="html/Properties_T_Grpc_Core_ServerPort.htm">
+          <HelpTOCNode Title="BoundPort Property " Url="html/P_Grpc_Core_ServerPort_BoundPort.htm" />
+          <HelpTOCNode Title="Credentials Property " Url="html/P_Grpc_Core_ServerPort_Credentials.htm" />
+          <HelpTOCNode Title="Host Property " Url="html/P_Grpc_Core_ServerPort_Host.htm" />
+          <HelpTOCNode Title="Port Property " Url="html/P_Grpc_Core_ServerPort_Port.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="ServerPort Methods" Url="html/Methods_T_Grpc_Core_ServerPort.htm" />
+        <HelpTOCNode Id="57a93a50-77d0-4e95-b56a-f7dd5b7c36d7" Title="ServerPort Fields" Url="html/Fields_T_Grpc_Core_ServerPort.htm">
+          <HelpTOCNode Title="PickUnused Field" Url="html/F_Grpc_Core_ServerPort_PickUnused.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="f016d58e-e22a-4270-9804-17e820acbeee" Title="ServerServiceDefinition Class" Url="html/T_Grpc_Core_ServerServiceDefinition.htm">
+        <HelpTOCNode Id="770302a4-5ce7-4c0f-ba09-2917367fb33f" Title="ServerServiceDefinition Methods" Url="html/Methods_T_Grpc_Core_ServerServiceDefinition.htm">
+          <HelpTOCNode Title="CreateBuilder Method " Url="html/M_Grpc_Core_ServerServiceDefinition_CreateBuilder.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="746c68c2-783d-41b6-a100-d16b10e6101e" Title="ServerServiceDefinition.Builder Class" Url="html/T_Grpc_Core_ServerServiceDefinition_Builder.htm">
+        <HelpTOCNode Title="ServerServiceDefinition.Builder Constructor " Url="html/M_Grpc_Core_ServerServiceDefinition_Builder__ctor.htm" />
+        <HelpTOCNode Id="31b26957-e71e-450c-b081-ddfb89858ae6" Title="Builder Methods" Url="html/Methods_T_Grpc_Core_ServerServiceDefinition_Builder.htm">
+          <HelpTOCNode Id="cdf7da25-dd67-4470-87b6-e6338d8af19c" Title="AddMethod Method " Url="html/Overload_Grpc_Core_ServerServiceDefinition_Builder_AddMethod.htm">
+            <HelpTOCNode Title="AddMethod(TRequest, TResponse) Method (Method(TRequest, TResponse), ClientStreamingServerMethod(TRequest, TResponse))" Url="html/M_Grpc_Core_ServerServiceDefinition_Builder_AddMethod__2.htm" />
+            <HelpTOCNode Title="AddMethod(TRequest, TResponse) Method (Method(TRequest, TResponse), DuplexStreamingServerMethod(TRequest, TResponse))" Url="html/M_Grpc_Core_ServerServiceDefinition_Builder_AddMethod__2_1.htm" />
+            <HelpTOCNode Title="AddMethod(TRequest, TResponse) Method (Method(TRequest, TResponse), ServerStreamingServerMethod(TRequest, TResponse))" Url="html/M_Grpc_Core_ServerServiceDefinition_Builder_AddMethod__2_2.htm" />
+            <HelpTOCNode Title="AddMethod(TRequest, TResponse) Method (Method(TRequest, TResponse), UnaryServerMethod(TRequest, TResponse))" Url="html/M_Grpc_Core_ServerServiceDefinition_Builder_AddMethod__2_3.htm" />
+          </HelpTOCNode>
+          <HelpTOCNode Title="Build Method " Url="html/M_Grpc_Core_ServerServiceDefinition_Builder_Build.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Title="ServerStreamingServerMethod(TRequest, TResponse) Delegate" Url="html/T_Grpc_Core_ServerStreamingServerMethod_2.htm" />
+      <HelpTOCNode Id="9360e278-6622-41e9-973b-2dda4a3f4191" Title="SslCredentials Class" Url="html/T_Grpc_Core_SslCredentials.htm">
+        <HelpTOCNode Id="db94bec2-b656-41a5-9a1e-f6e8e30aba61" Title="SslCredentials Constructor " Url="html/Overload_Grpc_Core_SslCredentials__ctor.htm">
+          <HelpTOCNode Title="SslCredentials Constructor " Url="html/M_Grpc_Core_SslCredentials__ctor.htm" />
+          <HelpTOCNode Title="SslCredentials Constructor (String)" Url="html/M_Grpc_Core_SslCredentials__ctor_1.htm" />
+          <HelpTOCNode Title="SslCredentials Constructor (String, KeyCertificatePair)" Url="html/M_Grpc_Core_SslCredentials__ctor_2.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="8676f362-61a4-45ae-98a1-72dc543e45ff" Title="SslCredentials Properties" Url="html/Properties_T_Grpc_Core_SslCredentials.htm">
+          <HelpTOCNode Title="KeyCertificatePair Property " Url="html/P_Grpc_Core_SslCredentials_KeyCertificatePair.htm" />
+          <HelpTOCNode Title="RootCertificates Property " Url="html/P_Grpc_Core_SslCredentials_RootCertificates.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="SslCredentials Methods" Url="html/Methods_T_Grpc_Core_SslCredentials.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="c42c9874-4efa-4021-ab51-38fca112ee60" Title="SslServerCredentials Class" Url="html/T_Grpc_Core_SslServerCredentials.htm">
+        <HelpTOCNode Id="a21a5287-ba71-4eff-8fb9-ae8df70b4e61" Title="SslServerCredentials Constructor " Url="html/Overload_Grpc_Core_SslServerCredentials__ctor.htm">
+          <HelpTOCNode Title="SslServerCredentials Constructor (IEnumerable(KeyCertificatePair))" Url="html/M_Grpc_Core_SslServerCredentials__ctor.htm" />
+          <HelpTOCNode Title="SslServerCredentials Constructor (IEnumerable(KeyCertificatePair), String, Boolean)" Url="html/M_Grpc_Core_SslServerCredentials__ctor_1.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="612006fc-3a12-48c3-aaf9-1e8f9427fda8" Title="SslServerCredentials Properties" Url="html/Properties_T_Grpc_Core_SslServerCredentials.htm">
+          <HelpTOCNode Title="ForceClientAuthentication Property " Url="html/P_Grpc_Core_SslServerCredentials_ForceClientAuthentication.htm" />
+          <HelpTOCNode Title="KeyCertificatePairs Property " Url="html/P_Grpc_Core_SslServerCredentials_KeyCertificatePairs.htm" />
+          <HelpTOCNode Title="RootCertificates Property " Url="html/P_Grpc_Core_SslServerCredentials_RootCertificates.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="SslServerCredentials Methods" Url="html/Methods_T_Grpc_Core_SslServerCredentials.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="9c94fbdf-19a0-4fc6-9a3c-78ce85d6d998" Title="Status Structure" Url="html/T_Grpc_Core_Status.htm">
+        <HelpTOCNode Title="Status Constructor " Url="html/M_Grpc_Core_Status__ctor.htm" />
+        <HelpTOCNode Id="b3e3e1c9-aa35-462d-aedb-0223a78f3c38" Title="Status Properties" Url="html/Properties_T_Grpc_Core_Status.htm">
+          <HelpTOCNode Title="Detail Property " Url="html/P_Grpc_Core_Status_Detail.htm" />
+          <HelpTOCNode Title="StatusCode Property " Url="html/P_Grpc_Core_Status_StatusCode.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="8c29ff31-266b-41f7-9ac1-06d2c14f87b6" Title="Status Methods" Url="html/Methods_T_Grpc_Core_Status.htm">
+          <HelpTOCNode Title="ToString Method " Url="html/M_Grpc_Core_Status_ToString.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="31c222e3-a41d-442c-b990-9792abbaec79" Title="Status Fields" Url="html/Fields_T_Grpc_Core_Status.htm">
+          <HelpTOCNode Title="DefaultCancelled Field" Url="html/F_Grpc_Core_Status_DefaultCancelled.htm" />
+          <HelpTOCNode Title="DefaultSuccess Field" Url="html/F_Grpc_Core_Status_DefaultSuccess.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Title="StatusCode Enumeration" Url="html/T_Grpc_Core_StatusCode.htm" />
+      <HelpTOCNode Title="UnaryServerMethod(TRequest, TResponse) Delegate" Url="html/T_Grpc_Core_UnaryServerMethod_2.htm" />
+      <HelpTOCNode Id="cbb63ce8-468c-4123-aae2-5114a6fedb48" Title="VersionInfo Class" Url="html/T_Grpc_Core_VersionInfo.htm">
+        <HelpTOCNode Id="1a7b3c5b-faed-4100-9519-f8009ce9047c" Title="VersionInfo Fields" Url="html/Fields_T_Grpc_Core_VersionInfo.htm">
+          <HelpTOCNode Title="CurrentVersion Field" Url="html/F_Grpc_Core_VersionInfo_CurrentVersion.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Title="WriteFlags Enumeration" Url="html/T_Grpc_Core_WriteFlags.htm" />
+      <HelpTOCNode Id="ed6a008f-6472-49d1-9d53-9dc4bafb3cbf" Title="WriteOptions Class" Url="html/T_Grpc_Core_WriteOptions.htm">
+        <HelpTOCNode Title="WriteOptions Constructor " Url="html/M_Grpc_Core_WriteOptions__ctor.htm" />
+        <HelpTOCNode Id="4e281091-67c5-43a9-be15-83ab0d2c0640" Title="WriteOptions Properties" Url="html/Properties_T_Grpc_Core_WriteOptions.htm">
+          <HelpTOCNode Title="Flags Property " Url="html/P_Grpc_Core_WriteOptions_Flags.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="WriteOptions Methods" Url="html/Methods_T_Grpc_Core_WriteOptions.htm" />
+        <HelpTOCNode Id="804b2351-b339-4fd2-9887-05f7471372db" Title="WriteOptions Fields" Url="html/Fields_T_Grpc_Core_WriteOptions.htm">
+          <HelpTOCNode Title="Default Field" Url="html/F_Grpc_Core_WriteOptions_Default.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="e20dd797-c523-4164-bada-14a079905483" Title="Grpc.Core.Logging" Url="html/N_Grpc_Core_Logging.htm">
+      <HelpTOCNode Id="d2413897-cd8c-4913-bf51-fd7f08781540" Title="ConsoleLogger Class" Url="html/T_Grpc_Core_Logging_ConsoleLogger.htm">
+        <HelpTOCNode Title="ConsoleLogger Constructor " Url="html/M_Grpc_Core_Logging_ConsoleLogger__ctor.htm" />
+        <HelpTOCNode Id="3d43197c-0f15-46df-b00a-741576b080d1" Title="ConsoleLogger Methods" Url="html/Methods_T_Grpc_Core_Logging_ConsoleLogger.htm">
+          <HelpTOCNode Title="Debug Method " Url="html/M_Grpc_Core_Logging_ConsoleLogger_Debug.htm" />
+          <HelpTOCNode Id="78f9a0e7-0817-40ae-8fa6-73b1c2fb0d43" Title="Error Method " Url="html/Overload_Grpc_Core_Logging_ConsoleLogger_Error.htm">
+            <HelpTOCNode Title="Error Method (String, Object[])" Url="html/M_Grpc_Core_Logging_ConsoleLogger_Error_1.htm" />
+            <HelpTOCNode Title="Error Method (Exception, String, Object[])" Url="html/M_Grpc_Core_Logging_ConsoleLogger_Error.htm" />
+          </HelpTOCNode>
+          <HelpTOCNode Title="ForType(T) Method " Url="html/M_Grpc_Core_Logging_ConsoleLogger_ForType__1.htm" />
+          <HelpTOCNode Title="Info Method " Url="html/M_Grpc_Core_Logging_ConsoleLogger_Info.htm" />
+          <HelpTOCNode Id="a501df56-0e95-4469-95fb-dc2a7a411789" Title="Warning Method " Url="html/Overload_Grpc_Core_Logging_ConsoleLogger_Warning.htm">
+            <HelpTOCNode Title="Warning Method (String, Object[])" Url="html/M_Grpc_Core_Logging_ConsoleLogger_Warning_1.htm" />
+            <HelpTOCNode Title="Warning Method (Exception, String, Object[])" Url="html/M_Grpc_Core_Logging_ConsoleLogger_Warning.htm" />
+          </HelpTOCNode>
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="1a278148-d563-4e6e-8078-7403300baf11" Title="ILogger Interface" Url="html/T_Grpc_Core_Logging_ILogger.htm">
+        <HelpTOCNode Id="dbabf9d7-57ca-49ea-b64b-6bcb2d5673e1" Title="ILogger Methods" Url="html/Methods_T_Grpc_Core_Logging_ILogger.htm">
+          <HelpTOCNode Title="Debug Method " Url="html/M_Grpc_Core_Logging_ILogger_Debug.htm" />
+          <HelpTOCNode Id="c7415d61-5774-4b68-8031-e8dc427a0b53" Title="Error Method " Url="html/Overload_Grpc_Core_Logging_ILogger_Error.htm">
+            <HelpTOCNode Title="Error Method (String, Object[])" Url="html/M_Grpc_Core_Logging_ILogger_Error_1.htm" />
+            <HelpTOCNode Title="Error Method (Exception, String, Object[])" Url="html/M_Grpc_Core_Logging_ILogger_Error.htm" />
+          </HelpTOCNode>
+          <HelpTOCNode Title="ForType(T) Method " Url="html/M_Grpc_Core_Logging_ILogger_ForType__1.htm" />
+          <HelpTOCNode Title="Info Method " Url="html/M_Grpc_Core_Logging_ILogger_Info.htm" />
+          <HelpTOCNode Id="a91057c3-122e-485f-a239-28bf44d29b64" Title="Warning Method " Url="html/Overload_Grpc_Core_Logging_ILogger_Warning.htm">
+            <HelpTOCNode Title="Warning Method (String, Object[])" Url="html/M_Grpc_Core_Logging_ILogger_Warning_1.htm" />
+            <HelpTOCNode Title="Warning Method (Exception, String, Object[])" Url="html/M_Grpc_Core_Logging_ILogger_Warning.htm" />
+          </HelpTOCNode>
+        </HelpTOCNode>
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="f0dcb251-b955-480a-b500-65a4a8317630" Title="Grpc.Core.Utils" Url="html/N_Grpc_Core_Utils.htm">
+      <HelpTOCNode Id="befb20b1-8faf-4ffe-a273-986cdd5039d3" Title="AsyncStreamExtensions Class" Url="html/T_Grpc_Core_Utils_AsyncStreamExtensions.htm">
+        <HelpTOCNode Id="e1514b3a-0bc6-4f66-8e7b-2e1b87770636" Title="AsyncStreamExtensions Methods" Url="html/Methods_T_Grpc_Core_Utils_AsyncStreamExtensions.htm">
+          <HelpTOCNode Title="ForEachAsync(T) Method " Url="html/M_Grpc_Core_Utils_AsyncStreamExtensions_ForEachAsync__1.htm" />
+          <HelpTOCNode Title="ToListAsync(T) Method " Url="html/M_Grpc_Core_Utils_AsyncStreamExtensions_ToListAsync__1.htm" />
+          <HelpTOCNode Id="bd2e67b9-87fa-44e9-a9df-b8beda377897" Title="WriteAllAsync Method " Url="html/Overload_Grpc_Core_Utils_AsyncStreamExtensions_WriteAllAsync.htm">
+            <HelpTOCNode Title="WriteAllAsync(T) Method (IServerStreamWriter(T), IEnumerable(T))" Url="html/M_Grpc_Core_Utils_AsyncStreamExtensions_WriteAllAsync__1_1.htm" />
+            <HelpTOCNode Title="WriteAllAsync(T) Method (IClientStreamWriter(T), IEnumerable(T), Boolean)" Url="html/M_Grpc_Core_Utils_AsyncStreamExtensions_WriteAllAsync__1.htm" />
+          </HelpTOCNode>
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="8a71d51b-3f4c-4d05-a5c2-372210e58c58" Title="BenchmarkUtil Class" Url="html/T_Grpc_Core_Utils_BenchmarkUtil.htm">
+        <HelpTOCNode Id="0c4af2e1-c86f-47a4-b01c-f69e701f998b" Title="BenchmarkUtil Methods" Url="html/Methods_T_Grpc_Core_Utils_BenchmarkUtil.htm">
+          <HelpTOCNode Title="RunBenchmark Method " Url="html/M_Grpc_Core_Utils_BenchmarkUtil_RunBenchmark.htm" />
+        </HelpTOCNode>
+      </HelpTOCNode>
+      <HelpTOCNode Id="c19e0a3c-734c-43b4-8513-6e9883ffc724" Title="Preconditions Class" Url="html/T_Grpc_Core_Utils_Preconditions.htm">
+        <HelpTOCNode Id="28a6deae-d1b8-45da-8627-258fd43f02e5" Title="Preconditions Methods" Url="html/Methods_T_Grpc_Core_Utils_Preconditions.htm">
+          <HelpTOCNode Id="82b41eef-bc6a-4830-99d0-fb7bc0278bdf" Title="CheckArgument Method " Url="html/Overload_Grpc_Core_Utils_Preconditions_CheckArgument.htm">
+            <HelpTOCNode Title="CheckArgument Method (Boolean)" Url="html/M_Grpc_Core_Utils_Preconditions_CheckArgument.htm" />
+            <HelpTOCNode Title="CheckArgument Method (Boolean, String)" Url="html/M_Grpc_Core_Utils_Preconditions_CheckArgument_1.htm" />
+          </HelpTOCNode>
+          <HelpTOCNode Id="519f0480-dfb2-477e-bc76-678bd0c977f8" Title="CheckNotNull Method " Url="html/Overload_Grpc_Core_Utils_Preconditions_CheckNotNull.htm">
+            <HelpTOCNode Title="CheckNotNull(T) Method (T)" Url="html/M_Grpc_Core_Utils_Preconditions_CheckNotNull__1.htm" />
+            <HelpTOCNode Title="CheckNotNull(T) Method (T, String)" Url="html/M_Grpc_Core_Utils_Preconditions_CheckNotNull__1_1.htm" />
+          </HelpTOCNode>
+          <HelpTOCNode Id="b124a5b0-114e-475a-b01d-ffd879af66e7" Title="CheckState Method " Url="html/Overload_Grpc_Core_Utils_Preconditions_CheckState.htm">
+            <HelpTOCNode Title="CheckState Method (Boolean)" Url="html/M_Grpc_Core_Utils_Preconditions_CheckState.htm" />
+            <HelpTOCNode Title="CheckState Method (Boolean, String)" Url="html/M_Grpc_Core_Utils_Preconditions_CheckState_1.htm" />
+          </HelpTOCNode>
+        </HelpTOCNode>
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+</HelpTOC>

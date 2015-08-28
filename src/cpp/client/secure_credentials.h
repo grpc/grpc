@@ -36,7 +36,7 @@
 
 #include <grpc/grpc_security.h>
 
-#include <grpc++/config.h>
+#include <grpc++/support/config.h>
 #include <grpc++/credentials.h>
 
 namespace grpc {
@@ -48,7 +48,7 @@ class SecureCredentials GRPC_FINAL : public Credentials {
   grpc_credentials* GetRawCreds() { return c_creds_; }
   bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE;
 
-  std::shared_ptr<grpc::ChannelInterface> CreateChannel(
+  std::shared_ptr<grpc::Channel> CreateChannel(
       const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE;
   SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
 

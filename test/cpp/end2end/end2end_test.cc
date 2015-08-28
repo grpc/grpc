@@ -34,30 +34,26 @@
 #include <mutex>
 #include <thread>
 
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
+#include <grpc++/channel.h>
+#include <grpc++/client_context.h>
+#include <grpc++/create_channel.h>
+#include <grpc++/credentials.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
+#include <grpc++/server_context.h>
+#include <grpc++/server_credentials.h>
+#include <gtest/gtest.h>
+
 #include "src/core/security/credentials.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/echo.grpc.pb.h"
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
-#include <grpc++/dynamic_thread_pool.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include <grpc++/time.h>
-#include <gtest/gtest.h>
-
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
+#include "test/cpp/util/string_ref_helper.h"
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
@@ -85,10 +81,10 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
 
 void CheckServerAuthContext(const ServerContext* context) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
-  std::vector<grpc::string> ssl =
+  std::vector<grpc::string_ref> ssl =
       auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1u, ssl.size());
-  EXPECT_EQ("ssl", ssl[0]);
+  EXPECT_EQ("ssl", ToString(ssl[0]));
   EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
   EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
 }
@@ -106,7 +102,7 @@ bool CheckIsLocalhost(const grpc::string& addr) {
 
 class Proxy : public ::grpc::cpp::test::util::TestService::Service {
  public:
-  Proxy(std::shared_ptr<ChannelInterface> channel)
+  Proxy(std::shared_ptr<Channel> channel)
       : stub_(grpc::cpp::test::util::TestService::NewStub(channel)) {}
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
@@ -157,12 +153,13 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
     }
 
     if (request->has_param() && request->param().echo_metadata()) {
-      const std::multimap<grpc::string, grpc::string>& client_metadata =
+      const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
           context->client_metadata();
-      for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
-               client_metadata.begin();
+      for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
+               iter = client_metadata.begin();
            iter != client_metadata.end(); ++iter) {
-        context->AddTrailingMetadata((*iter).first, (*iter).second);
+        context->AddTrailingMetadata(ToString(iter->first),
+                                     ToString(iter->second));
       }
     }
     if (request->has_param() && request->param().check_auth_context()) {
@@ -187,12 +184,12 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
     EchoRequest request;
     response->set_message("");
     int cancel_after_reads = 0;
-    const std::multimap<grpc::string, grpc::string> client_initial_metadata =
-        context->client_metadata();
+    const std::multimap<grpc::string_ref, grpc::string_ref>&
+        client_initial_metadata = context->client_metadata();
     if (client_initial_metadata.find(kServerCancelAfterReads) !=
         client_initial_metadata.end()) {
-      std::istringstream iss(
-          client_initial_metadata.find(kServerCancelAfterReads)->second);
+      std::istringstream iss(ToString(
+          client_initial_metadata.find(kServerCancelAfterReads)->second));
       iss >> cancel_after_reads;
       gpr_log(GPR_INFO, "cancel_after_reads %d", cancel_after_reads);
     }
@@ -262,7 +259,7 @@ class TestServiceImplDupPkg
 class End2endTest : public ::testing::TestWithParam<bool> {
  protected:
   End2endTest()
-      : kMaxMessageSize_(8192), special_service_("special"), thread_pool_(2) {}
+      : kMaxMessageSize_(8192), special_service_("special") {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
@@ -281,7 +278,6 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     builder.SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
-    builder.SetThreadPool(&thread_pool_);
     server_ = builder.BuildAndStart();
   }
 
@@ -295,8 +291,8 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.fr");
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
-    channel_ =
-        CreateChannel(server_address_.str(), SslCredentials(ssl_opts), args);
+    channel_ = CreateCustomChannel(server_address_.str(),
+                                   SslCredentials(ssl_opts), args);
   }
 
   void ResetStub(bool use_proxy) {
@@ -309,17 +305,15 @@ class End2endTest : public ::testing::TestWithParam<bool> {
       ServerBuilder builder;
       builder.AddListeningPort(proxyaddr.str(), InsecureServerCredentials());
       builder.RegisterService(proxy_service_.get());
-      builder.SetThreadPool(&thread_pool_);
       proxy_server_ = builder.BuildAndStart();
 
-      channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials(),
-                               ChannelArguments());
+      channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials());
     }
 
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
   std::unique_ptr<Server> proxy_server_;
@@ -329,7 +323,6 @@ class End2endTest : public ::testing::TestWithParam<bool> {
   TestServiceImpl service_;
   TestServiceImpl special_service_;
   TestServiceImplDupPkg dup_pkg_service_;
-  DynamicThreadPool thread_pool_;
 };
 
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,
@@ -571,8 +564,8 @@ TEST_F(End2endTest, DiffPackageServices) {
 TEST_F(End2endTest, BadCredentials) {
   std::shared_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
   EXPECT_EQ(static_cast<Credentials*>(nullptr), bad_creds.get());
-  std::shared_ptr<ChannelInterface> channel =
-      CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
+  std::shared_ptr<Channel> channel =
+      CreateChannel(server_address_.str(), bad_creds);
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
       grpc::cpp::test::util::TestService::NewStub(channel));
   EchoRequest request;
@@ -729,14 +722,15 @@ TEST_F(End2endTest, RpcMaxMessageSize) {
   EXPECT_FALSE(s.ok());
 }
 
-bool MetadataContains(const std::multimap<grpc::string, grpc::string>& metadata,
-                      const grpc::string& key, const grpc::string& value) {
+bool MetadataContains(
+    const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
+    const grpc::string& key, const grpc::string& value) {
   int count = 0;
 
-  for (std::multimap<grpc::string, grpc::string>::const_iterator iter =
+  for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
            metadata.begin();
        iter != metadata.end(); ++iter) {
-    if ((*iter).first == key && (*iter).second == value) {
+    if (ToString(iter->first) == key && ToString(iter->second) == value) {
       count++;
     }
   }
@@ -845,16 +839,17 @@ TEST_F(End2endTest, ClientAuthContext) {
   EXPECT_TRUE(s.ok());
 
   std::shared_ptr<const AuthContext> auth_ctx = context.auth_context();
-  std::vector<grpc::string> ssl =
+  std::vector<grpc::string_ref> ssl =
       auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1u, ssl.size());
-  EXPECT_EQ("ssl", ssl[0]);
+  EXPECT_EQ("ssl", ToString(ssl[0]));
   EXPECT_EQ("x509_subject_alternative_name",
             auth_ctx->GetPeerIdentityPropertyName());
   EXPECT_EQ(3u, auth_ctx->GetPeerIdentity().size());
-  EXPECT_EQ("*.test.google.fr", auth_ctx->GetPeerIdentity()[0]);
-  EXPECT_EQ("waterzooi.test.google.be", auth_ctx->GetPeerIdentity()[1]);
-  EXPECT_EQ("*.test.youtube.com", auth_ctx->GetPeerIdentity()[2]);
+  EXPECT_EQ("*.test.google.fr", ToString(auth_ctx->GetPeerIdentity()[0]));
+  EXPECT_EQ("waterzooi.test.google.be",
+            ToString(auth_ctx->GetPeerIdentity()[1]));
+  EXPECT_EQ("*.test.youtube.com", ToString(auth_ctx->GetPeerIdentity()[2]));
 }
 
 // Make the response larger than the flow control window.

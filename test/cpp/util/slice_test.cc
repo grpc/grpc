@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc++/slice.h>
+#include <grpc++/support/slice.h>
 
 #include <grpc/support/slice.h>
 #include <gtest/gtest.h>

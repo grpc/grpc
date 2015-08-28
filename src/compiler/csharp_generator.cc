@@ -35,10 +35,16 @@
 #include <map>
 #include <vector>
 
+#include "src/compiler/csharp_generator.h"
 #include "src/compiler/config.h"
 #include "src/compiler/csharp_generator_helpers.h"
 #include "src/compiler/csharp_generator.h"
 
+
+using google::protobuf::compiler::csharp::GetFileNamespace;
+using google::protobuf::compiler::csharp::GetClassName;
+using google::protobuf::compiler::csharp::GetUmbrellaClassName;
+using google::protobuf::SimpleItoa;
 using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::Descriptor;
 using grpc::protobuf::ServiceDescriptor;
@@ -55,46 +61,9 @@ using grpc_generator::StringReplace;
 using std::map;
 using std::vector;
 
+
 namespace grpc_csharp_generator {
 namespace {
-
-// TODO(jtattermusch): make GetFileNamespace part of libprotoc public API.
-// NOTE: Implementation needs to match exactly to GetFileNamespace
-// defined in csharp_helpers.h in protoc csharp plugin.
-// We cannot reference it directly because google3 protobufs
-// don't have a csharp protoc plugin.
-std::string GetFileNamespace(const FileDescriptor* file) {
-  if (file->options().has_csharp_namespace()) {
-    return file->options().csharp_namespace();
-  }
-  return file->package();
-}
-
-std::string ToCSharpName(const std::string& name, const FileDescriptor* file) {
-  std::string result = GetFileNamespace(file);
-  if (result != "") {
-    result += '.';
-  }
-  std::string classname;
-  if (file->package().empty()) {
-    classname = name;
-  } else {
-    // Strip the proto package from full_name since we've replaced it with
-    // the C# namespace.
-    classname = name.substr(file->package().size() + 1);
-  }
-  result += StringReplace(classname, ".", ".Types.", false);
-  return "global::" + result;
-}
-
-// TODO(jtattermusch): make GetClassName part of libprotoc public API.
-// NOTE: Implementation needs to match exactly to GetClassName
-// defined in csharp_helpers.h in protoc csharp plugin.
-// We cannot reference it directly because google3 protobufs
-// don't have a csharp protoc plugin.
-std::string GetClassName(const Descriptor* message) {
-  return ToCSharpName(message->full_name(), message->file());
-}
 
 std::string GetServiceClassName(const ServiceDescriptor* service) {
   return service->name();
@@ -229,7 +198,7 @@ void GenerateMarshallerFields(Printer* out, const ServiceDescriptor *service) {
   for (size_t i = 0; i < used_messages.size(); i++) {
     const Descriptor *message = used_messages[i];
     out->Print(
-        "static readonly Marshaller<$type$> $fieldname$ = Marshallers.Create((arg) => arg.ToByteArray(), $type$.ParseFrom);\n",
+        "static readonly Marshaller<$type$> $fieldname$ = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), $type$.Parser.ParseFrom);\n",
         "fieldname", GetMarshallerFieldName(message), "type",
         GetClassName(message));
   }
@@ -256,6 +225,16 @@ void GenerateStaticMethodField(Printer* out, const MethodDescriptor *method) {
   out->Print("\n");
   out->Outdent();
   out->Outdent();
+}
+
+void GenerateServiceDescriptorProperty(Printer* out, const ServiceDescriptor *service) {
+  out->Print("// service descriptor\n");
+  out->Print("public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor\n");
+  out->Print("{\n");
+  out->Print("  get { return $umbrella$.Descriptor.Services[$index$]; }\n",
+             "umbrella", GetUmbrellaClassName(service->file()), "index", SimpleItoa(service->index()));
+  out->Print("}\n");
+  out->Print("\n");
 }
 
 void GenerateClientInterface(Printer* out, const ServiceDescriptor *service) {
@@ -504,6 +483,7 @@ void GenerateService(Printer* out, const ServiceDescriptor *service) {
   for (int i = 0; i < service->method_count(); i++) {
     GenerateStaticMethodField(out, service->method(i));
   }
+  GenerateServiceDescriptorProperty(out, service);
   GenerateClientInterface(out, service);
   GenerateServerInterface(out, service);
   GenerateClientStub(out, service);
@@ -539,7 +519,6 @@ grpc::string GetServices(const FileDescriptor *file) {
     out.Print("using System.Threading;\n");
     out.Print("using System.Threading.Tasks;\n");
     out.Print("using Grpc.Core;\n");
-    // TODO(jtattermusch): add using for protobuf message classes
     out.Print("\n");
 
     out.Print("namespace $namespace$ {\n", "namespace", GetFileNamespace(file));

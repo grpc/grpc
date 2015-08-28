@@ -31,32 +31,28 @@
  *
  */
 
+#include <signal.h>
+#include <unistd.h>
+
 #include <fstream>
 #include <memory>
 #include <sstream>
 #include <thread>
 
-#include <signal.h>
-#include <unistd.h>
-
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
-
-#include <grpc++/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
 
+#include "test/cpp/interop/server_helper.h"
+#include "test/cpp/util/test_config.h"
 #include "test/proto/test.grpc.pb.h"
 #include "test/proto/empty.grpc.pb.h"
 #include "test/proto/messages.grpc.pb.h"
-#include "test/cpp/interop/server_helper.h"
-#include "test/cpp/util/test_config.h"
 
 DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
 DEFINE_int32(port, 0, "Server port.");
@@ -162,11 +158,13 @@ class TestServiceImpl : public TestService::Service {
     SetResponseCompression(context, *request);
     StreamingOutputCallResponse response;
     bool write_success = true;
-    response.mutable_payload()->set_type(request->response_type());
     for (int i = 0; write_success && i < request->response_parameters_size();
          i++) {
-      response.mutable_payload()->set_body(
-          grpc::string(request->response_parameters(i).size(), '\0'));
+      if (!SetPayload(request->response_type(),
+                      request->response_parameters(i).size(),
+                      response.mutable_payload())) {
+        return Status(grpc::StatusCode::INTERNAL, "Error creating payload.");
+      }
       write_success = writer->Write(response);
     }
     if (write_success) {

@@ -33,10 +33,10 @@
 
 #include "test/cpp/util/create_test_channel.h"
 
-#include "test/core/end2end/data/ssl_test_data.h"
-#include <grpc++/channel_arguments.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/credentials.h>
+
+#include "test/core/end2end/data/ssl_test_data.h"
 
 namespace grpc {
 
@@ -55,7 +55,7 @@ namespace grpc {
 //   CreateTestChannel("test.google.com:443", "", true, true, creds);
 //   same as above
 //   CreateTestChannel("", "test.google.com:443", true, true, creds);
-std::shared_ptr<ChannelInterface> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots,
     const std::shared_ptr<Credentials>& creds) {
@@ -74,13 +74,13 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
     if (creds.get()) {
       channel_creds = CompositeCredentials(creds, channel_creds);
     }
-    return CreateChannel(connect_to, channel_creds, channel_args);
+    return CreateCustomChannel(connect_to, channel_creds, channel_args);
   } else {
-    return CreateChannel(server, InsecureCredentials(), channel_args);
+    return CreateChannel(server, InsecureCredentials());
   }
 }
 
-std::shared_ptr<ChannelInterface> CreateTestChannel(
+std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots) {
   return CreateTestChannel(server, override_hostname, enable_ssl,
@@ -88,8 +88,8 @@ std::shared_ptr<ChannelInterface> CreateTestChannel(
 }
 
 // Shortcut for end2end and interop tests.
-std::shared_ptr<ChannelInterface> CreateTestChannel(const grpc::string& server,
-                                                    bool enable_ssl) {
+std::shared_ptr<Channel> CreateTestChannel(const grpc::string& server,
+                                           bool enable_ssl) {
   return CreateTestChannel(server, "foo.test.google.fr", enable_ssl, false);
 }
 

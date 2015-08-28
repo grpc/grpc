@@ -31,13 +31,13 @@
  *
  */
 
-#include "test/cpp/qps/interarrival.h"
 #include <chrono>
 #include <iostream>
 
 // Use the C histogram rather than C++ to avoid depending on proto
 #include <grpc/support/histogram.h>
-#include <grpc++/config.h>
+
+#include "test/cpp/qps/interarrival.h"
 
 using grpc::testing::RandomDist;
 using grpc::testing::InterarrivalTimer;

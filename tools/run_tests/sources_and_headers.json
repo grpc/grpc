@@ -238,6 +238,15 @@
     ]
   }, 
   {
+    "deps": [], 
+    "headers": [], 
+    "language": "c", 
+    "name": "gen_legal_metadata_characters", 
+    "src": [
+      "tools/codegen/core/gen_legal_metadata_characters.c"
+    ]
+  }, 
+  {
     "deps": [
       "gpr", 
       "gpr_test_util"
@@ -457,6 +466,20 @@
     "name": "grpc_byte_buffer_reader_test", 
     "src": [
       "test/core/surface/byte_buffer_reader_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "grpc_channel_args_test", 
+    "src": [
+      "test/core/channel/channel_args_test.c"
     ]
   }, 
   {
@@ -1054,8 +1077,11 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
       "grpc", 
-      "grpc++"
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
     ], 
     "headers": [], 
     "language": "c++", 
@@ -1170,6 +1196,17 @@
   }, 
   {
     "deps": [
+      "grpc++"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "cxx_string_ref_test", 
+    "src": [
+      "test/cpp/util/string_ref_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
       "gpr", 
       "gpr_test_util", 
       "grpc", 
@@ -1189,21 +1226,6 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "dynamic_thread_pool_test", 
-    "src": [
-      "test/cpp/server/dynamic_thread_pool_test.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -1212,21 +1234,6 @@
     "name": "end2end_test", 
     "src": [
       "test/cpp/end2end/end2end_test.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "fixed_size_thread_pool_test", 
-    "src": [
-      "test/cpp/server/fixed_size_thread_pool_test.cc"
     ]
   }, 
   {
@@ -1388,57 +1395,6 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
-      "grpc_test_util", 
-      "pubsub_client_lib"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "pubsub_client", 
-    "src": [
-      "examples/pubsub/main.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "pubsub_client_lib"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "pubsub_publisher_test", 
-    "src": [
-      "examples/pubsub/publisher_test.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "pubsub_client_lib"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "pubsub_subscriber_test", 
-    "src": [
-      "examples/pubsub/subscriber_test.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
@@ -1578,8 +1534,11 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
       "grpc", 
-      "grpc++"
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
     ], 
     "headers": [], 
     "language": "c++", 
@@ -1627,8 +1586,7 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
-      "grpc_test_util", 
-      "grpc_zookeeper"
+      "grpc_test_util"
     ], 
     "headers": [], 
     "language": "c++", 
@@ -12165,7 +12123,8 @@
       "src/core/support/stack_lockfree.h", 
       "src/core/support/string.h", 
       "src/core/support/string_win32.h", 
-      "src/core/support/thd_internal.h"
+      "src/core/support/thd_internal.h", 
+      "src/core/support/time_precise.h"
     ], 
     "language": "c", 
     "name": "gpr", 
@@ -12239,6 +12198,7 @@
       "src/core/support/thd_win32.c", 
       "src/core/support/time.c", 
       "src/core/support/time_posix.c", 
+      "src/core/support/time_precise.h", 
       "src/core/support/time_win32.c", 
       "src/core/support/tls_pthread.c"
     ]
@@ -12270,8 +12230,8 @@
       "include/grpc/grpc_security.h", 
       "include/grpc/status.h", 
       "src/core/census/context.h", 
+      "src/core/census/grpc_filter.h", 
       "src/core/census/rpc_stat_id.h", 
-      "src/core/channel/census_filter.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
       "src/core/channel/client_channel.h", 
@@ -12336,7 +12296,6 @@
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
       "src/core/profiling/timers.h", 
-      "src/core/profiling/timers_preciseclock.h", 
       "src/core/security/auth_filters.h", 
       "src/core/security/base64.h", 
       "src/core/security/credentials.h", 
@@ -12346,6 +12305,8 @@
       "src/core/security/secure_transport_setup.h", 
       "src/core/security/security_connector.h", 
       "src/core/security/security_context.h", 
+      "src/core/statistics/census_interface.h", 
+      "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/byte_buffer_queue.h", 
       "src/core/surface/call.h", 
       "src/core/surface/channel.h", 
@@ -12398,10 +12359,11 @@
       "src/core/census/context.c", 
       "src/core/census/context.h", 
       "src/core/census/grpc_context.c", 
+      "src/core/census/grpc_filter.c", 
+      "src/core/census/grpc_filter.h", 
       "src/core/census/initialize.c", 
       "src/core/census/record_stat.c", 
       "src/core/census/rpc_stat_id.h", 
-      "src/core/channel/census_filter.h", 
       "src/core/channel/channel_args.c", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.c", 
@@ -12536,7 +12498,6 @@
       "src/core/profiling/basic_timers.c", 
       "src/core/profiling/stap_timers.c", 
       "src/core/profiling/timers.h", 
-      "src/core/profiling/timers_preciseclock.h", 
       "src/core/security/auth_filters.h", 
       "src/core/security/base64.c", 
       "src/core/security/base64.h", 
@@ -12561,6 +12522,8 @@
       "src/core/security/security_context.h", 
       "src/core/security/server_auth_filter.c", 
       "src/core/security/server_secure_chttp2.c", 
+      "src/core/statistics/census_interface.h", 
+      "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/byte_buffer.c", 
       "src/core/surface/byte_buffer_queue.c", 
       "src/core/surface/byte_buffer_queue.h", 
@@ -12744,8 +12707,8 @@
       "include/grpc/grpc.h", 
       "include/grpc/status.h", 
       "src/core/census/context.h", 
+      "src/core/census/grpc_filter.h", 
       "src/core/census/rpc_stat_id.h", 
-      "src/core/channel/census_filter.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
       "src/core/channel/client_channel.h", 
@@ -12810,7 +12773,8 @@
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
       "src/core/profiling/timers.h", 
-      "src/core/profiling/timers_preciseclock.h", 
+      "src/core/statistics/census_interface.h", 
+      "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/byte_buffer_queue.h", 
       "src/core/surface/call.h", 
       "src/core/surface/channel.h", 
@@ -12858,10 +12822,11 @@
       "src/core/census/context.c", 
       "src/core/census/context.h", 
       "src/core/census/grpc_context.c", 
+      "src/core/census/grpc_filter.c", 
+      "src/core/census/grpc_filter.h", 
       "src/core/census/initialize.c", 
       "src/core/census/record_stat.c", 
       "src/core/census/rpc_stat_id.h", 
-      "src/core/channel/census_filter.h", 
       "src/core/channel/channel_args.c", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.c", 
@@ -12995,7 +12960,8 @@
       "src/core/profiling/basic_timers.c", 
       "src/core/profiling/stap_timers.c", 
       "src/core/profiling/timers.h", 
-      "src/core/profiling/timers_preciseclock.h", 
+      "src/core/statistics/census_interface.h", 
+      "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/byte_buffer.c", 
       "src/core/surface/byte_buffer_queue.c", 
       "src/core/surface/byte_buffer_queue.h", 
@@ -13118,25 +13084,16 @@
       "grpc"
     ], 
     "headers": [
-      "include/grpc++/async_generic_service.h", 
-      "include/grpc++/async_unary_call.h", 
-      "include/grpc++/auth_context.h", 
-      "include/grpc++/byte_buffer.h", 
-      "include/grpc++/channel_arguments.h", 
-      "include/grpc++/channel_interface.h", 
+      "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
-      "include/grpc++/config.h", 
-      "include/grpc++/config_protobuf.h", 
       "include/grpc++/create_channel.h", 
       "include/grpc++/credentials.h", 
-      "include/grpc++/dynamic_thread_pool.h", 
-      "include/grpc++/fixed_size_thread_pool.h", 
-      "include/grpc++/generic_stub.h", 
+      "include/grpc++/generic/async_generic_service.h", 
+      "include/grpc++/generic/generic_stub.h", 
       "include/grpc++/impl/call.h", 
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/grpc_library.h", 
-      "include/grpc++/impl/internal_stub.h", 
       "include/grpc++/impl/proto_utils.h", 
       "include/grpc++/impl/rpc_method.h", 
       "include/grpc++/impl/rpc_service_method.h", 
@@ -13152,41 +13109,42 @@
       "include/grpc++/server_builder.h", 
       "include/grpc++/server_context.h", 
       "include/grpc++/server_credentials.h", 
-      "include/grpc++/slice.h", 
-      "include/grpc++/status.h", 
-      "include/grpc++/status_code_enum.h", 
-      "include/grpc++/stream.h", 
-      "include/grpc++/stub_options.h", 
-      "include/grpc++/thread_pool_interface.h", 
-      "include/grpc++/time.h", 
-      "src/cpp/client/channel.h", 
+      "include/grpc++/support/async_stream.h", 
+      "include/grpc++/support/async_unary_call.h", 
+      "include/grpc++/support/auth_context.h", 
+      "include/grpc++/support/byte_buffer.h", 
+      "include/grpc++/support/channel_arguments.h", 
+      "include/grpc++/support/config.h", 
+      "include/grpc++/support/config_protobuf.h", 
+      "include/grpc++/support/slice.h", 
+      "include/grpc++/support/status.h", 
+      "include/grpc++/support/status_code_enum.h", 
+      "include/grpc++/support/string_ref.h", 
+      "include/grpc++/support/stub_options.h", 
+      "include/grpc++/support/sync_stream.h", 
+      "include/grpc++/support/time.h", 
+      "src/cpp/client/create_channel_internal.h", 
       "src/cpp/client/secure_credentials.h", 
       "src/cpp/common/create_auth_context.h", 
       "src/cpp/common/secure_auth_context.h", 
-      "src/cpp/server/secure_server_credentials.h"
+      "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/fixed_size_thread_pool.h", 
+      "src/cpp/server/secure_server_credentials.h", 
+      "src/cpp/server/thread_pool_interface.h"
     ], 
     "language": "c++", 
     "name": "grpc++", 
     "src": [
-      "include/grpc++/async_generic_service.h", 
-      "include/grpc++/async_unary_call.h", 
-      "include/grpc++/auth_context.h", 
-      "include/grpc++/byte_buffer.h", 
-      "include/grpc++/channel_arguments.h", 
-      "include/grpc++/channel_interface.h", 
+      "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
-      "include/grpc++/config.h", 
-      "include/grpc++/config_protobuf.h", 
       "include/grpc++/create_channel.h", 
       "include/grpc++/credentials.h", 
-      "include/grpc++/dynamic_thread_pool.h", 
-      "include/grpc++/fixed_size_thread_pool.h", 
-      "include/grpc++/generic_stub.h", 
+      "include/grpc++/generic/async_generic_service.h", 
+      "include/grpc++/generic/generic_stub.h", 
       "include/grpc++/impl/call.h", 
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/grpc_library.h", 
-      "include/grpc++/impl/internal_stub.h", 
       "include/grpc++/impl/proto_utils.h", 
       "include/grpc++/impl/rpc_method.h", 
       "include/grpc++/impl/rpc_service_method.h", 
@@ -13202,22 +13160,29 @@
       "include/grpc++/server_builder.h", 
       "include/grpc++/server_context.h", 
       "include/grpc++/server_credentials.h", 
-      "include/grpc++/slice.h", 
-      "include/grpc++/status.h", 
-      "include/grpc++/status_code_enum.h", 
-      "include/grpc++/stream.h", 
-      "include/grpc++/stub_options.h", 
-      "include/grpc++/thread_pool_interface.h", 
-      "include/grpc++/time.h", 
+      "include/grpc++/support/async_stream.h", 
+      "include/grpc++/support/async_unary_call.h", 
+      "include/grpc++/support/auth_context.h", 
+      "include/grpc++/support/byte_buffer.h", 
+      "include/grpc++/support/channel_arguments.h", 
+      "include/grpc++/support/config.h", 
+      "include/grpc++/support/config_protobuf.h", 
+      "include/grpc++/support/slice.h", 
+      "include/grpc++/support/status.h", 
+      "include/grpc++/support/status_code_enum.h", 
+      "include/grpc++/support/string_ref.h", 
+      "include/grpc++/support/stub_options.h", 
+      "include/grpc++/support/sync_stream.h", 
+      "include/grpc++/support/time.h", 
       "src/cpp/client/channel.cc", 
-      "src/cpp/client/channel.h", 
       "src/cpp/client/channel_arguments.cc", 
       "src/cpp/client/client_context.cc", 
       "src/cpp/client/create_channel.cc", 
+      "src/cpp/client/create_channel_internal.cc", 
+      "src/cpp/client/create_channel_internal.h", 
       "src/cpp/client/credentials.cc", 
       "src/cpp/client/generic_stub.cc", 
       "src/cpp/client/insecure_credentials.cc", 
-      "src/cpp/client/internal_stub.cc", 
       "src/cpp/client/secure_channel_arguments.cc", 
       "src/cpp/client/secure_credentials.cc", 
       "src/cpp/client/secure_credentials.h", 
@@ -13233,7 +13198,9 @@
       "src/cpp/server/async_generic_service.cc", 
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
+      "src/cpp/server/dynamic_thread_pool.h", 
       "src/cpp/server/fixed_size_thread_pool.cc", 
+      "src/cpp/server/fixed_size_thread_pool.h", 
       "src/cpp/server/insecure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.cc", 
       "src/cpp/server/secure_server_credentials.h", 
@@ -13241,9 +13208,11 @@
       "src/cpp/server/server_builder.cc", 
       "src/cpp/server/server_context.cc", 
       "src/cpp/server/server_credentials.cc", 
+      "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/util/byte_buffer.cc", 
       "src/cpp/util/slice.cc", 
       "src/cpp/util/status.cc", 
+      "src/cpp/util/string_ref.cc", 
       "src/cpp/util/time.cc"
     ]
   }, 
@@ -13273,6 +13242,7 @@
       "test/cpp/util/echo_duplicate.pb.h", 
       "test/cpp/util/messages.grpc.pb.h", 
       "test/cpp/util/messages.pb.h", 
+      "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.h"
     ], 
     "language": "c++", 
@@ -13282,6 +13252,8 @@
       "test/cpp/util/cli_call.h", 
       "test/cpp/util/create_test_channel.cc", 
       "test/cpp/util/create_test_channel.h", 
+      "test/cpp/util/string_ref_helper.cc", 
+      "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.cc", 
       "test/cpp/util/subprocess.h"
     ]
@@ -13292,25 +13264,16 @@
       "grpc_unsecure"
     ], 
     "headers": [
-      "include/grpc++/async_generic_service.h", 
-      "include/grpc++/async_unary_call.h", 
-      "include/grpc++/auth_context.h", 
-      "include/grpc++/byte_buffer.h", 
-      "include/grpc++/channel_arguments.h", 
-      "include/grpc++/channel_interface.h", 
+      "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
-      "include/grpc++/config.h", 
-      "include/grpc++/config_protobuf.h", 
       "include/grpc++/create_channel.h", 
       "include/grpc++/credentials.h", 
-      "include/grpc++/dynamic_thread_pool.h", 
-      "include/grpc++/fixed_size_thread_pool.h", 
-      "include/grpc++/generic_stub.h", 
+      "include/grpc++/generic/async_generic_service.h", 
+      "include/grpc++/generic/generic_stub.h", 
       "include/grpc++/impl/call.h", 
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/grpc_library.h", 
-      "include/grpc++/impl/internal_stub.h", 
       "include/grpc++/impl/proto_utils.h", 
       "include/grpc++/impl/rpc_method.h", 
       "include/grpc++/impl/rpc_service_method.h", 
@@ -13326,38 +13289,39 @@
       "include/grpc++/server_builder.h", 
       "include/grpc++/server_context.h", 
       "include/grpc++/server_credentials.h", 
-      "include/grpc++/slice.h", 
-      "include/grpc++/status.h", 
-      "include/grpc++/status_code_enum.h", 
-      "include/grpc++/stream.h", 
-      "include/grpc++/stub_options.h", 
-      "include/grpc++/thread_pool_interface.h", 
-      "include/grpc++/time.h", 
-      "src/cpp/client/channel.h", 
-      "src/cpp/common/create_auth_context.h"
+      "include/grpc++/support/async_stream.h", 
+      "include/grpc++/support/async_unary_call.h", 
+      "include/grpc++/support/auth_context.h", 
+      "include/grpc++/support/byte_buffer.h", 
+      "include/grpc++/support/channel_arguments.h", 
+      "include/grpc++/support/config.h", 
+      "include/grpc++/support/config_protobuf.h", 
+      "include/grpc++/support/slice.h", 
+      "include/grpc++/support/status.h", 
+      "include/grpc++/support/status_code_enum.h", 
+      "include/grpc++/support/string_ref.h", 
+      "include/grpc++/support/stub_options.h", 
+      "include/grpc++/support/sync_stream.h", 
+      "include/grpc++/support/time.h", 
+      "src/cpp/client/create_channel_internal.h", 
+      "src/cpp/common/create_auth_context.h", 
+      "src/cpp/server/dynamic_thread_pool.h", 
+      "src/cpp/server/fixed_size_thread_pool.h", 
+      "src/cpp/server/thread_pool_interface.h"
     ], 
     "language": "c++", 
     "name": "grpc++_unsecure", 
     "src": [
-      "include/grpc++/async_generic_service.h", 
-      "include/grpc++/async_unary_call.h", 
-      "include/grpc++/auth_context.h", 
-      "include/grpc++/byte_buffer.h", 
-      "include/grpc++/channel_arguments.h", 
-      "include/grpc++/channel_interface.h", 
+      "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
-      "include/grpc++/config.h", 
-      "include/grpc++/config_protobuf.h", 
       "include/grpc++/create_channel.h", 
       "include/grpc++/credentials.h", 
-      "include/grpc++/dynamic_thread_pool.h", 
-      "include/grpc++/fixed_size_thread_pool.h", 
-      "include/grpc++/generic_stub.h", 
+      "include/grpc++/generic/async_generic_service.h", 
+      "include/grpc++/generic/generic_stub.h", 
       "include/grpc++/impl/call.h", 
       "include/grpc++/impl/client_unary_call.h", 
       "include/grpc++/impl/grpc_library.h", 
-      "include/grpc++/impl/internal_stub.h", 
       "include/grpc++/impl/proto_utils.h", 
       "include/grpc++/impl/rpc_method.h", 
       "include/grpc++/impl/rpc_service_method.h", 
@@ -13373,22 +13337,29 @@
       "include/grpc++/server_builder.h", 
       "include/grpc++/server_context.h", 
       "include/grpc++/server_credentials.h", 
-      "include/grpc++/slice.h", 
-      "include/grpc++/status.h", 
-      "include/grpc++/status_code_enum.h", 
-      "include/grpc++/stream.h", 
-      "include/grpc++/stub_options.h", 
-      "include/grpc++/thread_pool_interface.h", 
-      "include/grpc++/time.h", 
+      "include/grpc++/support/async_stream.h", 
+      "include/grpc++/support/async_unary_call.h", 
+      "include/grpc++/support/auth_context.h", 
+      "include/grpc++/support/byte_buffer.h", 
+      "include/grpc++/support/channel_arguments.h", 
+      "include/grpc++/support/config.h", 
+      "include/grpc++/support/config_protobuf.h", 
+      "include/grpc++/support/slice.h", 
+      "include/grpc++/support/status.h", 
+      "include/grpc++/support/status_code_enum.h", 
+      "include/grpc++/support/string_ref.h", 
+      "include/grpc++/support/stub_options.h", 
+      "include/grpc++/support/sync_stream.h", 
+      "include/grpc++/support/time.h", 
       "src/cpp/client/channel.cc", 
-      "src/cpp/client/channel.h", 
       "src/cpp/client/channel_arguments.cc", 
       "src/cpp/client/client_context.cc", 
       "src/cpp/client/create_channel.cc", 
+      "src/cpp/client/create_channel_internal.cc", 
+      "src/cpp/client/create_channel_internal.h", 
       "src/cpp/client/credentials.cc", 
       "src/cpp/client/generic_stub.cc", 
       "src/cpp/client/insecure_credentials.cc", 
-      "src/cpp/client/internal_stub.cc", 
       "src/cpp/common/call.cc", 
       "src/cpp/common/completion_queue.cc", 
       "src/cpp/common/create_auth_context.h", 
@@ -13398,23 +13369,27 @@
       "src/cpp/server/async_generic_service.cc", 
       "src/cpp/server/create_default_thread_pool.cc", 
       "src/cpp/server/dynamic_thread_pool.cc", 
+      "src/cpp/server/dynamic_thread_pool.h", 
       "src/cpp/server/fixed_size_thread_pool.cc", 
+      "src/cpp/server/fixed_size_thread_pool.h", 
       "src/cpp/server/insecure_server_credentials.cc", 
       "src/cpp/server/server.cc", 
       "src/cpp/server/server_builder.cc", 
       "src/cpp/server/server_context.cc", 
       "src/cpp/server/server_credentials.cc", 
+      "src/cpp/server/thread_pool_interface.h", 
       "src/cpp/util/byte_buffer.cc", 
       "src/cpp/util/slice.cc", 
       "src/cpp/util/status.cc", 
+      "src/cpp/util/string_ref.cc", 
       "src/cpp/util/time.cc"
     ]
   }, 
   {
     "deps": [], 
     "headers": [
-      "include/grpc++/config.h", 
-      "include/grpc++/config_protobuf.h", 
+      "include/grpc++/support/config.h", 
+      "include/grpc++/support/config_protobuf.h", 
       "src/compiler/config.h", 
       "src/compiler/cpp_generator.h", 
       "src/compiler/cpp_generator_helpers.h", 
@@ -13432,8 +13407,8 @@
     "language": "c++", 
     "name": "grpc_plugin_support", 
     "src": [
-      "include/grpc++/config.h", 
-      "include/grpc++/config_protobuf.h", 
+      "include/grpc++/support/config.h", 
+      "include/grpc++/support/config_protobuf.h", 
       "src/compiler/config.h", 
       "src/compiler/cpp_generator.cc", 
       "src/compiler/cpp_generator.h", 
@@ -13542,31 +13517,6 @@
     "name": "interop_server_main", 
     "src": [
       "test/cpp/interop/server.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc", 
-      "grpc++"
-    ], 
-    "headers": [
-      "examples/pubsub/empty.grpc.pb.h", 
-      "examples/pubsub/empty.pb.h", 
-      "examples/pubsub/label.grpc.pb.h", 
-      "examples/pubsub/label.pb.h", 
-      "examples/pubsub/publisher.h", 
-      "examples/pubsub/pubsub.grpc.pb.h", 
-      "examples/pubsub/pubsub.pb.h", 
-      "examples/pubsub/subscriber.h"
-    ], 
-    "language": "c++", 
-    "name": "pubsub_client_lib", 
-    "src": [
-      "examples/pubsub/publisher.cc", 
-      "examples/pubsub/publisher.h", 
-      "examples/pubsub/subscriber.cc", 
-      "examples/pubsub/subscriber.h"
     ]
   }, 
   {

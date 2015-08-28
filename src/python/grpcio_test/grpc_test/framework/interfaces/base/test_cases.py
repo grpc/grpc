@@ -134,7 +134,7 @@ class _Servicer(base.Servicer):
       if group != self._group or method != self._method:
         controller.fail(
             '%s != %s or %s != %s' % (group, self._group, method, self._method))
-        raise base.NoSuchMethodError()
+        raise base.NoSuchMethodError(None, None)
       else:
         operator = _Operator(
             controller, controller.on_service_advance, self._pool,
@@ -211,8 +211,10 @@ class _OperationTest(unittest.TestCase):
       elif instruction.kind is _control.Instruction.Kind.CONCLUDE:
         break
 
-    invocation_end.stop_gracefully()
-    service_end.stop_gracefully()
+    invocation_stop_event = invocation_end.stop(0)
+    service_stop_event = service_end.stop(0)
+    invocation_stop_event.wait()
+    service_stop_event.wait()
     invocation_stats = invocation_end.operation_stats()
     service_stats = service_end.operation_stats()
 
