@@ -251,6 +251,19 @@ function pingPong($stub) {
 }
 
 /**
+ * Run the cancel_after_begin test.
+ * Passes when run against the Node server as of 2015-08-28
+ * @param $stub Stub object that has service methods.
+ */
+function cancelAfterBegin($stub) {
+  $call = $stub->StreamingInputCall();
+  $call->cancel();
+  list($result, $status) = $call->wait();
+  hardAssert($status->code === Grpc\STATUS_CANCELLED,
+             'Call status was not CANCELLED');
+}
+
+/**
  * Run the cancel_after_first_response test.
  * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods.
@@ -357,6 +370,9 @@ switch ($args['test_case']) {
   case 'ping_pong':
     pingPong($stub);
     break;
+  case 'cancel_after_begin':
+    cancelAfterBegin($stub);
+    break;
   case 'cancel_after_first_response':
     cancelAfterFirstResponse($stub);
     break;
@@ -372,11 +388,6 @@ switch ($args['test_case']) {
   case 'jwt_token_creds':
     jwtTokenCreds($stub, $args);
     break;
-  case 'cancel_after_begin':
-    // Currently unimplementable with the current API design
-    // Specifically, in the ClientStreamingCall->start() method, the
-    // messages are sent immediately after metadata is sent. There is
-    // currently no way to cancel before messages are sent.
   default:
     echo "Unsupported test case $args[test_case]\n";
     exit(1);
