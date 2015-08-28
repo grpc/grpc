@@ -2,7 +2,7 @@
 
 ### Install gRPC
 Make sure you have installed gRPC on your system. Follow the instructions here:
-[https://github.com/grpc/grpc/blob/master/INSTALL](https://github.com/grpc/grpc/blob/master/INSTALL).
+[https://github.com/grpc/grpc/blob/master/INSTALL](../../../INSTALL).
 
 ### Get the tutorial source code
 
@@ -34,7 +34,7 @@ types as protocol buffer message types. Both the client and the
 server use interface code generated from the service definition.
 
 Here's our example service definition, defined using protocol buffers IDL in
-[helloworld.proto](examples/protos/helloworld.proto). The `Greeting`
+[helloworld.proto](../../protos/helloworld.proto). The `Greeting`
 service has one method, `hello`, that lets the server receive a single
 `HelloRequest`
 message from the remote client containing the user's name, then send back
@@ -124,7 +124,7 @@ $ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
     }
     ```
 
-For a working example, refer to [greeter_client.cc](examples/cpp/helloworld/greeter_client.cc).
+For a working example, refer to [greeter_client.cc](greeter_client.cc).
 
 ### Writing a server
 
@@ -152,7 +152,7 @@ For a working example, refer to [greeter_client.cc](examples/cpp/helloworld/gree
     std::unique_ptr<Server> server(builder.BuildAndStart());
     ```
 
-For a working example, refer to [greeter_server.cc](examples/cpp/helloworld/greeter_server.cc).
+For a working example, refer to [greeter_server.cc](greeter_server.cc).
 
 ### Writing asynchronous client and server
 
@@ -194,7 +194,7 @@ The channel and stub creation code is the same as the sync client.
     }
     ```
 
-For a working example, refer to [greeter_async_client.cc](examples/cpp/helloworld/greeter_async_client.cc).
+For a working example, refer to [greeter_async_client.cc](greeter_async_client.cc).
 
 #### Async server
 
@@ -253,7 +253,7 @@ maintain the state of each rpc and use the address of it as the unique tag. For
 simplicity the server only uses one completion queue for all events, and runs a
 main loop in `HandleRpcs` to query the queue.
 
-For a working example, refer to [greeter_async_server.cc](examples/cpp/helloworld/greeter_async_server.cc).
+For a working example, refer to [greeter_async_server.cc](greeter_async_server.cc).
 
 
 
