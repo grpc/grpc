@@ -173,13 +173,11 @@ void census_tag_set_close(census_tag_set_iterator *it);
      census_register_aggregation()).
    * Metric: Each measurement is for a single metric. Examples include RPC
      latency, CPU seconds consumed, and bytes transmitted.
-   * View: A view is a tag set, in which the tag values are regular expressions,
-     combined with a metric and an arbitrary number of aggregations and their
-     initialization parameters.
-
-   Each metric can have an arbitrary number of views by which it will be
-   broken down. For every measurement recorded, they are broken down by
-   unique tag combinations, and recorded in each matching view/aggregation.
+   * View: A view is a combination of a metric, a tag set (in which the tag
+     values are regular expressions) and a set of aggregations. When a
+     measurement for a metric matches the view tags, it is recorded (for each
+     unique set of tags) against each aggregation. Each metric can have an
+     arbitrary number of views by which it will be broken down.
 */
 
 /* A single value to be recorded comprises two parts: an ID for the particular
@@ -190,8 +188,8 @@ typedef struct {
 } census_value;
 
 /* Record new usage values against the given context. */
-void census_record_usage(census_context *context, census_value *values,
-                         size_t nvalues);
+void census_record(census_context *context, census_value *values,
+                   size_t nvalues);
 
 /** Structure used to describe an aggregation type. */
 typedef struct {
@@ -206,39 +204,33 @@ typedef struct {
      the correct type for the aggregation result. The object returned can be
      freed by using free_data(). */
   const void *(*data)(const void *aggregation);
-  /* destroy an aggregation result eturned from get_aggregation(). */
+  /* free data returned by data() */
   void (*free_data)(const void *data);
   /* Reset an aggregation to default (zero) values. */
   void (*reset)(void *aggregation);
   /* Merge 'from' aggregation into 'to'. Both aggregations must be compatible */
   void (*merge)(void *to, const void *from);
   /* Fill buffer with printable string version of aggregation contents. For
-   * debugging only. */
-  void (*print)(const void *aggregation, char *buffer, size_t n);
-} census_aggregation_descriptor;
+     debugging only. Returns the number of bytes added to buffer (a value == n
+     implies the buffer was of insufficient size). */
+  size_t (*print)(const void *aggregation, char *buffer, size_t n);
+} census_aggregation;
 
-/** Register a new aggregation type.
-  @param descriptor Describes aggregation
-  @return An identifier that can be used to identify the aggregation in other
-  census functions. */
-gpr_uint32 census_register_aggregation(
-    const census_aggregation_descriptor *descriptor);
-
-/* Aggregation Identifiers for built-in census aggregations. */
-#define CENSUS_AGGREGATION_ID_SCALAR ((gpr_uint32)0)
-#define CENSUS_AGGREGATION_ID_DISTRIBUTION ((gpr_uint32)1)
-#define CENSUS_AGGREGATION_ID_HISTOGRAM ((gpr_uint32)2)
-#define CENSUS_AGGREGATION_ID_WINDOW ((gpr_uint32)3)
+/* Predefined aggregation types. */
+extern census_aggregation census_agg_scalar;
+extern census_aggregation census_agg_distribution;
+extern census_aggregation census_agg_histogram;
+extern census_aggregation census_agg_window;
 
 /** Information needed to instantiate a new aggregation. Used in view
     construction via census_define_view(). */
 typedef struct {
-  gpr_uint32 id; /* aggregation ID */
+  const census_aggregation *aggregation;
   const void
       *create_arg; /* Argument to be used for aggregation initialization. */
-} census_aggregation;
+} census_aggregation_descriptor;
 
-/** Type representing a single view. */
+/** A census view type. Opaque. */
 typedef struct census_view census_view;
 
 /** Create a new view.
@@ -249,10 +241,12 @@ typedef struct census_view census_view;
 
   @return A new census view
 */
-const census_view *census_define_view(gpr_uint32 metric_id,
-                                      const census_tag_set *tags,
-                                      const census_aggregation *aggregations,
-                                      size_t naggregations);
+census_view *census_view_create(
+    gpr_uint32 metric_id, const census_tag_set *tags,
+    const census_aggregation_descriptor *aggregations, size_t naggregations);
+
+/** Destroy a previously created view. */
+void census_view_delete(census_view *view);
 
 /** Metric ID associated with a view */
 size_t census_view_metric(const census_view *view);
@@ -263,31 +257,18 @@ size_t census_view_naggregations(const census_view *view);
 /** Get tags associated with view. */
 const census_tag_set *census_view_tags(const census_view *view);
 
-/** Get aggregations associated with a view. */
-const census_aggregation *census_view_aggregrations(const census_view *view);
-
-/** Holds aggregation data, as it applies to a particular view. This structure
-  is used as one component of the data returned from census_get_view_data(). */
-typedef struct {
-  /** Aggregation index in original view. Use as (e.g.)
-    census_view_aggregations(view)[index] to get the original
-    census_aggregation structure. */
-  size_t index;
-  /** Data as returned from the data() function for the relevant
-    aggregation descriptor. It is the user responsibility to cast this to the
-    correct type for the aggregation. */
-  void *data;
-} census_aggregation_data;
+/** Get aggregation descriptors associated with a view. */
+const census_aggregation_descriptor *census_view_aggregrations(
+    const census_view *view);
 
 /** Holds all the aggregation data for a particular view instantiation. Forms
-  part of the data returned by census_get_view_data(). */
+  part of the data returned by census_view_data(). */
 typedef struct {
-  const census_tag_set *tags;          /* Tags for this set of aggregations */
-  size_t naggregations;                /* Number of aggregations in data. */
-  const census_aggregation_data *data; /* Aggregation data */
+  const census_tag_set *tags; /* Tags for this set of aggregations. */
+  const void **data; /* One data set for every aggregation in the view. */
 } census_view_aggregation_data;
 
-/** Census view data as returned by census_get_view_data(). */
+/** Census view data as returned by census_view_get_data(). */
 typedef struct {
   size_t n_tag_sets; /* Number of unique tag sets that matched view. */
   const census_view_aggregation_data *data; /* n_tag_sets entries */
@@ -295,17 +276,12 @@ typedef struct {
 
 /** Get data from aggregations associated with a view.
   @param view View from which to get data.
-  @param aggregation_indices Indexes of view aggregations for which to return
-         current data. This parameter is ignored if nindices == 0.
-  @param nindices. Number of entries in aggregation_indices. If this is set to
-         0, then all aggregations are returned.
+  @return Full set of data for all aggregations for the view.
 */
-const census_view_data *census_get_view_data(census_view *view,
-                                             size_t *aggregation_indices,
-                                             size_t nindices);
+const census_view_data *census_view_get_data(const census_view *view);
 
-/** Reset all view data to zero for the specified view id. */
-void census_reset_view_data(gpr_uint64 view_id);
+/** Reset all view data to zero for the specified view */
+void census_view_reset(census_view *view);
 
 #ifdef __cplusplus
 }
