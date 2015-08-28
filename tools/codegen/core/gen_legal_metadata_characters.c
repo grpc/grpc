@@ -66,7 +66,10 @@ int main(void) {
   dump();
 
   clear();
-  for (i = 32; i <= 126; i++) legal(i);
+  for (i = 32; i <= 126; i++) {
+    if (i == ',') continue;
+    legal(i);
+  }
   dump();
 
   return 0;

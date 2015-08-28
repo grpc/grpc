@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
     }
   }
   std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateChannel(server_address, creds, grpc::ChannelArguments());
+      grpc::CreateChannel(server_address, creds);
 
   grpc::string response;
   std::multimap<grpc::string, grpc::string> client_metadata;
