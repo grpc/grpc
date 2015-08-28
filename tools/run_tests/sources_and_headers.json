@@ -1395,57 +1395,6 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_config", 
-      "grpc_test_util", 
-      "pubsub_client_lib"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "pubsub_client", 
-    "src": [
-      "examples/pubsub/main.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "pubsub_client_lib"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "pubsub_publisher_test", 
-    "src": [
-      "examples/pubsub/publisher_test.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "pubsub_client_lib"
-    ], 
-    "headers": [], 
-    "language": "c++", 
-    "name": "pubsub_subscriber_test", 
-    "src": [
-      "examples/pubsub/subscriber_test.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
@@ -13572,31 +13521,6 @@
     "name": "interop_server_main", 
     "src": [
       "test/cpp/interop/server.cc"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc", 
-      "grpc++"
-    ], 
-    "headers": [
-      "examples/pubsub/empty.grpc.pb.h", 
-      "examples/pubsub/empty.pb.h", 
-      "examples/pubsub/label.grpc.pb.h", 
-      "examples/pubsub/label.pb.h", 
-      "examples/pubsub/publisher.h", 
-      "examples/pubsub/pubsub.grpc.pb.h", 
-      "examples/pubsub/pubsub.pb.h", 
-      "examples/pubsub/subscriber.h"
-    ], 
-    "language": "c++", 
-    "name": "pubsub_client_lib", 
-    "src": [
-      "examples/pubsub/publisher.cc", 
-      "examples/pubsub/publisher.h", 
-      "examples/pubsub/subscriber.cc", 
-      "examples/pubsub/subscriber.h"
     ]
   }, 
   {
