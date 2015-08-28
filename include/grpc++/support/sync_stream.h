@@ -45,60 +45,78 @@
 
 namespace grpc {
 
-// Common interface for all client side streaming.
+/// Common interface for all synchronous client side streaming.
 class ClientStreamingInterface {
  public:
   virtual ~ClientStreamingInterface() {}
 
-  // Wait until the stream finishes, and return the final status. When the
-  // client side declares it has no more message to send, either implicitly or
-  // by calling WritesDone, it needs to make sure there is no more message to
-  // be received from the server, either implicitly or by getting a false from
-  // a Read().
-  // This function will return either:
-  // - when all incoming messages have been read and the server has returned
-  //   status
-  // - OR when the server has returned a non-OK status
+  /// Wait until the stream finishes, and return the final status. When the
+  /// client side declares it has no more message to send, either implicitly or
+  /// by calling \a WritesDone(), it needs to make sure there is no more message
+  /// to be received from the server, either implicitly or by getting a false
+  /// from a \a Read().
+  ///
+  /// This function will return either:
+  /// - when all incoming messages have been read and the server has returned
+  ///   status.
+  /// - OR when the server has returned a non-OK status.
   virtual Status Finish() = 0;
 };
 
-// An interface that yields a sequence of R messages.
+/// An interface that yields a sequence of messages of type \a R.
 template <class R>
 class ReaderInterface {
  public:
   virtual ~ReaderInterface() {}
 
-  // Blocking read a message and parse to msg. Returns true on success.
-  // The method returns false when there will be no more incoming messages,
-  // either because the other side has called WritesDone or the stream has
-  // failed (or been cancelled).
+  /// Blocking read a message and parse to \a msg. Returns \a true on success.
+  ///
+  /// \param[out] msg The read message.
+  ///
+  /// \return \a false when there will be no more incoming messages, either
+  /// because the other side has called \a WritesDone() or the stream has failed
+  /// (or been cancelled).
   virtual bool Read(R* msg) = 0;
 };
 
-// An interface that can be fed a sequence of W messages.
+/// An interface that can be fed a sequence of messages of type \a W.
 template <class W>
 class WriterInterface {
  public:
   virtual ~WriterInterface() {}
 
-  // Blocking write msg to the stream. Returns true on success.
-  // Returns false when the stream has been closed.
+  /// Blocking write \a msg to the stream with options.
+  ///
+  /// \param msg The message to be written to the stream.
+  /// \param options Options affecting the write operation.
+  ///
+  /// \return \a true on success, \a false when the stream has been closed.
   virtual bool Write(const W& msg, const WriteOptions& options) = 0;
 
+  /// Blocking write \a msg to the stream with default options.
+  ///
+  /// \param msg The message to be written to the stream.
+  ///
+  /// \return \a true on success, \a false when the stream has been closed.
   inline bool Write(const W& msg) { return Write(msg, WriteOptions()); }
 };
 
+/// Client-side interface for streaming reads of message of type \a R.
 template <class R>
 class ClientReaderInterface : public ClientStreamingInterface,
                               public ReaderInterface<R> {
  public:
+  /// Blocking wait for initial metadata from server. The received metadata
+  /// can only be accessed after this call returns. Should only be called before
+  /// the first read. Calling this method is optional, and if it is not called
+  /// the metadata will be available in ClientContext after the first read.
   virtual void WaitForInitialMetadata() = 0;
 };
 
 template <class R>
 class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
  public:
-  // Blocking create a stream and write the first request out.
+  /// Blocking create a stream and write the first request out.
   template <class W>
   ClientReader(Channel* channel, const RpcMethod& method,
                ClientContext* context, const W& request)
@@ -106,24 +124,20 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpClientSendClose> ops;
     ops.SendInitialMetadata(context->send_initial_metadata_);
-    // TODO(ctiller): don't assert
+    /// TODO(ctiller): don't assert
     GPR_ASSERT(ops.SendMessage(request).ok());
     ops.ClientSendClose();
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);
   }
 
-  // Blocking wait for initial metadata from server. The received metadata
-  // can only be accessed after this call returns. Should only be called before
-  // the first read. Calling this method is optional, and if it is not called
-  // the metadata will be available in ClientContext after the first read.
   void WaitForInitialMetadata() {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
     CallOpSet<CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
     call_.PerformOps(&ops);
-    cq_.Pluck(&ops);  // status ignored
+    cq_.Pluck(&ops);  /// status ignored
   }
 
   bool Read(R* msg) GRPC_OVERRIDE {
@@ -151,17 +165,21 @@ class ClientReader GRPC_FINAL : public ClientReaderInterface<R> {
   Call call_;
 };
 
+/// Client-side interface for streaming writes of message of type \a W.
 template <class W>
 class ClientWriterInterface : public ClientStreamingInterface,
                               public WriterInterface<W> {
  public:
+  /// Block until writes are completed.
+  ///
+  /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
 };
 
 template <class W>
 class ClientWriter : public ClientWriterInterface<W> {
  public:
-  // Blocking create a stream.
+  /// Blocking create a stream.
   template <class R>
   ClientWriter(Channel* channel, const RpcMethod& method,
                ClientContext* context, R* response)
@@ -191,7 +209,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     return cq_.Pluck(&ops);
   }
 
-  // Read the final response and wait for the final status.
+  /// Read the final response and wait for the final status.
   Status Finish() GRPC_OVERRIDE {
     Status status;
     finish_ops_.ClientRecvStatus(context_, &status);
@@ -207,20 +225,28 @@ class ClientWriter : public ClientWriterInterface<W> {
   Call call_;
 };
 
-// Client-side interface for bi-directional streaming.
+/// Client-side interface for bi-directional streaming.
 template <class W, class R>
 class ClientReaderWriterInterface : public ClientStreamingInterface,
                                     public WriterInterface<W>,
                                     public ReaderInterface<R> {
  public:
+  /// Blocking wait for initial metadata from server. The received metadata
+  /// can only be accessed after this call returns. Should only be called before
+  /// the first read. Calling this method is optional, and if it is not called
+  /// the metadata will be available in ClientContext after the first read.
   virtual void WaitForInitialMetadata() = 0;
+
+  /// Block until writes are completed.
+  ///
+  /// \return Whether the writes were successful.
   virtual bool WritesDone() = 0;
 };
 
 template <class W, class R>
 class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
  public:
-  // Blocking create a stream.
+  /// Blocking create a stream.
   ClientReaderWriter(Channel* channel, const RpcMethod& method,
                      ClientContext* context)
       : context_(context), call_(channel->CreateCall(method, context, &cq_)) {
@@ -230,10 +256,6 @@ class ClientReaderWriter GRPC_FINAL : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);
   }
 
-  // Blocking wait for initial metadata from server. The received metadata
-  // can only be accessed after this call returns. Should only be called before
-  // the first read. Calling this method is optional, and if it is not called
-  // the metadata will be available in ClientContext after the first read.
   void WaitForInitialMetadata() {
     GPR_ASSERT(!context_->initial_metadata_received_);
 
@@ -344,7 +366,7 @@ class ServerWriter GRPC_FINAL : public WriterInterface<W> {
   ServerContext* const ctx_;
 };
 
-// Server-side interface for bi-directional streaming.
+/// Server-side interface for bi-directional streaming.
 template <class W, class R>
 class ServerReaderWriter GRPC_FINAL : public WriterInterface<W>,
                                       public ReaderInterface<R> {

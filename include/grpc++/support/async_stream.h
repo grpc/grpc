@@ -45,32 +45,48 @@
 
 namespace grpc {
 
-// Async interfaces
-// Common interface for all client side streaming.
+/// Common interface for all client side asynchronous streaming.
 class ClientAsyncStreamingInterface {
  public:
   virtual ~ClientAsyncStreamingInterface() {}
 
+  /// Request notification of the reading of the initial metadata. Completion
+  /// will be notified by \a tag on the associated completion queue.
+  /// 
+  /// \param[in] tag Tag identifying this request.
   virtual void ReadInitialMetadata(void* tag) = 0;
 
+  /// Request notification completion.
+  ///
+  /// \param[out] status To be updated with the operation status.
+  /// \param[in] tag Tag identifying this request.
   virtual void Finish(Status* status, void* tag) = 0;
 };
 
-// An interface that yields a sequence of R messages.
+/// An interface that yields a sequence of messages of type \a R.
 template <class R>
 class AsyncReaderInterface {
  public:
   virtual ~AsyncReaderInterface() {}
 
+  /// Read a message of type \a R into \a msg. Completion will be notified by \a
+  /// tag on the associated completion queue.
+  ///
+  /// \param[out] msg Where to eventually store the read message.
+  /// \param[in] tag The tag identifying the operation.
   virtual void Read(R* msg, void* tag) = 0;
 };
 
-// An interface that can be fed a sequence of W messages.
+/// An interface that can be fed a sequence of messages of type \a W.
 template <class W>
 class AsyncWriterInterface {
  public:
   virtual ~AsyncWriterInterface() {}
 
+  /// Request the writing of \a msg with identifying tag \a tag.
+  ///
+  /// \param[in] msg The message to be written.
+  /// \param[in] tag The tag identifying the operation.
   virtual void Write(const W& msg, void* tag) = 0;
 };
 
@@ -81,7 +97,7 @@ class ClientAsyncReaderInterface : public ClientAsyncStreamingInterface,
 template <class R>
 class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
  public:
-  // Create a stream and write the first request out.
+  /// Create a stream and write the first request out.
   template <class W>
   ClientAsyncReader(Channel* channel, CompletionQueue* cq,
                     const RpcMethod& method, ClientContext* context,
@@ -89,7 +105,7 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_ops_.set_output_tag(tag);
     init_ops_.SendInitialMetadata(context->send_initial_metadata_);
-    // TODO(ctiller): don't assert
+    /// TODO(ctiller): don't assert
     GPR_ASSERT(init_ops_.SendMessage(request).ok());
     init_ops_.ClientSendClose();
     call_.PerformOps(&init_ops_);
@@ -131,10 +147,14 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
   CallOpSet<CallOpRecvInitialMetadata, CallOpClientRecvStatus> finish_ops_;
 };
 
+/// Common interface for client side asynchronous writing.
 template <class W>
 class ClientAsyncWriterInterface : public ClientAsyncStreamingInterface,
                                    public AsyncWriterInterface<W> {
  public:
+  /// Signal the client is done with the writes.
+  ///
+  /// \param[in] tag The tag identifying the operation.
   virtual void WritesDone(void* tag) = 0;
 };
 
@@ -163,7 +183,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
 
   void Write(const W& msg, void* tag) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
-    // TODO(ctiller): don't assert
+    /// TODO(ctiller): don't assert
     GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
@@ -194,12 +214,15 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
             CallOpClientRecvStatus> finish_ops_;
 };
 
-// Client-side interface for bi-directional streaming.
+/// Client-side interface for asynchronous bi-directional streaming.
 template <class W, class R>
 class ClientAsyncReaderWriterInterface : public ClientAsyncStreamingInterface,
                                          public AsyncWriterInterface<W>,
                                          public AsyncReaderInterface<R> {
  public:
+  /// Signal the client is done with the writes.
+  ///
+  /// \param[in] tag The tag identifying the operation.
   virtual void WritesDone(void* tag) = 0;
 };
 
@@ -235,7 +258,7 @@ class ClientAsyncReaderWriter GRPC_FINAL
 
   void Write(const W& msg, void* tag) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
-    // TODO(ctiller): don't assert
+    /// TODO(ctiller): don't assert
     GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
@@ -348,7 +371,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
-    // TODO(ctiller): don't assert
+    /// TODO(ctiller): don't assert
     GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
@@ -373,7 +396,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
   CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> finish_ops_;
 };
 
-// Server-side interface for bi-directional streaming.
+/// Server-side interface for asynchronous bi-directional streaming.
 template <class W, class R>
 class ServerAsyncReaderWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
                                            public AsyncWriterInterface<W>,
