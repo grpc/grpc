@@ -49,8 +49,6 @@ static grpc_pollset g_pollset;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
 
-static void on_connect(void *arg, grpc_endpoint *udp) {}
-
 static void on_read(int fd, grpc_udp_server_cb new_transport_cb, void *cb_arg) {
   char read_buffer[512];
   int byte_count;
@@ -73,7 +71,7 @@ static void test_no_op(void) {
 static void test_no_op_with_start(void) {
   grpc_udp_server *s = grpc_udp_server_create();
   LOG_TEST("test_no_op_with_start");
-  grpc_udp_server_start(s, NULL, 0, on_connect, NULL);
+  grpc_udp_server_start(s, NULL, 0);
   grpc_udp_server_destroy(s, NULL, NULL);
 }
 
@@ -100,7 +98,7 @@ static void test_no_op_with_port_and_start(void) {
   GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
                                       on_read));
 
-  grpc_udp_server_start(s, NULL, 0, on_connect, NULL);
+  grpc_udp_server_start(s, NULL, 0);
 
   grpc_udp_server_destroy(s, NULL, NULL);
 }
@@ -130,7 +128,7 @@ static void test_receive(int number_of_clients) {
   GPR_ASSERT(addr_len <= sizeof(addr));
 
   pollsets[0] = &g_pollset;
-  grpc_udp_server_start(s, pollsets, 1, on_connect, NULL);
+  grpc_udp_server_start(s, pollsets, 1);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
 
