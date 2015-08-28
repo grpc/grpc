@@ -58,8 +58,8 @@ using namespace gflags;
 
 int main(int argc, char** argv) {
   ParseCommandLineFlags(&argc, &argv, true);
-  auto stub = grpc::cpp::test::util::TestService::NewStub(grpc::CreateChannel(
-      FLAGS_address, grpc::InsecureCredentials(), grpc::ChannelArguments()));
+  auto stub = grpc::cpp::test::util::TestService::NewStub(
+      grpc::CreateChannel(FLAGS_address, grpc::InsecureCredentials()));
 
   EchoRequest request;
   EchoResponse response;

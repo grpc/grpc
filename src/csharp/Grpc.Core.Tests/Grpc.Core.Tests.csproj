@@ -64,6 +64,7 @@
       <Link>Version.cs</Link>
     </Compile>
     <Compile Include="ClientBaseTest.cs" />
+    <Compile Include="MarshallingErrorsTest.cs" />
     <Compile Include="ShutdownTest.cs" />
     <Compile Include="Internal\AsyncCallTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
