@@ -35,10 +35,13 @@
 #include <grpc++/support/auth_context.h>
 #include <gtest/gtest.h>
 #include "src/cpp/common/secure_auth_context.h"
+#include "test/cpp/util/string_ref_helper.h"
 
 extern "C" {
 #include "src/core/security/security_context.h"
 }
+
+using ::grpc::testing::ToString;
 
 namespace grpc {
 namespace {
@@ -84,12 +87,12 @@ TEST_F(AuthPropertyIteratorTest, GeneralTest) {
   AuthProperty p1 = *iter;
   iter++;
   AuthProperty p2 = *iter;
-  EXPECT_EQ("name", p0.first);
-  EXPECT_EQ("chapi", p0.second);
-  EXPECT_EQ("name", p1.first);
-  EXPECT_EQ("chapo", p1.second);
-  EXPECT_EQ("foo", p2.first);
-  EXPECT_EQ("bar", p2.second);
+  EXPECT_EQ("name", ToString(p0.first));
+  EXPECT_EQ("chapi", ToString(p0.second));
+  EXPECT_EQ("name", ToString(p1.first));
+  EXPECT_EQ("chapo", ToString(p1.second));
+  EXPECT_EQ("foo", ToString(p2.first));
+  EXPECT_EQ("bar", ToString(p2.second));
   ++iter;
   EXPECT_EQ(empty_iter, iter);
 }

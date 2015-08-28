@@ -191,8 +191,8 @@ class End2endTest : public ::testing::Test {
   void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = CreateChannel(
-        server_address_.str(), InsecureCredentials(), ChannelArguments());
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureCredentials());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
