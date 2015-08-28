@@ -32,6 +32,7 @@ Description: high performance general RPC framework
 
 Package: libgrpc0-cil
 Architecture: any
+Section: cli-mono
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: high performance general RPC framework
  A modern, open source remote procedure call (RPC) framework that can
