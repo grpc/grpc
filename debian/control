@@ -38,4 +38,4 @@ Description: high performance general RPC framework
  run anywhere. It enables client and server applications to communicate
  transparently, and makes it easier to build connected systems.
  .
- This package provides the gRPC CIL bindings.
+ This package provides the gRPC CLI bindings.
