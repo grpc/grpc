@@ -33,13 +33,6 @@
 
 #include "src/core/iomgr/tcp_posix.h"
 
-#include <errno.h>
-#include <fcntl.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

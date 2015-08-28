@@ -52,7 +52,6 @@ static OVERLAPPED g_iocp_custom_overlap;
 
 static gpr_event g_shutdown_iocp;
 static gpr_event g_iocp_done;
-static gpr_atm g_orphans = 0;
 static gpr_atm g_custom_events = 0;
 
 static HANDLE g_iocp;
@@ -92,22 +91,13 @@ static void do_iocp_work() {
     gpr_log(GPR_ERROR, "Unknown IOCP operation");
     abort();
   }
-  GPR_ASSERT(info->outstanding);
-  if (socket->orphan) {
-    info->outstanding = 0;
-    if (!socket->read_info.outstanding && !socket->write_info.outstanding) {
-      grpc_winsocket_destroy(socket);
-      gpr_atm_full_fetch_add(&g_orphans, -1);
-    }
-    return;
-  }
   success = WSAGetOverlappedResult(socket->socket, &info->overlapped, &bytes,
                                    FALSE, &flags);
   info->bytes_transfered = bytes;
   info->wsa_error = success ? 0 : WSAGetLastError();
   GPR_ASSERT(overlapped == &info->overlapped);
-  gpr_mu_lock(&socket->state_mu);
   GPR_ASSERT(!info->has_pending_iocp);
+  gpr_mu_lock(&socket->state_mu);
   if (info->cb) {
     f = info->cb;
     opaque = info->opaque;
@@ -120,7 +110,7 @@ static void do_iocp_work() {
 }
 
 static void iocp_loop(void *p) {
-  while (gpr_atm_acq_load(&g_orphans) || gpr_atm_acq_load(&g_custom_events) ||
+  while (gpr_atm_acq_load(&g_custom_events) || 
          !gpr_event_get(&g_shutdown_iocp)) {
     grpc_maybe_call_delayed_callbacks(NULL, 1);
     do_iocp_work();
@@ -173,12 +163,6 @@ void grpc_iocp_add_socket(grpc_winsocket *socket) {
   }
   socket->added_to_iocp = 1;
   GPR_ASSERT(ret == g_iocp);
-}
-
-void grpc_iocp_socket_orphan(grpc_winsocket *socket) {
-  GPR_ASSERT(!socket->orphan);
-  gpr_atm_full_fetch_add(&g_orphans, 1);
-  socket->orphan = 1;
 }
 
 /* Calling notify_on_read or write means either of two things:
