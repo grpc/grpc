@@ -1,8 +1,8 @@
-grpc (0.10.2-1) unstable; urgency=medium
+grpc (0.10.0-1~bpo8+1) jessie-backports; urgency=medium
 
-  * New upstream release (closes: #795766)
+  * Backport for jessie
 
- -- Andrew Pollock <apollock@debian.org>  Fri, 28 Aug 2015 09:26:25 +1000
+ -- Andrew Pollock <apollock@debian.org>  Fri, 28 Aug 2015 11:42:25 +1000
 
 grpc (0.10.0-1) unstable; urgency=low
 
