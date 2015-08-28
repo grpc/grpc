@@ -316,9 +316,8 @@ class _Kernel(object):
         call.status(status, call)
         self._rpc_states.pop(call, None)
 
-  def add_port(self, port, server_credentials):
+  def add_port(self, address, server_credentials):
     with self._lock:
-      address = '[::]:%d' % port
       if self._server is None:
         self._completion_queue = _intermediary_low.CompletionQueue()
         self._server = _intermediary_low.Server(self._completion_queue)
@@ -362,17 +361,20 @@ class ServiceLink(links.Link):
   """
 
   @abc.abstractmethod
-  def add_port(self, port, server_credentials):
+  def add_port(self, address, server_credentials):
     """Adds a port on which to service RPCs after this link has been started.
 
     Args:
-      port: The port on which to service RPCs, or zero to request that a port be
-        automatically selected and used.
-      server_credentials: A ServerCredentials object, or None for insecure
-        service.
+      address: The address on which to service RPCs with a port number of zero
+        requesting that a port number be automatically selected and used.
+      server_credentials: An _intermediary_low.ServerCredentials object, or
+        None for insecure service.
 
     Returns:
-      A port on which RPCs will be serviced after this link has been started.
+      A integer port on which RPCs will be serviced after this link has been
+        started. This is typically the same number as the port number contained
+        in the passed address, but will likely be different if the port number
+        contained in the passed address was zero.
     """
     raise NotImplementedError()
 
@@ -417,8 +419,8 @@ class _ServiceLink(ServiceLink):
   def join_link(self, link):
     self._relay.set_behavior(link.accept_ticket)
 
-  def add_port(self, port, server_credentials):
-    return self._kernel.add_port(port, server_credentials)
+  def add_port(self, address, server_credentials):
+    return self._kernel.add_port(address, server_credentials)
 
   def start(self):
     self._relay.start()

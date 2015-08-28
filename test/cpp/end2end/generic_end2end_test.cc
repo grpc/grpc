@@ -121,8 +121,8 @@ class GenericEnd2endTest : public ::testing::Test {
   }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = CreateChannel(
-        server_address_.str(), InsecureCredentials(), ChannelArguments());
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureCredentials());
     generic_stub_.reset(new GenericStub(channel));
   }
 

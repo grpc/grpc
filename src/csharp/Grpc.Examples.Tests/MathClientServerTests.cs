@@ -162,7 +162,7 @@ namespace Math.Tests
         {
             using (var call = client.Sum())
             {
-                var numbers = new List<long> { 10, 20, 30 }.ConvertAll(n => new Num{ Num_ = n });
+                var numbers = new List<long> { 10, 20, 30 }.ConvertAll(n => new Num { Num_ = n });
 
                 await call.RequestStream.WriteAllAsync(numbers);
                 var result = await call.ResponseAsync;
