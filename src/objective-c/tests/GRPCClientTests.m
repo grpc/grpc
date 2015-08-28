@@ -150,37 +150,34 @@ static ProtoMethod *kUnaryCallMethod;
 }
 
 - (void)testMetadata {
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"RPC unauthorized."];
+  __weak XCTestExpectation *header = [self expectationWithDescription:@"Header echoed"];
+  __weak XCTestExpectation *trailer = [self expectationWithDescription:@"Trailer echoed"];
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
-  request.fillUsername = YES;
-  request.fillOauthScope = YES;
   GRXWriter *requestsWriter = [GRXWriter writerWithValue:[request data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kHostAddress
                                              path:kUnaryCallMethod.HTTPPath
                                    requestsWriter:requestsWriter];
 
-  call.oauth2AccessToken = @"bogusToken";
+  call.requestHeaders[@"x-grpc-test-echo-initial"] = @"echo metadata";
+  call.requestHeaders[@"x-grpc-test-echo-trailing-bin"] = [@"abc"
+                                                           dataUsingEncoding:NSUTF8StringEncoding];
 
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
-    XCTFail(@"Received unexpected response: %@", value);
+    XCTAssertEqual(call.responseHeaders[@"x-grpc-test-echo-initial"], @"echo metadata");
+    [header fulfill];
   } completionHandler:^(NSError *errorOrNil) {
-    XCTAssertNotNil(errorOrNil, @"Finished without error!");
-    XCTAssertEqual(errorOrNil.code, 16, @"Finished with unexpected error: %@", errorOrNil);
-    XCTAssertEqualObjects(call.responseHeaders, errorOrNil.userInfo[kGRPCHeadersKey],
-                          @"Headers in the NSError object and call object differ.");
-    XCTAssertEqualObjects(call.responseTrailers, errorOrNil.userInfo[kGRPCTrailersKey],
-                          @"Trailers in the NSError object and call object differ.");
-    NSString *challengeHeader = call.oauth2ChallengeHeader;
-    XCTAssertGreaterThan(challengeHeader.length, 0,
-                         @"No challenge in response headers %@", call.responseHeaders);
-    [expectation fulfill];
+    XCTAssertEqual(call.responseTrailers[@"x-grpc-test-echo-trailing-bin"],
+                   [@"abc" dataUsingEncoding:NSUTF8StringEncoding]);
+    [trailer fulfill];
   }];
 
   [call startWithWriteable:responsesWriteable];
 
   [self waitForExpectationsWithTimeout:4 handler:nil];
 }
+
+
 
 @end

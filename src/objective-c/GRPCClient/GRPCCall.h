@@ -48,6 +48,8 @@
 #import <Foundation/Foundation.h>
 #import <RxLibrary/GRXWriter.h>
 
+@class GRPCRequestHeaders;
+
 // Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
 // the server.
 extern id const kGRPCHeadersKey;
@@ -70,7 +72,7 @@ extern id const kGRPCTrailersKey;
 //
 // For convenience, the property is initialized to an empty NSMutableDictionary, and the setter
 // accepts (and copies) both mutable and immutable dictionaries.
-- (NSMutableDictionary *)requestHeaders; // nonatomic
+- (GRPCRequestHeaders *)requestHeaders; // nonatomic
 - (void)setRequestHeaders:(NSDictionary *)requestHeaders; // nonatomic, copy
 
 // This dictionary is populated with the HTTP headers received from the server. This happens before
