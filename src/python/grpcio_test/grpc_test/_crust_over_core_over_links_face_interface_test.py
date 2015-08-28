@@ -39,11 +39,10 @@ from grpc.framework.core import implementations as core_implementations
 from grpc.framework.crust import implementations as crust_implementations
 from grpc.framework.foundation import logging_pool
 from grpc.framework.interfaces.links import utilities
-from grpc_test import test_common
+from grpc_test import test_common as grpc_test_common
 from grpc_test.framework.common import test_constants
 from grpc_test.framework.interfaces.face import test_cases
 from grpc_test.framework.interfaces.face import test_interfaces
-from grpc_test.framework.interfaces.links import test_utilities
 
 
 class _SerializationBehaviors(
@@ -130,19 +129,19 @@ class _Implementation(test_interfaces.Implementation):
     pool.shutdown(wait=True)
 
   def invocation_metadata(self):
-    return test_common.INVOCATION_INITIAL_METADATA
+    return grpc_test_common.INVOCATION_INITIAL_METADATA
 
   def initial_metadata(self):
-    return test_common.SERVICE_INITIAL_METADATA
+    return grpc_test_common.SERVICE_INITIAL_METADATA
 
   def terminal_metadata(self):
-    return test_common.SERVICE_TERMINAL_METADATA
+    return grpc_test_common.SERVICE_TERMINAL_METADATA
 
   def code(self):
     return _intermediary_low.Code.OK
 
   def details(self):
-    return test_common.DETAILS
+    return grpc_test_common.DETAILS
 
   def metadata_transmitted(self, original_metadata, transmitted_metadata):
     return original_metadata is None or grpc_test_common.metadata_transmitted(

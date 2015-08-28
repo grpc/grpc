@@ -45,11 +45,7 @@ from grpc_test.framework.common import test_constants
 from grpc_test.framework.interfaces.base import test_cases
 from grpc_test.framework.interfaces.base import test_interfaces
 
-_INVOCATION_INITIAL_METADATA = ((b'0', b'abc'), (b'1', b'def'), (b'2', b'ghi'),)
-_SERVICE_INITIAL_METADATA = ((b'3', b'jkl'), (b'4', b'mno'), (b'5', b'pqr'),)
-_SERVICE_TERMINAL_METADATA = ((b'6', b'stu'), (b'7', b'vwx'), (b'8', b'yza'),)
 _CODE = _intermediary_low.Code.OK
-_MESSAGE = b'test message'
 
 
 class _SerializationBehaviors(
@@ -117,16 +113,18 @@ class _Implementation(test_interfaces.Implementation):
     service_grpc_link.stop_gracefully()
 
   def invocation_initial_metadata(self):
-    return _INVOCATION_INITIAL_METADATA
+    return grpc_test_common.INVOCATION_INITIAL_METADATA
 
   def service_initial_metadata(self):
-    return _SERVICE_INITIAL_METADATA
+    return grpc_test_common.SERVICE_INITIAL_METADATA
 
   def invocation_completion(self):
     return utilities.completion(None, None, None)
 
   def service_completion(self):
-    return utilities.completion(_SERVICE_TERMINAL_METADATA, _CODE, _MESSAGE)
+    return utilities.completion(
+        grpc_test_common.SERVICE_TERMINAL_METADATA, _CODE,
+        grpc_test_common.DETAILS)
 
   def metadata_transmitted(self, original_metadata, transmitted_metadata):
     return original_metadata is None or grpc_test_common.metadata_transmitted(
@@ -144,14 +142,6 @@ class _Implementation(test_interfaces.Implementation):
       return False
     else:
       return True
-
-
-def setUpModule():
-  logging.warn('setUpModule!')
-
-
-def tearDownModule():
-  logging.warn('tearDownModule!')
 
 
 def load_tests(loader, tests, pattern):
