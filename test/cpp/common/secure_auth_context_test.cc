@@ -50,7 +50,7 @@ class SecureAuthContextTest : public ::testing::Test {};
 
 // Created with nullptr
 TEST_F(SecureAuthContextTest, EmptyContext) {
-  SecureAuthContext context(nullptr);
+  SecureAuthContext context(nullptr, true);
   EXPECT_TRUE(context.GetPeerIdentity().empty());
   EXPECT_TRUE(context.GetPeerIdentityPropertyName().empty());
   EXPECT_TRUE(context.FindPropertyValues("").empty());
@@ -60,7 +60,7 @@ TEST_F(SecureAuthContextTest, EmptyContext) {
 
 TEST_F(SecureAuthContextTest, Properties) {
   grpc_auth_context* ctx = grpc_auth_context_create(NULL);
-  SecureAuthContext context(ctx);
+  SecureAuthContext context(ctx, true);
   context.AddProperty("name", "chapi");
   context.AddProperty("name", "chapo");
   context.AddProperty("foo", "bar");
@@ -78,7 +78,7 @@ TEST_F(SecureAuthContextTest, Properties) {
 
 TEST_F(SecureAuthContextTest, Iterators) {
   grpc_auth_context* ctx = grpc_auth_context_create(NULL);
-  SecureAuthContext context(ctx);
+  SecureAuthContext context(ctx, true);
   context.AddProperty("name", "chapi");
   context.AddProperty("name", "chapo");
   context.AddProperty("foo", "bar");
