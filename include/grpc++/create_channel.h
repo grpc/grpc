@@ -49,6 +49,12 @@ namespace grpc {
 /// an object or is invalid, a lame channel is returned.
 /// \param args Options for channel creation.
 std::shared_ptr<Channel> CreateChannel(
+    const grpc::string& target, const std::shared_ptr<Credentials>& creds);
+
+// For advanced use and testing ONLY. Override default channel arguments only
+// if necessary.
+// If creds does not hold an object or is invalid, a lame channel is returned.
+std::shared_ptr<Channel> CreateCustomChannel(
     const grpc::string& target, const std::shared_ptr<Credentials>& creds,
     const ChannelArguments& args);
 
