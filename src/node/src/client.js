@@ -275,7 +275,7 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
     emitter.getPeer = function getPeer() {
       return call.getPeer();
     };
-    this.$_updateMetadata(this.$_auth_uri, metadata, function(error, metadata) {
+    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         callback(error);
@@ -349,7 +349,7 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
       metadata = metadata.clone();
     }
     var stream = new ClientWritableStream(call, serialize);
-    this.$_updateMetadata(this.$_auth_uri, metadata, function(error, metadata) {
+    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         callback(error);
@@ -425,7 +425,7 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
       metadata = metadata.clone();
     }
     var stream = new ClientReadableStream(call, deserialize);
-    this.$_updateMetadata(this.$_auth_uri, metadata, function(error, metadata) {
+    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         stream.emit('error', error);
@@ -503,7 +503,7 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
       metadata = metadata.clone();
     }
     var stream = new ClientDuplexStream(call, serialize, deserialize);
-    this.$_updateMetadata(this.$_auth_uri, metadata, function(error, metadata) {
+    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
       if (error) {
         call.cancel();
         stream.emit('error', error);
@@ -594,42 +594,15 @@ exports.makeClientConstructor = function(methods, serviceName) {
       options = {};
     }
     options['grpc.primary_user_agent'] = 'grpc-node/' + version;
+    /* Private fields use $ as a prefix instead of _ because it is an invalid
+     * prefix of a method name */
     this.$channel = new grpc.Channel(address, credentials, options);
     // Remove the optional DNS scheme, trailing port, and trailing backslash
     address = address.replace(/^(dns:\/{3})?([^:\/]+)(:\d+)?\/?$/, '$2');
-    this.$_server_address = address;
-    this.$_auth_uri = 'https://' + this.server_address + '/' + serviceName;
-    this.$_updateMetadata = updateMetadata;
+    this.$server_address = address;
+    this.$auth_uri = 'https://' + this.server_address + '/' + serviceName;
+    this.$updateMetadata = updateMetadata;
   }
-
-  /**
-   * Wait for the client to be ready. The callback will be called when the
-   * client has successfully connected to the server, and it will be called
-   * with an error if the attempt to connect to the server has unrecoverablly
-   * failed or if the deadline expires. This function will make the channel
-   * start connecting if it has not already done so.
-   * @param {(Date|Number)} deadline When to stop waiting for a connection. Pass
-   *     Infinity to wait forever.
-   * @param {function(Error)} callback The callback to call when done attempting
-   *     to connect.
-   */
-  Client.prototype.$waitForReady = function(deadline, callback) {
-    var self = this;
-    var checkState = function(err) {
-      if (err) {
-        callback(new Error('Failed to connect before the deadline'));
-      }
-      var new_state = self.$channel.getConnectivityState(true);
-      if (new_state === grpc.connectivityState.READY) {
-        callback();
-      } else if (new_state === grpc.connectivityState.FATAL_FAILURE) {
-        callback(new Error('Failed to connect to server'));
-      } else {
-        self.$channel.watchConnectivityState(new_state, deadline, checkState);
-      }
-    };
-    checkState();
-  };
 
   _.each(methods, function(attrs, name) {
     var method_type;
@@ -658,6 +631,44 @@ exports.makeClientConstructor = function(methods, serviceName) {
   });
 
   return Client;
+};
+
+/**
+ * Return the underlying channel object for the specified client
+ * @param {Client} client
+ * @return {Channel} The channel
+ */
+exports.getClientChannel = function(client) {
+  return client.$channel;
+};
+
+/**
+ * Wait for the client to be ready. The callback will be called when the
+ * client has successfully connected to the server, and it will be called
+ * with an error if the attempt to connect to the server has unrecoverablly
+ * failed or if the deadline expires. This function will make the channel
+ * start connecting if it has not already done so.
+ * @param {Client} client The client to wait on
+ * @param {(Date|Number)} deadline When to stop waiting for a connection. Pass
+ *     Infinity to wait forever.
+ * @param {function(Error)} callback The callback to call when done attempting
+ *     to connect.
+ */
+exports.waitForClientReady = function(client, deadline, callback) {
+  var checkState = function(err) {
+    if (err) {
+      callback(new Error('Failed to connect before the deadline'));
+    }
+    var new_state = client.$channel.getConnectivityState(true);
+    if (new_state === grpc.connectivityState.READY) {
+      callback();
+    } else if (new_state === grpc.connectivityState.FATAL_FAILURE) {
+      callback(new Error('Failed to connect to server'));
+    } else {
+      client.$channel.watchConnectivityState(new_state, deadline, checkState);
+    }
+  };
+  checkState();
 };
 
 /**

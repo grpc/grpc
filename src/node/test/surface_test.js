@@ -151,7 +151,7 @@ describe('Client constructor building', function() {
     }, /\$/);
   });
 });
-describe('Client#$waitForReady', function() {
+describe('waitForClientReady', function() {
   var server;
   var port;
   var Client;
@@ -169,13 +169,13 @@ describe('Client#$waitForReady', function() {
     server.forceShutdown();
   });
   it('should complete when called alone', function(done) {
-    client.$waitForReady(Infinity, function(error) {
+    grpc.waitForClientReady(client, Infinity, function(error) {
       assert.ifError(error);
       done();
     });
   });
   it('should complete when a call is initiated', function(done) {
-    client.$waitForReady(Infinity, function(error) {
+    grpc.waitForClientReady(client, Infinity, function(error) {
       assert.ifError(error);
       done();
     });
@@ -184,19 +184,19 @@ describe('Client#$waitForReady', function() {
   });
   it('should complete if called more than once', function(done) {
     done = multiDone(done, 2);
-    client.$waitForReady(Infinity, function(error) {
+    grpc.waitForClientReady(client, Infinity, function(error) {
       assert.ifError(error);
       done();
     });
-    client.$waitForReady(Infinity, function(error) {
+    grpc.waitForClientReady(client, Infinity, function(error) {
       assert.ifError(error);
       done();
     });
   });
   it('should complete if called when already ready', function(done) {
-    client.$waitForReady(Infinity, function(error) {
+    grpc.waitForClientReady(client, Infinity, function(error) {
       assert.ifError(error);
-      client.$waitForReady(Infinity, function(error) {
+      grpc.waitForClientReady(client, Infinity, function(error) {
         assert.ifError(error);
         done();
       });
@@ -444,7 +444,8 @@ describe('Other conditions', function() {
     server.forceShutdown();
   });
   it('channel.getTarget should be available', function() {
-    assert.strictEqual(typeof client.$channel.getTarget(), 'string');
+    assert.strictEqual(typeof grpc.getClientChannel(client).getTarget(),
+                       'string');
   });
   describe('Server recieving bad input', function() {
     var misbehavingClient;
