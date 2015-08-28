@@ -57,8 +57,6 @@ ClientCredentials *pygrpc_ClientCredentials_composite(
     PyTypeObject *type, PyObject *args, PyObject *kwargs);
 ClientCredentials *pygrpc_ClientCredentials_compute_engine(
     PyTypeObject *type, PyObject *ignored);
-ClientCredentials *pygrpc_ClientCredentials_service_account(
-    PyTypeObject *type, PyObject *args, PyObject *kwargs);
 ClientCredentials *pygrpc_ClientCredentials_jwt(
     PyTypeObject *type, PyObject *args, PyObject *kwargs);
 ClientCredentials *pygrpc_ClientCredentials_refresh_token(
