@@ -98,8 +98,9 @@ static void unlink_if_unix_domain_socket(const struct sockaddr_un *un) {
 
 /* the overall server */
 struct grpc_tcp_server {
-  grpc_tcp_server_cb cb;
-  void *cb_arg;
+  /* Called whenever accept() succeeds on a server port. */
+  grpc_tcp_server_cb on_accept_cb;
+  void *on_accept_cb_arg;
 
   gpr_mu mu;
 
@@ -132,8 +133,8 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
   s->active_ports = 0;
   s->destroyed_ports = 0;
   s->shutdown = 0;
-  s->cb = NULL;
-  s->cb_arg = NULL;
+  s->on_accept_cb = NULL;
+  s->on_accept_cb_arg = NULL;
   s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
   s->nports = 0;
   s->port_capacity = INIT_PORT_CAP;
@@ -344,8 +345,8 @@ static void on_read(void *arg, int success) {
     for (i = 0; i < sp->server->pollset_count; i++) {
       grpc_pollset_add_fd(sp->server->pollsets[i], fdobj);
     }
-    sp->server->cb(
-        sp->server->cb_arg,
+    sp->server->on_accept_cb(
+        sp->server->on_accept_cb_arg,
         grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str));
 
     gpr_free(name);
@@ -376,7 +377,7 @@ static int add_socket_to_server(grpc_tcp_server *s, int fd,
     grpc_sockaddr_to_string(&addr_str, (struct sockaddr *)&addr, 1);
     gpr_asprintf(&name, "tcp-server-listener:%s", addr_str);
     gpr_mu_lock(&s->mu);
-    GPR_ASSERT(!s->cb && "must add ports before starting server");
+    GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
     /* append it to the list under a lock */
     if (s->nports == s->port_capacity) {
       s->port_capacity *= 2;
@@ -482,16 +483,16 @@ int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned index) {
   return (index < s->nports) ? s->ports[index].fd : -1;
 }
 
-void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollsets,
-                           size_t pollset_count, grpc_tcp_server_cb cb,
-                           void *cb_arg) {
+void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollsets, size_t
+                           pollset_count, grpc_tcp_server_cb on_accept_cb, void
+                           *on_accept_cb_arg) {
   size_t i, j;
-  GPR_ASSERT(cb);
+  GPR_ASSERT(on_accept_cb);
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(!s->cb);
+  GPR_ASSERT(!s->on_accept_cb);
   GPR_ASSERT(s->active_ports == 0);
-  s->cb = cb;
-  s->cb_arg = cb_arg;
+  s->on_accept_cb = on_accept_cb;
+  s->on_accept_cb_arg = on_accept_cb_arg;
   s->pollsets = pollsets;
   s->pollset_count = pollset_count;
   for (i = 0; i < s->nports; i++) {
