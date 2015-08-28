@@ -133,7 +133,7 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
     auto auth_md = auth_metadata.find(GRPC_AUTHORIZATION_METADATA_KEY);
     EXPECT_NE(auth_md, auth_metadata.end());
     string_ref auth_md_value = auth_md->second;
-    if (auth_md_value.ends_with("Dr Jekyll")) {
+    if (auth_md_value.ends_with(kGoodGuy)) {
       context->AddProperty(kIdentityPropName, kGoodGuy);
       context->SetPeerIdentityPropertyName(kIdentityPropName);
       consumed_auth_metadata->insert(
