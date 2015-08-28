@@ -45,7 +45,6 @@
 #include "helloworld.grpc.pb.h"
 
 using grpc::Channel;
-using grpc::ChannelArguments;
 using grpc::ClientAsyncResponseReader;
 using grpc::ClientContext;
 using grpc::CompletionQueue;
