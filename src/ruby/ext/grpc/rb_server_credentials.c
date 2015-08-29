@@ -135,63 +135,117 @@ static VALUE grpc_rb_server_credentials_init_copy(VALUE copy, VALUE orig) {
   return copy;
 }
 
-/* The attribute used on the mark object to hold the pem_root_certs. */
+/* The attribute used on the mark object to preserve the pem_root_certs. */
 static ID id_pem_root_certs;
 
-/* The attribute used on the mark object to hold the pem_private_key. */
-static ID id_pem_private_key;
+/* The attribute used on the mark object to preserve the pem_key_certs */
+static ID id_pem_key_certs;
 
-/* The attribute used on the mark object to hold the pem_private_key. */
-static ID id_pem_cert_chain;
+/* The key used to access the pem cert in a key_cert pair hash */
+static VALUE sym_cert_chain;
+
+/* The key used to access the pem private key in a key_cert pair hash */
+static VALUE sym_private_key;
 
 /*
   call-seq:
-    creds = ServerCredentials.new(pem_root_certs, pem_private_key,
-                                  pem_cert_chain)
-    creds = ServerCredentials.new(nil, pem_private_key,
-                                  pem_cert_chain)
+    creds = ServerCredentials.new(nil,
+                                  [{private_key: <pem_private_key1>,
+                                   {cert_chain: <pem_cert_chain1>}],
+                                  force_client_auth)
+    creds = ServerCredentials.new(pem_root_certs,
+                                  [{private_key: <pem_private_key1>,
+                                   {cert_chain: <pem_cert_chain1>}],
+                                  force_client_auth)
 
-    pem_root_certs: (required) PEM encoding of the server root certificate
-    pem_private_key: (optional) PEM encoding of the server's private key
-    pem_cert_chain: (optional) PEM encoding of the server's cert chain
+    pem_root_certs: (optional) PEM encoding of the server root certificate
+    pem_private_key: (required) PEM encoding of the server's private keys
+    force_client_auth: indicatees
 
     Initializes ServerCredential instances. */
 static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
-                                             VALUE pem_private_key,
-                                             VALUE pem_cert_chain) {
-  /* TODO support multiple key cert pairs in the ruby API. */
+                                             VALUE pem_key_certs,
+                                             VALUE force_client_auth) {
   grpc_rb_server_credentials *wrapper = NULL;
   grpc_server_credentials *creds = NULL;
-  grpc_ssl_pem_key_cert_pair key_cert_pair = {NULL, NULL};
+  grpc_ssl_pem_key_cert_pair *key_cert_pairs = NULL;
+  VALUE cert = Qnil;
+  VALUE key = Qnil;
+  VALUE key_cert = Qnil;
+  int auth_client = 0;
+  int num_key_certs = 0;
+  int i;
+
+  if (NIL_P(force_client_auth) ||
+      !(force_client_auth == Qfalse || force_client_auth == Qtrue)) {
+    rb_raise(rb_eTypeError,
+             "bad force_client_auth: got:<%s> want: <True|False|nil>",
+             rb_obj_classname(force_client_auth));
+    return Qnil;
+  }
+  if (NIL_P(pem_key_certs) || TYPE(pem_key_certs) != T_ARRAY) {
+    rb_raise(rb_eTypeError, "bad pem_key_certs: got:<%s> want: <Array>",
+             rb_obj_classname(pem_key_certs));
+    return Qnil;
+  }
+  num_key_certs = RARRAY_LEN(pem_key_certs);
+  if (num_key_certs == 0) {
+    rb_raise(rb_eTypeError, "bad pem_key_certs: it had no elements");
+    return Qnil;
+  }
+  for (i = 0; i < num_key_certs; i++) {
+    key_cert = rb_ary_entry(pem_key_certs, i);
+    if (key_cert == Qnil) {
+      rb_raise(rb_eTypeError,
+               "could not create a server credential: nil key_cert");
+      return Qnil;
+    } else if (TYPE(key_cert) != T_HASH) {
+      rb_raise(rb_eTypeError,
+               "could not create a server credential: want <Hash>, got <%s>",
+               rb_obj_classname(key_cert));
+      return Qnil;
+    } else if (rb_hash_aref(key_cert, sym_private_key) == Qnil) {
+      rb_raise(rb_eTypeError,
+               "could not create a server credential: want nil private key");
+      return Qnil;
+    } else if (rb_hash_aref(key_cert, sym_cert_chain) == Qnil) {
+      rb_raise(rb_eTypeError,
+               "could not create a server credential: want nil cert chain");
+      return Qnil;
+    }
+  }
+
+  auth_client = TYPE(force_client_auth) == T_TRUE;
+  key_cert_pairs = ALLOC_N(grpc_ssl_pem_key_cert_pair, num_key_certs);
+  for (i = 0; i < num_key_certs; i++) {
+    key_cert = rb_ary_entry(pem_key_certs, i);
+    key = rb_hash_aref(key_cert, sym_private_key);
+    cert = rb_hash_aref(key_cert, sym_cert_chain);
+    key_cert_pairs[i].private_key = RSTRING_PTR(key);
+    key_cert_pairs[i].cert_chain = RSTRING_PTR(cert);
+  }
+
   TypedData_Get_Struct(self, grpc_rb_server_credentials,
                        &grpc_rb_server_credentials_data_type, wrapper);
-  if (pem_cert_chain == Qnil) {
-    rb_raise(rb_eRuntimeError,
-             "could not create a server credential: nil pem_cert_chain");
-    return Qnil;
-  } else if (pem_private_key == Qnil) {
-    rb_raise(rb_eRuntimeError,
-             "could not create a server credential: nil pem_private_key");
-    return Qnil;
-  }
-  key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
-  key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
-  /* TODO Add a force_client_auth parameter and pass it here. */
+
   if (pem_root_certs == Qnil) {
-    creds =
-        grpc_ssl_server_credentials_create(NULL, &key_cert_pair, 1, 0, NULL);
+    creds = grpc_ssl_server_credentials_create(NULL, key_cert_pairs,
+                                               num_key_certs,
+                                               auth_client, NULL);
   } else {
     creds = grpc_ssl_server_credentials_create(RSTRING_PTR(pem_root_certs),
-                                               &key_cert_pair, 1, 0, NULL);
+                                               key_cert_pairs, num_key_certs,
+                                               auth_client, NULL);
   }
+  xfree(key_cert_pairs);
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
+    return Qnil;
   }
   wrapper->wrapped = creds;
 
   /* Add the input objects as hidden fields to preserve them. */
-  rb_ivar_set(self, id_pem_cert_chain, pem_cert_chain);
-  rb_ivar_set(self, id_pem_private_key, pem_private_key);
+  rb_ivar_set(self, id_pem_key_certs, pem_key_certs);
   rb_ivar_set(self, id_pem_root_certs, pem_root_certs);
 
   return self;
@@ -211,9 +265,10 @@ void Init_grpc_server_credentials() {
   rb_define_method(grpc_rb_cServerCredentials, "initialize_copy",
                    grpc_rb_server_credentials_init_copy, 1);
 
-  id_pem_cert_chain = rb_intern("__pem_cert_chain");
-  id_pem_private_key = rb_intern("__pem_private_key");
+  id_pem_key_certs = rb_intern("__pem_key_certs");
   id_pem_root_certs = rb_intern("__pem_root_certs");
+  sym_private_key = ID2SYM(rb_intern("private_key"));
+  sym_cert_chain = ID2SYM(rb_intern("cert_chain"));
 }
 
 /* Gets the wrapped grpc_server_credentials from the ruby wrapper */
