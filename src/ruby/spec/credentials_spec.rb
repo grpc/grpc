@@ -29,15 +29,15 @@
 
 require 'grpc'
 
-def load_test_certs
-  test_root = File.join(File.dirname(__FILE__), 'testdata')
-  files = ['ca.pem', 'server1.pem', 'server1.key']
-  files.map { |f| File.open(File.join(test_root, f)).read }
-end
+describe GRPC::Core::Credentials do
+  Credentials = GRPC::Core::Credentials
 
-Credentials = GRPC::Core::Credentials
+  def load_test_certs
+    test_root = File.join(File.dirname(__FILE__), 'testdata')
+    files = ['ca.pem', 'server1.pem', 'server1.key']
+    files.map { |f| File.open(File.join(test_root, f)).read }
+  end
 
-describe Credentials do
   describe '#new' do
     it 'can be constructed with fake inputs' do
       expect { Credentials.new('root_certs', 'key', 'cert') }.not_to raise_error
