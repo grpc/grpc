@@ -27,64 +27,30 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python interop testing package."""
+"""Constants and functions for data used in interoperability testing."""
 
 import os
-import os.path
 
-import setuptools
+import pkg_resources
 
-# Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+_ROOT_CERTIFICATES_RESOURCE_PATH = 'credentials/ca.pem'
+_PRIVATE_KEY_RESOURCE_PATH = 'credentials/server1.key'
+_CERTIFICATE_CHAIN_RESOURCE_PATH = 'credentials/server1.pem'
 
-# Break import-style to ensure we can actually find our commands module.
-import commands
 
-_PACKAGES = setuptools.find_packages('.', exclude=['*._cython', '*._cython.*'])
+def test_root_certificates():
+  return pkg_resources.resource_string(
+      __name__, _ROOT_CERTIFICATES_RESOURCE_PATH)
 
-_PACKAGE_DIRECTORIES = {
-    '': '.',
-}
 
-_PACKAGE_DATA = {
-    'grpc_interop': [
-        'credentials/ca.pem',
-        'credentials/server1.key',
-        'credentials/server1.pem',
-    ],
-    'grpc_protoc_plugin': [
-        'test.proto',
-    ],
-    'grpc_test': [
-        'credentials/ca.pem',
-        'credentials/server1.key',
-        'credentials/server1.pem',
-    ],
-}
+def prod_root_certificates():
+  return open(os.environ['SSL_CERT_FILE'], mode='rb').read()
 
-_SETUP_REQUIRES = (
-    'pytest>=2.6',
-    'pytest-cov>=2.0',
-    'pytest-xdist>=1.11',
-    'pytest-timeout>=0.5',
-)
 
-_INSTALL_REQUIRES = (
-    'oauth2client>=1.4.7',
-    'grpcio>=0.10.0a0',
-)
+def private_key():
+  return pkg_resources.resource_string(__name__, _PRIVATE_KEY_RESOURCE_PATH)
 
-_COMMAND_CLASS = {
-    'test': commands.RunTests
-}
 
-setuptools.setup(
-    name='grpcio_test',
-    version='0.10.0a0',
-    packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES,
-    package_data=_PACKAGE_DATA,
-    install_requires=_INSTALL_REQUIRES + _SETUP_REQUIRES,
-    setup_requires=_SETUP_REQUIRES,
-    cmdclass=_COMMAND_CLASS,
-)
+def certificate_chain():
+  return pkg_resources.resource_string(
+      __name__, _CERTIFICATE_CHAIN_RESOURCE_PATH)
