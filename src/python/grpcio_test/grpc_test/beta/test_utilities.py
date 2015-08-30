@@ -27,64 +27,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""A setup module for the GRPC Python interop testing package."""
+"""Test-appropriate entry points into the gRPC Python Beta API."""
 
-import os
-import os.path
+from grpc._adapter import _intermediary_low
+from grpc.beta import beta
 
-import setuptools
 
-# Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+def create_not_really_secure_channel(
+    host, port, client_credentials, server_host_override):
+  """Creates an insecure Channel to a remote host.
 
-# Break import-style to ensure we can actually find our commands module.
-import commands
+  Args:
+    host: The name of the remote host to which to connect.
+    port: The port of the remote host to which to connect.
+    client_credentials: The beta.ClientCredentials with which to connect.
+    server_host_override: The target name used for SSL host name checking.
 
-_PACKAGES = setuptools.find_packages('.', exclude=['*._cython', '*._cython.*'])
-
-_PACKAGE_DIRECTORIES = {
-    '': '.',
-}
-
-_PACKAGE_DATA = {
-    'grpc_interop': [
-        'credentials/ca.pem',
-        'credentials/server1.key',
-        'credentials/server1.pem',
-    ],
-    'grpc_protoc_plugin': [
-        'test.proto',
-    ],
-    'grpc_test': [
-        'credentials/ca.pem',
-        'credentials/server1.key',
-        'credentials/server1.pem',
-    ],
-}
-
-_SETUP_REQUIRES = (
-    'pytest>=2.6',
-    'pytest-cov>=2.0',
-    'pytest-xdist>=1.11',
-    'pytest-timeout>=0.5',
-)
-
-_INSTALL_REQUIRES = (
-    'oauth2client>=1.4.7',
-    'grpcio>=0.10.0a0',
-)
-
-_COMMAND_CLASS = {
-    'test': commands.RunTests
-}
-
-setuptools.setup(
-    name='grpcio_test',
-    version='0.10.0a0',
-    packages=_PACKAGES,
-    package_dir=_PACKAGE_DIRECTORIES,
-    package_data=_PACKAGE_DATA,
-    install_requires=_INSTALL_REQUIRES + _SETUP_REQUIRES,
-    setup_requires=_SETUP_REQUIRES,
-    cmdclass=_COMMAND_CLASS,
-)
+  Returns:
+    A beta.Channel to the remote host through which RPCs may be conducted.
+  """
+  hostport = '%s:%d' % (host, port)
+  intermediary_low_channel = _intermediary_low.Channel(
+      hostport, client_credentials._intermediary_low_credentials,
+      server_host_override=server_host_override)
+  return beta.Channel(
+      intermediary_low_channel._internal, intermediary_low_channel)
