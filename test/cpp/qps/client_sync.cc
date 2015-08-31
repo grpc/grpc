@@ -31,8 +31,6 @@
  *
  */
 
-#include <sys/signal.h>
-
 #include <cassert>
 #include <chrono>
 #include <memory>

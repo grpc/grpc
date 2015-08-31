@@ -1,0 +1,7 @@
+%YAML 1.2
+--- |
+  <%namespace file="sln_defs.include" import="gen_solution"/>\
+  <%
+  solution_projects = [p for p in vsprojects if p.build != 'protoc' and p.language in ['c', 'c++'] and not (p.language == 'c++' and p.build in ['private', 'test'])]
+  %>\
+  ${gen_solution(solution_projects, use_dlls='yes')}
