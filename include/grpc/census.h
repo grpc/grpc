@@ -382,7 +382,7 @@ void census_tag_set_close(census_tag_set_iterator *it);
 /* Core stats collection API's. The following concepts are used:
    * Aggregation: A collection of values. Census supports the following
        aggregation types:
-         Scalar - a single scalar value. Typically used for keeping (e.g.)
+         Sum - a single summation type. Typically used for keeping (e.g.)
            counts of events.
          Distribution - statistical distribution information, used for
            recording average, standard deviation etc.
@@ -439,7 +439,7 @@ typedef struct {
 } census_aggregation_ops;
 
 /* Predefined aggregation types. */
-extern census_aggregation_ops census_agg_scalar;
+extern census_aggregation_ops census_agg_sum;
 extern census_aggregation_ops census_agg_distribution;
 extern census_aggregation_ops census_agg_histogram;
 extern census_aggregation_ops census_agg_window;
