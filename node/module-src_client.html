@@ -38,7 +38,7 @@
     <div class="container-overview">
     
         
-            <div class="description">Server module</div>
+            <div class="description">Client module</div>
         
 
         
@@ -189,7 +189,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line643">line 643</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line733">line 733</a>
     </li></ul></dd>
     
 
@@ -251,7 +251,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line638">line 638</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line728">line 728</a>
     </li></ul></dd>
     
 
@@ -314,7 +314,7 @@ makeClientConstructor
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line517">line 517</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line593">line 593</a>
     </li></ul></dd>
     
 
@@ -335,6 +335,159 @@ makeClientConstructor
 
     
         <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".getClientChannel"><span class="type-signature">(static) </span>getClientChannel<span class="signature">(client)</span><span class="type-signature"> &rarr; {Channel}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Return the underlying channel object for the specified client
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>client</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Client</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line678">line 678</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    The channel
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Channel</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
 
         
             
@@ -471,7 +624,7 @@ responseDeserialize: function to deserialize response objects
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line537">line 537</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line613">line 613</a>
     </li></ul></dd>
     
 
@@ -625,7 +778,7 @@ responseDeserialize: function to deserialize response objects
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line627">line 627</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line717">line 717</a>
     </li></ul></dd>
     
 
@@ -670,6 +823,192 @@ responseDeserialize: function to deserialize response objects
 </dl>
 
     
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".waitForClientReady"><span class="type-signature">(static) </span>waitForClientReady<span class="signature">(client, deadline, callback)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Wait for the client to be ready. The callback will be called when the
+client has successfully connected to the server, and it will be called
+with an error if the attempt to connect to the server has unrecoverablly
+failed or if the deadline expires. This function will make the channel
+start connecting if it has not already done so.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>client</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Client</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The client to wait on</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>deadline</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Date</span>
+|
+
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">When to stop waiting for a connection. Pass
+    Infinity to wait forever.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">The callback to call when done attempting
+    to connect.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line694">line 694</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -729,7 +1068,7 @@ responseDeserialize: function to deserialize response objects
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line188">line 188</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line203">line 203</a>
     </li></ul></dd>
     
 
@@ -862,7 +1201,7 @@ and overrides the hostname to connect to.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line216">line 216</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line231">line 231</a>
     </li></ul></dd>
     
 
@@ -944,7 +1283,7 @@ and overrides the hostname to connect to.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line201">line 201</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line216">line 216</a>
     </li></ul></dd>
     
 
@@ -1145,7 +1484,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line455">line 455</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line525">line 525</a>
     </li></ul></dd>
     
 
@@ -1345,7 +1684,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line314">line 314</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line353">line 353</a>
     </li></ul></dd>
     
 
@@ -1545,7 +1884,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line384">line 384</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line444">line 444</a>
     </li></ul></dd>
     
 
@@ -1745,7 +2084,7 @@ method.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line242">line 242</a>
+        <a href="src_client.js.html">src/client.js</a>, <a href="src_client.js.html#line257">line 257</a>
     </li></ul></dd>
     
 
@@ -1809,13 +2148,13 @@ method.
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#Credentials">Credentials</a></li><li><a href="global.html#getGoogleAuthDelegate">getGoogleAuthDelegate</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#status">status</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_metadata.html">src/metadata</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_metadata-Metadata.html">Metadata</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#Credentials">Credentials</a></li><li><a href="global.html#getClientChannel">getClientChannel</a></li><li><a href="global.html#getGoogleAuthDelegate">getGoogleAuthDelegate</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#Metadata">Metadata</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#status">status</a></li><li><a href="global.html#waitForClientReady">waitForClientReady</a></li><li><a href="global.html#writeFlags">writeFlags</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Tue Aug 18 2015 18:25:05 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Mon Aug 31 2015 11:35:11 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -46,10 +46,16 @@
         <article><h1>Node.js gRPC Library</h1><h2>Status</h2><p>Alpha : Ready for early adopters</p>
 <h2>PREREQUISITES</h2><ul>
 <li><code>node</code>: This requires <code>node</code> to be installed. If you instead have the <code>nodejs</code> executable on Debian, you should install the <a href="https://packages.debian.org/sid/nodejs-legacy"><code>nodejs-legacy</code></a> package.</li>
-<li><a href="http://brew.sh">homebrew</a> on Mac OS X, <a href="https://github.com/Homebrew/linuxbrew#installation">linuxbrew</a> on Linux.  These simplify the installation of the gRPC C core.</li>
+<li><a href="http://brew.sh">homebrew</a> on Mac OS X.  These simplify the installation of the gRPC C core.</li>
 </ul>
-<h2>INSTALLATION</h2><p>On Mac OS X, install <a href="http://brew.sh">homebrew</a>. On Linux, install <a href="https://github.com/Homebrew/linuxbrew#installation">linuxbrew</a>.
-Run the following command to install gRPC Node.js.</p>
+<h2>INSTALLATION</h2><p><strong>Linux (Debian):</strong></p>
+<p>Add <a href="https://www.debian.org/releases/stretch/">Debian testing</a> to your <code>sources.list</code> file. Example:</p>
+<pre class="prettyprint source lang-sh"><code>echo &quot;deb http://ftp.us.debian.org/debian testing main contrib non-free&quot; | \
+sudo tee -a /etc/apt/sources.list</code></pre><p>Install the gRPC Debian package</p>
+<pre class="prettyprint source lang-sh"><code>sudo apt-get update
+sudo apt-get install libgrpc-dev</code></pre><p>Install the gRPC NPM package</p>
+<pre class="prettyprint source lang-sh"><code>npm install grpc</code></pre><p><strong>Mac OS X</strong></p>
+<p>Install <a href="http://brew.sh">homebrew</a>. Run the following command to install gRPC Node.js.</p>
 <pre class="prettyprint source lang-sh"><code>$ curl -fsSL https://goo.gl/getgrpc | bash -s nodejs</code></pre><p>This will download and run the <a href="https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install">gRPC install script</a>, then install the latest version of gRPC Nodejs npm package.</p>
 <h2>BUILD FROM SOURCE</h2><ol>
 <li>Clone <a href="https://github.com/grpc/grpc">the grpc Git Repository</a>.</li>
@@ -84,13 +90,13 @@ Run the following command to install gRPC Node.js.</p>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#Credentials">Credentials</a></li><li><a href="global.html#getGoogleAuthDelegate">getGoogleAuthDelegate</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#status">status</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-src_client.html">src/client</a></li><li><a href="module-src_common.html">src/common</a></li><li><a href="module-src_metadata.html">src/metadata</a></li><li><a href="module-src_server.html">src/server</a></li></ul><h3>Classes</h3><ul><li><a href="module-src_client.makeClientConstructor-Client.html">Client</a></li><li><a href="module-src_client-ClientDuplexStream.html">ClientDuplexStream</a></li><li><a href="module-src_client-ClientReadableStream.html">ClientReadableStream</a></li><li><a href="module-src_client-ClientWritableStream.html">ClientWritableStream</a></li><li><a href="module-src_metadata-Metadata.html">Metadata</a></li><li><a href="module-src_server-Server.html">Server</a></li><li><a href="module-src_server-ServerDuplexStream.html">ServerDuplexStream</a></li><li><a href="module-src_server-ServerReadableStream.html">ServerReadableStream</a></li><li><a href="module-src_server-ServerWritableStream.html">ServerWritableStream</a></li></ul><h3>Global</h3><ul><li><a href="global.html#callError">callError</a></li><li><a href="global.html#Credentials">Credentials</a></li><li><a href="global.html#getClientChannel">getClientChannel</a></li><li><a href="global.html#getGoogleAuthDelegate">getGoogleAuthDelegate</a></li><li><a href="global.html#load">load</a></li><li><a href="global.html#loadObject">loadObject</a></li><li><a href="global.html#makeGenericClientConstructor">makeGenericClientConstructor</a></li><li><a href="global.html#Metadata">Metadata</a></li><li><a href="global.html#propagate">propagate</a></li><li><a href="global.html#Server">Server</a></li><li><a href="global.html#ServerCredentials">ServerCredentials</a></li><li><a href="global.html#status">status</a></li><li><a href="global.html#waitForClientReady">waitForClientReady</a></li><li><a href="global.html#writeFlags">writeFlags</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Tue Aug 18 2015 18:25:05 GMT-0700 (PDT)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Mon Aug 31 2015 11:35:11 GMT-0700 (PDT)
 </footer>
 
 <script> prettyPrint(); </script>

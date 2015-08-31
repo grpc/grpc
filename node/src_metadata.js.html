@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: src/common.js</title>
+    <title>JSDoc: Source: src/metadata.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: src/common.js</h1>
+    <h1 class="page-title">Source: src/metadata.js</h1>
 
     
 
@@ -60,6 +60,7 @@
  */
 
 /**
+ * Metadata module
  * @module
  */
 
@@ -68,104 +69,144 @@
 var _ = require('lodash');
 
 /**
- * Get a function that deserializes a specific type of protobuf.
- * @param {function()} cls The constructor of the message type to deserialize
- * @return {function(Buffer):cls} The deserialization function
+ * Class for storing metadata. Keys are normalized to lowercase ASCII.
+ * @constructor
  */
-exports.deserializeCls = function deserializeCls(cls) {
-  /**
-   * Deserialize a buffer to a message object
-   * @param {Buffer} arg_buf The buffer to deserialize
-   * @return {cls} The resulting object
-   */
-  return function deserialize(arg_buf) {
-    // Convert to a native object with binary fields as Buffers (first argument)
-    // and longs as strings (second argument)
-    return cls.decode(arg_buf).toRaw(false, true);
-  };
-};
+function Metadata() {
+  this._internal_repr = {};
+}
 
-var deserializeCls = exports.deserializeCls;
-
-/**
- * Get a function that serializes objects to a buffer by protobuf class.
- * @param {function()} Cls The constructor of the message type to serialize
- * @return {function(Cls):Buffer} The serialization function
- */
-exports.serializeCls = function serializeCls(Cls) {
-  /**
-   * Serialize an object to a Buffer
-   * @param {Object} arg The object to serialize
-   * @return {Buffer} The serialized object
-   */
-  return function serialize(arg) {
-    return new Buffer(new Cls(arg).encode().toBuffer());
-  };
-};
-
-var serializeCls = exports.serializeCls;
-
-/**
- * Get the fully qualified (dotted) name of a ProtoBuf.Reflect value.
- * @param {ProtoBuf.Reflect.Namespace} value The value to get the name of
- * @return {string} The fully qualified name of the value
- */
-exports.fullyQualifiedName = function fullyQualifiedName(value) {
-  if (value === null || value === undefined) {
-    return '';
+function normalizeKey(key) {
+  if (!(/^[A-Za-z\d_-]+$/.test(key))) {
+    throw new Error('Metadata keys must be nonempty strings containing only ' +
+        'alphanumeric characters and hyphens');
   }
-  var name = value.name;
-  if (value.className === 'Service.RPCMethod') {
-    name = _.capitalize(name);
-  }
-  if (value.hasOwnProperty('parent')) {
-    var parent_name = fullyQualifiedName(value.parent);
-    if (parent_name !== '') {
-      name = parent_name + '.' + name;
+  return key.toLowerCase();
+}
+
+function validate(key, value) {
+  if (_.endsWith(key, '-bin')) {
+    if (!(value instanceof Buffer)) {
+      throw new Error('keys that end with \'-bin\' must have Buffer values');
+    }
+  } else {
+    if (!_.isString(value)) {
+      throw new Error(
+          'keys that don\'t end with \'-bin\' must have String values');
+    }
+    if (!(/^[\x20-\x7E]*$/.test(value))) {
+      throw new Error('Metadata string values can only contain printable ' +
+          'ASCII characters and space');
     }
   }
-  return name;
-};
-
-var fullyQualifiedName = exports.fullyQualifiedName;
+}
 
 /**
- * Wrap a function to pass null-like values through without calling it. If no
- * function is given, just uses the identity;
- * @param {?function} func The function to wrap
- * @return {function} The wrapped function
+ * Sets the given value for the given key, replacing any other values associated
+ * with that key. Normalizes the key.
+ * @param {String} key The key to set
+ * @param {String|Buffer} value The value to set. Must be a buffer if and only
+ *     if the normalized key ends with '-bin'
  */
-exports.wrapIgnoreNull = function wrapIgnoreNull(func) {
-  if (!func) {
-    return _.identity;
+Metadata.prototype.set = function(key, value) {
+  key = normalizeKey(key);
+  validate(key, value);
+  this._internal_repr[key] = [value];
+};
+
+/**
+ * Adds the given value for the given key. Normalizes the key.
+ * @param {String} key The key to add to.
+ * @param {String|Buffer} value The value to add. Must be a buffer if and only
+ *     if the normalized key ends with '-bin'
+ */
+Metadata.prototype.add = function(key, value) {
+  key = normalizeKey(key);
+  validate(key, value);
+  if (!this._internal_repr[key]) {
+    this._internal_repr[key] = [];
   }
-  return function(arg) {
-    if (arg === null || arg === undefined) {
-      return null;
-    }
-    return func(arg);
-  };
+  this._internal_repr[key].push(value);
 };
 
 /**
- * Return a map from method names to method attributes for the service.
- * @param {ProtoBuf.Reflect.Service} service The service to get attributes for
- * @return {Object} The attributes map
+ * Remove the given key and any associated values. Normalizes the key.
+ * @param {String} key The key to remove
  */
-exports.getProtobufServiceAttrs = function getProtobufServiceAttrs(service) {
-  var prefix = '/' + fullyQualifiedName(service) + '/';
-  return _.object(_.map(service.children, function(method) {
-    return [_.camelCase(method.name), {
-      path: prefix + _.capitalize(method.name),
-      requestStream: method.requestStream,
-      responseStream: method.responseStream,
-      requestSerialize: serializeCls(method.resolvedRequestType.build()),
-      requestDeserialize: deserializeCls(method.resolvedRequestType.build()),
-      responseSerialize: serializeCls(method.resolvedResponseType.build()),
-      responseDeserialize: deserializeCls(method.resolvedResponseType.build())
-    }];
-  }));
+Metadata.prototype.remove = function(key) {
+  key = normalizeKey(key);
+  if (Object.prototype.hasOwnProperty.call(this._internal_repr, key)) {
+    delete this._internal_repr[key];
+  }
 };
+
+/**
+ * Gets a list of all values associated with the key. Normalizes the key.
+ * @param {String} key The key to get
+ * @return {Array.&lt;String|Buffer>} The values associated with that key
+ */
+Metadata.prototype.get = function(key) {
+  key = normalizeKey(key);
+  if (Object.prototype.hasOwnProperty.call(this._internal_repr, key)) {
+    return this._internal_repr[key];
+  } else {
+    return [];
+  }
+};
+
+/**
+ * Get a map of each key to a single associated value. This reflects the most
+ * common way that people will want to see metadata.
+ * @return {Object.&lt;String,String|Buffer>} A key/value mapping of the metadata
+ */
+Metadata.prototype.getMap = function() {
+  var result = {};
+  _.forOwn(this._internal_repr, function(values, key) {
+    if(values.length > 0) {
+      result[key] = values[0];
+    }
+  });
+  return result;
+};
+
+/**
+ * Clone the metadata object.
+ * @return {Metadata} The new cloned object
+ */
+Metadata.prototype.clone = function() {
+  var copy = new Metadata();
+  _.forOwn(this._internal_repr, function(value, key) {
+    copy._internal_repr[key] = _.clone(value);
+  });
+  return copy;
+};
+
+/**
+ * Gets the metadata in the format used by interal code. Intended for internal
+ * use only. API stability is not guaranteed.
+ * @private
+ * @return {Object.&lt;String, Array.&lt;String|Buffer>>} The metadata
+ */
+Metadata.prototype._getCoreRepresentation = function() {
+  return this._internal_repr;
+};
+
+/**
+ * Creates a Metadata object from a metadata map in the internal format.
+ * Intended for internal use only. API stability is not guaranteed.
+ * @private
+ * @param {Object.&lt;String, Array.&lt;String|Buffer>>} The metadata
+ * @return {Metadata} The new Metadata object
+ */
+Metadata._fromCoreRepresentation = function(metadata) {
+  var newMetadata = new Metadata();
+  if (metadata) {
+    newMetadata._internal_repr = _.cloneDeep(metadata);
+  }
+  return newMetadata;
+};
+
+module.exports = Metadata;
 </code></pre>
         </article>
     </section>

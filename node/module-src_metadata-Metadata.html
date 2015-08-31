@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Module: src/common</title>
+    <title>JSDoc: Class: Metadata</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Module: src/common</h1>
+    <h1 class="page-title">Class: Metadata</h1>
 
     
 
@@ -28,6 +28,11 @@
 
 <header>
     
+        <h2>
+            <span class="ancestors"><a href="module-src_metadata.html">src/metadata</a>~</span>
+        
+        Metadata
+        </h2>
         
     
 </header>
@@ -37,7 +42,85 @@
     
         
 
-        
+    
+
+    <h4 class="name" id="Metadata"><span class="type-signature"></span>new Metadata<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Class for storing metadata. Keys are normalized to lowercase ASCII.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line47">line 47</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
     </div>
 
@@ -61,14 +144,14 @@
 
     
 
-    <h4 class="name" id=".deserializeCls"><span class="type-signature">(static) </span>deserializeCls<span class="signature">(cls)</span><span class="type-signature"> &rarr; {function}</span></h4>
+    <h4 class="name" id="add"><span class="type-signature"></span>add<span class="signature">(key, value)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Get a function that deserializes a specific type of protobuf.
+    Adds the given value for the given key. Normalizes the key.
 </div>
 
 
@@ -104,13 +187,13 @@
 
         <tr>
             
-                <td class="name"><code>cls</code></td>
+                <td class="name"><code>key</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">function</span>
+<span class="param-type">String</span>
 
 
             
@@ -120,139 +203,9 @@
 
             
 
-            <td class="description last">The constructor of the message type to deserialize</td>
+            <td class="description last">The key to add to.</td>
         </tr>
 
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line47">line 47</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    The deserialization function
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">function</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".fullyQualifiedName"><span class="type-signature">(static) </span>fullyQualifiedName<span class="signature">(value)</span><span class="type-signature"> &rarr; {string}</span></h4>
-
-    
-
-
-
-<div class="description">
-    Get the fully qualified (dotted) name of a ProtoBuf.Reflect value.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
     
 
         <tr>
@@ -263,7 +216,10 @@
             <td class="type">
             
                 
-<span class="param-type">ProtoBuf.Reflect.Namespace</span>
+<span class="param-type">String</span>
+|
+
+<span class="param-type">Buffer</span>
 
 
             
@@ -273,7 +229,8 @@
 
             
 
-            <td class="description last">The value to get the name of</td>
+            <td class="description last">The value to add. Must be a buffer if and only
+    if the normalized key ends with '-bin'</td>
         </tr>
 
     
@@ -314,7 +271,89 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line85">line 85</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line95">line 95</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="clone"><span class="type-signature"></span>clone<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#Metadata">Metadata</a>}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Clone the metadata object.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line148">line 148</a>
     </li></ul></dd>
     
 
@@ -341,7 +380,7 @@
 
         
 <div class="param-desc">
-    The fully qualified name of the value
+    The new cloned object
 </div>
 
 
@@ -352,7 +391,7 @@
     </dt>
     <dd>
         
-<span class="param-type">string</span>
+<span class="param-type"><a href="global.html#Metadata">Metadata</a></span>
 
 
     </dd>
@@ -367,14 +406,14 @@
 
     
 
-    <h4 class="name" id=".getProtobufServiceAttrs"><span class="type-signature">(static) </span>getProtobufServiceAttrs<span class="signature">(service)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+    <h4 class="name" id="get"><span class="type-signature"></span>get<span class="signature">(key)</span><span class="type-signature"> &rarr; {Array.&lt;(String|Buffer)>}</span></h4>
 
     
 
 
 
 <div class="description">
-    Return a map from method names to method attributes for the service.
+    Gets a list of all values associated with the key. Normalizes the key.
 </div>
 
 
@@ -410,13 +449,13 @@
 
         <tr>
             
-                <td class="name"><code>service</code></td>
+                <td class="name"><code>key</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">ProtoBuf.Reflect.Service</span>
+<span class="param-type">String</span>
 
 
             
@@ -426,7 +465,7 @@
 
             
 
-            <td class="description last">The service to get attributes for</td>
+            <td class="description last">The key to get</td>
         </tr>
 
     
@@ -467,7 +506,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line127">line 127</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line120">line 120</a>
     </li></ul></dd>
     
 
@@ -494,7 +533,7 @@
 
         
 <div class="param-desc">
-    The attributes map
+    The values associated with that key
 </div>
 
 
@@ -505,7 +544,7 @@
     </dt>
     <dd>
         
-<span class="param-type">Object</span>
+<span class="param-type">Array.&lt;(String|Buffer)></span>
 
 
     </dd>
@@ -520,14 +559,119 @@
 
     
 
-    <h4 class="name" id=".serializeCls"><span class="type-signature">(static) </span>serializeCls<span class="signature">(Cls)</span><span class="type-signature"> &rarr; {function}</span></h4>
+    <h4 class="name" id="getMap"><span class="type-signature"></span>getMap<span class="signature">()</span><span class="type-signature"> &rarr; {Object.&lt;String, (String|Buffer)>}</span></h4>
 
     
 
 
 
 <div class="description">
-    Get a function that serializes objects to a buffer by protobuf class.
+    Get a map of each key to a single associated value. This reflects the most
+common way that people will want to see metadata.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line134">line 134</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    A key/value mapping of the metadata
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object.&lt;String, (String|Buffer)></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="remove"><span class="type-signature"></span>remove<span class="signature">(key)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Remove the given key and any associated values. Normalizes the key.
 </div>
 
 
@@ -563,13 +707,13 @@
 
         <tr>
             
-                <td class="name"><code>Cls</code></td>
+                <td class="name"><code>key</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">function</span>
+<span class="param-type">String</span>
 
 
             
@@ -579,7 +723,7 @@
 
             
 
-            <td class="description last">The constructor of the message type to serialize</td>
+            <td class="description last">The key to remove</td>
         </tr>
 
     
@@ -620,7 +764,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line67">line 67</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line108">line 108</a>
     </li></ul></dd>
     
 
@@ -643,28 +787,6 @@
 
 
 
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    The serialization function
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">function</span>
-
-
-    </dd>
-</dl>
-
-    
 
 
 
@@ -673,15 +795,15 @@
 
     
 
-    <h4 class="name" id=".wrapIgnoreNull"><span class="type-signature">(static) </span>wrapIgnoreNull<span class="signature">(func<span class="signature-attributes">nullable</span>)</span><span class="type-signature"> &rarr; {function}</span></h4>
+    <h4 class="name" id="set"><span class="type-signature"></span>set<span class="signature">(key, value)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Wrap a function to pass null-like values through without calling it. If no
-function is given, just uses the identity;
+    Sets the given value for the given key, replacing any other values associated
+with that key. Normalizes the key.
 </div>
 
 
@@ -705,8 +827,6 @@ function is given, just uses the identity;
         <th>Type</th>
 
         
-        <th>Attributes</th>
-        
 
         
 
@@ -719,33 +839,50 @@ function is given, just uses the identity;
 
         <tr>
             
-                <td class="name"><code>func</code></td>
+                <td class="name"><code>key</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">function</span>
+<span class="param-type">String</span>
 
 
             
             </td>
 
             
-                <td class="attributes">
-                
 
-                
-                    &lt;nullable><br>
-                
+            
 
+            <td class="description last">The key to set</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>value</code></td>
+            
+
+            <td class="type">
+            
                 
-                </td>
+<span class="param-type">String</span>
+|
+
+<span class="param-type">Buffer</span>
+
+
+            
+            </td>
+
             
 
             
 
-            <td class="description last">The function to wrap</td>
+            <td class="description last">The value to set. Must be a buffer if and only
+    if the normalized key ends with '-bin'</td>
         </tr>
 
     
@@ -786,7 +923,7 @@ function is given, just uses the identity;
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="src_common.js.html">src/common.js</a>, <a href="src_common.js.html#line110">line 110</a>
+        <a href="src_metadata.js.html">src/metadata.js</a>, <a href="src_metadata.js.html#line83">line 83</a>
     </li></ul></dd>
     
 
@@ -809,28 +946,6 @@ function is given, just uses the identity;
 
 
 
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    The wrapped function
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">function</span>
-
-
-    </dd>
-</dl>
-
-    
 
 
 
