@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace examples
+namespace routeguide
 {
     public static class RouteGuideUtil
     {
