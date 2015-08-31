@@ -32,9 +32,9 @@ var parseArgs = require('minimist');
 var path = require('path');
 var _ = require('underscore');
 var grpc = require('grpc');
-var examples = grpc.load(__dirname + '/route_guide.proto').examples;
+var routeguide = grpc.load(__dirname + '/route_guide.proto').routeguide;
 
-var Server = grpc.buildServer([examples.RouteGuide.service]);
+var Server = grpc.buildServer([routeguide.RouteGuide.service]);
 
 var COORD_FACTOR = 1e7;
 
@@ -223,7 +223,7 @@ function routeChat(call) {
  */
 function getServer() {
   return new Server({
-    'examples.RouteGuide' : {
+    'routeguide.RouteGuide' : {
       getFeature: getFeature,
       listFeatures: listFeatures,
       recordRoute: recordRoute,
