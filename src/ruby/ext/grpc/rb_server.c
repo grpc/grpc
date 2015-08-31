@@ -337,7 +337,7 @@ static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
   call-seq:
     // insecure port
     insecure_server = Server.new(cq, {'arg1': 'value1'})
-    insecure_server.add_http2_port('mydomain:50051', :this_port_is_not_secure)
+    insecure_server.add_http2_port('mydomain:50051', :this_port_is_insecure)
 
     // secure port
     server_creds = ...
