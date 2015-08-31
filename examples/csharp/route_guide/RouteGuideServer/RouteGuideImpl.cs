@@ -39,7 +39,10 @@ namespace Examples
         public async Task ListFeatures(Rectangle request, Grpc.Core.IServerStreamWriter<Feature> responseStream, Grpc.Core.ServerCallContext context)
         {
             var responses = features.FindAll( (feature) => feature.Exists() && request.Contains(feature.Location) );
-            await responseStream.WriteAllAsync(responses);
+            foreach (var response in responses)
+            {
+                await responseStream.WriteAsync(response);
+            }
         }
 
         /// <summary>
