@@ -641,7 +641,9 @@ static void unlock(grpc_call *call) {
         op.max_recv_bytes = MAX_RECV_PEEK_AHEAD - buffered_bytes;
       }
     }
-    if (op.max_recv_bytes != 0) {
+    /* TODO(ctiller): 1024 is basically to cover a bug
+       I don't understand yet */
+    if (op.max_recv_bytes > 1024) {
       op.recv_ops = &call->recv_ops;
       op.recv_state = &call->recv_state;
       op.on_done_recv = &call->on_done_recv;
