@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -31,30 +30,34 @@
  *
  */
 
-#include <grpc++/credentials.h>
+#include <grpc/census.h>
 
-#include <memory>
+/* TODO(aveitch): These are all placeholder implementations. */
 
-#include <grpc/grpc.h>
-#include <gtest/gtest.h>
-
-namespace grpc {
-namespace testing {
-
-class CredentialsTest : public ::testing::Test {
- protected:
-};
-
-TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
-  std::shared_ptr<Credentials> bad1 = GoogleRefreshTokenCredentials("");
-  EXPECT_EQ(static_cast<Credentials*>(nullptr), bad1.get());
+census_timestamp census_start_rpc_op_timestamp(void) {
+  census_timestamp ct;
+  /* TODO(aveitch): assumes gpr_timespec implementation of census_timestamp. */
+  ct.ts = gpr_now(GPR_CLOCK_MONOTONIC);
+  return ct;
 }
 
-}  // namespace testing
-}  // namespace grpc
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int ret = RUN_ALL_TESTS();
-  return ret;
+census_context *census_start_client_rpc_op(
+    const census_context *context, gpr_int64 rpc_name_id,
+    const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
+    const census_timestamp *start_time) {
+  return NULL;
 }
+
+census_context *census_start_server_rpc_op(
+    const char *buffer, gpr_int64 rpc_name_id,
+    const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
+    census_timestamp *start_time) {
+  return NULL;
+}
+
+census_context *census_start_op(census_context *context, const char *family,
+                                const char *name, int trace_mask) {
+  return NULL;
+}
+
+void census_end_op(census_context *context, int status) {}
