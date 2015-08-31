@@ -36,12 +36,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "include/grpc/census.h"
 #include "src/core/census/rpc_stat_id.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/noop_filter.h"
 #include "src/core/statistics/census_interface.h"
 #include "src/core/statistics/census_rpc_stats.h"
+#include <grpc/census.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>

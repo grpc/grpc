@@ -291,8 +291,8 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.fr");
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
-    channel_ =
-        CreateChannel(server_address_.str(), SslCredentials(ssl_opts), args);
+    channel_ = CreateCustomChannel(server_address_.str(),
+                                   SslCredentials(ssl_opts), args);
   }
 
   void ResetStub(bool use_proxy) {
@@ -307,8 +307,7 @@ class End2endTest : public ::testing::TestWithParam<bool> {
       builder.RegisterService(proxy_service_.get());
       proxy_server_ = builder.BuildAndStart();
 
-      channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials(),
-                               ChannelArguments());
+      channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials());
     }
 
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
@@ -563,10 +562,10 @@ TEST_F(End2endTest, DiffPackageServices) {
 
 // rpc and stream should fail on bad credentials.
 TEST_F(End2endTest, BadCredentials) {
-  std::shared_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
+  std::shared_ptr<Credentials> bad_creds = GoogleRefreshTokenCredentials("");
   EXPECT_EQ(static_cast<Credentials*>(nullptr), bad_creds.get());
   std::shared_ptr<Channel> channel =
-      CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
+      CreateChannel(server_address_.str(), bad_creds);
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
       grpc::cpp::test::util::TestService::NewStub(channel));
   EchoRequest request;
@@ -744,7 +743,7 @@ TEST_F(End2endTest, SetPerCallCredentials) {
   EchoResponse response;
   ClientContext context;
   std::shared_ptr<Credentials> creds =
-      IAMCredentials("fake_token", "fake_selector");
+      GoogleIAMCredentials("fake_token", "fake_selector");
   context.set_credentials(creds);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
@@ -781,10 +780,10 @@ TEST_F(End2endTest, OverridePerCallCredentials) {
   EchoResponse response;
   ClientContext context;
   std::shared_ptr<Credentials> creds1 =
-      IAMCredentials("fake_token1", "fake_selector1");
+      GoogleIAMCredentials("fake_token1", "fake_selector1");
   context.set_credentials(creds1);
   std::shared_ptr<Credentials> creds2 =
-      IAMCredentials("fake_token2", "fake_selector2");
+      GoogleIAMCredentials("fake_token2", "fake_selector2");
   context.set_credentials(creds2);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);

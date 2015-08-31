@@ -24,7 +24,9 @@
       "src": [
         "src/core/census/context.c",
         "src/core/census/initialize.c",
-        "src/core/census/record_stat.c"
+        "src/core/census/operation.c",
+        "src/core/census/record_stat.c",
+        "src/core/census/tracing.c"
       ]
     },
     {
@@ -811,27 +813,6 @@
         "gpr_test_util",
         "gpr",
         "grpc++_test_config"
-      ]
-    },
-    {
-      "name": "pubsub_client_lib",
-      "build": "do_not_build",
-      "language": "c++",
-      "headers": [
-        "examples/pubsub/publisher.h",
-        "examples/pubsub/subscriber.h"
-      ],
-      "src": [
-        "examples/pubsub/label.proto",
-        "examples/pubsub/empty.proto",
-        "examples/pubsub/pubsub.proto",
-        "examples/pubsub/publisher.cc",
-        "examples/pubsub/subscriber.cc"
-      ],
-      "deps": [
-        "grpc++",
-        "grpc",
-        "gpr"
       ]
     },
     {
@@ -2361,58 +2342,6 @@
         "test/cpp/end2end/mock_test.cc"
       ],
       "deps": [
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "pubsub_client",
-      "build": "do_not_build",
-      "run": false,
-      "language": "c++",
-      "src": [
-        "examples/pubsub/main.cc"
-      ],
-      "deps": [
-        "pubsub_client_lib",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr",
-        "grpc++_test_config"
-      ]
-    },
-    {
-      "name": "pubsub_publisher_test",
-      "build": "do_not_build",
-      "language": "c++",
-      "src": [
-        "examples/pubsub/publisher_test.cc"
-      ],
-      "deps": [
-        "pubsub_client_lib",
-        "grpc++_test_util",
-        "grpc_test_util",
-        "grpc++",
-        "grpc",
-        "gpr_test_util",
-        "gpr"
-      ]
-    },
-    {
-      "name": "pubsub_subscriber_test",
-      "build": "do_not_build",
-      "language": "c++",
-      "src": [
-        "examples/pubsub/subscriber_test.cc"
-      ],
-      "deps": [
-        "pubsub_client_lib",
         "grpc++_test_util",
         "grpc_test_util",
         "grpc++",

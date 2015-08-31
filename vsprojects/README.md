@@ -80,7 +80,12 @@ Individual tests can be run by directly running the executable in `/vsprojects/r
 For generating service stub code, gRPC relies on plugins for `protoc` (the protocol buffer compiler). The solution `grpc_protoc_plugins.sln` allows you to build
 Windows .exe binaries of gRPC protoc plugins.
 
-1. Open solution `third_party\protobuf\vsprojects\protobuf.sln`
-2. Accept the conversion to newer Visual Studio version and ignore errors about gtest.
-3. Build libprotoc in Release mode.
-4. Open solution `vsprojects\grpc_protoc_plugins.sln` and build it in Release mode. As a result, you should obtain a set of gRPC protoc plugin binaries (`grpc_cpp_plugin.exe`, `grpc_csharp_plugin.exe`, ...)
+1. Follow instructions in `third_party\protobuf\cmake\README.md` to create Visual Studio 2013 projects for protobuf.
+```
+$ cd third_party/protobuf/cmake
+$ cmake -G "Visual Studio 12 2013"
+```
+
+2. Open solution `third_party\protobuf\cmake\protobuf.sln` and build it in Release mode. That will build libraries `libprotobuf.lib` and `libprotoc.lib` needed for the next step.
+
+3. Open solution `vsprojects\grpc_protoc_plugins.sln` and build it in Release mode. As a result, you should obtain a set of gRPC protoc plugin binaries (`grpc_cpp_plugin.exe`, `grpc_csharp_plugin.exe`, ...)

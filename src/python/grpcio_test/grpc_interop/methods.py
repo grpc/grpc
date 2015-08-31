@@ -346,7 +346,7 @@ def _compute_engine_creds(stub, args):
                                           response.username))
 
 
-def _service_account_creds(stub, args):
+def _oauth2_auth_token(stub, args):
   json_key_filename = os.environ[
       oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
   wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
@@ -359,7 +359,6 @@ def _service_account_creds(stub, args):
         'expected to find oauth scope "%s" in received "%s"' %
             (response.oauth_scope, args.oauth_scope))
 
-
 @enum.unique
 class TestCase(enum.Enum):
   EMPTY_UNARY = 'empty_unary'
@@ -370,7 +369,7 @@ class TestCase(enum.Enum):
   CANCEL_AFTER_BEGIN = 'cancel_after_begin'
   CANCEL_AFTER_FIRST_RESPONSE = 'cancel_after_first_response'
   COMPUTE_ENGINE_CREDS = 'compute_engine_creds'
-  SERVICE_ACCOUNT_CREDS = 'service_account_creds'
+  OAUTH2_AUTH_TOKEN = 'oauth2_auth_token'
   TIMEOUT_ON_SLEEPING_SERVER = 'timeout_on_sleeping_server'
 
   def test_interoperability(self, stub, args):
@@ -392,7 +391,7 @@ class TestCase(enum.Enum):
       _timeout_on_sleeping_server(stub)
     elif self is TestCase.COMPUTE_ENGINE_CREDS:
       _compute_engine_creds(stub, args)
-    elif self is TestCase.SERVICE_ACCOUNT_CREDS:
-      _service_account_creds(stub, args)
+    elif self is TestCase.OAUTH2_AUTH_TOKEN:
+      _oauth2_auth_token(stub, args)
     else:
       raise NotImplementedError('Test case "%s" not implemented!' % self.name)
