@@ -171,7 +171,8 @@ end
 
 def test_server_creds
   certs = load_test_certs
-  GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
+  GRPC::Core::ServerCredentials.new(
+    nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
 end
 
 def main
