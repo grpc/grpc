@@ -1,0 +1,65 @@
+.viewer {
+    -ms-touch-action: none;
+}
+
+.iviewer_common {
+    position:absolute;
+    bottom:10px;
+    border: 1px  solid #000;
+    height: 28px;
+    z-index: 5000;
+}
+
+.iviewer_cursor {
+    cursor: url(../images/iviewer/hand.cur) 6 8, pointer;
+}
+
+.iviewer_drag_cursor {
+    cursor: url(../images/iviewer/grab.cur) 6 8, pointer;
+}
+
+.iviewer_button {
+    width: 28px;
+    cursor: pointer;
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
+.iviewer_zoom_in {
+    left: 20px;
+    background: url(../images/iviewer/iviewer.zoom_in.png);
+}
+
+.iviewer_zoom_out {
+    left: 55px;
+    background: url(../images/iviewer/iviewer.zoom_out.png);
+}
+
+.iviewer_zoom_zero {
+    left: 90px;
+    background: url(../images/iviewer/iviewer.zoom_zero.png);
+}
+
+.iviewer_zoom_fit {
+    left: 125px;
+    background: url(../images/iviewer/iviewer.zoom_fit.png);
+}
+
+.iviewer_zoom_status {
+    left: 160px;
+    font: 1em/28px Sans;
+    color: #000;
+    background-color: #fff;
+    text-align: center;
+    width: 60px;
+}
+
+.iviewer_rotate_left {
+    left: 227px;
+    background: #fff url(../images/iviewer/iviewer.rotate_left.png) center center no-repeat;
+}
+
+.iviewer_rotate_right {
+    left: 262px;
+    background: #fff url(../images/iviewer/iviewer.rotate_right.png) center center no-repeat;
+}

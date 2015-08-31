@@ -1,0 +1,429 @@
+@import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro);
+@import url('phpdocumentor-clean-icons/style.css');
+
+body {
+    padding-top:      40px;
+    background-color: #333333;
+}
+
+a {
+    color: #6495ed;
+}
+a.anchor {
+    height: 40px;
+    margin-top: -40px;
+    display: block;
+}
+
+h1, h2, h3, h4, h5, h6, .brand {
+    font-family:    'Source Sans Pro', sans-serif;
+    font-weight:    normal;
+    letter-spacing: 0.05em;
+}
+
+h2, h3, .detailsbar h1 {
+    overflow:    hidden;
+    white-space: nowrap;
+    margin:      30px 0 20px 0;
+}
+
+h2:after, h3:after, .detailsbar h1:after {
+    content:        '';
+    display:        inline-block;
+    vertical-align: middle;
+    width:          100%;
+    height:         2px;
+    margin-left:    1em;
+    background:     silver;
+}
+
+h3 {
+    margin: 10px 0 20px 0;
+}
+
+h4 {
+    margin:    20px 0 10px 0;
+    color:     gray;
+    font-size: 18.5px;
+}
+
+h3.public, h3.protected, h3.private {
+    padding-left: 10px;
+    text-overflow: ellipsis;
+}
+
+.table tr:first-of-type th, .table tr:first-of-type td {
+    border-top: none;
+}
+.detailsbar {
+    color:            #eeeeee;
+    background-color: #333333;
+    font-size:        0.9em;
+    overflow:         hidden;
+    border-left:      2px solid gray;
+}
+
+.detailsbar h1 {
+    font-size:     1.5em;
+    margin-bottom: 20px;
+    margin-top:    0;
+}
+
+.detailsbar h2 {
+    font-size: 1.2em;
+    margin:    0;
+    padding:   0;
+}
+
+.detailsbar h1:after {
+    background: gray;
+}
+.detailsbar h2:after, .detailsbar h3:after {
+    background: transparent;
+}
+
+.detailsbar dt {
+    font-variant:   small-caps;
+    text-transform: lowercase;
+    font-size:      1.1em;
+    letter-spacing: 0.1em;
+    color:          silver;
+}
+
+.hierarchy div:nth-of-type(2) { margin-left: 11px; }
+.hierarchy div:nth-of-type(3) { margin-left: 22px; }
+.hierarchy div:nth-of-type(4) { margin-left: 33px; }
+.hierarchy div:nth-of-type(5) { margin-left: 44px; }
+.hierarchy div:nth-of-type(6) { margin-left: 55px; }
+.hierarchy div:nth-of-type(7) { margin-left: 66px; }
+.hierarchy div:nth-of-type(8) { margin-left: 77px; }
+.hierarchy div:nth-of-type(9) { margin-left: 88px; }
+.hierarchy div:before {
+    content: "\f0da";
+    font-family: FontAwesome;
+    margin-right: 5px;
+}
+
+.row-fluid {
+    background-color: white;
+    overflow:         hidden;
+}
+
+footer.row-fluid, footer.row-fluid * {
+    background-color: #333333;
+    color:            white;
+}
+
+footer.row-fluid {
+    border-top: 2px dashed #555;
+    margin-top: 2px;
+}
+
+.footer-sections .span4 {
+    border:        2px solid #555;
+    text-align:    center;
+    border-radius: 10px;
+    margin-top:    70px;
+    margin-bottom: 20px;
+    background:    #373737;
+}
+
+.footer-sections .span4 h1 {
+    background: transparent;
+    margin-top: -30px;
+    margin-bottom: 20px;
+    font-size:  5em;
+}
+
+.footer-sections .span4 h1 * {
+    background: transparent;
+}
+
+.footer-sections .span4 div {
+    border-bottom-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    padding: 10px;
+    min-height: 40px;
+}
+.footer-sections .span4 div, .footer-sections .span4 div * {
+    background-color: #555;
+}
+.footer-sections .span4 ul {
+    text-align: left;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.content {
+    background-color: white;
+    padding-right:    20px;
+}
+
+.content nav {
+    text-align:     center;
+    border-bottom:  1px solid silver;
+    margin:         5px 0 20px 0;
+    padding-bottom: 5px;
+}
+
+.content > h1 {
+    padding-bottom: 15px;
+}
+
+.content > h1 small {
+    display:        block;
+    padding-bottom: 8px;
+    font-size:      0.6em;
+}
+
+.deprecated {
+    text-decoration: line-through;
+}
+
+.method {
+    margin-bottom: 20px;
+}
+
+.method .signature .argument {
+    color:       maroon;
+    font-weight: bold;
+}
+
+.class #summary section.row-fluid {
+    overflow: hidden
+}
+
+.class #summary .heading {
+    font-weight: bold;
+    text-align:  center;
+}
+
+.class #summary section .span4 {
+    padding:        3px;
+    overflow:       hidden;
+    margin-bottom:  -9999px;
+    padding-bottom: 9999px;
+    white-space:    nowrap;
+    text-overflow:  ellipsis;
+    border-left:    5px solid transparent;
+}
+
+.class #summary section.public .span4:first-of-type:before,
+.class #summary section.public .span6:first-of-type:before,
+h3.public:before {
+    font-family: FontAwesome;
+    content:     "\f046";
+    color:       green;
+    display:     inline-block;
+    width:       1.2em;
+}
+
+.class #summary section .span4:first-of-type,
+.class #summary section .span6:first-of-type {
+    padding-left: 21px;
+}
+.class #summary section .span4:first-of-type:before,
+.class #summary section .span6:first-of-type:before {
+    margin-left: -21px;
+}
+.class #summary section.protected .span4:first-of-type:before,
+.class #summary section.protected .span6:first-of-type:before,
+h3.protected:before {
+    font-family: FontAwesome;
+    content:     "\f132";
+    color:       orange;
+    display:     inline-block;
+    width:       1.2em;
+}
+
+.class #summary section.private .span4:first-of-type:before,
+.class #summary section.private .span6:first-of-type:before,
+h3.private:before {
+    font-family: FontAwesome;
+    content:     "\f023";
+    color:       red;
+    display:     inline-block;
+    width:       1.2em;
+}
+
+.class #summary section em {
+    font-size: 0.9em;
+    color: silver;
+}
+.class #summary .inherited {
+    color:      gray;
+    font-style: italic;
+}
+
+.accordion-group {
+    border: none;
+}
+
+.accordion {
+    margin-bottom: 0;
+}
+
+.accordion a:hover {
+    text-decoration: none;
+    background:      #333333;
+    color:           #eeeeee;
+}
+
+.accordion-heading .accordion-toggle:before {
+    content:      "\f078";
+    font-family:  FontAwesome;
+    margin-right: 5px;
+}
+
+.accordion-heading .accordion-toggle.collapsed:before {
+    content: "\f054";
+}
+.accordion-heading .accordion-toggle {
+    float: left;
+    width: 16px;
+    height: 16px;
+    padding: 4px 2px 4px 12px;
+}
+.accordion-heading a {
+    display: block;
+    padding: 4px 12px;
+}
+
+.accordion-inner a {
+    display: block;
+    padding: 4px 12px;
+}
+
+.accordion-inner > ul a:before {
+    font-family: 'phpdocumentor-clean-icons';
+    content:      "\e001";
+    margin-right: 5px;
+}
+
+.accordion-inner li.class a:before {
+    content:      "\e002";
+}
+
+.accordion-inner li.interface a:before {
+    content:      "\e001";
+}
+
+.accordion-inner li.trait a:before {
+    content:      "\e000";
+}
+
+.accordion-inner {
+    padding: 4px 0 4px 12px;
+}
+.accordion-inner ul {
+    list-style: none;
+    padding:    0;
+    margin:     0;
+}
+
+.row-fluid .span2 {
+    width: 16.5%;
+}
+
+body .modal {
+    width: 90%; /* desired relative width */
+    left: 5%; /* (100%-width)/2 */
+    /* place center */
+    margin-left:auto;
+    margin-right:auto;
+}
+
+.side-nav.nav-list li a {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+@media (min-width: 767px) {
+    .sidebar {
+        position:         fixed;
+        top:              40px;
+        bottom:           0;
+        background-color: #f3f3f3;
+        left:             0;
+        border-right:     1px solid #e9e9e9;
+        overflow-y:       scroll;
+        overflow-x:       hidden;
+        padding-top:      10px;
+    }
+
+    .sidebar::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb {
+        background:      #cccccc;
+        background-clip: padding-box;
+        border:          3px solid #f3f3f3;
+        border-radius:   5px;
+    }
+
+    .sidebar::-webkit-scrollbar-button {
+        display: none;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
+        background: #f3f3f3;
+    }
+}
+
+@media (max-width: 979px) {
+    body {
+        padding-top: 0;
+    }
+}
+
+@media (max-width: 767px) {
+    .class #summary .heading {
+        display: none;
+    }
+
+    .detailsbar h1 {
+        display: none;
+    }
+
+    body {
+        background-color: white;
+    }
+
+    footer.row-fluid, footer.row-fluid * {
+        background-color: white;
+    }
+
+    .footer-sections .span4 h1 {
+        color: #ccccd9;
+        margin-top: 0;
+    }
+
+    .detailsbar {
+        background-color: white;
+        color: #333;
+        border: none;
+    }
+
+    .row-fluid .span2 {
+        width: 100%;
+    }
+}
+
+@media (min-width: 767px) {
+    .detailsbar {
+        min-height:     100%;
+        margin-bottom:  -99999px;
+        padding-bottom: 99999px;
+        padding-left:   20px;
+        padding-top:    10px;
+    }
+}
+
+@media (min-width: 1200px) {
+    .row-fluid .span2 {
+        width: 16.5%;
+    }
+}
