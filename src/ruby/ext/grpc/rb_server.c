@@ -49,6 +49,9 @@ static VALUE grpc_rb_cServer = Qnil;
 /* id_at is the constructor method of the ruby standard Time class. */
 static ID id_at;
 
+/* id_insecure_server is used to indicate that a server is insecure */
+static VALUE id_insecure_server;
+
 /* grpc_rb_server wraps a grpc_server.  It provides a peer ruby object,
   'mark' to minimize copying when a server is created from ruby. */
 typedef struct grpc_rb_server {
@@ -334,7 +337,7 @@ static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
   call-seq:
     // insecure port
     insecure_server = Server.new(cq, {'arg1': 'value1'})
-    insecure_server.add_http2_port('mydomain:50051')
+    insecure_server.add_http2_port('mydomain:50051', :this_port_is_not_secure)
 
     // secure port
     server_creds = ...
@@ -342,21 +345,22 @@ static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
     secure_server.add_http_port('mydomain:50051', server_creds)
 
     Adds a http2 port to server */
-static VALUE grpc_rb_server_add_http2_port(int argc, VALUE *argv, VALUE self) {
-  VALUE port = Qnil;
-  VALUE rb_creds = Qnil;
+static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port,
+                                           VALUE rb_creds) {
   grpc_rb_server *s = NULL;
   grpc_server_credentials *creds = NULL;
   int recvd_port = 0;
-
-  /* "11" == 1 mandatory args, 1 (rb_creds) is optional */
-  rb_scan_args(argc, argv, "11", &port, &rb_creds);
 
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
     return Qnil;
-  } else if (rb_creds == Qnil) {
+  } else if (TYPE(rb_creds) == T_SYMBOL) {
+    if (id_insecure_server != SYM2ID(rb_creds)) {
+      rb_raise(rb_eTypeError,
+               "bad creds symbol, want :this_port_is_insecure");
+      return Qnil;
+    }
     recvd_port =
         grpc_server_add_insecure_http2_port(s->wrapped, StringValueCStr(port));
     if (recvd_port == 0) {
@@ -398,8 +402,9 @@ void Init_grpc_server() {
   rb_define_alias(grpc_rb_cServer, "close", "destroy");
   rb_define_method(grpc_rb_cServer, "add_http2_port",
                    grpc_rb_server_add_http2_port,
-                   -1);
+                   2);
   id_at = rb_intern("at");
+  id_insecure_server = rb_intern("this_port_is_insecure");
 }
 
 /* Gets the wrapped server from the ruby wrapper */
