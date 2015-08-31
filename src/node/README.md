@@ -11,10 +11,10 @@ Alpha : Ready for early adopters
 
 **Linux (Debian):**
 
-Add [Debian unstable][] to your `sources.list` file. Example:
+Add [Debian testing][] to your `sources.list` file. Example:
 
 ```sh
-echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
+echo "deb http://ftp.us.debian.org/debian testing main contrib non-free" | \
 sudo tee -a /etc/apt/sources.list
 ```
 
@@ -113,4 +113,4 @@ An object with factory methods for creating credential objects for servers.
 
 [homebrew]:http://brew.sh
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
-[Debian unstable]:https://www.debian.org/releases/sid/
+[Debian testing]:https://www.debian.org/releases/stretch/
