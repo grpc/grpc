@@ -31,30 +31,15 @@
  *
  */
 
-#include <grpc++/credentials.h>
+#include <grpc/census.h>
 
-#include <memory>
+/* TODO(aveitch): These are all placeholder implementations. */
 
-#include <grpc/grpc.h>
-#include <gtest/gtest.h>
-
-namespace grpc {
-namespace testing {
-
-class CredentialsTest : public ::testing::Test {
- protected:
-};
-
-TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
-  std::shared_ptr<Credentials> bad1 = GoogleRefreshTokenCredentials("");
-  EXPECT_EQ(static_cast<Credentials*>(nullptr), bad1.get());
+int census_trace_mask(const census_context *context) {
+  return CENSUS_TRACE_MASK_NONE;
 }
 
-}  // namespace testing
-}  // namespace grpc
+void census_set_trace_mask(int trace_mask) {}
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  int ret = RUN_ALL_TESTS();
-  return ret;
-}
+void census_trace_print(census_context *context, gpr_uint32 type,
+                        const char *buffer, size_t n) {}

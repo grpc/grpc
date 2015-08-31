@@ -418,7 +418,13 @@
     <ClCompile Include="..\..\src\core\census\initialize.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\operation.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\src\core\census\record_stat.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\tracing.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
   </ItemGroup>
