@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '11.0'" Label="Configuration">
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '12.0'" Label="Configuration">
+    <PlatformToolset>v120</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\..\vsprojects\global.props" />
+    <Import Project="..\..\..\vsprojects\winsock.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <TargetName>gpr</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <TargetName>gpr</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;_USE_32BIT_TIME_T;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\grpc\support\alloc.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\atm.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\atm_gcc_atomic.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\atm_gcc_sync.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\atm_win32.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\cmdline.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\cpu.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\histogram.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\host_port.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\log.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\log_win32.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\port_platform.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\slice.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\slice_buffer.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\string_util.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\subprocess.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\sync.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\sync_generic.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\sync_posix.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\sync_win32.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\thd.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\time.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\tls.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\tls_gcc.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\tls_msvc.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\tls_pthread.h" />
+    <ClInclude Include="..\..\..\include\grpc\support\useful.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\core\support\env.h" />
+    <ClInclude Include="..\..\..\src\core\support\file.h" />
+    <ClInclude Include="..\..\..\src\core\support\murmur_hash.h" />
+    <ClInclude Include="..\..\..\src\core\support\stack_lockfree.h" />
+    <ClInclude Include="..\..\..\src\core\support\string.h" />
+    <ClInclude Include="..\..\..\src\core\support\string_win32.h" />
+    <ClInclude Include="..\..\..\src\core\support\thd_internal.h" />
+    <ClInclude Include="..\..\..\src\core\support\time_precise.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\core\support\alloc.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\cmdline.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\cpu_iphone.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\cpu_linux.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\cpu_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\cpu_windows.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\env_linux.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\env_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\env_win32.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\file.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\file_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\file_win32.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\histogram.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\host_port.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\log.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\log_android.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\log_linux.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\log_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\log_win32.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\murmur_hash.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\slice.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\slice_buffer.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\stack_lockfree.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\string.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\string_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\string_win32.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\subprocess_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\sync.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\sync_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\sync_win32.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\thd.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\thd_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\thd_win32.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\time.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\time_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\time_win32.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\tls_pthread.c">
+    </ClCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+  </Target>
+</Project>
+

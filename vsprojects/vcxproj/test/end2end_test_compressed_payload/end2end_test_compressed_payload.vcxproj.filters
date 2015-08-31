@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\end2end\tests\compressed_payload.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\core\end2end\tests\cancel_test_helpers.h">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\core\end2end\end2end_tests.h">
+      <Filter>test\core\end2end</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{67c64767-3dc1-ab6f-dbd2-d02480dfda3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{d9cb108c-c79b-e28e-da80-2d9690b39d06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{e1323279-4bf4-018e-67d8-9ff616ca97ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end\tests">
+      <UniqueIdentifier>{f0b92a78-0bcb-fe60-5ea9-ecf2a432647a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

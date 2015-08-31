@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\test\cpp\util\messages.proto">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\cpp\util\echo.proto">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\cpp\util\echo_duplicate.proto">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\cpp\util\cli_call.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\cpp\util\create_test_channel.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\cpp\util\string_ref_helper.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\cpp\util\subprocess.cc">
+      <Filter>test\cpp\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\test\cpp\util\cli_call.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\test\cpp\util\create_test_channel.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\test\cpp\util\string_ref_helper.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\test\cpp\util\subprocess.h">
+      <Filter>test\cpp\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{b1aaa210-fe1d-859a-67b3-95a2b286ec99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{793efaa7-370f-c34a-d347-31fc4e0630e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\util">
+      <UniqueIdentifier>{bbe1e5b7-f4f9-8e32-ce7c-8c21afcf39d8}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
