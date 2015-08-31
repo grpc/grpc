@@ -214,8 +214,7 @@ typedef struct grpc_metadata {
 
   /** The following fields are reserved for grpc internal use.
       There is no need to initialize them, and they will be set to garbage
-     during
-      calls to grpc. */
+      during calls to grpc. */
   struct {
     void *obfuscated[4];
   } internal_data;

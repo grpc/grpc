@@ -179,24 +179,6 @@ void InteropClient::DoComputeEngineCreds(
   gpr_log(GPR_INFO, "Large unary with compute engine creds done.");
 }
 
-void InteropClient::DoServiceAccountCreds(const grpc::string& username,
-                                          const grpc::string& oauth_scope) {
-  gpr_log(GPR_INFO,
-          "Sending a large unary rpc with service account credentials ...");
-  SimpleRequest request;
-  SimpleResponse response;
-  request.set_fill_username(true);
-  request.set_fill_oauth_scope(true);
-  request.set_response_type(PayloadType::COMPRESSABLE);
-  PerformLargeUnary(&request, &response);
-  GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(!response.oauth_scope().empty());
-  GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
-  const char* oauth_scope_str = response.oauth_scope().c_str();
-  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
-  gpr_log(GPR_INFO, "Large unary with service account creds done.");
-}
-
 void InteropClient::DoOauth2AuthToken(const grpc::string& username,
                                       const grpc::string& oauth_scope) {
   gpr_log(GPR_INFO,

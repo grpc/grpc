@@ -47,6 +47,10 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase {
     $this->assertTrue(self::$client->waitForReady(250000));
   }
 
+  public function testGetTarget() {
+    $this->assertTrue(is_string(self::$client->getTarget()));
+  }
+
   public function testSimpleRequest() {
     $div_arg = new math\DivArgs();
     $div_arg->setDividend(7);

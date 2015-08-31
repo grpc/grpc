@@ -49,7 +49,7 @@ static grpc_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) 
     // Passing NULL to grpc_ssl_credentials_create produces behavior we don't want, so return.
     return NULL;
   }
-  return grpc_ssl_credentials_create(contentInASCII.bytes, NULL);
+  return grpc_ssl_credentials_create(contentInASCII.bytes, NULL, NULL);
 }
 
 @implementation GRPCSecureChannel
@@ -101,8 +101,9 @@ static grpc_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) 
 - (instancetype)initWithHost:(NSString *)host
                  credentials:(grpc_credentials *)credentials
                         args:(grpc_channel_args *)args {
-  return (self =
-          [super initWithChannel:grpc_secure_channel_create(credentials, host.UTF8String, args)]);
+  return (self = [super
+              initWithChannel:grpc_secure_channel_create(
+                                  credentials, host.UTF8String, args, NULL)]);
 }
 
 // TODO(jcanizales): GRPCSecureChannel and GRPCUnsecuredChannel are just convenience initializers

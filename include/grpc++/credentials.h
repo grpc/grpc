@@ -57,7 +57,7 @@ class Credentials : public GrpcLibrary {
   virtual SecureCredentials* AsSecureCredentials() = 0;
 
  private:
-  friend std::shared_ptr<Channel> CreateChannel(
+  friend std::shared_ptr<Channel> CreateCustomChannel(
       const grpc::string& target, const std::shared_ptr<Credentials>& creds,
       const ChannelArguments& args);
 
@@ -94,17 +94,7 @@ std::shared_ptr<Credentials> SslCredentials(
     const SslCredentialsOptions& options);
 
 // Builds credentials for use when running in GCE
-std::shared_ptr<Credentials> ComputeEngineCredentials();
-
-// Builds service account credentials.
-// json_key is the JSON key string containing the client's private key.
-// scope is a space-delimited list of the requested permissions.
-// token_lifetime_seconds is the lifetime in seconds of each token acquired
-// through this service account credentials. It should be positive and should
-// not exceed grpc_max_auth_token_lifetime or will be cropped to this value.
-std::shared_ptr<Credentials> ServiceAccountCredentials(
-    const grpc::string& json_key, const grpc::string& scope,
-    long token_lifetime_seconds);
+std::shared_ptr<Credentials> GoogleComputeEngineCredentials();
 
 // Builds Service Account JWT Access credentials.
 // json_key is the JSON key string containing the client's private key.
@@ -117,7 +107,7 @@ std::shared_ptr<Credentials> ServiceAccountJWTAccessCredentials(
 // Builds refresh token credentials.
 // json_refresh_token is the JSON string containing the refresh token along
 // with a client_id and client_secret.
-std::shared_ptr<Credentials> RefreshTokenCredentials(
+std::shared_ptr<Credentials> GoogleRefreshTokenCredentials(
     const grpc::string& json_refresh_token);
 
 // Builds access token credentials.
@@ -127,7 +117,7 @@ std::shared_ptr<Credentials> AccessTokenCredentials(
     const grpc::string& access_token);
 
 // Builds IAM credentials.
-std::shared_ptr<Credentials> IAMCredentials(
+std::shared_ptr<Credentials> GoogleIAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector);
 
