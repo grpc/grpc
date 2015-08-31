@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 #define GRPC_INTERNAL_CPP_COMMON_SECURE_AUTH_CONTEXT_H
 
-#include <grpc++/support/auth_context.h>
+#include <grpc++/security/auth_context.h>
 
 struct grpc_auth_context;
 
@@ -42,9 +42,11 @@ namespace grpc {
 
 class SecureAuthContext GRPC_FINAL : public AuthContext {
  public:
-  SecureAuthContext(grpc_auth_context* ctx);
+  SecureAuthContext(grpc_auth_context* ctx, bool take_ownership);
 
   ~SecureAuthContext() GRPC_OVERRIDE;
+
+  bool IsPeerAuthenticated() const GRPC_OVERRIDE;
 
   std::vector<grpc::string_ref> GetPeerIdentity() const GRPC_OVERRIDE;
 
@@ -57,8 +59,15 @@ class SecureAuthContext GRPC_FINAL : public AuthContext {
 
   AuthPropertyIterator end() const GRPC_OVERRIDE;
 
+  void AddProperty(const grpc::string& key,
+                   const grpc::string_ref& value) GRPC_OVERRIDE;
+
+  virtual bool SetPeerIdentityPropertyName(const grpc::string& name)
+      GRPC_OVERRIDE;
+
  private:
   grpc_auth_context* ctx_;
+  bool take_ownership_;
 };
 
 }  // namespace grpc

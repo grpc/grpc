@@ -40,7 +40,7 @@
 #include <grpc/support/slice.h>
 #include <grpc++/client_context.h>
 #include <grpc++/completion_queue.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/rpc_method.h>
 #include <grpc++/support/channel_arguments.h>

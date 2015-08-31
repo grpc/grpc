@@ -31,50 +31,44 @@
  *
  */
 
-#ifndef GRPCXX_SERVER_CREDENTIALS_H
-#define GRPCXX_SERVER_CREDENTIALS_H
+#ifndef GRPCXX_AUTH_METADATA_PROCESSOR_H_
+#define GRPCXX_AUTH_METADATA_PROCESSOR_H_
 
-#include <memory>
-#include <vector>
+#include <map>
 
-#include <grpc++/support/config.h>
-
-struct grpc_server;
+#include <grpc++/security/auth_context.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/string_ref.h>
 
 namespace grpc {
-class Server;
 
-// grpc_server_credentials wrapper class.
-class ServerCredentials {
+class AuthMetadataProcessor {
  public:
-  virtual ~ServerCredentials();
+  typedef std::multimap<grpc::string_ref, grpc::string_ref> InputMetadata;
+  typedef std::multimap<grpc::string, grpc::string_ref> OutputMetadata;
 
- private:
-  friend class ::grpc::Server;
+  virtual ~AuthMetadataProcessor() {}
 
-  virtual int AddPortToServer(const grpc::string& addr,
-                              grpc_server* server) = 0;
+  // If this method returns true, the Process function will be scheduled in
+  // a different thread from the one processing the call.
+  virtual bool IsBlocking() const { return true; }
+
+  // context is read/write: it contains the properties of the channel peer and
+  // it is the job of the Process method to augment it with properties derived
+  // from the passed-in auth_metadata.
+  // consumed_auth_metadata needs to be filled with metadata that has been
+  // consumed by the processor and will be removed from the call.
+  // response_metadata is the metadata that will be sent as part of the
+  // response.
+  // If the return value is not Status::OK, the rpc call will be aborted with
+  // the error code and error message sent back to the client.
+  virtual Status Process(const InputMetadata& auth_metadata,
+                         AuthContext* context,
+                         OutputMetadata* consumed_auth_metadata,
+                         OutputMetadata* response_metadata) = 0;
 };
-
-// Options to create ServerCredentials with SSL
-struct SslServerCredentialsOptions {
-  SslServerCredentialsOptions() : force_client_auth(false) {}
-
-  struct PemKeyCertPair {
-    grpc::string private_key;
-    grpc::string cert_chain;
-  };
-  grpc::string pem_root_certs;
-  std::vector<PemKeyCertPair> pem_key_cert_pairs;
-  bool force_client_auth;
-};
-
-// Builds SSL ServerCredentials given SSL specific options
-std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options);
-
-std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
 }  // namespace grpc
 
-#endif  // GRPCXX_SERVER_CREDENTIALS_H
+#endif  // GRPCXX_AUTH_METADATA_PROCESSOR_H_
+
