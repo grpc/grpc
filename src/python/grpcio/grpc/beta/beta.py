@@ -27,13 +27,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Entry points into gRPC Python Beta."""
+"""Entry points into the Beta API of gRPC Python."""
 
+# threading is referenced from specification in this module.
+import abc
 import enum
+import threading  # pylint: disable=unused-import
 
-from grpc._adapter import _low
+# cardinality and face are referenced from specification in this module.
+from grpc._adapter import _intermediary_low
 from grpc._adapter import _types
 from grpc.beta import _connectivity_channel
+from grpc.beta import _server
+from grpc.beta import _stub
+from grpc.framework.common import cardinality  # pylint: disable=unused-import
+from grpc.framework.interfaces.face import face  # pylint: disable=unused-import
 
 _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE = (
     'Exception calling channel subscription callback!')
@@ -65,6 +73,39 @@ _LOW_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
 }
 
 
+class ClientCredentials(object):
+  """A value encapsulating the data required to create a secure Channel.
+
+  This class and its instances have no supported interface - it exists to define
+  the type of its instances and its instances exist to be passed to other
+  functions.
+  """
+
+  def __init__(self, low_credentials, intermediary_low_credentials):
+    self._low_credentials = low_credentials
+    self._intermediary_low_credentials = intermediary_low_credentials
+
+
+def ssl_client_credentials(root_certificates, private_key, certificate_chain):
+  """Creates a ClientCredentials for use with an SSL-enabled Channel.
+
+  Args:
+    root_certificates: The PEM-encoded root certificates or None to ask for
+      them to be retrieved from a default location.
+    private_key: The PEM-encoded private key to use or None if no private key
+      should be used.
+    certificate_chain: The PEM-encoded certificate chain to use or None if no
+      certificate chain should be used.
+
+  Returns:
+    A ClientCredentials for use with an SSL-enabled Channel.
+  """
+  intermediary_low_credentials = _intermediary_low.ClientCredentials(
+      root_certificates, private_key, certificate_chain)
+  return ClientCredentials(
+      intermediary_low_credentials._internal, intermediary_low_credentials)  # pylint: disable=protected-access
+
+
 class Channel(object):
   """A channel to a remote host through which RPCs may be conducted.
 
@@ -73,7 +114,9 @@ class Channel(object):
   unsupported.
   """
 
-  def __init__(self, low_channel):
+  def __init__(self, low_channel, intermediary_low_channel):
+    self._low_channel = low_channel
+    self._intermediary_low_channel = intermediary_low_channel
     self._connectivity_channel = _connectivity_channel.ConnectivityChannel(
         low_channel, _LOW_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY)
 
@@ -111,4 +154,336 @@ def create_insecure_channel(host, port):
   Returns:
     A Channel to the remote host through which RPCs may be conducted.
   """
-  return Channel(_low.Channel('%s:%d' % (host, port), ()))
+  intermediary_low_channel = _intermediary_low.Channel(
+      '%s:%d' % (host, port), None)
+  return Channel(intermediary_low_channel._internal, intermediary_low_channel)  # pylint: disable=protected-access
+
+
+def create_secure_channel(host, port, client_credentials):
+  """Creates a secure Channel to a remote host.
+
+  Args:
+    host: The name of the remote host to which to connect.
+    port: The port of the remote host to which to connect.
+    client_credentials: A ClientCredentials.
+
+  Returns:
+    A secure Channel to the remote host through which RPCs may be conducted.
+  """
+  intermediary_low_channel = _intermediary_low.Channel(
+      '%s:%d' % (host, port), client_credentials.intermediary_low_credentials)
+  return Channel(intermediary_low_channel._internal, intermediary_low_channel)  # pylint: disable=protected-access
+
+
+class StubOptions(object):
+  """A value encapsulating the various options for creation of a Stub.
+
+  This class and its instances have no supported interface - it exists to define
+  the type of its instances and its instances exist to be passed to other
+  functions.
+  """
+
+  def __init__(
+      self, host, request_serializers, response_deserializers,
+      metadata_transformer, thread_pool, thread_pool_size):
+    self.host = host
+    self.request_serializers = request_serializers
+    self.response_deserializers = response_deserializers
+    self.metadata_transformer = metadata_transformer
+    self.thread_pool = thread_pool
+    self.thread_pool_size = thread_pool_size
+
+_EMPTY_STUB_OPTIONS = StubOptions(
+    None, None, None, None, None, None)
+
+
+def stub_options(
+    host=None, request_serializers=None, response_deserializers=None,
+    metadata_transformer=None, thread_pool=None, thread_pool_size=None):
+  """Creates a StubOptions value to be passed at stub creation.
+
+  All parameters are optional and should always be passed by keyword.
+
+  Args:
+    host: A host string to set on RPC calls.
+    request_serializers: A dictionary from service name-method name pair to
+      request serialization behavior.
+    response_deserializers: A dictionary from service name-method name pair to
+      response deserialization behavior.
+    metadata_transformer: A callable that given a metadata object produces
+      another metadata object to be used in the underlying communication on the
+      wire.
+    thread_pool: A thread pool to use in stubs.
+    thread_pool_size: The size of thread pool to create for use in stubs;
+      ignored if thread_pool has been passed.
+
+  Returns:
+    A StubOptions value created from the passed parameters.
+  """
+  return StubOptions(
+      host, request_serializers, response_deserializers,
+      metadata_transformer, thread_pool, thread_pool_size)
+
+
+def generic_stub(channel, options=None):
+  """Creates a face.GenericStub on which RPCs can be made.
+
+  Args:
+    channel: A Channel for use by the created stub.
+    options: A StubOptions customizing the created stub.
+
+  Returns:
+    A face.GenericStub on which RPCs can be made.
+  """
+  effective_options = _EMPTY_STUB_OPTIONS if options is None else options
+  return _stub.generic_stub(
+      channel._intermediary_low_channel, effective_options.host,  # pylint: disable=protected-access
+      effective_options.request_serializers,
+      effective_options.response_deserializers, effective_options.thread_pool,
+      effective_options.thread_pool_size)
+
+
+def dynamic_stub(channel, service, cardinalities, options=None):
+  """Creates a face.DynamicStub with which RPCs can be invoked.
+
+  Args:
+    channel: A Channel for the returned face.DynamicStub to use.
+    service: The package-qualified full name of the service.
+    cardinalities: A dictionary from RPC method name to cardinality.Cardinality
+      value identifying the cardinality of the RPC method.
+    options: An optional StubOptions value further customizing the functionality
+      of the returned face.DynamicStub.
+
+  Returns:
+    A face.DynamicStub with which RPCs can be invoked.
+  """
+  effective_options = StubOptions() if options is None else options
+  return _stub.dynamic_stub(
+      channel._intermediary_low_channel, effective_options.host, service,  # pylint: disable=protected-access
+      cardinalities, effective_options.request_serializers,
+      effective_options.response_deserializers, effective_options.thread_pool,
+      effective_options.thread_pool_size)
+
+
+class ServerCredentials(object):
+  """A value encapsulating the data required to open a secure port on a Server.
+
+  This class and its instances have no supported interface - it exists to define
+  the type of its instances and its instances exist to be passed to other
+  functions.
+  """
+
+  def __init__(self, low_credentials, intermediary_low_credentials):
+    self._low_credentials = low_credentials
+    self._intermediary_low_credentials = intermediary_low_credentials
+
+
+def ssl_server_credentials(
+    private_key_certificate_chain_pairs, root_certificates=None,
+    require_client_auth=False):
+  """Creates a ServerCredentials for use with an SSL-enabled Server.
+
+  Args:
+    private_key_certificate_chain_pairs: A nonempty sequence each element of
+      which is a pair the first element of which is a PEM-encoded private key
+      and the second element of which is the corresponding PEM-encoded
+      certificate chain.
+    root_certificates: PEM-encoded client root certificates to be used for
+      verifying authenticated clients. If omitted, require_client_auth must also
+      be omitted or be False.
+    require_client_auth: A boolean indicating whether or not to require clients
+      to be authenticated. May only be True if root_certificates is not None.
+
+  Returns:
+    A ServerCredentials for use with an SSL-enabled Server.
+  """
+  if len(private_key_certificate_chain_pairs) == 0:
+    raise ValueError(
+        'At least one private key-certificate chain pairis required!')
+  elif require_client_auth and root_certificates is None:
+    raise ValueError(
+        'Illegal to require client auth without providing root certificates!')
+  else:
+    intermediary_low_credentials = _intermediary_low.ServerCredentials(
+        root_certificates, private_key_certificate_chain_pairs,
+        require_client_auth)
+    return ServerCredentials(
+        intermediary_low_credentials._internal, intermediary_low_credentials)  # pylint: disable=protected-access
+
+
+class Server(object):
+  """Services RPCs."""
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def add_insecure_port(self, address):
+    """Reserves a port for insecure RPC service once this Server becomes active.
+
+    This method may only be called before calling this Server's start method is
+    called.
+
+    Args:
+      address: The address for which to open a port.
+
+    Returns:
+      An integer port on which RPCs will be serviced after this link has been
+        started. This is typically the same number as the port number contained
+        in the passed address, but will likely be different if the port number
+        contained in the passed address was zero.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def add_secure_port(self, address, server_credentials):
+    """Reserves a port for secure RPC service after this Server becomes active.
+
+    This method may only be called before calling this Server's start method is
+    called.
+
+    Args:
+      address: The address for which to open a port.
+      server_credentials: A ServerCredentials.
+
+    Returns:
+      An integer port on which RPCs will be serviced after this link has been
+        started. This is typically the same number as the port number contained
+        in the passed address, but will likely be different if the port number
+        contained in the passed address was zero.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def start(self):
+    """Starts this Server's service of RPCs.
+
+    This method may only be called while the server is not serving RPCs (i.e. it
+    is not idempotent).
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def stop(self, grace):
+    """Stops this Server's service of RPCs.
+
+    All calls to this method immediately stop service of new RPCs. When existing
+    RPCs are aborted is controlled by the grace period parameter passed to this
+    method.
+
+    This method may be called at any time and is idempotent. Passing a smaller
+    grace value than has been passed in a previous call will have the effect of
+    stopping the Server sooner. Passing a larger grace value than has been
+    passed in a previous call will not have the effect of stopping the sooner
+    later.
+
+    Args:
+      grace: A duration of time in seconds to allow existing RPCs to complete
+        before being aborted by this Server's stopping. May be zero for
+        immediate abortion of all in-progress RPCs.
+
+    Returns:
+      A threading.Event that will be set when this Server has completely
+      stopped. The returned event may not be set until after the full grace
+      period (if some ongoing RPC continues for the full length of the period)
+      of it may be set much sooner (such as if this Server had no RPCs underway
+      at the time it was stopped or if all RPCs that it had underway completed
+      very early in the grace period).
+    """
+    raise NotImplementedError()
+
+
+class ServerOptions(object):
+  """A value encapsulating the various options for creation of a Server.
+
+  This class and its instances have no supported interface - it exists to define
+  the type of its instances and its instances exist to be passed to other
+  functions.
+  """
+
+  def __init__(
+      self, multi_method_implementation, request_deserializers,
+      response_serializers, thread_pool, thread_pool_size, default_timeout,
+      maximum_timeout):
+    self.multi_method_implementation = multi_method_implementation
+    self.request_deserializers = request_deserializers
+    self.response_serializers = response_serializers
+    self.thread_pool = thread_pool
+    self.thread_pool_size = thread_pool_size
+    self.default_timeout = default_timeout
+    self.maximum_timeout = maximum_timeout
+
+_EMPTY_SERVER_OPTIONS = ServerOptions(
+    None, None, None, None, None, None, None)
+
+
+def server_options(
+    multi_method_implementation=None, request_deserializers=None,
+    response_serializers=None, thread_pool=None, thread_pool_size=None,
+    default_timeout=None, maximum_timeout=None):
+  """Creates a ServerOptions value to be passed at server creation.
+
+  All parameters are optional and should always be passed by keyword.
+
+  Args:
+    multi_method_implementation: A face.MultiMethodImplementation to be called
+      to service an RPC if the server has no specific method implementation for
+      the name of the RPC for which service was requested.
+    request_deserializers: A dictionary from service name-method name pair to
+      request deserialization behavior.
+    response_serializers: A dictionary from service name-method name pair to
+      response serialization behavior.
+    thread_pool: A thread pool to use in stubs.
+    thread_pool_size: The size of thread pool to create for use in stubs;
+      ignored if thread_pool has been passed.
+    default_timeout: A duration in seconds to allow for RPC service when
+      servicing RPCs that did not include a timeout value when invoked.
+    maximum_timeout: A duration in seconds to allow for RPC service when
+      servicing RPCs no matter what timeout value was passed when the RPC was
+      invoked.
+
+  Returns:
+    A StubOptions value created from the passed parameters.
+  """
+  return ServerOptions(
+      multi_method_implementation, request_deserializers, response_serializers,
+      thread_pool, thread_pool_size, default_timeout, maximum_timeout)
+
+
+class _Server(Server):
+
+  def __init__(self, underserver):
+    self._underserver = underserver
+
+  def add_insecure_port(self, address):
+    return self._underserver.add_insecure_port(address)
+
+  def add_secure_port(self, address, server_credentials):
+    return self._underserver.add_secure_port(
+        address, server_credentials._intermediary_low_credentials)  # pylint: disable=protected-access
+
+  def start(self):
+    self._underserver.start()
+
+  def stop(self, grace):
+    return self._underserver.stop(grace)
+
+
+def server(service_implementations, options=None):
+  """Creates a Server with which RPCs can be serviced.
+
+  Args:
+    service_implementations: A dictionary from service name-method name pair to
+      face.MethodImplementation.
+    options: An optional ServerOptions value further customizing the
+      functionality of the returned Server.
+
+  Returns:
+    A Server with which RPCs can be serviced.
+  """
+  effective_options = _EMPTY_SERVER_OPTIONS if options is None else options
+  underserver = _server.server(
+      service_implementations, effective_options.multi_method_implementation,
+      effective_options.request_deserializers,
+      effective_options.response_serializers, effective_options.thread_pool,
+      effective_options.thread_pool_size, effective_options.default_timeout,
+      effective_options.maximum_timeout)
+  return _Server(underserver)
