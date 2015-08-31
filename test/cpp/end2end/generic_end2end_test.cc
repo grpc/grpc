@@ -42,8 +42,6 @@
 #include <grpc++/create_channel.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/generic/generic_stub.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
