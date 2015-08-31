@@ -67,13 +67,21 @@ static const grpc_metadata *find_metadata(const grpc_metadata *md,
   return NULL;
 }
 
+typedef struct {
+  size_t pseudo_refcount;
+} test_processor_state;
+
 static void process_oauth2_success(void *state, grpc_auth_context *ctx,
                                    const grpc_metadata *md, size_t md_count,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void *user_data) {
   const grpc_metadata *oauth2 =
       find_metadata(md, md_count, "Authorization", oauth2_md);
-  GPR_ASSERT(state == NULL);
+  test_processor_state *s;
+
+  GPR_ASSERT(state != NULL);
+  s = (test_processor_state *)state;
+  GPR_ASSERT(s->pseudo_refcount == 1);
   GPR_ASSERT(oauth2 != NULL);
   grpc_auth_context_add_cstring_property(ctx, client_identity_property_name,
                                          client_identity);
@@ -88,7 +96,10 @@ static void process_oauth2_failure(void *state, grpc_auth_context *ctx,
                                    void *user_data) {
   const grpc_metadata *oauth2 =
       find_metadata(md, md_count, "Authorization", oauth2_md);
-  GPR_ASSERT(state == NULL);
+  test_processor_state *s;
+  GPR_ASSERT(state != NULL);
+  s = (test_processor_state *)state;
+  GPR_ASSERT(s->pseudo_refcount == 1);
   GPR_ASSERT(oauth2 != NULL);
   cb(user_data, oauth2, 1, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, NULL);
 }
@@ -171,20 +182,34 @@ static int fail_server_auth_check(grpc_channel_args *server_args) {
   return 0;
 }
 
+static void processor_destroy(void *state) {
+  test_processor_state *s = (test_processor_state *)state;
+  GPR_ASSERT((s->pseudo_refcount--) == 1);
+  gpr_free(s);
+}
+
+static grpc_auth_metadata_processor test_processor_create(int failing) {
+  test_processor_state *s = gpr_malloc(sizeof(*s));
+  grpc_auth_metadata_processor result;
+  s->pseudo_refcount = 1;
+  result.state = s;
+  result.destroy = processor_destroy;
+  if (failing) {
+    result.process = process_oauth2_failure;
+  } else {
+    result.process = process_oauth2_success;
+  }
+  return result;
+}
+
 static void chttp2_init_server_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                   test_server1_cert};
   grpc_server_credentials *ssl_creds =
       grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0, NULL);
-  grpc_auth_metadata_processor processor;
-  processor.state = NULL;
-  if (fail_server_auth_check(server_args)) {
-    processor.process = process_oauth2_failure;
-  } else {
-    processor.process = process_oauth2_success;
-  }
-  grpc_server_credentials_set_auth_metadata_processor(ssl_creds, processor);
+  grpc_server_credentials_set_auth_metadata_processor(
+      ssl_creds, test_processor_create(fail_server_auth_check(server_args)));
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
 }
 

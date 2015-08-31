@@ -44,7 +44,7 @@
 #include <grpc/support/useful.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
 
 #include "src/core/transport/stream_op.h"
 #include "test/cpp/interop/client_helper.h"

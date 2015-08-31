@@ -31,66 +31,56 @@
  *
  */
 
-#ifndef GRPCXX_SUPPORT_AUTH_CONTEXT_H
-#define GRPCXX_SUPPORT_AUTH_CONTEXT_H
+#ifndef GRPCXX_SERVER_CREDENTIALS_H
+#define GRPCXX_SERVER_CREDENTIALS_H
 
-#include <iterator>
+#include <memory>
 #include <vector>
 
+#include <grpc++/security/auth_metadata_processor.h>
 #include <grpc++/support/config.h>
-#include <grpc++/support/string_ref.h>
 
-struct grpc_auth_context;
-struct grpc_auth_property;
-struct grpc_auth_property_iterator;
+struct grpc_server;
 
 namespace grpc {
-class SecureAuthContext;
+class Server;
 
-typedef std::pair<grpc::string_ref, grpc::string_ref> AuthProperty;
-
-class AuthPropertyIterator
-    : public std::iterator<std::input_iterator_tag, const AuthProperty> {
+// grpc_server_credentials wrapper class.
+class ServerCredentials {
  public:
-  ~AuthPropertyIterator();
-  AuthPropertyIterator& operator++();
-  AuthPropertyIterator operator++(int);
-  bool operator==(const AuthPropertyIterator& rhs) const;
-  bool operator!=(const AuthPropertyIterator& rhs) const;
-  const AuthProperty operator*();
+  virtual ~ServerCredentials();
 
- protected:
-  AuthPropertyIterator();
-  AuthPropertyIterator(const grpc_auth_property* property,
-                       const grpc_auth_property_iterator* iter);
+  // This method is not thread-safe and has to be called before the server is
+  // started. The last call to this function wins.
+  virtual void SetAuthMetadataProcessor(
+      const std::shared_ptr<AuthMetadataProcessor>& processor) = 0;
 
  private:
-  friend class SecureAuthContext;
-  const grpc_auth_property* property_;
-  // The following items form a grpc_auth_property_iterator.
-  const grpc_auth_context* ctx_;
-  size_t index_;
-  const char* name_;
+  friend class ::grpc::Server;
+
+  virtual int AddPortToServer(const grpc::string& addr,
+                              grpc_server* server) = 0;
 };
 
-class AuthContext {
- public:
-  virtual ~AuthContext() {}
+// Options to create ServerCredentials with SSL
+struct SslServerCredentialsOptions {
+  SslServerCredentialsOptions() : force_client_auth(false) {}
 
-  // A peer identity, in general is one or more properties (in which case they
-  // have the same name).
-  virtual std::vector<grpc::string_ref> GetPeerIdentity() const = 0;
-  virtual grpc::string GetPeerIdentityPropertyName() const = 0;
-
-  // Returns all the property values with the given name.
-  virtual std::vector<grpc::string_ref> FindPropertyValues(
-      const grpc::string& name) const = 0;
-
-  // Iteration over all the properties.
-  virtual AuthPropertyIterator begin() const = 0;
-  virtual AuthPropertyIterator end() const = 0;
+  struct PemKeyCertPair {
+    grpc::string private_key;
+    grpc::string cert_chain;
+  };
+  grpc::string pem_root_certs;
+  std::vector<PemKeyCertPair> pem_key_cert_pairs;
+  bool force_client_auth;
 };
+
+// Builds SSL ServerCredentials given SSL specific options
+std::shared_ptr<ServerCredentials> SslServerCredentials(
+    const SslServerCredentialsOptions& options);
+
+std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
 }  // namespace grpc
 
-#endif  // GRPCXX_SUPPORT_AUTH_CONTEXT_H
+#endif  // GRPCXX_SERVER_CREDENTIALS_H

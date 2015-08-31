@@ -129,7 +129,7 @@ typedef void (*grpc_credentials_metadata_cb)(void *user_data,
                                              grpc_credentials_status status);
 
 typedef struct {
-  void (*destroy)(grpc_credentials *c);
+  void (*destruct)(grpc_credentials *c);
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
   void (*get_request_metadata)(grpc_credentials *c, grpc_pollset *pollset,
@@ -210,19 +210,27 @@ grpc_credentials *grpc_refresh_token_credentials_create_from_auth_refresh_token(
 /* --- grpc_server_credentials. --- */
 
 typedef struct {
-  void (*destroy)(grpc_server_credentials *c);
+  void (*destruct)(grpc_server_credentials *c);
   grpc_security_status (*create_security_connector)(
       grpc_server_credentials *c, grpc_security_connector **sc);
 } grpc_server_credentials_vtable;
 
+
+/* TODO(jboeuf): Add a refcount. */
 struct grpc_server_credentials {
   const grpc_server_credentials_vtable *vtable;
   const char *type;
+  gpr_refcount refcount;
   grpc_auth_metadata_processor processor;
 };
 
 grpc_security_status grpc_server_credentials_create_security_connector(
     grpc_server_credentials *creds, grpc_security_connector **sc);
+
+grpc_server_credentials *grpc_server_credentials_ref(
+    grpc_server_credentials *creds);
+
+void grpc_server_credentials_unref(grpc_server_credentials *creds);
 
 /* -- Ssl credentials. -- */
 
