@@ -87,7 +87,10 @@ grpc_credentials *grpc_credentials_ref(grpc_credentials *creds) {
 
 void grpc_credentials_unref(grpc_credentials *creds) {
   if (creds == NULL) return;
-  if (gpr_unref(&creds->refcount)) creds->vtable->destroy(creds);
+  if (gpr_unref(&creds->refcount)) {
+    creds->vtable->destruct(creds);
+    gpr_free(creds);
+  }
 }
 
 void grpc_credentials_release(grpc_credentials *creds) {
@@ -135,9 +138,26 @@ grpc_security_status grpc_credentials_create_security_connector(
       creds, target, args, request_metadata_creds, sc, new_args);
 }
 
-void grpc_server_credentials_release(grpc_server_credentials *creds) {
+grpc_server_credentials *grpc_server_credentials_ref(
+    grpc_server_credentials *creds) {
+  if (creds == NULL) return NULL;
+  gpr_ref(&creds->refcount);
+  return creds;
+}
+
+void grpc_server_credentials_unref(grpc_server_credentials *creds) {
   if (creds == NULL) return;
-  creds->vtable->destroy(creds);
+  if (gpr_unref(&creds->refcount)) {
+    creds->vtable->destruct(creds);
+    if (creds->processor.destroy != NULL && creds->processor.state != NULL) {
+      creds->processor.destroy(creds->processor.state);
+    }
+    gpr_free(creds);
+  }
+}
+
+void grpc_server_credentials_release(grpc_server_credentials *creds) {
+  grpc_server_credentials_unref(creds);
 }
 
 grpc_security_status grpc_server_credentials_create_security_connector(
@@ -158,25 +178,16 @@ void grpc_server_credentials_set_auth_metadata_processor(
   creds->processor = processor;
 }
 
-void grpc_server_credentials_destroy(grpc_server_credentials *creds) {
-  if (creds == NULL) return;
-  if (creds->processor.destroy != NULL && creds->processor.state != NULL) {
-    creds->processor.destroy(creds->processor.state);
-  }
-  gpr_free(creds);
-}
-
 /* -- Ssl credentials. -- */
 
-static void ssl_destroy(grpc_credentials *creds) {
+static void ssl_destruct(grpc_credentials *creds) {
   grpc_ssl_credentials *c = (grpc_ssl_credentials *)creds;
   if (c->config.pem_root_certs != NULL) gpr_free(c->config.pem_root_certs);
   if (c->config.pem_private_key != NULL) gpr_free(c->config.pem_private_key);
   if (c->config.pem_cert_chain != NULL) gpr_free(c->config.pem_cert_chain);
-  gpr_free(creds);
 }
 
-static void ssl_server_destroy(grpc_server_credentials *creds) {
+static void ssl_server_destruct(grpc_server_credentials *creds) {
   grpc_ssl_server_credentials *c = (grpc_ssl_server_credentials *)creds;
   size_t i;
   for (i = 0; i < c->config.num_key_cert_pairs; i++) {
@@ -196,7 +207,6 @@ static void ssl_server_destroy(grpc_server_credentials *creds) {
     gpr_free(c->config.pem_cert_chains_sizes);
   }
   if (c->config.pem_root_certs != NULL) gpr_free(c->config.pem_root_certs);
-  grpc_server_credentials_destroy(creds);
 }
 
 static int ssl_has_request_metadata(const grpc_credentials *creds) { return 0; }
@@ -242,11 +252,11 @@ static grpc_security_status ssl_server_create_security_connector(
 }
 
 static grpc_credentials_vtable ssl_vtable = {
-    ssl_destroy, ssl_has_request_metadata, ssl_has_request_metadata_only, NULL,
+    ssl_destruct, ssl_has_request_metadata, ssl_has_request_metadata_only, NULL,
     ssl_create_security_connector};
 
 static grpc_server_credentials_vtable ssl_server_vtable = {
-    ssl_server_destroy, ssl_server_create_security_connector};
+    ssl_server_destruct, ssl_server_create_security_connector};
 
 static void ssl_copy_key_material(const char *input, unsigned char **output,
                                   size_t *output_size) {
@@ -327,9 +337,9 @@ grpc_server_credentials *grpc_ssl_server_credentials_create(
   grpc_ssl_server_credentials *c =
       gpr_malloc(sizeof(grpc_ssl_server_credentials));
   GPR_ASSERT(reserved == NULL);
-  memset(c, 0, sizeof(grpc_ssl_credentials));
   memset(c, 0, sizeof(grpc_ssl_server_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_SSL;
+  gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &ssl_server_vtable;
   ssl_build_server_config(pem_root_certs, pem_key_cert_pairs,
                           num_key_cert_pairs, force_client_auth, &c->config);
@@ -350,13 +360,12 @@ static void jwt_reset_cache(grpc_service_account_jwt_access_credentials *c) {
   c->cached.jwt_expiration = gpr_inf_past(GPR_CLOCK_REALTIME);
 }
 
-static void jwt_destroy(grpc_credentials *creds) {
+static void jwt_destruct(grpc_credentials *creds) {
   grpc_service_account_jwt_access_credentials *c =
       (grpc_service_account_jwt_access_credentials *)creds;
   grpc_auth_json_key_destruct(&c->key);
   jwt_reset_cache(c);
   gpr_mu_destroy(&c->cache_mu);
-  gpr_free(c);
 }
 
 static int jwt_has_request_metadata(const grpc_credentials *creds) { return 1; }
@@ -421,7 +430,7 @@ static void jwt_get_request_metadata(grpc_credentials *creds,
 }
 
 static grpc_credentials_vtable jwt_vtable = {
-    jwt_destroy, jwt_has_request_metadata, jwt_has_request_metadata_only,
+    jwt_destruct, jwt_has_request_metadata, jwt_has_request_metadata_only,
     jwt_get_request_metadata, NULL};
 
 grpc_credentials *
@@ -453,13 +462,12 @@ grpc_credentials *grpc_service_account_jwt_access_credentials_create(
 
 /* -- Oauth2TokenFetcher credentials -- */
 
-static void oauth2_token_fetcher_destroy(grpc_credentials *creds) {
+static void oauth2_token_fetcher_destruct(grpc_credentials *creds) {
   grpc_oauth2_token_fetcher_credentials *c =
       (grpc_oauth2_token_fetcher_credentials *)creds;
   grpc_credentials_md_store_unref(c->access_token_md);
   gpr_mu_destroy(&c->mu);
   grpc_httpcli_context_destroy(&c->httpcli_context);
-  gpr_free(c);
 }
 
 static int oauth2_token_fetcher_has_request_metadata(
@@ -632,7 +640,7 @@ static void init_oauth2_token_fetcher(grpc_oauth2_token_fetcher_credentials *c,
 /* -- GoogleComputeEngine credentials. -- */
 
 static grpc_credentials_vtable compute_engine_vtable = {
-    oauth2_token_fetcher_destroy, oauth2_token_fetcher_has_request_metadata,
+    oauth2_token_fetcher_destruct, oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
     oauth2_token_fetcher_get_request_metadata, NULL};
 
@@ -663,15 +671,15 @@ grpc_credentials *grpc_google_compute_engine_credentials_create(
 
 /* -- GoogleRefreshToken credentials. -- */
 
-static void refresh_token_destroy(grpc_credentials *creds) {
+static void refresh_token_destruct(grpc_credentials *creds) {
   grpc_google_refresh_token_credentials *c =
       (grpc_google_refresh_token_credentials *)creds;
   grpc_auth_refresh_token_destruct(&c->refresh_token);
-  oauth2_token_fetcher_destroy(&c->base.base);
+  oauth2_token_fetcher_destruct(&c->base.base);
 }
 
 static grpc_credentials_vtable refresh_token_vtable = {
-    refresh_token_destroy, oauth2_token_fetcher_has_request_metadata,
+    refresh_token_destruct, oauth2_token_fetcher_has_request_metadata,
     oauth2_token_fetcher_has_request_metadata_only,
     oauth2_token_fetcher_get_request_metadata, NULL};
 
@@ -724,10 +732,9 @@ grpc_credentials *grpc_google_refresh_token_credentials_create(
 
 /* -- Metadata-only credentials. -- */
 
-static void md_only_test_destroy(grpc_credentials *creds) {
+static void md_only_test_destruct(grpc_credentials *creds) {
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
   grpc_credentials_md_store_unref(c->md_store);
-  gpr_free(c);
 }
 
 static int md_only_test_has_request_metadata(const grpc_credentials *creds) {
@@ -768,7 +775,7 @@ static void md_only_test_get_request_metadata(grpc_credentials *creds,
 }
 
 static grpc_credentials_vtable md_only_test_vtable = {
-    md_only_test_destroy, md_only_test_has_request_metadata,
+    md_only_test_destruct, md_only_test_has_request_metadata,
     md_only_test_has_request_metadata_only, md_only_test_get_request_metadata,
     NULL};
 
@@ -789,10 +796,9 @@ grpc_credentials *grpc_md_only_test_credentials_create(const char *md_key,
 
 /* -- Oauth2 Access Token credentials. -- */
 
-static void access_token_destroy(grpc_credentials *creds) {
+static void access_token_destruct(grpc_credentials *creds) {
   grpc_access_token_credentials *c = (grpc_access_token_credentials *)creds;
   grpc_credentials_md_store_unref(c->access_token_md);
-  gpr_free(c);
 }
 
 static int access_token_has_request_metadata(const grpc_credentials *creds) {
@@ -814,7 +820,7 @@ static void access_token_get_request_metadata(grpc_credentials *creds,
 }
 
 static grpc_credentials_vtable access_token_vtable = {
-    access_token_destroy, access_token_has_request_metadata,
+    access_token_destruct, access_token_has_request_metadata,
     access_token_has_request_metadata_only, access_token_get_request_metadata,
     NULL};
 
@@ -838,14 +844,14 @@ grpc_credentials *grpc_access_token_credentials_create(const char *access_token,
 
 /* -- Fake transport security credentials. -- */
 
-static void fake_transport_security_credentials_destroy(
+static void fake_transport_security_credentials_destruct(
     grpc_credentials *creds) {
-  gpr_free(creds);
+  /* Nothing to do here. */
 }
 
-static void fake_transport_security_server_credentials_destroy(
+static void fake_transport_security_server_credentials_destruct(
     grpc_server_credentials *creds) {
-  grpc_server_credentials_destroy(creds);
+  /* Nothing to do here. */
 }
 
 static int fake_transport_security_has_request_metadata(
@@ -874,14 +880,14 @@ fake_transport_security_server_create_security_connector(
 }
 
 static grpc_credentials_vtable fake_transport_security_credentials_vtable = {
-    fake_transport_security_credentials_destroy,
+    fake_transport_security_credentials_destruct,
     fake_transport_security_has_request_metadata,
     fake_transport_security_has_request_metadata_only, NULL,
     fake_transport_security_create_security_connector};
 
 static grpc_server_credentials_vtable
     fake_transport_security_server_credentials_vtable = {
-        fake_transport_security_server_credentials_destroy,
+        fake_transport_security_server_credentials_destruct,
         fake_transport_security_server_create_security_connector};
 
 grpc_credentials *grpc_fake_transport_security_credentials_create(void) {
@@ -898,6 +904,7 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
   grpc_server_credentials *c = gpr_malloc(sizeof(grpc_server_credentials));
   memset(c, 0, sizeof(grpc_server_credentials));
   c->type = GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
+  gpr_ref_init(&c->refcount, 1);
   c->vtable = &fake_transport_security_server_credentials_vtable;
   return c;
 }
@@ -914,14 +921,13 @@ typedef struct {
   grpc_credentials_metadata_cb cb;
 } grpc_composite_credentials_metadata_context;
 
-static void composite_destroy(grpc_credentials *creds) {
+static void composite_destruct(grpc_credentials *creds) {
   grpc_composite_credentials *c = (grpc_composite_credentials *)creds;
   size_t i;
   for (i = 0; i < c->inner.num_creds; i++) {
     grpc_credentials_unref(c->inner.creds_array[i]);
   }
   gpr_free(c->inner.creds_array);
-  gpr_free(creds);
 }
 
 static int composite_has_request_metadata(const grpc_credentials *creds) {
@@ -1037,7 +1043,7 @@ static grpc_security_status composite_create_security_connector(
 }
 
 static grpc_credentials_vtable composite_credentials_vtable = {
-    composite_destroy, composite_has_request_metadata,
+    composite_destruct, composite_has_request_metadata,
     composite_has_request_metadata_only, composite_get_request_metadata,
     composite_create_security_connector};
 
@@ -1136,10 +1142,9 @@ grpc_credentials *grpc_credentials_contains_type(
 
 /* -- IAM credentials. -- */
 
-static void iam_destroy(grpc_credentials *creds) {
+static void iam_destruct(grpc_credentials *creds) {
   grpc_google_iam_credentials *c = (grpc_google_iam_credentials *)creds;
   grpc_credentials_md_store_unref(c->iam_md);
-  gpr_free(c);
 }
 
 static int iam_has_request_metadata(const grpc_credentials *creds) { return 1; }
@@ -1159,7 +1164,7 @@ static void iam_get_request_metadata(grpc_credentials *creds,
 }
 
 static grpc_credentials_vtable iam_vtable = {
-    iam_destroy, iam_has_request_metadata, iam_has_request_metadata_only,
+    iam_destruct, iam_has_request_metadata, iam_has_request_metadata_only,
     iam_get_request_metadata, NULL};
 
 grpc_credentials *grpc_google_iam_credentials_create(
