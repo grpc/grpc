@@ -46,7 +46,7 @@ describe GRPC::ActiveCall do
     @server_queue = GRPC::Core::CompletionQueue.new
     host = '0.0.0.0:0'
     @server = GRPC::Core::Server.new(@server_queue, nil)
-    server_port = @server.add_http2_port(host)
+    server_port = @server.add_http2_port(host, :this_port_is_insecure)
     @server.start
     @ch = GRPC::Core::Channel.new("0.0.0.0:#{server_port}", nil)
   end
