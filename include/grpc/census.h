@@ -69,12 +69,14 @@ int census_supported(void);
 /** Return the census features currently enabled. */
 int census_enabled(void);
 
-/* Internally, Census relies on a context, which should be propagated across
- * RPC's. From the RPC subsystems viewpoint, this is an opaque data structure.
- * A context must be used as the first argument to all other census
- * functions. Conceptually, contexts should be thought of as specific to
- * single RPC/thread. The context can be serialized for passing across the
- * wire. */
+/**
+  Context is a handle used by census to represent the current tracing and
+  tagging information. Contexts should be propagated across RPC's. Contexts
+  are created by any of the census_start_*_op() functions. A context is
+  typically used as argument to most census functions. Conceptually, contexts
+  should be thought of as specific to single RPC/thread. The context can be
+  serialized for passing across the wire, via census_context_serialize().
+*/
 typedef struct census_context census_context;
 
 /* This function is called by the RPC subsystem whenever it needs to get a
@@ -91,18 +93,236 @@ typedef struct census_context census_context;
 size_t census_context_serialize(const census_context *context, char *buffer,
                                 size_t buf_size);
 
-/* Create a new census context, possibly from a serialized buffer. If 'buffer'
- * is non-NULL, it is assumed that it is a buffer encoded by
- * census_context_serialize(). If `buffer` is NULL, a new, empty context is
- * created. The decoded/new contest is returned in 'context'.
- *
- * Returns 0 if no errors, non-zero if buffer is incorrectly formatted, in
- * which case a new empty context will be returned. */
-int census_context_deserialize(const char *buffer, census_context **context);
+/* Distributed traces can have a number of options. */
+enum census_trace_mask_values {
+  CENSUS_TRACE_MASK_NONE = 0,      /* Default, empty flags */
+  CENSUS_TRACE_MASK_IS_SAMPLED = 1 /* RPC tracing enabled for this context. */
+};
 
-/* The given context is destroyed. Once destroyed, using the context in
- * future census calls will result in undefined behavior. */
-void census_context_destroy(census_context *context);
+/** Get the current trace mask associated with this context. The value returned
+    will be the logical or of census_trace_mask_values values. */
+int census_trace_mask(const census_context *context);
+
+/** Set the trace mask associated with a context. */
+void census_set_trace_mask(int trace_mask);
+
+/* The concept of "operation" is a fundamental concept for Census. In an RPC
+   system, and operation typcially represents a single RPC, or a significant
+   sub-part thereof (e.g. a single logical "read" RPC to a distributed storage
+   system might do several other actions in parallel, from looking up metadata
+   indices to making requests of other services - each of these could be a
+   sub-operation with the larger RPC operation). Census uses operations for the
+   following:
+
+   CPU accounting: If enabled, census will measure the thread CPU time
+   consumed between operation start and end times.
+
+   Active operations: Census will maintain information on all currently
+   active operations.
+
+   Distributed tracing: Each operation serves as a logical trace span.
+
+   Stats collection: Stats are broken down by operation (e.g. latency
+   breakdown for each unique RPC path).
+
+   The following functions serve to delineate the start and stop points for
+   each logical operation. */
+
+/**
+  This structure represents a timestamp as used by census to record the time
+  at which an operation begins.
+*/
+typedef struct {
+  /* Use gpr_timespec for default implementation. High performance
+   * implementations should use a cycle-counter based timestamp. */
+  gpr_timespec ts;
+} census_timestamp;
+
+/**
+  Mark the beginning of an RPC operation. The information required to call the
+  functions to record the start of RPC operations (both client and server) may
+  not be callable at the true start time of the operation, due to information
+  not being available (e.g. the census context data will not be available in a
+  server RPC until at least initial metadata has been processed). To ensure
+  correct CPU accounting and latency recording, RPC systems can call this
+  function to get the timestamp of operation beginning. This can later be used
+  as an argument to census_start_{client,server}_rpc_op(). NB: for correct
+  CPU accounting, the system must guarantee that the same thread is used
+  for all request processing after this function is called.
+
+  @return A timestamp representing the operation start time.
+*/
+census_timestamp census_start_rpc_op_timestamp(void);
+
+/**
+  Represent functions to map RPC name ID to service/method names. Census
+  breaks down all RPC stats by service and method names. We leave the
+  definition and format of these to the RPC system. For efficiency purposes,
+  we encode these as a single 64 bit identifier, and allow the RPC system to
+  provide a structure for functions that can convert these to service and
+  method strings.
+
+  TODO(aveitch): Instead of providing this as an argument to the rpc_start_op()
+  functions, maybe it should be set once at census initialization.
+*/
+typedef struct {
+  const char *(*get_rpc_service_name)(gpr_int64 id);
+  const char *(*get_rpc_method_name)(gpr_int64 id);
+} census_rpc_name_info;
+
+/**
+   Start a client rpc operation. This function should be called as early in the
+   client RPC path as possible. This function will create a new context. If
+   the context argument is non-null, then the new context will inherit all
+   its properties, with the following changes:
+   - create a new operation ID for the new context, marking it as a child of
+     the previous operation.
+   - use the new RPC path and peer information for tracing and stats
+     collection purposes, rather than those from the original context
+
+   If the context argument is NULL, then a new root context is created. This
+   is particularly important for tracing purposes (the trace spans generated
+   will be unassociated with any other trace spans, except those
+   downstream). The trace_mask will be used for tracing operations associated
+   with the new context.
+
+   In some RPC systems (e.g. where load balancing is used), peer information
+   may not be available at the time the operation starts. In this case, use a
+   NULL value for peer, and set it later using the
+   census_set_rpc_client_peer() function.
+
+   @param context The parent context. Can be NULL.
+   @param rpc_name_id The rpc name identifier to be associated with this RPC.
+   @param rpc_name_info Used to decode rpc_name_id.
+   @param peer RPC peer. If not available at the time, NULL can be used,
+               and a later census_set_rpc_client_peer() call made.
+   @param trace_mask An OR of census_trace_mask_values values. Only used in
+                     the creation of a new root context (context == NULL).
+   @param start_time A timestamp returned from census_start_rpc_op_timestamp().
+                     Can be NULL. Used to set the true time the operation
+                     begins.
+
+   @return A new census context.
+ */
+census_context *census_start_client_rpc_op(
+    const census_context *context, gpr_int64 rpc_name_id,
+    const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
+    const census_timestamp *start_time);
+
+/**
+  Add peer information to a context representing a client RPC operation.
+*/
+void census_set_rpc_client_peer(census_context *context, const char *peer);
+
+/**
+   Start a server RPC operation. Returns a new context to be used in future
+   census calls. If buffer is non-NULL, then the buffer contents should
+   represent the client context, as generated by census_context_serialize().
+   If buffer is NULL, a new root context is created.
+
+   @param buffer Buffer containing bytes output from census_context_serialize().
+   @param rpc_name_id The rpc name identifier to be associated with this RPC.
+   @param rpc_name_info Used to decode rpc_name_id.
+   @param peer RPC peer.
+   @param trace_mask An OR of census_trace_mask_values values. Only used in
+                     the creation of a new root context (buffer == NULL).
+   @param start_time A timestamp returned from census_start_rpc_op_timestamp().
+                     Can be NULL. Used to set the true time the operation
+                     begins.
+
+   @return A new census context.
+ */
+census_context *census_start_server_rpc_op(
+    const char *buffer, gpr_int64 rpc_name_id,
+    const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
+    census_timestamp *start_time);
+
+/**
+   Start a new, non-RPC operation. In general, this function works very
+   similarly to census_start_client_rpc_op, with the primary difference being
+   the replacement of host/path information with the more generic family/name
+   tags. If the context argument is non-null, then the new context will
+   inherit all its properties, with the following changes:
+   - create a new operation ID for the new context, marking it as a child of
+     the previous operation.
+   - use the family and name information for tracing and stats collection
+     purposes, rather than those from the original context
+
+   If the context argument is NULL, then a new root context is created. This
+   is particularly important for tracing purposes (the trace spans generated
+   will be unassociated with any other trace spans, except those
+   downstream). The trace_mask will be used for tracing
+   operations associated with the new context.
+
+   @param context The base context. Can be NULL.
+   @param family Family name to associate with the trace
+   @param name Name within family to associated with traces/stats
+   @param trace_mask An OR of census_trace_mask_values values. Only used if
+                     context is NULL.
+
+   @return A new census context.
+ */
+census_context *census_start_op(census_context *context, const char *family,
+                                const char *name, int trace_mask);
+
+/**
+  End an operation started by any of the census_start_*_op*() calls. The
+  context used in this call will no longer be valid once this function
+  completes.
+
+  @param context Context associated with operation which is ending.
+  @param status status associated with the operation. Not interpreted by
+                census.
+*/
+void census_end_op(census_context *context, int status);
+
+#define CENSUS_TRACE_RECORD_START_OP ((gpr_uint32)0)
+#define CENSUS_TRACE_RECORD_END_OP ((gpr_uint32)1)
+
+/** Insert a trace record into the trace stream. The record consists of an
+    arbitrary size buffer, the size of which is provided in 'n'.
+    @param context Trace context
+    @param type User-defined type to associate with trace entry.
+    @param buffer Pointer to buffer to use
+    @param n Number of bytes in buffer
+*/
+void census_trace_print(census_context *context, gpr_uint32 type,
+                        const char *buffer, size_t n);
+
+/** Trace record. */
+typedef struct {
+  census_timestamp timestamp; /* Time of record creation */
+  gpr_uint64 trace_id;        /* Trace ID associated with record */
+  gpr_uint64 op_id;           /* Operation ID associated with record */
+  gpr_uint32 type;            /* Type (as used in census_trace_print() */
+  const char *buffer;         /* Buffer (from census_trace_print() */
+  size_t buf_size;            /* Number of bytes inside buffer */
+} census_trace_record;
+
+/** Start a scan of existing trace records. While a scan is ongoing, addition
+    of new trace records will be blocked if the underlying trace buffers
+    fill up, so trace processing systems should endeavor to complete
+    reading as soon as possible.
+  @param consume if non-zero, indicates that reading records also "consumes"
+         the previously read record - i.e. releases space in the trace log
+         while scanning is ongoing.
+  @returns 0 on success, non-zero on failure (e.g. if a scan is already ongoing)
+*/
+int census_trace_scan_start(int consume);
+
+/** Get a trace record. The data pointed to by the trace buffer is guaranteed
+    stable until the next census_get_trace_record() call (if the consume
+    argument to census_trace_scan_start was non-zero) or census_trace_scan_end()
+    is called (otherwise).
+  @param trace_record structure that will be filled in with oldest trace record.
+  @returns -1 if an error occurred (e.g. no previous call to
+           census_trace_scan_start()), 0 if there is no more trace data (and
+           trace_record will not be modified) or 1 otherwise.
+*/
+int census_get_trace_record(census_trace_record *trace_record);
+
+/** End a scan previously started by census_trace_scan_start() */
+void census_trace_scan_end();
 
 /* Max number of characters in tag key */
 #define CENSUS_MAX_TAG_KEY_LENGTH 20

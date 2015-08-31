@@ -45,8 +45,8 @@ class CredentialsTest : public ::testing::Test {
  protected:
 };
 
-TEST_F(CredentialsTest, InvalidServiceAccountCreds) {
-  std::shared_ptr<Credentials> bad1 = ServiceAccountCredentials("", "", 1);
+TEST_F(CredentialsTest, InvalidGoogleRefreshToken) {
+  std::shared_ptr<Credentials> bad1 = GoogleRefreshTokenCredentials("");
   EXPECT_EQ(static_cast<Credentials*>(nullptr), bad1.get());
 }
 

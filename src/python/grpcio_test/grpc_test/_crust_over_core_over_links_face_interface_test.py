@@ -39,11 +39,10 @@ from grpc.framework.core import implementations as core_implementations
 from grpc.framework.crust import implementations as crust_implementations
 from grpc.framework.foundation import logging_pool
 from grpc.framework.interfaces.links import utilities
-from grpc_test import test_common
+from grpc_test import test_common as grpc_test_common
 from grpc_test.framework.common import test_constants
 from grpc_test.framework.interfaces.face import test_cases
 from grpc_test.framework.interfaces.face import test_interfaces
-from grpc_test.framework.interfaces.links import test_utilities
 
 
 class _SerializationBehaviors(
@@ -85,7 +84,7 @@ class _Implementation(test_interfaces.Implementation):
     service_grpc_link = service.service_link(
         serialization_behaviors.request_deserializers,
         serialization_behaviors.response_serializers)
-    port = service_grpc_link.add_port(0, None)
+    port = service_grpc_link.add_port('[::]:0', None)
     channel = _intermediary_low.Channel('localhost:%d' % port, None)
     invocation_grpc_link = invocation.invocation_link(
         channel, b'localhost',
@@ -121,8 +120,9 @@ class _Implementation(test_interfaces.Implementation):
      service_end_link, pool) = memo
     invocation_end_link.stop(0).wait()
     invocation_grpc_link.stop()
-    service_grpc_link.stop_gracefully()
+    service_grpc_link.begin_stop()
     service_end_link.stop(0).wait()
+    service_grpc_link.end_stop()
     invocation_end_link.join_link(utilities.NULL_LINK)
     invocation_grpc_link.join_link(utilities.NULL_LINK)
     service_grpc_link.join_link(utilities.NULL_LINK)
@@ -130,19 +130,19 @@ class _Implementation(test_interfaces.Implementation):
     pool.shutdown(wait=True)
 
   def invocation_metadata(self):
-    return test_common.INVOCATION_INITIAL_METADATA
+    return grpc_test_common.INVOCATION_INITIAL_METADATA
 
   def initial_metadata(self):
-    return test_common.SERVICE_INITIAL_METADATA
+    return grpc_test_common.SERVICE_INITIAL_METADATA
 
   def terminal_metadata(self):
-    return test_common.SERVICE_TERMINAL_METADATA
+    return grpc_test_common.SERVICE_TERMINAL_METADATA
 
   def code(self):
     return _intermediary_low.Code.OK
 
   def details(self):
-    return test_common.DETAILS
+    return grpc_test_common.DETAILS
 
   def metadata_transmitted(self, original_metadata, transmitted_metadata):
     return original_metadata is None or grpc_test_common.metadata_transmitted(

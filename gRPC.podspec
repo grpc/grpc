@@ -394,7 +394,9 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport.c',
                       'src/core/transport/transport_op_string.c',
                       'src/core/census/context.c',
-                      'src/core/census/initialize.c'
+                      'src/core/census/initialize.c',
+                      'src/core/census/operation.c',
+                      'src/core/census/tracing.c'
 
     ss.private_header_files = 'src/core/support/env.h',
                               'src/core/support/file.h',
