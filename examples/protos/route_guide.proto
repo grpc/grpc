@@ -32,7 +32,7 @@ syntax = "proto3";
 option java_package = "ex.grpc";
 option objc_class_prefix = "RTG";
 
-package examples;
+package routeguide;
 
 // Interface exported by the server.
 service RouteGuide {
