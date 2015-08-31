@@ -238,6 +238,7 @@ def generic_stub(channel, options=None):
   effective_options = _EMPTY_STUB_OPTIONS if options is None else options
   return _stub.generic_stub(
       channel._intermediary_low_channel, effective_options.host,  # pylint: disable=protected-access
+      effective_options.metadata_transformer,
       effective_options.request_serializers,
       effective_options.response_deserializers, effective_options.thread_pool,
       effective_options.thread_pool_size)
@@ -260,7 +261,8 @@ def dynamic_stub(channel, service, cardinalities, options=None):
   effective_options = StubOptions() if options is None else options
   return _stub.dynamic_stub(
       channel._intermediary_low_channel, effective_options.host, service,  # pylint: disable=protected-access
-      cardinalities, effective_options.request_serializers,
+      cardinalities, effective_options.metadata_transformer,
+      effective_options.request_serializers,
       effective_options.response_deserializers, effective_options.thread_pool,
       effective_options.thread_pool_size)
 
