@@ -411,34 +411,10 @@ typedef struct {
 void census_record_values(census_context *context, census_value *values,
                           size_t nvalues);
 
-/** Structure used to describe an aggregation type. */
-typedef struct {
-  /* Create a new aggregation. The pointer returned can be used in future calls
-     to clone(), free(), record(), data() and reset(). */
-  void *(*create)(const void *create_arg);
-  /* Make a copy of an aggregation created by create() */
-  void *(*clone)(const void *aggregation);
-  /* Destroy an aggregation created by create() */
-  void (*free)(void *aggregation);
-  /* Record a new value against aggregation. */
-  void (*record)(void *aggregation, double value);
-  /* Return current aggregation data. The caller must cast this object into
-     the correct type for the aggregation result. The object returned can be
-     freed by using free_data(). */
-  void *(*data)(const void *aggregation);
-  /* free data returned by data() */
-  void (*free_data)(void *data);
-  /* Reset an aggregation to default (zero) values. */
-  void (*reset)(void *aggregation);
-  /* Merge 'from' aggregation into 'to'. Both aggregations must be compatible */
-  void (*merge)(void *to, const void *from);
-  /* Fill buffer with printable string version of aggregation contents. For
-     debugging only. Returns the number of bytes added to buffer (a value == n
-     implies the buffer was of insufficient size). */
-  size_t (*print)(const void *aggregation, char *buffer, size_t n);
-} census_aggregation_ops;
+/** Type representing a particular aggregation */
+typedef struct census_aggregation_ops census_aggregation_ops;
 
-/* Predefined aggregation types. */
+/* Predefined aggregation types, for use with census_view_create(). */
 extern census_aggregation_ops census_agg_sum;
 extern census_aggregation_ops census_agg_distribution;
 extern census_aggregation_ops census_agg_histogram;
