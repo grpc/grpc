@@ -72,12 +72,12 @@ class Channel GRPC_FINAL : public GrpcLibrary,
  public:
   ~Channel();
 
-  /// Get the current channel state. If the channel is in IDLE and try_to_connect
-  /// is set to true, try to connect.
+  /// Get the current channel state. If the channel is in IDLE and
+  /// \a try_to_connect is set to true, try to connect.
   grpc_connectivity_state GetState(bool try_to_connect);
 
-  /// Return the tag on cq when the channel state is changed or deadline expires.
-  /// GetState needs to called to get the current state.
+  /// Return the \a tag on \a cq when the channel state is changed or \a
+  /// deadline expires. \a GetState needs to called to get the current state.
   template <typename T>
   void NotifyOnStateChange(grpc_connectivity_state last_observed, T deadline,
                            CompletionQueue* cq, void* tag) {
@@ -85,8 +85,8 @@ class Channel GRPC_FINAL : public GrpcLibrary,
     NotifyOnStateChangeImpl(last_observed, deadline_tp.raw_time(), cq, tag);
   }
 
-  /// Blocking wait for channel state change or deadline expiration.
-  /// GetState needs to called to get the current state.
+  /// Blocking wait for channel state change or \a deadline expiration.
+  /// \a GetState needs to called to get the current state.
   template <typename T>
   bool WaitForStateChange(grpc_connectivity_state last_observed, T deadline) {
     TimePoint<T> deadline_tp(deadline);

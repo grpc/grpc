@@ -75,7 +75,7 @@ class GreeterClient {
     ClientContext context;
 
     // The producer-consumer queue we use to communicate asynchronously with the
-    // gRPC runtmie.
+    // gRPC runtime.
     CompletionQueue cq;
 
     // Storage for the status of the RPC upon completion.

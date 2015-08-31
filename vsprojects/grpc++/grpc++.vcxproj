@@ -219,6 +219,7 @@
     <ClInclude Include="..\..\include\grpc++\create_channel.h" />
     <ClInclude Include="..\..\include\grpc++\generic\async_generic_service.h" />
     <ClInclude Include="..\..\include\grpc++\generic\generic_stub.h" />
+    <ClInclude Include="..\..\include\grpc++\grpc++.h" />
     <ClInclude Include="..\..\include\grpc++\impl\call.h" />
     <ClInclude Include="..\..\include\grpc++\impl\client_unary_call.h" />
     <ClInclude Include="..\..\include\grpc++\impl\grpc_library.h" />

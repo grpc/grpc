@@ -77,8 +77,8 @@ class Server;
 class ServerBuilder;
 class ServerContext;
 
-// This class is a thin wrapper around \a grpc_completion_queue (see
-// \a src/core/surface/completion_queue.h). 
+/// A thin wrapper around \a grpc_completion_queue (see / \a
+/// src/core/surface/completion_queue.h).
 class CompletionQueue : public GrpcLibrary {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
@@ -86,7 +86,7 @@ class CompletionQueue : public GrpcLibrary {
   CompletionQueue();
 
   /// Wrap \a take, taking ownership of the instance.
-  /// 
+  ///
   /// \param take The completion queue instance to wrap. Ownership is taken.
   explicit CompletionQueue(grpc_completion_queue* take);
 
