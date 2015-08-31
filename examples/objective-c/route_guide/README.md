@@ -43,7 +43,7 @@ code is limited by the dynamic nature of the language.
 <a name="setup"></a>
 ## Example code and setup
 
-The example code for our tutorial is in [examples/objective-c/route_guide](examples/objective-c/route_guide).
+The example code for our tutorial is in [examples/objective-c/route_guide](.).
 To download the example, clone this repository by running the following command:
 ```shell
 $ git clone https://github.com/grpc/grpc.git
@@ -97,7 +97,7 @@ a client library from it, and how to create an app that uses that library.
 
 First let's look at how the service we're using is defined. A gRPC *service* and its method
 *request* and *response* types using [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview).
-You can see the complete .proto file for our example in [`examples/protos/route_guide.proto`](examples/protos/route_guide.proto).
+You can see the complete .proto file for our example in [`examples/protos/route_guide.proto`](../../protos/route_guide.proto).
 
 To define a service, you specify a named `service` in your .proto file:
 
@@ -177,7 +177,7 @@ option objc_class_prefix = "RTG";
 Next we need to generate the gRPC client interfaces from our .proto service definition. We do this
 using the protocol buffer compiler (`protoc`) with a special gRPC Objective-C plugin.
 
-For simplicity, we've provided a [Podspec file](examples/objective-c/route_guide/RouteGuide.podspec)
+For simplicity, we've provided a [Podspec file](RouteGuide.podspec)
 that runs `protoc` for you with the appropriate plugin, input, and output, and describes how to
 compile the generated files. You just need to run in this directory (`examples/objective-c/route_guide`):
 
@@ -211,7 +211,7 @@ definition; just replace the name (matching the file name), version, and other m
 ## Creating the client
 
 In this section, we'll look at creating an Objective-C client for our `RouteGuide` service. You can
-see our complete example client code in [examples/objective-c/route_guide/ViewControllers.m](examples/objective-c/route_guide/ViewControllers.m).
+see our complete example client code in [ViewControllers.m](ViewControllers.m).
 (Note: In your apps, for maintainability and readability reasons, you shouldn't put all of your view
 controllers in a single file; it's done here only to simplify the learning process).
 

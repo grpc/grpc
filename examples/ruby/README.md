@@ -55,7 +55,7 @@ Try it!
 Tutorial
 --------
 
-You can find a more detailed tutorial in [gRPC Basics: Ruby](examples/ruby/route_guide/README.md)
+You can find a more detailed tutorial in [gRPC Basics: Ruby](route_guide/README.md)
 
-[helloworld.proto]:examples/protos/helloworld.proto
+[helloworld.proto]:../protos/helloworld.proto
 [RVM]:https://www.rvm.io/
