@@ -153,7 +153,7 @@ require dirname(__FILE__) . '/route_guide.php';
 
 The file contains:
 - All the protocol buffer code to populate, serialize, and retrieve our request and response message types.
-- A class called `examples\RouteGuideClient` that lets clients call the methods defined in the `RouteGuide` service.
+- A class called `routeguide\RouteGuideClient` that lets clients call the methods defined in the `RouteGuide` service.
 
 
 <a name="client"></a>
@@ -166,7 +166,7 @@ In this section, we'll look at creating a PHP client for our `RouteGuide` servic
 To call service methods, we first need to create a client object, an instance of the generated `RouteGuideClient` class. The constructor of the class expects the server address and port we want to connect to:
 
 ```php
-$client = new examples\RouteGuideClient(new Grpc\BaseStub('localhost:50051', []));
+$client = new routeguide\RouteGuideClient(new Grpc\BaseStub('localhost:50051', []));
 ```
 
 ### Calling service methods
@@ -178,13 +178,13 @@ Now let's look at how we call our service methods.
 Calling the simple RPC `GetFeature` is nearly as straightforward as calling a local asynchronous method.
 
 ```php
-  $point = new examples\Point();
+  $point = new routeguide\Point();
   $point->setLatitude(409146138);
   $point->setLongitude(-746188906);
   list($feature, $status) = $client->GetFeature($point)->wait();
 ```
 
-As you can see, we create and populate a request object, i.e. an `examples\Point` object. Then, we call the method on the stub, passing it the request object. If there is no error, then we can read the response information from the server from our response object, i.e. an `examples\Feature` object.
+As you can see, we create and populate a request object, i.e. an `routeguide\Point` object. Then, we call the method on the stub, passing it the request object. If there is no error, then we can read the response information from the server from our response object, i.e. an `routeguide\Feature` object.
 
 ```php
   print sprintf("Found %s \n  at %f, %f\n", $feature->getName(),
@@ -197,15 +197,15 @@ As you can see, we create and populate a request object, i.e. an `examples\Point
 Now let's look at our streaming methods. Here's where we call the server-side streaming method `ListFeatures`, which returns a stream of geographical `Feature`s:
 
 ```php
-  $lo_point = new examples\Point();
-  $hi_point = new examples\Point();
+  $lo_point = new routeguide\Point();
+  $hi_point = new routeguide\Point();
 
   $lo_point->setLatitude(400000000);
   $lo_point->setLongitude(-750000000);
   $hi_point->setLatitude(420000000);
   $hi_point->setLongitude(-730000000);
 
-  $rectangle = new examples\Rectangle();
+  $rectangle = new routeguide\Rectangle();
   $rectangle->setLo($lo_point);
   $rectangle->setHi($hi_point);
 
@@ -219,12 +219,12 @@ Now let's look at our streaming methods. Here's where we call the server-side st
 
 The `$call->responses()` method call returns an iterator. When the server sends a response, a `$feature` object will be returned in the `foreach` loop, until the server indiciates that there will be no more responses to be sent.
 
-The client-side streaming method `RecordRoute` is similar, except there we pass the method an iterator and get back a `examples\RouteSummary`.
+The client-side streaming method `RecordRoute` is similar, except there we pass the method an iterator and get back a `routeguide\RouteSummary`.
 
 ```php
   $points_iter = function($db) {
     for ($i = 0; $i < $num_points; $i++) {
-      $point = new examples\Point();
+      $point = new routeguide\Point();
       $point->setLatitude($lat);
       $point->setLongitude($long);
       yield $point;
@@ -245,7 +245,7 @@ To write messages from the client:
 
 ```php
   foreach ($notes as $n) {
-    $route_note = new examples\RouteNote();
+    $route_note = new routerguide\RouteNote();
     $call->write($route_note);
   }
   $call->writesDone();
