@@ -42,7 +42,7 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
+#include <grpc++/security/server_credentials.h>
 #include "helper.h"
 #include "route_guide.grpc.pb.h"
 
@@ -53,12 +53,12 @@ using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
 using grpc::Status;
-using examples::Point;
-using examples::Feature;
-using examples::Rectangle;
-using examples::RouteSummary;
-using examples::RouteNote;
-using examples::RouteGuide;
+using routeguide::Point;
+using routeguide::Feature;
+using routeguide::Rectangle;
+using routeguide::RouteSummary;
+using routeguide::RouteNote;
+using routeguide::RouteGuide;
 using std::chrono::system_clock;
 
 
@@ -99,7 +99,7 @@ std::string GetFeatureName(const Point& point,
 class RouteGuideImpl final : public RouteGuide::Service {
  public:
   explicit RouteGuideImpl(const std::string& db) {
-    examples::ParseDb(db, &feature_list_);
+    routeguide::ParseDb(db, &feature_list_);
   }
 
   Status GetFeature(ServerContext* context, const Point* point,
@@ -110,7 +110,7 @@ class RouteGuideImpl final : public RouteGuide::Service {
   }
 
   Status ListFeatures(ServerContext* context,
-                      const examples::Rectangle* rectangle,
+                      const routeguide::Rectangle* rectangle,
                       ServerWriter<Feature>* writer) override {
     auto lo = rectangle->lo();
     auto hi = rectangle->hi();
@@ -195,7 +195,7 @@ void RunServer(const std::string& db_path) {
 
 int main(int argc, char** argv) {
   // Expect only arg: --db_path=path/to/route_guide_db.json.
-  std::string db = examples::GetDbFileContent(argc, argv);
+  std::string db = routeguide::GetDbFileContent(argc, argv);
   RunServer(db);
 
   return 0;
