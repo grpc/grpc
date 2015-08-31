@@ -425,9 +425,9 @@ typedef struct {
   /* Return current aggregation data. The caller must cast this object into
      the correct type for the aggregation result. The object returned can be
      freed by using free_data(). */
-  const void *(*data)(const void *aggregation);
+  void *(*data)(const void *aggregation);
   /* free data returned by data() */
-  void (*free_data)(const void *data);
+  void (*free_data)(void *data);
   /* Reset an aggregation to default (zero) values. */
   void (*reset)(void *aggregation);
   /* Merge 'from' aggregation into 'to'. Both aggregations must be compatible */
