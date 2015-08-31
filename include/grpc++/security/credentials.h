@@ -115,22 +115,7 @@ std::shared_ptr<Credentials> SslCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<Credentials> ComputeEngineCredentials();
-
-/// Builds service account credentials.
-/// json_key is the JSON key string containing the client's private key.
-/// scope is a space-delimited list of the requested permissions.
-/// token_lifetime_seconds is the lifetime in seconds of each token acquired
-/// through this service account credentials. It should be positive and should
-/// not exceed grpc_max_auth_token_lifetime or will be cropped to this value.
-///
-/// \warning Only use these credentials when connecting to a Google endpoint.
-/// Using these credentials to connect to any other service may result in this
-/// service being able to impersonate your client for requests to Google
-/// services.
-std::shared_ptr<Credentials> ServiceAccountCredentials(
-    const grpc::string& json_key, const grpc::string& scope,
-    long token_lifetime_seconds);
+std::shared_ptr<Credentials> GoogleComputeEngineCredentials();
 
 /// Builds Service Account JWT Access credentials.
 /// json_key is the JSON key string containing the client's private key.
@@ -148,7 +133,7 @@ std::shared_ptr<Credentials> ServiceAccountJWTAccessCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<Credentials> RefreshTokenCredentials(
+std::shared_ptr<Credentials> GoogleRefreshTokenCredentials(
     const grpc::string& json_refresh_token);
 
 /// Builds access token credentials.
@@ -168,7 +153,7 @@ std::shared_ptr<Credentials> AccessTokenCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<Credentials> IAMCredentials(
+std::shared_ptr<Credentials> GoogleIAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector);
 

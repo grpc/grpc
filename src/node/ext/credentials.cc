@@ -186,7 +186,7 @@ NAN_METHOD(Credentials::CreateComposite) {
 
 NAN_METHOD(Credentials::CreateGce) {
   NanScope();
-  grpc_credentials *creds = grpc_compute_engine_credentials_create(NULL);
+  grpc_credentials *creds = grpc_google_compute_engine_credentials_create(NULL);
   if (creds == NULL) {
     NanReturnNull();
   }
@@ -204,7 +204,7 @@ NAN_METHOD(Credentials::CreateIam) {
   NanUtf8String auth_token(args[0]);
   NanUtf8String auth_selector(args[1]);
   grpc_credentials *creds =
-      grpc_iam_credentials_create(*auth_token, *auth_selector, NULL);
+      grpc_google_iam_credentials_create(*auth_token, *auth_selector, NULL);
   if (creds == NULL) {
     NanReturnNull();
   }

@@ -82,6 +82,9 @@ class AuthContext {
  public:
   virtual ~AuthContext() {}
 
+  /// Returns true if the peer is authenticated.
+  virtual bool IsPeerAuthenticated() const = 0;
+
   /// A peer identity.
   ///
   /// It is, in general, comprised of one or more properties (in which case they
@@ -109,6 +112,11 @@ class AuthContext {
   static string x509_san_property_name() {
     return GRPC_X509_SAN_PROPERTY_NAME;
   }
+
+  // Mutation functions: should only be used by an AuthMetadataProcessor.
+  virtual void AddProperty(const grpc::string& key,
+                           const grpc::string_ref& value) = 0;
+  virtual bool SetPeerIdentityPropertyName(const grpc::string& name) = 0;
 };
 
 }  // namespace grpc

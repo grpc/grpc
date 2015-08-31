@@ -36,7 +36,7 @@
 
 #include <memory>
 
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
 #include <grpc++/support/channel_arguments.h>
 #include <grpc++/support/config.h>
 

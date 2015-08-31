@@ -32,7 +32,7 @@
  */
 
 #include <grpc/grpc_security.h>
-#include <grpc++/support/auth_context.h>
+#include <grpc++/security/auth_context.h>
 #include <gtest/gtest.h>
 #include "src/cpp/common/secure_auth_context.h"
 #include "test/cpp/util/string_ref_helper.h"
@@ -50,7 +50,7 @@ class SecureAuthContextTest : public ::testing::Test {};
 
 // Created with nullptr
 TEST_F(SecureAuthContextTest, EmptyContext) {
-  SecureAuthContext context(nullptr);
+  SecureAuthContext context(nullptr, true);
   EXPECT_TRUE(context.GetPeerIdentity().empty());
   EXPECT_TRUE(context.GetPeerIdentityPropertyName().empty());
   EXPECT_TRUE(context.FindPropertyValues("").empty());
@@ -60,12 +60,12 @@ TEST_F(SecureAuthContextTest, EmptyContext) {
 
 TEST_F(SecureAuthContextTest, Properties) {
   grpc_auth_context* ctx = grpc_auth_context_create(NULL);
-  grpc_auth_context_add_cstring_property(ctx, "name", "chapi");
-  grpc_auth_context_add_cstring_property(ctx, "name", "chapo");
-  grpc_auth_context_add_cstring_property(ctx, "foo", "bar");
-  EXPECT_EQ(1, grpc_auth_context_set_peer_identity_property_name(ctx, "name"));
+  SecureAuthContext context(ctx, true);
+  context.AddProperty("name", "chapi");
+  context.AddProperty("name", "chapo");
+  context.AddProperty("foo", "bar");
+  EXPECT_TRUE(context.SetPeerIdentityPropertyName("name"));
 
-  SecureAuthContext context(ctx);
   std::vector<grpc::string_ref> peer_identity = context.GetPeerIdentity();
   EXPECT_EQ(2u, peer_identity.size());
   EXPECT_EQ("chapi", ToString(peer_identity[0]));
@@ -78,12 +78,12 @@ TEST_F(SecureAuthContextTest, Properties) {
 
 TEST_F(SecureAuthContextTest, Iterators) {
   grpc_auth_context* ctx = grpc_auth_context_create(NULL);
-  grpc_auth_context_add_cstring_property(ctx, "name", "chapi");
-  grpc_auth_context_add_cstring_property(ctx, "name", "chapo");
-  grpc_auth_context_add_cstring_property(ctx, "foo", "bar");
-  EXPECT_EQ(1, grpc_auth_context_set_peer_identity_property_name(ctx, "name"));
+  SecureAuthContext context(ctx, true);
+  context.AddProperty("name", "chapi");
+  context.AddProperty("name", "chapo");
+  context.AddProperty("foo", "bar");
+  EXPECT_TRUE(context.SetPeerIdentityPropertyName("name"));
 
-  SecureAuthContext context(ctx);
   AuthPropertyIterator iter = context.begin();
   EXPECT_TRUE(context.end() != iter);
   AuthProperty p0 = *iter;
