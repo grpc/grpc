@@ -96,10 +96,10 @@ To load a `.proto` file, simply `require` the gRPC library, then use its `load()
 var grpc = require('grpc');
 var protoDescriptor = grpc.load(__dirname + '/route_guide.proto');
 // The protoDescriptor object has the full package hierarchy
-var example = protoDescriptor.examples;
+var example = protoDescriptor.routeguide;
 ```
 
-Once you've done this, the stub constructor is in the `examples` namespace (`protoDescriptor.examples.RouteGuide`) and the service descriptor (which is used to create a server) is a property of the stub (`protoDescriptor.examples.RouteGuide.service`);
+Once you've done this, the stub constructor is in the `routeguide` namespace (`protoDescriptor.routeguide.RouteGuide`) and the service descriptor (which is used to create a server) is a property of the stub (`protoDescriptor.routeguide.RouteGuide.service`);
 
 <a name="server"></a>
 ## Creating the server
@@ -117,7 +117,7 @@ You can find our example `RouteGuide` server in [examples/node/route_guide/route
 As you can see, our server has a `Server` constructor generated from the `RouteGuide.service` descriptor object
 
 ```node
-var Server = grpc.buildServer([examples.RouteGuide.service]);
+var Server = grpc.buildServer([routeguide.RouteGuide.service]);
 ```
 In this case we're implementing the *asynchronous* version of `RouteGuide`, which provides our default gRPC server behaviour.
 
@@ -219,18 +219,18 @@ Once we've implemented all our methods, we also need to start up a gRPC server s
 
 ```node
 function getServer() {
-  return new Server({
-    'examples.RouteGuide' : {
-      getFeature: getFeature,
-      listFeatures: listFeatures,
-      recordRoute: recordRoute,
-      routeChat: routeChat
-    }
+  var server = new grpc.Server();
+  server.addProtoService(routeguide.RouteGuide.service, {
+    getFeature: getFeature,
+    listFeatures: listFeatures,
+    recordRoute: recordRoute,
+    routeChat: routeChat
   });
+  return server;
 }
 var routeServer = getServer();
-routeServer.bind('0.0.0.0:50051');
-routeServer.listen();
+routeServer.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
+routeServer.start();
 ```
 
 As you can see, we build and start our server with the following steps:
@@ -251,7 +251,8 @@ In this section, we'll look at creating a Node.js client for our `RouteGuide` se
 To call service methods, we first need to create a *stub*. To do this, we just need to call the RouteGuide stub constructor, specifying the server address and port.
 
 ```node
-new example.RouteGuide('localhost:50051');
+var client = new routeguide.RouteGuide('localhost:50051',
+                                       grpc.Credentials.createInsecure());
 ```
 
 ### Calling service methods
