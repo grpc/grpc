@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -32,18 +31,33 @@
  */
 
 #include <grpc/census.h>
-#include <grpc/grpc.h>
-#include "src/core/surface/call.h"
 
-void grpc_census_call_set_context(grpc_call *call, census_context *context) {
-  if (census_enabled() == CENSUS_FEATURE_NONE) {
-    return;
-  }
-  if (context != NULL) {
-    grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context, NULL);
-  }
+/* TODO(aveitch): These are all placeholder implementations. */
+
+census_timestamp census_start_rpc_op_timestamp(void) {
+  census_timestamp ct;
+  /* TODO(aveitch): assumes gpr_timespec implementation of census_timestamp. */
+  ct.ts = gpr_now(GPR_CLOCK_MONOTONIC);
+  return ct;
 }
 
-census_context *grpc_census_call_get_context(grpc_call *call) {
-  return (census_context *)grpc_call_context_get(call, GRPC_CONTEXT_TRACING);
+census_context *census_start_client_rpc_op(
+    const census_context *context, gpr_int64 rpc_name_id,
+    const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
+    const census_timestamp *start_time) {
+  return NULL;
 }
+
+census_context *census_start_server_rpc_op(
+    const char *buffer, gpr_int64 rpc_name_id,
+    const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
+    census_timestamp *start_time) {
+  return NULL;
+}
+
+census_context *census_start_op(census_context *context, const char *family,
+                                const char *name, int trace_mask) {
+  return NULL;
+}
+
+void census_end_op(census_context *context, int status) {}
