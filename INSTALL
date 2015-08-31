@@ -11,12 +11,12 @@ wiki pages:
 
 On Linux (Debian):
 
- Note: you will need to add the Debian 'unstable' distribution to your sources
+ Note: you will need to add the Debian 'testing' distribution to your sources
  file first.
 
  Add the following line to your `/etc/apt/sources.list` file:
 
-   deb http://ftp.us.debian.org/debian unstable main contrib non-free
+   deb http://ftp.us.debian.org/debian testing main contrib non-free
 
  Install the gRPC library:
 

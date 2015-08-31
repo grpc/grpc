@@ -32,10 +32,10 @@ $ sudo php -d detect_unicode=0 go-pear.phar
 
 **Linux (Debian):**
 
-Add [Debian unstable][] to your `sources.list` file. Example:
+Add [Debian testing][] to your `sources.list` file. Example:
 
 ```sh
-echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
+echo "deb http://ftp.us.debian.org/debian testing main contrib non-free" | \
 sudo tee -a /etc/apt/sources.list
 ```
 
@@ -73,29 +73,24 @@ This will download and run the [gRPC install script][] and compile the gRPC PHP 
 
 Clone this repository
 
-```
+```sh
 $ git clone https://github.com/grpc/grpc.git
-```
-
-Build and install the Protocol Buffers compiler (protoc)
-
-```
-$ cd grpc
-$ git pull --recurse-submodules && git submodule update --init --recursive
-$ cd third_party/protobuf
-$ ./autogen.sh
-$ ./configure
-$ make
-$ make check
-$ sudo make install
 ```
 
 Build and install the gRPC C core libraries
 
 ```sh
 $ cd grpc
+$ git pull --recurse-submodules && git submodule update --init --recursive
 $ make
 $ sudo make install
+```
+
+Note: you may encounter a warning about the Protobuf compiler `protoc` 3.0.0+ not being installed. The following might help, and will be useful later on when we need to compile the `protoc-gen-php` tool.
+
+```sh
+$ cd grpc/third_party/protobuf
+$ sudo make install   # 'make' should have been run by core grpc
 ```
 
 Install the gRPC PHP extension
@@ -172,4 +167,4 @@ $ ./bin/run_gen_code_test.sh
 [homebrew]:http://brew.sh
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Node]:https://github.com/grpc/grpc/tree/master/src/node/examples
-[Debian unstable]:https://www.debian.org/releases/sid/
+[Debian testing]:https://www.debian.org/releases/stretch/

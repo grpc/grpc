@@ -316,9 +316,8 @@ class _Kernel(object):
         call.status(status, call)
         self._rpc_states.pop(call, None)
 
-  def add_port(self, port, server_credentials):
+  def add_port(self, address, server_credentials):
     with self._lock:
-      address = '[::]:%d' % port
       if self._server is None:
         self._completion_queue = _intermediary_low.CompletionQueue()
         self._server = _intermediary_low.Server(self._completion_queue)
@@ -337,21 +336,19 @@ class _Kernel(object):
       self._server.start()
       self._server.service(None)
 
-  def graceful_stop(self):
+  def begin_stop(self):
     with self._lock:
       self._server.stop()
       self._server = None
+
+  def end_stop(self):
+    with self._lock:
       self._completion_queue.stop()
       self._completion_queue = None
       pool = self._pool
       self._pool = None
       self._rpc_states = None
     pool.shutdown(wait=True)
-
-  def immediate_stop(self):
-    # TODO(nathaniel): Implementation.
-    raise NotImplementedError(
-        'TODO(nathaniel): after merge of rewritten lower layers')
 
 
 class ServiceLink(links.Link):
@@ -362,17 +359,20 @@ class ServiceLink(links.Link):
   """
 
   @abc.abstractmethod
-  def add_port(self, port, server_credentials):
+  def add_port(self, address, server_credentials):
     """Adds a port on which to service RPCs after this link has been started.
 
     Args:
-      port: The port on which to service RPCs, or zero to request that a port
-        be automatically selected and used.
+      address: The address on which to service RPCs with a port number of zero
+        requesting that a port number be automatically selected and used.
       server_credentials: An _intermediary_low.ServerCredentials object, or
         None for insecure service.
 
     Returns:
-      A port on which RPCs will be serviced after this link has been started.
+      A integer port on which RPCs will be serviced after this link has been
+        started. This is typically the same number as the port number contained
+        in the passed address, but will likely be different if the port number
+        contained in the passed address was zero.
     """
     raise NotImplementedError()
 
@@ -386,18 +386,20 @@ class ServiceLink(links.Link):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def stop_gracefully(self):
-    """Stops this link.
+  def begin_stop(self):
+    """Indicate imminent link stop and immediate rejection of new RPCs.
 
     New RPCs will be rejected as soon as this method is called, but ongoing RPCs
-    will be allowed to continue until they terminate. This method blocks until
-    all RPCs have terminated.
+    will be allowed to continue until they terminate. This method does not
+    block.
     """
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def stop_immediately(self):
-    """Stops this link.
+  def end_stop(self):
+    """Finishes stopping this link.
+
+    begin_stop must have been called exactly once before calling this method.
 
     All in-progress RPCs will be terminated immediately.
     """
@@ -417,19 +419,18 @@ class _ServiceLink(ServiceLink):
   def join_link(self, link):
     self._relay.set_behavior(link.accept_ticket)
 
-  def add_port(self, port, server_credentials):
-    return self._kernel.add_port(port, server_credentials)
+  def add_port(self, address, server_credentials):
+    return self._kernel.add_port(address, server_credentials)
 
   def start(self):
     self._relay.start()
     return self._kernel.start()
 
-  def stop_gracefully(self):
-    self._kernel.graceful_stop()
-    self._relay.stop()
+  def begin_stop(self):
+    self._kernel.begin_stop()
 
-  def stop_immediately(self):
-    self._kernel.immediate_stop()
+  def end_stop(self):
+    self._kernel.end_stop()
     self._relay.stop()
 
 

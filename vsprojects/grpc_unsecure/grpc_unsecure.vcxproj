@@ -568,6 +568,10 @@
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\initialize.c">
     </ClCompile>
+    <ClCompile Include="..\..\src\core\census\operation.c">
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\tracing.c">
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\gpr\gpr.vcxproj">

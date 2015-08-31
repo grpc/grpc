@@ -111,17 +111,19 @@ bool CreateMetadataArray(Handle<Object> metadata, grpc_metadata_array *array,
           NanAssignPersistent(*handle, value);
           resources->handles.push_back(unique_ptr<PersistentHolder>(
               new PersistentHolder(handle)));
-          continue;
+        } else {
+          return false;
         }
-      }
-      if (value->IsString()) {
-        Handle<String> string_value = value->ToString();
-        NanUtf8String *utf8_value = new NanUtf8String(string_value);
-        resources->strings.push_back(unique_ptr<NanUtf8String>(utf8_value));
-        current->value = **utf8_value;
-        current->value_length = string_value->Length();
       } else {
-        return false;
+        if (value->IsString()) {
+          Handle<String> string_value = value->ToString();
+          NanUtf8String *utf8_value = new NanUtf8String(string_value);
+          resources->strings.push_back(unique_ptr<NanUtf8String>(utf8_value));
+          current->value = **utf8_value;
+          current->value_length = string_value->Length();
+        } else {
+          return false;
+        }
       }
       array->count += 1;
     }
@@ -156,8 +158,7 @@ Handle<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
     }
     if (EndsWith(elem->key, "-bin")) {
       array->Set(index_map[elem->key],
-                 MakeFastBuffer(
-                     NanNewBufferHandle(elem->value, elem->value_length)));
+                 NanNewBufferHandle(elem->value, elem->value_length));
     } else {
       array->Set(index_map[elem->key], NanNew(elem->value));
     }
@@ -460,6 +461,9 @@ void Call::Init(Handle<Object> exports) {
                           NanNew<FunctionTemplate>(StartBatch)->GetFunction());
   NanSetPrototypeTemplate(tpl, "cancel",
                           NanNew<FunctionTemplate>(Cancel)->GetFunction());
+  NanSetPrototypeTemplate(
+      tpl, "cancelWithStatus",
+      NanNew<FunctionTemplate>(CancelWithStatus)->GetFunction());
   NanSetPrototypeTemplate(tpl, "getPeer",
                           NanNew<FunctionTemplate>(GetPeer)->GetFunction());
   NanAssignPersistent(fun_tpl, tpl);
@@ -639,6 +643,26 @@ NAN_METHOD(Call::Cancel) {
   if (error != GRPC_CALL_OK) {
     return NanThrowError(nanErrorWithCode("cancel failed", error));
   }
+  NanReturnUndefined();
+}
+
+NAN_METHOD(Call::CancelWithStatus) {
+  NanScope();
+  if (!HasInstance(args.This())) {
+    return NanThrowTypeError("cancel can only be called on Call objects");
+  }
+  if (!args[0]->IsUint32()) {
+    return NanThrowTypeError(
+        "cancelWithStatus's first argument must be a status code");
+  }
+  if (!args[1]->IsString()) {
+    return NanThrowTypeError(
+        "cancelWithStatus's second argument must be a string");
+  }
+  Call *call = ObjectWrap::Unwrap<Call>(args.This());
+  grpc_status_code code = static_cast<grpc_status_code>(args[0]->Uint32Value());
+  NanUtf8String details(args[0]);
+  grpc_call_cancel_with_status(call->wrapped_call, code, *details, NULL);
   NanReturnUndefined();
 }
 
