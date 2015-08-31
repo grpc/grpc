@@ -34,7 +34,7 @@
 #include "test/cpp/util/create_test_channel.h"
 
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
 
 #include "test/core/end2end/data/ssl_test_data.h"
 

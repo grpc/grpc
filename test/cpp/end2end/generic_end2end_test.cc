@@ -40,13 +40,11 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/generic/generic_stub.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
 #include <grpc++/support/slice.h>
 #include <gtest/gtest.h>
 

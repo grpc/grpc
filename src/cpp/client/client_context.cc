@@ -36,7 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
 #include <grpc++/server_context.h>
 #include <grpc++/support/time.h>
 
