@@ -275,10 +275,12 @@ typedef void (*grpc_process_auth_metadata_done_cb)(
 typedef struct {
   /* The context object is read/write: it contains the properties of the
      channel peer and it is the job of the process function to augment it with
-     properties derived from the passed-in metadata. */
+     properties derived from the passed-in metadata.
+     The lifetime of these objects is guaranteed until cb is invoked. */
   void (*process)(void *state, grpc_auth_context *context,
-                  const grpc_metadata *md, size_t md_count,
+                  const grpc_metadata *md, size_t num_md,
                   grpc_process_auth_metadata_done_cb cb, void *user_data);
+  void (*destroy)(void *state);
   void *state;
 } grpc_auth_metadata_processor;
 

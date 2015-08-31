@@ -40,6 +40,7 @@ message RequestParams {
   bool check_auth_context = 5;
   int32 response_message_length = 6;
   bool echo_peer = 7;
+  string expected_client_identity = 8;  // will force check_auth_context.
 }
 
 message EchoRequest {
