@@ -186,7 +186,7 @@ describe Grpc::Health::Checker do
       @server_queue = GRPC::Core::CompletionQueue.new
       server_host = '0.0.0.0:0'
       @server = GRPC::Core::Server.new(@server_queue, nil)
-      server_port = @server.add_http2_port(server_host)
+      server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
       @host = "localhost:#{server_port}"
       @ch = GRPC::Core::Channel.new(@host, nil)
       @client_opts = { channel_override: @ch }

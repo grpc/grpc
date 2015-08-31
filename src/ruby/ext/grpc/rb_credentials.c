@@ -154,7 +154,7 @@ static VALUE grpc_rb_default_credentials_create(VALUE cls) {
     Creates the default credential instances. */
 static VALUE grpc_rb_compute_engine_credentials_create(VALUE cls) {
   grpc_rb_credentials *wrapper = ALLOC(grpc_rb_credentials);
-  wrapper->wrapped = grpc_compute_engine_credentials_create();
+  wrapper->wrapped = grpc_google_compute_engine_credentials_create(NULL);
   if (wrapper->wrapped == NULL) {
     rb_raise(rb_eRuntimeError,
              "could not create composite engine credentials, not sure why");
@@ -181,8 +181,8 @@ static VALUE grpc_rb_composite_credentials_create(VALUE self, VALUE other) {
   TypedData_Get_Struct(other, grpc_rb_credentials,
                        &grpc_rb_credentials_data_type, other_wrapper);
   wrapper = ALLOC(grpc_rb_credentials);
-  wrapper->wrapped = grpc_composite_credentials_create(self_wrapper->wrapped,
-                                                       other_wrapper->wrapped);
+  wrapper->wrapped = grpc_composite_credentials_create(
+      self_wrapper->wrapped, other_wrapper->wrapped, NULL);
   if (wrapper->wrapped == NULL) {
     rb_raise(rb_eRuntimeError,
              "could not create composite credentials, not sure why");
@@ -234,12 +234,13 @@ static VALUE grpc_rb_credentials_init(int argc, VALUE *argv, VALUE self) {
     return Qnil;
   }
   if (pem_private_key == Qnil && pem_cert_chain == Qnil) {
-    creds = grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs), NULL);
+    creds =
+        grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs), NULL, NULL);
   } else {
     key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
     key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
     creds = grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs),
-                                        &key_cert_pair);
+                                        &key_cert_pair, NULL);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");

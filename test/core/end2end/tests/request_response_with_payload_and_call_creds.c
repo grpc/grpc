@@ -190,7 +190,7 @@ static void request_response_with_payload_and_call_creds(
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                "/foo", "foo.test.google.fr", deadline, NULL);
   GPR_ASSERT(c);
-  creds = grpc_iam_credentials_create(iam_token, iam_selector);
+  creds = grpc_google_iam_credentials_create(iam_token, iam_selector, NULL);
   GPR_ASSERT(creds != NULL);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   switch (mode) {
@@ -198,8 +198,8 @@ static void request_response_with_payload_and_call_creds(
       break;
     case OVERRIDE:
       grpc_credentials_release(creds);
-      creds = grpc_iam_credentials_create(overridden_iam_token,
-                                          overridden_iam_selector);
+      creds = grpc_google_iam_credentials_create(overridden_iam_token,
+                                                 overridden_iam_selector, NULL);
       GPR_ASSERT(creds != NULL);
       GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
       break;
@@ -421,7 +421,7 @@ static void test_request_with_server_rejecting_client_creds(
                                "/foo", "foo.test.google.fr", deadline, NULL);
   GPR_ASSERT(c);
 
-  creds = grpc_iam_credentials_create(iam_token, iam_selector);
+  creds = grpc_google_iam_credentials_create(iam_token, iam_selector, NULL);
   GPR_ASSERT(creds != NULL);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
   grpc_credentials_release(creds);

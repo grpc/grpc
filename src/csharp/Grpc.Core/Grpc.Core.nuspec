@@ -14,15 +14,16 @@
     <releaseNotes>Release $version$ of gRPC C#</releaseNotes>
     <copyright>Copyright 2015, Google Inc.</copyright>
     <tags>gRPC RPC Protocol HTTP/2</tags>
-	<dependencies>
-	  <dependency id="Ix-Async" version="1.2.3" />
-	  <dependency id="grpc.native.csharp_ext" version="$GrpcNativeCsharpExtVersion$" />
+    <dependencies>
+      <dependency id="Ix-Async" version="1.2.3" />
+      <dependency id="grpc.native.csharp_ext" version="$GrpcNativeCsharpExtVersion$" />
     </dependencies>
   </metadata>
   <files>
+    <file src="..\..\..\etc\roots.pem" target="tools" />
     <file src="bin/ReleaseSigned/Grpc.Core.dll" target="lib/net45" />
-	<file src="bin/ReleaseSigned/Grpc.Core.pdb" target="lib/net45" />
-	<file src="bin/ReleaseSigned/Grpc.Core.xml" target="lib/net45" />
-	<file src="**\*.cs" target="src" />
+    <file src="bin/ReleaseSigned/Grpc.Core.pdb" target="lib/net45" />
+    <file src="bin/ReleaseSigned/Grpc.Core.xml" target="lib/net45" />
+    <file src="**\*.cs" target="src" />
   </files>
 </package>

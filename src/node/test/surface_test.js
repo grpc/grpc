@@ -133,7 +133,25 @@ describe('Server.prototype.addProtoService', function() {
     });
   });
 });
-describe('Client#$waitForReady', function() {
+describe('Client constructor building', function() {
+  var illegal_service_attrs = {
+    $method : {
+      path: '/illegal/$method',
+      requestStream: false,
+      responseStream: false,
+      requestSerialize: _.identity,
+      requestDeserialize: _.identity,
+      responseSerialize: _.identity,
+      responseDeserialize: _.identity
+    }
+  };
+  it('Should reject method names starting with $', function() {
+    assert.throws(function() {
+      grpc.makeGenericClientConstructor(illegal_service_attrs);
+    }, /\$/);
+  });
+});
+describe('waitForClientReady', function() {
   var server;
   var port;
   var Client;
@@ -151,13 +169,13 @@ describe('Client#$waitForReady', function() {
     server.forceShutdown();
   });
   it('should complete when called alone', function(done) {
-    client.$waitForReady(Infinity, function(error) {
+    grpc.waitForClientReady(client, Infinity, function(error) {
       assert.ifError(error);
       done();
     });
   });
   it('should complete when a call is initiated', function(done) {
-    client.$waitForReady(Infinity, function(error) {
+    grpc.waitForClientReady(client, Infinity, function(error) {
       assert.ifError(error);
       done();
     });
@@ -166,19 +184,19 @@ describe('Client#$waitForReady', function() {
   });
   it('should complete if called more than once', function(done) {
     done = multiDone(done, 2);
-    client.$waitForReady(Infinity, function(error) {
+    grpc.waitForClientReady(client, Infinity, function(error) {
       assert.ifError(error);
       done();
     });
-    client.$waitForReady(Infinity, function(error) {
+    grpc.waitForClientReady(client, Infinity, function(error) {
       assert.ifError(error);
       done();
     });
   });
   it('should complete if called when already ready', function(done) {
-    client.$waitForReady(Infinity, function(error) {
+    grpc.waitForClientReady(client, Infinity, function(error) {
       assert.ifError(error);
-      client.$waitForReady(Infinity, function(error) {
+      grpc.waitForClientReady(client, Infinity, function(error) {
         assert.ifError(error);
         done();
       });
@@ -262,6 +280,7 @@ describe('Generic client and server', function() {
 describe('Echo metadata', function() {
   var client;
   var server;
+  var metadata;
   before(function() {
     var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
     var test_service = test_proto.lookup('TestService');
@@ -294,6 +313,8 @@ describe('Echo metadata', function() {
     var Client = surface_client.makeProtobufClientConstructor(test_service);
     client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
     server.start();
+    metadata = new grpc.Metadata();
+    metadata.set('key', 'value');
   });
   after(function() {
     server.forceShutdown();
@@ -301,35 +322,35 @@ describe('Echo metadata', function() {
   it('with unary call', function(done) {
     var call = client.unary({}, function(err, data) {
       assert.ifError(err);
-    }, {key: ['value']});
+    }, metadata);
     call.on('metadata', function(metadata) {
-      assert.deepEqual(metadata.key, ['value']);
+      assert.deepEqual(metadata.get('key'), ['value']);
       done();
     });
   });
   it('with client stream call', function(done) {
     var call = client.clientStream(function(err, data) {
       assert.ifError(err);
-    }, {key: ['value']});
+    }, metadata);
     call.on('metadata', function(metadata) {
-      assert.deepEqual(metadata.key, ['value']);
+      assert.deepEqual(metadata.get('key'), ['value']);
       done();
     });
     call.end();
   });
   it('with server stream call', function(done) {
-    var call = client.serverStream({}, {key: ['value']});
+    var call = client.serverStream({}, metadata);
     call.on('data', function() {});
     call.on('metadata', function(metadata) {
-      assert.deepEqual(metadata.key, ['value']);
+      assert.deepEqual(metadata.get('key'), ['value']);
       done();
     });
   });
   it('with bidi stream call', function(done) {
-    var call = client.bidiStream({key: ['value']});
+    var call = client.bidiStream(metadata);
     call.on('data', function() {});
     call.on('metadata', function(metadata) {
-      assert.deepEqual(metadata.key, ['value']);
+      assert.deepEqual(metadata.get('key'), ['value']);
       done();
     });
     call.end();
@@ -337,9 +358,10 @@ describe('Echo metadata', function() {
   it('shows the correct user-agent string', function(done) {
     var version = require('../package.json').version;
     var call = client.unary({}, function(err, data) { assert.ifError(err); },
-                            {key: ['value']});
+                            metadata);
     call.on('metadata', function(metadata) {
-      assert(_.startsWith(metadata['user-agent'], 'grpc-node/' + version));
+      assert(_.startsWith(metadata.get('user-agent')[0],
+                          'grpc-node/' + version));
       done();
     });
   });
@@ -354,13 +376,15 @@ describe('Other conditions', function() {
     var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
     test_service = test_proto.lookup('TestService');
     server = new grpc.Server();
+    var trailer_metadata = new grpc.Metadata();
+    trailer_metadata.add('trailer-present', 'yes');
     server.addProtoService(test_service, {
       unary: function(call, cb) {
         var req = call.request;
         if (req.error) {
-          cb(new Error('Requested error'), null, {trailer_present: ['yes']});
+          cb(new Error('Requested error'), null, trailer_metadata);
         } else {
-          cb(null, {count: 1}, {trailer_present: ['yes']});
+          cb(null, {count: 1}, trailer_metadata);
         }
       },
       clientStream: function(stream, cb){
@@ -369,14 +393,14 @@ describe('Other conditions', function() {
         stream.on('data', function(data) {
           if (data.error) {
             errored = true;
-            cb(new Error('Requested error'), null, {trailer_present: ['yes']});
+            cb(new Error('Requested error'), null, trailer_metadata);
           } else {
             count += 1;
           }
         });
         stream.on('end', function() {
           if (!errored) {
-            cb(null, {count: count}, {trailer_present: ['yes']});
+            cb(null, {count: count}, trailer_metadata);
           }
         });
       },
@@ -384,13 +408,13 @@ describe('Other conditions', function() {
         var req = stream.request;
         if (req.error) {
           var err = new Error('Requested error');
-          err.metadata = {trailer_present: ['yes']};
+          err.metadata = trailer_metadata;
           stream.emit('error', err);
         } else {
           for (var i = 0; i < 5; i++) {
             stream.write({count: i});
           }
-          stream.end({trailer_present: ['yes']});
+          stream.end(trailer_metadata);
         }
       },
       bidiStream: function(stream) {
@@ -398,10 +422,8 @@ describe('Other conditions', function() {
         stream.on('data', function(data) {
           if (data.error) {
             var err = new Error('Requested error');
-            err.metadata = {
-              trailer_present: ['yes'],
-              count: ['' + count]
-            };
+            err.metadata = trailer_metadata.clone();
+            err.metadata.add('count', '' + count);
             stream.emit('error', err);
           } else {
             stream.write({count: count});
@@ -409,7 +431,7 @@ describe('Other conditions', function() {
           }
         });
         stream.on('end', function() {
-          stream.end({trailer_present: ['yes']});
+          stream.end(trailer_metadata);
         });
       }
     });
@@ -422,7 +444,8 @@ describe('Other conditions', function() {
     server.forceShutdown();
   });
   it('channel.getTarget should be available', function() {
-    assert.strictEqual(typeof client.channel.getTarget(), 'string');
+    assert.strictEqual(typeof grpc.getClientChannel(client).getTarget(),
+                       'string');
   });
   describe('Server recieving bad input', function() {
     var misbehavingClient;
@@ -510,7 +533,7 @@ describe('Other conditions', function() {
         assert.ifError(err);
       });
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.trailer_present, ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -519,7 +542,7 @@ describe('Other conditions', function() {
         assert(err);
       });
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.trailer_present, ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -531,7 +554,7 @@ describe('Other conditions', function() {
       call.write({error: false});
       call.end();
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.trailer_present, ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -543,7 +566,7 @@ describe('Other conditions', function() {
       call.write({error: true});
       call.end();
       call.on('status', function(status) {
-        assert.deepEqual(status.metadata.trailer_present, ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -552,7 +575,7 @@ describe('Other conditions', function() {
       call.on('data', function(){});
       call.on('status', function(status) {
         assert.strictEqual(status.code, grpc.status.OK);
-        assert.deepEqual(status.metadata.trailer_present, ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -560,7 +583,7 @@ describe('Other conditions', function() {
       var call = client.serverStream({error: true});
       call.on('data', function(){});
       call.on('error', function(error) {
-        assert.deepEqual(error.metadata.trailer_present, ['yes']);
+        assert.deepEqual(error.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -572,7 +595,7 @@ describe('Other conditions', function() {
       call.on('data', function(){});
       call.on('status', function(status) {
         assert.strictEqual(status.code, grpc.status.OK);
-        assert.deepEqual(status.metadata.trailer_present, ['yes']);
+        assert.deepEqual(status.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });
@@ -583,7 +606,7 @@ describe('Other conditions', function() {
       call.end();
       call.on('data', function(){});
       call.on('error', function(error) {
-        assert.deepEqual(error.metadata.trailer_present, ['yes']);
+        assert.deepEqual(error.metadata.get('trailer-present'), ['yes']);
         done();
       });
     });

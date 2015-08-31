@@ -40,7 +40,7 @@ using Grpc.Core;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 
-namespace math.Tests
+namespace Math.Tests
 {
     /// <summary>
     /// Math client talks to local math server.
@@ -75,7 +75,7 @@ namespace math.Tests
         [Test]
         public void Div1()
         {
-            DivReply response = client.Div(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build());
+            DivReply response = client.Div(new DivArgs { Dividend = 10, Divisor = 3 });
             Assert.AreEqual(3, response.Quotient);
             Assert.AreEqual(1, response.Remainder);
         }
@@ -83,7 +83,7 @@ namespace math.Tests
         [Test]
         public void Div2()
         {
-            DivReply response = client.Div(new DivArgs.Builder { Dividend = 0, Divisor = 1 }.Build());
+            DivReply response = client.Div(new DivArgs { Dividend = 0, Divisor = 1 });
             Assert.AreEqual(0, response.Quotient);
             Assert.AreEqual(0, response.Remainder);
         }
@@ -91,14 +91,14 @@ namespace math.Tests
         [Test]
         public void DivByZero()
         {
-            var ex = Assert.Throws<RpcException>(() => client.Div(new DivArgs.Builder { Dividend = 0, Divisor = 0 }.Build()));
+            var ex = Assert.Throws<RpcException>(() => client.Div(new DivArgs { Dividend = 0, Divisor = 0 }));
             Assert.AreEqual(StatusCode.Unknown, ex.Status.StatusCode);
         }
 
         [Test]
         public async Task DivAsync()
         {
-            DivReply response = await client.DivAsync(new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build());
+            DivReply response = await client.DivAsync(new DivArgs { Dividend = 10, Divisor = 3 });
             Assert.AreEqual(3, response.Quotient);
             Assert.AreEqual(1, response.Remainder);
         }
@@ -106,7 +106,7 @@ namespace math.Tests
         [Test]
         public async Task Fib()
         {
-            using (var call = client.Fib(new FibArgs.Builder { Limit = 6 }.Build()))
+            using (var call = client.Fib(new FibArgs { Limit = 6 }))
             {
                 var responses = await call.ResponseStream.ToListAsync();
                 CollectionAssert.AreEqual(new List<long> { 1, 1, 2, 3, 5, 8 },
@@ -119,8 +119,7 @@ namespace math.Tests
         {
             var cts = new CancellationTokenSource();
 
-            using (var call = client.Fib(new FibArgs.Builder { Limit = 0 }.Build(), 
-                cancellationToken: cts.Token))
+            using (var call = client.Fib(new FibArgs { Limit = 0 }, cancellationToken: cts.Token))
             {
                 List<long> responses = new List<long>();
 
@@ -147,7 +146,7 @@ namespace math.Tests
         [Test]
         public async Task FibWithDeadline()
         {
-            using (var call = client.Fib(new FibArgs.Builder { Limit = 0 }.Build(), 
+            using (var call = client.Fib(new FibArgs { Limit = 0 }, 
                 deadline: DateTime.UtcNow.AddMilliseconds(500)))
             {
                 var ex = Assert.Throws<RpcException>(async () => await call.ResponseStream.ToListAsync());
@@ -163,8 +162,7 @@ namespace math.Tests
         {
             using (var call = client.Sum())
             {
-                var numbers = new List<long> { 10, 20, 30 }.ConvertAll(
-                            n => Num.CreateBuilder().SetNum_(n).Build());
+                var numbers = new List<long> { 10, 20, 30 }.ConvertAll(n => new Num { Num_ = n });
 
                 await call.RequestStream.WriteAllAsync(numbers);
                 var result = await call.ResponseAsync;
@@ -177,9 +175,9 @@ namespace math.Tests
         {
             var divArgsList = new List<DivArgs>
             {
-                new DivArgs.Builder { Dividend = 10, Divisor = 3 }.Build(),
-                new DivArgs.Builder { Dividend = 100, Divisor = 21 }.Build(),
-                new DivArgs.Builder { Dividend = 7, Divisor = 2 }.Build()
+                new DivArgs { Dividend = 10, Divisor = 3 },
+                new DivArgs { Dividend = 100, Divisor = 21 },
+                new DivArgs { Dividend = 7, Divisor = 2 }
             };
 
             using (var call = client.DivMany())

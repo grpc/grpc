@@ -34,7 +34,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc++/support/auth_context.h>
+#include <grpc++/security/auth_context.h>
 #include "src/cpp/common/secure_auth_context.h"
 
 namespace grpc {
@@ -44,7 +44,7 @@ std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call) {
     return std::shared_ptr<const AuthContext>();
   }
   return std::shared_ptr<const AuthContext>(
-      new SecureAuthContext(grpc_call_auth_context(call)));
+      new SecureAuthContext(grpc_call_auth_context(call), true));
 }
 
 }  // namespace grpc

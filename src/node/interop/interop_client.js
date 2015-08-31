@@ -285,7 +285,7 @@ function authTest(expected_user, scope, client, done) {
     if (credential.createScopedRequired() && scope) {
       credential = credential.createScoped(scope);
     }
-    client.updateMetadata = grpc.getGoogleAuthDelegate(credential);
+    client.$updateMetadata = grpc.getGoogleAuthDelegate(credential);
     var arg = {
       response_type: 'COMPRESSABLE',
       response_size: 314159,
@@ -321,13 +321,7 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
     credential.getAccessToken(function(err, token) {
       assert.ifError(err);
       var updateMetadata = function(authURI, metadata, callback) {
-        metadata = _.clone(metadata);
-        if (metadata.Authorization) {
-          metadata.Authorization = _.clone(metadata.Authorization);
-        } else {
-          metadata.Authorization = [];
-        }
-        metadata.Authorization.push('Bearer ' + token);
+        metadata.Add('authorization', 'Bearer ' + token);
         callback(null, metadata);
       };
       var makeTestCall = function(error, client_metadata) {
@@ -344,7 +338,7 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
       if (per_rpc) {
         updateMetadata('', {}, makeTestCall);
       } else {
-        client.updateMetadata = updateMetadata;
+        client.$updateMetadata = updateMetadata;
         makeTestCall(null, {});
       }
     });
