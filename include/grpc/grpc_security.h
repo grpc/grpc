@@ -153,7 +153,7 @@ typedef struct {
   void *state;
 } grpc_metadata_credentials_plugin;
 
-/* Creates a credentials object
+/* Creates a credentials object from a plugin. */
 grpc_credentials *grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin, void *reserved);
 
