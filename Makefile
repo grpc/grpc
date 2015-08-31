@@ -527,6 +527,11 @@ OPENSSL_PKG_CONFIG = false
 PC_REQUIRES_SECURE =
 PC_LIBS_SECURE =
 
+ifeq ($(EMBED_OPENSSL),1)
+HAS_SYSTEM_OPENSSL_ALPN = false
+HAS_SYSTEM_OPENSSL_NPN = false
+endif
+
 ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_PKG_CONFIG = true
@@ -547,6 +552,14 @@ PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
 endif
 endif
 else
+ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+USE_SYSTEM_OPENSSL = true
+CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
+LIBS_SECURE = $(OPENSSL_LIBS)
+ifeq ($(OPENSSL_REQUIRES_DL),true)
+LIBS_SECURE += dl
+endif
+else
 ifeq ($(HAS_EMBEDDED_OPENSSL_ALPN),true)
 USE_SYSTEM_OPENSSL = false
 OPENSSL_DEP = $(LIBDIR)/$(CONFIG)/openssl/libssl.a
@@ -556,14 +569,6 @@ CPPFLAGS := -Ithird_party/openssl/include $(CPPFLAGS)
 LDFLAGS := -L$(LIBDIR)/$(CONFIG)/openssl $(LDFLAGS)
 ifeq ($(OPENSSL_REQUIRES_DL),true)
 LIBS_SECURE = dl
-endif
-else
-ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-USE_SYSTEM_OPENSSL = true
-CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
-LIBS_SECURE = $(OPENSSL_LIBS)
-ifeq ($(OPENSSL_REQUIRES_DL),true)
-LIBS_SECURE += dl
 endif
 else
 NO_SECURE = true
