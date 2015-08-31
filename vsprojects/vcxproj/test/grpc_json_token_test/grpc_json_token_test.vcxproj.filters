@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\security\json_token_test.c">
+      <Filter>test\core\security</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{88deb424-95d2-546a-ff4d-e9f285f8426f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{6ec50709-ca23-8426-4569-86e0a2d8b0f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\security">
+      <UniqueIdentifier>{abd47f4a-6230-44a6-2764-27ed2e2dbe2d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

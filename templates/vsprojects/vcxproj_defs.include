@@ -1,8 +1,7 @@
 ﻿<%namespace file="packages.include" import="gen_package_props,gen_package_targets,gen_package_ensure"/>\
-<%def name="get_repo_root()">..\..</%def>\
 <%def name="to_windows_path(path)">${path.replace('/','\\')}</%def>\
 <%def name="get_subsystem(is_library)">${'Windows' if is_library else 'Console'}</%def>\
-<%def name="gen_project(name, collection, configuration_type = None, project_guid = None, props = [], packages = [])">\
+<%def name="gen_project(name, collection)">\
 <%
   target = None
   for p in vsprojects:
@@ -11,14 +10,9 @@
   for t in collection:
     if t.name == name:
       target = t
-  if not configuration_type and target:
-    print target.name
-    if target.build == 'test' or target.build == 'tool':
-      configuration_type = 'Application'
-  if not configuration_type:
-    configuration_type = 'StaticLibrary'
-  if not project_guid:
-    project_guid = project.vs_project_guid
+  props = project.vs_props
+  configuration_type = project.vs_config_type
+  project_guid = project.vs_project_guid
   if target.build == 'test' and target.language == 'c++':
     props.extend(['cpptest'])
   if configuration_type == 'Application':
@@ -29,13 +23,16 @@
   else:
     props.extend(['winsock'])
   props.extend(['global'])
-  dll = project.get('dll', 'no')
+  props = sorted(list(set(props)))
+  dll = project.get('dll', False)
+  packages = project.vs_packages
+  repo_root = '..\..\..' + ('\..' if project.vs_proj_dir != '.' else '')
 %>\
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-${gen_package_props(packages)}\
+${gen_package_props(packages, repo_root)}\
   <ItemGroup Label="ProjectConfigurations">
-% if dll == 'yes':
+% if dll and dll != 'only':
     <ProjectConfiguration Include="Debug-DLL|Win32">
       <Configuration>Debug-DLL</Configuration>
       <Platform>Win32</Platform>
@@ -94,7 +91,7 @@ ${gen_package_props(packages)}\
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-% if dll == 'yes':
+% if dll and dll != 'only':
   <PropertyGroup Condition="'$(Configuration)'=='Debug-DLL'" Label="Configuration">
     <ConfigurationType>${configuration_type}</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -113,31 +110,24 @@ ${gen_package_props(packages)}\
   <ImportGroup Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     % for prop in props:
-    <Import Project="..\${prop}.props" />
+    <Import Project="${repo_root}\vsprojects\${prop}.props" />
     % endfor
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+% for config in ['Debug', 'Release']:# + (['Debug-DLL', 'Release-DLL'] if dll and dll != 'only' else []):
+  <PropertyGroup Condition="'$(Configuration)'=='${config}'">
     <TargetName>${name}</TargetName>
-    % if "zlib" in packages:
-    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
-    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
-    % endif
-    % if "openssl" in packages:
-    <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
-    % endif
+    % for package in vspackages:
+    %  if packages == 'all' or package.name in packages:
+    %   if package.get('linkage', None) is not None:
+    <Linkage-${package.name.replace('.', '_')}>${package.linkage}</Linkage-${package.name.replace('.', '_')}>
+    %   endif
+    <Configuration-${package.name.replace('.', '_')}>Debug</Configuration-${package.name.replace('.', '_')}>
+    %  endif
+    % endfor
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>${name}</TargetName>
-    % if "zlib" in packages:
-    <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
-    <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
-    % endif
-    % if "openssl" in packages:
-    <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
-    % endif
-  </PropertyGroup>
-  % if dll == 'yes':
+% endfor
+  % if dll and dll != 'only':
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-DLL|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -270,14 +260,14 @@ ${gen_package_props(packages)}\
   % if project.get('public_headers',[]):
   <ItemGroup>
     % for public_header in project.public_headers:
-    <ClInclude Include="${get_repo_root()}\${to_windows_path(public_header)}" />
+    <ClInclude Include="${repo_root}\${to_windows_path(public_header)}" />
     % endfor
   </ItemGroup>
   % endif
   % if project.get('headers',[]):
   <ItemGroup>
     % for header in project.headers:
-    <ClInclude Include="${get_repo_root()}\${to_windows_path(header)}" />
+    <ClInclude Include="${repo_root}\${to_windows_path(header)}" />
     % endfor
   </ItemGroup>
   % endif
@@ -286,30 +276,30 @@ ${gen_package_props(packages)}\
     % for src_name in project.src:
       % if src_name.endswith(".proto"):
 <% src_name_parts = src_name.split(".") %>\
-    <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".pb.cc")}">
+    <ClCompile Include="${repo_root}\${to_windows_path(src_name_parts[0] + ".pb.cc")}">
     </ClCompile>
-    <ClInclude Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".pb.h")}">
+    <ClInclude Include="${repo_root}\${to_windows_path(src_name_parts[0] + ".pb.h")}">
     </ClInclude>
-    <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.pb.cc")}">
+    <ClCompile Include="${repo_root}\${to_windows_path(src_name_parts[0] + ".grpc.pb.cc")}">
     </ClCompile>
-    <ClInclude Include="${get_repo_root()}\${to_windows_path(src_name_parts[0] + ".grpc.pb.h")}">
+    <ClInclude Include="${repo_root}\${to_windows_path(src_name_parts[0] + ".grpc.pb.h")}">
     </ClInclude>
       % else:
-    <ClCompile Include="${get_repo_root()}\${to_windows_path(src_name)}">
+    <ClCompile Include="${repo_root}\${to_windows_path(src_name)}">
     </ClCompile>
       % endif
     % endfor
   </ItemGroup>
   % elif configuration_type != 'StaticLibrary':
   <ItemGroup>
-    <ClCompile Include="${get_repo_root()}\${to_windows_path('vsprojects/dummy.c')}">
+    <ClCompile Include="${repo_root}\${to_windows_path('vsprojects/dummy.c')}">
     </ClCompile>
   </ItemGroup>
   % endif
   % if project.get('deps',[]):
   <ItemGroup>
     % for dep in project.deps:
-    <ProjectReference Include="..\${dep}\${dep}.vcxproj">
+    <ProjectReference Include="${repo_root}\vsprojects\vcxproj\${vsproject_dict[dep].vs_proj_dir}\${dep}\${dep}.vcxproj">
       <Project>${vsproject_dict[dep].vs_project_guid}</Project>
     </ProjectReference>
     % endfor
@@ -322,8 +312,8 @@ ${gen_package_props(packages)}\
   %endif
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-${gen_package_targets(packages)}\
+${gen_package_targets(packages, repo_root)}\
   </ImportGroup>
-${gen_package_ensure(packages)}\
+${gen_package_ensure(packages, repo_root)}\
 </Project>
 </%def>\
