@@ -32,8 +32,8 @@
 """Generates the appropriate build.json data for all the end2end tests."""
 
 
-import simplejson
 import collections
+import yaml
 
 TestOptions = collections.namedtuple('TestOptions', 'flaky')
 default_test_options = TestOptions(False)
@@ -58,6 +58,7 @@ def main():
             'headers': [
               'test/core/bad_client/bad_client.h'
             ],
+            'vs_proj_dir': 'test',
             'deps': [
               'grpc_test_util_unsecure',
               'grpc_unsecure',
@@ -72,7 +73,7 @@ def main():
               'language': 'c',
               'secure': 'no',
               'src': ['test/core/bad_client/tests/%s.c' % t],
-              'flaky': 'invoke_large_request' in t,
+              'vs_proj_dir': 'test',
               'deps': [
                   'bad_client_test',
                   'grpc_test_util_unsecure',
@@ -82,7 +83,7 @@ def main():
               ]
           }
       for t in sorted(BAD_CLIENT_TESTS.keys())]}
-  print simplejson.dumps(json, sort_keys=True, indent=2 * ' ')
+  print yaml.dump(json)
 
 
 if __name__ == '__main__':

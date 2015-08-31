@@ -38,14 +38,15 @@ Just a wrapper around the mako rendering library.
 import getopt
 import imp
 import os
+import shutil
 import sys
 
 
 from mako.lookup import TemplateLookup
 from mako.runtime import Context
 from mako.template import Template
-import simplejson
 import bunch
+import yaml
 
 
 # Imports a plugin
@@ -76,6 +77,7 @@ def main(argv):
   got_output = False
   output_file = sys.stdout
   plugins = []
+  output_name = None
 
   try:
     opts, args = getopt.getopt(argv, 'hm:d:o:p:')
@@ -95,7 +97,7 @@ def main(argv):
         showhelp()
         sys.exit(3)
       got_output = True
-      output_file = open(arg, 'w')
+      output_name = arg
     elif opt == '-m':
       if module_directory is not None:
         out('Got more than one cache directory')
@@ -104,7 +106,7 @@ def main(argv):
       module_directory = arg
     elif opt == '-d':
       dict_file = open(arg, 'r')
-      bunch.merge_json(json_dict, simplejson.loads(dict_file.read()))
+      bunch.merge_json(json_dict, yaml.load(dict_file.read()))
       dict_file.close()
     elif opt == '-p':
       plugins.append(import_plugin(arg))
@@ -115,14 +117,51 @@ def main(argv):
   for k, v in json_dict.items():
     dictionary[k] = bunch.to_bunch(v)
 
-  ctx = Context(output_file, **dictionary)
-
+  cleared_dir = False
   for arg in args:
     got_input = True
-    template = Template(filename=arg,
-                        module_directory=module_directory,
-                        lookup=TemplateLookup(directories=['.']))
-    template.render_context(ctx)
+    with open(arg) as f:
+      srcs = list(yaml.load_all(f.read()))
+    for src in srcs:
+      if isinstance(src, basestring):
+        assert len(srcs) == 1
+        template = Template(src,
+                            filename=arg,
+                            module_directory=module_directory,
+                            lookup=TemplateLookup(directories=['.']))
+        with open(output_name, 'w') as output_file:
+          template.render_context(Context(output_file, **dictionary))
+      else:
+        # we have optional control data: this template represents
+        # a directory
+        if not cleared_dir:
+          shutil.rmtree(output_name, ignore_errors=True)
+          cleared_dir = True
+        items = []
+        if 'foreach' in src:
+          for el in dictionary[src['foreach']]:
+            if 'cond' in src:
+              args = dict(dictionary)
+              args['selected'] = el
+              if not eval(src['cond'], {}, args):
+                continue
+            items.append(el)
+          assert items
+        else:
+          items = [None]
+        for item in items:
+          args = dict(dictionary)
+          args['selected'] = item
+          item_output_name = os.path.join(
+              output_name, Template(src['output_name']).render(**args))
+          if not os.path.exists(os.path.dirname(item_output_name)):
+            os.makedirs(os.path.dirname(item_output_name))
+          template = Template(src['template'],
+                              filename=arg,
+                              module_directory=module_directory,
+                              lookup=TemplateLookup(directories=['.']))
+          with open(item_output_name, 'w') as output_file:
+            template.render_context(Context(output_file, **args))
 
   if not got_input:
     out('Got nothing to do')

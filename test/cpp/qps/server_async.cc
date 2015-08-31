@@ -35,9 +35,6 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/signal.h>
 #include <thread>
 
 #include <gflags/gflags.h>
