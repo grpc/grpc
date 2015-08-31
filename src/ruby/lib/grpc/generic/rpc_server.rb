@@ -417,17 +417,17 @@ module GRPC
         begin
           an_rpc = @server.request_call(@cq, loop_tag, INFINITE_FUTURE)
           c = new_active_server_call(an_rpc)
+          unless c.nil?
+            mth = an_rpc.method.to_sym
+            @pool.schedule(c) do |call|
+              rpc_descs[mth].run_server_method(call, rpc_handlers[mth])
+            end
+          end
         rescue Core::CallError, RuntimeError => e
           # these might happen for various reasonse.  The correct behaviour of
           # the server is to log them and continue, if it's not shutting down.
           GRPC.logger.warn("server call failed: #{e}") unless stopped?
           next
-        end
-        unless c.nil?
-          mth = an_rpc.method.to_sym
-          @pool.schedule(c) do |call|
-            rpc_descs[mth].run_server_method(call, rpc_handlers[mth])
-          end
         end
       end
       @running = false
