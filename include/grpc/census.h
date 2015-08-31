@@ -408,8 +408,8 @@ typedef struct {
 } census_value;
 
 /* Record new usage values against the given context. */
-void census_record(census_context *context, census_value *values,
-                   size_t nvalues);
+void census_record_values(census_context *context, census_value *values,
+                          size_t nvalues);
 
 /** Structure used to describe an aggregation type. */
 typedef struct {
