@@ -7,7 +7,7 @@ using pb = global::Google.ProtocolBuffers;
 using pbc = global::Google.ProtocolBuffers.Collections;
 using pbd = global::Google.ProtocolBuffers.Descriptors;
 using scg = global::System.Collections.Generic;
-namespace examples {
+namespace routeguide {
 
   namespace Proto {
 
@@ -19,16 +19,16 @@ namespace examples {
       }
       #endregion
       #region Static variables
-      internal static pbd::MessageDescriptor internal__static_examples_Point__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::examples.Point, global::examples.Point.Builder> internal__static_examples_Point__FieldAccessorTable;
-      internal static pbd::MessageDescriptor internal__static_examples_Rectangle__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::examples.Rectangle, global::examples.Rectangle.Builder> internal__static_examples_Rectangle__FieldAccessorTable;
-      internal static pbd::MessageDescriptor internal__static_examples_Feature__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::examples.Feature, global::examples.Feature.Builder> internal__static_examples_Feature__FieldAccessorTable;
-      internal static pbd::MessageDescriptor internal__static_examples_RouteNote__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::examples.RouteNote, global::examples.RouteNote.Builder> internal__static_examples_RouteNote__FieldAccessorTable;
-      internal static pbd::MessageDescriptor internal__static_examples_RouteSummary__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::examples.RouteSummary, global::examples.RouteSummary.Builder> internal__static_examples_RouteSummary__FieldAccessorTable;
+      internal static pbd::MessageDescriptor internal__static_routeguide_Point__Descriptor;
+      internal static pb::FieldAccess.FieldAccessorTable<global::routeguide.Point, global::routeguide.Point.Builder> internal__static_routeguide_Point__FieldAccessorTable;
+      internal static pbd::MessageDescriptor internal__static_routeguide_Rectangle__Descriptor;
+      internal static pb::FieldAccess.FieldAccessorTable<global::routeguide.Rectangle, global::routeguide.Rectangle.Builder> internal__static_routeguide_Rectangle__FieldAccessorTable;
+      internal static pbd::MessageDescriptor internal__static_routeguide_Feature__Descriptor;
+      internal static pb::FieldAccess.FieldAccessorTable<global::routeguide.Feature, global::routeguide.Feature.Builder> internal__static_routeguide_Feature__FieldAccessorTable;
+      internal static pbd::MessageDescriptor internal__static_routeguide_RouteNote__Descriptor;
+      internal static pb::FieldAccess.FieldAccessorTable<global::routeguide.RouteNote, global::routeguide.RouteNote.Builder> internal__static_routeguide_RouteNote__FieldAccessorTable;
+      internal static pbd::MessageDescriptor internal__static_routeguide_RouteSummary__Descriptor;
+      internal static pb::FieldAccess.FieldAccessorTable<global::routeguide.RouteSummary, global::routeguide.RouteSummary.Builder> internal__static_routeguide_RouteSummary__FieldAccessorTable;
       #endregion
       #region Descriptor
       public static pbd::FileDescriptor Descriptor {
@@ -55,25 +55,25 @@ namespace examples {
             "dXRlTm90ZRoTLmV4YW1wbGVzLlJvdXRlTm90ZSIAKAEwAQ=="));
         pbd::FileDescriptor.InternalDescriptorAssigner assigner = delegate(pbd::FileDescriptor root) {
           descriptor = root;
-          internal__static_examples_Point__Descriptor = Descriptor.MessageTypes[0];
-          internal__static_examples_Point__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::examples.Point, global::examples.Point.Builder>(internal__static_examples_Point__Descriptor,
+          internal__static_routeguide_Point__Descriptor = Descriptor.MessageTypes[0];
+          internal__static_routeguide_Point__FieldAccessorTable = 
+              new pb::FieldAccess.FieldAccessorTable<global::routeguide.Point, global::routeguide.Point.Builder>(internal__static_routeguide_Point__Descriptor,
                   new string[] { "Latitude", "Longitude", });
-          internal__static_examples_Rectangle__Descriptor = Descriptor.MessageTypes[1];
-          internal__static_examples_Rectangle__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::examples.Rectangle, global::examples.Rectangle.Builder>(internal__static_examples_Rectangle__Descriptor,
+          internal__static_routeguide_Rectangle__Descriptor = Descriptor.MessageTypes[1];
+          internal__static_routeguide_Rectangle__FieldAccessorTable = 
+              new pb::FieldAccess.FieldAccessorTable<global::routeguide.Rectangle, global::routeguide.Rectangle.Builder>(internal__static_routeguide_Rectangle__Descriptor,
                   new string[] { "Lo", "Hi", });
-          internal__static_examples_Feature__Descriptor = Descriptor.MessageTypes[2];
-          internal__static_examples_Feature__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::examples.Feature, global::examples.Feature.Builder>(internal__static_examples_Feature__Descriptor,
+          internal__static_routeguide_Feature__Descriptor = Descriptor.MessageTypes[2];
+          internal__static_routeguide_Feature__FieldAccessorTable = 
+              new pb::FieldAccess.FieldAccessorTable<global::routeguide.Feature, global::routeguide.Feature.Builder>(internal__static_routeguide_Feature__Descriptor,
                   new string[] { "Name", "Location", });
-          internal__static_examples_RouteNote__Descriptor = Descriptor.MessageTypes[3];
-          internal__static_examples_RouteNote__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::examples.RouteNote, global::examples.RouteNote.Builder>(internal__static_examples_RouteNote__Descriptor,
+          internal__static_routeguide_RouteNote__Descriptor = Descriptor.MessageTypes[3];
+          internal__static_routeguide_RouteNote__FieldAccessorTable = 
+              new pb::FieldAccess.FieldAccessorTable<global::routeguide.RouteNote, global::routeguide.RouteNote.Builder>(internal__static_routeguide_RouteNote__Descriptor,
                   new string[] { "Location", "Message", });
-          internal__static_examples_RouteSummary__Descriptor = Descriptor.MessageTypes[4];
-          internal__static_examples_RouteSummary__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::examples.RouteSummary, global::examples.RouteSummary.Builder>(internal__static_examples_RouteSummary__Descriptor,
+          internal__static_routeguide_RouteSummary__Descriptor = Descriptor.MessageTypes[4];
+          internal__static_routeguide_RouteSummary__FieldAccessorTable = 
+              new pb::FieldAccess.FieldAccessorTable<global::routeguide.RouteSummary, global::routeguide.RouteSummary.Builder>(internal__static_routeguide_RouteSummary__Descriptor,
                   new string[] { "PointCount", "FeatureCount", "Distance", "ElapsedTime", });
           pb::ExtensionRegistry registry = pb::ExtensionRegistry.CreateInstance();
           RegisterAllExtensions(registry);
@@ -107,11 +107,11 @@ namespace examples {
     }
 
     public static pbd::MessageDescriptor Descriptor {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Point__Descriptor; }
+      get { return global::routeguide.Proto.RouteGuide.internal__static_routeguide_Point__Descriptor; }
     }
 
     protected override pb::FieldAccess.FieldAccessorTable<Point, Point.Builder> InternalFieldAccessors {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Point__FieldAccessorTable; }
+      get { return global::routeguide.Proto.RouteGuide.internal__static_routeguide_Point__FieldAccessorTable; }
     }
 
     public const int LatitudeFieldNumber = 1;
@@ -267,11 +267,11 @@ namespace examples {
       }
 
       public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::examples.Point.Descriptor; }
+        get { return global::routeguide.Point.Descriptor; }
       }
 
       public override Point DefaultInstanceForType {
-        get { return global::examples.Point.DefaultInstance; }
+        get { return global::routeguide.Point.DefaultInstance; }
       }
 
       public override Point BuildPartial() {
@@ -292,7 +292,7 @@ namespace examples {
       }
 
       public override Builder MergeFrom(Point other) {
-        if (other == global::examples.Point.DefaultInstance) return this;
+        if (other == global::routeguide.Point.DefaultInstance) return this;
         PrepareBuilder();
         if (other.HasLatitude) {
           Latitude = other.Latitude;
@@ -402,7 +402,7 @@ namespace examples {
       }
     }
     static Point() {
-      object.ReferenceEquals(global::examples.Proto.RouteGuide.Descriptor, null);
+      object.ReferenceEquals(global::routeguide.Proto.RouteGuide.Descriptor, null);
     }
   }
 
@@ -425,31 +425,31 @@ namespace examples {
     }
 
     public static pbd::MessageDescriptor Descriptor {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Rectangle__Descriptor; }
+      get { return global::routeguide.Proto.RouteGuide.internal__static_routeguide_Rectangle__Descriptor; }
     }
 
     protected override pb::FieldAccess.FieldAccessorTable<Rectangle, Rectangle.Builder> InternalFieldAccessors {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Rectangle__FieldAccessorTable; }
+      get { return global::routeguide.Proto.RouteGuide.internal__static_routeguide_Rectangle__FieldAccessorTable; }
     }
 
     public const int LoFieldNumber = 1;
     private bool hasLo;
-    private global::examples.Point lo_;
+    private global::routeguide.Point lo_;
     public bool HasLo {
       get { return hasLo; }
     }
-    public global::examples.Point Lo {
-      get { return lo_ ?? global::examples.Point.DefaultInstance; }
+    public global::routeguide.Point Lo {
+      get { return lo_ ?? global::routeguide.Point.DefaultInstance; }
     }
 
     public const int HiFieldNumber = 2;
     private bool hasHi;
-    private global::examples.Point hi_;
+    private global::routeguide.Point hi_;
     public bool HasHi {
       get { return hasHi; }
     }
-    public global::examples.Point Hi {
-      get { return hi_ ?? global::examples.Point.DefaultInstance; }
+    public global::routeguide.Point Hi {
+      get { return hi_ ?? global::routeguide.Point.DefaultInstance; }
     }
 
     public override bool IsInitialized {
@@ -585,11 +585,11 @@ namespace examples {
       }
 
       public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::examples.Rectangle.Descriptor; }
+        get { return global::routeguide.Rectangle.Descriptor; }
       }
 
       public override Rectangle DefaultInstanceForType {
-        get { return global::examples.Rectangle.DefaultInstance; }
+        get { return global::routeguide.Rectangle.DefaultInstance; }
       }
 
       public override Rectangle BuildPartial() {
@@ -610,7 +610,7 @@ namespace examples {
       }
 
       public override Builder MergeFrom(Rectangle other) {
-        if (other == global::examples.Rectangle.DefaultInstance) return this;
+        if (other == global::routeguide.Rectangle.DefaultInstance) return this;
         PrepareBuilder();
         if (other.HasLo) {
           MergeLo(other.Lo);
@@ -662,7 +662,7 @@ namespace examples {
               break;
             }
             case 10: {
-              global::examples.Point.Builder subBuilder = global::examples.Point.CreateBuilder();
+              global::routeguide.Point.Builder subBuilder = global::routeguide.Point.CreateBuilder();
               if (result.hasLo) {
                 subBuilder.MergeFrom(Lo);
               }
@@ -671,7 +671,7 @@ namespace examples {
               break;
             }
             case 18: {
-              global::examples.Point.Builder subBuilder = global::examples.Point.CreateBuilder();
+              global::routeguide.Point.Builder subBuilder = global::routeguide.Point.CreateBuilder();
               if (result.hasHi) {
                 subBuilder.MergeFrom(Hi);
               }
@@ -692,30 +692,30 @@ namespace examples {
       public bool HasLo {
        get { return result.hasLo; }
       }
-      public global::examples.Point Lo {
+      public global::routeguide.Point Lo {
         get { return result.Lo; }
         set { SetLo(value); }
       }
-      public Builder SetLo(global::examples.Point value) {
+      public Builder SetLo(global::routeguide.Point value) {
         pb::ThrowHelper.ThrowIfNull(value, "value");
         PrepareBuilder();
         result.hasLo = true;
         result.lo_ = value;
         return this;
       }
-      public Builder SetLo(global::examples.Point.Builder builderForValue) {
+      public Builder SetLo(global::routeguide.Point.Builder builderForValue) {
         pb::ThrowHelper.ThrowIfNull(builderForValue, "builderForValue");
         PrepareBuilder();
         result.hasLo = true;
         result.lo_ = builderForValue.Build();
         return this;
       }
-      public Builder MergeLo(global::examples.Point value) {
+      public Builder MergeLo(global::routeguide.Point value) {
         pb::ThrowHelper.ThrowIfNull(value, "value");
         PrepareBuilder();
         if (result.hasLo &&
-            result.lo_ != global::examples.Point.DefaultInstance) {
-            result.lo_ = global::examples.Point.CreateBuilder(result.lo_).MergeFrom(value).BuildPartial();
+            result.lo_ != global::routeguide.Point.DefaultInstance) {
+            result.lo_ = global::routeguide.Point.CreateBuilder(result.lo_).MergeFrom(value).BuildPartial();
         } else {
           result.lo_ = value;
         }
@@ -732,30 +732,30 @@ namespace examples {
       public bool HasHi {
        get { return result.hasHi; }
       }
-      public global::examples.Point Hi {
+      public global::routeguide.Point Hi {
         get { return result.Hi; }
         set { SetHi(value); }
       }
-      public Builder SetHi(global::examples.Point value) {
+      public Builder SetHi(global::routeguide.Point value) {
         pb::ThrowHelper.ThrowIfNull(value, "value");
         PrepareBuilder();
         result.hasHi = true;
         result.hi_ = value;
         return this;
       }
-      public Builder SetHi(global::examples.Point.Builder builderForValue) {
+      public Builder SetHi(global::routeguide.Point.Builder builderForValue) {
         pb::ThrowHelper.ThrowIfNull(builderForValue, "builderForValue");
         PrepareBuilder();
         result.hasHi = true;
         result.hi_ = builderForValue.Build();
         return this;
       }
-      public Builder MergeHi(global::examples.Point value) {
+      public Builder MergeHi(global::routeguide.Point value) {
         pb::ThrowHelper.ThrowIfNull(value, "value");
         PrepareBuilder();
         if (result.hasHi &&
-            result.hi_ != global::examples.Point.DefaultInstance) {
-            result.hi_ = global::examples.Point.CreateBuilder(result.hi_).MergeFrom(value).BuildPartial();
+            result.hi_ != global::routeguide.Point.DefaultInstance) {
+            result.hi_ = global::routeguide.Point.CreateBuilder(result.hi_).MergeFrom(value).BuildPartial();
         } else {
           result.hi_ = value;
         }
@@ -770,7 +770,7 @@ namespace examples {
       }
     }
     static Rectangle() {
-      object.ReferenceEquals(global::examples.Proto.RouteGuide.Descriptor, null);
+      object.ReferenceEquals(global::routeguide.Proto.RouteGuide.Descriptor, null);
     }
   }
 
@@ -793,11 +793,11 @@ namespace examples {
     }
 
     public static pbd::MessageDescriptor Descriptor {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Feature__Descriptor; }
+      get { return global::routeguide.Proto.RouteGuide.internal__static_routeguide_Feature__Descriptor; }
     }
 
     protected override pb::FieldAccess.FieldAccessorTable<Feature, Feature.Builder> InternalFieldAccessors {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Feature__FieldAccessorTable; }
+      get { return global::routeguide.Proto.RouteGuide.internal__static_routeguide_Feature__FieldAccessorTable; }
     }
 
     public const int NameFieldNumber = 1;
@@ -812,12 +812,12 @@ namespace examples {
 
     public const int LocationFieldNumber = 2;
     private bool hasLocation;
-    private global::examples.Point location_;
+    private global::routeguide.Point location_;
     public bool HasLocation {
       get { return hasLocation; }
     }
-    public global::examples.Point Location {
-      get { return location_ ?? global::examples.Point.DefaultInstance; }
+    public global::routeguide.Point Location {
+      get { return location_ ?? global::routeguide.Point.DefaultInstance; }
     }
 
     public override bool IsInitialized {
@@ -953,11 +953,11 @@ namespace examples {
       }
 
       public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::examples.Feature.Descriptor; }
+        get { return global::routeguide.Feature.Descriptor; }
       }
 
       public override Feature DefaultInstanceForType {
-        get { return global::examples.Feature.DefaultInstance; }
+        get { return global::routeguide.Feature.DefaultInstance; }
       }
 
       public override Feature BuildPartial() {
@@ -978,7 +978,7 @@ namespace examples {
       }
 
       public override Builder MergeFrom(Feature other) {
-        if (other == global::examples.Feature.DefaultInstance) return this;
+        if (other == global::routeguide.Feature.DefaultInstance) return this;
         PrepareBuilder();
         if (other.HasName) {
           Name = other.Name;
@@ -1034,7 +1034,7 @@ namespace examples {
               break;
             }
             case 18: {
-              global::examples.Point.Builder subBuilder = global::examples.Point.CreateBuilder();
+              global::routeguide.Point.Builder subBuilder = global::routeguide.Point.CreateBuilder();
               if (result.hasLocation) {
                 subBuilder.MergeFrom(Location);
               }
@@ -1076,30 +1076,30 @@ namespace examples {
       public bool HasLocation {
        get { return result.hasLocation; }
       }
-      public global::examples.Point Location {
+      public global::routeguide.Point Location {
         get { return result.Location; }
         set { SetLocation(value); }
       }
-      public Builder SetLocation(global::examples.Point value) {
+      public Builder SetLocation(global::routeguide.Point value) {
         pb::ThrowHelper.ThrowIfNull(value, "value");
         PrepareBuilder();
         result.hasLocation = true;
         result.location_ = value;
         return this;
       }
-      public Builder SetLocation(global::examples.Point.Builder builderForValue) {
+      public Builder SetLocation(global::routeguide.Point.Builder builderForValue) {
         pb::ThrowHelper.ThrowIfNull(builderForValue, "builderForValue");
         PrepareBuilder();
         result.hasLocation = true;
         result.location_ = builderForValue.Build();
         return this;
       }
-      public Builder MergeLocation(global::examples.Point value) {
+      public Builder MergeLocation(global::routeguide.Point value) {
         pb::ThrowHelper.ThrowIfNull(value, "value");
         PrepareBuilder();
         if (result.hasLocation &&
-            result.location_ != global::examples.Point.DefaultInstance) {
-            result.location_ = global::examples.Point.CreateBuilder(result.location_).MergeFrom(value).BuildPartial();
+            result.location_ != global::routeguide.Point.DefaultInstance) {
+            result.location_ = global::routeguide.Point.CreateBuilder(result.location_).MergeFrom(value).BuildPartial();
         } else {
           result.location_ = value;
         }
@@ -1114,7 +1114,7 @@ namespace examples {
       }
     }
     static Feature() {
-      object.ReferenceEquals(global::examples.Proto.RouteGuide.Descriptor, null);
+      object.ReferenceEquals(global::routeguide.Proto.RouteGuide.Descriptor, null);
     }
   }
 
@@ -1137,21 +1137,21 @@ namespace examples {
     }
 
     public static pbd::MessageDescriptor Descriptor {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_RouteNote__Descriptor; }
+      get { return global::routeguide.Proto.RouteGuide.internal__static_routeguide_RouteNote__Descriptor; }
     }
 
     protected override pb::FieldAccess.FieldAccessorTable<RouteNote, RouteNote.Builder> InternalFieldAccessors {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_RouteNote__FieldAccessorTable; }
+      get { return global::routeguide.Proto.RouteGuide.internal__static_routeguide_RouteNote__FieldAccessorTable; }
     }
 
     public const int LocationFieldNumber = 1;
     private bool hasLocation;
-    private global::examples.Point location_;
+    private global::routeguide.Point location_;
     public bool HasLocation {
       get { return hasLocation; }
     }
-    public global::examples.Point Location {
-      get { return location_ ?? global::examples.Point.DefaultInstance; }
+    public global::routeguide.Point Location {
+      get { return location_ ?? global::routeguide.Point.DefaultInstance; }
     }
 
     public const int MessageFieldNumber = 2;
@@ -1297,11 +1297,11 @@ namespace examples {
       }
 
       public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::examples.RouteNote.Descriptor; }
+        get { return global::routeguide.RouteNote.Descriptor; }
       }
 
       public override RouteNote DefaultInstanceForType {
-        get { return global::examples.RouteNote.DefaultInstance; }
+        get { return global::routeguide.RouteNote.DefaultInstance; }
       }
 
       public override RouteNote BuildPartial() {
@@ -1322,7 +1322,7 @@ namespace examples {
       }
 
       public override Builder MergeFrom(RouteNote other) {
-        if (other == global::examples.RouteNote.DefaultInstance) return this;
+        if (other == global::routeguide.RouteNote.DefaultInstance) return this;
         PrepareBuilder();
         if (other.HasLocation) {
           MergeLocation(other.Location);
@@ -1374,7 +1374,7 @@ namespace examples {
               break;
             }
             case 10: {
-              global::examples.Point.Builder subBuilder = global::examples.Point.CreateBuilder();
+              global::routeguide.Point.Builder subBuilder = global::routeguide.Point.CreateBuilder();
               if (result.hasLocation) {
                 subBuilder.MergeFrom(Location);
               }
@@ -1399,30 +1399,30 @@ namespace examples {
       public bool HasLocation {
        get { return result.hasLocation; }
       }
-      public global::examples.Point Location {
+      public global::routeguide.Point Location {
         get { return result.Location; }
         set { SetLocation(value); }
       }
-      public Builder SetLocation(global::examples.Point value) {
+      public Builder SetLocation(global::routeguide.Point value) {
         pb::ThrowHelper.ThrowIfNull(value, "value");
         PrepareBuilder();
         result.hasLocation = true;
         result.location_ = value;
         return this;
       }
-      public Builder SetLocation(global::examples.Point.Builder builderForValue) {
+      public Builder SetLocation(global::routeguide.Point.Builder builderForValue) {
         pb::ThrowHelper.ThrowIfNull(builderForValue, "builderForValue");
         PrepareBuilder();
         result.hasLocation = true;
         result.location_ = builderForValue.Build();
         return this;
       }
-      public Builder MergeLocation(global::examples.Point value) {
+      public Builder MergeLocation(global::routeguide.Point value) {
         pb::ThrowHelper.ThrowIfNull(value, "value");
         PrepareBuilder();
         if (result.hasLocation &&
-            result.location_ != global::examples.Point.DefaultInstance) {
-            result.location_ = global::examples.Point.CreateBuilder(result.location_).MergeFrom(value).BuildPartial();
+            result.location_ != global::routeguide.Point.DefaultInstance) {
+            result.location_ = global::routeguide.Point.CreateBuilder(result.location_).MergeFrom(value).BuildPartial();
         } else {
           result.location_ = value;
         }
@@ -1458,7 +1458,7 @@ namespace examples {
       }
     }
     static RouteNote() {
-      object.ReferenceEquals(global::examples.Proto.RouteGuide.Descriptor, null);
+      object.ReferenceEquals(global::routeguide.Proto.RouteGuide.Descriptor, null);
     }
   }
 
@@ -1481,11 +1481,11 @@ namespace examples {
     }
 
     public static pbd::MessageDescriptor Descriptor {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_RouteSummary__Descriptor; }
+      get { return global::routeguide.Proto.RouteGuide.internal__static_routeguide_RouteSummary__Descriptor; }
     }
 
     protected override pb::FieldAccess.FieldAccessorTable<RouteSummary, RouteSummary.Builder> InternalFieldAccessors {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_RouteSummary__FieldAccessorTable; }
+      get { return global::routeguide.Proto.RouteGuide.internal__static_routeguide_RouteSummary__FieldAccessorTable; }
     }
 
     public const int PointCountFieldNumber = 1;
@@ -1673,11 +1673,11 @@ namespace examples {
       }
 
       public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::examples.RouteSummary.Descriptor; }
+        get { return global::routeguide.RouteSummary.Descriptor; }
       }
 
       public override RouteSummary DefaultInstanceForType {
-        get { return global::examples.RouteSummary.DefaultInstance; }
+        get { return global::routeguide.RouteSummary.DefaultInstance; }
       }
 
       public override RouteSummary BuildPartial() {
@@ -1698,7 +1698,7 @@ namespace examples {
       }
 
       public override Builder MergeFrom(RouteSummary other) {
-        if (other == global::examples.RouteSummary.DefaultInstance) return this;
+        if (other == global::routeguide.RouteSummary.DefaultInstance) return this;
         PrepareBuilder();
         if (other.HasPointCount) {
           PointCount = other.PointCount;
@@ -1862,7 +1862,7 @@ namespace examples {
       }
     }
     static RouteSummary() {
-      object.ReferenceEquals(global::examples.Proto.RouteGuide.Descriptor, null);
+      object.ReferenceEquals(global::routeguide.Proto.RouteGuide.Descriptor, null);
     }
   }
 
