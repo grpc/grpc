@@ -54,7 +54,7 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
     service_link.start()
     channel = _intermediary_low.Channel('localhost:%d' % port, None)
     invocation_link = invocation.invocation_link(
-        channel, 'localhost',
+        channel, 'localhost', None,
         {self.group_and_method(): self.serialize_request},
         {self.group_and_method(): self.deserialize_response})
     invocation_link.start()
@@ -121,7 +121,7 @@ class RoundTripTest(unittest.TestCase):
     service_link.start()
     channel = _intermediary_low.Channel('localhost:%d' % port, None)
     invocation_link = invocation.invocation_link(
-        channel, 'localhost', identity_transformation, identity_transformation)
+        channel, None, None, identity_transformation, identity_transformation)
     invocation_mate = test_utilities.RecordingLink()
     invocation_link.join_link(invocation_mate)
     invocation_link.start()
@@ -166,7 +166,7 @@ class RoundTripTest(unittest.TestCase):
     service_link.start()
     channel = _intermediary_low.Channel('localhost:%d' % port, None)
     invocation_link = invocation.invocation_link(
-        channel, 'localhost',
+        channel, 'localhost', None,
         {(test_group, test_method): scenario.serialize_request},
         {(test_group, test_method): scenario.deserialize_response})
     invocation_mate = test_utilities.RecordingLink()

@@ -41,6 +41,8 @@ from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import relay
 from grpc.framework.interfaces.links import links
 
+_IDENTITY = lambda x: x
+
 _STOP = _intermediary_low.Event.Kind.STOP
 _WRITE = _intermediary_low.Event.Kind.WRITE_ACCEPTED
 _COMPLETE = _intermediary_low.Event.Kind.COMPLETE_ACCEPTED
@@ -95,11 +97,12 @@ def _no_longer_due(kind, rpc_state, key, rpc_states):
 class _Kernel(object):
 
   def __init__(
-      self, channel, host, request_serializers, response_deserializers,
-      ticket_relay):
+      self, channel, host, metadata_transformer, request_serializers,
+      response_deserializers, ticket_relay):
     self._lock = threading.Lock()
     self._channel = channel
     self._host = host
+    self._metadata_transformer = metadata_transformer
     self._request_serializers = request_serializers
     self._response_deserializers = response_deserializers
     self._relay = ticket_relay
@@ -225,20 +228,17 @@ class _Kernel(object):
     else:
       return
 
-    request_serializer = self._request_serializers.get((group, method))
-    response_deserializer = self._response_deserializers.get((group, method))
-    if request_serializer is None or response_deserializer is None:
-      cancellation_ticket = links.Ticket(
-          operation_id, 0, None, None, None, None, None, None, None, None, None,
-          None, links.Ticket.Termination.CANCELLATION)
-      self._relay.add_value(cancellation_ticket)
-      return
+    transformed_initial_metadata = self._metadata_transformer(initial_metadata)
+    request_serializer = self._request_serializers.get(
+        (group, method), _IDENTITY)
+    response_deserializer = self._response_deserializers.get(
+        (group, method), _IDENTITY)
 
     call = _intermediary_low.Call(
         self._channel, self._completion_queue, '/%s/%s' % (group, method),
         self._host, time.time() + timeout)
-    if initial_metadata is not None:
-      for metadata_key, metadata_value in initial_metadata:
+    if transformed_initial_metadata is not None:
+      for metadata_key, metadata_value in transformed_initial_metadata:
         call.add_metadata(metadata_key, metadata_value)
     call.invoke(self._completion_queue, operation_id, operation_id)
     if payload is None:
@@ -336,10 +336,15 @@ class InvocationLink(links.Link, activated.Activated):
 class _InvocationLink(InvocationLink):
 
   def __init__(
-      self, channel, host, request_serializers, response_deserializers):
+      self, channel, host, metadata_transformer, request_serializers,
+      response_deserializers):
     self._relay = relay.relay(None)
     self._kernel = _Kernel(
-        channel, host, request_serializers, response_deserializers, self._relay)
+        channel, host,
+        _IDENTITY if metadata_transformer is None else metadata_transformer,
+        {} if request_serializers is None else request_serializers,
+        {} if response_deserializers is None else response_deserializers,
+        self._relay)
 
   def _start(self):
     self._relay.start()
@@ -376,12 +381,17 @@ class _InvocationLink(InvocationLink):
     self._stop()
 
 
-def invocation_link(channel, host, request_serializers, response_deserializers):
+def invocation_link(
+    channel, host, metadata_transformer, request_serializers,
+    response_deserializers):
   """Creates an InvocationLink.
 
   Args:
     channel: An _intermediary_low.Channel for use by the link.
     host: The host to specify when invoking RPCs.
+    metadata_transformer: A callable that takes an invocation-side initial
+      metadata value and returns another metadata value to send in its place.
+      May be None.
     request_serializers: A dict from group-method pair to request object
       serialization behavior.
     response_deserializers: A dict from group-method pair to response object
@@ -391,4 +401,5 @@ def invocation_link(channel, host, request_serializers, response_deserializers):
     An InvocationLink.
   """
   return _InvocationLink(
-      channel, host, request_serializers, response_deserializers)
+      channel, host, metadata_transformer, request_serializers,
+      response_deserializers)

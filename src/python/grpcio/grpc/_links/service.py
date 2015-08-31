@@ -40,6 +40,8 @@ from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import relay
 from grpc.framework.interfaces.links import links
 
+_IDENTITY = lambda x: x
+
 _TERMINATION_KIND_TO_CODE = {
     links.Ticket.Termination.COMPLETION: _intermediary_low.Code.OK,
     links.Ticket.Termination.CANCELLATION: _intermediary_low.Code.CANCELLED,
@@ -154,12 +156,10 @@ class _Kernel(object):
     except ValueError:
       logging.info('Illegal path "%s"!', service_acceptance.method)
       return
-    request_deserializer = self._request_deserializers.get((group, method))
-    response_serializer = self._response_serializers.get((group, method))
-    if request_deserializer is None or response_serializer is None:
-      # TODO(nathaniel): Terminate the RPC with code NOT_FOUND.
-      call.cancel()
-      return
+    request_deserializer = self._request_deserializers.get(
+        (group, method), _IDENTITY)
+    response_serializer = self._response_serializers.get(
+        (group, method), _IDENTITY)
 
     call.read(call)
     self._rpc_states[call] = _RPCState(
@@ -433,7 +433,9 @@ class _ServiceLink(ServiceLink):
   def __init__(self, request_deserializers, response_serializers):
     self._relay = relay.relay(None)
     self._kernel = _Kernel(
-        request_deserializers, response_serializers, self._relay)
+        {} if request_deserializers is None else request_deserializers,
+        {} if response_serializers is None else response_serializers,
+        self._relay)
 
   def accept_ticket(self, ticket):
     self._kernel.add_ticket(ticket)
