@@ -154,7 +154,7 @@ static VALUE grpc_rb_default_credentials_create(VALUE cls) {
     Creates the default credential instances. */
 static VALUE grpc_rb_compute_engine_credentials_create(VALUE cls) {
   grpc_rb_credentials *wrapper = ALLOC(grpc_rb_credentials);
-  wrapper->wrapped = grpc_compute_engine_credentials_create(NULL);
+  wrapper->wrapped = grpc_google_compute_engine_credentials_create(NULL);
   if (wrapper->wrapped == NULL) {
     rb_raise(rb_eRuntimeError,
              "could not create composite engine credentials, not sure why");

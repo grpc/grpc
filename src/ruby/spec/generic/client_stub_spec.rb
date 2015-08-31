@@ -498,7 +498,7 @@ describe 'ClientStub' do
   def create_test_server
     @server_queue = GRPC::Core::CompletionQueue.new
     @server = GRPC::Core::Server.new(@server_queue, nil)
-    @server.add_http2_port('0.0.0.0:0')
+    @server.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
   end
 
   def expect_server_to_be_invoked(notifier)

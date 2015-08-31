@@ -42,19 +42,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-/* --- grpc_process_auth_metadata_func --- */
-
-static grpc_auth_metadata_processor server_processor = {NULL, NULL};
-
-grpc_auth_metadata_processor grpc_server_get_auth_metadata_processor(void) {
-  return server_processor;
-}
-
-void grpc_server_register_auth_metadata_processor(
-    grpc_auth_metadata_processor processor) {
-  server_processor = processor;
-}
-
 /* --- grpc_call --- */
 
 grpc_call_error grpc_call_set_credentials(grpc_call *call,

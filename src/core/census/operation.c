@@ -1,5 +1,4 @@
 /*
- *
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -31,56 +30,34 @@
  *
  */
 
-#ifndef GRPCXX_SERVER_CREDENTIALS_H
-#define GRPCXX_SERVER_CREDENTIALS_H
+#include <grpc/census.h>
 
-#include <memory>
-#include <vector>
+/* TODO(aveitch): These are all placeholder implementations. */
 
-#include <grpc++/support/config.h>
+census_timestamp census_start_rpc_op_timestamp(void) {
+  census_timestamp ct;
+  /* TODO(aveitch): assumes gpr_timespec implementation of census_timestamp. */
+  ct.ts = gpr_now(GPR_CLOCK_MONOTONIC);
+  return ct;
+}
 
-struct grpc_server;
+census_context *census_start_client_rpc_op(
+    const census_context *context, gpr_int64 rpc_name_id,
+    const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
+    const census_timestamp *start_time) {
+  return NULL;
+}
 
-namespace grpc {
-class Server;
+census_context *census_start_server_rpc_op(
+    const char *buffer, gpr_int64 rpc_name_id,
+    const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
+    census_timestamp *start_time) {
+  return NULL;
+}
 
-// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
-class ServerCredentials {
- public:
-  virtual ~ServerCredentials();
+census_context *census_start_op(census_context *context, const char *family,
+                                const char *name, int trace_mask) {
+  return NULL;
+}
 
- private:
-  friend class ::grpc::Server;
-
-  /// Tries to bind \a server to the given \a addr (eg, localhost:1234,
-  /// 192.168.1.1:31416, [::1]:27182, etc.)
-  ///
-  /// \return bound port number on sucess, 0 on failure.
-  // TODO(dgq): the "port" part seems to be a misnomer.
-  virtual int AddPortToServer(const grpc::string& addr,
-                              grpc_server* server) = 0;
-};
-
-/// Options to create ServerCredentials with SSL
-struct SslServerCredentialsOptions {
-  SslServerCredentialsOptions() : force_client_auth(false) {}
-
-  struct PemKeyCertPair {
-    grpc::string private_key;
-    grpc::string cert_chain;
-  };
-  grpc::string pem_root_certs;
-  std::vector<PemKeyCertPair> pem_key_cert_pairs;
-  bool force_client_auth;
-};
-
-/// Builds SSL ServerCredentials given SSL specific options
-std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options);
-
-/// Builds insecure server credentials.
-std::shared_ptr<ServerCredentials> InsecureServerCredentials();
-
-}  // namespace grpc
-
-#endif  // GRPCXX_SERVER_CREDENTIALS_H
+void census_end_op(census_context *context, int status) {}

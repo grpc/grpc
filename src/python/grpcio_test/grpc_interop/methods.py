@@ -346,20 +346,6 @@ def _compute_engine_creds(stub, args):
                                           response.username))
 
 
-def _service_account_creds(stub, args):
-  json_key_filename = os.environ[
-      oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
-  wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
-  response = _large_unary_common_behavior(stub, True, True)
-  if wanted_email != response.username:
-    raise ValueError(
-        'expected username %s, got %s' % (wanted_email, response.username))
-  if args.oauth_scope.find(response.oauth_scope) == -1:
-    raise ValueError(
-        'expected to find oauth scope "%s" in received "%s"' %
-            (response.oauth_scope, args.oauth_scope))
-
-
 def _oauth2_auth_token(stub, args):
   json_key_filename = os.environ[
       oauth2client_client.GOOGLE_APPLICATION_CREDENTIALS]
@@ -383,7 +369,6 @@ class TestCase(enum.Enum):
   CANCEL_AFTER_BEGIN = 'cancel_after_begin'
   CANCEL_AFTER_FIRST_RESPONSE = 'cancel_after_first_response'
   COMPUTE_ENGINE_CREDS = 'compute_engine_creds'
-  SERVICE_ACCOUNT_CREDS = 'service_account_creds'
   OAUTH2_AUTH_TOKEN = 'oauth2_auth_token'
   TIMEOUT_ON_SLEEPING_SERVER = 'timeout_on_sleeping_server'
 
@@ -406,8 +391,6 @@ class TestCase(enum.Enum):
       _timeout_on_sleeping_server(stub)
     elif self is TestCase.COMPUTE_ENGINE_CREDS:
       _compute_engine_creds(stub, args)
-    elif self is TestCase.SERVICE_ACCOUNT_CREDS:
-      _service_account_creds(stub, args)
     elif self is TestCase.OAUTH2_AUTH_TOKEN:
       _oauth2_auth_token(stub, args)
     else:

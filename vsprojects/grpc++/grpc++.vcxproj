@@ -217,7 +217,6 @@
     <ClInclude Include="..\..\include\grpc++\client_context.h" />
     <ClInclude Include="..\..\include\grpc++\completion_queue.h" />
     <ClInclude Include="..\..\include\grpc++\create_channel.h" />
-    <ClInclude Include="..\..\include\grpc++\credentials.h" />
     <ClInclude Include="..\..\include\grpc++\generic\async_generic_service.h" />
     <ClInclude Include="..\..\include\grpc++\generic\generic_stub.h" />
     <ClInclude Include="..\..\include\grpc++\impl\call.h" />
@@ -234,13 +233,15 @@
     <ClInclude Include="..\..\include\grpc++\impl\thd.h" />
     <ClInclude Include="..\..\include\grpc++\impl\thd_cxx11.h" />
     <ClInclude Include="..\..\include\grpc++\impl\thd_no_cxx11.h" />
+    <ClInclude Include="..\..\include\grpc++\security\auth_context.h" />
+    <ClInclude Include="..\..\include\grpc++\security\auth_metadata_processor.h" />
+    <ClInclude Include="..\..\include\grpc++\security\credentials.h" />
+    <ClInclude Include="..\..\include\grpc++\security\server_credentials.h" />
     <ClInclude Include="..\..\include\grpc++\server.h" />
     <ClInclude Include="..\..\include\grpc++\server_builder.h" />
     <ClInclude Include="..\..\include\grpc++\server_context.h" />
-    <ClInclude Include="..\..\include\grpc++\server_credentials.h" />
     <ClInclude Include="..\..\include\grpc++\support\async_stream.h" />
     <ClInclude Include="..\..\include\grpc++\support\async_unary_call.h" />
-    <ClInclude Include="..\..\include\grpc++\support\auth_context.h" />
     <ClInclude Include="..\..\include\grpc++\support\byte_buffer.h" />
     <ClInclude Include="..\..\include\grpc++\support\channel_arguments.h" />
     <ClInclude Include="..\..\include\grpc++\support\config.h" />

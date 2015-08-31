@@ -55,7 +55,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc++/support/auth_context.h>
+#include <grpc++/security/auth_context.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
 #include <grpc++/support/string_ref.h>
