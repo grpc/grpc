@@ -111,9 +111,6 @@
     <ClInclude Include="..\..\include\grpc++\create_channel.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\credentials.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\generic\async_generic_service.h">
       <Filter>include\grpc++\generic</Filter>
     </ClInclude>
@@ -162,6 +159,18 @@
     <ClInclude Include="..\..\include\grpc++\impl\thd_no_cxx11.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\security\auth_context.h">
+      <Filter>include\grpc++\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\security\auth_metadata_processor.h">
+      <Filter>include\grpc++\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\security\credentials.h">
+      <Filter>include\grpc++\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\security\server_credentials.h">
+      <Filter>include\grpc++\security</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\server.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
@@ -171,16 +180,10 @@
     <ClInclude Include="..\..\include\grpc++\server_context.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\server_credentials.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\support\async_stream.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\support\async_unary_call.h">
-      <Filter>include\grpc++\support</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\include\grpc++\support\auth_context.h">
       <Filter>include\grpc++\support</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\grpc++\support\byte_buffer.h">
@@ -256,6 +259,9 @@
     </Filter>
     <Filter Include="include\grpc++\impl">
       <UniqueIdentifier>{0da8cd95-314f-da1b-5ce7-7791a5be1f1a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\security">
+      <UniqueIdentifier>{a80eb32b-1be9-1187-5f40-30d92accecc8}</UniqueIdentifier>
     </Filter>
     <Filter Include="include\grpc++\support">
       <UniqueIdentifier>{a5c10dae-f715-2a30-1066-d22f8bc94cb2}</UniqueIdentifier>
