@@ -203,11 +203,11 @@ class _End(End):
   def accept_ticket(self, ticket):
     """See links.Link.accept_ticket for specification."""
     with self._lock:
-      if self._cycle is not None and not self._cycle.grace:
+      if self._cycle is not None:
         operation = self._cycle.operations.get(ticket.operation_id)
         if operation is not None:
           operation.handle_ticket(ticket)
-        elif self._servicer_package is not None:
+        elif self._servicer_package is not None and not self._cycle.grace:
           termination_action = _termination_action(
               self._lock, self._stats, ticket.operation_id, self._cycle)
           operation = _operation.service_operate(
