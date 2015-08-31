@@ -135,7 +135,12 @@ def main(argv):
         # we have optional control data: this template represents
         # a directory
         if not cleared_dir:
-          shutil.rmtree(output_name, ignore_errors=True)
+          if not os.path.exists(output_name):
+            pass
+          elif os.path.isfile(output_name):
+            os.unlink(output_name)
+          else:
+            shutil.rmtree(output_name, ignore_errors=True)
           cleared_dir = True
         items = []
         if 'foreach' in src:
