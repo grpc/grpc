@@ -93,16 +93,16 @@ message Point {
 Next we need to generate the gRPC client and server interfaces from our .proto service definition. We do this using the protocol buffer compiler `protoc` with a special gRPC C# plugin.
 
 If you want to run this yourself, make sure you've installed protoc and gRPC C# plugin. The instructions vary based on your OS:
-- For Windows, the `Grpc.Tools` NuGet package contains the binaries you will need to generate the code.
+- For Windows, the `Grpc.Tools` and `Google.Protobuf` NuGet packages contain the binaries you will need to generate the code.
 - For Linux, make sure you've [installed gRPC C Core using Linuxbrew](https://github.com/grpc/grpc/tree/master/src/csharp#usage-linux-mono)
 - For MacOS, make sure you've [installed gRPC C Core using Homebrew](https://github.com/grpc/grpc/tree/master/src/csharp#usage-macos-mono)
 
 Once that's done, the following command can be used to generate the C# code.
 
-To generate the code on Windows, we use `protoc.exe` and `grpc_csharp_plugin.exe` binaries that are shipped with the `Grpc.Tools` NuGet package under the `tools` directory.
+To generate the code on Windows, we use `protoc.exe` from the `Google.Protobuf` NuGet package and `grpc_csharp_plugin.exe` from the `Grpc.Tools` NuGet package (both under the `tools` directory).
 Normally you would need to add the `Grpc.Tools` package to the solution yourself, but in this tutorial it has been already done for you. Following command should be run from the `csharp/route_guide` directory:
 ```
-> packages\Grpc.Tools.0.5.1\tools\protoc -I RouteGuide/protos --csharp_out=RouteGuide --grpc_out=RouteGuide --plugin=protoc-gen-grpc=packages\Grpc.Tools.0.5.1\tools\grpc_csharp_plugin.exe RouteGuide/protos/route_guide.proto
+> packages\Google.Protobuf.3.0.0-alpha4\tools\protoc -I RouteGuide/protos --csharp_out=RouteGuide --grpc_out=RouteGuide --plugin=protoc-gen-grpc=packages\Grpc.Tools.0.7.0\tools\grpc_csharp_plugin.exe RouteGuide/protos/route_guide.proto
 ```
 
 On Linux/MacOS, we rely on `protoc` and `grpc_csharp_plugin` being installed by Linuxbrew/Homebrew. Run this command from the route_guide directory:
@@ -143,7 +143,7 @@ public class RouteGuideImpl : RouteGuide.IRouteGuide
 `RouteGuideImpl` implements all our service methods. Let's look at the simplest type first, `GetFeature`, which just gets a `Point` from the client and returns the corresponding feature information from its database in a `Feature`.
 
 ```csharp
-    public Task<Feature> GetFeature(Grpc.Core.ServerCallContext context, Point request)
+    public Task<Feature> GetFeature(Point request, Grpc.Core.ServerCallContext context)
     {
         return Task.FromResult(CheckFeature(request));
     }
@@ -159,27 +159,14 @@ Now let's look at something a bit more complicated - a streaming RPC. `ListFeatu
 
 ```csharp
     // in RouteGuideImpl
-    public async Task ListFeatures(Grpc.Core.ServerCallContext context, Rectangle request,
-	    Grpc.Core.IServerStreamWriter<Feature> responseStream)
+    public async Task ListFeatures(Rectangle request,
+        Grpc.Core.IServerStreamWriter<Feature> responseStream,
+        Grpc.Core.ServerCallContext context)
     {
-        int left = Math.Min(request.Lo.Longitude, request.Hi.Longitude);
-        int right = Math.Max(request.Lo.Longitude, request.Hi.Longitude);
-        int top = Math.Max(request.Lo.Latitude, request.Hi.Latitude);
-        int bottom = Math.Min(request.Lo.Latitude, request.Hi.Latitude);
-
-        foreach (var feature in features)
+        var responses = features.FindAll( (feature) => feature.Exists() && request.Contains(feature.Location) );
+        foreach (var response in responses)
         {
-            if (!RouteGuideUtil.Exists(feature))
-            {
-                continue;
-            }
-
-            int lat = feature.Location.Latitude;
-            int lon = feature.Location.Longitude;
-            if (lon >= left && lon <= right && lat >= bottom && lat <= top)
-            {
-                await responseStream.WriteAsync(feature);
-            }
+            await responseStream.WriteAsync(response);
         }
     }
 ```
@@ -191,8 +178,8 @@ As you can see, here the request object is a `Rectangle` in which our client wan
 Similarly, the client-side streaming method `RecordRoute` uses an [IAsyncEnumerator](https://github.com/Reactive-Extensions/Rx.NET/blob/master/Ix.NET/Source/System.Interactive.Async/IAsyncEnumerator.cs), to read the stream of requests using the async method `MoveNext` and the `Current` property.
 
 ```csharp
-    public async Task<RouteSummary> RecordRoute(Grpc.Core.ServerCallContext context,
-	    Grpc.Core.IAsyncStreamReader<Point> requestStream)
+    public async Task<RouteSummary> RecordRoute(Grpc.Core.IAsyncStreamReader<Point> requestStream,
+        Grpc.Core.ServerCallContext context)
     {
         int pointCount = 0;
         int featureCount = 0;
@@ -205,21 +192,26 @@ Similarly, the client-side streaming method `RecordRoute` uses an [IAsyncEnumera
         {
             var point = requestStream.Current;
             pointCount++;
-            if (RouteGuideUtil.Exists(CheckFeature(point)))
+            if (CheckFeature(point).Exists())
             {
                 featureCount++;
             }
             if (previous != null)
             {
-                distance += (int) CalcDistance(previous, point);
+                distance += (int) previous.GetDistance(point);
             }
             previous = point;
         }
 
         stopwatch.Stop();
-        return RouteSummary.CreateBuilder().SetPointCount(pointCount)
-            .SetFeatureCount(featureCount).SetDistance(distance)
-            .SetElapsedTime((int) (stopwatch.ElapsedMilliseconds / 1000)).Build();
+        
+        return new RouteSummary
+        {
+            PointCount = pointCount,
+            FeatureCount = featureCount,
+            Distance = distance,
+            ElapsedTime = (int)(stopwatch.ElapsedMilliseconds / 1000)
+        };
     }
 ```
 
@@ -228,28 +220,17 @@ Similarly, the client-side streaming method `RecordRoute` uses an [IAsyncEnumera
 Finally, let's look at our bidirectional streaming RPC `RouteChat`.
 
 ```csharp
-    public async Task RouteChat(Grpc.Core.ServerCallContext context,
-	    Grpc.Core.IAsyncStreamReader<RouteNote> requestStream, Grpc.Core.IServerStreamWriter<RouteNote> responseStream)
+    public async Task RouteChat(Grpc.Core.IAsyncStreamReader<RouteNote> requestStream,
+        Grpc.Core.IServerStreamWriter<RouteNote> responseStream,
+        Grpc.Core.ServerCallContext context,)
     {
         while (await requestStream.MoveNext())
-        {
+        {        
             var note = requestStream.Current;
-            List<RouteNote> notes = GetOrCreateNotes(note.Location);
-
-			List<RouteNote> prevNotes;
-            lock (notes)
-            {
-                prevNotes = new List<RouteNote>(notes);
-            }
-
+            List<RouteNote> prevNotes = AddNoteForLocation(note.Location, note);
             foreach (var prevNote in prevNotes)
             {
                 await responseStream.WriteAsync(prevNote);
-            }                
-                
-            lock (notes)
-            {
-                notes.Add(note);
             }
         }
     }
@@ -263,11 +244,12 @@ Once we've implemented all our methods, we also need to start up a gRPC server s
 
 ```csharp
 var features = RouteGuideUtil.ParseFeatures(RouteGuideUtil.DefaultFeaturesFile);
-GrpcEnvironment.Initialize();
 
-Server server = new Server();
-server.AddServiceDefinition(RouteGuide.BindService(new RouteGuideImpl(features)));
-int port = server.AddListeningPort("localhost", 50052);
+Server server = new Server
+{
+    Services = { RouteGuide.BindService(new RouteGuideImpl(features)) },
+    Ports = { new ServerPort("localhost", Port, ServerCredentials.Insecure) }
+};
 server.Start();
 
 Console.WriteLine("RouteGuide server listening on port " + port);
@@ -275,14 +257,13 @@ Console.WriteLine("Press any key to stop the server...");
 Console.ReadKey();
 
 server.ShutdownAsync().Wait();
-GrpcEnvironment.Shutdown();
 ```
 As you can see, we build and start our server using `Grpc.Core.Server` class. To do this, we:
 
 1. Create an instance of `Grpc.Core.Server`.
 1. Create an instance of our service implementation class `RouteGuideImpl`.
-3. Register our service implementation with the server using the `AddServiceDefinition` method and the generated method `RouteGuide.BindService`.
-2. Specify the address and port we want to use to listen for client requests using the `AddListeningPort` method.
+3. Register our service implementation by adding its service definition to `Services` collection (We obtain the service definition from the generated `RouteGuide.BindService` method).
+2. Specify the address and port we want to use to listen for client requests. This is done by adding `ServerPort` to `Ports` collection.
 4. Call `Start` on the server instance to start an RPC server for our service.
 
 <a name="client"></a>
@@ -294,19 +275,15 @@ In this section, we'll look at creating a C# client for our `RouteGuide` service
 
 To call service methods, we first need to create a *stub*.
 
-First, we need to create a gRPC client channel that will connect to gRPC server. Then, we use the `RouteGuide.NewStub` method of the `RouteGuide` class generated from our .proto.
+First, we need to create a gRPC client channel that will connect to gRPC server. Then, we use the `RouteGuide.NewClient` method of the `RouteGuide` class generated from our .proto.
 
 ```csharp
-GrpcEnvironment.Initialize();
+Channel channel = new Channel("127.0.0.1:50052", Credentials.Insecure)
+var client = new RouteGuideClient(RouteGuide.NewClient(channel));
 
-using (Channel channel = new Channel("127.0.0.1:50052"))
-{
-    var client = RouteGuide.NewStub(channel);
- 
-    // YOUR CODE GOES HERE
-}
+// YOUR CODE GOES HERE
 
-GrpcEnvironment.Shutdown();
+channel.ShutdownAsync().Wait();
 ```
 
 ### Calling service methods
@@ -319,7 +296,7 @@ gRPC C# also provides a synchronous method stub, but only for simple (single req
 Calling the simple RPC `GetFeature` in a synchronous way is nearly as straightforward as calling a local method.
 
 ```csharp
-Point request = Point.CreateBuilder().SetLatitude(409146138).SetLongitude(-746188906).Build();
+Point request = new Point { Latitude = 409146138, Longitude = -746188906 };
 Feature feature = client.GetFeature(request);
 ```
 
@@ -327,7 +304,7 @@ As you can see, we create and populate a request protocol buffer object (in our 
 
 Alternatively, if you are in async context, you can call an asynchronous version of the method (and use `await` keyword to await the result):
 ```csharp
-Point request = Point.CreateBuilder().SetLatitude(409146138).SetLongitude(-746188906).Build();
+Point request = new Point { Latitude = 409146138, Longitude = -746188906 };
 Feature feature = await client.GetFeatureAsync(request);
 ```
 
@@ -349,17 +326,17 @@ using (var call = client.ListFeatures(request))
 ```
 
 The client-side streaming method `RecordRoute` is similar, except we use the property `RequestStream` to write the requests one by one using `WriteAsync` and eventually signal that no more request will be send using `CompleteAsync`. The method result can be obtained through the property
-`Result`.
+`ResponseAsync`.
 ```csharp
 using (var call = client.RecordRoute())
 {
     foreach (var point in points)
-	{
+    {
         await call.RequestStream.WriteAsync(point);
     }
     await call.RequestStream.CompleteAsync();
 
-    RouteSummary summary = await call.Result;
+    RouteSummary summary = await call.ResponseAsync;
 }
 ```
 
@@ -374,7 +351,7 @@ Finally, let's look at our bidirectional streaming RPC `RouteChat`. In this case
         {
             var note = call.ResponseStream.Current;
             Console.WriteLine("Received " + note);
-		}
+        }
     });
 
     foreach (RouteNote request in requests)
@@ -382,7 +359,7 @@ Finally, let's look at our bidirectional streaming RPC `RouteChat`. In this case
         await call.RequestStream.WriteAsync(request);
     }
     await call.RequestStream.CompleteAsync();
-	await responseReaderTask;
+    await responseReaderTask;
 }
 ```
 
