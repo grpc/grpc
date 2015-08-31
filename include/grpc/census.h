@@ -194,8 +194,10 @@ void census_record(census_context *context, census_value *values,
 /** Structure used to describe an aggregation type. */
 typedef struct {
   /* Create a new aggregation. The pointer returned can be used in future calls
-     to free(), record(), data() and reset(). */
+     to clone(), free(), record(), data() and reset(). */
   void *(*create)(const void *create_arg);
+  /* Make a copy of an aggregation created by create() */
+  void *(*clone)(const void *aggregation);
   /* Destroy an aggregation created by create() */
   void (*free)(void *aggregation);
   /* Record a new value against aggregation. */
