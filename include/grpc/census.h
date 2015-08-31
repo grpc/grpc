@@ -216,21 +216,21 @@ typedef struct {
      debugging only. Returns the number of bytes added to buffer (a value == n
      implies the buffer was of insufficient size). */
   size_t (*print)(const void *aggregation, char *buffer, size_t n);
-} census_aggregation;
+} census_aggregation_ops;
 
 /* Predefined aggregation types. */
-extern census_aggregation census_agg_scalar;
-extern census_aggregation census_agg_distribution;
-extern census_aggregation census_agg_histogram;
-extern census_aggregation census_agg_window;
+extern census_aggregation_ops census_agg_scalar;
+extern census_aggregation_ops census_agg_distribution;
+extern census_aggregation_ops census_agg_histogram;
+extern census_aggregation_ops census_agg_window;
 
 /** Information needed to instantiate a new aggregation. Used in view
     construction via census_define_view(). */
 typedef struct {
-  const census_aggregation *aggregation;
+  const census_aggregation_ops *ops;
   const void
       *create_arg; /* Argument to be used for aggregation initialization. */
-} census_aggregation_descriptor;
+} census_aggregation;
 
 /** A census view type. Opaque. */
 typedef struct census_view census_view;
@@ -243,9 +243,10 @@ typedef struct census_view census_view;
 
   @return A new census view
 */
-census_view *census_view_create(
-    gpr_uint32 metric_id, const census_tag_set *tags,
-    const census_aggregation_descriptor *aggregations, size_t naggregations);
+census_view *census_view_create(gpr_uint32 metric_id,
+                                const census_tag_set *tags,
+                                const census_aggregation *aggregations,
+                                size_t naggregations);
 
 /** Destroy a previously created view. */
 void census_view_delete(census_view *view);
@@ -260,8 +261,7 @@ size_t census_view_naggregations(const census_view *view);
 const census_tag_set *census_view_tags(const census_view *view);
 
 /** Get aggregation descriptors associated with a view. */
-const census_aggregation_descriptor *census_view_aggregrations(
-    const census_view *view);
+const census_aggregation *census_view_aggregrations(const census_view *view);
 
 /** Holds all the aggregation data for a particular view instantiation. Forms
   part of the data returned by census_view_data(). */
