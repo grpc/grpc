@@ -54,11 +54,12 @@ class _AutoIntermediary(object):
 
 
 def _assemble(
-    channel, host, request_serializers, response_deserializers, thread_pool,
-    thread_pool_size):
+    channel, host, metadata_transformer, request_serializers,
+    response_deserializers, thread_pool, thread_pool_size):
   end_link = _core_implementations.invocation_end_link()
   grpc_link = invocation.invocation_link(
-      channel, host, request_serializers, response_deserializers)
+      channel, host, metadata_transformer, request_serializers,
+      response_deserializers)
   if thread_pool is None:
     invocation_pool = logging_pool.pool(
         _DEFAULT_POOL_SIZE if thread_pool_size is None else thread_pool_size)
@@ -89,21 +90,22 @@ def _wrap_assembly(stub, end_link, grpc_link, assembly_pool):
 
 
 def generic_stub(
-    channel, host, request_serializers, response_deserializers, thread_pool,
-    thread_pool_size):
+    channel, host, metadata_transformer, request_serializers,
+    response_deserializers, thread_pool, thread_pool_size):
   end_link, grpc_link, invocation_pool, assembly_pool = _assemble(
-      channel, host, request_serializers, response_deserializers, thread_pool,
-      thread_pool_size)
+      channel, host, metadata_transformer, request_serializers,
+      response_deserializers, thread_pool, thread_pool_size)
   stub = _crust_implementations.generic_stub(end_link, invocation_pool)
   return _wrap_assembly(stub, end_link, grpc_link, assembly_pool)
 
 
 def dynamic_stub(
-    channel, host, service, cardinalities, request_serializers,
-    response_deserializers, thread_pool, thread_pool_size):
+    channel, host, service, cardinalities, metadata_transformer,
+    request_serializers, response_deserializers, thread_pool,
+    thread_pool_size):
   end_link, grpc_link, invocation_pool, assembly_pool = _assemble(
-      channel, host, request_serializers, response_deserializers, thread_pool,
-      thread_pool_size)
+      channel, host, metadata_transformer, request_serializers,
+      response_deserializers, thread_pool, thread_pool_size)
   stub = _crust_implementations.dynamic_stub(
       end_link, service, cardinalities, invocation_pool)
   return _wrap_assembly(stub, end_link, grpc_link, assembly_pool)
