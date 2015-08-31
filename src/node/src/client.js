@@ -142,7 +142,14 @@ function _read(size) {
       return;
     }
     var data = event.read;
-    if (self.push(self.deserialize(data)) && data !== null) {
+    var deserialized;
+    try {
+      deserialized = self.deserialize(data);
+    } catch (e) {
+      self.call.cancelWithStatus(grpc.status.INTERNAL,
+                                 'Failed to parse server response');
+    }
+    if (self.push(deserialized) && data !== null) {
       var read_batch = {};
       read_batch[grpc.opType.RECV_MESSAGE] = true;
       self.call.startBatch(read_batch, readCallback);
@@ -296,23 +303,38 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
       call.startBatch(client_batch, function(err, response) {
         response.status.metadata = Metadata._fromCoreRepresentation(
               response.status.metadata);
-        emitter.emit('status', response.status);
-        if (response.status.code !== grpc.status.OK) {
-          var error = new Error(response.status.details);
-          error.code = response.status.code;
-          error.metadata = response.status.metadata;
-          callback(error);
-          return;
-        } else {
+        var status = response.status;
+        var error;
+        var deserialized;
+        if (status.code === grpc.status.OK) {
           if (err) {
             // Got a batch error, but OK status. Something went wrong
             callback(err);
             return;
+          } else {
+            try {
+              deserialized = deserialize(response.read);
+            } catch (e) {
+              /* Change status to indicate bad server response. This will result
+               * in passing an error to the callback */
+              status = {
+                code: grpc.status.INTERNAL,
+                details: 'Failed to parse server response'
+              };
+            }
           }
         }
+        if (status.code !== grpc.status.OK) {
+          error = new Error(response.status.details);
+          error.code = status.code;
+          error.metadata = status.metadata;
+          callback(error);
+        } else {
+          callback(null, deserialized);
+        }
+        emitter.emit('status', status);
         emitter.emit('metadata', Metadata._fromCoreRepresentation(
             response.metadata));
-        callback(null, deserialize(response.read));
       });
     });
     return emitter;
@@ -374,21 +396,36 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
       call.startBatch(client_batch, function(err, response) {
         response.status.metadata = Metadata._fromCoreRepresentation(
               response.status.metadata);
-        stream.emit('status', response.status);
-        if (response.status.code !== grpc.status.OK) {
-          var error = new Error(response.status.details);
-          error.code = response.status.code;
-          error.metadata = response.status.metadata;
-          callback(error);
-          return;
-        } else {
+        var status = response.status;
+        var error;
+        var deserialized;
+        if (status.code === grpc.status.OK) {
           if (err) {
             // Got a batch error, but OK status. Something went wrong
             callback(err);
             return;
+          } else {
+            try {
+              deserialized = deserialize(response.read);
+            } catch (e) {
+              /* Change status to indicate bad server response. This will result
+               * in passing an error to the callback */
+              status = {
+                code: grpc.status.INTERNAL,
+                details: 'Failed to parse server response'
+              };
+            }
           }
         }
-        callback(null, deserialize(response.read));
+        if (status.code !== grpc.status.OK) {
+          error = new Error(response.status.details);
+          error.code = status.code;
+          error.metadata = status.metadata;
+          callback(error);
+        } else {
+          callback(null, deserialized);
+        }
+        stream.emit('status', status);
       });
     });
     return stream;
