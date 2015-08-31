@@ -102,6 +102,9 @@
     <ClInclude Include="..\..\include\grpc++\generic\generic_stub.h">
       <Filter>include\grpc++\generic</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\grpc++\grpc++.h">
+      <Filter>include\grpc++</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\include\grpc++\impl\call.h">
       <Filter>include\grpc++\impl</Filter>
     </ClInclude>
