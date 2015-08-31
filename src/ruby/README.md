@@ -19,10 +19,10 @@ INSTALLATION
 
 **Linux (Debian):**
 
-Add [Debian unstable][] to your `sources.list` file. Example:
+Add [Debian testing][] to your `sources.list` file. Example:
 
 ```sh
-echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
+echo "deb http://ftp.us.debian.org/debian testing main contrib non-free" | \
 sudo tee -a /etc/apt/sources.list
 ```
 
@@ -99,4 +99,4 @@ Directory structure is the layout for [ruby extensions][]
 [ruby extensions]:http://guides.rubygems.org/gems-with-extensions/
 [rubydoc]: http://www.rubydoc.info/gems/grpc
 [grpc.io]: http://www.grpc.io/docs/installation/ruby.html
-[Debian unstable]:https://www.debian.org/releases/sid/
+[Debian testing]:https://www.debian.org/releases/stretch/

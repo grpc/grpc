@@ -27,22 +27,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Tests Face compliance of the crust-over-core-over-gRPC-links stack."""
+"""Tests Face interface compliance of the gRPC Python Beta API."""
 
 import collections
 import unittest
 
 from grpc._adapter import _intermediary_low
-from grpc._links import invocation
-from grpc._links import service
-from grpc.framework.core import implementations as core_implementations
-from grpc.framework.crust import implementations as crust_implementations
-from grpc.framework.foundation import logging_pool
-from grpc.framework.interfaces.links import utilities
+from grpc.beta import beta
+from grpc_test import resources
 from grpc_test import test_common as grpc_test_common
+from grpc_test.beta import test_utilities
 from grpc_test.framework.common import test_constants
 from grpc_test.framework.interfaces.face import test_cases
 from grpc_test.framework.interfaces.face import test_interfaces
+
+_SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
 
 class _SerializationBehaviors(
@@ -72,62 +71,40 @@ class _Implementation(test_interfaces.Implementation):
 
   def instantiate(
       self, methods, method_implementations, multi_method_implementation):
-    pool = logging_pool.pool(test_constants.POOL_SIZE)
-    servicer = crust_implementations.servicer(
-        method_implementations, multi_method_implementation, pool)
     serialization_behaviors = _serialization_behaviors_from_test_methods(
         methods)
-    invocation_end_link = core_implementations.invocation_end_link()
-    service_end_link = core_implementations.service_end_link(
-        servicer, test_constants.DEFAULT_TIMEOUT,
-        test_constants.MAXIMUM_TIMEOUT)
-    service_grpc_link = service.service_link(
-        serialization_behaviors.request_deserializers,
-        serialization_behaviors.response_serializers)
-    port = service_grpc_link.add_port('[::]:0', None)
-    channel = _intermediary_low.Channel('localhost:%d' % port, None)
-    invocation_grpc_link = invocation.invocation_link(
-        channel, b'localhost', None,
-        serialization_behaviors.request_serializers,
-        serialization_behaviors.response_deserializers)
-
-    invocation_end_link.join_link(invocation_grpc_link)
-    invocation_grpc_link.join_link(invocation_end_link)
-    service_grpc_link.join_link(service_end_link)
-    service_end_link.join_link(service_grpc_link)
-    service_end_link.start()
-    invocation_end_link.start()
-    invocation_grpc_link.start()
-    service_grpc_link.start()
-
-    generic_stub = crust_implementations.generic_stub(invocation_end_link, pool)
     # TODO(nathaniel): Add a "groups" attribute to _digest.TestServiceDigest.
-    group = next(iter(methods))[0]
+    service = next(iter(methods))[0]
     # TODO(nathaniel): Add a "cardinalities_by_group" attribute to
     # _digest.TestServiceDigest.
     cardinalities = {
         method: method_object.cardinality()
         for (group, method), method_object in methods.iteritems()}
-    dynamic_stub = crust_implementations.dynamic_stub(
-        invocation_end_link, group, cardinalities, pool)
 
-    return generic_stub, {group: dynamic_stub}, (
-        invocation_end_link, invocation_grpc_link, service_grpc_link,
-        service_end_link, pool)
+    server_options = beta.server_options(
+        request_deserializers=serialization_behaviors.request_deserializers,
+        response_serializers=serialization_behaviors.response_serializers,
+        thread_pool_size=test_constants.POOL_SIZE)
+    server = beta.server(method_implementations, options=server_options)
+    server_credentials = beta.ssl_server_credentials(
+        [(resources.private_key(), resources.certificate_chain(),),])
+    port = server.add_secure_port('[::]:0', server_credentials)
+    server.start()
+    client_credentials = beta.ssl_client_credentials(
+        resources.test_root_certificates(), None, None)
+    channel = test_utilities.create_not_really_secure_channel(
+        'localhost', port, client_credentials, _SERVER_HOST_OVERRIDE)
+    stub_options = beta.stub_options(
+        request_serializers=serialization_behaviors.request_serializers,
+        response_deserializers=serialization_behaviors.response_deserializers,
+        thread_pool_size=test_constants.POOL_SIZE)
+    generic_stub = beta.generic_stub(channel, options=stub_options)
+    dynamic_stub = beta.dynamic_stub(
+        channel, service, cardinalities, options=stub_options)
+    return generic_stub, {service: dynamic_stub}, server
 
   def destantiate(self, memo):
-    (invocation_end_link, invocation_grpc_link, service_grpc_link,
-     service_end_link, pool) = memo
-    invocation_end_link.stop(0).wait()
-    invocation_grpc_link.stop()
-    service_grpc_link.begin_stop()
-    service_end_link.stop(0).wait()
-    service_grpc_link.end_stop()
-    invocation_end_link.join_link(utilities.NULL_LINK)
-    invocation_grpc_link.join_link(utilities.NULL_LINK)
-    service_grpc_link.join_link(utilities.NULL_LINK)
-    service_end_link.join_link(utilities.NULL_LINK)
-    pool.shutdown(wait=True)
+    memo.stop(test_constants.SHORT_TIMEOUT).wait()
 
   def invocation_metadata(self):
     return grpc_test_common.INVOCATION_INITIAL_METADATA

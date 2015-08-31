@@ -32,18 +32,14 @@
  */
 
 #include <grpc/census.h>
-#include <grpc/grpc.h>
-#include "src/core/surface/call.h"
 
-void grpc_census_call_set_context(grpc_call *call, census_context *context) {
-  if (census_enabled() == CENSUS_FEATURE_NONE) {
-    return;
-  }
-  if (context != NULL) {
-    grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context, NULL);
-  }
+/* TODO(aveitch): These are all placeholder implementations. */
+
+int census_trace_mask(const census_context *context) {
+  return CENSUS_TRACE_MASK_NONE;
 }
 
-census_context *grpc_census_call_get_context(grpc_call *call) {
-  return (census_context *)grpc_call_context_get(call, GRPC_CONTEXT_TRACING);
-}
+void census_set_trace_mask(int trace_mask) {}
+
+void census_trace_print(census_context *context, gpr_uint32 type,
+                        const char *buffer, size_t n) {}
