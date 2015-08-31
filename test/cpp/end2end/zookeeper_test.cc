@@ -34,11 +34,9 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
 #include <gtest/gtest.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_zookeeper.h>
@@ -159,7 +157,7 @@ class ZookeeperTest : public ::testing::Test {
 
   void ResetStub() {
     string target = "zookeeper://" + zookeeper_address_ + "/test";
-    channel_ = CreateChannel(target, InsecureCredentials(), ChannelArguments());
+    channel_ = CreateChannel(target, InsecureCredentials());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 

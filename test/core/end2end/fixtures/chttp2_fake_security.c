@@ -77,7 +77,8 @@ static void chttp2_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
                                                 grpc_channel_args *client_args,
                                                 grpc_credentials *creds) {
   fullstack_secure_fixture_data *ffd = f->fixture_data;
-  f->client = grpc_secure_channel_create(creds, ffd->localaddr, client_args);
+  f->client =
+      grpc_secure_channel_create(creds, ffd->localaddr, client_args, NULL);
   GPR_ASSERT(f->client != NULL);
   grpc_credentials_release(creds);
 }
@@ -127,7 +128,7 @@ static void chttp2_init_server_fake_secure_fullstack(
   grpc_server_credentials *fake_ts_creds =
       grpc_fake_transport_security_server_credentials_create();
   if (fail_server_auth_check(server_args)) {
-    grpc_auth_metadata_processor processor = {process_auth_failure, NULL};
+    grpc_auth_metadata_processor processor = {process_auth_failure, NULL, NULL};
     grpc_server_credentials_set_auth_metadata_processor(fake_ts_creds,
                                                         processor);
   }

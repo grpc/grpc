@@ -3,9 +3,9 @@
 #pragma warning disable 1591, 0612, 3021
 #region Designer generated code
 
-using pb = global::Google.ProtocolBuffers;
-using pbc = global::Google.ProtocolBuffers.Collections;
-using pbd = global::Google.ProtocolBuffers.Descriptors;
+using pb = global::Google.Protobuf;
+using pbc = global::Google.Protobuf.Collections;
+using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
 namespace Grpc.Health.V1Alpha {
 
@@ -14,21 +14,11 @@ namespace Grpc.Health.V1Alpha {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public static partial class Health {
 
-      #region Extension registration
-      public static void RegisterAllExtensions(pb::ExtensionRegistry registry) {
-      }
-      #endregion
-      #region Static variables
-      internal static pbd::MessageDescriptor internal__static_grpc_health_v1alpha_HealthCheckRequest__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::Grpc.Health.V1Alpha.HealthCheckRequest, global::Grpc.Health.V1Alpha.HealthCheckRequest.Builder> internal__static_grpc_health_v1alpha_HealthCheckRequest__FieldAccessorTable;
-      internal static pbd::MessageDescriptor internal__static_grpc_health_v1alpha_HealthCheckResponse__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::Grpc.Health.V1Alpha.HealthCheckResponse, global::Grpc.Health.V1Alpha.HealthCheckResponse.Builder> internal__static_grpc_health_v1alpha_HealthCheckResponse__FieldAccessorTable;
-      #endregion
       #region Descriptor
-      public static pbd::FileDescriptor Descriptor {
+      public static pbr::FileDescriptor Descriptor {
         get { return descriptor; }
       }
-      private static pbd::FileDescriptor descriptor;
+      private static pbr::FileDescriptor descriptor;
 
       static Health() {
         byte[] descriptorData = global::System.Convert.FromBase64String(
@@ -41,24 +31,13 @@ namespace Grpc.Health.V1Alpha {
               "EAESDwoLTk9UX1NFUlZJTkcQAjJkCgZIZWFsdGgSWgoFQ2hlY2sSJy5ncnBj", 
               "LmhlYWx0aC52MWFscGhhLkhlYWx0aENoZWNrUmVxdWVzdBooLmdycGMuaGVh", 
               "bHRoLnYxYWxwaGEuSGVhbHRoQ2hlY2tSZXNwb25zZUIWqgITR3JwYy5IZWFs", 
-            "dGguVjFBbHBoYQ=="));
-        pbd::FileDescriptor.InternalDescriptorAssigner assigner = delegate(pbd::FileDescriptor root) {
-          descriptor = root;
-          internal__static_grpc_health_v1alpha_HealthCheckRequest__Descriptor = Descriptor.MessageTypes[0];
-          internal__static_grpc_health_v1alpha_HealthCheckRequest__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::Grpc.Health.V1Alpha.HealthCheckRequest, global::Grpc.Health.V1Alpha.HealthCheckRequest.Builder>(internal__static_grpc_health_v1alpha_HealthCheckRequest__Descriptor,
-                  new string[] { "Host", "Service", });
-          internal__static_grpc_health_v1alpha_HealthCheckResponse__Descriptor = Descriptor.MessageTypes[1];
-          internal__static_grpc_health_v1alpha_HealthCheckResponse__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::Grpc.Health.V1Alpha.HealthCheckResponse, global::Grpc.Health.V1Alpha.HealthCheckResponse.Builder>(internal__static_grpc_health_v1alpha_HealthCheckResponse__Descriptor,
-                  new string[] { "Status", });
-          pb::ExtensionRegistry registry = pb::ExtensionRegistry.CreateInstance();
-          RegisterAllExtensions(registry);
-          return registry;
-        };
-        pbd::FileDescriptor.InternalBuildGeneratedFileFrom(descriptorData,
-            new pbd::FileDescriptor[] {
-            }, assigner);
+              "dGguVjFBbHBoYWIGcHJvdG8z"));
+        descriptor = pbr::FileDescriptor.InternalBuildGeneratedFileFrom(descriptorData,
+            new pbr::FileDescriptor[] { },
+            new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
+              new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1Alpha.HealthCheckRequest), new[]{ "Host", "Service" }, null, null, null),
+              new pbr::GeneratedCodeInfo(typeof(global::Grpc.Health.V1Alpha.HealthCheckResponse), new[]{ "Status" }, null, new[]{ typeof(global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus) }, null)
+            }));
       }
       #endregion
 
@@ -66,349 +45,231 @@ namespace Grpc.Health.V1Alpha {
   }
   #region Messages
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-  public sealed partial class HealthCheckRequest : pb::GeneratedMessage<HealthCheckRequest, HealthCheckRequest.Builder> {
-    private HealthCheckRequest() { }
-    private static readonly HealthCheckRequest defaultInstance = new HealthCheckRequest().MakeReadOnly();
-    private static readonly string[] _healthCheckRequestFieldNames = new string[] { "host", "service" };
-    private static readonly uint[] _healthCheckRequestFieldTags = new uint[] { 10, 18 };
-    public static HealthCheckRequest DefaultInstance {
-      get { return defaultInstance; }
+  public sealed partial class HealthCheckRequest : pb::IMessage<HealthCheckRequest> {
+    private static readonly pb::MessageParser<HealthCheckRequest> _parser = new pb::MessageParser<HealthCheckRequest>(() => new HealthCheckRequest());
+    public static pb::MessageParser<HealthCheckRequest> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Health.V1Alpha.Proto.Health.Descriptor.MessageTypes[0]; }
     }
 
-    public override HealthCheckRequest DefaultInstanceForType {
-      get { return DefaultInstance; }
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
     }
 
-    protected override HealthCheckRequest ThisMessage {
-      get { return this; }
+    public HealthCheckRequest() {
+      OnConstruction();
     }
 
-    public static pbd::MessageDescriptor Descriptor {
-      get { return global::Grpc.Health.V1Alpha.Proto.Health.internal__static_grpc_health_v1alpha_HealthCheckRequest__Descriptor; }
+    partial void OnConstruction();
+
+    public HealthCheckRequest(HealthCheckRequest other) : this() {
+      host_ = other.host_;
+      service_ = other.service_;
     }
 
-    protected override pb::FieldAccess.FieldAccessorTable<HealthCheckRequest, HealthCheckRequest.Builder> InternalFieldAccessors {
-      get { return global::Grpc.Health.V1Alpha.Proto.Health.internal__static_grpc_health_v1alpha_HealthCheckRequest__FieldAccessorTable; }
+    public HealthCheckRequest Clone() {
+      return new HealthCheckRequest(this);
     }
 
     public const int HostFieldNumber = 1;
-    private bool hasHost;
     private string host_ = "";
-    public bool HasHost {
-      get { return hasHost; }
-    }
     public string Host {
       get { return host_; }
+      set {
+        host_ = pb::Preconditions.CheckNotNull(value, "value");
+      }
     }
 
     public const int ServiceFieldNumber = 2;
-    private bool hasService;
     private string service_ = "";
-    public bool HasService {
-      get { return hasService; }
-    }
     public string Service {
       get { return service_; }
+      set {
+        service_ = pb::Preconditions.CheckNotNull(value, "value");
+      }
     }
 
-    public override bool IsInitialized {
-      get {
+    public override bool Equals(object other) {
+      return Equals(other as HealthCheckRequest);
+    }
+
+    public bool Equals(HealthCheckRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (Host != other.Host) return false;
+      if (Service != other.Service) return false;
+      return true;
     }
 
-    public override void WriteTo(pb::ICodedOutputStream output) {
-      CalcSerializedSize();
-      string[] field_names = _healthCheckRequestFieldNames;
-      if (hasHost) {
-        output.WriteString(1, field_names[0], Host);
-      }
-      if (hasService) {
-        output.WriteString(2, field_names[1], Service);
-      }
-      UnknownFields.WriteTo(output);
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Host.Length != 0) hash ^= Host.GetHashCode();
+      if (Service.Length != 0) hash ^= Service.GetHashCode();
+      return hash;
     }
 
-    private int memoizedSerializedSize = -1;
-    public override int SerializedSize {
-      get {
-        int size = memoizedSerializedSize;
-        if (size != -1) return size;
-        return CalcSerializedSize();
+    public override string ToString() {
+      return pb::JsonFormatter.Default.Format(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Host.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Host);
+      }
+      if (Service.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Service);
       }
     }
 
-    private int CalcSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (hasHost) {
-        size += pb::CodedOutputStream.ComputeStringSize(1, Host);
+    public int CalculateSize() {
+      int size = 0;
+      if (Host.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Host);
       }
-      if (hasService) {
-        size += pb::CodedOutputStream.ComputeStringSize(2, Service);
+      if (Service.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Service);
       }
-      size += UnknownFields.SerializedSize;
-      memoizedSerializedSize = size;
       return size;
     }
-    public static HealthCheckRequest ParseFrom(pb::ByteString data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static HealthCheckRequest ParseFrom(pb::ByteString data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static HealthCheckRequest ParseFrom(byte[] data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static HealthCheckRequest ParseFrom(byte[] data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static HealthCheckRequest ParseFrom(global::System.IO.Stream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static HealthCheckRequest ParseFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    public static HealthCheckRequest ParseDelimitedFrom(global::System.IO.Stream input) {
-      return CreateBuilder().MergeDelimitedFrom(input).BuildParsed();
-    }
-    public static HealthCheckRequest ParseDelimitedFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return CreateBuilder().MergeDelimitedFrom(input, extensionRegistry).BuildParsed();
-    }
-    public static HealthCheckRequest ParseFrom(pb::ICodedInputStream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static HealthCheckRequest ParseFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    private HealthCheckRequest MakeReadOnly() {
-      return this;
+
+    public void MergeFrom(HealthCheckRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Host.Length != 0) {
+        Host = other.Host;
+      }
+      if (other.Service.Length != 0) {
+        Service = other.Service;
+      }
     }
 
-    public static Builder CreateBuilder() { return new Builder(); }
-    public override Builder ToBuilder() { return CreateBuilder(this); }
-    public override Builder CreateBuilderForType() { return new Builder(); }
-    public static Builder CreateBuilder(HealthCheckRequest prototype) {
-      return new Builder(prototype);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    public sealed partial class Builder : pb::GeneratedBuilder<HealthCheckRequest, Builder> {
-      protected override Builder ThisBuilder {
-        get { return this; }
-      }
-      public Builder() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-      }
-      internal Builder(HealthCheckRequest cloneFrom) {
-        result = cloneFrom;
-        resultIsReadOnly = true;
-      }
-
-      private bool resultIsReadOnly;
-      private HealthCheckRequest result;
-
-      private HealthCheckRequest PrepareBuilder() {
-        if (resultIsReadOnly) {
-          HealthCheckRequest original = result;
-          result = new HealthCheckRequest();
-          resultIsReadOnly = false;
-          MergeFrom(original);
-        }
-        return result;
-      }
-
-      public override bool IsInitialized {
-        get { return result.IsInitialized; }
-      }
-
-      protected override HealthCheckRequest MessageBeingBuilt {
-        get { return PrepareBuilder(); }
-      }
-
-      public override Builder Clear() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-        return this;
-      }
-
-      public override Builder Clone() {
-        if (resultIsReadOnly) {
-          return new Builder(result);
-        } else {
-          return new Builder().MergeFrom(result);
-        }
-      }
-
-      public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::Grpc.Health.V1Alpha.HealthCheckRequest.Descriptor; }
-      }
-
-      public override HealthCheckRequest DefaultInstanceForType {
-        get { return global::Grpc.Health.V1Alpha.HealthCheckRequest.DefaultInstance; }
-      }
-
-      public override HealthCheckRequest BuildPartial() {
-        if (resultIsReadOnly) {
-          return result;
-        }
-        resultIsReadOnly = true;
-        return result.MakeReadOnly();
-      }
-
-      public override Builder MergeFrom(pb::IMessage other) {
-        if (other is HealthCheckRequest) {
-          return MergeFrom((HealthCheckRequest) other);
-        } else {
-          base.MergeFrom(other);
-          return this;
-        }
-      }
-
-      public override Builder MergeFrom(HealthCheckRequest other) {
-        if (other == global::Grpc.Health.V1Alpha.HealthCheckRequest.DefaultInstance) return this;
-        PrepareBuilder();
-        if (other.HasHost) {
-          Host = other.Host;
-        }
-        if (other.HasService) {
-          Service = other.Service;
-        }
-        this.MergeUnknownFields(other.UnknownFields);
-        return this;
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input) {
-        return MergeFrom(input, pb::ExtensionRegistry.Empty);
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-        PrepareBuilder();
-        pb::UnknownFieldSet.Builder unknownFields = null;
-        uint tag;
-        string field_name;
-        while (input.ReadTag(out tag, out field_name)) {
-          if(tag == 0 && field_name != null) {
-            int field_ordinal = global::System.Array.BinarySearch(_healthCheckRequestFieldNames, field_name, global::System.StringComparer.Ordinal);
-            if(field_ordinal >= 0)
-              tag = _healthCheckRequestFieldTags[field_ordinal];
-            else {
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              continue;
-            }
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 10: {
+            Host = input.ReadString();
+            break;
           }
-          switch (tag) {
-            case 0: {
-              throw pb::InvalidProtocolBufferException.InvalidTag();
-            }
-            default: {
-              if (pb::WireFormat.IsEndGroupTag(tag)) {
-                if (unknownFields != null) {
-                  this.UnknownFields = unknownFields.Build();
-                }
-                return this;
-              }
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              break;
-            }
-            case 10: {
-              result.hasHost = input.ReadString(ref result.host_);
-              break;
-            }
-            case 18: {
-              result.hasService = input.ReadString(ref result.service_);
-              break;
-            }
+          case 18: {
+            Service = input.ReadString();
+            break;
           }
         }
-
-        if (unknownFields != null) {
-          this.UnknownFields = unknownFields.Build();
-        }
-        return this;
-      }
-
-
-      public bool HasHost {
-        get { return result.hasHost; }
-      }
-      public string Host {
-        get { return result.Host; }
-        set { SetHost(value); }
-      }
-      public Builder SetHost(string value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        result.hasHost = true;
-        result.host_ = value;
-        return this;
-      }
-      public Builder ClearHost() {
-        PrepareBuilder();
-        result.hasHost = false;
-        result.host_ = "";
-        return this;
-      }
-
-      public bool HasService {
-        get { return result.hasService; }
-      }
-      public string Service {
-        get { return result.Service; }
-        set { SetService(value); }
-      }
-      public Builder SetService(string value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        result.hasService = true;
-        result.service_ = value;
-        return this;
-      }
-      public Builder ClearService() {
-        PrepareBuilder();
-        result.hasService = false;
-        result.service_ = "";
-        return this;
       }
     }
-    static HealthCheckRequest() {
-      object.ReferenceEquals(global::Grpc.Health.V1Alpha.Proto.Health.Descriptor, null);
-    }
+
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-  public sealed partial class HealthCheckResponse : pb::GeneratedMessage<HealthCheckResponse, HealthCheckResponse.Builder> {
-    private HealthCheckResponse() { }
-    private static readonly HealthCheckResponse defaultInstance = new HealthCheckResponse().MakeReadOnly();
-    private static readonly string[] _healthCheckResponseFieldNames = new string[] { "status" };
-    private static readonly uint[] _healthCheckResponseFieldTags = new uint[] { 8 };
-    public static HealthCheckResponse DefaultInstance {
-      get { return defaultInstance; }
+  public sealed partial class HealthCheckResponse : pb::IMessage<HealthCheckResponse> {
+    private static readonly pb::MessageParser<HealthCheckResponse> _parser = new pb::MessageParser<HealthCheckResponse>(() => new HealthCheckResponse());
+    public static pb::MessageParser<HealthCheckResponse> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Health.V1Alpha.Proto.Health.Descriptor.MessageTypes[1]; }
     }
 
-    public override HealthCheckResponse DefaultInstanceForType {
-      get { return DefaultInstance; }
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
     }
 
-    protected override HealthCheckResponse ThisMessage {
-      get { return this; }
+    public HealthCheckResponse() {
+      OnConstruction();
     }
 
-    public static pbd::MessageDescriptor Descriptor {
-      get { return global::Grpc.Health.V1Alpha.Proto.Health.internal__static_grpc_health_v1alpha_HealthCheckResponse__Descriptor; }
+    partial void OnConstruction();
+
+    public HealthCheckResponse(HealthCheckResponse other) : this() {
+      status_ = other.status_;
     }
 
-    protected override pb::FieldAccess.FieldAccessorTable<HealthCheckResponse, HealthCheckResponse.Builder> InternalFieldAccessors {
-      get { return global::Grpc.Health.V1Alpha.Proto.Health.internal__static_grpc_health_v1alpha_HealthCheckResponse__FieldAccessorTable; }
+    public HealthCheckResponse Clone() {
+      return new HealthCheckResponse(this);
+    }
+
+    public const int StatusFieldNumber = 1;
+    private global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus status_ = global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN;
+    public global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus Status {
+      get { return status_; }
+      set {
+        status_ = value;
+      }
+    }
+
+    public override bool Equals(object other) {
+      return Equals(other as HealthCheckResponse);
+    }
+
+    public bool Equals(HealthCheckResponse other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Status != other.Status) return false;
+      return true;
+    }
+
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Status != global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN) hash ^= Status.GetHashCode();
+      return hash;
+    }
+
+    public override string ToString() {
+      return pb::JsonFormatter.Default.Format(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Status != global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
+        output.WriteRawTag(8);
+        output.WriteEnum((int) Status);
+      }
+    }
+
+    public int CalculateSize() {
+      int size = 0;
+      if (Status != global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) Status);
+      }
+      return size;
+    }
+
+    public void MergeFrom(HealthCheckResponse other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Status != global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN) {
+        Status = other.Status;
+      }
+    }
+
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 8: {
+            status_ = (global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus) input.ReadEnum();
+            break;
+          }
+        }
+      }
     }
 
     #region Nested types
@@ -423,261 +284,6 @@ namespace Grpc.Health.V1Alpha {
     }
     #endregion
 
-    public const int StatusFieldNumber = 1;
-    private bool hasStatus;
-    private global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus status_ = global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN;
-    public bool HasStatus {
-      get { return hasStatus; }
-    }
-    public global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus Status {
-      get { return status_; }
-    }
-
-    public override bool IsInitialized {
-      get {
-        return true;
-      }
-    }
-
-    public override void WriteTo(pb::ICodedOutputStream output) {
-      CalcSerializedSize();
-      string[] field_names = _healthCheckResponseFieldNames;
-      if (hasStatus) {
-        output.WriteEnum(1, field_names[0], (int) Status, Status);
-      }
-      UnknownFields.WriteTo(output);
-    }
-
-    private int memoizedSerializedSize = -1;
-    public override int SerializedSize {
-      get {
-        int size = memoizedSerializedSize;
-        if (size != -1) return size;
-        return CalcSerializedSize();
-      }
-    }
-
-    private int CalcSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (hasStatus) {
-        size += pb::CodedOutputStream.ComputeEnumSize(1, (int) Status);
-      }
-      size += UnknownFields.SerializedSize;
-      memoizedSerializedSize = size;
-      return size;
-    }
-    public static HealthCheckResponse ParseFrom(pb::ByteString data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static HealthCheckResponse ParseFrom(pb::ByteString data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static HealthCheckResponse ParseFrom(byte[] data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static HealthCheckResponse ParseFrom(byte[] data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static HealthCheckResponse ParseFrom(global::System.IO.Stream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static HealthCheckResponse ParseFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    public static HealthCheckResponse ParseDelimitedFrom(global::System.IO.Stream input) {
-      return CreateBuilder().MergeDelimitedFrom(input).BuildParsed();
-    }
-    public static HealthCheckResponse ParseDelimitedFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return CreateBuilder().MergeDelimitedFrom(input, extensionRegistry).BuildParsed();
-    }
-    public static HealthCheckResponse ParseFrom(pb::ICodedInputStream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static HealthCheckResponse ParseFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    private HealthCheckResponse MakeReadOnly() {
-      return this;
-    }
-
-    public static Builder CreateBuilder() { return new Builder(); }
-    public override Builder ToBuilder() { return CreateBuilder(this); }
-    public override Builder CreateBuilderForType() { return new Builder(); }
-    public static Builder CreateBuilder(HealthCheckResponse prototype) {
-      return new Builder(prototype);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    public sealed partial class Builder : pb::GeneratedBuilder<HealthCheckResponse, Builder> {
-      protected override Builder ThisBuilder {
-        get { return this; }
-      }
-      public Builder() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-      }
-      internal Builder(HealthCheckResponse cloneFrom) {
-        result = cloneFrom;
-        resultIsReadOnly = true;
-      }
-
-      private bool resultIsReadOnly;
-      private HealthCheckResponse result;
-
-      private HealthCheckResponse PrepareBuilder() {
-        if (resultIsReadOnly) {
-          HealthCheckResponse original = result;
-          result = new HealthCheckResponse();
-          resultIsReadOnly = false;
-          MergeFrom(original);
-        }
-        return result;
-      }
-
-      public override bool IsInitialized {
-        get { return result.IsInitialized; }
-      }
-
-      protected override HealthCheckResponse MessageBeingBuilt {
-        get { return PrepareBuilder(); }
-      }
-
-      public override Builder Clear() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-        return this;
-      }
-
-      public override Builder Clone() {
-        if (resultIsReadOnly) {
-          return new Builder(result);
-        } else {
-          return new Builder().MergeFrom(result);
-        }
-      }
-
-      public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::Grpc.Health.V1Alpha.HealthCheckResponse.Descriptor; }
-      }
-
-      public override HealthCheckResponse DefaultInstanceForType {
-        get { return global::Grpc.Health.V1Alpha.HealthCheckResponse.DefaultInstance; }
-      }
-
-      public override HealthCheckResponse BuildPartial() {
-        if (resultIsReadOnly) {
-          return result;
-        }
-        resultIsReadOnly = true;
-        return result.MakeReadOnly();
-      }
-
-      public override Builder MergeFrom(pb::IMessage other) {
-        if (other is HealthCheckResponse) {
-          return MergeFrom((HealthCheckResponse) other);
-        } else {
-          base.MergeFrom(other);
-          return this;
-        }
-      }
-
-      public override Builder MergeFrom(HealthCheckResponse other) {
-        if (other == global::Grpc.Health.V1Alpha.HealthCheckResponse.DefaultInstance) return this;
-        PrepareBuilder();
-        if (other.HasStatus) {
-          Status = other.Status;
-        }
-        this.MergeUnknownFields(other.UnknownFields);
-        return this;
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input) {
-        return MergeFrom(input, pb::ExtensionRegistry.Empty);
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-        PrepareBuilder();
-        pb::UnknownFieldSet.Builder unknownFields = null;
-        uint tag;
-        string field_name;
-        while (input.ReadTag(out tag, out field_name)) {
-          if(tag == 0 && field_name != null) {
-            int field_ordinal = global::System.Array.BinarySearch(_healthCheckResponseFieldNames, field_name, global::System.StringComparer.Ordinal);
-            if(field_ordinal >= 0)
-              tag = _healthCheckResponseFieldTags[field_ordinal];
-            else {
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              continue;
-            }
-          }
-          switch (tag) {
-            case 0: {
-              throw pb::InvalidProtocolBufferException.InvalidTag();
-            }
-            default: {
-              if (pb::WireFormat.IsEndGroupTag(tag)) {
-                if (unknownFields != null) {
-                  this.UnknownFields = unknownFields.Build();
-                }
-                return this;
-              }
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              break;
-            }
-            case 8: {
-              object unknown;
-              if(input.ReadEnum(ref result.status_, out unknown)) {
-                result.hasStatus = true;
-              } else if(unknown is int) {
-                if (unknownFields == null) {
-                  unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-                }
-                unknownFields.MergeVarintField(1, (ulong)(int)unknown);
-              }
-              break;
-            }
-          }
-        }
-
-        if (unknownFields != null) {
-          this.UnknownFields = unknownFields.Build();
-        }
-        return this;
-      }
-
-
-      public bool HasStatus {
-       get { return result.hasStatus; }
-      }
-      public global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus Status {
-        get { return result.Status; }
-        set { SetStatus(value); }
-      }
-      public Builder SetStatus(global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus value) {
-        PrepareBuilder();
-        result.hasStatus = true;
-        result.status_ = value;
-        return this;
-      }
-      public Builder ClearStatus() {
-        PrepareBuilder();
-        result.hasStatus = false;
-        result.status_ = global::Grpc.Health.V1Alpha.HealthCheckResponse.Types.ServingStatus.UNKNOWN;
-        return this;
-      }
-    }
-    static HealthCheckResponse() {
-      object.ReferenceEquals(global::Grpc.Health.V1Alpha.Proto.Health.Descriptor, null);
-    }
   }
 
   #endregion
