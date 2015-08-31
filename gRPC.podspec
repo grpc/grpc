@@ -247,6 +247,7 @@ Pod::Spec.new do |s|
                       'src/core/transport/stream_op.h',
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
+                      'src/core/census/aggregation.h',
                       'src/core/census/context.h',
                       'src/core/census/rpc_metric_id.h',
                       'grpc/grpc_security.h',
@@ -520,6 +521,7 @@ Pod::Spec.new do |s|
                               'src/core/transport/stream_op.h',
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
+                              'src/core/census/aggregation.h',
                               'src/core/census/context.h',
                               'src/core/census/rpc_metric_id.h'
 

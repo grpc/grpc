@@ -791,6 +791,9 @@
     <ClInclude Include="..\..\src\core\transport\transport_impl.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\census\aggregation.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\census\context.h">
       <Filter>src\core\census</Filter>
     </ClInclude>

@@ -18,6 +18,7 @@
         "include/grpc/census.h"
       ],
       "headers": [
+        "src/core/census/aggregation.h",
         "src/core/census/context.h",
         "src/core/census/rpc_metric_id.h"
       ],
