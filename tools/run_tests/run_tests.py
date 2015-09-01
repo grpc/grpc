@@ -479,6 +479,7 @@ if platform.system() == 'Windows':
     return [
       jobset.JobSpec(['msbuild.exe', 
                       'vsprojects\\%s.sln' % target, 
+                      '/m',
                       '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]],
                       shell=True, timeout_seconds=30*60)
       for target in targets]
