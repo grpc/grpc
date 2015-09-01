@@ -478,7 +478,7 @@ if len(build_configs) > 1:
 if platform.system() == 'Windows':
   def make_jobspec(cfg, targets):
     return [
-      jobset.JobSpec(['msbuild.exe', 
+      jobset.JobSpec(['vsprojects\\build.bat', 
                       'vsprojects\\%s.sln' % target, 
                       '/m',
                       '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]],
