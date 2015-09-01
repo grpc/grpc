@@ -421,9 +421,6 @@
     <ClCompile Include="..\..\src\core\census\operation.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\core\census\record_stat.c">
-      <Filter>src\core\census</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\core\census\tracing.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
@@ -794,10 +791,13 @@
     <ClInclude Include="..\..\src\core\transport\transport_impl.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\core\census\aggregation.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\src\core\census\context.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h">
+    <ClInclude Include="..\..\src\core\census\rpc_metric_id.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
   </ItemGroup>
