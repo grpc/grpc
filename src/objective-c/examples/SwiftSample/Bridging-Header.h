@@ -34,5 +34,10 @@
 #ifndef SwiftSample_Bridging_Header_h
 #define SwiftSample_Bridging_Header_h
 
+#import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
+#import <GRPCClient/GRPCCall.h>
+#import <ProtoRPC/ProtoMethod.h>
 
 #endif
