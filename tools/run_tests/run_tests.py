@@ -151,6 +151,9 @@ class CLanguage(object):
     return sorted(out)
 
   def make_targets(self):
+    if platform_string() == 'windows':
+      # don't build tools on windows just yet
+      return ['buildtests_%s' % self.make_target]
     return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
   def build_steps(self):
@@ -388,6 +391,11 @@ _LANGUAGES = {
     'build': Build(),
     }
 
+_WINDOWS_CONFIG = {
+    'dbg': 'Debug',
+    'opt': 'Release',
+    }
+
 # parse command line
 argp = argparse.ArgumentParser(description='Run grpc tests.')
 argp.add_argument('-c', '--config',
@@ -471,7 +479,7 @@ if platform.system() == 'Windows':
     return [
       jobset.JobSpec(['msbuild.exe', 
                       'vsprojects\\%s.sln' % target, 
-                      '/p:Configuration=%s', WINDOWS_CONFIG[cfg]],
+                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]],
                       shell=True, timeout_seconds=30*60)
       for target in targets]
 else:
