@@ -1,5 +1,5 @@
 /*
- *
+
  * Copyright 2015, Google Inc.
  * All rights reserved.
  *
@@ -67,7 +67,7 @@
 #include <grpc/grpc.h>
 #include <grpc++/channel.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
 #include <grpc++/support/string_ref.h>
 
 #include "test/cpp/util/cli_call.h"
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
     }
   }
   std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateChannel(server_address, creds, grpc::ChannelArguments());
+      grpc::CreateChannel(server_address, creds);
 
   grpc::string response;
   std::multimap<grpc::string, grpc::string> client_metadata;

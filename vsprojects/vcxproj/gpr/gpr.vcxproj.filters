@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\core\support\alloc.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\cmdline.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\cpu_iphone.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\cpu_linux.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\cpu_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\cpu_windows.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\env_linux.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\env_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\env_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\file.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\file_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\file_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\histogram.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\host_port.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\log.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\log_android.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\log_linux.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\log_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\log_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\murmur_hash.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\slice.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\slice_buffer.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\stack_lockfree.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\string.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\string_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\string_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\subprocess_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\sync.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\sync_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\sync_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\thd.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\thd_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\thd_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\time.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\time_posix.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\time_win32.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\tls_pthread.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\grpc\support\alloc.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\atm.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\atm_gcc_atomic.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\atm_gcc_sync.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\atm_win32.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\cmdline.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\cpu.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\histogram.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\host_port.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\log.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\log_win32.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\port_platform.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\slice.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\slice_buffer.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\string_util.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\subprocess.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\sync.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\sync_generic.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\sync_posix.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\sync_win32.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\thd.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\time.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\tls.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\tls_gcc.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\tls_msvc.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\tls_pthread.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc\support\useful.h">
+      <Filter>include\grpc\support</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\core\support\env.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\support\file.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\support\murmur_hash.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\support\stack_lockfree.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\support\string.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\support\string_win32.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\support\thd_internal.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\support\time_precise.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{9ea89137-2bf7-b6d9-b7af-7cb4d1b74928}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc">
+      <UniqueIdentifier>{e6957ec1-85ba-6515-03c0-e12878045b1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc\support">
+      <UniqueIdentifier>{31c42000-3ed7-95e1-d076-df814b72cdee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{60eb2826-e58b-cb10-a98d-fe04727398a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{c5e1baa7-de77-beb1-9675-942261648f79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\support">
+      <UniqueIdentifier>{bb116f2a-ea2a-c233-82da-0c54e3cbfec1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
