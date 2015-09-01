@@ -661,8 +661,7 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "exclude_configs": [], 
     "flaky": false, 
@@ -671,8 +670,7 @@
     "platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ]
   }, 
   {
@@ -1139,8 +1137,7 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "exclude_configs": [], 
     "flaky": false, 
@@ -1149,8 +1146,7 @@
     "platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ]
   }, 
   {
