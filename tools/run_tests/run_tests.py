@@ -468,24 +468,27 @@ if len(build_configs) > 1:
 
 if platform.system() == 'Windows':
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec(['make.bat', 'CONFIG=%s' % cfg] + targets,
-                          cwd='vsprojects', shell=True, 
-                          timeout_seconds=30*60)
+    return [
+      jobset.JobSpec(['msbuild.exe', 
+                      'vsprojects\\%s.sln' % target, 
+                      '/p:Configuration=%s', WINDOWS_CONFIG[cfg]],
+                      shell=True, timeout_seconds=30*60)
+      for target in targets]
 else:
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec([os.getenv('MAKE', 'make'),
-                           '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                           'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
-                               args.slowdown,
-                           'CONFIG=%s' % cfg] + targets,
-                          timeout_seconds=30*60)
+    return [jobset.JobSpec([os.getenv('MAKE', 'make'),
+                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
+                                args.slowdown,
+                            'CONFIG=%s' % cfg] + targets,
+                           timeout_seconds=30*60)]
 
 make_targets = list(set(itertools.chain.from_iterable(
                                          l.make_targets() for l in languages)))
 build_steps = []
 if make_targets:
-  build_steps.extend(set(make_jobspec(cfg, make_targets)
-                         for cfg in build_configs))
+  make_commands = itertools.chain.from_iterable(make_jobspec(cfg, make_targets) for cfg in build_configs)
+  build_steps.extend(set(make_commands))
 build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs
