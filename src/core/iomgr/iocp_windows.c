@@ -112,7 +112,6 @@ static void do_iocp_work() {
 static void iocp_loop(void *p) {
   while (gpr_atm_acq_load(&g_custom_events) || 
          !gpr_event_get(&g_shutdown_iocp)) {
-    grpc_maybe_call_delayed_callbacks(NULL, 1);
     do_iocp_work();
   }
 
