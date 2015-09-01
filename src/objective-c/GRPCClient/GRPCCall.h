@@ -48,7 +48,7 @@
 #import <Foundation/Foundation.h>
 #import <RxLibrary/GRXWriter.h>
 
-@class GRPCRequestHeaders;
+#import "GRPCRequestHeaders.h"
 
 // Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
 // the server.
