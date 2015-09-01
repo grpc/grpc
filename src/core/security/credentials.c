@@ -1185,3 +1185,89 @@ grpc_credentials *grpc_google_iam_credentials_create(
       c->iam_md, GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY, authority_selector);
   return &c->base;
 }
+
+/* -- Plugin credentials. -- */
+
+typedef struct {
+  void *user_data;
+  grpc_credentials_metadata_cb cb;
+} grpc_metadata_plugin_request;
+
+static void plugin_destruct(grpc_credentials *creds) {
+  grpc_plugin_credentials *c = (grpc_plugin_credentials *)creds;
+  if (c->plugin.state != NULL && c->plugin.destroy != NULL) {
+    c->plugin.destroy(c->plugin.state);
+  }
+}
+
+static int plugin_has_request_metadata(const grpc_credentials *creds) {
+  return 1;
+}
+
+static int plugin_has_request_metadata_only(const grpc_credentials *creds) {
+  return 1;
+}
+
+static void plugin_md_request_metadata_ready(void *request,
+                                             const grpc_metadata *md,
+                                             size_t num_md,
+                                             grpc_status_code status,
+                                             const char *error_details) {
+  grpc_metadata_plugin_request *r = (grpc_metadata_plugin_request *)request;
+  if (status != GRPC_STATUS_OK) {
+    if (error_details != NULL) {
+      gpr_log(GPR_ERROR, "Getting metadata from plugin failed with error: %s",
+              error_details);
+    }
+    r->cb(r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR);
+  } else {
+    grpc_credentials_md *md_array = NULL;
+    if (num_md > 0) {
+      size_t i;
+      md_array = gpr_malloc(num_md * sizeof(grpc_credentials_md));
+      for (i = 0; i < num_md; i++) {
+        md_array[i].key = gpr_slice_from_copied_string(md[i].key);
+        md_array[i].value =
+            gpr_slice_from_copied_buffer(md[i].value, md[i].value_length);
+      }
+    }
+    r->cb(r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK);
+    if (md_array != NULL) gpr_free(md_array);
+  }
+  gpr_free(r);
+}
+
+static void plugin_get_request_metadata(grpc_credentials *creds,
+                                        grpc_pollset *pollset,
+                                        const char *service_url,
+                                        grpc_credentials_metadata_cb cb,
+                                        void *user_data) {
+  grpc_plugin_credentials *c = (grpc_plugin_credentials *)creds;
+  if (c->plugin.get_metadata != NULL) {
+    grpc_metadata_plugin_request *request = gpr_malloc(sizeof(*request));
+    memset(request, 0, sizeof(*request));
+    request->user_data = user_data;
+    request->cb = cb;
+    c->plugin.get_metadata(c->plugin.state, service_url,
+                           plugin_md_request_metadata_ready, request);
+  } else {
+    cb(user_data, NULL, 0, GRPC_CREDENTIALS_OK);
+  }
+}
+
+static grpc_credentials_vtable plugin_vtable = {
+    plugin_destruct, plugin_has_request_metadata,
+    plugin_has_request_metadata_only, plugin_get_request_metadata, NULL};
+
+grpc_credentials *grpc_metadata_credentials_create_from_plugin(
+    grpc_metadata_credentials_plugin plugin, void *reserved) {
+  grpc_plugin_credentials *c = gpr_malloc(sizeof(*c));
+  GPR_ASSERT(reserved == NULL);
+  memset(c, 0, sizeof(*c));
+  c->base.type = GRPC_CREDENTIALS_TYPE_METADATA_PLUGIN;
+  c->base.vtable = &plugin_vtable;
+  gpr_ref_init(&c->base.refcount, 1);
+  c->plugin = plugin;
+  return &c->base;
+}
+
