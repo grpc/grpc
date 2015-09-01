@@ -481,7 +481,7 @@ if platform.system() == 'Windows':
       jobset.JobSpec(['vsprojects\\build.bat', 
                       'vsprojects\\%s.sln' % target, 
                       '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]],
-                      shell=True, timeout_seconds=30*60)
+                      shell=True, timeout_seconds=90*60)
       for target in targets]
 else:
   def make_jobspec(cfg, targets):
