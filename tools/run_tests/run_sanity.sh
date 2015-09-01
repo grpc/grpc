@@ -52,7 +52,7 @@ diff -u $submodules $want_submodules
 
 rm $submodules $want_submodules
 
-if git ls-files cache.mk --error-unmatch &> /dev/null ; then
+if [ -f cache.mk ] ; then
   echo "Please don't commit cache.mk"
   exit 1
 fi
