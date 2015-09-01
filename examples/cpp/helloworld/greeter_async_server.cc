@@ -39,10 +39,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
 #include "helloworld.grpc.pb.h"
 
 using grpc::Server;

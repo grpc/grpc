@@ -17,7 +17,7 @@ With gRPC we can define our service once in a .proto file and implement clients 
 
 ## Example code and setup
 
-The example code for our tutorial is in [examples/node/route_guide](examples/node/route_guide). To download the example, clone this repository by running the following command:
+The example code for our tutorial is in [examples/node/route_guide](.). To download the example, clone this repository by running the following command:
 ```shell
 $ git clone https://github.com/grpc/grpc.git
 ```
@@ -27,12 +27,12 @@ Then change your current directory to `examples/node/route_guide`:
 $ cd examples/node/route_guide
 ```
 
-You also should have the relevant tools installed to generate the server and client interface code - if you don't already, follow the setup instructions in [the Node.js quick start guide](examples/node).
+You also should have the relevant tools installed to generate the server and client interface code - if you don't already, follow the setup instructions in [the Node.js quick start guide](..).
 
 
 ## Defining the service
 
-Our first step (as you'll know from [Getting started](https://github.com/grpc/grpc/tree/master/examples)) is to define the gRPC *service* and the method *request* and *response* types using [protocol buffers] (https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file in [`examples/protos/route_guide.proto`](examples/protos/route_guide.proto).
+Our first step (as you'll know from [Getting started](https://github.com/grpc/grpc/tree/master/examples)) is to define the gRPC *service* and the method *request* and *response* types using [protocol buffers] (https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file in [`examples/protos/route_guide.proto`](../../route_guide.proto).
 
 To define a service, you specify a named `service` in your .proto file:
 
@@ -110,7 +110,7 @@ There are two parts to making our `RouteGuide` service do its job:
 - Implementing the service interface generated from our service definition: doing the actual "work" of our service.
 - Running a gRPC server to listen for requests from clients and return the service responses.
 
-You can find our example `RouteGuide` server in [examples/node/route_guide/route_guide_server.js](examples/node/route_guide/route_guide_server.js). Let's take a closer look at how it works.
+You can find our example `RouteGuide` server in [route_guide_server.js](route_guide_server.js). Let's take a closer look at how it works.
 
 ### Implementing RouteGuide
 
@@ -244,7 +244,7 @@ As you can see, we build and start our server with the following steps:
 <a name="client"></a>
 ## Creating the client
 
-In this section, we'll look at creating a Node.js client for our `RouteGuide` service. You can see our complete example client code in [examples/node/route_guide/route_guide_client.js](examples/node/route_guide/route_guide_client.js).
+In this section, we'll look at creating a Node.js client for our `RouteGuide` service. You can see our complete example client code in [route_guide_client.js](route_guide_client.js).
 
 ### Creating a stub
 

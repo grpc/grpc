@@ -18,14 +18,14 @@
         "include/grpc/census.h"
       ],
       "headers": [
+        "src/core/census/aggregation.h",
         "src/core/census/context.h",
-        "src/core/census/rpc_stat_id.h"
+        "src/core/census/rpc_metric_id.h"
       ],
       "src": [
         "src/core/census/context.c",
         "src/core/census/initialize.c",
         "src/core/census/operation.c",
-        "src/core/census/record_stat.c",
         "src/core/census/tracing.c"
       ]
     },
