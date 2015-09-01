@@ -37,7 +37,7 @@ This fills in any optional attributes.
 def mako_plugin(dictionary):
   """The exported plugin code for expand_filegroups.
 
-  The list of libs in the build.json file can contain "filegroups" tags.
+  The list of libs in the build.yaml file can contain "filegroups" tags.
   These refer to the filegroups in the root object. We will expand and
   merge filegroups on the src, headers and public_headers properties.
 
