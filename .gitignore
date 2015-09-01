@@ -39,3 +39,6 @@ report.xml
 
 # port server log
 portlog.txt
+
+# Qt Creator user files
+*.user
