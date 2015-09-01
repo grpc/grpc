@@ -42,7 +42,7 @@ class ClientStreamingCall extends AbstractCall {
    * Start the call.
    * @param array $metadata Metadata to send with the call, if applicable
    */
-  public function start($metadata) {
+  public function start($metadata = array()) {
     $this->call->startBatch([OP_SEND_INITIAL_METADATA => $metadata]);
   }
 
