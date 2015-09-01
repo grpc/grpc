@@ -231,6 +231,11 @@ static int prepare_socket(int fd, const struct sockaddr *addr, int addr_len) {
     goto error;
   }
 
+  if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1)) {
+    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
+            strerror(errno));
+  }
+
   get_local_ip = 1;
   rc = setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
                   sizeof(get_local_ip));
@@ -370,8 +375,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr, int addr_len,
     /* Try listening on IPv6 first. */
     addr = (struct sockaddr *)&wild6;
     addr_len = sizeof(wild6);
-    fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM | SOCK_NONBLOCK,
-                                      IPPROTO_UDP, &dsmode);
+    fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode);
     allocated_port1 = add_socket_to_server(s, fd, addr, addr_len, read_cb);
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
       goto done;
@@ -385,8 +389,7 @@ int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr, int addr_len,
     addr_len = sizeof(wild4);
   }
 
-  fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM | SOCK_NONBLOCK,
-                                    IPPROTO_UDP, &dsmode);
+  fd = grpc_create_dualstack_socket(addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode);
   if (fd < 0) {
     gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
   }
