@@ -37,7 +37,25 @@ class ViewController: UIViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
-    // Do any additional setup after loading the view, typically from a nib.
+
+    let RemoteHost = "grpc-test.sandbox.google.com"
+
+    // Same example call using the generic gRPC client library:
+
+    let method = ProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")
+
+    let requestsWriter = GRXWriter(value: NSData())
+
+    let call = GRPCCall(host: RemoteHost, path: method.HTTPPath, requestsWriter: requestsWriter)
+
+    let responsesWriteable = GRXWriteable { (value: AnyObject?, error: NSError?) in
+      if let value = value as? NSData {
+        NSLog("Received response:\n\(value)")
+      } else {
+        NSLog("Finished with error: \(error!)")
+      }
+    }
+
+    call.startWithWriteable(responsesWriteable)
   }
 }
-
