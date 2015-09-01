@@ -276,60 +276,6 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_endpoint_destroy(state.write_ep);
 }
 
-struct timeout_test_state {
-  int io_done;
-};
-
-typedef struct {
-  int done;
-  grpc_endpoint *ep;
-  gpr_slice_buffer incoming;
-  grpc_iomgr_closure done_read;
-} shutdown_during_write_test_state;
-
-static void shutdown_during_write_test_read_handler(void *user_data,
-                                                    int success) {
-  shutdown_during_write_test_state *st = user_data;
-
-loop:
-  if (!success) {
-    grpc_endpoint_destroy(st->ep);
-    gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
-    st->done = 1;
-    grpc_pollset_kick(g_pollset, NULL);
-    gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
-  } else {
-    switch (grpc_endpoint_read(st->ep, &st->incoming, &st->done_read)) {
-      case GRPC_ENDPOINT_PENDING:
-        break;
-      case GRPC_ENDPOINT_ERROR:
-        success = 0;
-        goto loop;
-      case GRPC_ENDPOINT_DONE:
-        success = 1;
-        goto loop;
-    }
-  }
-}
-
-static void shutdown_during_write_test_write_handler(void *user_data,
-                                                     int success) {
-  shutdown_during_write_test_state *st = user_data;
-  gpr_log(GPR_INFO, "shutdown_during_write_test_write_handler: success = %d",
-          success);
-  if (success) {
-    /* This happens about 0.5% of the time when run under TSAN, and is entirely
-       legitimate, but means we aren't testing the path we think we are. */
-    /* TODO(klempner): Change this test to retry the write in that case */
-    gpr_log(GPR_ERROR,
-            "shutdown_during_write_test_write_handler completed unexpectedly");
-  }
-  gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
-  st->done = 1;
-  grpc_pollset_kick(g_pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
-}
-
 void grpc_endpoint_tests(grpc_endpoint_test_config config,
                          grpc_pollset *pollset) {
   size_t i;
