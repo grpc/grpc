@@ -49,7 +49,6 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\..\..\..\vsprojects\global.props" />
     <Import Project="..\..\..\..\vsprojects\openssl.props" />
-    <Import Project="..\..\..\..\vsprojects\protobuf.props" />
     <Import Project="..\..\..\..\vsprojects\winsock.props" />
     <Import Project="..\..\..\..\vsprojects\zlib.props" />
   </ImportGroup>
