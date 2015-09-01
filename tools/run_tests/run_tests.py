@@ -477,10 +477,14 @@ if len(build_configs) > 1:
 
 if platform.system() == 'Windows':
   def make_jobspec(cfg, targets):
+    extra_args = []
+    if args.travis:
+      extra_args.extend(["/m", "/p:DebugSymbols=false", "/p:DebugType=None"])
     return [
       jobset.JobSpec(['vsprojects\\build.bat', 
                       'vsprojects\\%s.sln' % target, 
-                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]],
+                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
+                      extra_args,
                       shell=True, timeout_seconds=90*60)
       for target in targets]
 else:
