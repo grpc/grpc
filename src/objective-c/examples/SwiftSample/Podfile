@@ -2,7 +2,7 @@ source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
 pod 'gRPC', :path => "../../../.."
-# pod 'RemoteTest', :path => "../../generated_libraries/RemoteTestClient"
+pod 'RemoteTest', :path => "../RemoteTestClient"
 
 target 'SwiftSample' do
 end
