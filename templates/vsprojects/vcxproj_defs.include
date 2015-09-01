@@ -11,6 +11,7 @@
     if t.name == name:
       target = t
   props = project.vs_props
+  packages = project.vs_packages
   configuration_type = project.vs_config_type
   project_guid = project.vs_project_guid
   if target.build == 'test' and target.language == 'c++':
@@ -21,13 +22,17 @@
     else:
       if target.language == 'c++':
       	props.extend(['protobuf'])
-      props.extend(['winsock', 'zlib', 'openssl'])
+      props.extend(['winsock', 'zlib'])
+      packages.extend(['grpc.dependencies.zlib'])
+      if target.get('secure', 'check'):
+        props.extend(['openssl'])
+	packages.extend(['grpc.dependencies.openssl'])
   else:
     props.extend(['winsock'])
   props.extend(['global'])
   props = sorted(list(set(props)))
+  packages = sorted(list(set(packages)))
   dll = project.get('dll', False)
-  packages = project.vs_packages
   repo_root = '..\..\..' + ('\..' if project.vs_proj_dir != '.' else '')
 %>\
 <?xml version="1.0" encoding="utf-8"?>

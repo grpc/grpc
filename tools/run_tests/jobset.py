@@ -174,7 +174,6 @@ class Job(object):
     for k, v in add_env.iteritems():
       env[k] = v
     self._start = time.time()
-    print spec.cmdline
     self._process = subprocess.Popen(args=spec.cmdline,
                                      stderr=subprocess.STDOUT,
                                      stdout=self._tempfile,
