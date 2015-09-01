@@ -63,11 +63,10 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
    various callsites of that function, which happens to be in various
    mutex hold states, and that'd be unsafe to call them directly. */
 void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
-  shutdown(winsocket->socket, SD_BOTH);
+  closesocket(winsocket->socket);
 }
 
 void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
-  closesocket(winsocket->socket);
   grpc_iomgr_unregister_object(&winsocket->iomgr_object);
   gpr_mu_destroy(&winsocket->state_mu);
   gpr_free(winsocket);

@@ -106,6 +106,22 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
 
 static void dont_care_about_shutdown_completion(void *arg) {}
 
+static void finish_shutdown(grpc_tcp_server *s) {
+  size_t i;
+
+  s->shutdown_complete(s->shutdown_complete_arg);
+
+  /* Now that the accepts have been aborted, we can destroy the sockets.
+  The IOCP won't get notified on these, so we can flag them as already
+  closed by the system. */
+  for (i = 0; i < s->nports; i++) {
+    server_port *sp = &s->ports[i];
+    grpc_winsocket_destroy(sp->socket);
+  }
+  gpr_free(s->ports);
+  gpr_free(s);
+}
+
 /* Public function. Stops and destroys a grpc_tcp_server. */
 void grpc_tcp_server_destroy(grpc_tcp_server *s,
                              void (*shutdown_complete)(void *shutdown_done_arg),
@@ -131,18 +147,8 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
   }
   gpr_mu_unlock(&s->mu);
 
-  /* Now that the accepts have been aborted, we can destroy the sockets.
-     The IOCP won't get notified on these, so we can flag them as already
-     closed by the system. */
-  for (i = 0; i < s->nports; i++) {
-    server_port *sp = &s->ports[i];
-    grpc_winsocket_destroy(sp->socket);
-  }
-  gpr_free(s->ports);
-  gpr_free(s);
-
   if (immediately_done) {
-    s->shutdown_complete(s->shutdown_complete_arg);
+    finish_shutdown(s);
   }
 }
 
@@ -195,18 +201,16 @@ error:
 }
 
 static void decrement_active_ports_and_notify(server_port *sp) {
-  void(*notify)(void *) = NULL;
-  void *notify_arg = NULL;
+  int notify = 0;
   sp->shutting_down = 0;
   gpr_mu_lock(&sp->server->mu);
   GPR_ASSERT(sp->server->active_ports > 0);
-  if (0 == --sp->server->active_ports) {
-    notify = sp->server->shutdown_complete;
-    notify_arg = sp->server->shutdown_complete_arg;
+  if (0 == --sp->server->active_ports && sp->server->shutdown_complete != NULL) {
+    notify = 1;
   }
   gpr_mu_unlock(&sp->server->mu);
-  if (notify != NULL) {
-    notify(notify_arg);
+  if (notify) {
+    finish_shutdown(sp->server);
   }
 }
 

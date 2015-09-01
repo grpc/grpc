@@ -1119,7 +1119,7 @@ static int recv_data_loop(grpc_chttp2_transport *t, int *success) {
   if (!*success || i != t->read_buffer.count) {
     drop_connection(t);
     read_error_locked(t);
-  } else {
+  } else if (!t->closed) {
     keep_reading = 1;
     prevent_endpoint_shutdown(t);
   }
