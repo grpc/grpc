@@ -207,6 +207,10 @@ _parse_build_json()
 set(gRPC_VERSION
   "${gRPC_VERSION_MAJOR}.${gRPC_VERSION_MINOR}.${gRPC_VERSION_MICRO}.${gRPC_VERSION_BUILD}")
 
+# Remove zookeeper (now not supported)
+list(REMOVE_ITEM gRPC_LIBS grpc_zookeeper)
+list(REMOVE_ITEM gRPC_TARGETS zookeeper_test)
+
 # Statistics
 message(STATUS "Project structure from build.json {")
 message(STATUS "  gRPC_VERSION ${gRPC_VERSION}")
