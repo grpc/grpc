@@ -40,17 +40,33 @@ class ViewController: UIViewController {
 
     let RemoteHost = "grpc-test.sandbox.google.com"
 
+    let request = RMTSimpleRequest()
+    request.responseSize = 10
+    request.fillUsername = true
+    request.fillOauthScope = true
+
+    // Example gRPC call using a generated proto client library:
+
+    let service = RMTTestService(host: RemoteHost)
+    service.unaryCallWithRequest(request) { (response: RMTSimpleResponse?, error: NSError?) in
+      if let response = response {
+        NSLog("Finished successfully with response:\n\(response)")
+      } else {
+        NSLog("Finished with error: \(error!)")
+      }
+    }
+
     // Same example call using the generic gRPC client library:
 
     let method = ProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")
 
-    let requestsWriter = GRXWriter(value: NSData())
+    let requestsWriter = GRXWriter(value: request.data())
 
     let call = GRPCCall(host: RemoteHost, path: method.HTTPPath, requestsWriter: requestsWriter)
 
     let responsesWriteable = GRXWriteable { (value: AnyObject?, error: NSError?) in
       if let value = value as? NSData {
-        NSLog("Received response:\n\(value)")
+        NSLog("Received response:\n\(RMTSimpleResponse(data: value, error: nil))")
       } else {
         NSLog("Finished with error: \(error!)")
       }
