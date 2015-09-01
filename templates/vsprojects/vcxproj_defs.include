@@ -19,7 +19,9 @@
     if target.build == 'protoc':
       props.extend(['protoc', 'protobuf'])
     else:
-      props.extend(['winsock', 'protobuf', 'zlib', 'openssl'])
+      if target.language == 'c++':
+      	props.extend(['protobuf'])
+      props.extend(['winsock', 'zlib', 'openssl'])
   else:
     props.extend(['winsock'])
   props.extend(['global'])
