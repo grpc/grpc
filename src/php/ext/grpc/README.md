@@ -26,6 +26,7 @@ Build and install the gRPC C core libraries
 
 ```sh
 $ cd grpc
+$ git checkout --track origin/release-0_11
 $ git pull --recurse-submodules && git submodule update --init --recursive
 $ make
 $ sudo make install
