@@ -129,7 +129,7 @@ typedef void (*grpc_credentials_metadata_cb)(void *user_data,
                                              grpc_credentials_status status);
 
 typedef struct {
-  void (*destroy)(grpc_credentials *c);
+  void (*destruct)(grpc_credentials *c);
   int (*has_request_metadata)(const grpc_credentials *c);
   int (*has_request_metadata_only)(const grpc_credentials *c);
   void (*get_request_metadata)(grpc_credentials *c, grpc_pollset *pollset,
@@ -210,19 +210,27 @@ grpc_credentials *grpc_refresh_token_credentials_create_from_auth_refresh_token(
 /* --- grpc_server_credentials. --- */
 
 typedef struct {
-  void (*destroy)(grpc_server_credentials *c);
+  void (*destruct)(grpc_server_credentials *c);
   grpc_security_status (*create_security_connector)(
       grpc_server_credentials *c, grpc_security_connector **sc);
 } grpc_server_credentials_vtable;
 
+
+/* TODO(jboeuf): Add a refcount. */
 struct grpc_server_credentials {
   const grpc_server_credentials_vtable *vtable;
   const char *type;
+  gpr_refcount refcount;
   grpc_auth_metadata_processor processor;
 };
 
 grpc_security_status grpc_server_credentials_create_security_connector(
     grpc_server_credentials *creds, grpc_security_connector **sc);
+
+grpc_server_credentials *grpc_server_credentials_ref(
+    grpc_server_credentials *creds);
+
+void grpc_server_credentials_unref(grpc_server_credentials *creds);
 
 /* -- Ssl credentials. -- */
 
@@ -277,21 +285,12 @@ typedef struct {
   grpc_fetch_oauth2_func fetch_func;
 } grpc_oauth2_token_fetcher_credentials;
 
-/* -- ServiceAccount credentials. -- */
-
-typedef struct {
-  grpc_oauth2_token_fetcher_credentials base;
-  grpc_auth_json_key key;
-  char *scope;
-  gpr_timespec token_lifetime;
-} grpc_service_account_credentials;
-
-/* -- RefreshToken credentials. -- */
+/* -- GoogleRefreshToken credentials. -- */
 
 typedef struct {
   grpc_oauth2_token_fetcher_credentials base;
   grpc_auth_refresh_token refresh_token;
-} grpc_refresh_token_credentials;
+} grpc_google_refresh_token_credentials;
 
 /* -- Oauth2 Access Token credentials. -- */
 
@@ -308,12 +307,12 @@ typedef struct {
   int is_async;
 } grpc_md_only_test_credentials;
 
-/* -- IAM credentials. -- */
+/* -- GoogleIAM credentials. -- */
 
 typedef struct {
   grpc_credentials base;
   grpc_credentials_md_store *iam_md;
-} grpc_iam_credentials;
+} grpc_google_iam_credentials;
 
 /* -- Composite credentials. -- */
 

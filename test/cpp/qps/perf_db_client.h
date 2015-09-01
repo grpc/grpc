@@ -41,7 +41,7 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
 #include "test/cpp/qps/perf_db.grpc.pb.h"
 
 namespace grpc {

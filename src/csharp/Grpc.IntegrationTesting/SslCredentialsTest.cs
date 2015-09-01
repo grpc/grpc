@@ -37,9 +37,9 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Grpc.Testing;
 using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting
@@ -92,7 +92,7 @@ namespace Grpc.IntegrationTesting
         [Test]
         public void AuthenticatedClientAndServer()
         {
-            var response = client.UnaryCall(SimpleRequest.CreateBuilder().SetResponseSize(10).Build());
+            var response = client.UnaryCall(new SimpleRequest { ResponseSize = 10 });
             Assert.AreEqual(10, response.Payload.Body.Length);
         }
     }

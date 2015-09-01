@@ -40,11 +40,12 @@
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/auth_metadata_processor.h>
+#include <grpc++/security/credentials.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
 #include <gtest/gtest.h>
 
 #include "src/core/security/credentials.h"
@@ -79,14 +80,23 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
   }
 }
 
-void CheckServerAuthContext(const ServerContext* context) {
+void CheckServerAuthContext(const ServerContext* context,
+                            const grpc::string& expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
   std::vector<grpc::string_ref> ssl =
       auth_ctx->FindPropertyValues("transport_security_type");
   EXPECT_EQ(1u, ssl.size());
   EXPECT_EQ("ssl", ToString(ssl[0]));
-  EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
-  EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
+  if (expected_client_identity.length() == 0) {
+    EXPECT_TRUE(auth_ctx->GetPeerIdentityPropertyName().empty());
+    EXPECT_TRUE(auth_ctx->GetPeerIdentity().empty());
+    EXPECT_FALSE(auth_ctx->IsPeerAuthenticated());
+  } else {
+    auto identity = auth_ctx->GetPeerIdentity();
+    EXPECT_TRUE(auth_ctx->IsPeerAuthenticated());
+    EXPECT_EQ(1u, identity.size());
+    EXPECT_EQ(expected_client_identity, identity[0]);
+  }
 }
 
 bool CheckIsLocalhost(const grpc::string& addr) {
@@ -97,6 +107,54 @@ bool CheckIsLocalhost(const grpc::string& addr) {
          addr.substr(0, kIpv4MappedIpv6.size()) == kIpv4MappedIpv6 ||
          addr.substr(0, kIpv6.size()) == kIpv6;
 }
+
+class TestAuthMetadataProcessor : public AuthMetadataProcessor {
+ public:
+  static const char kGoodGuy[];
+
+  TestAuthMetadataProcessor(bool is_blocking) : is_blocking_(is_blocking) {}
+
+  std::shared_ptr<Credentials> GetCompatibleClientCreds() {
+    return AccessTokenCredentials(kGoodGuy);
+  }
+  std::shared_ptr<Credentials> GetIncompatibleClientCreds() {
+    return AccessTokenCredentials("Mr Hyde");
+  }
+
+  // Interface implementation
+  bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
+
+  Status Process(const InputMetadata& auth_metadata, AuthContext* context,
+                 OutputMetadata* consumed_auth_metadata,
+                 OutputMetadata* response_metadata) GRPC_OVERRIDE {
+    EXPECT_TRUE(consumed_auth_metadata != nullptr);
+    EXPECT_TRUE(context != nullptr);
+    EXPECT_TRUE(response_metadata != nullptr);
+    auto auth_md = auth_metadata.find(GRPC_AUTHORIZATION_METADATA_KEY);
+    EXPECT_NE(auth_md, auth_metadata.end());
+    string_ref auth_md_value = auth_md->second;
+    if (auth_md_value.ends_with(kGoodGuy)) {
+      context->AddProperty(kIdentityPropName, kGoodGuy);
+      context->SetPeerIdentityPropertyName(kIdentityPropName);
+      consumed_auth_metadata->insert(
+          std::make_pair(string(auth_md->first.data(), auth_md->first.length()),
+                         auth_md->second));
+      return Status::OK;
+    } else {
+      return Status(StatusCode::UNAUTHENTICATED,
+                    string("Invalid principal: ") +
+                        string(auth_md_value.data(), auth_md_value.length()));
+    }
+  }
+
+ protected:
+  static const char kIdentityPropName[];
+  bool is_blocking_;
+};
+
+const char TestAuthMetadataProcessor::kGoodGuy[] = "Dr Jekyll";
+const char TestAuthMetadataProcessor::kIdentityPropName[] = "novel identity";
+
 
 }  // namespace
 
@@ -162,8 +220,10 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
                                      ToString(iter->second));
       }
     }
-    if (request->has_param() && request->param().check_auth_context()) {
-      CheckServerAuthContext(context);
+    if (request->has_param() &&
+        (request->param().expected_client_identity().length() > 0 ||
+         request->param().check_auth_context())) {
+      CheckServerAuthContext(context, request->param().expected_client_identity());
     }
     if (request->has_param() &&
         request->param().response_message_length() > 0) {
@@ -259,9 +319,18 @@ class TestServiceImplDupPkg
 class End2endTest : public ::testing::TestWithParam<bool> {
  protected:
   End2endTest()
-      : kMaxMessageSize_(8192), special_service_("special") {}
+      : is_server_started_(false),
+        kMaxMessageSize_(8192),
+        special_service_("special") {}
 
-  void SetUp() GRPC_OVERRIDE {
+  void TearDown() GRPC_OVERRIDE {
+    if (is_server_started_) {
+      server_->Shutdown();
+      if (proxy_server_) proxy_server_->Shutdown();
+    }
+  }
+
+  void StartServer(const std::shared_ptr<AuthMetadataProcessor>& processor) {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << "127.0.0.1:" << port;
     // Setup server
@@ -271,28 +340,29 @@ class End2endTest : public ::testing::TestWithParam<bool> {
     SslServerCredentialsOptions ssl_opts;
     ssl_opts.pem_root_certs = "";
     ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-    builder.AddListeningPort(server_address_.str(),
-                             SslServerCredentials(ssl_opts));
+    auto server_creds = SslServerCredentials(ssl_opts);
+    server_creds->SetAuthMetadataProcessor(processor);
+    builder.AddListeningPort(server_address_.str(), server_creds);
     builder.RegisterService(&service_);
     builder.RegisterService("foo.test.youtube.com", &special_service_);
     builder.SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
     server_ = builder.BuildAndStart();
-  }
-
-  void TearDown() GRPC_OVERRIDE {
-    server_->Shutdown();
-    if (proxy_server_) proxy_server_->Shutdown();
+    is_server_started_ = true;
   }
 
   void ResetChannel() {
+    if (!is_server_started_) {
+      StartServer(std::shared_ptr<AuthMetadataProcessor>());
+    }
+    EXPECT_TRUE(is_server_started_);
     SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
     ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.fr");
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
-    channel_ =
-        CreateChannel(server_address_.str(), SslCredentials(ssl_opts), args);
+    channel_ = CreateCustomChannel(server_address_.str(),
+                                   SslCredentials(ssl_opts), args);
   }
 
   void ResetStub(bool use_proxy) {
@@ -307,13 +377,13 @@ class End2endTest : public ::testing::TestWithParam<bool> {
       builder.RegisterService(proxy_service_.get());
       proxy_server_ = builder.BuildAndStart();
 
-      channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials(),
-                               ChannelArguments());
+      channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials());
     }
 
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
   }
 
+  bool is_server_started_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
   std::unique_ptr<Server> server_;
@@ -563,10 +633,10 @@ TEST_F(End2endTest, DiffPackageServices) {
 
 // rpc and stream should fail on bad credentials.
 TEST_F(End2endTest, BadCredentials) {
-  std::shared_ptr<Credentials> bad_creds = ServiceAccountCredentials("", "", 1);
+  std::shared_ptr<Credentials> bad_creds = GoogleRefreshTokenCredentials("");
   EXPECT_EQ(static_cast<Credentials*>(nullptr), bad_creds.get());
   std::shared_ptr<Channel> channel =
-      CreateChannel(server_address_.str(), bad_creds, ChannelArguments());
+      CreateChannel(server_address_.str(), bad_creds);
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
       grpc::cpp::test::util::TestService::NewStub(channel));
   EchoRequest request;
@@ -744,7 +814,7 @@ TEST_F(End2endTest, SetPerCallCredentials) {
   EchoResponse response;
   ClientContext context;
   std::shared_ptr<Credentials> creds =
-      IAMCredentials("fake_token", "fake_selector");
+      GoogleIAMCredentials("fake_token", "fake_selector");
   context.set_credentials(creds);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
@@ -781,10 +851,10 @@ TEST_F(End2endTest, OverridePerCallCredentials) {
   EchoResponse response;
   ClientContext context;
   std::shared_ptr<Credentials> creds1 =
-      IAMCredentials("fake_token1", "fake_selector1");
+      GoogleIAMCredentials("fake_token1", "fake_selector1");
   context.set_credentials(creds1);
   std::shared_ptr<Credentials> creds2 =
-      IAMCredentials("fake_token2", "fake_selector2");
+      GoogleIAMCredentials("fake_token2", "fake_selector2");
   context.set_credentials(creds2);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
@@ -804,6 +874,82 @@ TEST_F(End2endTest, OverridePerCallCredentials) {
                                 "fake_selector1"));
   EXPECT_EQ(request.message(), response.message());
   EXPECT_TRUE(s.ok());
+}
+
+TEST_F(End2endTest, NonBlockingAuthMetadataProcessorSuccess) {
+  auto* processor = new TestAuthMetadataProcessor(false);
+  StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
+  ResetStub(false);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(processor->GetCompatibleClientCreds());
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_metadata(true);
+  request.mutable_param()->set_expected_client_identity(
+      TestAuthMetadataProcessor::kGoodGuy);
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(request.message(), response.message());
+  EXPECT_TRUE(s.ok());
+
+  // Metadata should have been consumed by the processor.
+  EXPECT_FALSE(MetadataContains(
+      context.GetServerTrailingMetadata(), GRPC_AUTHORIZATION_METADATA_KEY,
+      grpc::string("Bearer ") + TestAuthMetadataProcessor::kGoodGuy));
+}
+
+TEST_F(End2endTest, NonBlockingAuthMetadataProcessorFailure) {
+  auto* processor = new TestAuthMetadataProcessor(false);
+  StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
+  ResetStub(false);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(processor->GetIncompatibleClientCreds());
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+
+TEST_F(End2endTest, BlockingAuthMetadataProcessorSuccess) {
+  auto* processor = new TestAuthMetadataProcessor(true);
+  StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
+  ResetStub(false);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(processor->GetCompatibleClientCreds());
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_metadata(true);
+  request.mutable_param()->set_expected_client_identity(
+      TestAuthMetadataProcessor::kGoodGuy);
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(request.message(), response.message());
+  EXPECT_TRUE(s.ok());
+
+  // Metadata should have been consumed by the processor.
+  EXPECT_FALSE(MetadataContains(
+      context.GetServerTrailingMetadata(), GRPC_AUTHORIZATION_METADATA_KEY,
+      grpc::string("Bearer ") + TestAuthMetadataProcessor::kGoodGuy));
+}
+
+TEST_F(End2endTest, BlockingAuthMetadataProcessorFailure) {
+  auto* processor = new TestAuthMetadataProcessor(true);
+  StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
+  ResetStub(false);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(processor->GetIncompatibleClientCreds());
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
 }
 
 // Client sends 20 requests and the server returns CANCELLED status after

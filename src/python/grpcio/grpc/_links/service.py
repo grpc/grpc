@@ -40,6 +40,8 @@ from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import relay
 from grpc.framework.interfaces.links import links
 
+_IDENTITY = lambda x: x
+
 _TERMINATION_KIND_TO_CODE = {
     links.Ticket.Termination.COMPLETION: _intermediary_low.Code.OK,
     links.Ticket.Termination.CANCELLATION: _intermediary_low.Code.CANCELLED,
@@ -52,6 +54,13 @@ _TERMINATION_KIND_TO_CODE = {
     links.Ticket.Termination.LOCAL_FAILURE: _intermediary_low.Code.UNKNOWN,
     links.Ticket.Termination.REMOTE_FAILURE: _intermediary_low.Code.UNKNOWN,
 }
+
+_STOP = _intermediary_low.Event.Kind.STOP
+_WRITE = _intermediary_low.Event.Kind.WRITE_ACCEPTED
+_COMPLETE = _intermediary_low.Event.Kind.COMPLETE_ACCEPTED
+_SERVICE = _intermediary_low.Event.Kind.SERVICE_ACCEPTED
+_READ = _intermediary_low.Event.Kind.READ_ACCEPTED
+_FINISH = _intermediary_low.Event.Kind.FINISH
 
 
 @enum.unique
@@ -84,7 +93,7 @@ class _RPCState(object):
   def __init__(
       self, request_deserializer, response_serializer, sequence_number, read,
       early_read, allowance, high_write, low_write, premetadataed,
-      terminal_metadata, code, message):
+      terminal_metadata, code, message, due):
     self.request_deserializer = request_deserializer
     self.response_serializer = response_serializer
     self.sequence_number = sequence_number
@@ -99,6 +108,13 @@ class _RPCState(object):
     self.terminal_metadata = terminal_metadata
     self.code = code
     self.message = message
+    self.due = due
+
+
+def _no_longer_due(kind, rpc_state, key, rpc_states):
+  rpc_state.due.remove(kind)
+  if not rpc_state.due:
+    del rpc_states[key]
 
 
 def _metadatafy(call, metadata):
@@ -124,6 +140,7 @@ class _Kernel(object):
     self._relay = ticket_relay
 
     self._completion_queue = None
+    self._due = set()
     self._server = None
     self._rpc_states = {}
     self._pool = None
@@ -139,17 +156,16 @@ class _Kernel(object):
     except ValueError:
       logging.info('Illegal path "%s"!', service_acceptance.method)
       return
-    request_deserializer = self._request_deserializers.get((group, method))
-    response_serializer = self._response_serializers.get((group, method))
-    if request_deserializer is None or response_serializer is None:
-      # TODO(nathaniel): Terminate the RPC with code NOT_FOUND.
-      call.cancel()
-      return
+    request_deserializer = self._request_deserializers.get(
+        (group, method), _IDENTITY)
+    response_serializer = self._response_serializers.get(
+        (group, method), _IDENTITY)
 
     call.read(call)
     self._rpc_states[call] = _RPCState(
         request_deserializer, response_serializer, 1, _Read.READING, None, 1,
-        _HighWrite.OPEN, _LowWrite.OPEN, False, None, None, None)
+        _HighWrite.OPEN, _LowWrite.OPEN, False, None, None, None,
+        set((_READ, _FINISH,)))
     ticket = links.Ticket(
         call, 0, group, method, links.Ticket.Subscription.FULL,
         service_acceptance.deadline - time.time(), None, event.metadata, None,
@@ -158,14 +174,13 @@ class _Kernel(object):
 
   def _on_read_event(self, event):
     call = event.tag
-    rpc_state = self._rpc_states.get(call, None)
-    if rpc_state is None:
-      return
+    rpc_state = self._rpc_states[call]
 
     if event.bytes is None:
       rpc_state.read = _Read.CLOSED
       payload = None
       termination = links.Ticket.Termination.COMPLETION
+      _no_longer_due(_READ, rpc_state, call, self._rpc_states)
     else:
       if 0 < rpc_state.allowance:
         payload = rpc_state.request_deserializer(event.bytes)
@@ -174,6 +189,7 @@ class _Kernel(object):
         call.read(call)
       else:
         rpc_state.early_read = event.bytes
+        _no_longer_due(_READ, rpc_state, call, self._rpc_states)
         return
         # TODO(issue 2916): Instead of returning:
         # rpc_state.read = _Read.AWAITING_ALLOWANCE
@@ -185,9 +201,7 @@ class _Kernel(object):
 
   def _on_write_event(self, event):
     call = event.tag
-    rpc_state = self._rpc_states.get(call, None)
-    if rpc_state is None:
-      return
+    rpc_state = self._rpc_states[call]
 
     if rpc_state.high_write is _HighWrite.CLOSED:
       if rpc_state.terminal_metadata is not None:
@@ -197,6 +211,8 @@ class _Kernel(object):
           rpc_state.message)
       call.status(status, call)
       rpc_state.low_write = _LowWrite.CLOSED
+      rpc_state.due.add(_COMPLETE)
+      rpc_state.due.remove(_WRITE)
     else:
       ticket = links.Ticket(
           call, rpc_state.sequence_number, None, None, None, None, 1, None,
@@ -204,12 +220,12 @@ class _Kernel(object):
       rpc_state.sequence_number += 1
       self._relay.add_value(ticket)
       rpc_state.low_write = _LowWrite.OPEN
+      _no_longer_due(_WRITE, rpc_state, call, self._rpc_states)
 
   def _on_finish_event(self, event):
     call = event.tag
-    rpc_state = self._rpc_states.pop(call, None)
-    if rpc_state is None:
-      return
+    rpc_state = self._rpc_states[call]
+    _no_longer_due(_FINISH, rpc_state, call, self._rpc_states)
     code = event.status.code
     if code is _intermediary_low.Code.OK:
       return
@@ -229,28 +245,33 @@ class _Kernel(object):
   def _spin(self, completion_queue, server):
     while True:
       event = completion_queue.get(None)
-      if event.kind is _intermediary_low.Event.Kind.STOP:
-        return
       with self._lock:
-        if self._server is None:
-          continue
-        elif event.kind is _intermediary_low.Event.Kind.SERVICE_ACCEPTED:
-          self._on_service_acceptance_event(event, server)
-        elif event.kind is _intermediary_low.Event.Kind.READ_ACCEPTED:
+        if event.kind is _STOP:
+          self._due.remove(_STOP)
+        elif event.kind is _READ:
           self._on_read_event(event)
-        elif event.kind is _intermediary_low.Event.Kind.WRITE_ACCEPTED:
+        elif event.kind is _WRITE:
           self._on_write_event(event)
-        elif event.kind is _intermediary_low.Event.Kind.COMPLETE_ACCEPTED:
-          pass
+        elif event.kind is _COMPLETE:
+          _no_longer_due(
+              _COMPLETE, self._rpc_states.get(event.tag), event.tag,
+              self._rpc_states)
         elif event.kind is _intermediary_low.Event.Kind.FINISH:
           self._on_finish_event(event)
+        elif event.kind is _SERVICE:
+          if self._server is None:
+            self._due.remove(_SERVICE)
+          else:
+            self._on_service_acceptance_event(event, server)
         else:
           logging.error('Illegal event! %s', (event,))
 
+        if not self._due and not self._rpc_states:
+          completion_queue.stop()
+          return
+
   def add_ticket(self, ticket):
     with self._lock:
-      if self._server is None:
-        return
       call = ticket.operation_id
       rpc_state = self._rpc_states.get(call)
       if rpc_state is None:
@@ -278,6 +299,7 @@ class _Kernel(object):
           rpc_state.early_read = None
           if rpc_state.read is _Read.READING:
             call.read(call)
+            rpc_state.due.add(_READ)
             termination = None
           else:
             termination = links.Ticket.Termination.COMPLETION
@@ -289,6 +311,7 @@ class _Kernel(object):
 
       if ticket.payload is not None:
         call.write(rpc_state.response_serializer(ticket.payload), call)
+        rpc_state.due.add(_WRITE)
         rpc_state.low_write = _LowWrite.ACTIVE
 
       if ticket.terminal_metadata is not None:
@@ -307,6 +330,7 @@ class _Kernel(object):
               links.Ticket.Termination.COMPLETION, rpc_state.code,
               rpc_state.message)
           call.status(status, call)
+          rpc_state.due.add(_COMPLETE)
           rpc_state.low_write = _LowWrite.CLOSED
       elif ticket.termination is not None:
         if rpc_state.terminal_metadata is not None:
@@ -314,11 +338,10 @@ class _Kernel(object):
         status = _status(
             ticket.termination, rpc_state.code, rpc_state.message)
         call.status(status, call)
-        self._rpc_states.pop(call, None)
+        rpc_state.due.add(_COMPLETE)
 
-  def add_port(self, port, server_credentials):
+  def add_port(self, address, server_credentials):
     with self._lock:
-      address = '[::]:%d' % port
       if self._server is None:
         self._completion_queue = _intermediary_low.CompletionQueue()
         self._server = _intermediary_low.Server(self._completion_queue)
@@ -336,22 +359,18 @@ class _Kernel(object):
       self._pool.submit(self._spin, self._completion_queue, self._server)
       self._server.start()
       self._server.service(None)
+      self._due.add(_SERVICE)
 
-  def graceful_stop(self):
+  def begin_stop(self):
     with self._lock:
       self._server.stop()
+      self._due.add(_STOP)
       self._server = None
-      self._completion_queue.stop()
-      self._completion_queue = None
-      pool = self._pool
-      self._pool = None
-      self._rpc_states = None
-    pool.shutdown(wait=True)
 
-  def immediate_stop(self):
-    # TODO(nathaniel): Implementation.
-    raise NotImplementedError(
-        'TODO(nathaniel): after merge of rewritten lower layers')
+  def end_stop(self):
+    with self._lock:
+      pool = self._pool
+    pool.shutdown(wait=True)
 
 
 class ServiceLink(links.Link):
@@ -362,17 +381,20 @@ class ServiceLink(links.Link):
   """
 
   @abc.abstractmethod
-  def add_port(self, port, server_credentials):
+  def add_port(self, address, server_credentials):
     """Adds a port on which to service RPCs after this link has been started.
 
     Args:
-      port: The port on which to service RPCs, or zero to request that a port be
-        automatically selected and used.
-      server_credentials: A ServerCredentials object, or None for insecure
-        service.
+      address: The address on which to service RPCs with a port number of zero
+        requesting that a port number be automatically selected and used.
+      server_credentials: An _intermediary_low.ServerCredentials object, or
+        None for insecure service.
 
     Returns:
-      A port on which RPCs will be serviced after this link has been started.
+      An integer port on which RPCs will be serviced after this link has been
+        started. This is typically the same number as the port number contained
+        in the passed address, but will likely be different if the port number
+        contained in the passed address was zero.
     """
     raise NotImplementedError()
 
@@ -386,18 +408,20 @@ class ServiceLink(links.Link):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def stop_gracefully(self):
-    """Stops this link.
+  def begin_stop(self):
+    """Indicate imminent link stop and immediate rejection of new RPCs.
 
     New RPCs will be rejected as soon as this method is called, but ongoing RPCs
-    will be allowed to continue until they terminate. This method blocks until
-    all RPCs have terminated.
+    will be allowed to continue until they terminate. This method does not
+    block.
     """
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def stop_immediately(self):
-    """Stops this link.
+  def end_stop(self):
+    """Finishes stopping this link.
+
+    begin_stop must have been called exactly once before calling this method.
 
     All in-progress RPCs will be terminated immediately.
     """
@@ -409,7 +433,9 @@ class _ServiceLink(ServiceLink):
   def __init__(self, request_deserializers, response_serializers):
     self._relay = relay.relay(None)
     self._kernel = _Kernel(
-        request_deserializers, response_serializers, self._relay)
+        {} if request_deserializers is None else request_deserializers,
+        {} if response_serializers is None else response_serializers,
+        self._relay)
 
   def accept_ticket(self, ticket):
     self._kernel.add_ticket(ticket)
@@ -417,19 +443,18 @@ class _ServiceLink(ServiceLink):
   def join_link(self, link):
     self._relay.set_behavior(link.accept_ticket)
 
-  def add_port(self, port, server_credentials):
-    return self._kernel.add_port(port, server_credentials)
+  def add_port(self, address, server_credentials):
+    return self._kernel.add_port(address, server_credentials)
 
   def start(self):
     self._relay.start()
     return self._kernel.start()
 
-  def stop_gracefully(self):
-    self._kernel.graceful_stop()
-    self._relay.stop()
+  def begin_stop(self):
+    self._kernel.begin_stop()
 
-  def stop_immediately(self):
-    self._kernel.immediate_stop()
+  def end_stop(self):
+    self._kernel.end_stop()
     self._relay.stop()
 
 

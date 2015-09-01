@@ -35,24 +35,11 @@
 #include <grpc/grpc.h>
 #include "src/core/surface/call.h"
 
-static void grpc_census_context_destroy(void *context) {
-  census_context_destroy((census_context *)context);
-}
-
 void grpc_census_call_set_context(grpc_call *call, census_context *context) {
   if (census_enabled() == CENSUS_FEATURE_NONE) {
     return;
   }
-  if (context == NULL) {
-    if (grpc_call_is_client(call)) {
-      census_context *context_ptr;
-      census_context_deserialize(NULL, &context_ptr);
-      grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context_ptr,
-                            grpc_census_context_destroy);
-    } else {
-      /* TODO(aveitch): server side context code to be implemented. */
-    }
-  } else {
+  if (context != NULL) {
     grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context, NULL);
   }
 }
