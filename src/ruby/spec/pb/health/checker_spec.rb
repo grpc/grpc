@@ -179,7 +179,6 @@ describe Grpc::Health::Checker do
 
   describe 'running on RpcServer' do
     RpcServer = GRPC::RpcServer
-    StatusCodes = GRPC::Core::StatusCodes
     CheckerStub = Grpc::Health::Checker.rpc_stub_class
 
     before(:each) do

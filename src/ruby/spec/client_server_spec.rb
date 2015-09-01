@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'spec_helper'
 
 include GRPC::Core
 
@@ -41,7 +40,7 @@ shared_context 'setup: tags' do
   end
 
   def deadline
-    Time.now + 2
+    Time.now + 5
   end
 
   def server_allows_client_to_proceed

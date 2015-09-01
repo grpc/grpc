@@ -1,6 +1,6 @@
 # gRPC Python Hello World
 
-This is a quick introduction with a simple example and installation instructions: for a more complete tutorial see [gRPC Basics: Python](examples/python/route_guide).
+This is a quick introduction with a simple example and installation instructions: for a more complete tutorial see [gRPC Basics: Python](../route_guide).
 
 ### Install gRPC
 Make sure you have built gRPC Python from source on your system. Follow the instructions here:
@@ -96,7 +96,7 @@ been generated for you (helloworld_pb2.py).
 
 ### The client
 
-Client-side code can be found in [greeter_client.py](examples/python/helloworld/greeter_client.py).
+Client-side code can be found in [greeter_client.py](greeter_client.py).
 
 You can run the client using:
 
@@ -107,7 +107,7 @@ $ ./run_client.sh
 
 ### The server
 
-Server side code can be found in [greeter_server.py](examples/python/helloworld/greeter_server.py). 
+Server side code can be found in [greeter_server.py](greeter_server.py). 
 
 You can run the server using:
 
