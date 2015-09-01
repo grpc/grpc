@@ -31,7 +31,6 @@
  *
  */
 
-#include <unistd.h>
 #include <list>
 #include <thread>
 #include <deque>
