@@ -343,8 +343,9 @@
     <ClInclude Include="..\..\src\core\transport\stream_op.h" />
     <ClInclude Include="..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\src\core\transport\transport_impl.h" />
+    <ClInclude Include="..\..\src\core\census\aggregation.h" />
     <ClInclude Include="..\..\src\core\census\context.h" />
-    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h" />
+    <ClInclude Include="..\..\src\core\census\rpc_metric_id.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\core\httpcli\httpcli_security_connector.c">
@@ -626,8 +627,6 @@
     <ClCompile Include="..\..\src\core\census\initialize.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\operation.c">
-    </ClCompile>
-    <ClCompile Include="..\..\src\core\census\record_stat.c">
     </ClCompile>
     <ClCompile Include="..\..\src\core\census\tracing.c">
     </ClCompile>

@@ -4150,7 +4150,6 @@ LIBGRPC_SRC = \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/operation.c \
-    src/core/census/record_stat.c \
     src/core/census/tracing.c \
 
 PUBLIC_HEADERS_C += \
@@ -4426,7 +4425,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/census/context.c \
     src/core/census/initialize.c \
     src/core/census/operation.c \
-    src/core/census/record_stat.c \
     src/core/census/tracing.c \
 
 PUBLIC_HEADERS_C += \

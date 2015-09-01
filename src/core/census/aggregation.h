@@ -31,16 +31,36 @@
  *
  */
 
-#ifndef CENSUS_RPC_STAT_ID_H
-#define CENSUS_RPC_STAT_ID_H
+#include <stddef.h>
 
-/* Stats ID's used for RPC measurements. */
-#define CENSUS_INVALID_STAT_ID 0     /* ID 0 is always invalid */
-#define CENSUS_RPC_CLIENT_REQUESTS 1 /* Count of client requests sent. */
-#define CENSUS_RPC_SERVER_REQUESTS 2 /* Count of server requests sent. */
-#define CENSUS_RPC_CLIENT_ERRORS 3   /* Client error counts. */
-#define CENSUS_RPC_SERVER_ERRORS 4   /* Server error counts. */
-#define CENSUS_RPC_CLIENT_LATENCY 5  /* Client side request latency. */
-#define CENSUS_RPC_SERVER_LATENCY 6  /* Server side request latency. */
+#ifndef GRPC_INTERNAL_CORE_CENSUS_AGGREGATION_H
+#define GRPC_INTERNAL_CORE_CENSUS_AGGREGATION_H
 
-#endif /* CENSUS_RPC_STAT_ID_H */
+/** Structure used to describe an aggregation type. */
+struct census_aggregation_ops {
+  /* Create a new aggregation. The pointer returned can be used in future calls
+     to clone(), free(), record(), data() and reset(). */
+  void *(*create)(const void *create_arg);
+  /* Make a copy of an aggregation created by create() */
+  void *(*clone)(const void *aggregation);
+  /* Destroy an aggregation created by create() */
+  void (*free)(void *aggregation);
+  /* Record a new value against aggregation. */
+  void (*record)(void *aggregation, double value);
+  /* Return current aggregation data. The caller must cast this object into
+     the correct type for the aggregation result. The object returned can be
+     freed by using free_data(). */
+  void *(*data)(const void *aggregation);
+  /* free data returned by data() */
+  void (*free_data)(void *data);
+  /* Reset an aggregation to default (zero) values. */
+  void (*reset)(void *aggregation);
+  /* Merge 'from' aggregation into 'to'. Both aggregations must be compatible */
+  void (*merge)(void *to, const void *from);
+  /* Fill buffer with printable string version of aggregation contents. For
+     debugging only. Returns the number of bytes added to buffer (a value == n
+     implies the buffer was of insufficient size). */
+  size_t (*print)(const void *aggregation, char *buffer, size_t n);
+};
+
+#endif /* GRPC_INTERNAL_CORE_CENSUS_AGGREGATION_H */
