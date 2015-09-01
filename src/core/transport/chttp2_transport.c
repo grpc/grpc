@@ -338,10 +338,10 @@ static void destroy_transport(grpc_transport *gt) {
   UNREF_TRANSPORT(t, "destroy");
 }
 
-/** block grpc_endpoint_shutdown being called until a paired 
+/** block grpc_endpoint_shutdown being called until a paired
     allow_endpoint_shutdown is made */
 static void prevent_endpoint_shutdown(grpc_chttp2_transport *t) {
-  GPR_ASSERT(t->shutdown_ep_refs.count);
+  GPR_ASSERT(t->ep);
   gpr_ref(&t->shutdown_ep_refs);
 }
 
@@ -525,6 +525,8 @@ void grpc_chttp2_terminate_writing(void *transport_writing_ptr, int success) {
   grpc_chttp2_transport_writing *transport_writing = transport_writing_ptr;
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING(transport_writing);
 
+  allow_endpoint_shutdown(t);
+
   lock(t);
 
   if (!success) {
@@ -552,7 +554,6 @@ void grpc_chttp2_terminate_writing(void *transport_writing_ptr, int success) {
 static void writing_action(void *gt, int iomgr_success_ignored) {
   grpc_chttp2_transport *t = gt;
   grpc_chttp2_perform_writes(&t->writing, t->ep);
-  allow_endpoint_shutdown(t);
 }
 
 void grpc_chttp2_add_incoming_goaway(
