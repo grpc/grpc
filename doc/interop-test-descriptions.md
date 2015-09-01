@@ -4,7 +4,7 @@ Interoperability Test Case Descriptions
 Client and server use
 [test.proto](https://github.com/grpc/grpc/blob/master/test/proto/test.proto)
 and the [gRPC over HTTP/2 v2
-protocol](https://github.com/grpc/grpc-common/blob/master/PROTOCOL-HTTP2.md).
+protocol](doc/PROTOCOL-HTTP2.md).
 
 Client
 ------

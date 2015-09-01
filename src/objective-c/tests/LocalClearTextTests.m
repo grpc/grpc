@@ -42,7 +42,7 @@
 #import <RxLibrary/GRXWriter+Immediate.h>
 
 // These tests require a gRPC "RouteGuide" sample server to be running locally. You can compile and
-// run one by following the instructions here: https://github.com/grpc/grpc-common/blob/master/cpp/cpptutorial.md#try-it-out
+// run one by following the instructions here: https://github.com/grpc/grpc/blob/master/examples/cpp/cpptutorial.md#try-it-out
 // Be sure to have the C gRPC library installed in your system (for example, by having followed the
 // instructions at https://github.com/grpc/homebrew-grpc
 
