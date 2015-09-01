@@ -32,7 +32,6 @@
  */
 
 #import "GRPCCall+OAuth2.h"
-#import "private/GRPCRequestHeaders.h"
 
 static NSString * const kAuthorizationHeader = @"authorization";
 static NSString * const kBearerPrefix = @"Bearer ";
