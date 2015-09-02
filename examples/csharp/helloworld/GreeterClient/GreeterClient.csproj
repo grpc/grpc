@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\grpc.native.csharp_ext.0.11.0-preview20150827\build\portable-net45\grpc.native.csharp_ext.props" Condition="Exists('..\packages\grpc.native.csharp_ext.0.11.0-preview20150827\build\portable-net45\grpc.native.csharp_ext.props')" />
-  <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props')" />
+  <Import Project="..\packages\grpc.native.csharp_ext.0.11.0\build\portable-net45\grpc.native.csharp_ext.props" Condition="Exists('..\packages\grpc.native.csharp_ext.0.11.0\build\portable-net45\grpc.native.csharp_ext.props')" />
+  <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\portable-net45\grpc.dependencies.openssl.redist.props" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\portable-net45\grpc.dependencies.openssl.redist.props')" />
   <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.props" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -13,7 +13,7 @@
     <RootNamespace>GreeterClient</RootNamespace>
     <AssemblyName>GreeterClient</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <NuGetPackageImportStamp>09ec40c9</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>c4057b0a</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -37,8 +37,9 @@
     <Reference Include="Google.Protobuf">
       <HintPath>..\packages\Google.Protobuf.3.0.0-alpha4\lib\portable-net45+netcore45+wpa81+wp8\Google.Protobuf.dll</HintPath>
     </Reference>
-    <Reference Include="Grpc.Core">
-      <HintPath>..\packages\Grpc.Core.0.7.0-preview20150827\lib\net45\Grpc.Core.dll</HintPath>
+    <Reference Include="Grpc.Core, Version=0.7.0.0, Culture=neutral, PublicKeyToken=d754f35622e28bad, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Grpc.Core.0.7.0\lib\net45\Grpc.Core.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Interactive.Async">
@@ -65,12 +66,12 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.props'))" />
     <Error Condition="!Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.props'))" />
-    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets'))" />
-    <Error Condition="!Exists('..\packages\grpc.native.csharp_ext.0.11.0-preview20150827\build\portable-net45\grpc.native.csharp_ext.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.native.csharp_ext.0.11.0-preview20150827\build\portable-net45\grpc.native.csharp_ext.props'))" />
-    <Error Condition="!Exists('..\packages\grpc.native.csharp_ext.0.11.0-preview20150827\build\portable-net45\grpc.native.csharp_ext.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.native.csharp_ext.0.11.0-preview20150827\build\portable-net45\grpc.native.csharp_ext.targets'))" />
+    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\portable-net45\grpc.dependencies.openssl.redist.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\portable-net45\grpc.dependencies.openssl.redist.props'))" />
+    <Error Condition="!Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\portable-net45\grpc.dependencies.openssl.redist.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\portable-net45\grpc.dependencies.openssl.redist.targets'))" />
+    <Error Condition="!Exists('..\packages\grpc.native.csharp_ext.0.11.0\build\portable-net45\grpc.native.csharp_ext.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.native.csharp_ext.0.11.0\build\portable-net45\grpc.native.csharp_ext.props'))" />
+    <Error Condition="!Exists('..\packages\grpc.native.csharp_ext.0.11.0\build\portable-net45\grpc.native.csharp_ext.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\grpc.native.csharp_ext.0.11.0\build\portable-net45\grpc.native.csharp_ext.targets'))" />
   </Target>
   <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets')" />
-  <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets')" />
-  <Import Project="..\packages\grpc.native.csharp_ext.0.11.0-preview20150827\build\portable-net45\grpc.native.csharp_ext.targets" Condition="Exists('..\packages\grpc.native.csharp_ext.0.11.0-preview20150827\build\portable-net45\grpc.native.csharp_ext.targets')" />
+  <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\portable-net45\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.3\build\portable-net45\grpc.dependencies.openssl.redist.targets')" />
+  <Import Project="..\packages\grpc.native.csharp_ext.0.11.0\build\portable-net45\grpc.native.csharp_ext.targets" Condition="Exists('..\packages\grpc.native.csharp_ext.0.11.0\build\portable-net45\grpc.native.csharp_ext.targets')" />
 </Project>
