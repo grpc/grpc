@@ -114,7 +114,7 @@ class _ServiceSubscriptionCreator(_SubscriptionCreator):
           group, method, self._operation_context, self._output_operator)
     except base.NoSuchMethodError as e:
       return _SubscriptionCreation(
-          _SubscriptionCreation.Kind.REMOTE_ERROR, None, e.code, e.message)
+          _SubscriptionCreation.Kind.REMOTE_ERROR, None, e.code, e.details)
     except abandonment.Abandoned:
       return _SubscriptionCreation(
           _SubscriptionCreation.Kind.ABANDONED, None, None, None)

@@ -837,11 +837,11 @@ grpcsharp_ssl_credentials_create(const char *pem_root_certs,
   if (key_cert_pair_cert_chain || key_cert_pair_private_key) {
     key_cert_pair.cert_chain = key_cert_pair_cert_chain;
     key_cert_pair.private_key = key_cert_pair_private_key;
-    return grpc_ssl_credentials_create(pem_root_certs, &key_cert_pair);
+    return grpc_ssl_credentials_create(pem_root_certs, &key_cert_pair, NULL);
   } else {
     GPR_ASSERT(!key_cert_pair_cert_chain);
     GPR_ASSERT(!key_cert_pair_private_key);
-    return grpc_ssl_credentials_create(pem_root_certs, NULL);
+    return grpc_ssl_credentials_create(pem_root_certs, NULL, NULL);
   }
 }
 
@@ -852,7 +852,7 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_credentials_release(grpc_credentials *cre
 GPR_EXPORT grpc_channel *GPR_CALLTYPE
 grpcsharp_secure_channel_create(grpc_credentials *creds, const char *target,
                                 const grpc_channel_args *args) {
-  return grpc_secure_channel_create(creds, target, args);
+  return grpc_secure_channel_create(creds, target, args, NULL);
 }
 
 GPR_EXPORT grpc_server_credentials *GPR_CALLTYPE
@@ -876,7 +876,7 @@ grpcsharp_ssl_server_credentials_create(
   }
   creds = grpc_ssl_server_credentials_create(pem_root_certs, key_cert_pairs,
                                              num_key_cert_pairs,
-                                             force_client_auth);
+                                             force_client_auth, NULL);
   gpr_free(key_cert_pairs);
   return creds;
 }

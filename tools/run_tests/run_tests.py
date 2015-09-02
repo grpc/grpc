@@ -281,7 +281,10 @@ class CSharpLanguage(object):
   def make_targets(self):
     # For Windows, this target doesn't really build anything,
     # everything is build by buildall script later.
-    return ['grpc_csharp_ext']
+    if self.platform == 'windows':
+      return []
+    else:
+      return ['grpc_csharp_ext']
 
   def build_steps(self):
     if self.platform == 'windows':
@@ -358,7 +361,7 @@ _CONFIGS = {
     'opt': SimpleConfig('opt'),
     'tsan': SimpleConfig('tsan', timeout_seconds=10*60, environ={
         'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
-    'msan': SimpleConfig('msan'),
+    'msan': SimpleConfig('msan', timeout_seconds=7*60),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', timeout_seconds=7*60, environ={
         'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt',
@@ -452,7 +455,6 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 if args.travis:
   _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'surface,batch'}
 
-make_targets = []
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
                       _LANGUAGES.iterkeys() if x == 'all' else [x]
@@ -478,10 +480,12 @@ else:
                            'CONFIG=%s' % cfg] + targets,
                           timeout_seconds=30*60)
 
-build_steps = [make_jobspec(cfg,
-                            list(set(itertools.chain.from_iterable(
-                                         l.make_targets() for l in languages))))
-               for cfg in build_configs]
+make_targets = list(set(itertools.chain.from_iterable(
+                                         l.make_targets() for l in languages)))
+build_steps = []
+if make_targets:
+  build_steps.extend(set(make_jobspec(cfg, make_targets)
+                         for cfg in build_configs))
 build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs

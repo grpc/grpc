@@ -148,8 +148,8 @@ class IndentScope {
 // END FORMATTING BOILERPLATE //
 ////////////////////////////////
 
-bool PrintServicer(const ServiceDescriptor* service,
-                   Printer* out) {
+bool PrintAlphaServicer(const ServiceDescriptor* service,
+                        Printer* out) {
   grpc::string doc = "<fill me in later!>";
   map<grpc::string, grpc::string> dict = ListToDict({
         "Service", service->name(),
@@ -176,7 +176,7 @@ bool PrintServicer(const ServiceDescriptor* service,
   return true;
 }
 
-bool PrintServer(const ServiceDescriptor* service, Printer* out) {
+bool PrintAlphaServer(const ServiceDescriptor* service, Printer* out) {
   grpc::string doc = "<fill me in later!>";
   map<grpc::string, grpc::string> dict = ListToDict({
         "Service", service->name(),
@@ -204,8 +204,8 @@ bool PrintServer(const ServiceDescriptor* service, Printer* out) {
   return true;
 }
 
-bool PrintStub(const ServiceDescriptor* service,
-               Printer* out) {
+bool PrintAlphaStub(const ServiceDescriptor* service,
+                    Printer* out) {
   grpc::string doc = "<fill me in later!>";
   map<grpc::string, grpc::string> dict = ListToDict({
         "Service", service->name(),
@@ -268,8 +268,8 @@ bool GetModuleAndMessagePath(const Descriptor* type,
   return true;
 }
 
-bool PrintServerFactory(const grpc::string& package_qualified_service_name,
-                        const ServiceDescriptor* service, Printer* out) {
+bool PrintAlphaServerFactory(const grpc::string& package_qualified_service_name,
+                             const ServiceDescriptor* service, Printer* out) {
   out->Print("def early_adopter_create_$Service$_server(servicer, port, "
              "private_key=None, certificate_chain=None):\n",
              "Service", service->name());
@@ -320,7 +320,7 @@ bool PrintServerFactory(const grpc::string& package_qualified_service_name,
           input_message_modules_and_classes.find(method_name);
       auto output_message_module_and_class =
           output_message_modules_and_classes.find(method_name);
-      out->Print("\"$Method$\": utilities.$Constructor$(\n", "Method",
+      out->Print("\"$Method$\": alpha_utilities.$Constructor$(\n", "Method",
                  method_name, "Constructor",
                  name_and_description_constructor->second);
       {
@@ -348,8 +348,8 @@ bool PrintServerFactory(const grpc::string& package_qualified_service_name,
   return true;
 }
 
-bool PrintStubFactory(const grpc::string& package_qualified_service_name,
-                      const ServiceDescriptor* service, Printer* out) {
+bool PrintAlphaStubFactory(const grpc::string& package_qualified_service_name,
+                           const ServiceDescriptor* service, Printer* out) {
   map<grpc::string, grpc::string> dict = ListToDict({
         "Service", service->name(),
       });
@@ -404,7 +404,7 @@ bool PrintStubFactory(const grpc::string& package_qualified_service_name,
           input_message_modules_and_classes.find(method_name);
       auto output_message_module_and_class =
           output_message_modules_and_classes.find(method_name);
-      out->Print("\"$Method$\": utilities.$Constructor$(\n", "Method",
+      out->Print("\"$Method$\": alpha_utilities.$Constructor$(\n", "Method",
                  method_name, "Constructor",
                  name_and_description_constructor->second);
       {
@@ -434,12 +434,280 @@ bool PrintStubFactory(const grpc::string& package_qualified_service_name,
   return true;
 }
 
+bool PrintBetaServicer(const ServiceDescriptor* service,
+                       Printer* out) {
+  grpc::string doc = "<fill me in later!>";
+  map<grpc::string, grpc::string> dict = ListToDict({
+        "Service", service->name(),
+        "Documentation", doc,
+      });
+  out->Print("\n");
+  out->Print(dict, "class Beta$Service$Servicer(object):\n");
+  {
+    IndentScope raii_class_indent(out);
+    out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
+    out->Print("__metaclass__ = abc.ABCMeta\n");
+    for (int i = 0; i < service->method_count(); ++i) {
+      auto meth = service->method(i);
+      grpc::string arg_name = meth->client_streaming() ?
+          "request_iterator" : "request";
+      out->Print("@abc.abstractmethod\n");
+      out->Print("def $Method$(self, $ArgName$, context):\n",
+                 "Method", meth->name(), "ArgName", arg_name);
+      {
+        IndentScope raii_method_indent(out);
+        out->Print("raise NotImplementedError()\n");
+      }
+    }
+  }
+  return true;
+}
+
+bool PrintBetaStub(const ServiceDescriptor* service,
+                   Printer* out) {
+  grpc::string doc = "The interface to which stubs will conform.";
+  map<grpc::string, grpc::string> dict = ListToDict({
+        "Service", service->name(),
+        "Documentation", doc,
+      });
+  out->Print("\n");
+  out->Print(dict, "class Beta$Service$Stub(object):\n");
+  {
+    IndentScope raii_class_indent(out);
+    out->Print(dict, "\"\"\"$Documentation$\"\"\"\n");
+    out->Print("__metaclass__ = abc.ABCMeta\n");
+    for (int i = 0; i < service->method_count(); ++i) {
+      const MethodDescriptor* meth = service->method(i);
+      grpc::string arg_name = meth->client_streaming() ?
+          "request_iterator" : "request";
+      auto methdict = ListToDict({"Method", meth->name(), "ArgName", arg_name});
+      out->Print("@abc.abstractmethod\n");
+      out->Print(methdict, "def $Method$(self, $ArgName$, timeout):\n");
+      {
+        IndentScope raii_method_indent(out);
+        out->Print("raise NotImplementedError()\n");
+      }
+      if (!meth->server_streaming()) {
+        out->Print(methdict, "$Method$.future = None\n");
+      }
+    }
+  }
+  return true;
+}
+
+bool PrintBetaServerFactory(const grpc::string& package_qualified_service_name,
+                            const ServiceDescriptor* service, Printer* out) {
+  out->Print("\n");
+  out->Print("def beta_create_$Service$_server(servicer, pool=None, "
+             "pool_size=None, default_timeout=None, maximum_timeout=None):\n",
+             "Service", service->name());
+  {
+    IndentScope raii_create_server_indent(out);
+    map<grpc::string, grpc::string> method_implementation_constructors;
+    map<grpc::string, pair<grpc::string, grpc::string>>
+        input_message_modules_and_classes;
+    map<grpc::string, pair<grpc::string, grpc::string>>
+        output_message_modules_and_classes;
+    for (int i = 0; i < service->method_count(); ++i) {
+      const MethodDescriptor* method = service->method(i);
+      const grpc::string method_implementation_constructor =
+          grpc::string(method->client_streaming() ? "stream_" : "unary_") +
+          grpc::string(method->server_streaming() ? "stream_" : "unary_") +
+          "inline";
+      pair<grpc::string, grpc::string> input_message_module_and_class;
+      if (!GetModuleAndMessagePath(method->input_type(),
+                                   &input_message_module_and_class)) {
+        return false;
+      }
+      pair<grpc::string, grpc::string> output_message_module_and_class;
+      if (!GetModuleAndMessagePath(method->output_type(),
+                                   &output_message_module_and_class)) {
+        return false;
+      }
+      // Import the modules that define the messages used in RPCs.
+      out->Print("import $Module$\n", "Module",
+                 input_message_module_and_class.first);
+      out->Print("import $Module$\n", "Module",
+                 output_message_module_and_class.first);
+      method_implementation_constructors.insert(
+          make_pair(method->name(), method_implementation_constructor));
+      input_message_modules_and_classes.insert(
+          make_pair(method->name(), input_message_module_and_class));
+      output_message_modules_and_classes.insert(
+          make_pair(method->name(), output_message_module_and_class));
+    }
+    out->Print("request_deserializers = {\n");
+    for (auto name_and_input_module_class_pair =
+           input_message_modules_and_classes.begin();
+         name_and_input_module_class_pair !=
+           input_message_modules_and_classes.end();
+         name_and_input_module_class_pair++) {
+      IndentScope raii_indent(out);
+      out->Print("(\'$PackageQualifiedServiceName$\', \'$MethodName$\'): "
+                 "$InputTypeModule$.$InputTypeClass$.FromString,\n",
+                 "PackageQualifiedServiceName", package_qualified_service_name,
+                 "MethodName", name_and_input_module_class_pair->first,
+                 "InputTypeModule",
+                 name_and_input_module_class_pair->second.first,
+                 "InputTypeClass",
+                 name_and_input_module_class_pair->second.second);
+    }
+    out->Print("}\n");
+    out->Print("response_serializers = {\n");
+    for (auto name_and_output_module_class_pair =
+           output_message_modules_and_classes.begin();
+         name_and_output_module_class_pair !=
+           output_message_modules_and_classes.end();
+         name_and_output_module_class_pair++) {
+      IndentScope raii_indent(out);
+      out->Print("(\'$PackageQualifiedServiceName$\', \'$MethodName$\'): "
+                 "$OutputTypeModule$.$OutputTypeClass$.SerializeToString,\n",
+                 "PackageQualifiedServiceName", package_qualified_service_name,
+                 "MethodName", name_and_output_module_class_pair->first,
+                 "OutputTypeModule",
+                 name_and_output_module_class_pair->second.first,
+                 "OutputTypeClass",
+                 name_and_output_module_class_pair->second.second);
+    }
+    out->Print("}\n");
+    out->Print("method_implementations = {\n");
+    for (auto name_and_implementation_constructor =
+	   method_implementation_constructors.begin();
+	 name_and_implementation_constructor !=
+	   method_implementation_constructors.end();
+	 name_and_implementation_constructor++) {
+      IndentScope raii_descriptions_indent(out);
+      const grpc::string method_name =
+          name_and_implementation_constructor->first;
+      out->Print("(\'$PackageQualifiedServiceName$\', \'$Method$\'): "
+                 "face_utilities.$Constructor$(servicer.$Method$),\n",
+                 "PackageQualifiedServiceName", package_qualified_service_name,
+                 "Method", name_and_implementation_constructor->first,
+                 "Constructor", name_and_implementation_constructor->second);
+    }
+    out->Print("}\n");
+    out->Print("server_options = beta.server_options("
+               "request_deserializers=request_deserializers, "
+               "response_serializers=response_serializers, "
+               "thread_pool=pool, thread_pool_size=pool_size, "
+               "default_timeout=default_timeout, "
+               "maximum_timeout=maximum_timeout)\n");
+    out->Print("return beta.server(method_implementations, "
+               "options=server_options)\n");
+  }
+  return true;
+}
+
+bool PrintBetaStubFactory(const grpc::string& package_qualified_service_name,
+                          const ServiceDescriptor* service, Printer* out) {
+  map<grpc::string, grpc::string> dict = ListToDict({
+        "Service", service->name(),
+      });
+  out->Print("\n");
+  out->Print(dict, "def beta_create_$Service$_stub(channel, host=None,"
+             " metadata_transformer=None, pool=None, pool_size=None):\n");
+  {
+    IndentScope raii_create_server_indent(out);
+    map<grpc::string, grpc::string> method_cardinalities;
+    map<grpc::string, pair<grpc::string, grpc::string>>
+        input_message_modules_and_classes;
+    map<grpc::string, pair<grpc::string, grpc::string>>
+        output_message_modules_and_classes;
+    for (int i = 0; i < service->method_count(); ++i) {
+      const MethodDescriptor* method = service->method(i);
+      const grpc::string method_cardinality =
+          grpc::string(method->client_streaming() ? "STREAM" : "UNARY") +
+          "_" +
+	  grpc::string(method->server_streaming() ? "STREAM" : "UNARY");
+      pair<grpc::string, grpc::string> input_message_module_and_class;
+      if (!GetModuleAndMessagePath(method->input_type(),
+                                   &input_message_module_and_class)) {
+        return false;
+      }
+      pair<grpc::string, grpc::string> output_message_module_and_class;
+      if (!GetModuleAndMessagePath(method->output_type(),
+                                   &output_message_module_and_class)) {
+        return false;
+      }
+      // Import the modules that define the messages used in RPCs.
+      out->Print("import $Module$\n", "Module",
+                 input_message_module_and_class.first);
+      out->Print("import $Module$\n", "Module",
+                 output_message_module_and_class.first);
+      method_cardinalities.insert(
+          make_pair(method->name(), method_cardinality));
+      input_message_modules_and_classes.insert(
+          make_pair(method->name(), input_message_module_and_class));
+      output_message_modules_and_classes.insert(
+          make_pair(method->name(), output_message_module_and_class));
+    }
+    out->Print("request_serializers = {\n");
+    for (auto name_and_input_module_class_pair =
+           input_message_modules_and_classes.begin();
+         name_and_input_module_class_pair !=
+           input_message_modules_and_classes.end();
+         name_and_input_module_class_pair++) {
+      IndentScope raii_indent(out);
+      out->Print("(\'$PackageQualifiedServiceName$\', \'$MethodName$\'): "
+                 "$InputTypeModule$.$InputTypeClass$.SerializeToString,\n",
+                 "PackageQualifiedServiceName", package_qualified_service_name,
+                 "MethodName", name_and_input_module_class_pair->first,
+                 "InputTypeModule",
+                 name_and_input_module_class_pair->second.first,
+                 "InputTypeClass",
+                 name_and_input_module_class_pair->second.second);
+    }
+    out->Print("}\n");
+    out->Print("response_deserializers = {\n");
+    for (auto name_and_output_module_class_pair =
+           output_message_modules_and_classes.begin();
+         name_and_output_module_class_pair !=
+           output_message_modules_and_classes.end();
+         name_and_output_module_class_pair++) {
+      IndentScope raii_indent(out);
+      out->Print("(\'$PackageQualifiedServiceName$\', \'$MethodName$\'): "
+                 "$OutputTypeModule$.$OutputTypeClass$.FromString,\n",
+                 "PackageQualifiedServiceName", package_qualified_service_name,
+                 "MethodName", name_and_output_module_class_pair->first,
+                 "OutputTypeModule",
+                 name_and_output_module_class_pair->second.first,
+                 "OutputTypeClass",
+                 name_and_output_module_class_pair->second.second);
+    }
+    out->Print("}\n");
+    out->Print("cardinalities = {\n");
+    for (auto name_and_cardinality = method_cardinalities.begin();
+         name_and_cardinality != method_cardinalities.end();
+         name_and_cardinality++) {
+      IndentScope raii_descriptions_indent(out);
+      out->Print("\'$Method$\': cardinality.Cardinality.$Cardinality$,\n",
+                 "Method", name_and_cardinality->first,
+                 "Cardinality", name_and_cardinality->second);
+    }
+    out->Print("}\n");
+    out->Print("stub_options = beta.stub_options("
+               "host=host, metadata_transformer=metadata_transformer, "
+               "request_serializers=request_serializers, "
+               "response_deserializers=response_deserializers, "
+               "thread_pool=pool, thread_pool_size=pool_size)\n");
+    out->Print(
+        "return beta.dynamic_stub(channel, \'$PackageQualifiedServiceName$\', "
+        "cardinalities, options=stub_options)\n",
+        "PackageQualifiedServiceName", package_qualified_service_name);
+  }
+  return true;
+}
+
 bool PrintPreamble(const FileDescriptor* file,
                    const GeneratorConfiguration& config, Printer* out) {
   out->Print("import abc\n");
+  out->Print("from $Package$ import beta\n",
+             "Package", config.beta_package_root);
   out->Print("from $Package$ import implementations\n",
-             "Package", config.implementations_package_root);
-  out->Print("from grpc.framework.alpha import utilities\n");
+             "Package", config.early_adopter_package_root);
+  out->Print("from grpc.framework.alpha import utilities as alpha_utilities\n");
+  out->Print("from grpc.framework.common import cardinality\n");
+  out->Print("from grpc.framework.interfaces.face import utilities as face_utilities\n");
   return true;
 }
 
@@ -462,11 +730,15 @@ pair<bool, grpc::string> GetServices(const FileDescriptor* file,
     for (int i = 0; i < file->service_count(); ++i) {
       auto service = file->service(i);
       auto package_qualified_service_name = package + service->name();
-      if (!(PrintServicer(service, &out) &&
-            PrintServer(service, &out) &&
-            PrintStub(service, &out) &&
-            PrintServerFactory(package_qualified_service_name, service, &out) &&
-            PrintStubFactory(package_qualified_service_name, service, &out))) {
+      if (!(PrintAlphaServicer(service, &out) &&
+            PrintAlphaServer(service, &out) &&
+            PrintAlphaStub(service, &out) &&
+            PrintAlphaServerFactory(package_qualified_service_name, service, &out) &&
+            PrintAlphaStubFactory(package_qualified_service_name, service, &out) &&
+            PrintBetaServicer(service, &out) &&
+            PrintBetaStub(service, &out) &&
+            PrintBetaServerFactory(package_qualified_service_name, service, &out) &&
+            PrintBetaStubFactory(package_qualified_service_name, service, &out))) {
         return make_pair(false, "");
       }
     }

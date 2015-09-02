@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\end2end\fixtures\h2_ssl.c">
+      <Filter>test\core\end2end\fixtures</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\core\end2end\end2end_tests.h">
+      <Filter>test\core\end2end</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{8d4b8b21-2edf-6111-8500-c9039e0beee9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{6c94de23-d9e7-e8e4-fe54-f10566bacc1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{e515eb1f-40ce-cec9-88cb-128d4142cef6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end\fixtures">
+      <UniqueIdentifier>{f8b26ac3-dfaf-6a20-d415-87f0f8c3f388}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

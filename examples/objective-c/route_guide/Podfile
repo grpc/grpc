@@ -1,0 +1,7 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+
+target 'RouteGuideClient' do
+  # Depend on the generated RouteGuide library.
+  pod 'RouteGuide', :path => '.'
+end
