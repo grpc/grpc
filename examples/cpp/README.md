@@ -2,12 +2,11 @@
 
 ## Installation
 
-To install gRPC on your system, follow the instructions here:
-[https://github.com/grpc/grpc/blob/master/INSTALL](https://github.com/grpc/grpc/blob/master/INSTALL).
+To install gRPC on your system, follow the instructions [here](../../INSTALL).
 
 ## Hello C++ gRPC!
 
-Here's how to build and run the C++ implementation of the [Hello World](examples/protos/helloworld.proto) example used in [Getting started](https://github.com/grpc/grpc/tree/master/examples).
+Here's how to build and run the C++ implementation of the [Hello World](../protos/helloworld.proto) example used in [Getting started](..).
 
 The example code for this and our other examples lives in the `examples`
 directory. Clone this repository to your local machine by running the
@@ -41,9 +40,9 @@ $ protoc -I ../../protos/ --cpp_out=. ../../protos/helloworld.proto
 
 ### Client and server implementations
 
-The client implementation is at [greeter_client.cc](examples/cpp/helloworld/greeter_client.cc).
+The client implementation is at [greeter_client.cc](helloworld/greeter_client.cc).
 
-The server implementation is at [greeter_server.cc](examples/cpp/helloworld/greeter_server.cc).
+The server implementation is at [greeter_server.cc](helloworld/greeter_server.cc).
 
 ### Try it!
 Build client and server:
@@ -62,4 +61,4 @@ If things go smoothly, you will see the "Greeter received: Hello world" in the c
 
 ## Tutorial
 
-You can find a more detailed tutorial in [gRPC Basics: C++](examples/cpp/cpptutorial.md)
+You can find a more detailed tutorial in [gRPC Basics: C++](cpptutorial.md)

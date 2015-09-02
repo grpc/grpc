@@ -34,8 +34,6 @@ var _ = require('underscore');
 var grpc = require('grpc');
 var examples = grpc.load(__dirname + '/route_guide.proto').examples;
 
-var Server = grpc.buildServer([examples.RouteGuide.service]);
-
 var COORD_FACTOR = 1e7;
 
 /**
@@ -222,27 +220,27 @@ function routeChat(call) {
  * @return {Server} The new server object
  */
 function getServer() {
-  return new Server({
-    'examples.RouteGuide' : {
-      getFeature: getFeature,
-      listFeatures: listFeatures,
-      recordRoute: recordRoute,
-      routeChat: routeChat
-    }
+  var server = new grpc.Server();
+  server.addProtoService(examples.RouteGuide.service, {
+    getFeature: getFeature,
+    listFeatures: listFeatures,
+    recordRoute: recordRoute,
+    routeChat: routeChat
   });
+  return server;
 }
 
 if (require.main === module) {
   // If this is run as a script, start a server on an unused port
   var routeServer = getServer();
-  routeServer.bind('0.0.0.0:50051');
+  routeServer.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
   var argv = parseArgs(process.argv, {
     string: 'db_path'
   });
   fs.readFile(path.resolve(argv.db_path), function(err, data) {
     if (err) throw err;
     feature_list = JSON.parse(data);
-    routeServer.listen();
+    routeServer.start();
   });
 }
 
