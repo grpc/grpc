@@ -542,7 +542,7 @@ grpc_cloud_prod_auth_test_args() {
       cxx)
         if [ "$test_case" == "oauth2_auth_token" ]
         then
-          test_command="compute_engine_creds"
+          grpc_gen_test_cmd="grpc_cloud_prod_auth_compute_engine_creds"
         fi
         grpc_client_platform='Docker'
         grpc_gen_test_cmd+="_gen_$1_cmd"
