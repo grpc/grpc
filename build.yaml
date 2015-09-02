@@ -391,6 +391,11 @@ targets:
   src: [test/core/end2end/dualstack_socket_test.c]
   deps: [grpc_test_util, grpc, gpr_test_util, gpr]
   platforms: [mac, linux, posix]
+- name: endpoint_pair_test
+  build: test
+  language: c
+  src: [test/core/iomgr/endpoint_pair_test.c]
+  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -562,6 +567,7 @@ targets:
   language: c
   src: [test/core/security/json_token_test.c]
   deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  platforms: [linux, posix, mac]
 - name: grpc_jwt_verifier_test
   build: test
   language: c
@@ -723,6 +729,7 @@ targets:
   language: c
   src: [test/core/tsi/transport_security_test.c]
   deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  platforms: [linux, posix, mac]
 - name: udp_server_test
   build: test
   language: c
