@@ -35,17 +35,17 @@
 #include <mutex>
 #include <thread>
 
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
 #include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
+#include <grpc++/security/credentials.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
 #include <gtest/gtest.h>
 
 #include "test/core/util/port.h"
@@ -92,8 +92,7 @@ const char* kLargeString = "("
   "With this regard their currents turn awry"
   "And lose the name of action.- Soft you now!"
   "The fair Ophelia!- Nymph, in thy orisons"
-  "Be all my sins rememb'red."
-);
+  "Be all my sins rememb'red.";
 
 namespace grpc {
 namespace testing {
@@ -115,7 +114,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
       GRPC_OVERRIDE {
     EchoRequest request;
     std::atomic<bool> should_exit(false);
-    std::thread sender(std::bind(&TestServiceImpl::BidiStream_Sender, stream, should_exit));
+    std::thread sender(std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
 
     while (stream->Read(&request)) {
       std::this_thread::sleep_for(std::chrono::milliseconds(3));
@@ -143,7 +142,7 @@ class End2endTest : public ::testing::Test {
 
   void ResetStub() {
     std::shared_ptr<Channel> channel = CreateChannel(
-        server_address_.str(), InsecureCredentials(), ChannelArguments());
+        server_address_.str(), InsecureCredentials());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
@@ -153,7 +152,7 @@ class End2endTest : public ::testing::Test {
   TestServiceImpl service_;
 };
 
-static void Drainer(ClientReaderWriter<EchoResponse, EchoRequest>* reader) {
+static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
   EchoResponse response;
   while (reader->Read(&response)) {
       // Just drain out the responses as fast as possible.
