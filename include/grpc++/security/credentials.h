@@ -49,7 +49,7 @@ class SecureCredentials;
 /// client’s identity, role, or whether it is authorized to make a particular
 /// call.
 ///
-/// \see https://github.com/grpc/grpc-common/blob/master/grpc-auth-support.md
+/// \see https://github.com/grpc/grpc/blob/master/doc/grpc-auth-support.md
 class Credentials : public GrpcLibrary {
  public:
   ~Credentials() GRPC_OVERRIDE;
