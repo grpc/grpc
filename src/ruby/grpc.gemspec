@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.license       = 'BSD-3-Clause'
 
   s.required_ruby_version = '>= 2.0.0'
-  s.requirements << 'libgrpc ~> 0.10.0 needs to be installed'
+  s.requirements << 'libgrpc ~> 0.11.0 needs to be installed'
 
   s.files = %w( Rakefile )
   s.files += Dir.glob('lib/**/*')

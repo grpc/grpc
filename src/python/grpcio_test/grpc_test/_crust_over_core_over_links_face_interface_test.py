@@ -87,7 +87,7 @@ class _Implementation(test_interfaces.Implementation):
     port = service_grpc_link.add_port('[::]:0', None)
     channel = _intermediary_low.Channel('localhost:%d' % port, None)
     invocation_grpc_link = invocation.invocation_link(
-        channel, b'localhost',
+        channel, b'localhost', None,
         serialization_behaviors.request_serializers,
         serialization_behaviors.response_deserializers)
 

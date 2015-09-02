@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\tsi\transport_security_test.c">
+      <Filter>test\core\tsi</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{2bedc132-bb01-5d1d-6248-cc7d7283efef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{cfd98cc9-2ebd-8ec3-7958-cf1958c92a3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\tsi">
+      <UniqueIdentifier>{bb008813-53d4-5d28-e610-24f41510c3a9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
