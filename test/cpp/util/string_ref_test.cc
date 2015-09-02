@@ -100,8 +100,8 @@ TEST_F(StringRefTest, Assignment) {
 TEST_F(StringRefTest, Iterator) {
   string_ref s(kTestString);
   size_t i = 0;
-  for (char c : s) {
-    EXPECT_EQ(kTestString[i++], c);
+  for (auto it = s.cbegin(); it != s.cend(); ++it) {
+    EXPECT_EQ(kTestString[i++], *it);
   }
   EXPECT_EQ(strlen(kTestString), i);
 }
