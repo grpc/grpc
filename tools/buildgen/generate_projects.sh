@@ -40,11 +40,11 @@ cd `dirname $0`/../..
 mako_renderer=tools/buildgen/mako_renderer.py
 
 if [ "x$TEST" != "x" ] ; then
-  tools/buildgen/build-cleaner.py build.json
+  tools/buildgen/build-cleaner.py build.yaml
 fi
 
 . tools/buildgen/generate_build_additions.sh
 
-tools/buildgen/generate_projects.py build.json $gen_build_files
+tools/buildgen/generate_projects.py build.yaml $gen_build_files
 
 rm $gen_build_files

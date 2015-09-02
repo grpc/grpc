@@ -8,7 +8,7 @@ testing). You can obtain the latter by following [these setup instructions](http
 
 ## Hello Objective-C gRPC!
 
-Here's how to build and run the Objective-C implementation of the [Hello World](examples/protos/helloworld.proto)
+Here's how to build and run the Objective-C implementation of the [Hello World](../../protos/helloworld.proto)
 example used in [Getting started](https://github.com/grpc/grpc/tree/master/examples).
 
 The example code for this and our other examples lives in the `examples` directory. Clone
@@ -53,4 +53,4 @@ responds with a `HLWHelloResponse`, which contains a string that is then output 
 
 ## Tutorial
 
-You can find a more detailed tutorial in [gRPC Basics: Objective-C](examples/objective-c/route_guide/README.md).
+You can find a more detailed tutorial in [gRPC Basics: Objective-C](../route_guide/README.md).
