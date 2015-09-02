@@ -27,34 +27,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Private constants for the package."""
+"""Constants for use within this package."""
 
-from grpc.framework.interfaces.base import base
-from grpc.framework.interfaces.links import links
+from grpc._adapter import _intermediary_low
+from grpc.beta import interfaces as beta_interfaces
 
-TICKET_SUBSCRIPTION_FOR_BASE_SUBSCRIPTION_KIND = {
-    base.Subscription.Kind.NONE: links.Ticket.Subscription.NONE,
-    base.Subscription.Kind.TERMINATION_ONLY:
-        links.Ticket.Subscription.TERMINATION,
-    base.Subscription.Kind.FULL: links.Ticket.Subscription.FULL,
-    }
-
-# Mapping from abortive operation outcome to ticket termination to be
-# sent to the other side of the operation, or None to indicate that no
-# ticket should be sent to the other side in the event of such an
-# outcome.
-ABORTION_OUTCOME_TO_TICKET_TERMINATION = {
-    base.Outcome.Kind.CANCELLED: links.Ticket.Termination.CANCELLATION,
-    base.Outcome.Kind.EXPIRED: links.Ticket.Termination.EXPIRATION,
-    base.Outcome.Kind.LOCAL_SHUTDOWN: links.Ticket.Termination.SHUTDOWN,
-    base.Outcome.Kind.REMOTE_SHUTDOWN: None,
-    base.Outcome.Kind.RECEPTION_FAILURE:
-        links.Ticket.Termination.RECEPTION_FAILURE,
-    base.Outcome.Kind.TRANSMISSION_FAILURE: None,
-    base.Outcome.Kind.LOCAL_FAILURE: links.Ticket.Termination.LOCAL_FAILURE,
-    base.Outcome.Kind.REMOTE_FAILURE: links.Ticket.Termination.REMOTE_FAILURE,
+LOW_STATUS_CODE_TO_HIGH_STATUS_CODE = {
+    low: high for low, high in zip(
+        _intermediary_low.Code, beta_interfaces.StatusCode)
 }
 
-INTERNAL_ERROR_LOG_MESSAGE = ':-( RPC Framework (Core) internal error! )-:'
-TERMINATION_CALLBACK_EXCEPTION_LOG_MESSAGE = (
-    'Exception calling termination callback!')
+HIGH_STATUS_CODE_TO_LOW_STATUS_CODE = {
+    high: low for low, high in LOW_STATUS_CODE_TO_HIGH_STATUS_CODE.items()
+}
