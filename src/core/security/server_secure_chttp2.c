@@ -61,7 +61,7 @@ typedef struct grpc_server_secure_state {
   grpc_server *server;
   grpc_tcp_server *tcp;
   grpc_security_connector *sc;
-  grpc_auth_metadata_processor processor;
+  grpc_server_credentials *creds;
   tcp_endpoint_list *handshaking_tcp_endpoints;
   int is_shutdown;
   gpr_mu mu;
@@ -79,6 +79,7 @@ static void state_unref(grpc_server_secure_state *state) {
     gpr_mu_unlock(&state->mu);
     /* clean up */
     GRPC_SECURITY_CONNECTOR_UNREF(state->sc, "server");
+    grpc_server_credentials_unref(state->creds);
     gpr_free(state);
   }
 }
@@ -91,7 +92,8 @@ static void setup_transport(void *statep, grpc_transport *transport,
   grpc_channel_args *args_copy;
   grpc_arg args_to_add[2];
   args_to_add[0] = grpc_security_connector_to_arg(state->sc);
-  args_to_add[1] = grpc_auth_metadata_processor_to_arg(&state->processor);
+  args_to_add[1] =
+      grpc_auth_metadata_processor_to_arg(&state->creds->processor);
   args_copy = grpc_channel_args_copy_and_add(
       grpc_server_get_channel_args(state->server), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
@@ -262,7 +264,8 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   state->server = server;
   state->tcp = tcp;
   state->sc = sc;
-  state->processor = creds->processor;
+  state->creds = grpc_server_credentials_ref(creds);
+
   state->handshaking_tcp_endpoints = NULL;
   state->is_shutdown = 0;
   gpr_mu_init(&state->mu);

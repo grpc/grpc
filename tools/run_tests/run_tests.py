@@ -281,7 +281,10 @@ class CSharpLanguage(object):
   def make_targets(self):
     # For Windows, this target doesn't really build anything,
     # everything is build by buildall script later.
-    return ['grpc_csharp_ext']
+    if self.platform == 'windows':
+      return []
+    else:
+      return ['grpc_csharp_ext']
 
   def build_steps(self):
     if self.platform == 'windows':
@@ -452,7 +455,6 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 if args.travis:
   _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'surface,batch'}
 
-make_targets = []
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
                       _LANGUAGES.iterkeys() if x == 'all' else [x]
@@ -478,10 +480,12 @@ else:
                            'CONFIG=%s' % cfg] + targets,
                           timeout_seconds=30*60)
 
-build_steps = [make_jobspec(cfg,
-                            list(set(itertools.chain.from_iterable(
-                                         l.make_targets() for l in languages))))
-               for cfg in build_configs]
+make_targets = list(set(itertools.chain.from_iterable(
+                                         l.make_targets() for l in languages)))
+build_steps = []
+if make_targets:
+  build_steps.extend(set(make_jobspec(cfg, make_targets)
+                         for cfg in build_configs))
 build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs
