@@ -36,6 +36,7 @@ import threading
 import time
 
 from grpc._adapter import _intermediary_low
+from grpc._links import _constants
 from grpc.framework.foundation import activated
 from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import relay
@@ -168,14 +169,17 @@ class _Kernel(object):
       termination = links.Ticket.Termination.CANCELLATION
     elif event.status.code is _intermediary_low.Code.DEADLINE_EXCEEDED:
       termination = links.Ticket.Termination.EXPIRATION
+    elif event.status.code is _intermediary_low.Code.UNIMPLEMENTED:
+      termination = links.Ticket.Termination.REMOTE_FAILURE
     elif event.status.code is _intermediary_low.Code.UNKNOWN:
       termination = links.Ticket.Termination.LOCAL_FAILURE
     else:
       termination = links.Ticket.Termination.TRANSMISSION_FAILURE
+    code = _constants.LOW_STATUS_CODE_TO_HIGH_STATUS_CODE[event.status.code]
     ticket = links.Ticket(
         operation_id, rpc_state.sequence_number, None, None, None, None, None,
-        None, None, event.metadata, event.status.code, event.status.details,
-        termination, None)
+        None, None, event.metadata, code, event.status.details, termination,
+        None)
     rpc_state.sequence_number += 1
     self._relay.add_value(ticket)
 

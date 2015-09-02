@@ -113,7 +113,9 @@ class _TerminationManager(TerminationManager):
     act = callable_util.with_exceptions_logged(
         self._action, _constants.INTERNAL_ERROR_LOG_MESSAGE)
 
-    if outcome.kind is base.Outcome.Kind.LOCAL_FAILURE:
+    # TODO(issue 3202): Don't call the local application's callbacks if it has
+    # previously shown a programming defect.
+    if False and outcome.kind is base.Outcome.Kind.LOCAL_FAILURE:
       self._pool.submit(act, base.Outcome.Kind.LOCAL_FAILURE)
     else:
       def call_callbacks_and_act(callbacks, outcome):
