@@ -547,7 +547,8 @@ email address in the key file.
 
 ### oauth2_auth_token
 
-This test is only for cloud-to-prod path and runs in GCE only.
+This test is only for cloud-to-prod path and some implementations may run
+in GCE only.
 
 This test verifies unary calls succeed in sending messages using an OAuth2 token
 that is obtained out of band. For the purpose of the test, the OAuth2 token is
