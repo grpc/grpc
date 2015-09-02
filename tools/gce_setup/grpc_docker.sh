@@ -530,7 +530,20 @@ grpc_cloud_prod_auth_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|node|php|python|ruby|csharp_mono)
+      go|java|node|php|python|ruby|csharp_mono)
+        grpc_client_platform='Docker'
+        grpc_gen_test_cmd+="_gen_$1_cmd"
+        declare -F $grpc_gen_test_cmd >> /dev/null || {
+          echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
+          return 2
+        }
+        shift
+        ;;
+      cxx)
+        if [ "$test_case" == "oauth2_auth_token" ]
+        then
+          test_command="compute_engine_creds"
+        fi
         grpc_client_platform='Docker'
         grpc_gen_test_cmd+="_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
