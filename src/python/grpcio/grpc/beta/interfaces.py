@@ -27,34 +27,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Private constants for the package."""
+"""Constants and interfaces of the Beta API of gRPC Python."""
 
-from grpc.framework.interfaces.base import base
-from grpc.framework.interfaces.links import links
+import enum
 
-TICKET_SUBSCRIPTION_FOR_BASE_SUBSCRIPTION_KIND = {
-    base.Subscription.Kind.NONE: links.Ticket.Subscription.NONE,
-    base.Subscription.Kind.TERMINATION_ONLY:
-        links.Ticket.Subscription.TERMINATION,
-    base.Subscription.Kind.FULL: links.Ticket.Subscription.FULL,
-    }
 
-# Mapping from abortive operation outcome to ticket termination to be
-# sent to the other side of the operation, or None to indicate that no
-# ticket should be sent to the other side in the event of such an
-# outcome.
-ABORTION_OUTCOME_TO_TICKET_TERMINATION = {
-    base.Outcome.Kind.CANCELLED: links.Ticket.Termination.CANCELLATION,
-    base.Outcome.Kind.EXPIRED: links.Ticket.Termination.EXPIRATION,
-    base.Outcome.Kind.LOCAL_SHUTDOWN: links.Ticket.Termination.SHUTDOWN,
-    base.Outcome.Kind.REMOTE_SHUTDOWN: None,
-    base.Outcome.Kind.RECEPTION_FAILURE:
-        links.Ticket.Termination.RECEPTION_FAILURE,
-    base.Outcome.Kind.TRANSMISSION_FAILURE: None,
-    base.Outcome.Kind.LOCAL_FAILURE: links.Ticket.Termination.LOCAL_FAILURE,
-    base.Outcome.Kind.REMOTE_FAILURE: links.Ticket.Termination.REMOTE_FAILURE,
-}
-
-INTERNAL_ERROR_LOG_MESSAGE = ':-( RPC Framework (Core) internal error! )-:'
-TERMINATION_CALLBACK_EXCEPTION_LOG_MESSAGE = (
-    'Exception calling termination callback!')
+@enum.unique
+class StatusCode(enum.Enum):
+  """Mirrors grpc_status_code in the C core."""
+  OK                  = 0
+  CANCELLED           = 1
+  UNKNOWN             = 2
+  INVALID_ARGUMENT    = 3
+  DEADLINE_EXCEEDED   = 4
+  NOT_FOUND           = 5
+  ALREADY_EXISTS      = 6
+  PERMISSION_DENIED   = 7
+  RESOURCE_EXHAUSTED  = 8
+  FAILED_PRECONDITION = 9
+  ABORTED             = 10
+  OUT_OF_RANGE        = 11
+  UNIMPLEMENTED       = 12
+  INTERNAL            = 13
+  UNAVAILABLE         = 14
+  DATA_LOSS           = 15
+  UNAUTHENTICATED     = 16

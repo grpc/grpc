@@ -27,34 +27,49 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Private constants for the package."""
+"""Tests of RPC-method-not-found behavior."""
 
-from grpc.framework.interfaces.base import base
-from grpc.framework.interfaces.links import links
+import unittest
 
-TICKET_SUBSCRIPTION_FOR_BASE_SUBSCRIPTION_KIND = {
-    base.Subscription.Kind.NONE: links.Ticket.Subscription.NONE,
-    base.Subscription.Kind.TERMINATION_ONLY:
-        links.Ticket.Subscription.TERMINATION,
-    base.Subscription.Kind.FULL: links.Ticket.Subscription.FULL,
-    }
+from grpc.beta import beta
+from grpc.beta import interfaces
+from grpc.framework.interfaces.face import face
+from grpc_test.framework.common import test_constants
 
-# Mapping from abortive operation outcome to ticket termination to be
-# sent to the other side of the operation, or None to indicate that no
-# ticket should be sent to the other side in the event of such an
-# outcome.
-ABORTION_OUTCOME_TO_TICKET_TERMINATION = {
-    base.Outcome.Kind.CANCELLED: links.Ticket.Termination.CANCELLATION,
-    base.Outcome.Kind.EXPIRED: links.Ticket.Termination.EXPIRATION,
-    base.Outcome.Kind.LOCAL_SHUTDOWN: links.Ticket.Termination.SHUTDOWN,
-    base.Outcome.Kind.REMOTE_SHUTDOWN: None,
-    base.Outcome.Kind.RECEPTION_FAILURE:
-        links.Ticket.Termination.RECEPTION_FAILURE,
-    base.Outcome.Kind.TRANSMISSION_FAILURE: None,
-    base.Outcome.Kind.LOCAL_FAILURE: links.Ticket.Termination.LOCAL_FAILURE,
-    base.Outcome.Kind.REMOTE_FAILURE: links.Ticket.Termination.REMOTE_FAILURE,
-}
 
-INTERNAL_ERROR_LOG_MESSAGE = ':-( RPC Framework (Core) internal error! )-:'
-TERMINATION_CALLBACK_EXCEPTION_LOG_MESSAGE = (
-    'Exception calling termination callback!')
+class NotFoundTest(unittest.TestCase):
+
+  def setUp(self):
+    self._server = beta.server({})
+    port = self._server.add_insecure_port('[::]:0')
+    channel = beta.create_insecure_channel('localhost', port)
+    self._generic_stub = beta.generic_stub(channel)
+    self._server.start()
+
+  def tearDown(self):
+    self._server.stop(0).wait()
+    self._generic_stub = None
+
+  def test_blocking_unary_unary_not_found(self):
+    with self.assertRaises(face.LocalError) as exception_assertion_context:
+      self._generic_stub.blocking_unary_unary(
+          'groop', 'meffod', b'abc', test_constants.LONG_TIMEOUT,
+          with_call=True)
+    self.assertIs(
+        exception_assertion_context.exception.code,
+        interfaces.StatusCode.UNIMPLEMENTED)
+
+  def test_future_stream_unary_not_found(self):
+    rpc_future = self._generic_stub.future_stream_unary(
+        'grupe', 'mevvod', b'def', test_constants.LONG_TIMEOUT)
+    with self.assertRaises(face.LocalError) as exception_assertion_context:
+      rpc_future.result()
+    self.assertIs(
+        exception_assertion_context.exception.code,
+        interfaces.StatusCode.UNIMPLEMENTED)
+    self.assertIs(
+        rpc_future.exception().code, interfaces.StatusCode.UNIMPLEMENTED)
+
+
+if __name__ == '__main__':
+  unittest.main(verbosity=2)
