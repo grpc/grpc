@@ -479,7 +479,7 @@ if platform.system() == 'Windows':
   def make_jobspec(cfg, targets):
     extra_args = []
     if args.travis:
-      extra_args.extend(["/m", "/p:DebugSymbols=false", "/p:DebugType=None"])
+      extra_args.extend(["/m", "/p:GenerateDebugInformation=false"])
     return [
       jobset.JobSpec(['vsprojects\\build.bat', 
                       'vsprojects\\%s.sln' % target, 
