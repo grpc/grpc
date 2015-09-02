@@ -33,6 +33,7 @@ import abc
 
 from grpc.framework.core import _constants
 from grpc.framework.core import _interfaces
+from grpc.framework.core import _utilities
 from grpc.framework.foundation import callable_util
 from grpc.framework.interfaces.base import base
 
@@ -74,7 +75,8 @@ class _TerminationManager(TerminationManager):
       predicate: One of _invocation_completion_predicate or
         _service_completion_predicate to be used to determine when the operation
         has completed.
-      action: A behavior to pass the operation outcome on operation termination.
+      action: A behavior to pass the operation outcome's kind on operation
+        termination.
       pool: A thread pool.
     """
     self._predicate = predicate
@@ -82,13 +84,18 @@ class _TerminationManager(TerminationManager):
     self._pool = pool
     self._expiration_manager = None
 
-    self.outcome = None
     self._callbacks = []
 
+    self._code = None
+    self._details = None
     self._emission_complete = False
     self._transmission_complete = False
     self._reception_complete = False
     self._ingestion_complete = False
+
+    # The None-ness of outcome is the operation-wide record of whether and how
+    # the operation has terminated.
+    self.outcome = None
 
   def set_expiration_manager(self, expiration_manager):
     self._expiration_manager = expiration_manager
@@ -106,8 +113,8 @@ class _TerminationManager(TerminationManager):
     act = callable_util.with_exceptions_logged(
         self._action, _constants.INTERNAL_ERROR_LOG_MESSAGE)
 
-    if outcome is base.Outcome.LOCAL_FAILURE:
-      self._pool.submit(act, outcome)
+    if outcome.kind is base.Outcome.Kind.LOCAL_FAILURE:
+      self._pool.submit(act, base.Outcome.Kind.LOCAL_FAILURE)
     else:
       def call_callbacks_and_act(callbacks, outcome):
         for callback in callbacks:
@@ -115,9 +122,11 @@ class _TerminationManager(TerminationManager):
               callback, _constants.TERMINATION_CALLBACK_EXCEPTION_LOG_MESSAGE,
               outcome)
           if callback_outcome.exception is not None:
-            outcome = base.Outcome.LOCAL_FAILURE
+            act_outcome_kind = base.Outcome.Kind.LOCAL_FAILURE
             break
-        act(outcome)
+        else:
+          act_outcome_kind = outcome.kind
+        act(act_outcome_kind)
 
       self._pool.submit(
           callable_util.with_exceptions_logged(
@@ -132,7 +141,9 @@ class _TerminationManager(TerminationManager):
     if self._predicate(
         self._emission_complete, self._transmission_complete,
         self._reception_complete, self._ingestion_complete):
-      self._terminate_and_notify(base.Outcome.COMPLETED)
+      self._terminate_and_notify(
+          _utilities.Outcome(
+              base.Outcome.Kind.COMPLETED, self._code, self._details))
       return True
     else:
       return False
@@ -163,10 +174,12 @@ class _TerminationManager(TerminationManager):
     else:
       return False
 
-  def reception_complete(self):
+  def reception_complete(self, code, details):
     """See superclass method for specification."""
     if self.outcome is None:
       self._reception_complete = True
+      self._code = code
+      self._details = details
       self._perhaps_complete()
 
   def ingestion_complete(self):
@@ -177,7 +190,8 @@ class _TerminationManager(TerminationManager):
 
   def expire(self):
     """See _interfaces.TerminationManager.expire for specification."""
-    self._terminate_internal_only(base.Outcome.EXPIRED)
+    self._terminate_internal_only(
+        _utilities.Outcome(base.Outcome.Kind.EXPIRED, None, None))
 
   def abort(self, outcome):
     """See _interfaces.TerminationManager.abort for specification."""

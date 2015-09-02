@@ -31,7 +31,6 @@
 
 import threading
 
-# _utilities is referenced from specification in this module.
 from grpc.framework.core import _context
 from grpc.framework.core import _emission
 from grpc.framework.core import _expiration
@@ -40,7 +39,7 @@ from grpc.framework.core import _interfaces
 from grpc.framework.core import _reception
 from grpc.framework.core import _termination
 from grpc.framework.core import _transmission
-from grpc.framework.core import _utilities  # pylint: disable=unused-import
+from grpc.framework.core import _utilities
 
 
 class _EasyOperation(_interfaces.Operation):
@@ -75,11 +74,12 @@ class _EasyOperation(_interfaces.Operation):
     with self._lock:
       self._reception_manager.receive_ticket(ticket)
 
-  def abort(self, outcome):
+  def abort(self, outcome_kind):
     with self._lock:
       if self._termination_manager.outcome is None:
+        outcome = _utilities.Outcome(outcome_kind, None, None)
         self._termination_manager.abort(outcome)
-        self._transmission_manager.abort(outcome, None, None)
+        self._transmission_manager.abort(outcome)
         self._expiration_manager.terminate()
 
 
