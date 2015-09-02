@@ -35,49 +35,58 @@
 #include <stdlib.h>
 #include "test/core/util/test_config.h"
 
-void test_log_events(int num_seqs) {
+void
+test_log_events (int num_seqs)
+{
   int start = 0;
   int *state;
-  state = calloc(num_seqs, sizeof(state[0]));
-  while (start < num_seqs) {
-    int i;
-    int row;
-    if (state[start] == 3) { /* Already done with this posn */
-      start++;
-      continue;
-    }
+  state = calloc (num_seqs, sizeof (state[0]));
+  while (start < num_seqs)
+    {
+      int i;
+      int row;
+      if (state[start] == 3)
+	{			/* Already done with this posn */
+	  start++;
+	  continue;
+	}
 
-    row = rand() % 10; /* how many in a row */
-    for (i = start; (i < start + row) && (i < num_seqs); i++) {
-      int j;
-      int advance = 1 + rand() % 3; /* how many to advance by */
-      for (j = 0; j < advance; j++) {
-        switch (state[i]) {
-          case 0:
-            GRPC_TIMER_MARK(STATE_0, i);
-            state[i]++;
-            break;
-          case 1:
-            GRPC_TIMER_MARK(STATE_1, i);
-            state[i]++;
-            break;
-          case 2:
-            GRPC_TIMER_MARK(STATE_2, i);
-            state[i]++;
-            break;
-          case 3:
-            break;
-        }
-      }
+      row = rand () % 10;	/* how many in a row */
+      for (i = start; (i < start + row) && (i < num_seqs); i++)
+	{
+	  int j;
+	  int advance = 1 + rand () % 3;	/* how many to advance by */
+	  for (j = 0; j < advance; j++)
+	    {
+	      switch (state[i])
+		{
+		case 0:
+		  GRPC_TIMER_MARK (STATE_0, i);
+		  state[i]++;
+		  break;
+		case 1:
+		  GRPC_TIMER_MARK (STATE_1, i);
+		  state[i]++;
+		  break;
+		case 2:
+		  GRPC_TIMER_MARK (STATE_2, i);
+		  state[i]++;
+		  break;
+		case 3:
+		  break;
+		}
+	    }
+	}
     }
-  }
-  free(state);
+  free (state);
 }
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  grpc_timers_global_init();
-  test_log_events(1000000);
-  grpc_timers_global_destroy();
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  grpc_timers_global_init ();
+  test_log_events (1000000);
+  grpc_timers_global_destroy ();
   return 0;
 }

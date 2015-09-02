@@ -47,25 +47,33 @@
    ports. All of what we're doing here is basically make sure that
    Windows sockets are initialized in and out. */
 
-static void winsock_init(void) {
+static void
+winsock_init (void)
+{
   WSADATA wsaData;
-  int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
-  GPR_ASSERT(status == 0);
+  int status = WSAStartup (MAKEWORD (2, 0), &wsaData);
+  GPR_ASSERT (status == 0);
 }
 
-static void winsock_shutdown(void) {
-  int status = WSACleanup();
-  GPR_ASSERT(status == 0);
+static void
+winsock_shutdown (void)
+{
+  int status = WSACleanup ();
+  GPR_ASSERT (status == 0);
 }
 
-void grpc_iomgr_platform_init(void) {
-  winsock_init();
-  grpc_iocp_init();
+void
+grpc_iomgr_platform_init (void)
+{
+  winsock_init ();
+  grpc_iocp_init ();
 }
 
-void grpc_iomgr_platform_shutdown(void) {
-  grpc_iocp_shutdown();
-  winsock_shutdown();
+void
+grpc_iomgr_platform_shutdown (void)
+{
+  grpc_iocp_shutdown ();
+  winsock_shutdown ();
 }
 
 #endif /* GRPC_WINSOCK_SOCKET */

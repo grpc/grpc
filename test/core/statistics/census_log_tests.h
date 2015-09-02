@@ -34,18 +34,18 @@
 #ifndef GRPC_TEST_CORE_STATISTICS_CENSUS_LOG_TESTS_H
 #define GRPC_TEST_CORE_STATISTICS_CENSUS_LOG_TESTS_H
 
-void test_invalid_record_size();
-void test_end_write_with_different_size();
-void test_read_pending_record();
-void test_read_beyond_pending_record();
-void test_detached_while_reading();
-void test_fill_log_no_fragmentation();
-void test_fill_circular_log_no_fragmentation();
-void test_fill_log_with_straddling_records();
-void test_fill_circular_log_with_straddling_records();
-void test_multiple_writers_circular_log();
-void test_multiple_writers();
-void test_performance();
-void test_small_log();
+void test_invalid_record_size ();
+void test_end_write_with_different_size ();
+void test_read_pending_record ();
+void test_read_beyond_pending_record ();
+void test_detached_while_reading ();
+void test_fill_log_no_fragmentation ();
+void test_fill_circular_log_no_fragmentation ();
+void test_fill_log_with_straddling_records ();
+void test_fill_circular_log_with_straddling_records ();
+void test_multiple_writers_circular_log ();
+void test_multiple_writers ();
+void test_performance ();
+void test_small_log ();
 
 #endif /* GRPC_TEST_CORE_STATISTICS_CENSUS_LOG_TESTS_H */

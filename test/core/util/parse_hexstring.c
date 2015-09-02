@@ -34,37 +34,45 @@
 #include "test/core/util/parse_hexstring.h"
 #include <grpc/support/log.h>
 
-gpr_slice parse_hexstring(const char *hexstring) {
+gpr_slice
+parse_hexstring (const char *hexstring)
+{
   int nibbles = 0;
   const char *p = 0;
   gpr_uint8 *out;
   gpr_uint8 temp;
   gpr_slice slice;
 
-  for (p = hexstring; *p; p++) {
-    nibbles += (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f');
-  }
+  for (p = hexstring; *p; p++)
+    {
+      nibbles += (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'f');
+    }
 
-  GPR_ASSERT((nibbles & 1) == 0);
+  GPR_ASSERT ((nibbles & 1) == 0);
 
-  slice = gpr_slice_malloc(nibbles / 2);
-  out = GPR_SLICE_START_PTR(slice);
+  slice = gpr_slice_malloc (nibbles / 2);
+  out = GPR_SLICE_START_PTR (slice);
 
   nibbles = 0;
   temp = 0;
-  for (p = hexstring; *p; p++) {
-    if (*p >= '0' && *p <= '9') {
-      temp = (temp << 4) | (*p - '0');
-      nibbles++;
-    } else if (*p >= 'a' && *p <= 'f') {
-      temp = (temp << 4) | (*p - 'a' + 10);
-      nibbles++;
+  for (p = hexstring; *p; p++)
+    {
+      if (*p >= '0' && *p <= '9')
+	{
+	  temp = (temp << 4) | (*p - '0');
+	  nibbles++;
+	}
+      else if (*p >= 'a' && *p <= 'f')
+	{
+	  temp = (temp << 4) | (*p - 'a' + 10);
+	  nibbles++;
+	}
+      if (nibbles == 2)
+	{
+	  *out++ = temp;
+	  nibbles = 0;
+	}
     }
-    if (nibbles == 2) {
-      *out++ = temp;
-      nibbles = 0;
-    }
-  }
 
   return slice;
 }

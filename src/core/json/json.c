@@ -37,28 +37,37 @@
 
 #include "src/core/json/json.h"
 
-grpc_json *grpc_json_create(grpc_json_type type) {
-  grpc_json *json = gpr_malloc(sizeof(*json));
-  memset(json, 0, sizeof(*json));
+grpc_json *
+grpc_json_create (grpc_json_type type)
+{
+  grpc_json *json = gpr_malloc (sizeof (*json));
+  memset (json, 0, sizeof (*json));
   json->type = type;
 
   return json;
 }
 
-void grpc_json_destroy(grpc_json *json) {
-  while (json->child) {
-    grpc_json_destroy(json->child);
-  }
+void
+grpc_json_destroy (grpc_json * json)
+{
+  while (json->child)
+    {
+      grpc_json_destroy (json->child);
+    }
 
-  if (json->next) {
-    json->next->prev = json->prev;
-  }
+  if (json->next)
+    {
+      json->next->prev = json->prev;
+    }
 
-  if (json->prev) {
-    json->prev->next = json->next;
-  } else if (json->parent) {
-    json->parent->child = json->next;
-  }
+  if (json->prev)
+    {
+      json->prev->next = json->next;
+    }
+  else if (json->parent)
+    {
+      json->parent->child = json->next;
+    }
 
-  gpr_free(json);
+  gpr_free (json);
 }

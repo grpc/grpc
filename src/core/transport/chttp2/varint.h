@@ -41,10 +41,11 @@
 /* length of a value that needs varint tail encoding (it's bigger than can be
    bitpacked into the opcode byte) - returned value includes the length of the
    opcode byte */
-int grpc_chttp2_hpack_varint_length(gpr_uint32 tail_value);
+int grpc_chttp2_hpack_varint_length (gpr_uint32 tail_value);
 
-void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
-                                         gpr_uint8* target, int tail_length);
+void grpc_chttp2_hpack_write_varint_tail (gpr_uint32 tail_value,
+					  gpr_uint8 * target,
+					  int tail_length);
 
 /* maximum value that can be bitpacked with the opcode if the opcode has a
    prefix

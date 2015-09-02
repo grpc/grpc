@@ -33,14 +33,21 @@
 
 #include "src/core/client_config/subchannel_factory.h"
 
-void grpc_subchannel_factory_ref(grpc_subchannel_factory *factory) {
-  factory->vtable->ref(factory);
-}
-void grpc_subchannel_factory_unref(grpc_subchannel_factory *factory) {
-  factory->vtable->unref(factory);
+void
+grpc_subchannel_factory_ref (grpc_subchannel_factory * factory)
+{
+  factory->vtable->ref (factory);
 }
 
-grpc_subchannel *grpc_subchannel_factory_create_subchannel(
-    grpc_subchannel_factory *factory, grpc_subchannel_args *args) {
-  return factory->vtable->create_subchannel(factory, args);
+void
+grpc_subchannel_factory_unref (grpc_subchannel_factory * factory)
+{
+  factory->vtable->unref (factory);
+}
+
+grpc_subchannel *
+grpc_subchannel_factory_create_subchannel (grpc_subchannel_factory * factory,
+					   grpc_subchannel_args * args)
+{
+  return factory->vtable->create_subchannel (factory, args);
 }

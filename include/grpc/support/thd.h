@@ -45,47 +45,49 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-typedef gpr_uint64 gpr_thd_id;
+  typedef gpr_uint64 gpr_thd_id;
 
 /* Thread creation options. */
-typedef struct {
-  int flags; /* Opaque field. Get and set with accessors below. */
-} gpr_thd_options;
+  typedef struct
+  {
+    int flags;			/* Opaque field. Get and set with accessors below. */
+  } gpr_thd_options;
 
 /* Create a new thread running (*thd_body)(arg) and place its thread identifier
    in *t, and return true.  If there are insufficient resources, return false.
    If options==NULL, default options are used.
    The thread is immediately runnable, and exits when (*thd_body)() returns.  */
-int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
-                const gpr_thd_options *options);
+  int gpr_thd_new (gpr_thd_id * t, void (*thd_body) (void *arg), void *arg,
+		   const gpr_thd_options * options);
 
 /* Return a gpr_thd_options struct with all fields set to defaults. */
-gpr_thd_options gpr_thd_options_default(void);
+  gpr_thd_options gpr_thd_options_default (void);
 
 /* Set the thread to become detached on startup - this is the default. */
-void gpr_thd_options_set_detached(gpr_thd_options *options);
+  void gpr_thd_options_set_detached (gpr_thd_options * options);
 
 /* Set the thread to become joinable - mutually exclusive with detached. */
-void gpr_thd_options_set_joinable(gpr_thd_options *options);
+  void gpr_thd_options_set_joinable (gpr_thd_options * options);
 
 /* Returns non-zero if the option detached is set. */
-int gpr_thd_options_is_detached(const gpr_thd_options *options);
+  int gpr_thd_options_is_detached (const gpr_thd_options * options);
 
 /* Returns non-zero if the option joinable is set. */
-int gpr_thd_options_is_joinable(const gpr_thd_options *options);
+  int gpr_thd_options_is_joinable (const gpr_thd_options * options);
 
 /* Returns the identifier of the current thread. */
-gpr_thd_id gpr_thd_currentid(void);
+  gpr_thd_id gpr_thd_currentid (void);
 
 /* Blocks until the specified thread properly terminates.
    Calling this on a detached thread has unpredictable results. */
-void gpr_thd_join(gpr_thd_id t);
+  void gpr_thd_join (gpr_thd_id t);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_SUPPORT_THD_H */
+#endif				/* GRPC_SUPPORT_THD_H */

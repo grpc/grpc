@@ -38,9 +38,11 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
-  test_performance();
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  srand (gpr_now (GPR_CLOCK_REALTIME).tv_nsec);
+  test_performance ();
   return 0;
 }
