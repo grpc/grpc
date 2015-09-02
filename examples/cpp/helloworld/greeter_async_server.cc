@@ -36,13 +36,7 @@
 #include <string>
 #include <thread>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
+#include <grpc++/grpc++.h>
 
 #include "helloworld.grpc.pb.h"
 
@@ -119,7 +113,7 @@ class ServerImpl final {
         std::string prefix("Hello ");
         reply_.set_message(prefix + request_.name());
 
-        // And we are done! Let the gRPC runtime now we've finished, using the
+        // And we are done! Let the gRPC runtime know we've finished, using the
         // memory address of this instance as the uniquely identifying tag for
         // the event.
         responder_.Finish(reply_, Status::OK, this);
@@ -137,8 +131,9 @@ class ServerImpl final {
     Greeter::AsyncService* service_;
     // The producer-consumer queue where for asynchronous server notifications.
     ServerCompletionQueue* cq_;
-    // Context for the server, allowing to tweak aspects of it such as the use
-    // of compression, authentication, etc.
+    // Context for the rpc, allowing to tweak aspects of it such as the use
+    // of compression, authentication, as well as to send metadata back to the
+    // client.
     ServerContext ctx_;
 
     // What we get from the client.

@@ -52,7 +52,7 @@ class ClientAsyncStreamingInterface {
 
   /// Request notification of the reading of the initial metadata. Completion
   /// will be notified by \a tag on the associated completion queue.
-  /// 
+  ///
   /// \param[in] tag Tag identifying this request.
   virtual void ReadInitialMetadata(void* tag) = 0;
 
@@ -105,7 +105,7 @@ class ClientAsyncReader GRPC_FINAL : public ClientAsyncReaderInterface<R> {
       : context_(context), call_(channel->CreateCall(method, context, cq)) {
     init_ops_.set_output_tag(tag);
     init_ops_.SendInitialMetadata(context->send_initial_metadata_);
-    /// TODO(ctiller): don't assert
+    // TODO(ctiller): don't assert
     GPR_ASSERT(init_ops_.SendMessage(request).ok());
     init_ops_.ClientSendClose();
     call_.PerformOps(&init_ops_);
@@ -183,7 +183,7 @@ class ClientAsyncWriter GRPC_FINAL : public ClientAsyncWriterInterface<W> {
 
   void Write(const W& msg, void* tag) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
-    /// TODO(ctiller): don't assert
+    // TODO(ctiller): don't assert
     GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
@@ -258,7 +258,7 @@ class ClientAsyncReaderWriter GRPC_FINAL
 
   void Write(const W& msg, void* tag) GRPC_OVERRIDE {
     write_ops_.set_output_tag(tag);
-    /// TODO(ctiller): don't assert
+    // TODO(ctiller): don't assert
     GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }
@@ -371,7 +371,7 @@ class ServerAsyncWriter GRPC_FINAL : public ServerAsyncStreamingInterface,
       write_ops_.SendInitialMetadata(ctx_->initial_metadata_);
       ctx_->sent_initial_metadata_ = true;
     }
-    /// TODO(ctiller): don't assert
+    // TODO(ctiller): don't assert
     GPR_ASSERT(write_ops_.SendMessage(msg).ok());
     call_.PerformOps(&write_ops_);
   }

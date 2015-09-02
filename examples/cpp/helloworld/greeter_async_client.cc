@@ -35,13 +35,7 @@
 #include <memory>
 #include <string>
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
+#include <grpc++/grpc++.h>
 
 #include "helloworld.grpc.pb.h"
 
@@ -123,7 +117,7 @@ int main(int argc, char** argv) {
   // localhost at port 50051). We indicate that the channel isn't authenticated
   // (use of InsecureCredentials()) and we don't pass any special channel
   // arguments (that could enable extra channel features, such as compression).
-  GreeterClient greeter(grpc::CreateChannel(
+  GreeterClient greeter(grpc::CreateCustomChannel(
       "localhost:50051", grpc::InsecureCredentials(), ChannelArguments()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);  // The actual RPC call!

@@ -42,7 +42,9 @@
 /// Context settings are only relevant to the call they are invoked with, that
 /// is to say, they aren't sticky. Some of these settings, such as the
 /// compression options, can be made persistant at channel construction time
-/// (see \a grpc::CreateChannel).
+/// (see \a grpc::CreateCustomChannel).
+///
+/// \warning ClientContext instances should \em not be reused across rpcs.
 
 #ifndef GRPCXX_CLIENT_CONTEXT_H
 #define GRPCXX_CLIENT_CONTEXT_H
@@ -241,7 +243,7 @@ class ClientContext {
   /// client’s identity, role, or whether it is authorized to make a particular
   /// call.
   ///
-  /// \see https://github.com/grpc/grpc-common/blob/master/grpc-auth-support.md
+  /// \see  https://github.com/grpc/grpc/blob/master/doc/grpc-auth-support.md
   void set_credentials(const std::shared_ptr<Credentials>& creds) {
     creds_ = creds;
   }
