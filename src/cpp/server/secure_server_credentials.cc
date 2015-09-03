@@ -101,7 +101,9 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
                            0,
                            {{nullptr, nullptr, nullptr, nullptr}}});
   }
-  cb(user_data, &consumed_md[0], consumed_md.size(), &response_md[0],
+  auto consumed_md_data = consumed_md.empty() ? nullptr : &consumed_md[0];
+  auto response_md_data = response_md.empty() ? nullptr : &response_md[0];
+  cb(user_data, consumed_md_data, consumed_md.size(), response_md_data,
      response_md.size(), static_cast<grpc_status_code>(status.error_code()),
      status.error_message().c_str());
 }
@@ -130,8 +132,8 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
   }
   grpc_server_credentials* c_creds = grpc_ssl_server_credentials_create(
       options.pem_root_certs.empty() ? nullptr : options.pem_root_certs.c_str(),
-      &pem_key_cert_pairs[0], pem_key_cert_pairs.size(),
-      options.force_client_auth, nullptr);
+      pem_key_cert_pairs.empty() ? nullptr : &pem_key_cert_pairs[0],
+      pem_key_cert_pairs.size(), options.force_client_auth, nullptr);
   return std::shared_ptr<ServerCredentials>(
       new SecureServerCredentials(c_creds));
 }
