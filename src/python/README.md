@@ -16,13 +16,6 @@ INSTALLATION
 
 **Linux (Debian):**
 
-Add [Debian testing][] to your `sources.list` file. Example:
-
-```sh
-echo "deb http://ftp.us.debian.org/debian testing main contrib non-free" | \
-sudo tee -a /etc/apt/sources.list
-```
-
 Install the gRPC Debian package
 
 ```sh
@@ -92,4 +85,3 @@ $ ../../tools/distrib/python/submit.py
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Quick Start]:http://www.grpc.io/docs/tutorials/basic/python.html
 [detailed example]:http://www.grpc.io/docs/installation/python.html
-[Debian testing]:https://www.debian.org/releases/stretch/

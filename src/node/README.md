@@ -11,13 +11,6 @@ Beta
 
 **Linux (Debian):**
 
-Add [Debian testing][] to your `sources.list` file. Example:
-
-```sh
-echo "deb http://ftp.us.debian.org/debian testing main contrib non-free" | \
-sudo tee -a /etc/apt/sources.list
-```
-
 Install the gRPC Debian package
 
 ```sh
@@ -113,4 +106,3 @@ An object with factory methods for creating credential objects for servers.
 
 [homebrew]:http://brew.sh
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
-[Debian testing]:https://www.debian.org/releases/stretch/
