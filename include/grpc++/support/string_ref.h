@@ -41,11 +41,14 @@
 
 namespace grpc {
 
-// This class is a non owning reference to a string.
-// It should be a strict subset of the upcoming std::string_ref. See:
-// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3442.html
-// The constexpr is dropped or replaced with const for legacy compiler
-// compatibility.
+/// This class is a non owning reference to a string.
+///
+/// It should be a strict subset of the upcoming std::string_ref.
+///
+/// \see http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2012/n3442.html
+///
+/// The constexpr is dropped or replaced with const for legacy compiler
+/// compatibility.
 class string_ref {
  public:
   // types
