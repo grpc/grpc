@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -95,6 +95,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>Options for channel creation.  
+ <a href="classgrpc_1_1_channel_arguments.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="channel__arguments_8h_source.html">channel_arguments.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -109,16 +112,21 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ac75ba90de32a5c7f3cb6c62f7ce649be"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3ff4f22c2cf31c01885b2aaefbdd227d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a3ff4f22c2cf31c01885b2aaefbdd227d">Swap</a> (<a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;other)</td></tr>
 <tr class="separator:a3ff4f22c2cf31c01885b2aaefbdd227d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90ce1857947d36ff894402ad10cb6048"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a90ce1857947d36ff894402ad10cb6048">SetChannelArgs</a> (grpc_channel_args *channel_args) const </td></tr>
+<tr class="memdesc:a90ce1857947d36ff894402ad10cb6048"><td class="mdescLeft">&#160;</td><td class="mdescRight">Populates this instance with the arguments from <em>channel_args</em>.  <a href="#a90ce1857947d36ff894402ad10cb6048">More...</a><br/></td></tr>
+<tr class="separator:a90ce1857947d36ff894402ad10cb6048"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af4182e659448184f9618f079a1570328"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#af4182e659448184f9618f079a1570328">SetSslTargetNameOverride</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name)</td></tr>
+<tr class="memdesc:af4182e659448184f9618f079a1570328"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set target name override for SSL host name checking.  <a href="#af4182e659448184f9618f079a1570328">More...</a><br/></td></tr>
 <tr class="separator:af4182e659448184f9618f079a1570328"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaf332071bbdff5e4a7f3352f4ad564d5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#aaf332071bbdff5e4a7f3352f4ad564d5">SetCompressionAlgorithm</a> (grpc_compression_algorithm algorithm)</td></tr>
+<tr class="memdesc:aaf332071bbdff5e4a7f3352f4ad564d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the compression algorithm for the channel.  <a href="#aaf332071bbdff5e4a7f3352f4ad564d5">More...</a><br/></td></tr>
 <tr class="separator:aaf332071bbdff5e4a7f3352f4ad564d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2b1c60568a4906bfe0b21781b09cdbbf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a2b1c60568a4906bfe0b21781b09cdbbf">SetInt</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, int value)</td></tr>
+<tr class="memdesc:a2b1c60568a4906bfe0b21781b09cdbbf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set an integer argument <em>value</em> under <em>key</em>.  <a href="#a2b1c60568a4906bfe0b21781b09cdbbf">More...</a><br/></td></tr>
 <tr class="separator:a2b1c60568a4906bfe0b21781b09cdbbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a852ac2fe0ac7421fa82927ddda612947"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a852ac2fe0ac7421fa82927ddda612947">SetString</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;value)</td></tr>
+<tr class="memdesc:a852ac2fe0ac7421fa82927ddda612947"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a textual argument <em>value</em> under <em>key</em>.  <a href="#a852ac2fe0ac7421fa82927ddda612947">More...</a><br/></td></tr>
 <tr class="separator:a852ac2fe0ac7421fa82927ddda612947"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a90ce1857947d36ff894402ad10cb6048"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a90ce1857947d36ff894402ad10cb6048">SetChannelArgs</a> (grpc_channel_args *channel_args) const </td></tr>
-<tr class="separator:a90ce1857947d36ff894402ad10cb6048"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -127,7 +135,10 @@ Friends</h2></td></tr>
 <tr class="memitem:ab9fc942609a77bb3021ba172be262c7b"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#ab9fc942609a77bb3021ba172be262c7b">testing::ChannelArgumentsTest</a></td></tr>
 <tr class="separator:ab9fc942609a77bb3021ba172be262c7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Options for channel creation. </p>
+<p>The user can use generic setters to pass key value pairs down to c channel creation code. For grpc related options, concrete setters are provided. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="aecabf1ea1c78a3202544571cf857e8eb"></a>
 <div class="memitem">
 <div class="memproto">
@@ -229,6 +240,10 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Populates this instance with the arguments from <em>channel_args</em>. </p>
+<p>Does not take ownership of <em>channel_args</em>.</p>
+<p>Note that the underlying arguments are shared. Changes made to either <em>channel_args</em> or this instance would be reflected on both. </p>
+
 </div>
 </div>
 <a class="anchor" id="aaf332071bbdff5e4a7f3352f4ad564d5"></a>
@@ -244,6 +259,8 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Set the compression algorithm for the channel. </p>
 
 </div>
 </div>
@@ -271,6 +288,8 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Set an integer argument <em>value</em> under <em>key</em>. </p>
+
 </div>
 </div>
 <a class="anchor" id="af4182e659448184f9618f079a1570328"></a>
@@ -286,6 +305,8 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Set target name override for SSL host name checking. </p>
 
 </div>
 </div>
@@ -312,6 +333,8 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Set a textual argument <em>value</em> under <em>key</em>. </p>
 
 </div>
 </div>
@@ -373,12 +396,12 @@ Friends</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/<a class="el" href="channel__arguments_8h_source.html">channel_arguments.h</a></li>
+<li>include/grpc++/support/<a class="el" href="channel__arguments_8h_source.html">channel_arguments.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

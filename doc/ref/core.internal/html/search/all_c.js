@@ -42,5 +42,6 @@ var searchData=
   ['log_5flinux_2ec',['log_linux.c',['../log__linux_8c.html',1,'']]],
   ['log_5fposix_2ec',['log_posix.c',['../log__posix_8c.html',1,'']]],
   ['log_5fwin32_2ec',['log_win32.c',['../log__win32_8c.html',1,'']]],
-  ['log_5fwin32_2eh',['log_win32.h',['../log__win32_8h.html',1,'']]]
+  ['log_5fwin32_2eh',['log_win32.h',['../log__win32_8h.html',1,'']]],
+  ['lower',['lower',['../structcensus__op__id.html#a3ecaa207fabb88fdfe0904e8c359c7fc',1,'census_op_id']]]
 ];

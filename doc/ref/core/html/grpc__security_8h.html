@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -107,6 +107,8 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__property.html">grpc_auth_property</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__processor.html">grpc_auth_metadata_processor</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
@@ -114,8 +116,6 @@ Macros</h2></td></tr>
 <tr class="separator:a3874f70577fc9fe15fd2c4ce68a36ecd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a48565da473b7c82fa2453798f620fd59"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a48565da473b7c82fa2453798f620fd59">GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR</a>&#160;&#160;&#160;&quot;GRPC_DEFAULT_SSL_ROOTS_FILE_PATH&quot;</td></tr>
 <tr class="separator:a48565da473b7c82fa2453798f620fd59"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a218bf55b665134a11baf07ada5980825"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a218bf55b665134a11baf07ada5980825">GRPC_SSL_TARGET_NAME_OVERRIDE_ARG</a>&#160;&#160;&#160;&quot;grpc.ssl_target_name_override&quot;</td></tr>
-<tr class="separator:a218bf55b665134a11baf07ada5980825"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aff82fdff9e7c40c4dd4bdc650e38e25a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aff82fdff9e7c40c4dd4bdc650e38e25a">GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME</a>&#160;&#160;&#160;&quot;transport_security_type&quot;</td></tr>
 <tr class="separator:aff82fdff9e7c40c4dd4bdc650e38e25a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35a35c597b7090b8ac7e2d854c9bcc7a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a35a35c597b7090b8ac7e2d854c9bcc7a">GRPC_SSL_TRANSPORT_SECURITY_TYPE</a>&#160;&#160;&#160;&quot;ssl&quot;</td></tr>
@@ -139,6 +139,8 @@ Typedefs</h2></td></tr>
 <tr class="separator:a26981fdcb987d885b25d34c7dc66e4cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a010fe7d27deaa2ea50b765b48dbad429"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__auth__property.html">grpc_auth_property</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a010fe7d27deaa2ea50b765b48dbad429">grpc_auth_property</a></td></tr>
 <tr class="separator:a010fe7d27deaa2ea50b765b48dbad429"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a54decefff49649afe0c5a3056d0734f1"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a54decefff49649afe0c5a3056d0734f1">grpc_process_auth_metadata_done_cb</a> )(void *user_data, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *consumed_md, size_t num_consumed_md, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *response_md, size_t num_response_md, <a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> status, const char *error_details)</td></tr>
+<tr class="separator:a54decefff49649afe0c5a3056d0734f1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -146,28 +148,26 @@ Functions</h2></td></tr>
 <tr class="separator:a6c01e107d41e964458fdf701b8b81440"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5e3fb8f208c302245a1392c7ef16d170"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5e3fb8f208c302245a1392c7ef16d170">grpc_google_default_credentials_create</a> (void)</td></tr>
 <tr class="separator:a5e3fb8f208c302245a1392c7ef16d170"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0d627ca897718091e4ceca5dce3ef10e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a0d627ca897718091e4ceca5dce3ef10e">grpc_ssl_credentials_create</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pair)</td></tr>
-<tr class="separator:a0d627ca897718091e4ceca5dce3ef10e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4f65f01fb23e963cc88bcdfbede70da7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a4f65f01fb23e963cc88bcdfbede70da7">grpc_composite_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *creds1, <a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *creds2)</td></tr>
-<tr class="separator:a4f65f01fb23e963cc88bcdfbede70da7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3beb3fe683139856e1a13c27d760eb95"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a3beb3fe683139856e1a13c27d760eb95">grpc_compute_engine_credentials_create</a> (void)</td></tr>
-<tr class="separator:a3beb3fe683139856e1a13c27d760eb95"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a15aa83608fad085b6244de659d322b27"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a15aa83608fad085b6244de659d322b27">grpc_service_account_credentials_create</a> (const char *json_key, const char *scope, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> token_lifetime)</td></tr>
-<tr class="separator:a15aa83608fad085b6244de659d322b27"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af26993774cc991debd61e4a84ed49187"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#af26993774cc991debd61e4a84ed49187">grpc_service_account_jwt_access_credentials_create</a> (const char *json_key, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> token_lifetime)</td></tr>
-<tr class="separator:af26993774cc991debd61e4a84ed49187"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7a2440ad02b6a96adbd2c6e5d66fd7d2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a7a2440ad02b6a96adbd2c6e5d66fd7d2">grpc_refresh_token_credentials_create</a> (const char *json_refresh_token)</td></tr>
-<tr class="separator:a7a2440ad02b6a96adbd2c6e5d66fd7d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ef8e179bb5d15c81dfd363924db0041"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a7ef8e179bb5d15c81dfd363924db0041">grpc_access_token_credentials_create</a> (const char *access_token)</td></tr>
-<tr class="separator:a7ef8e179bb5d15c81dfd363924db0041"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae42c358e718847c988aa690cb0fccab3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ae42c358e718847c988aa690cb0fccab3">grpc_iam_credentials_create</a> (const char *authorization_token, const char *authority_selector)</td></tr>
-<tr class="separator:ae42c358e718847c988aa690cb0fccab3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4d63d4cac74652ec3fac7782acb4a2d4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a4d63d4cac74652ec3fac7782acb4a2d4">grpc_secure_channel_create</a> (<a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *creds, const char *target, const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *args)</td></tr>
-<tr class="separator:a4d63d4cac74652ec3fac7782acb4a2d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e1970bc7f3d1fd221161adc0a56ff32"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2e1970bc7f3d1fd221161adc0a56ff32">grpc_ssl_credentials_create</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pair, void *reserved)</td></tr>
+<tr class="separator:a2e1970bc7f3d1fd221161adc0a56ff32"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60bbfa5d24aaa4f9075c6045181e9ddd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a60bbfa5d24aaa4f9075c6045181e9ddd">grpc_composite_credentials_create</a> (<a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *creds1, <a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *creds2, void *reserved)</td></tr>
+<tr class="separator:a60bbfa5d24aaa4f9075c6045181e9ddd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa186fa3ea6c3a5a551d1a8fa9ddc9372"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aa186fa3ea6c3a5a551d1a8fa9ddc9372">grpc_google_compute_engine_credentials_create</a> (void *reserved)</td></tr>
+<tr class="separator:aa186fa3ea6c3a5a551d1a8fa9ddc9372"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab471a46dec4eb4e1c4ce986f237dbf66"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ab471a46dec4eb4e1c4ce986f237dbf66">grpc_service_account_jwt_access_credentials_create</a> (const char *json_key, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> token_lifetime, void *reserved)</td></tr>
+<tr class="separator:ab471a46dec4eb4e1c4ce986f237dbf66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae44d54a3099c9c8499764706e1c69919"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ae44d54a3099c9c8499764706e1c69919">grpc_google_refresh_token_credentials_create</a> (const char *json_refresh_token, void *reserved)</td></tr>
+<tr class="separator:ae44d54a3099c9c8499764706e1c69919"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56df677a9fafe181dca4eb3280228d0b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a56df677a9fafe181dca4eb3280228d0b">grpc_access_token_credentials_create</a> (const char *access_token, void *reserved)</td></tr>
+<tr class="separator:a56df677a9fafe181dca4eb3280228d0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a672ef3a65799cabdd63b9e5cb7592446"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a672ef3a65799cabdd63b9e5cb7592446">grpc_google_iam_credentials_create</a> (const char *authorization_token, const char *authority_selector, void *reserved)</td></tr>
+<tr class="separator:a672ef3a65799cabdd63b9e5cb7592446"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29bf879141d7c0ca7eb86e0e26d585af"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a29bf879141d7c0ca7eb86e0e26d585af">grpc_secure_channel_create</a> (<a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *creds, const char *target, const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *args, void *reserved)</td></tr>
+<tr class="separator:a29bf879141d7c0ca7eb86e0e26d585af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e9f9320f4f8d2d534d04ed642f032ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a6e9f9320f4f8d2d534d04ed642f032ea">grpc_server_credentials_release</a> (<a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *creds)</td></tr>
 <tr class="separator:a6e9f9320f4f8d2d534d04ed642f032ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3382907a4689c034a6f55bab4d5135b9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a3382907a4689c034a6f55bab4d5135b9">grpc_ssl_server_credentials_create</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pairs, size_t num_key_cert_pairs, int force_client_auth)</td></tr>
-<tr class="separator:a3382907a4689c034a6f55bab4d5135b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa79cf1d662f3e26bbc7dc34192dba500"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aa79cf1d662f3e26bbc7dc34192dba500">grpc_ssl_server_credentials_create</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pairs, size_t num_key_cert_pairs, int force_client_auth, void *reserved)</td></tr>
+<tr class="separator:aa79cf1d662f3e26bbc7dc34192dba500"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5d0db200d00b62b79138472dc9b1fe59"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5d0db200d00b62b79138472dc9b1fe59">grpc_server_add_secure_http2_port</a> (<a class="el" href="grpc_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *server, const char *addr, <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *creds)</td></tr>
 <tr class="separator:a5d0db200d00b62b79138472dc9b1fe59"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a56de54ae2563e67e236c10e8fa419f60"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_call_error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a56de54ae2563e67e236c10e8fa419f60">grpc_call_set_credentials</a> (<a class="el" href="grpc_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *creds)</td></tr>
@@ -188,6 +188,14 @@ Functions</h2></td></tr>
 <tr class="separator:a0b439e6d2875c8b5e2e901a959f6a2fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2eea99f76030b21ad58afdf615f4d2b9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2eea99f76030b21ad58afdf615f4d2b9">grpc_auth_context_release</a> (<a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *context)</td></tr>
 <tr class="separator:a2eea99f76030b21ad58afdf615f4d2b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c64d6535e657a200f425be4441eaf20"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a6c64d6535e657a200f425be4441eaf20">grpc_auth_context_add_property</a> (<a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *ctx, const char *name, const char *value, size_t value_length)</td></tr>
+<tr class="separator:a6c64d6535e657a200f425be4441eaf20"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7cde3a0627117899b2c7a412719a92c3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a7cde3a0627117899b2c7a412719a92c3">grpc_auth_context_add_cstring_property</a> (<a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *ctx, const char *name, const char *value)</td></tr>
+<tr class="separator:a7cde3a0627117899b2c7a412719a92c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5891cb5ed3b06389711892a2262542fa"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5891cb5ed3b06389711892a2262542fa">grpc_auth_context_set_peer_identity_property_name</a> (<a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *ctx, const char *name)</td></tr>
+<tr class="separator:a5891cb5ed3b06389711892a2262542fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6af590e826340f94cee5d8aaab109bc"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ab6af590e826340f94cee5d8aaab109bc">grpc_server_credentials_set_auth_metadata_processor</a> (<a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *creds, <a class="el" href="structgrpc__auth__metadata__processor.html">grpc_auth_metadata_processor</a> processor)</td></tr>
+<tr class="separator:ab6af590e826340f94cee5d8aaab109bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -213,18 +221,6 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">#define GRPC_GOOGLE_CREDENTIALS_ENV_VAR&#160;&#160;&#160;&quot;GOOGLE_APPLICATION_CREDENTIALS&quot;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a218bf55b665134a11baf07ada5980825"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG&#160;&#160;&#160;&quot;grpc.ssl_target_name_override&quot;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -328,6 +324,18 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a54decefff49649afe0c5a3056d0734f1"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef void(* grpc_process_auth_metadata_done_cb)(void *user_data, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *consumed_md, size_t num_consumed_md, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *response_md, size_t num_response_md, <a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> status, const char *error_details)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="aa724192e56fdc03827846f16752deccc"></a>
 <div class="memitem">
 <div class="memproto">
@@ -341,7 +349,7 @@ Variables</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a7ef8e179bb5d15c81dfd363924db0041"></a>
+<a class="anchor" id="a56df677a9fafe181dca4eb3280228d0b"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -349,8 +357,88 @@ Variables</h2></td></tr>
           <td class="memname"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a>* grpc_access_token_credentials_create </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>access_token</em></td><td>)</td>
+          <td class="paramname"><em>access_token</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a7cde3a0627117899b2c7a412719a92c3"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_auth_context_add_cstring_property </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *&#160;</td>
+          <td class="paramname"><em>ctx</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a6c64d6535e657a200f425be4441eaf20"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_auth_context_add_property </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *&#160;</td>
+          <td class="paramname"><em>ctx</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>value</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>value_length</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -463,6 +551,32 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a5891cb5ed3b06389711892a2262542fa"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int grpc_auth_context_set_peer_identity_property_name </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *&#160;</td>
+          <td class="paramname"><em>ctx</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>name</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="ac20e3890d5e5e0de6ae6b5cb57cae1ae"></a>
 <div class="memitem">
 <div class="memproto">
@@ -521,7 +635,7 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a4f65f01fb23e963cc88bcdfbede70da7"></a>
+<a class="anchor" id="a60bbfa5d24aaa4f9075c6045181e9ddd"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -535,28 +649,18 @@ Variables</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td>
-          <td class="paramname"><em>creds2</em>&#160;</td>
+          <td class="paramname"><em>creds2</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
           <td>)</td>
           <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a3beb3fe683139856e1a13c27d760eb95"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a>* grpc_compute_engine_credentials_create </td>
-          <td>(</td>
-          <td class="paramtype">void&#160;</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -572,6 +676,22 @@ Variables</h2></td></tr>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a> *&#160;</td>
           <td class="paramname"><em>creds</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aa186fa3ea6c3a5a551d1a8fa9ddc9372"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a>* grpc_google_compute_engine_credentials_create </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -595,12 +715,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ae42c358e718847c988aa690cb0fccab3"></a>
+<a class="anchor" id="a672ef3a65799cabdd63b9e5cb7592446"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a>* grpc_iam_credentials_create </td>
+          <td class="memname"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a>* grpc_google_iam_credentials_create </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>authorization_token</em>, </td>
@@ -609,7 +729,13 @@ Variables</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>authority_selector</em>&#160;</td>
+          <td class="paramname"><em>authority_selector</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -621,23 +747,33 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a7a2440ad02b6a96adbd2c6e5d66fd7d2"></a>
+<a class="anchor" id="ae44d54a3099c9c8499764706e1c69919"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a>* grpc_refresh_token_credentials_create </td>
+          <td class="memname"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a>* grpc_google_refresh_token_credentials_create </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>json_refresh_token</em></td><td>)</td>
+          <td class="paramname"><em>json_refresh_token</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a class="anchor" id="a4d63d4cac74652ec3fac7782acb4a2d4"></a>
+<a class="anchor" id="a29bf879141d7c0ca7eb86e0e26d585af"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -657,7 +793,13 @@ Variables</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *&#160;</td>
-          <td class="paramname"><em>args</em>&#160;</td>
+          <td class="paramname"><em>args</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -717,27 +859,21 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a15aa83608fad085b6244de659d322b27"></a>
+<a class="anchor" id="ab6af590e826340f94cee5d8aaab109bc"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="grpc__security_8h.html#a17768c857575e4500cdd12bb94d3f33e">grpc_credentials</a>* grpc_service_account_credentials_create </td>
+          <td class="memname">void grpc_server_credentials_set_auth_metadata_processor </td>
           <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>json_key</em>, </td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td>
+          <td class="paramname"><em>creds</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>scope</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
-          <td class="paramname"><em>token_lifetime</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="structgrpc__auth__metadata__processor.html">grpc_auth_metadata_processor</a>&#160;</td>
+          <td class="paramname"><em>processor</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -749,7 +885,7 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="af26993774cc991debd61e4a84ed49187"></a>
+<a class="anchor" id="ab471a46dec4eb4e1c4ce986f237dbf66"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -763,7 +899,13 @@ Variables</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
-          <td class="paramname"><em>token_lifetime</em>&#160;</td>
+          <td class="paramname"><em>token_lifetime</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -775,7 +917,7 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a0d627ca897718091e4ceca5dce3ef10e"></a>
+<a class="anchor" id="a2e1970bc7f3d1fd221161adc0a56ff32"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -789,7 +931,13 @@ Variables</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *&#160;</td>
-          <td class="paramname"><em>pem_key_cert_pair</em>&#160;</td>
+          <td class="paramname"><em>pem_key_cert_pair</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -801,7 +949,7 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a3382907a4689c034a6f55bab4d5135b9"></a>
+<a class="anchor" id="aa79cf1d662f3e26bbc7dc34192dba500"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -827,7 +975,13 @@ Variables</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>force_client_auth</em>&#160;</td>
+          <td class="paramname"><em>force_client_auth</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -855,7 +1009,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
