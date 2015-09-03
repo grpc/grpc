@@ -38,25 +38,33 @@
 #import "GRPCCall.h"
 #import "NSDictionary+GRPC.h"
 
+// Used by the setters.
 static NSString* NormalizeKey(NSString* key) {
-  if ([key canBeConvertedToEncoding:NSASCIIStringEncoding]) {
-    return [key lowercaseString];
-  } else {
-    return nil;
+  if (!key) {
+    [NSException raise:NSInvalidArgumentException format:@"Key cannot be nil"];
   }
+  if (![key canBeConvertedToEncoding:NSASCIIStringEncoding]) {
+    [NSException raise:NSInvalidArgumentException
+                format:@"Key %@ contains non-ASCII characters", key];
+  }
+  return key.lowercaseString;
 }
 
-static bool IsKeyValuePairValid(NSString *key, id value) {
+// Precondition: key isn't nil.
+static void CheckKeyValuePairIsValid(NSString *key, id value) {
   if ([key hasSuffix:@"-bin"]) {
-    if (![value isKindOfClass:[NSData class]]) {
-      return false;
+    if (![value isKindOfClass:NSData.class]) {
+      [NSException raise:NSInvalidArgumentException
+                  format:@"Expected NSData value for header %@ ending in \"-bin\", "
+       @"instead got %@", key, value];
     }
   } else {
-    if (![value isKindOfClass:[NSString class]]) {
-      return false;
+    if (![value isKindOfClass:NSString.class]) {
+      [NSException raise:NSInvalidArgumentException
+                  format:@"Expected NSString value for header %@ not ending in \"-bin\", "
+       @"instead got %@", key, value];
     }
   }
-  return true;
 }
 
 @implementation GRPCRequestHeaders {
@@ -72,55 +80,32 @@ static bool IsKeyValuePairValid(NSString *key, id value) {
   return self;
 }
 
-- (id)objectForKeyedSubscript:(NSString *)key {
-  NSString *normalizedKey = NormalizeKey(key);
-  if (normalizedKey) {
-    return _proxy[normalizedKey];
-  } else {
-    return [NSNull null];
+- (void)checkCallIsNotStarted {
+  if (_call.state != GRXWriterStateNotStarted) {
+    [NSException raise:@"Invalid modification"
+                format:@"Cannot modify request headers after call is started"];
   }
+}
+
+- (id)objectForKeyedSubscript:(NSString *)key {
+  return _proxy[key.lowercaseString];
 }
 
 - (void)setObject:(id)obj forKeyedSubscript:(NSString *)key {
-  if (_call.state == GRXWriterStateNotStarted) {
-    NSString *normalizedKey = NormalizeKey(key);
-    if (normalizedKey) {
-      if (IsKeyValuePairValid(key, obj)) {
-        _proxy[normalizedKey] = obj;
-      } else {
-        [NSException raise:@"Invalid key/value pair"
-                    format:@"Key %@ could not be added with value %@", key, obj];
-      }
-    } else {
-      [NSException raise:@"Invalid key" format:@"Key %@ contains illegal characters", key];
-    }
-  } else {
-    [NSException raise:@"Invalid modification"
-                format:@"Cannot modify request metadata after call is started"];
-  }
+  [self checkCallIsNotStarted];
+  key = NormalizeKey(key);
+  CheckKeyValuePairIsValid(key, obj);
+  _proxy[key] = obj;
 }
 
-- (void)removeObjectForKey:(NSString *)aKey {
-  if (_call.state == GRXWriterStateNotStarted) {
-    NSString *normalizedKey = NormalizeKey(aKey);
-    if (normalizedKey) {
-      [_proxy removeObjectForKey:normalizedKey];
-    } else {
-      [NSException raise:@"Invalid key" format:@"Key %@ contains illegal characters", aKey];
-    }
-  } else {
-    [NSException raise:@"Invalid modification"
-                format:@"Cannot modify request metadata after call is started"];
-  }
+- (void)removeObjectForKey:(NSString *)key {
+  [self checkCallIsNotStarted];
+  [_proxy removeObjectForKey:NormalizeKey(key)];
 }
 
 - (void)removeAllObjects {
-  if (_call.state == GRXWriterStateNotStarted) {
-    [_proxy removeAllObjects];
-  } else {
-    [NSException raise:@"Invalid modification"
-                format:@"Cannot modify request metadata after call is started"];
-  }
+  [self checkCallIsNotStarted];
+  [_proxy removeAllObjects];
 }
 
 // TODO(jcanizales): Just forward all invocations?
