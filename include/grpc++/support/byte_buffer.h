@@ -46,24 +46,21 @@
 
 namespace grpc {
 
-/// A sequence of bytes.
 class ByteBuffer GRPC_FINAL {
  public:
-  /// Constuct an empty buffer.
   ByteBuffer() : buffer_(nullptr) {}
 
-  /// Construct buffer from \a slices, of which there are \a nslices.
   ByteBuffer(const Slice* slices, size_t nslices);
 
-  ~ByteBuffer();
+  ~ByteBuffer() {
+    if (buffer_) {
+      grpc_byte_buffer_destroy(buffer_);
+    }
+  }
 
-  /// Dump (read) the buffer contents into \a slices.
   void Dump(std::vector<Slice>* slices) const;
 
-  /// Remove all data.
   void Clear();
-
-  /// Buffer size in bytes.
   size_t Length() const;
 
  private:
@@ -81,7 +78,6 @@ class ByteBuffer GRPC_FINAL {
     buffer_ = buf;
   }
 
-  // For \a SerializationTraits's usage.
   grpc_byte_buffer* buffer() const { return buffer_; }
 
   grpc_byte_buffer* buffer_;
