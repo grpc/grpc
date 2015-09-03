@@ -3,3 +3,4 @@ usr/lib/libgpr.a
 usr/lib/libgpr.so
 usr/lib/libgrpc.a
 usr/lib/libgrpc.so
+usr/lib/libgrpc_csharp_ext.so
