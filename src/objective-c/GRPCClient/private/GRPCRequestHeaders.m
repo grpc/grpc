@@ -108,8 +108,6 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
   [_delegate removeAllObjects];
 }
 
-// TODO(jcanizales): Just forward all invocations?
-
 - (NSUInteger)count {
   return _delegate.count;
 }
