@@ -110,30 +110,31 @@ class _Termination(
 
 _NOT_TERMINATED = _Termination(False, None, None)
 
-_OPERATION_OUTCOME_TO_TERMINATION_CONSTRUCTOR = {
-    base.Outcome.COMPLETED: lambda *unused_args: _Termination(True, None, None),
-    base.Outcome.CANCELLED: lambda *args: _Termination(
+_OPERATION_OUTCOME_KIND_TO_TERMINATION_CONSTRUCTOR = {
+    base.Outcome.Kind.COMPLETED: lambda *unused_args: _Termination(
+        True, None, None),
+    base.Outcome.Kind.CANCELLED: lambda *args: _Termination(
         True, face.Abortion(face.Abortion.Kind.CANCELLED, *args),
         face.CancellationError(*args)),
-    base.Outcome.EXPIRED: lambda *args: _Termination(
+    base.Outcome.Kind.EXPIRED: lambda *args: _Termination(
         True, face.Abortion(face.Abortion.Kind.EXPIRED, *args),
         face.ExpirationError(*args)),
-    base.Outcome.LOCAL_SHUTDOWN: lambda *args: _Termination(
+    base.Outcome.Kind.LOCAL_SHUTDOWN: lambda *args: _Termination(
         True, face.Abortion(face.Abortion.Kind.LOCAL_SHUTDOWN, *args),
         face.LocalShutdownError(*args)),
-    base.Outcome.REMOTE_SHUTDOWN: lambda *args: _Termination(
+    base.Outcome.Kind.REMOTE_SHUTDOWN: lambda *args: _Termination(
         True, face.Abortion(face.Abortion.Kind.REMOTE_SHUTDOWN, *args),
         face.RemoteShutdownError(*args)),
-    base.Outcome.RECEPTION_FAILURE: lambda *args: _Termination(
+    base.Outcome.Kind.RECEPTION_FAILURE: lambda *args: _Termination(
         True, face.Abortion(face.Abortion.Kind.NETWORK_FAILURE, *args),
         face.NetworkError(*args)),
-    base.Outcome.TRANSMISSION_FAILURE: lambda *args: _Termination(
+    base.Outcome.Kind.TRANSMISSION_FAILURE: lambda *args: _Termination(
         True, face.Abortion(face.Abortion.Kind.NETWORK_FAILURE, *args),
         face.NetworkError(*args)),
-    base.Outcome.LOCAL_FAILURE: lambda *args: _Termination(
+    base.Outcome.Kind.LOCAL_FAILURE: lambda *args: _Termination(
         True, face.Abortion(face.Abortion.Kind.LOCAL_FAILURE, *args),
         face.LocalError(*args)),
-    base.Outcome.REMOTE_FAILURE: lambda *args: _Termination(
+    base.Outcome.Kind.REMOTE_FAILURE: lambda *args: _Termination(
         True, face.Abortion(face.Abortion.Kind.REMOTE_FAILURE, *args),
         face.RemoteError(*args)),
 }
@@ -247,13 +248,17 @@ class Rendezvous(base.Operator, future.Future, stream.Consumer, face.Call):
       else:
         initial_metadata = self._up_initial_metadata.value
       if self._up_completion.kind is _Awaited.Kind.NOT_YET_ARRIVED:
-        terminal_metadata, code, details = None, None, None
+        terminal_metadata = None
       else:
         terminal_metadata = self._up_completion.value.terminal_metadata
+      if outcome.kind is base.Outcome.Kind.COMPLETED:
         code = self._up_completion.value.code
         details = self._up_completion.value.message
-      self._termination = _OPERATION_OUTCOME_TO_TERMINATION_CONSTRUCTOR[
-          outcome](initial_metadata, terminal_metadata, code, details)
+      else:
+        code = outcome.code
+        details = outcome.details
+      self._termination = _OPERATION_OUTCOME_KIND_TO_TERMINATION_CONSTRUCTOR[
+          outcome.kind](initial_metadata, terminal_metadata, code, details)
 
       self._condition.notify_all()
 
