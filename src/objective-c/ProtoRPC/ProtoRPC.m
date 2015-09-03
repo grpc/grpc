@@ -65,14 +65,25 @@
   }
   // A writer that serializes the proto messages to send.
   GRXWriter *bytesWriter = [requestsWriter map:^id(GPBMessage *proto) {
-    // TODO(jcanizales): Fail with an understandable error message if the requestsWriter isn't
-    // sending GPBMessages.
+    if (![proto isKindOfClass:GPBMessage.class]) {
+      [NSException raise:NSInvalidArgumentException
+                  format:@"Request must be a proto message: %@", proto];
+    }
     return [proto data];
   }];
   if ((self = [super initWithHost:host path:method.HTTPPath requestsWriter:bytesWriter])) {
+    __weak ProtoRPC *weakSelf = self;
+
     // A writeable that parses the proto messages received.
     _responseWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
-      [responsesWriteable writeValue:[responseClass parseFromData:value error:NULL]];
+      // TODO(jcanizales): This is done in the main thread, and needs to happen in another thread.
+      NSError *error = nil;
+      id parsed = [responseClass parseFromData:value error:&error];
+      if (parsed) {
+        [responsesWriteable writeValue:parsed];
+      } else {
+        [weakSelf finishWithError:error];
+      }
     } completionHandler:^(NSError *errorOrNil) {
       [responsesWriteable writesFinishedWithError:errorOrNil];
     }];
