@@ -68,7 +68,7 @@ class AsyncQpsServerTest : public Server {
 
     builder.RegisterAsyncService(&async_service_);
     for (int i = 0; i < config.threads(); i++) {
-      srv_cqs_.emplace_back(std::move(builder.AddCompletionQueue()));
+      srv_cqs_.emplace_back(builder.AddCompletionQueue());
     }
 
     server_ = builder.BuildAndStart();
