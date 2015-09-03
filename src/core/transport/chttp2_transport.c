@@ -345,10 +345,29 @@ static void prevent_endpoint_shutdown(grpc_chttp2_transport *t) {
   gpr_ref(&t->shutdown_ep_refs);
 }
 
-static void allow_endpoint_shutdown(grpc_chttp2_transport *t) {
+static void allow_endpoint_shutdown_locked(grpc_chttp2_transport *t) {
   if (gpr_unref(&t->shutdown_ep_refs)) {
-    grpc_endpoint_shutdown(t->ep);
+    if (t->ep) {
+      grpc_endpoint_shutdown(t->ep);
+    }
   }
+}
+
+static void allow_endpoint_shutdown_unlocked(grpc_chttp2_transport *t) {
+  if (gpr_unref(&t->shutdown_ep_refs)) {
+    gpr_mu_lock(&t->mu);
+    if (t->ep) {
+      grpc_endpoint_shutdown(t->ep);
+    }
+    gpr_mu_unlock(&t->mu);
+  }
+}
+
+static void destroy_endpoint(grpc_chttp2_transport *t) {
+  grpc_endpoint_destroy(t->ep);
+  t->ep = NULL;
+  UNREF_TRANSPORT(
+      t, "disconnect"); /* safe because we'll still have the ref for write */
 }
 
 static void close_transport_locked(grpc_chttp2_transport *t) {
@@ -357,7 +376,7 @@ static void close_transport_locked(grpc_chttp2_transport *t) {
     connectivity_state_set(&t->global, GRPC_CHANNEL_FATAL_FAILURE,
                            "close_transport");
     if (t->ep) {
-      allow_endpoint_shutdown(t);
+      allow_endpoint_shutdown_locked(t);
     }
   }
 }
@@ -525,9 +544,9 @@ void grpc_chttp2_terminate_writing(void *transport_writing_ptr, int success) {
   grpc_chttp2_transport_writing *transport_writing = transport_writing_ptr;
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING(transport_writing);
 
-  allow_endpoint_shutdown(t);
-
   lock(t);
+
+  allow_endpoint_shutdown_locked(t);
 
   if (!success) {
     drop_connection(t);
@@ -540,10 +559,7 @@ void grpc_chttp2_terminate_writing(void *transport_writing_ptr, int success) {
      from starting */
   t->writing_active = 0;
   if (t->ep && !t->endpoint_reading) {
-    grpc_endpoint_destroy(t->ep);
-    t->ep = NULL;
-    UNREF_TRANSPORT(
-        t, "disconnect"); /* safe because we'll still have the ref for write */
+    destroy_endpoint(t);
   }
 
   unlock(t);
@@ -1073,10 +1089,7 @@ static void update_global_window(void *args, gpr_uint32 id, void *stream) {
 static void read_error_locked(grpc_chttp2_transport *t) {
   t->endpoint_reading = 0;
   if (!t->writing_active && t->ep) {
-    grpc_endpoint_destroy(t->ep);
-    t->ep = NULL;
-    /* safe as we still have a ref for read */
-    UNREF_TRANSPORT(t, "disconnect");
+    destroy_endpoint(t);
   }
 }
 
@@ -1122,6 +1135,7 @@ static int recv_data_loop(grpc_chttp2_transport *t, int *success) {
     read_error_locked(t);
   } else if (!t->closed) {
     keep_reading = 1;
+    REF_TRANSPORT(t, "keep_reading");
     prevent_endpoint_shutdown(t);
   }
   gpr_slice_buffer_reset_and_unref(&t->read_buffer);
@@ -1142,7 +1156,8 @@ static int recv_data_loop(grpc_chttp2_transport *t, int *success) {
         ret = 0;
         break;
     }
-    allow_endpoint_shutdown(t);
+    allow_endpoint_shutdown_unlocked(t);
+    UNREF_TRANSPORT(t, "keep_reading");
     return ret;
   } else {
     UNREF_TRANSPORT(t, "recv_data");

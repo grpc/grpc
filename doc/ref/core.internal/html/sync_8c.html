@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -103,9 +103,9 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:a0ed680fdb405e7195d9f14032851eebb"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <a class="el" href="sync_8c.html#a0ed680fdb405e7195d9f14032851eebba036372fdae4f52140a8f27482b729753">event_sync_partitions</a> = 31
+<tr class="memitem:a4790f45dcc812c1b00184a2edccdddf5"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom">{ <a class="el" href="sync_8c.html#a4790f45dcc812c1b00184a2edccdddf5a036372fdae4f52140a8f27482b729753">event_sync_partitions</a> = 31
  }</td></tr>
-<tr class="separator:a0ed680fdb405e7195d9f14032851eebb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a4790f45dcc812c1b00184a2edccdddf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -117,8 +117,6 @@ Functions</h2></td></tr>
 <tr class="separator:ac0a2305d9e6575cc5a3d92bc3f12c161"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01d442a76ff77f64d9f898b22ea33db7"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8c.html#a01d442a76ff77f64d9f898b22ea33db7">gpr_event_wait</a> (<a class="el" href="structgpr__event.html">gpr_event</a> *ev, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> abs_deadline)</td></tr>
 <tr class="separator:a01d442a76ff77f64d9f898b22ea33db7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae048c7e762b723821e35a07fd0d85e22"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8c.html#ae048c7e762b723821e35a07fd0d85e22">gpr_event_cancellable_wait</a> (<a class="el" href="structgpr__event.html">gpr_event</a> *ev, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> abs_deadline, <a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *c)</td></tr>
-<tr class="separator:ae048c7e762b723821e35a07fd0d85e22"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a235584f36572b5410b042ee63cb0740b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8c.html#a235584f36572b5410b042ee63cb0740b">gpr_ref_init</a> (<a class="el" href="structgpr__refcount.html">gpr_refcount</a> *r, int n)</td></tr>
 <tr class="separator:a235584f36572b5410b042ee63cb0740b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac0e52c6bfc7a04ba8a269f3227104571"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8c.html#ac0e52c6bfc7a04ba8a269f3227104571">gpr_ref</a> (<a class="el" href="structgpr__refcount.html">gpr_refcount</a> *r)</td></tr>
@@ -135,7 +133,7 @@ Functions</h2></td></tr>
 <tr class="separator:abb2c58da7d0b785887266b3b1890764d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
-<a class="anchor" id="a0ed680fdb405e7195d9f14032851eebb"></a>
+<a class="anchor" id="a4790f45dcc812c1b00184a2edccdddf5"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -145,45 +143,13 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a0ed680fdb405e7195d9f14032851eebba036372fdae4f52140a8f27482b729753"></a>event_sync_partitions</em>&#160;</td><td class="fielddoc">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a4790f45dcc812c1b00184a2edccdddf5a036372fdae4f52140a8f27482b729753"></a>event_sync_partitions</em>&#160;</td><td class="fielddoc">
 </td></tr>
 </table>
 
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="ae048c7e762b723821e35a07fd0d85e22"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void* gpr_event_cancellable_wait </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgpr__event.html">gpr_event</a> *&#160;</td>
-          <td class="paramname"><em>ev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
-          <td class="paramname"><em>abs_deadline</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *&#160;</td>
-          <td class="paramname"><em>c</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a class="anchor" id="ac0a2305d9e6575cc5a3d92bc3f12c161"></a>
 <div class="memitem">
 <div class="memproto">
@@ -423,7 +389,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

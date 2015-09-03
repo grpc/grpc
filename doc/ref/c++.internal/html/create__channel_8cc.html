@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -94,10 +94,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <div class="textblock"><code>#include &lt;memory&gt;</code><br/>
 <code>#include &lt;sstream&gt;</code><br/>
-<code>#include &quot;<a class="el" href="channel_8h_source.html">src/cpp/client/channel.h</a>&quot;</code><br/>
-<code>#include &lt;<a class="el" href="channel__interface_8h_source.html">grpc++/channel_interface.h</a>&gt;</code><br/>
-<code>#include &lt;<a class="el" href="channel__arguments_8h_source.html">grpc++/channel_arguments.h</a>&gt;</code><br/>
+<code>#include &lt;<a class="el" href="channel_8h_source.html">grpc++/channel.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="create__channel_8h_source.html">grpc++/create_channel.h</a>&gt;</code><br/>
+<code>#include &lt;<a class="el" href="channel__arguments_8h_source.html">grpc++/support/channel_arguments.h</a>&gt;</code><br/>
+<code>#include &quot;<a class="el" href="create__channel__internal_8h_source.html">src/cpp/client/create_channel_internal.h</a>&quot;</code><br/>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -106,13 +106,17 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a61b64d32193030bed7112b49b8e21006"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; ChannelInterface &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a61b64d32193030bed7112b49b8e21006">grpc::CreateChannel</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;target, const std::shared_ptr&lt; Credentials &gt; &amp;creds, const ChannelArguments &amp;args)</td></tr>
-<tr class="separator:a61b64d32193030bed7112b49b8e21006"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a514f7fecc4951c53018a1daaaa7ac64f"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Channel &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a514f7fecc4951c53018a1daaaa7ac64f">grpc::CreateChannel</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;target, const std::shared_ptr&lt; Credentials &gt; &amp;creds)</td></tr>
+<tr class="memdesc:a514f7fecc4951c53018a1daaaa7ac64f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">Channel</a></em> pointing to <em>target</em>.  <a href="#a514f7fecc4951c53018a1daaaa7ac64f">More...</a><br/></td></tr>
+<tr class="separator:a514f7fecc4951c53018a1daaaa7ac64f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae58cb6bacb532f548bdc01427dbfbbdb"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; Channel &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ae58cb6bacb532f548bdc01427dbfbbdb">grpc::CreateCustomChannel</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;target, const std::shared_ptr&lt; Credentials &gt; &amp;creds, const ChannelArguments &amp;args)</td></tr>
+<tr class="memdesc:ae58cb6bacb532f548bdc01427dbfbbdb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel. ">Channel</a></em> pointing to <em>target</em>.  <a href="#ae58cb6bacb532f548bdc01427dbfbbdb">More...</a><br/></td></tr>
+<tr class="separator:ae58cb6bacb532f548bdc01427dbfbbdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

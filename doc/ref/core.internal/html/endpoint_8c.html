@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -94,10 +94,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:abead7bb222b6e3f5a7004c8fb12821be"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="endpoint_8c.html#abead7bb222b6e3f5a7004c8fb12821be">grpc_endpoint_notify_on_read</a> (<a class="el" href="structgrpc__endpoint.html">grpc_endpoint</a> *ep, <a class="el" href="endpoint_8h.html#adb689cc1f448569b81f46c8810b5a24c">grpc_endpoint_read_cb</a> cb, void *user_data)</td></tr>
-<tr class="separator:abead7bb222b6e3f5a7004c8fb12821be"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6cc5c4afb853d7204ad7b6bcbe8c95b0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="endpoint_8h.html#abfb8e299371be52c109912cda9dbe902">grpc_endpoint_write_status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="endpoint_8c.html#a6cc5c4afb853d7204ad7b6bcbe8c95b0">grpc_endpoint_write</a> (<a class="el" href="structgrpc__endpoint.html">grpc_endpoint</a> *ep, <a class="el" href="structgpr__slice.html">gpr_slice</a> *slices, size_t nslices, <a class="el" href="endpoint_8h.html#af2ca6ea84b9d91d443ba9a8a53e55f2a">grpc_endpoint_write_cb</a> cb, void *user_data)</td></tr>
-<tr class="separator:a6cc5c4afb853d7204ad7b6bcbe8c95b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a88073e28e8d69a1e0ef322bc1e825349"><td class="memItemLeft" align="right" valign="top"><a class="el" href="endpoint_8h.html#a51f03de57cc964c0aa30ea45c1854a3c">grpc_endpoint_op_status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="endpoint_8c.html#a88073e28e8d69a1e0ef322bc1e825349">grpc_endpoint_read</a> (<a class="el" href="structgrpc__endpoint.html">grpc_endpoint</a> *ep, <a class="el" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> *slices, <a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> *cb)</td></tr>
+<tr class="separator:a88073e28e8d69a1e0ef322bc1e825349"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1789b99244fa647b7a6c82581e1ddaad"><td class="memItemLeft" align="right" valign="top"><a class="el" href="endpoint_8h.html#a51f03de57cc964c0aa30ea45c1854a3c">grpc_endpoint_op_status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="endpoint_8c.html#a1789b99244fa647b7a6c82581e1ddaad">grpc_endpoint_write</a> (<a class="el" href="structgrpc__endpoint.html">grpc_endpoint</a> *ep, <a class="el" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> *slices, <a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> *cb)</td></tr>
+<tr class="separator:a1789b99244fa647b7a6c82581e1ddaad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afe30ad16c4df2a5c80b9e73d2bce80e6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="endpoint_8c.html#afe30ad16c4df2a5c80b9e73d2bce80e6">grpc_endpoint_add_to_pollset</a> (<a class="el" href="structgrpc__endpoint.html">grpc_endpoint</a> *ep, <a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset)</td></tr>
 <tr class="separator:afe30ad16c4df2a5c80b9e73d2bce80e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7da8b1657895a121a59458dbdeb0e900"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="endpoint_8c.html#a7da8b1657895a121a59458dbdeb0e900">grpc_endpoint_add_to_pollset_set</a> (<a class="el" href="structgrpc__endpoint.html">grpc_endpoint</a> *ep, <a class="el" href="structgrpc__pollset__set.html">grpc_pollset_set</a> *pollset_set)</td></tr>
@@ -194,12 +194,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="abead7bb222b6e3f5a7004c8fb12821be"></a>
+<a class="anchor" id="a88073e28e8d69a1e0ef322bc1e825349"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc_endpoint_notify_on_read </td>
+          <td class="memname"><a class="el" href="endpoint_8h.html#a51f03de57cc964c0aa30ea45c1854a3c">grpc_endpoint_op_status</a> grpc_endpoint_read </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__endpoint.html">grpc_endpoint</a> *&#160;</td>
           <td class="paramname"><em>ep</em>, </td>
@@ -207,14 +207,14 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="endpoint_8h.html#adb689cc1f448569b81f46c8810b5a24c">grpc_endpoint_read_cb</a>&#160;</td>
-          <td class="paramname"><em>cb</em>, </td>
+          <td class="paramtype"><a class="el" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> *&#160;</td>
+          <td class="paramname"><em>slices</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>user_data</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> *&#160;</td>
+          <td class="paramname"><em>cb</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -242,12 +242,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a6cc5c4afb853d7204ad7b6bcbe8c95b0"></a>
+<a class="anchor" id="a1789b99244fa647b7a6c82581e1ddaad"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="endpoint_8h.html#abfb8e299371be52c109912cda9dbe902">grpc_endpoint_write_status</a> grpc_endpoint_write </td>
+          <td class="memname"><a class="el" href="endpoint_8h.html#a51f03de57cc964c0aa30ea45c1854a3c">grpc_endpoint_op_status</a> grpc_endpoint_write </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__endpoint.html">grpc_endpoint</a> *&#160;</td>
           <td class="paramname"><em>ep</em>, </td>
@@ -255,26 +255,14 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structgpr__slice.html">gpr_slice</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> *&#160;</td>
           <td class="paramname"><em>slices</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>nslices</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="endpoint_8h.html#af2ca6ea84b9d91d443ba9a8a53e55f2a">grpc_endpoint_write_cb</a>&#160;</td>
-          <td class="paramname"><em>cb</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>user_data</em>&#160;</td>
+          <td class="paramtype"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> *&#160;</td>
+          <td class="paramname"><em>cb</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -289,7 +277,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

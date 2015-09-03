@@ -163,6 +163,9 @@ class Call(object):
   def cancel(self):
     return self._internal.cancel()
 
+  def set_credentials(self, creds):
+    return self._internal.set_credentials(creds)
+
 
 class Channel(object):
   """Adapter from old _low.Channel interface to new _low.Channel."""

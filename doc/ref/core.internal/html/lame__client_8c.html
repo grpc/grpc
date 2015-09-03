@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -86,6 +86,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
+<a href="#define-members">Macros</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">lame_client.c File Reference</div>  </div>
@@ -106,14 +107,36 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structchannel__data.html">channel_data</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:a66dde7aaec84b22bf4ddfa999a2201ed"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="lame__client_8c.html#a66dde7aaec84b22bf4ddfa999a2201ed">CHANNEL_STACK_FROM_CHANNEL</a>(c)&#160;&#160;&#160;((<a class="el" href="structgrpc__channel__stack.html">grpc_channel_stack</a> *)((c) + 1))</td></tr>
+<tr class="separator:a66dde7aaec84b22bf4ddfa999a2201ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:acd59697f4b8bedea662939da3668ab9b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__channel.html">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="lame__client_8c.html#acd59697f4b8bedea662939da3668ab9b">grpc_lame_client_channel_create</a> (const char *target)</td></tr>
-<tr class="memdesc:acd59697f4b8bedea662939da3668ab9b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a lame client: this client fails every operation attempted on it.  <a href="#acd59697f4b8bedea662939da3668ab9b">More...</a><br/></td></tr>
-<tr class="separator:acd59697f4b8bedea662939da3668ab9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06520e4e8ed6c764866b61756609d705"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__channel.html">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="lame__client_8c.html#a06520e4e8ed6c764866b61756609d705">grpc_lame_client_channel_create</a> (const char *target, <a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> error_code, const char *error_message)</td></tr>
+<tr class="memdesc:a06520e4e8ed6c764866b61756609d705"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a lame client: this client fails every operation attempted on it.  <a href="#a06520e4e8ed6c764866b61756609d705">More...</a><br/></td></tr>
+<tr class="separator:a06520e4e8ed6c764866b61756609d705"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a class="anchor" id="a66dde7aaec84b22bf4ddfa999a2201ed"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CHANNEL_STACK_FROM_CHANNEL</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">c</td><td>)</td>
+          <td>&#160;&#160;&#160;((<a class="el" href="structgrpc__channel__stack.html">grpc_channel_stack</a> *)((c) + 1))</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="acd59697f4b8bedea662939da3668ab9b"></a>
+<a class="anchor" id="a06520e4e8ed6c764866b61756609d705"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -121,8 +144,24 @@ Functions</h2></td></tr>
           <td class="memname"><a class="el" href="structgrpc__channel.html">grpc_channel</a>* grpc_lame_client_channel_create </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>target</em></td><td>)</td>
+          <td class="paramname"><em>target</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype"><a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>&#160;</td>
+          <td class="paramname"><em>error_code</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>error_message</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -134,7 +173,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
