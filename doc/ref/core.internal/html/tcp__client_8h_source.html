@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -131,7 +131,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="comment">/* Asynchronously connect to an address (specified as (addr, len)), and call</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment">   cb with arg and the completed connection when done (or call cb with arg and</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">   NULL on failure). </span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">   NULL on failure).</span></div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="comment">   interested_parties points to a set of pollsets that would be interested</span></div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">   in this connection being established (in order to continue their work) */</span></div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordtype">void</span> <a class="code" href="tcp__client_8h.html#a086207583509b040c4fff779333468cd">grpc_tcp_client_connect</a>(<span class="keywordtype">void</span> (*cb)(<span class="keywordtype">void</span> *<a class="code" href="structarg.html">arg</a>, <a class="code" href="structgrpc__endpoint.html">grpc_endpoint</a> *tcp),</div>
@@ -144,15 +144,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="sockaddr_8h_html"><div class="ttname"><a href="sockaddr_8h.html">sockaddr.h</a></div></div>
 <div class="ttc" id="tcp__client_8h_html_a086207583509b040c4fff779333468cd"><div class="ttname"><a href="tcp__client_8h.html#a086207583509b040c4fff779333468cd">grpc_tcp_client_connect</a></div><div class="ttdeci">void grpc_tcp_client_connect(void(*cb)(void *arg, grpc_endpoint *tcp), void *arg, grpc_pollset_set *interested_parties, const struct sockaddr *addr, int addr_len, gpr_timespec deadline)</div></div>
 <div class="ttc" id="structarg_html"><div class="ttname"><a href="structarg.html">arg</a></div><div class="ttdef"><b>Definition:</b> cmdline.c:47</div></div>
-<div class="ttc" id="structgrpc__endpoint_html"><div class="ttname"><a href="structgrpc__endpoint.html">grpc_endpoint</a></div><div class="ttdef"><b>Definition:</b> endpoint.h:108</div></div>
+<div class="ttc" id="structgrpc__endpoint_html"><div class="ttname"><a href="structgrpc__endpoint.html">grpc_endpoint</a></div><div class="ttdef"><b>Definition:</b> endpoint.h:102</div></div>
 <div class="ttc" id="pollset__set_8h_html"><div class="ttname"><a href="pollset__set_8h.html">pollset_set.h</a></div></div>
-<div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdef"><b>Definition:</b> time.h:60</div></div>
+<div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdef"><b>Definition:</b> time.h:63</div></div>
 <div class="ttc" id="endpoint_8h_html"><div class="ttname"><a href="endpoint_8h.html">endpoint.h</a></div></div>
 <div class="ttc" id="structgrpc__pollset__set_html"><div class="ttname"><a href="structgrpc__pollset__set.html">grpc_pollset_set</a></div><div class="ttdef"><b>Definition:</b> pollset_set_posix.h:40</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

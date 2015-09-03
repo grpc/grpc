@@ -1,11 +1,6 @@
 var searchData=
 [
-  ['received_5fstatus',['received_status',['../structreceived__status.html',1,'']]],
-  ['registered_5fcall',['registered_call',['../structregistered__call.html',1,'']]],
-  ['registered_5fmethod',['registered_method',['../structregistered__method.html',1,'']]],
-  ['registered_5fresolver',['registered_resolver',['../structregistered__resolver.html',1,'']]],
-  ['reqinfo_5fmaster',['reqinfo_master',['../structreqinfo__master.html',1,'']]],
-  ['request_5fkiller',['request_killer',['../structrequest__killer.html',1,'']]],
-  ['request_5fmatcher',['request_matcher',['../structrequest__matcher.html',1,'']]],
-  ['requested_5fcall',['requested_call',['../structrequested__call.html',1,'']]]
+  ['pending_5fpick',['pending_pick',['../structpending__pick.html',1,'']]],
+  ['pick_5ffirst_5flb_5fpolicy',['pick_first_lb_policy',['../structpick__first__lb__policy.html',1,'']]],
+  ['plucker',['plucker',['../structplucker.html',1,'']]]
 ];
