@@ -36,7 +36,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "include/grpc/census.h"
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/noop_filter.h"
 #include "src/core/statistics/census_interface.h"
