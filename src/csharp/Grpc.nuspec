@@ -5,17 +5,17 @@
     <title>gRPC C#</title>
     <summary>C# implementation of gRPC - an RPC library and framework</summary>
     <description>C# implementation of gRPC - an RPC library and framework. See project site for more info.</description>
-    <version>0.6.0</version>
+    <version>$version$</version>
     <authors>Google Inc.</authors>
     <owners>grpc-packages</owners>
     <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/grpc/grpc</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <releaseNotes>Release 0.6.0 of gRPC C#</releaseNotes>
+    <releaseNotes>Release $version$ of gRPC C#</releaseNotes>
     <copyright>Copyright 2015, Google Inc.</copyright>
     <tags>gRPC RPC Protocol HTTP/2</tags>
     <dependencies>
-      <dependency id="Grpc.Core" version="0.6.0" />
+      <dependency id="Grpc.Core" version="$version$" />
     </dependencies>
   </metadata>
   <files/>

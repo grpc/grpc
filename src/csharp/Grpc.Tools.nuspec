@@ -5,13 +5,13 @@
     <title>gRPC C# Tools</title>
     <summary>Tools for C# implementation of gRPC - an RPC library and framework</summary>
     <description>Precompiled Windows binaries for generating protocol buffer messages and gRPC client/server code</description>
-    <version>0.6.0</version>
+    <version>$version$</version>
     <authors>Google Inc.</authors>
     <owners>grpc-packages</owners>
     <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/grpc/grpc</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <releaseNotes>protoc.exe - protocol buffer compiler v3.0.0-alpha-3; grpc_csharp_plugin.exe - gRPC C# protoc plugin version 0.6.0</releaseNotes>
+    <releaseNotes>protoc.exe - protocol buffer compiler v3.0.0-alpha-3; grpc_csharp_plugin.exe - gRPC C# protoc plugin version $version$</releaseNotes>
     <copyright>Copyright 2015, Google Inc.</copyright>
     <tags>gRPC RPC Protocol HTTP/2</tags>
   </metadata>
