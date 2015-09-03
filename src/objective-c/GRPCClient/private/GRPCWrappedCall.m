@@ -38,6 +38,8 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 
+#import "GRPCRequestHeaders.h"
+
 #import "GRPCCompletionQueue.h"
 #import "GRPCHost.h"
 #import "NSDictionary+GRPC.h"
@@ -65,7 +67,7 @@
   return [self initWithMetadata:nil handler:nil];
 }
 
-- (instancetype)initWithMetadata:(NSDictionary *)metadata handler:(void (^)())handler {
+- (instancetype)initWithMetadata:(GRPCRequestHeaders *)metadata handler:(void (^)())handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_SEND_INITIAL_METADATA;
     _op.data.send_initial_metadata.count = metadata.count;

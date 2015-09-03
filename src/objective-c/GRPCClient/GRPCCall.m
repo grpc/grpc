@@ -236,9 +236,8 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 
 - (void)sendHeaders:(GRPCRequestHeaders *)headers {
   // TODO(jcanizales): Add error handlers for async failures
-  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc]
-                                            initWithMetadata:[headers asDictionary] ?: @{}
-                                            handler:nil]]];
+  [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:headers
+                                                                                handler:nil]]];
 }
 
 #pragma mark GRXWriteable implementation

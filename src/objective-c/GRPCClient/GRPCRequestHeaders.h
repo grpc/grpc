@@ -38,6 +38,9 @@
 
 @interface GRPCRequestHeaders : NSObject
 
+@property(nonatomic, readonly) NSUInteger count;
+@property(nonatomic, readonly) grpc_metadata *grpc_metadataArray;
+
 - (instancetype)initWithCall:(GRPCCall *)call;
 
 - (id)objectForKeyedSubscript:(NSString *)key;
@@ -45,7 +48,5 @@
 
 - (void)removeAllObjects;
 - (void)removeObjectForKey:(NSString *)aKey;
-
-- (NSDictionary *)asDictionary;
 
 @end
