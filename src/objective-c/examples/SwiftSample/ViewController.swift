@@ -45,16 +45,36 @@ class ViewController: UIViewController {
     request.fillUsername = true
     request.fillOauthScope = true
 
+
     // Example gRPC call using a generated proto client library:
 
     let service = RMTTestService(host: RemoteHost)
-    service.unaryCallWithRequest(request) { (response: RMTSimpleResponse?, error: NSError?) in
+    service.unaryCallWithRequest(request) { response, error in
       if let response = response {
-        NSLog("Finished successfully with response:\n\(response)")
+        NSLog("1. Finished successfully with response:\n\(response)")
       } else {
-        NSLog("Finished with error: \(error!)")
+        NSLog("1. Finished with error: \(error!)")
       }
     }
+
+
+    // Same but manipulating headers:
+
+    var RPC : ProtoRPC! // Needed to convince Swift to capture by reference (__block)
+    RPC = service.RPCToUnaryCallWithRequest(request) { response, error in
+      if let response = response {
+        NSLog("2. Finished successfully with response:\n\(response)")
+      } else {
+        NSLog("2. Finished with error: \(error!)")
+      }
+      NSLog("2. Response headers: \(RPC.responseHeaders)")
+      NSLog("2. Response trailers: \(RPC.responseTrailers)")
+    }
+
+    RPC.requestHeaders["My-Header"] = "My value"
+
+    RPC.start()
+
 
     // Same example call using the generic gRPC client library:
 
@@ -64,14 +84,16 @@ class ViewController: UIViewController {
 
     let call = GRPCCall(host: RemoteHost, path: method.HTTPPath, requestsWriter: requestsWriter)
 
-    let responsesWriteable = GRXWriteable { (value: AnyObject?, error: NSError?) in
-      if let value = value as? NSData {
-        NSLog("Received response:\n\(RMTSimpleResponse(data: value, error: nil))")
-      } else {
-        NSLog("Finished with error: \(error!)")
-      }
-    }
+    call.requestHeaders["My-Header"] = "My value"
 
-    call.startWithWriteable(responsesWriteable)
+    call.startWithWriteable(GRXWriteable { response, error in
+      if let response = response as? NSData {
+        NSLog("3. Received response:\n\(RMTSimpleResponse(data: response, error: nil))")
+      } else {
+        NSLog("3. Finished with error: \(error!)")
+      }
+      NSLog("3. Response headers: \(call.responseHeaders)")
+      NSLog("3. Response trailers: \(call.responseTrailers)")
+    })
   }
 }
