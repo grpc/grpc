@@ -68,13 +68,13 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
 
 @implementation GRPCRequestHeaders {
   __weak GRPCCall *_call;
-  NSMutableDictionary *_proxy;
+  NSMutableDictionary *_delegate;
 }
 
 - (instancetype)initWithCall:(GRPCCall *)call {
   if ((self = [super init])) {
     _call = call;
-    _proxy = [NSMutableDictionary dictionary];
+    _delegate = [NSMutableDictionary dictionary];
   }
   return self;
 }
@@ -87,7 +87,7 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
 }
 
 - (id)objectForKeyedSubscript:(NSString *)key {
-  return _proxy[key.lowercaseString];
+  return _delegate[key.lowercaseString];
 }
 
 - (void)setObject:(id)obj forKeyedSubscript:(NSString *)key {
@@ -95,26 +95,26 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
   CheckKeyIsValid(key);
   key = key.lowercaseString;
   CheckKeyValuePairIsValid(key, obj);
-  _proxy[key] = obj;
+  _delegate[key] = obj;
 }
 
 - (void)removeObjectForKey:(NSString *)key {
   [self checkCallIsNotStarted];
-  [_proxy removeObjectForKey:key.lowercaseString];
+  [_delegate removeObjectForKey:key.lowercaseString];
 }
 
 - (void)removeAllObjects {
   [self checkCallIsNotStarted];
-  [_proxy removeAllObjects];
+  [_delegate removeAllObjects];
 }
 
 // TODO(jcanizales): Just forward all invocations?
 
 - (NSUInteger)count {
-  return _proxy.count;
+  return _delegate.count;
 }
 
 - (grpc_metadata *)grpc_metadataArray {
-  return _proxy.grpc_metadataArray;
+  return _delegate.grpc_metadataArray;
 }
 @end
