@@ -48,12 +48,25 @@
 #import <Foundation/Foundation.h>
 #import <RxLibrary/GRXWriter.h>
 
-#import "GRPCRequestHeaders.h"
+#include <grpc/grpc.h>
 
 // Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by
 // the server.
 extern id const kGRPCHeadersKey;
 extern id const kGRPCTrailersKey;
+
+@protocol GRPCRequestHeaders <NSObject>
+
+@property(nonatomic, readonly) NSUInteger count;
+@property(nonatomic, readonly) grpc_metadata *grpc_metadataArray;
+
+- (id)objectForKeyedSubscript:(NSString *)key;
+- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
+
+- (void)removeAllObjects;
+- (void)removeObjectForKey:(NSString *)key;
+
+@end
 
 // Represents a single gRPC remote call.
 @interface GRPCCall : GRXWriter
@@ -72,7 +85,7 @@ extern id const kGRPCTrailersKey;
 //
 // For convenience, the property is initialized to an empty NSMutableDictionary, and the setter
 // accepts (and copies) both mutable and immutable dictionaries.
-- (GRPCRequestHeaders *)requestHeaders; // nonatomic
+- (id<GRPCRequestHeaders>)requestHeaders; // nonatomic
 - (void)setRequestHeaders:(NSDictionary *)requestHeaders; // nonatomic, copy
 
 // This dictionary is populated with the HTTP headers received from the server. This happens before

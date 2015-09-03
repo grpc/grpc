@@ -37,6 +37,7 @@
 #include <grpc/support/time.h>
 #import <RxLibrary/GRXConcurrentWriteable.h>
 
+#import "private/GRPCRequestHeaders.h"
 #import "private/GRPCWrappedCall.h"
 #import "private/NSData+GRPC.h"
 #import "private/NSDictionary+GRPC.h"
@@ -131,7 +132,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 
 #pragma mark Metadata
 
-- (GRPCRequestHeaders *)requestHeaders {
+- (id<GRPCRequestHeaders>)requestHeaders {
   return _requestHeaders;
 }
 
@@ -234,7 +235,7 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
 
 #pragma mark Send headers
 
-- (void)sendHeaders:(GRPCRequestHeaders *)headers {
+- (void)sendHeaders:(id<GRPCRequestHeaders>)headers {
   // TODO(jcanizales): Add error handlers for async failures
   [_wrappedCall startBatchWithOperations:@[[[GRPCOpSendMetadata alloc] initWithMetadata:headers
                                                                                 handler:nil]]];
