@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -94,14 +94,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Data Fields</h2></td></tr>
 <tr class="memitem:aaf39bb67f8b5344fffac5595eee45fe6"><td class="memItemLeft" align="right" valign="top">struct <a class="el" href="structgrpc__auth__context.html">grpc_auth_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__context.html#aaf39bb67f8b5344fffac5595eee45fe6">chained</a></td></tr>
 <tr class="separator:aaf39bb67f8b5344fffac5595eee45fe6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7090965e44ac9d847543646be11f13c7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__auth__property.html">grpc_auth_property</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__context.html#a7090965e44ac9d847543646be11f13c7">properties</a></td></tr>
-<tr class="separator:a7090965e44ac9d847543646be11f13c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab537c748115de425b595d9efddc6f5b"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__context.html#aab537c748115de425b595d9efddc6f5b">property_count</a></td></tr>
-<tr class="separator:aab537c748115de425b595d9efddc6f5b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a338bfe6d265658b10fc2384f794485a7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__auth__property__array.html">grpc_auth_property_array</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__context.html#a338bfe6d265658b10fc2384f794485a7">properties</a></td></tr>
+<tr class="separator:a338bfe6d265658b10fc2384f794485a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1f00929fc059a0445eb61cbe73deaaae"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__refcount.html">gpr_refcount</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__context.html#a1f00929fc059a0445eb61cbe73deaaae">refcount</a></td></tr>
 <tr class="separator:a1f00929fc059a0445eb61cbe73deaaae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aab2b0fcdafe3cd96b1240ab5b48f1c33"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__context.html#aab2b0fcdafe3cd96b1240ab5b48f1c33">peer_identity_property_name</a></td></tr>
 <tr class="separator:aab2b0fcdafe3cd96b1240ab5b48f1c33"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fa83dbe88743ec5ad9c5a400488c48a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__context.html#a3fa83dbe88743ec5ad9c5a400488c48a">pollset</a></td></tr>
+<tr class="separator:a3fa83dbe88743ec5ad9c5a400488c48a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="aaf39bb67f8b5344fffac5595eee45fe6"></a>
@@ -128,24 +128,24 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a7090965e44ac9d847543646be11f13c7"></a>
+<a class="anchor" id="a3fa83dbe88743ec5ad9c5a400488c48a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structgrpc__auth__property.html">grpc_auth_property</a>* grpc_auth_context::properties</td>
+          <td class="memname"><a class="el" href="structgrpc__pollset.html">grpc_pollset</a>* grpc_auth_context::pollset</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a class="anchor" id="aab537c748115de425b595d9efddc6f5b"></a>
+<a class="anchor" id="a338bfe6d265658b10fc2384f794485a7"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">size_t grpc_auth_context::property_count</td>
+          <td class="memname"><a class="el" href="structgrpc__auth__property__array.html">grpc_auth_property_array</a> grpc_auth_context::properties</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -170,7 +170,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

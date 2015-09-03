@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -118,6 +118,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GPR_CLOCK_MONOTONIC
 : <a class="el" href="time_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c">time.h</a>
 </li>
+<li>GPR_CLOCK_PRECISE
+: <a class="el" href="time_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6">time.h</a>
+</li>
 <li>GPR_CLOCK_REALTIME
 : <a class="el" href="time_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746">time.h</a>
 </li>
@@ -131,7 +134,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="log_8h.html#af10334b4085ac6985a2af9c08478ad48af6c13c67f06821c1629b7e019af4aaf1">log.h</a>
 </li>
 <li>GPR_THD_JOINABLE
-: <a class="el" href="thd_8c.html#a0944a4353780132eeab7b06e3e42291da228d343354c0f2bb16c0fb1f79e71dbc">thd.c</a>
+: <a class="el" href="thd_8c.html#a4caf8d8f829279fba122163d961608a4a228d343354c0f2bb16c0fb1f79e71dbc">thd.c</a>
 </li>
 <li>GPR_TIMESPAN
 : <a class="el" href="time_8h.html#a2441bd1fbe80e86ff741e0757725b281a52f75e587240b7b44d3b8bc7fb3d5741">time.h</a>
@@ -163,8 +166,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_CALL_ERROR_ALREADY_INVOKED
 : <a class="el" href="grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba042165aa26653c844a846d188f722857">grpc.h</a>
 </li>
+<li>GRPC_CALL_ERROR_BATCH_TOO_BIG
+: <a class="el" href="grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba906d5d530b249b5b853595e424ec400b">grpc.h</a>
+</li>
 <li>GRPC_CALL_ERROR_INVALID_FLAGS
 : <a class="el" href="grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785bae915786320e24eff4f1e05852d40f861">grpc.h</a>
+</li>
+<li>GRPC_CALL_ERROR_INVALID_MESSAGE
+: <a class="el" href="grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba7dfc7fe11288dd7a30a8f07b890c9c5b">grpc.h</a>
 </li>
 <li>GRPC_CALL_ERROR_INVALID_METADATA
 : <a class="el" href="grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba13f469c7761a672240ddfe29f85729bd">grpc.h</a>
@@ -532,26 +541,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_DTS_FRAME
 : <a class="el" href="internal_8h.html#a6f98ba3b22480becf1bcc47253326a62a166f3cb24f0210d2a31e37863345b586">internal.h</a>
 </li>
-<li>GRPC_ENDPOINT_CB_EOF
-: <a class="el" href="endpoint_8h.html#abb88e72ffe7908c2def55fea24d321aea2e899c2c1f439bcacb80d720bf16b28a">endpoint.h</a>
+<li>GRPC_ENDPOINT_DONE
+: <a class="el" href="endpoint_8h.html#a51f03de57cc964c0aa30ea45c1854a3caf13fb4fae5b62dce1a291a46a18d99b4">endpoint.h</a>
 </li>
-<li>GRPC_ENDPOINT_CB_ERROR
-: <a class="el" href="endpoint_8h.html#abb88e72ffe7908c2def55fea24d321aea56bdd1b428950ad6e54bf0ef4044ab8e">endpoint.h</a>
+<li>GRPC_ENDPOINT_ERROR
+: <a class="el" href="endpoint_8h.html#a51f03de57cc964c0aa30ea45c1854a3ca27923a830617fcb9fad5c14a9faf7ae1">endpoint.h</a>
 </li>
-<li>GRPC_ENDPOINT_CB_OK
-: <a class="el" href="endpoint_8h.html#abb88e72ffe7908c2def55fea24d321aea48c02072cce4fc7339c4236ea902407f">endpoint.h</a>
-</li>
-<li>GRPC_ENDPOINT_CB_SHUTDOWN
-: <a class="el" href="endpoint_8h.html#abb88e72ffe7908c2def55fea24d321aea077a9b05808b8e3b0e2cf6ab4fe0ee37">endpoint.h</a>
-</li>
-<li>GRPC_ENDPOINT_WRITE_DONE
-: <a class="el" href="endpoint_8h.html#abfb8e299371be52c109912cda9dbe902a9b592c54f22e5b3d4692aedf57b0a254">endpoint.h</a>
-</li>
-<li>GRPC_ENDPOINT_WRITE_ERROR
-: <a class="el" href="endpoint_8h.html#abfb8e299371be52c109912cda9dbe902ac6ee550584876eb6ecba8fa333133f8f">endpoint.h</a>
-</li>
-<li>GRPC_ENDPOINT_WRITE_PENDING
-: <a class="el" href="endpoint_8h.html#abfb8e299371be52c109912cda9dbe902aa3fdd3c500d6ed9c4d33687a80d37f09">endpoint.h</a>
+<li>GRPC_ENDPOINT_PENDING
+: <a class="el" href="endpoint_8h.html#a51f03de57cc964c0aa30ea45c1854a3ca4c69599e563e2d2f32d1ca74f1e363f8">endpoint.h</a>
 </li>
 <li>GRPC_HTTPCLI_BODY
 : <a class="el" href="parser_8h.html#a664db6149875c333b0a568ef8711e257ab0d18f147817864752f04b87f1ab54d0">parser.h</a>
@@ -626,13 +623,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="json__reader_8h.html#ab958fafc9819a82736ac5f030feb8d24a9e89bd16fe4ee12cff307413b6f28b6c">json_reader.h</a>
 </li>
 <li>GRPC_JSON_READ_CHAR_EAGAIN
-: <a class="el" href="json__reader_8h.html#a16af7b253440dadd46a80a4b9fddba4dab16e9d72bca58d8d43810ed53afb12c9">json_reader.h</a>
+: <a class="el" href="json__reader_8h.html#aaf105ae5beaca1dee30ae54530691fceab16e9d72bca58d8d43810ed53afb12c9">json_reader.h</a>
 </li>
 <li>GRPC_JSON_READ_CHAR_EOF
-: <a class="el" href="json__reader_8h.html#a16af7b253440dadd46a80a4b9fddba4daf9fe6e98c983a5c439783f938b3c86d9">json_reader.h</a>
+: <a class="el" href="json__reader_8h.html#aaf105ae5beaca1dee30ae54530691fceaf9fe6e98c983a5c439783f938b3c86d9">json_reader.h</a>
 </li>
 <li>GRPC_JSON_READ_CHAR_ERROR
-: <a class="el" href="json__reader_8h.html#a16af7b253440dadd46a80a4b9fddba4da8812b963d2fe1700bdcc1a8084cf86bc">json_reader.h</a>
+: <a class="el" href="json__reader_8h.html#aaf105ae5beaca1dee30ae54530691fcea8812b963d2fe1700bdcc1a8084cf86bc">json_reader.h</a>
 </li>
 <li>GRPC_JSON_READ_ERROR
 : <a class="el" href="json__reader_8h.html#ab958fafc9819a82736ac5f030feb8d24af34c0d5ee249e46cca43ead968e07ebc">json_reader.h</a>
@@ -947,7 +944,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:08 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

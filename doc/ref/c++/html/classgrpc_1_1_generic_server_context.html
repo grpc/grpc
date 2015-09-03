@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -118,9 +118,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ac30e12c4ee3ca008522b24157f4f886c inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae52a89bbf70c27be3325080000757864 inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#ae52a89bbf70c27be3325080000757864">IsCancelled</a> () const </td></tr>
 <tr class="separator:ae52a89bbf70c27be3325080000757864 inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a82f70d1b5b56ca2a4a8a2f5bad6d8ca1 inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">const std::multimap<br class="typebreak"/>
-&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a82f70d1b5b56ca2a4a8a2f5bad6d8ca1">client_metadata</a> ()</td></tr>
-<tr class="separator:a82f70d1b5b56ca2a4a8a2f5bad6d8ca1 inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a144de24bd56a8950676ba91913cc74ce inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">const std::multimap<br class="typebreak"/>
+&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>, <br class="typebreak"/>
+<a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt; &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a144de24bd56a8950676ba91913cc74ce">client_metadata</a> ()</td></tr>
+<tr class="separator:a144de24bd56a8950676ba91913cc74ce inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a401d5c77fde5cccb13155ccd668787e8 inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">grpc_compression_level&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#a401d5c77fde5cccb13155ccd668787e8">compression_level</a> () const </td></tr>
 <tr class="separator:a401d5c77fde5cccb13155ccd668787e8 inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:accfdf160f46aa20eda843443c3eea91d inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#accfdf160f46aa20eda843443c3eea91d">set_compression_level</a> (grpc_compression_level level)</td></tr>
@@ -136,6 +137,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a5ef7910ccd61514eafa7087519bb17bb inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3adc0c2dc243915f6167c6f80d2882e inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">const struct census_context *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#af3adc0c2dc243915f6167c6f80d2882e">census_context</a> () const </td></tr>
 <tr class="separator:af3adc0c2dc243915f6167c6f80d2882e inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aafcb8e430e3d81bcd3f0a88701a19fba inherit pub_methods_classgrpc_1_1_server_context"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context.html#aafcb8e430e3d81bcd3f0a88701a19fba">AsyncNotifyWhenDone</a> (void *tag)</td></tr>
+<tr class="separator:aafcb8e430e3d81bcd3f0a88701a19fba inherit pub_methods_classgrpc_1_1_server_context"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -211,12 +214,12 @@ Friends</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/<a class="el" href="async__generic__service_8h_source.html">async_generic_service.h</a></li>
+<li>include/grpc++/generic/<a class="el" href="async__generic__service_8h_source.html">async_generic_service.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
