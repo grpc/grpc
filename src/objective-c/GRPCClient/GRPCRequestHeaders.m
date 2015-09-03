@@ -31,12 +31,14 @@
  *
  */
 
-#import <Foundation/Foundation.h>
 #import "GRPCRequestHeaders.h"
+
+#import <Foundation/Foundation.h>
+
 #import "GRPCCall.h"
 #import "NSDictionary+GRPC.h"
 
-static NSString* normalizeKey(NSString* key) {
+static NSString* NormalizeKey(NSString* key) {
   if ([key canBeConvertedToEncoding:NSASCIIStringEncoding]) {
     return [key lowercaseString];
   } else {
@@ -44,7 +46,7 @@ static NSString* normalizeKey(NSString* key) {
   }
 }
 
-static bool isKeyValuePairValid(NSString *key, id value) {
+static bool IsKeyValuePairValid(NSString *key, id value) {
   if ([key hasSuffix:@"-bin"]) {
     if (![value isKindOfClass:[NSData class]]) {
       return false;
@@ -62,17 +64,16 @@ static bool isKeyValuePairValid(NSString *key, id value) {
   NSMutableDictionary *_proxy;
 }
 
-- (instancetype) initWithCall:(GRPCCall *)call {
-  self = [super init];
-  if (self) {
+- (instancetype)initWithCall:(GRPCCall *)call {
+  if ((self = [super init])) {
     _call = call;
     _proxy = [NSMutableDictionary dictionary];
   }
   return self;
 }
 
-- (id) objectForKeyedSubscript:(NSString *)key {
-  NSString *normalizedKey = normalizeKey(key);
+- (id)objectForKeyedSubscript:(NSString *)key {
+  NSString *normalizedKey = NormalizeKey(key);
   if (normalizedKey) {
     return _proxy[normalizedKey];
   } else {
@@ -80,11 +81,11 @@ static bool isKeyValuePairValid(NSString *key, id value) {
   }
 }
 
-- (void) setObject:(id)obj forKeyedSubscript:(NSString *)key {
+- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key {
   if (_call.state == GRXWriterStateNotStarted) {
-    NSString *normalizedKey = normalizeKey(key);
+    NSString *normalizedKey = NormalizeKey(key);
     if (normalizedKey) {
-      if (isKeyValuePairValid(key, obj)) {
+      if (IsKeyValuePairValid(key, obj)) {
         _proxy[normalizedKey] = obj;
       } else {
         [NSException raise:@"Invalid key/value pair"
@@ -99,9 +100,9 @@ static bool isKeyValuePairValid(NSString *key, id value) {
   }
 }
 
-- (void) removeObjectForKey:(NSString *)aKey {
+- (void)removeObjectForKey:(NSString *)aKey {
   if (_call.state == GRXWriterStateNotStarted) {
-    NSString *normalizedKey = normalizeKey(aKey);
+    NSString *normalizedKey = NormalizeKey(aKey);
     if (normalizedKey) {
       [_proxy removeObjectForKey:normalizedKey];
     } else {
@@ -113,7 +114,7 @@ static bool isKeyValuePairValid(NSString *key, id value) {
   }
 }
 
-- (void) removeAllObjects {
+- (void)removeAllObjects {
   if (_call.state == GRXWriterStateNotStarted) {
     [_proxy removeAllObjects];
   } else {
