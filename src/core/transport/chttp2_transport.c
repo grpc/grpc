@@ -695,9 +695,9 @@ static void perform_stream_op_locked(
     }
     grpc_chttp2_incoming_metadata_live_op_buffer_end(
         &stream_global->outstanding_metadata);
+    grpc_chttp2_list_add_read_write_state_changed(transport_global,
+                                                  stream_global);
     if (stream_global->id != 0) {
-      grpc_chttp2_list_add_read_write_state_changed(transport_global,
-                                                    stream_global);
       grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
     }
   }
