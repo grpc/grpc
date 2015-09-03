@@ -34,6 +34,7 @@
 #import <Foundation/Foundation.h>
 #import "GRPCRequestHeaders.h"
 #import "GRPCCall.h"
+#import "NSDictionary+GRPC.h"
 
 static NSString* normalizeKey(NSString* key) {
   if ([key canBeConvertedToEncoding:NSASCIIStringEncoding]) {
@@ -121,8 +122,13 @@ static bool isKeyValuePairValid(NSString *key, id value) {
   }
 }
 
-- (NSDictionary *)asDictionary {
-  return [NSDictionary dictionaryWithDictionary:_proxy];
+// TODO(jcanizales): Just forward all invocations?
+
+- (NSUInteger)count {
+  return _proxy.count;
 }
 
+- (grpc_metadata *)grpc_metadataArray {
+  return _proxy.grpc_metadataArray;
+}
 @end
