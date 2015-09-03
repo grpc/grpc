@@ -105,8 +105,6 @@
 + (instancetype)grpc_dictionaryFromMetadata:(grpc_metadata *)entries count:(size_t)count {
   NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithCapacity:count];
   for (grpc_metadata *entry = entries; entry < entries + count; entry++) {
-    // TODO(jcanizales): Verify in a C library test that it's converting header names to lower case
-    // automatically.
     NSString *name = [NSString stringWithCString:entry->key encoding:NSASCIIStringEncoding];
     if (!name || metadata[name]) {
       // Log if name is nil?
@@ -114,7 +112,6 @@
     }
     id value;
     if ([name hasSuffix:@"-bin"]) {
-      name = [name substringToIndex:name.length - 4];
       value = [NSData grpc_dataFromMetadataValue:entry];
     } else {
       value = [NSString grpc_stringFromMetadataValue:entry];
