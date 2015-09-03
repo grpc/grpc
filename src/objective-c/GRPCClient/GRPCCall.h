@@ -55,6 +55,13 @@
 extern id const kGRPCHeadersKey;
 extern id const kGRPCTrailersKey;
 
+// The container of the request headers of an RPC conforms to this protocol, which is a subset of
+// NSMutableDictionary's interface. It will become a NSMutableDictionary later on.
+// The keys of this container are the header names, which per the HTTP standard are case-
+// insensitive. They are stored in lowercase (which is how HTTP/2 mandates them on the wire), and
+// can only consist of ASCII characters.
+// A header value is a NSString object (with only ASCII characters), unless the header name has the
+// suffix "-bin", in which case the value has to be a NSData object.
 @protocol GRPCRequestHeaders <NSObject>
 
 @property(nonatomic, readonly) NSUInteger count;
