@@ -130,20 +130,6 @@ NSString * const kGRPCTrailersKey = @"io.grpc.TrailersKey";
   return self;
 }
 
-#pragma mark Metadata
-
-- (id<GRPCRequestHeaders>)requestHeaders {
-  return _requestHeaders;
-}
-
-- (void)setRequestHeaders:(NSDictionary *)requestHeaders {
-  GRPCRequestHeaders *newHeaders = [[GRPCRequestHeaders alloc] initWithCall:self];
-  for (id key in requestHeaders) {
-    newHeaders[key] = requestHeaders[key];
-  }
-  _requestHeaders = newHeaders;
-}
-
 #pragma mark Finish
 
 - (void)finishWithError:(NSError *)errorOrNil {
