@@ -37,6 +37,7 @@
 #include <iterator>
 #include <vector>
 
+#include <grpc/grpc_security.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/string_ref.h>
 
@@ -73,25 +74,44 @@ class AuthPropertyIterator
   const char* name_;
 };
 
+/// Class encapsulating the Authentication Information.
+///
+/// It includes the secure identity of the peer, the type of secure transport
+/// used as well as any other properties required by the authorization layer.
 class AuthContext {
  public:
   virtual ~AuthContext() {}
 
-  // Returns true if the peer is authenticated.
+  /// Returns true if the peer is authenticated.
   virtual bool IsPeerAuthenticated() const = 0;
 
-  // A peer identity, in general is one or more properties (in which case they
-  // have the same name).
+  /// A peer identity.
+  ///
+  /// It is, in general, comprised of one or more properties (in which case they
+  /// have the same name).
   virtual std::vector<grpc::string_ref> GetPeerIdentity() const = 0;
   virtual grpc::string GetPeerIdentityPropertyName() const = 0;
 
-  // Returns all the property values with the given name.
+  /// Returns all the property values with the given name.
   virtual std::vector<grpc::string_ref> FindPropertyValues(
       const grpc::string& name) const = 0;
 
-  // Iteration over all the properties.
+  /// Iteration over all the properties.
   virtual AuthPropertyIterator begin() const = 0;
   virtual AuthPropertyIterator end() const = 0;
+
+  static string transport_security_type_property_name() {
+    return GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME;
+  }
+  static string ssl_transport_security_type() {
+    return GRPC_SSL_TRANSPORT_SECURITY_TYPE;
+  }
+  static string x509_cn_property_name() {
+    return GRPC_X509_CN_PROPERTY_NAME;
+  }
+  static string x509_san_property_name() {
+    return GRPC_X509_SAN_PROPERTY_NAME;
+  }
 
   // Mutation functions: should only be used by an AuthMetadataProcessor.
   virtual void AddProperty(const grpc::string& key,
