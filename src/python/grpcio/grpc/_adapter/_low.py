@@ -78,6 +78,9 @@ class Call(_types.Call):
   def peer(self):
     return self.call.peer()
 
+  def set_credentials(self, creds):
+    return self.call.set_credentials(creds)
+
 
 class Channel(_types.Channel):
 

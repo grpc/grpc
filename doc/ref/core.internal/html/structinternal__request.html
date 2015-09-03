@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -106,8 +106,8 @@ Data Fields</h2></td></tr>
 <tr class="separator:a3b0a573ccd8ac3d01b0b3668e39a2e61"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aff291a650e0020e9a09beb9cc64298f9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinternal__request.html#aff291a650e0020e9a09beb9cc64298f9">have_read_byte</a></td></tr>
 <tr class="separator:aff291a650e0020e9a09beb9cc64298f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0d17604038fc0b611296561b66cb46c5"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinternal__request.html#a0d17604038fc0b611296561b66cb46c5">use_ssl</a></td></tr>
-<tr class="separator:a0d17604038fc0b611296561b66cb46c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aef1d13d21215dd942491e405c6c41db3"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="structgrpc__httpcli__handshaker.html">grpc_httpcli_handshaker</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinternal__request.html#aef1d13d21215dd942491e405c6c41db3">handshaker</a></td></tr>
+<tr class="separator:aef1d13d21215dd942491e405c6c41db3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4679ca2c4587920feca983ac852ef2b6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="httpcli_8h.html#a00129a2e0bb8e9d9a6632e88f7a8c887">grpc_httpcli_response_cb</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinternal__request.html#a4679ca2c4587920feca983ac852ef2b6">on_response</a></td></tr>
 <tr class="separator:a4679ca2c4587920feca983ac852ef2b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa47b4bb5697930b25831fbc2fc9ae16e"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinternal__request.html#aa47b4bb5697930b25831fbc2fc9ae16e">user_data</a></td></tr>
@@ -118,6 +118,14 @@ Data Fields</h2></td></tr>
 <tr class="separator:aba6c008fc3a067827acf1dea8d88dec7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a16edaecfecf5937255d86d07ab3be4d0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__object.html">grpc_iomgr_object</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinternal__request.html#a16edaecfecf5937255d86d07ab3be4d0">iomgr_obj</a></td></tr>
 <tr class="separator:a16edaecfecf5937255d86d07ab3be4d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a80d0347935c0d381d8630c74b2823aa6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__slice__buffer.html">gpr_slice_buffer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinternal__request.html#a80d0347935c0d381d8630c74b2823aa6">incoming</a></td></tr>
+<tr class="separator:a80d0347935c0d381d8630c74b2823aa6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04a2fa77d81ed6e28fdc6386c943c089"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__slice__buffer.html">gpr_slice_buffer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinternal__request.html#a04a2fa77d81ed6e28fdc6386c943c089">outgoing</a></td></tr>
+<tr class="separator:a04a2fa77d81ed6e28fdc6386c943c089"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adb6a72d4cb626f6454791454e1eabb55"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinternal__request.html#adb6a72d4cb626f6454791454e1eabb55">on_read</a></td></tr>
+<tr class="separator:adb6a72d4cb626f6454791454e1eabb55"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7073a81a4489413757cc2d7acffe49e5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structinternal__request.html#a7073a81a4489413757cc2d7acffe49e5">done_write</a></td></tr>
+<tr class="separator:a7073a81a4489413757cc2d7acffe49e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a0ab2a9ca4e299dc1f8fa41de2e3384b0"></a>
@@ -156,12 +164,36 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a7073a81a4489413757cc2d7acffe49e5"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> internal_request::done_write</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="af6443badea586cce9b4e3112832760c7"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="structgrpc__endpoint.html">grpc_endpoint</a>* internal_request::ep</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aef1d13d21215dd942491e405c6c41db3"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="structgrpc__httpcli__handshaker.html">grpc_httpcli_handshaker</a>* internal_request::handshaker</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -192,6 +224,18 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a80d0347935c0d381d8630c74b2823aa6"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> internal_request::incoming</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a16edaecfecf5937255d86d07ab3be4d0"></a>
 <div class="memitem">
 <div class="memproto">
@@ -216,12 +260,36 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="adb6a72d4cb626f6454791454e1eabb55"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> internal_request::on_read</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a4679ca2c4587920feca983ac852ef2b6"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="httpcli_8h.html#a00129a2e0bb8e9d9a6632e88f7a8c887">grpc_httpcli_response_cb</a> internal_request::on_response</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a04a2fa77d81ed6e28fdc6386c943c089"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> internal_request::outgoing</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -264,18 +332,6 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a0d17604038fc0b611296561b66cb46c5"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int internal_request::use_ssl</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a class="anchor" id="aa47b4bb5697930b25831fbc2fc9ae16e"></a>
 <div class="memitem">
 <div class="memproto">
@@ -294,7 +350,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

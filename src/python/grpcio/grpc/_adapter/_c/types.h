@@ -112,6 +112,8 @@ void pygrpc_Call_dealloc(Call *self);
 PyObject *pygrpc_Call_start_batch(Call *self, PyObject *args, PyObject *kwargs);
 PyObject *pygrpc_Call_cancel(Call *self, PyObject *args, PyObject *kwargs);
 PyObject *pygrpc_Call_peer(Call *self);
+PyObject *pygrpc_Call_set_credentials(Call *self, PyObject *args,
+                                      PyObject *kwargs);
 extern PyTypeObject pygrpc_Call_type;
 
 

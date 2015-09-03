@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -132,29 +132,27 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keywordtype">void</span> <a class="code" href="iocp__windows_8h.html#abd0c27d8288aa07c1b07d125cd0ad505">grpc_iocp_kick</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keywordtype">void</span> <a class="code" href="iocp__windows_8h.html#a7198ba025cf05ae1a67b6f493caf5b16">grpc_iocp_shutdown</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keywordtype">void</span> <a class="code" href="iocp__windows_8h.html#ad206d7bc3468ecc2fb6ab52d80c6e2dd">grpc_iocp_add_socket</a>(<a class="code" href="structgrpc__winsocket.html">grpc_winsocket</a> *);</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keywordtype">void</span> <a class="code" href="iocp__windows_8h.html#a720ee7b4b498b7d477efa4fc3ff55aac">grpc_iocp_socket_orphan</a>(<a class="code" href="structgrpc__winsocket.html">grpc_winsocket</a> *);</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordtype">void</span> <a class="code" href="iocp__windows_8h.html#a4db8d3b4cc420a58c833e579a94bdd38">grpc_socket_notify_on_write</a>(<a class="code" href="structgrpc__winsocket.html">grpc_winsocket</a> *, <span class="keywordtype">void</span>(*cb)(<span class="keywordtype">void</span> *, <span class="keywordtype">int</span> success),</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                 <span class="keywordtype">void</span> *opaque);</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;<span class="keywordtype">void</span> <a class="code" href="iocp__windows_8h.html#a08d522cb6d04a6f5895fae78fd645e00">grpc_socket_notify_on_read</a>(<a class="code" href="structgrpc__winsocket.html">grpc_winsocket</a> *, <span class="keywordtype">void</span>(*cb)(<span class="keywordtype">void</span> *, <span class="keywordtype">int</span> success),</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;                                <span class="keywordtype">void</span> *opaque);</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor">#endif  </span><span class="comment">/* GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keywordtype">void</span> <a class="code" href="iocp__windows_8h.html#a4db8d3b4cc420a58c833e579a94bdd38">grpc_socket_notify_on_write</a>(<a class="code" href="structgrpc__winsocket.html">grpc_winsocket</a> *,</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;                                 <span class="keywordtype">void</span> (*cb)(<span class="keywordtype">void</span> *, <span class="keywordtype">int</span> success), <span class="keywordtype">void</span> *opaque);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="keywordtype">void</span> <a class="code" href="iocp__windows_8h.html#a08d522cb6d04a6f5895fae78fd645e00">grpc_socket_notify_on_read</a>(<a class="code" href="structgrpc__winsocket.html">grpc_winsocket</a> *,</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;                                <span class="keywordtype">void</span> (*cb)(<span class="keywordtype">void</span> *, <span class="keywordtype">int</span> success), <span class="keywordtype">void</span> *opaque);</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="socket__windows_8h_html"><div class="ttname"><a href="socket__windows_8h.html">socket_windows.h</a></div></div>
 <div class="ttc" id="iocp__windows_8h_html_a08d522cb6d04a6f5895fae78fd645e00"><div class="ttname"><a href="iocp__windows_8h.html#a08d522cb6d04a6f5895fae78fd645e00">grpc_socket_notify_on_read</a></div><div class="ttdeci">void grpc_socket_notify_on_read(grpc_winsocket *, void(*cb)(void *, int success), void *opaque)</div></div>
 <div class="ttc" id="iocp__windows_8h_html_a4db8d3b4cc420a58c833e579a94bdd38"><div class="ttname"><a href="iocp__windows_8h.html#a4db8d3b4cc420a58c833e579a94bdd38">grpc_socket_notify_on_write</a></div><div class="ttdeci">void grpc_socket_notify_on_write(grpc_winsocket *, void(*cb)(void *, int success), void *opaque)</div></div>
 <div class="ttc" id="iocp__windows_8h_html_a7198ba025cf05ae1a67b6f493caf5b16"><div class="ttname"><a href="iocp__windows_8h.html#a7198ba025cf05ae1a67b6f493caf5b16">grpc_iocp_shutdown</a></div><div class="ttdeci">void grpc_iocp_shutdown(void)</div></div>
 <div class="ttc" id="iocp__windows_8h_html_ad206d7bc3468ecc2fb6ab52d80c6e2dd"><div class="ttname"><a href="iocp__windows_8h.html#ad206d7bc3468ecc2fb6ab52d80c6e2dd">grpc_iocp_add_socket</a></div><div class="ttdeci">void grpc_iocp_add_socket(grpc_winsocket *)</div></div>
 <div class="ttc" id="iocp__windows_8h_html_abd0c27d8288aa07c1b07d125cd0ad505"><div class="ttname"><a href="iocp__windows_8h.html#abd0c27d8288aa07c1b07d125cd0ad505">grpc_iocp_kick</a></div><div class="ttdeci">void grpc_iocp_kick(void)</div></div>
-<div class="ttc" id="iocp__windows_8h_html_a720ee7b4b498b7d477efa4fc3ff55aac"><div class="ttname"><a href="iocp__windows_8h.html#a720ee7b4b498b7d477efa4fc3ff55aac">grpc_iocp_socket_orphan</a></div><div class="ttdeci">void grpc_iocp_socket_orphan(grpc_winsocket *)</div></div>
 <div class="ttc" id="iocp__windows_8h_html_a74907d635ceee6adf285291336d18807"><div class="ttname"><a href="iocp__windows_8h.html#a74907d635ceee6adf285291336d18807">grpc_iocp_init</a></div><div class="ttdeci">void grpc_iocp_init(void)</div></div>
-<div class="ttc" id="structgrpc__winsocket_html"><div class="ttname"><a href="structgrpc__winsocket.html">grpc_winsocket</a></div><div class="ttdef"><b>Definition:</b> socket_windows.h:84</div></div>
+<div class="ttc" id="structgrpc__winsocket_html"><div class="ttname"><a href="structgrpc__winsocket.html">grpc_winsocket</a></div><div class="ttdef"><b>Definition:</b> socket_windows.h:82</div></div>
 <div class="ttc" id="sync_8h_html"><div class="ttname"><a href="sync_8h.html">sync.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

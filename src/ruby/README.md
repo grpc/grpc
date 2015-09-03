@@ -19,13 +19,6 @@ INSTALLATION
 
 **Linux (Debian):**
 
-Add [Debian testing][] to your `sources.list` file. Example:
-
-```sh
-echo "deb http://ftp.us.debian.org/debian testing main contrib non-free" | \
-sudo tee -a /etc/apt/sources.list
-```
-
 Install the gRPC Debian package
 
 ```sh
@@ -99,4 +92,3 @@ Directory structure is the layout for [ruby extensions][]
 [ruby extensions]:http://guides.rubygems.org/gems-with-extensions/
 [rubydoc]: http://www.rubydoc.info/gems/grpc
 [grpc.io]: http://www.grpc.io/docs/installation/ruby.html
-[Debian testing]:https://www.debian.org/releases/stretch/

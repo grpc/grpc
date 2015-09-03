@@ -23,8 +23,11 @@ var searchData=
   ['status_2ecc',['status.cc',['../status_8cc.html',1,'']]],
   ['status_2eh',['status.h',['../status_8h.html',1,'']]],
   ['status_5fcode_5fenum_2eh',['status_code_enum.h',['../status__code__enum_8h.html',1,'']]],
-  ['stream_2eh',['stream.h',['../stream_8h.html',1,'']]],
+  ['string_5fref_2ecc',['string_ref.cc',['../string__ref_8cc.html',1,'']]],
+  ['string_5fref_2eh',['string_ref.h',['../string__ref_8h.html',1,'']]],
+  ['stub_5foptions_2eh',['stub_options.h',['../stub__options_8h.html',1,'']]],
   ['sync_2eh',['sync.h',['../sync_8h.html',1,'']]],
   ['sync_5fcxx11_2eh',['sync_cxx11.h',['../sync__cxx11_8h.html',1,'']]],
-  ['sync_5fno_5fcxx11_2eh',['sync_no_cxx11.h',['../sync__no__cxx11_8h.html',1,'']]]
+  ['sync_5fno_5fcxx11_2eh',['sync_no_cxx11.h',['../sync__no__cxx11_8h.html',1,'']]],
+  ['sync_5fstream_2eh',['sync_stream.h',['../sync__stream_8h.html',1,'']]]
 ];

@@ -16,7 +16,6 @@ var searchData=
   ['httpcli_2ec',['httpcli.c',['../httpcli_8c.html',1,'']]],
   ['httpcli_2eh',['httpcli.h',['../httpcli_8h.html',1,'']]],
   ['httpcli_5fsecurity_5fconnector_2ec',['httpcli_security_connector.c',['../httpcli__security__connector_8c.html',1,'']]],
-  ['httpcli_5fsecurity_5fconnector_2eh',['httpcli_security_connector.h',['../httpcli__security__connector_8h.html',1,'']]],
   ['huffsyms_2ec',['huffsyms.c',['../huffsyms_8c.html',1,'']]],
   ['huffsyms_2eh',['huffsyms.h',['../huffsyms_8h.html',1,'']]]
 ];

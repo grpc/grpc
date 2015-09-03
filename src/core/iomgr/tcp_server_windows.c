@@ -75,18 +75,18 @@ struct grpc_tcp_server {
   void *cb_arg;
 
   gpr_mu mu;
-  gpr_cv cv;
 
   /* active port count: how many ports are actually still listening */
   int active_ports;
-  /* number of iomgr callbacks that have been explicitly scheduled during
-   * shutdown */
-  int iomgr_callbacks_pending;
 
   /* all listening ports */
   server_port *ports;
   size_t nports;
   size_t port_capacity;
+
+  /* shutdown callback */
+  void(*shutdown_complete)(void *);
+  void *shutdown_complete_arg;
 };
 
 /* Public function. Allocates the proper data structures to hold a
@@ -94,48 +94,61 @@ struct grpc_tcp_server {
 grpc_tcp_server *grpc_tcp_server_create(void) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   gpr_mu_init(&s->mu);
-  gpr_cv_init(&s->cv);
   s->active_ports = 0;
-  s->iomgr_callbacks_pending = 0;
   s->cb = NULL;
   s->cb_arg = NULL;
   s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
   s->nports = 0;
   s->port_capacity = INIT_PORT_CAP;
+  s->shutdown_complete = NULL;
   return s;
+}
+
+static void dont_care_about_shutdown_completion(void *arg) {}
+
+static void finish_shutdown(grpc_tcp_server *s) {
+  size_t i;
+
+  s->shutdown_complete(s->shutdown_complete_arg);
+
+  /* Now that the accepts have been aborted, we can destroy the sockets.
+  The IOCP won't get notified on these, so we can flag them as already
+  closed by the system. */
+  for (i = 0; i < s->nports; i++) {
+    server_port *sp = &s->ports[i];
+    grpc_winsocket_destroy(sp->socket);
+  }
+  gpr_free(s->ports);
+  gpr_free(s);
 }
 
 /* Public function. Stops and destroys a grpc_tcp_server. */
 void grpc_tcp_server_destroy(grpc_tcp_server *s,
-                             void (*shutdown_done)(void *shutdown_done_arg),
-                             void *shutdown_done_arg) {
+                             void (*shutdown_complete)(void *shutdown_done_arg),
+                             void *shutdown_complete_arg) {
   size_t i;
+  int immediately_done = 0;
   gpr_mu_lock(&s->mu);
+
+  s->shutdown_complete = shutdown_complete
+    ? shutdown_complete
+    : dont_care_about_shutdown_completion;
+  s->shutdown_complete_arg = shutdown_complete_arg;
+
   /* First, shutdown all fd's. This will queue abortion calls for all
      of the pending accepts due to the normal operation mechanism. */
+  if (s->active_ports == 0) {
+    immediately_done = 1;
+  }
   for (i = 0; i < s->nports; i++) {
     server_port *sp = &s->ports[i];
     sp->shutting_down = 1;
-    s->iomgr_callbacks_pending += grpc_winsocket_shutdown(sp->socket);
-  }
-  /* This happens asynchronously. Wait while that happens. */
-  while (s->active_ports || s->iomgr_callbacks_pending) {
-    gpr_cv_wait(&s->cv, &s->mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+    grpc_winsocket_shutdown(sp->socket);
   }
   gpr_mu_unlock(&s->mu);
 
-  /* Now that the accepts have been aborted, we can destroy the sockets.
-     The IOCP won't get notified on these, so we can flag them as already
-     closed by the system. */
-  for (i = 0; i < s->nports; i++) {
-    server_port *sp = &s->ports[i];
-    grpc_winsocket_orphan(sp->socket);
-  }
-  gpr_free(s->ports);
-  gpr_free(s);
-
-  if (shutdown_done) {
-    shutdown_done(shutdown_done_arg);
+  if (immediately_done) {
+    finish_shutdown(s);
   }
 }
 
@@ -188,14 +201,17 @@ error:
 }
 
 static void decrement_active_ports_and_notify(server_port *sp) {
+  int notify = 0;
   sp->shutting_down = 0;
-  sp->socket->read_info.outstanding = 0;
   gpr_mu_lock(&sp->server->mu);
   GPR_ASSERT(sp->server->active_ports > 0);
-  if (0 == --sp->server->active_ports) {
-    gpr_cv_broadcast(&sp->server->cv);
+  if (0 == --sp->server->active_ports && sp->server->shutdown_complete != NULL) {
+    notify = 1;
   }
   gpr_mu_unlock(&sp->server->mu);
+  if (notify) {
+    finish_shutdown(sp->server);
+  }
 }
 
 /* start_accept will reference that for the IOCP notification request. */
@@ -280,12 +296,6 @@ static void on_accept(void *arg, int from_iocp) {
      this is necessary in the read/write case, it's useless for the accept
      case. We only need to adjust the pending callback count */
   if (!from_iocp) {
-    gpr_mu_lock(&sp->server->mu);
-    GPR_ASSERT(sp->server->iomgr_callbacks_pending > 0);
-    if (0 == --sp->server->iomgr_callbacks_pending) {
-      gpr_cv_broadcast(&sp->server->cv);
-    }
-    gpr_mu_unlock(&sp->server->mu);
     return;
   }
 
@@ -462,7 +472,6 @@ void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollset,
   s->cb = cb;
   s->cb_arg = cb_arg;
   for (i = 0; i < s->nports; i++) {
-    s->ports[i].socket->read_info.outstanding = 1;
     start_accept(s->ports + i);
     s->active_ports++;
   }

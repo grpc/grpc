@@ -47,11 +47,9 @@ extern "C" {
 
 /*! \mainpage GRPC Core
  *
- * \section intro_sec The GRPC Core library is a low-level library designed
- * to be wrapped by higher level libraries.
- *
- * The top-level API is provided in grpc.h.
- * Security related functionality lives in grpc_security.h.
+ * The GRPC Core library is a low-level library designed to be wrapped by higher
+ * level libraries. The top-level API is provided in grpc.h. Security related
+ * functionality lives in grpc_security.h.
  */
 
 /** Completion Queues enable notification of the completion of asynchronous

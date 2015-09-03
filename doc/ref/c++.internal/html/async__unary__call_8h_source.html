@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>GRPC C++: include/grpc++/async_unary_call.h Source File</title>
+<title>GRPC C++: include/grpc++/support/async_unary_call.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -81,7 +81,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_f1b2ab2a88927c1e950e43c1cf4b634b.html">grpc++</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_f1b2ab2a88927c1e950e43c1cf4b634b.html">grpc++</a></li><li class="navelem"><a class="el" href="dir_b3f05bce718e375cbe64ccd78910fb7d.html">support</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -122,17 +122,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPCXX_ASYNC_UNARY_CALL_H</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_ASYNC_UNARY_CALL_H</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="channel__interface_8h.html">grpc++/channel_interface.h</a>&gt;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="client__context_8h.html">grpc++/client_context.h</a>&gt;</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="completion__queue_8h.html">grpc++/completion_queue.h</a>&gt;</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="server__context_8h.html">grpc++/server_context.h</a>&gt;</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="call_8h.html">grpc++/impl/call.h</a>&gt;</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="service__type_8h.html">grpc++/impl/service_type.h</a>&gt;</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="status_8h.html">grpc++/status.h</a>&gt;</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#include &lt;grpc/support/log.h&gt;</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;grpc/support/log.h&gt;</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="channel_8h.html">grpc++/channel.h</a>&gt;</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="client__context_8h.html">grpc++/client_context.h</a>&gt;</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="completion__queue_8h.html">grpc++/completion_queue.h</a>&gt;</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="server__context_8h.html">grpc++/server_context.h</a>&gt;</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="call_8h.html">grpc++/impl/call.h</a>&gt;</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="service__type_8h.html">grpc++/impl/service_type.h</a>&gt;</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="status_8h.html">grpc++/support/status.h</a>&gt;</span></div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keyword">namespace </span>grpc {</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;</div>
@@ -145,11 +145,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;};</div>
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> R&gt;</div>
-<div class="line"><a name="l00057"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_response_reader.html">   57</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_client_async_response_reader.html">ClientAsyncResponseReader</a> <a class="code" href="config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    : <span class="keyword">public</span> <a class="code" href="classgrpc_1_1_client_async_response_reader_interface.html">ClientAsyncResponseReaderInterface</a>&lt;R&gt; {</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="keyword">class </span>ClientAsyncResponseReader <a class="code" href="config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;    : <span class="keyword">public</span> ClientAsyncResponseReaderInterface&lt;R&gt; {</div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;  <span class="keyword">template</span> &lt;<span class="keyword">class</span> W&gt;</div>
-<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_response_reader.html#a4868e0f82053062c95fea7bd197acadf">   61</a></span>&#160;  <a class="code" href="classgrpc_1_1_client_async_response_reader.html#a4868e0f82053062c95fea7bd197acadf">ClientAsyncResponseReader</a>(<a class="code" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a>* channel, <a class="code" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a>* cq,</div>
+<div class="line"><a name="l00061"></a><span class="lineno"><a class="line" href="classgrpc_1_1_client_async_response_reader.html#a83f7c9c6969cfb19880110231d7aaa48">   61</a></span>&#160;  <a class="code" href="classgrpc_1_1_client_async_response_reader.html#a83f7c9c6969cfb19880110231d7aaa48">ClientAsyncResponseReader</a>(<a class="code" href="classgrpc_1_1_channel.html">Channel</a>* channel, <a class="code" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a>* cq,</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;                            <span class="keyword">const</span> <a class="code" href="classgrpc_1_1_rpc_method.html">RpcMethod</a>&amp; method, <a class="code" href="classgrpc_1_1_client_context.html">ClientContext</a>* context,</div>
 <div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;                            <span class="keyword">const</span> W&amp; request)</div>
 <div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;      : context_(context), call_(channel-&gt;CreateCall(method, context, cq)) {</div>
@@ -189,8 +189,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;};</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">class</span> W&gt;</div>
-<div class="line"><a name="l00101"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_async_response_writer.html">  101</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc_1_1_server_async_response_writer.html">ServerAsyncResponseWriter</a> <a class="code" href="config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a></div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    : <span class="keyword">public</span> <a class="code" href="classgrpc_1_1_server_async_streaming_interface.html">ServerAsyncStreamingInterface</a> {</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="keyword">class </span>ServerAsyncResponseWriter <a class="code" href="config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a></div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    : <span class="keyword">public</span> ServerAsyncStreamingInterface {</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00104"></a><span class="lineno"><a class="line" href="classgrpc_1_1_server_async_response_writer.html#a3c97a19ba6eaa0b9eef9b6b86dbad9e9">  104</a></span>&#160;  <span class="keyword">explicit</span> <a class="code" href="classgrpc_1_1_server_async_response_writer.html#a3c97a19ba6eaa0b9eef9b6b86dbad9e9">ServerAsyncResponseWriter</a>(<a class="code" href="classgrpc_1_1_server_context.html">ServerContext</a>* ctx)</div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;      : call_(nullptr, nullptr, nullptr), ctx_(ctx) {}</div>
@@ -212,8 +212,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    }</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="comment">// The response is dropped if the status is not OK.</span></div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keywordflow">if</span> (status.<a class="code" href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">ok</a>()) {</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;      finish_buf_.ServerSendStatus(</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;          ctx_-&gt;trailing_metadata_, finish_buf_.SendMessage(msg));</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;      finish_buf_.ServerSendStatus(ctx_-&gt;trailing_metadata_,</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;                                   finish_buf_.SendMessage(msg));</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    } <span class="keywordflow">else</span> {</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;      finish_buf_.ServerSendStatus(ctx_-&gt;trailing_metadata_, status);</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    }</div>
@@ -243,49 +243,46 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;}  <span class="comment">// namespace grpc</span></div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<span class="preprocessor">#endif  // GRPCXX_ASYNC_UNARY_CALL_H</span></div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<span class="preprocessor">#endif  // GRPCXX_SUPPORT_ASYNC_UNARY_CALL_H</span></div>
 <div class="ttc" id="classgrpc_1_1_server_async_response_writer_html_af1e5812c2a8017bf82e84748f201ce93"><div class="ttname"><a href="classgrpc_1_1_server_async_response_writer.html#af1e5812c2a8017bf82e84748f201ce93">grpc::ServerAsyncResponseWriter::FinishWithError</a></div><div class="ttdeci">void FinishWithError(const Status &amp;status, void *tag)</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:132</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_response_reader_interface_html_aa97dc1ab6a7160a489d2e555102bf5a0"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader_interface.html#aa97dc1ab6a7160a489d2e555102bf5a0">grpc::ClientAsyncResponseReaderInterface::~ClientAsyncResponseReaderInterface</a></div><div class="ttdeci">virtual ~ClientAsyncResponseReaderInterface()</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:51</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_response_reader_interface_html_a379b1d7477431729e01cd48cf6fc78bb"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader_interface.html#a379b1d7477431729e01cd48cf6fc78bb">grpc::ClientAsyncResponseReaderInterface::Finish</a></div><div class="ttdeci">virtual void Finish(R *msg, Status *status, void *tag)=0</div></div>
 <div class="ttc" id="completion__queue_8h_html"><div class="ttname"><a href="completion__queue_8h.html">completion_queue.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_server_async_response_writer_html_ad1e22d187c82a537ded4504fbdef6809"><div class="ttname"><a href="classgrpc_1_1_server_async_response_writer.html#ad1e22d187c82a537ded4504fbdef6809">grpc::ServerAsyncResponseWriter::Finish</a></div><div class="ttdeci">void Finish(const W &amp;msg, const Status &amp;status, void *tag)</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:116</div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_client_recv_status_html"><div class="ttname"><a href="classgrpc_1_1_call_op_client_recv_status.html">grpc::CallOpClientRecvStatus</a></div><div class="ttdef"><b>Definition:</b> call.h:431</div></div>
-<div class="ttc" id="classgrpc_1_1_server_async_streaming_interface_html"><div class="ttname"><a href="classgrpc_1_1_server_async_streaming_interface.html">grpc::ServerAsyncStreamingInterface</a></div><div class="ttdef"><b>Definition:</b> service_type.h:57</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_client_recv_status_html"><div class="ttname"><a href="classgrpc_1_1_call_op_client_recv_status.html">grpc::CallOpClientRecvStatus</a></div><div class="ttdef"><b>Definition:</b> call.h:426</div></div>
 <div class="ttc" id="classgrpc_1_1_server_async_response_writer_html_a76be68485a36629af40560aa1f1de0b7"><div class="ttname"><a href="classgrpc_1_1_server_async_response_writer.html#a76be68485a36629af40560aa1f1de0b7">grpc::ServerAsyncResponseWriter::SendInitialMetadata</a></div><div class="ttdeci">void SendInitialMetadata(void *tag) GRPC_OVERRIDE</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:107</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_response_reader_html_a585dc15817999f82a72120a783800830"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader.html#a585dc15817999f82a72120a783800830">grpc::ClientAsyncResponseReader::Finish</a></div><div class="ttdeci">void Finish(R *msg, Status *status, void *tag)</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:80</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_response_reader_interface_html_a676e3a03a61c49a82b630d85bbfd366c"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader_interface.html#a676e3a03a61c49a82b630d85bbfd366c">grpc::ClientAsyncResponseReaderInterface::ReadInitialMetadata</a></div><div class="ttdeci">virtual void ReadInitialMetadata(void *tag)=0</div></div>
-<div class="ttc" id="channel__interface_8h_html"><div class="ttname"><a href="channel__interface_8h.html">channel_interface.h</a></div></div>
 <div class="ttc" id="config_8h_html_ab2216aa6e0ffe505e1ec362a9621a7f9"><div class="ttname"><a href="config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a></div><div class="ttdeci">#define GRPC_FINAL</div><div class="ttdef"><b>Definition:</b> config.h:71</div></div>
-<div class="ttc" id="classgrpc_1_1_client_async_response_reader_html"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader.html">grpc::ClientAsyncResponseReader</a></div><div class="ttdef"><b>Definition:</b> async_unary_call.h:57</div></div>
-<div class="ttc" id="classgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdef"><b>Definition:</b> client_context.h:74</div></div>
+<div class="ttc" id="classgrpc_1_1_client_context_html"><div class="ttname"><a href="classgrpc_1_1_client_context.html">grpc::ClientContext</a></div><div class="ttdef"><b>Definition:</b> client_context.h:149</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_response_reader_html_a963aefc43f34c9182e265647bbcdb91b"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader.html#a963aefc43f34c9182e265647bbcdb91b">grpc::ClientAsyncResponseReader::ReadInitialMetadata</a></div><div class="ttdeci">void ReadInitialMetadata(void *tag)</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:72</div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_send_message_html"><div class="ttname"><a href="classgrpc_1_1_call_op_send_message.html">grpc::CallOpSendMessage</a></div><div class="ttdef"><b>Definition:</b> call.h:190</div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_client_send_close_html"><div class="ttname"><a href="classgrpc_1_1_call_op_client_send_close.html">grpc::CallOpClientSendClose</a></div><div class="ttdef"><b>Definition:</b> call.h:341</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_send_message_html"><div class="ttname"><a href="classgrpc_1_1_call_op_send_message.html">grpc::CallOpSendMessage</a></div><div class="ttdef"><b>Definition:</b> call.h:179</div></div>
+<div class="ttc" id="channel_8h_html"><div class="ttname"><a href="channel_8h.html">channel.h</a></div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_client_send_close_html"><div class="ttname"><a href="classgrpc_1_1_call_op_client_send_close.html">grpc::CallOpClientSendClose</a></div><div class="ttdef"><b>Definition:</b> call.h:333</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_response_reader_interface_html"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader_interface.html">grpc::ClientAsyncResponseReaderInterface</a></div><div class="ttdef"><b>Definition:</b> async_unary_call.h:49</div></div>
-<div class="ttc" id="classgrpc_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1_call.html">grpc::Call</a></div><div class="ttdef"><b>Definition:</b> call.h:565</div></div>
-<div class="ttc" id="classgrpc_1_1_channel_interface_html"><div class="ttname"><a href="classgrpc_1_1_channel_interface.html">grpc::ChannelInterface</a></div><div class="ttdef"><b>Definition:</b> channel_interface.h:52</div></div>
+<div class="ttc" id="classgrpc_1_1_client_async_response_reader_html_a83f7c9c6969cfb19880110231d7aaa48"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader.html#a83f7c9c6969cfb19880110231d7aaa48">grpc::ClientAsyncResponseReader::ClientAsyncResponseReader</a></div><div class="ttdeci">ClientAsyncResponseReader(Channel *channel, CompletionQueue *cq, const RpcMethod &amp;method, ClientContext *context, const W &amp;request)</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:61</div></div>
+<div class="ttc" id="classgrpc_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1_call.html">grpc::Call</a></div><div class="ttdef"><b>Definition:</b> call.h:560</div></div>
 <div class="ttc" id="call_8h_html"><div class="ttname"><a href="call_8h.html">call.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_set_html"><div class="ttname"><a href="classgrpc_1_1_call_op_set.html">grpc::CallOpSet</a></div><div class="ttdoc">Primary implementaiton of CallOpSetInterface. </div><div class="ttdef"><b>Definition:</b> call.h:506</div></div>
-<div class="ttc" id="classgrpc_1_1_server_context_html"><div class="ttname"><a href="classgrpc_1_1_server_context.html">grpc::ServerContext</a></div><div class="ttdef"><b>Definition:</b> server_context.h:86</div></div>
-<div class="ttc" id="classgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdef"><b>Definition:</b> completion_queue.h:87</div></div>
-<div class="ttc" id="classgrpc_1_1_client_async_response_reader_html_a4868e0f82053062c95fea7bd197acadf"><div class="ttname"><a href="classgrpc_1_1_client_async_response_reader.html#a4868e0f82053062c95fea7bd197acadf">grpc::ClientAsyncResponseReader::ClientAsyncResponseReader</a></div><div class="ttdeci">ClientAsyncResponseReader(ChannelInterface *channel, CompletionQueue *cq, const RpcMethod &amp;method, ClientContext *context, const W &amp;request)</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:61</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_set_html"><div class="ttname"><a href="classgrpc_1_1_call_op_set.html">grpc::CallOpSet</a></div><div class="ttdoc">Primary implementaiton of CallOpSetInterface. </div><div class="ttdef"><b>Definition:</b> call.h:502</div></div>
+<div class="ttc" id="classgrpc_1_1_server_context_html"><div class="ttname"><a href="classgrpc_1_1_server_context.html">grpc::ServerContext</a></div><div class="ttdef"><b>Definition:</b> server_context.h:89</div></div>
+<div class="ttc" id="classgrpc_1_1_completion_queue_html"><div class="ttname"><a href="classgrpc_1_1_completion_queue.html">grpc::CompletionQueue</a></div><div class="ttdoc">A thin wrapper around grpc_completion_queue (see / src/core/surface/completion_queue.h). </div><div class="ttdef"><b>Definition:</b> completion_queue.h:81</div></div>
 <div class="ttc" id="status_8h_html"><div class="ttname"><a href="status_8h.html">status.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_server_async_response_writer_html_a3c97a19ba6eaa0b9eef9b6b86dbad9e9"><div class="ttname"><a href="classgrpc_1_1_server_async_response_writer.html#a3c97a19ba6eaa0b9eef9b6b86dbad9e9">grpc::ServerAsyncResponseWriter::ServerAsyncResponseWriter</a></div><div class="ttdeci">ServerAsyncResponseWriter(ServerContext *ctx)</div><div class="ttdef"><b>Definition:</b> async_unary_call.h:104</div></div>
-<div class="ttc" id="classgrpc_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html">grpc::RpcMethod</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:39</div></div>
+<div class="ttc" id="classgrpc_1_1_rpc_method_html"><div class="ttname"><a href="classgrpc_1_1_rpc_method.html">grpc::RpcMethod</a></div><div class="ttdef"><b>Definition:</b> rpc_method.h:43</div></div>
 <div class="ttc" id="client__context_8h_html"><div class="ttname"><a href="client__context_8h.html">client_context.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_call_html_a78ca141a1008fbbb122ee4de076edcc4"><div class="ttname"><a href="classgrpc_1_1_call.html#a78ca141a1008fbbb122ee4de076edcc4">grpc::Call::PerformOps</a></div><div class="ttdeci">void PerformOps(CallOpSetInterface *ops)</div><div class="ttdef"><b>Definition:</b> call.cc:85</div></div>
-<div class="ttc" id="classgrpc_1_1_status_html_a1f5b65c54d4e6dd502897e36040714dc"><div class="ttname"><a href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">grpc::Status::ok</a></div><div class="ttdeci">bool ok() const </div><div class="ttdef"><b>Definition:</b> status.h:55</div></div>
+<div class="ttc" id="classgrpc_1_1_status_html_a1f5b65c54d4e6dd502897e36040714dc"><div class="ttname"><a href="classgrpc_1_1_status.html#a1f5b65c54d4e6dd502897e36040714dc">grpc::Status::ok</a></div><div class="ttdeci">bool ok() const </div><div class="ttdoc">Is the status OK? </div><div class="ttdef"><b>Definition:</b> status.h:67</div></div>
 <div class="ttc" id="service__type_8h_html"><div class="ttname"><a href="service__type_8h.html">service_type.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdef"><b>Definition:</b> status.h:42</div></div>
-<div class="ttc" id="classgrpc_1_1_server_async_response_writer_html"><div class="ttname"><a href="classgrpc_1_1_server_async_response_writer.html">grpc::ServerAsyncResponseWriter</a></div><div class="ttdef"><b>Definition:</b> async_unary_call.h:101</div></div>
-<div class="ttc" id="classgrpc_1_1_call_op_send_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1_call_op_send_initial_metadata.html">grpc::CallOpSendInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call.h:159</div></div>
-<div class="ttc" id="classgrpc_1_1_sneaky_call_op_set_html"><div class="ttname"><a href="classgrpc_1_1_sneaky_call_op_set.html">grpc::SneakyCallOpSet</a></div><div class="ttdoc">A CallOpSet that does not post completions to the completion queue. </div><div class="ttdef"><b>Definition:</b> call.h:548</div></div>
+<div class="ttc" id="classgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn&#39;t, why? </div><div class="ttdef"><b>Definition:</b> status.h:45</div></div>
+<div class="ttc" id="classgrpc_1_1_call_op_send_initial_metadata_html"><div class="ttname"><a href="classgrpc_1_1_call_op_send_initial_metadata.html">grpc::CallOpSendInitialMetadata</a></div><div class="ttdef"><b>Definition:</b> call.h:147</div></div>
+<div class="ttc" id="classgrpc_1_1_sneaky_call_op_set_html"><div class="ttname"><a href="classgrpc_1_1_sneaky_call_op_set.html">grpc::SneakyCallOpSet</a></div><div class="ttdoc">A CallOpSet that does not post completions to the completion queue. </div><div class="ttdef"><b>Definition:</b> call.h:544</div></div>
 <div class="ttc" id="config_8h_html_a9a884d706be26697c9c892365a3402a9"><div class="ttname"><a href="config_8h.html#a9a884d706be26697c9c892365a3402a9">GRPC_OVERRIDE</a></div><div class="ttdeci">#define GRPC_OVERRIDE</div><div class="ttdef"><b>Definition:</b> config.h:77</div></div>
 <div class="ttc" id="server__context_8h_html"><div class="ttname"><a href="server__context_8h.html">server_context.h</a></div></div>
+<div class="ttc" id="classgrpc_1_1_channel_html"><div class="ttname"><a href="classgrpc_1_1_channel.html">grpc::Channel</a></div><div class="ttdoc">Channels represent a connection to an endpoint. Created by CreateChannel. </div><div class="ttdef"><b>Definition:</b> channel.h:69</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

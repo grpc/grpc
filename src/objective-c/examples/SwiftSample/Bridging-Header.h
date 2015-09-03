@@ -39,6 +39,7 @@
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <GRPCClient/GRPCCall.h>
 #import <ProtoRPC/ProtoMethod.h>
+#import <ProtoRPC/ProtoRPC.h>
 #import <RemoteTest/Test.pbrpc.h>
 
 #endif
