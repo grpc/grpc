@@ -1,8 +1,8 @@
 var searchData=
 [
   ['call_2eh',['call.h',['../call_8h.html',1,'']]],
+  ['channel_2eh',['channel.h',['../channel_8h.html',1,'']]],
   ['channel_5farguments_2eh',['channel_arguments.h',['../channel__arguments_8h.html',1,'']]],
-  ['channel_5finterface_2eh',['channel_interface.h',['../channel__interface_8h.html',1,'']]],
   ['client_5fcontext_2eh',['client_context.h',['../client__context_8h.html',1,'']]],
   ['client_5funary_5fcall_2eh',['client_unary_call.h',['../client__unary__call_8h.html',1,'']]],
   ['completion_5fqueue_2eh',['completion_queue.h',['../completion__queue_8h.html',1,'']]],
