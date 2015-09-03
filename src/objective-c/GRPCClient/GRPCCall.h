@@ -48,8 +48,6 @@
 #import <Foundation/Foundation.h>
 #import <RxLibrary/GRXWriter.h>
 
-#include <grpc/grpc.h>
-
 #pragma mark gRPC errors
 
 // Domain of NSError objects produced by gRPC.
