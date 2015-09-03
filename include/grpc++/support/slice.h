@@ -39,42 +39,28 @@
 
 namespace grpc {
 
-/// A wrapper around \a grpc_slice.
-///
-/// A slice represents a contiguous reference counted array of bytes.
-/// It is cheap to take references to a slice, and it is cheap to create a
-/// slice pointing to a subset of another slice.
 class Slice GRPC_FINAL {
  public:
-  /// Construct an empty slice.
+  // construct empty slice
   Slice();
-  // Destructor - drops one reference.
+  // destructor - drops one ref
   ~Slice();
-
+  // construct slice from grpc slice, adding a ref
   enum AddRef { ADD_REF };
-  /// Construct a slice from \a slice, adding a reference.
   Slice(gpr_slice slice, AddRef);
-
+  // construct slice from grpc slice, stealing a ref
   enum StealRef { STEAL_REF };
-  /// Construct a slice from \a slice, stealing a reference.
   Slice(gpr_slice slice, StealRef);
-
-  /// Copy constructor, adds a reference.
+  // copy constructor - adds a ref
   Slice(const Slice& other);
-
-  /// Assignment, reference count is unchanged.
+  // assignment - ref count is unchanged
   Slice& operator=(Slice other) {
     std::swap(slice_, other.slice_);
     return *this;
   }
 
-  /// Byte size.
   size_t size() const { return GPR_SLICE_LENGTH(slice_); }
-
-  /// Raw pointer to the beginning (first element) of the slice.
   const gpr_uint8* begin() const { return GPR_SLICE_START_PTR(slice_); }
-
-  /// Raw pointer to the end (one byte \em past the last element) of the slice.
   const gpr_uint8* end() const { return GPR_SLICE_END_PTR(slice_); }
 
  private:
