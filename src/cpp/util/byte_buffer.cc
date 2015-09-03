@@ -45,6 +45,12 @@ ByteBuffer::ByteBuffer(const Slice* slices, size_t nslices) {
   buffer_ = grpc_raw_byte_buffer_create(c_slices.data(), nslices);
 }
 
+ByteBuffer::~ByteBuffer() {
+  if (buffer_) {
+    grpc_byte_buffer_destroy(buffer_);
+  }
+}
+
 void ByteBuffer::Clear() {
   if (buffer_) {
     grpc_byte_buffer_destroy(buffer_);
