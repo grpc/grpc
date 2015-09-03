@@ -37,6 +37,20 @@
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
 
+static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError) {
+  NSDictionary *info = @{
+                         NSLocalizedDescriptionKey: @"Unable to parse response from the server",
+                         NSLocalizedRecoverySuggestionErrorKey: @"Retry with exponential backoff",
+                         NSUnderlyingErrorKey: parsingError,
+                         @"Expected class": expectedClass,
+                         @"Received value": proto,
+                         };
+  // TODO(jcanizales): Use kGRPCErrorDomain and GRPCErrorCodeInternal when they're public.
+  return [NSError errorWithDomain:@"io.grpc"
+                             code:13
+                         userInfo:info];
+}
+
 @implementation ProtoRPC {
   id<GRXWriteable> _responseWriteable;
 }
@@ -82,7 +96,7 @@
       if (parsed) {
         [responsesWriteable writeValue:parsed];
       } else {
-        [weakSelf finishWithError:error];
+        [weakSelf finishWithError:ErrorForBadProto(value, responseClass, error)];
       }
     } completionHandler:^(NSError *errorOrNil) {
       [responsesWriteable writesFinishedWithError:errorOrNil];
