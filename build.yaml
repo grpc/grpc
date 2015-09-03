@@ -3,7 +3,7 @@
 '#3': Please refer to the templates directory for more information.
 settings:
   '#': The public version number of the library.
-  version: {major: 0, minor: 10, micro: 1, build: 0}
+  version: {major: 0, minor: 11, micro: 0, build: 0}
 filegroups:
 - name: census
   public_headers: [include/grpc/census.h]

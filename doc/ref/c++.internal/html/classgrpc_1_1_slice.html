@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -96,6 +96,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>A wrapper around <em>grpc_slice</em>.  
+ <a href="classgrpc_1_1_slice.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="slice_8h_source.html">slice.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
@@ -110,22 +113,30 @@ Public Types</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a8c5179cf7a39f66d65887bf298dc548f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a8c5179cf7a39f66d65887bf298dc548f">Slice</a> ()</td></tr>
+<tr class="memdesc:a8c5179cf7a39f66d65887bf298dc548f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct an empty slice.  <a href="#a8c5179cf7a39f66d65887bf298dc548f">More...</a><br/></td></tr>
 <tr class="separator:a8c5179cf7a39f66d65887bf298dc548f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1f89af608ad9e5bbc2870d4ee7140c94"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a1f89af608ad9e5bbc2870d4ee7140c94">~Slice</a> ()</td></tr>
 <tr class="separator:a1f89af608ad9e5bbc2870d4ee7140c94"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0cf5718377c0ae4584d58bb6c1b042f2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a0cf5718377c0ae4584d58bb6c1b042f2">Slice</a> (gpr_slice slice, <a class="el" href="classgrpc_1_1_slice.html#ac1e8469bbb6dfa9ab9e646e0b48f5fe2">AddRef</a>)</td></tr>
+<tr class="memdesc:a0cf5718377c0ae4584d58bb6c1b042f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a slice from <em>slice</em>, adding a reference.  <a href="#a0cf5718377c0ae4584d58bb6c1b042f2">More...</a><br/></td></tr>
 <tr class="separator:a0cf5718377c0ae4584d58bb6c1b042f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad952f787620a1fe4c519e53e9e1aa921"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#ad952f787620a1fe4c519e53e9e1aa921">Slice</a> (gpr_slice slice, <a class="el" href="classgrpc_1_1_slice.html#a13fbbec0e9121a8b948d563f9730d75a">StealRef</a>)</td></tr>
+<tr class="memdesc:ad952f787620a1fe4c519e53e9e1aa921"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a slice from <em>slice</em>, stealing a reference.  <a href="#ad952f787620a1fe4c519e53e9e1aa921">More...</a><br/></td></tr>
 <tr class="separator:ad952f787620a1fe4c519e53e9e1aa921"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0a6b936d72f7ae35f083d003d3e0c8a3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a0a6b936d72f7ae35f083d003d3e0c8a3">Slice</a> (const <a class="el" href="classgrpc_1_1_slice.html">Slice</a> &amp;other)</td></tr>
+<tr class="memdesc:a0a6b936d72f7ae35f083d003d3e0c8a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor, adds a reference.  <a href="#a0a6b936d72f7ae35f083d003d3e0c8a3">More...</a><br/></td></tr>
 <tr class="separator:a0a6b936d72f7ae35f083d003d3e0c8a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac5a109779239ed4d3fd58e8124abdba1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_slice.html">Slice</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#ac5a109779239ed4d3fd58e8124abdba1">operator=</a> (<a class="el" href="classgrpc_1_1_slice.html">Slice</a> other)</td></tr>
+<tr class="memdesc:ac5a109779239ed4d3fd58e8124abdba1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assignment, reference count is unchanged.  <a href="#ac5a109779239ed4d3fd58e8124abdba1">More...</a><br/></td></tr>
 <tr class="separator:ac5a109779239ed4d3fd58e8124abdba1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa216fa6d6e98e5e2677b7d33fb4af724"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#aa216fa6d6e98e5e2677b7d33fb4af724">size</a> () const </td></tr>
+<tr class="memdesc:aa216fa6d6e98e5e2677b7d33fb4af724"><td class="mdescLeft">&#160;</td><td class="mdescRight">Byte size.  <a href="#aa216fa6d6e98e5e2677b7d33fb4af724">More...</a><br/></td></tr>
 <tr class="separator:aa216fa6d6e98e5e2677b7d33fb4af724"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad7b0a21bd37c2ed9899c369777cc9fb8"><td class="memItemLeft" align="right" valign="top">const gpr_uint8 *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#ad7b0a21bd37c2ed9899c369777cc9fb8">begin</a> () const </td></tr>
+<tr class="memdesc:ad7b0a21bd37c2ed9899c369777cc9fb8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw pointer to the beginning (first element) of the slice.  <a href="#ad7b0a21bd37c2ed9899c369777cc9fb8">More...</a><br/></td></tr>
 <tr class="separator:ad7b0a21bd37c2ed9899c369777cc9fb8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a15f9576be1afa1048ed8963d50581b60"><td class="memItemLeft" align="right" valign="top">const gpr_uint8 *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#a15f9576be1afa1048ed8963d50581b60">end</a> () const </td></tr>
+<tr class="memdesc:a15f9576be1afa1048ed8963d50581b60"><td class="mdescLeft">&#160;</td><td class="mdescRight">Raw pointer to the end (one byte <em>past</em> the last element) of the slice.  <a href="#a15f9576be1afa1048ed8963d50581b60">More...</a><br/></td></tr>
 <tr class="separator:a15f9576be1afa1048ed8963d50581b60"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
@@ -133,7 +144,10 @@ Friends</h2></td></tr>
 <tr class="memitem:ac6c83f28f4b17ae317094a794e92e99e"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_slice.html#ac6c83f28f4b17ae317094a794e92e99e">ByteBuffer</a></td></tr>
 <tr class="separator:ac6c83f28f4b17ae317094a794e92e99e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Enumeration Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A wrapper around <em>grpc_slice</em>. </p>
+<p>A slice represents a contiguous reference counted array of bytes. It is cheap to take references to a slice, and it is cheap to create a slice pointing to a subset of another slice. </p>
+</div><h2 class="groupheader">Member Enumeration Documentation</h2>
 <a class="anchor" id="ac1e8469bbb6dfa9ab9e646e0b48f5fe2"></a>
 <div class="memitem">
 <div class="memproto">
@@ -180,6 +194,8 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Construct an empty slice. </p>
+
 </div>
 </div>
 <a class="anchor" id="a1f89af608ad9e5bbc2870d4ee7140c94"></a>
@@ -221,6 +237,8 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Construct a slice from <em>slice</em>, adding a reference. </p>
+
 </div>
 </div>
 <a class="anchor" id="ad952f787620a1fe4c519e53e9e1aa921"></a>
@@ -247,6 +265,8 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>Construct a slice from <em>slice</em>, stealing a reference. </p>
+
 </div>
 </div>
 <a class="anchor" id="a0a6b936d72f7ae35f083d003d3e0c8a3"></a>
@@ -262,6 +282,8 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Copy constructor, adds a reference. </p>
 
 </div>
 </div>
@@ -287,6 +309,8 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Raw pointer to the beginning (first element) of the slice. </p>
+
 </div>
 </div>
 <a class="anchor" id="a15f9576be1afa1048ed8963d50581b60"></a>
@@ -309,6 +333,8 @@ Friends</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Raw pointer to the end (one byte <em>past</em> the last element) of the slice. </p>
 
 </div>
 </div>
@@ -334,6 +360,8 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Assignment, reference count is unchanged. </p>
+
 </div>
 </div>
 <a class="anchor" id="aa216fa6d6e98e5e2677b7d33fb4af724"></a>
@@ -356,6 +384,8 @@ Friends</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Byte size. </p>
 
 </div>
 </div>
@@ -381,13 +411,13 @@ Friends</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
-<li>include/grpc++/<a class="el" href="slice_8h_source.html">slice.h</a></li>
+<li>include/grpc++/support/<a class="el" href="slice_8h_source.html">slice.h</a></li>
 <li>src/cpp/util/<a class="el" href="slice_8cc.html">slice.cc</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -94,18 +94,25 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="stream_8h_source.html">stream.h</a>&gt;</code></p>
+<p>Common interface for all client side asynchronous streaming.  
+ <a href="classgrpc_1_1_client_async_streaming_interface.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="async__stream_8h_source.html">async_stream.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a103c33e82dbf1715749886c4249f3f28"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#a103c33e82dbf1715749886c4249f3f28">~ClientAsyncStreamingInterface</a> ()</td></tr>
 <tr class="separator:a103c33e82dbf1715749886c4249f3f28"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad83bfe2febf4a6296b7d2646799b8174"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#ad83bfe2febf4a6296b7d2646799b8174">ReadInitialMetadata</a> (void *tag)=0</td></tr>
+<tr class="memdesc:ad83bfe2febf4a6296b7d2646799b8174"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request notification of the reading of the initial metadata.  <a href="#ad83bfe2febf4a6296b7d2646799b8174">More...</a><br/></td></tr>
 <tr class="separator:ad83bfe2febf4a6296b7d2646799b8174"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afc1cfbd1514fea47088bc837bb578a24"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#afc1cfbd1514fea47088bc837bb578a24">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">Status</a> *status, void *tag)=0</td></tr>
+<tr class="memdesc:afc1cfbd1514fea47088bc837bb578a24"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request notification completion.  <a href="#afc1cfbd1514fea47088bc837bb578a24">More...</a><br/></td></tr>
 <tr class="separator:afc1cfbd1514fea47088bc837bb578a24"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Common interface for all client side asynchronous streaming. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a103c33e82dbf1715749886c4249f3f28"></a>
 <div class="memitem">
 <div class="memproto">
@@ -162,6 +169,15 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Request notification completion. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">status</td><td>To be updated with the operation status. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>Tag identifying this request. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 <p>Implemented in <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a4316a3e8d1b4d148a695c8afa240ea23">grpc::ClientAsyncReaderWriter&lt; R, W &gt;</a>, <a class="el" href="classgrpc_1_1_client_async_writer.html#ad37af0a7fc27fc90e168fdb90eb52d8b">grpc::ClientAsyncWriter&lt; W &gt;</a>, and <a class="el" href="classgrpc_1_1_client_async_reader.html#a91bfabf65e2dc955b6983bc0ece5a73f">grpc::ClientAsyncReader&lt; R &gt;</a>.</p>
 
 </div>
@@ -188,17 +204,26 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Request notification of the reading of the initial metadata. </p>
+<p>Completion will be notified by <em>tag</em> on the associated completion queue.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>Tag identifying this request. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 <p>Implemented in <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a69f0115acf443d7820adefc7b2a6f162">grpc::ClientAsyncReaderWriter&lt; R, W &gt;</a>, <a class="el" href="classgrpc_1_1_client_async_writer.html#a1db45c4f5817db4f770c08dab64916c7">grpc::ClientAsyncWriter&lt; W &gt;</a>, and <a class="el" href="classgrpc_1_1_client_async_reader.html#a0e5b71e2620dc95fe41305eef7ee7863">grpc::ClientAsyncReader&lt; R &gt;</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/<a class="el" href="stream_8h_source.html">stream.h</a></li>
+<li>include/grpc++/support/<a class="el" href="async__stream_8h_source.html">async_stream.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

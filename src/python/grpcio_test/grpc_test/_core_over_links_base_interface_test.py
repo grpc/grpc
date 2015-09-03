@@ -38,14 +38,13 @@ import unittest
 from grpc._adapter import _intermediary_low
 from grpc._links import invocation
 from grpc._links import service
+from grpc.beta import interfaces as beta_interfaces
 from grpc.framework.core import implementations
 from grpc.framework.interfaces.base import utilities
 from grpc_test import test_common as grpc_test_common
 from grpc_test.framework.common import test_constants
 from grpc_test.framework.interfaces.base import test_cases
 from grpc_test.framework.interfaces.base import test_interfaces
-
-_CODE = _intermediary_low.Code.OK
 
 
 class _SerializationBehaviors(
@@ -124,8 +123,8 @@ class _Implementation(test_interfaces.Implementation):
 
   def service_completion(self):
     return utilities.completion(
-        grpc_test_common.SERVICE_TERMINAL_METADATA, _CODE,
-        grpc_test_common.DETAILS)
+        grpc_test_common.SERVICE_TERMINAL_METADATA,
+        beta_interfaces.StatusCode.OK, grpc_test_common.DETAILS)
 
   def metadata_transmitted(self, original_metadata, transmitted_metadata):
     return original_metadata is None or grpc_test_common.metadata_transmitted(

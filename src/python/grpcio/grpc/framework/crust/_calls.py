@@ -98,7 +98,7 @@ def blocking_unary_unary(
   rendezvous, unused_operation_context, unused_outcome = _invoke(
       end, group, method, timeout, initial_metadata, payload, True)
   if with_call:
-    return next(rendezvous, rendezvous)
+    return next(rendezvous), rendezvous
   else:
     return next(rendezvous)
 
