@@ -274,7 +274,7 @@ class End(object):
   @abc.abstractmethod
   def operate(
       self, group, method, subscription, timeout, initial_metadata=None,
-      payload=None, completion=None):
+      payload=None, completion=None, protocol_options=None):
     """Commences an operation.
 
     Args:
@@ -290,6 +290,8 @@ class End(object):
       payload: An initial payload for the operation.
       completion: A Completion value indicating the end of transmission to the
         other side of the operation.
+      protocol_options: A value specified by the provider of a Base interface
+        implementation affording custom state and behavior.
 
     Returns:
       A pair of objects affording information about the operation and action
