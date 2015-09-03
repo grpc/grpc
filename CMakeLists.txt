@@ -8,201 +8,173 @@ cmake_policy(SET CMP0022 NEW)
 project(gRPC C CXX)
 
 # Parse build.json file
-function(_parse_build_json)
+function(_parse_build_yaml)
 
   # Read file strings
-  file(STRINGS "build.json" _strings)
+  file(STRINGS "build.yaml" _strings)
 
   # Regex
-  set(_version_line_regex "^[ \t]*\"([a-z]+)\"[ \t]*:[ \t]*([0-9]+)[ \t]*[,]?[ \t]*$")
 
-  set(_filegroups_regex "^[ \t]*\"filegroups\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,?[ \t]*$")
+  set(_section_regex "^[ \t]*([a-zA-Z]+)[ \t]*:[ \t]*$")
 
-  set(_libs_regex "^[ \t]*\"libs\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,?[ \t]*$")
+  set(_version_regex          "^[ \t]*version[ \t]*:[ \t]*{")
+  string(APPEND _version_regex "[ \t]*major[ \t]*:[ \t]*([0-9]+)[ \t]*,")
+  string(APPEND _version_regex "[ \t]*minor[ \t]*:[ \t]*([0-9]+)[ \t]*,")
+  string(APPEND _version_regex "[ \t]*micro[ \t]*:[ \t]*([0-9]+)[ \t]*,")
+  string(APPEND _version_regex "[ \t]*build[ \t]*:[ \t]*([0-9]+)[ \t]*")
+  string(APPEND _version_regex "}[ \t]*$")
 
-  set(_targets_regex "^[ \t]*\"targets\"[ \t]*:[ \t]*\\[(.*)\\][ \t]*,?[ \t]*$")
+  set(_name_regex "^[ \t]*-[ \t]*name[ \t]*:[ \t]*([ +a-z_A-Z]+)[ \t]*$")
 
-  set(_name_regex "\"name\"[ \t]*:[ \t]*\"([ +a-z_A-Z]+)\"")
+  set(_group_regex "^[ \t]*([a-z_A-Z]+)[ \t]*:[ \t]*\\[([^]]+)\\][ \t]*$")
 
-  set(_value_regex "\"([ +a-z_A-Z]+)\"[ \t]*:[ \t]*\"?([ +a-z_A-Z]+)\"?")
+  set(_value_regex "^[ \t]*([+a-z_A-Z]+)[ \t]*:[ \t]*([+a-z_A-Z]+)[ \t]*$")
 
-  set(_file_group_regex "\"([ a-z_A-Z]+)\"[ \t]*:[ \t]*\\[[ \t]*([^]]+)\\]")
-
-  # parsing
+  # Parsing
+  set(_section "none")
+  set(_gRPC_FILEGROUPS)
+  set(_gRPC_LIBS)
+  set(_gRPC_TARGETS)
   foreach(_string ${_strings})
     #message("_string:\n${_string}")
 
-    # Version
-    string(REGEX MATCH "${_version_line_regex}"
-      _version_line "${_string}")
-    if(_version_line)
-      #message("_version_line: ${_version_line}")
-      string(REGEX REPLACE "${_version_line_regex}"
-        "\\1" _version_name "${_version_line}")
-      string(REGEX REPLACE "${_version_line_regex}"
-        "\\2" _version_value "${_version_line}")
-      string(TOUPPER "${_version_name}" _version_name)
-      set(gRPC_VERSION_${_version_name} ${_version_value} PARENT_SCOPE)
+    # Section
+    string(REGEX MATCH "${_section_regex}"
+      _section_string "${_string}")
+    if(_section_string)
+      string(REGEX REPLACE "${_section_regex}" "\\1" _section "${_section_string}")
+      string(TOLOWER "${_section}" _section)
+#      message("_section: ${_section}")
     endif()
+
+    # Settings
+    if("${_section}" STREQUAL "settings")
+
+      string(REGEX MATCH "${_version_regex}"
+        _version_string "${_string}")
+      if(_version_string)
+#        message("_version_string: ${_version_string}")
+        string(REGEX REPLACE "${_version_regex}" "\\1"
+          _version_major "${_version_string}")
+        set(gRPC_VERSION_MAJOR ${_version_major} PARENT_SCOPE)
+        string(REGEX REPLACE "${_version_regex}" "\\2"
+          _version_minor "${_version_string}")
+        set(gRPC_VERSION_MINOR ${_version_minor} PARENT_SCOPE)
+        string(REGEX REPLACE "${_version_regex}" "\\3"
+          _version_micro "${_version_string}")
+        set(gRPC_VERSION_MICRO ${_version_micro} PARENT_SCOPE)
+        string(REGEX REPLACE "${_version_regex}" "\\4"
+          _version_build "${_version_string}")
+        set(gRPC_VERSION_BUILD ${_version_build} PARENT_SCOPE)
+      endif()
 
     # Filegroups
-    string(REGEX MATCH "${_filegroups_regex}"
-      _filegroups_line "${_string}")
-    if(_filegroups_line)
-      set(_gRPC_FILEGROUPS)
-      #message("_filegroups: ${_filegroups_line}")
-      string(REGEX REPLACE "${_filegroups_regex}"
-        "\\1" _filegroups "${_filegroups_line}")
-      string(REPLACE " " "" _filegroups "${_filegroups}")
-      string(REPLACE "\t" "" _filegroups "${_filegroups}")
-      string(REPLACE ";" "" _filegroups "${_filegroups}")
-      string(REGEX MATCHALL "{([^}]+)}" _filegroups "${_filegroups}")
-      #message("_filegroups: ${_filegroups}")
-      foreach(_filegroup ${_filegroups})
-        #message("_filegroup: ${_filegroup}")
-        string(REGEX MATCH "${_name_regex}"
-          _filegroup_name "${_filegroup}")
-        if(_filegroup_name)
-          string(REGEX REPLACE "${_name_regex}"
-            "\\1" _filegroup_name "${_filegroup_name}")
-          #message("_filegroup_name: ${_filegroup_name}")
-          list(APPEND _gRPC_FILEGROUPS ${_filegroup_name})
-          # Group
-          string(REGEX MATCHALL "${_file_group_regex}"
-            _filegroup_groups "${_filegroup}")
-          #message("_filegroup_groups: ${_filegroup_groups}")
-          foreach(_filegroup_group ${_filegroup_groups})
-            #message("_filegroup_group: ${_filegroup_group}")
-            string(REGEX REPLACE "${_file_group_regex}"
-              "\\1" _filegroup_group_name "${_filegroup_group}")
-            string(REGEX REPLACE "${_file_group_regex}"
-              "\\2" _filegroup_group_files "${_filegroup_group}")
-            string(REPLACE "," ";" _filegroup_group_files "${_filegroup_group_files}")
-            string(REPLACE "\"" "" _filegroup_group_files "${_filegroup_group_files}")
-            #message("_filegroup_${_filegroup_name}_${_filegroup_group_name}: ${_filegroup_group_files}")
-            set(gRPC_FILEGROUP_${_filegroup_name}_${_filegroup_group_name} ${_filegroup_group_files} PARENT_SCOPE)
-          endforeach()
-        endif()
-      endforeach()
-      set(gRPC_FILEGROUPS ${_gRPC_FILEGROUPS} PARENT_SCOPE)
-    endif()
+    elseif("${_section}" STREQUAL "filegroups")
+
+      #message("_string:\n${_string}")
+      # Name
+      string(REGEX MATCH "${_name_regex}"
+        _name_string "${_string}")
+      if(_name_string)
+        string(REGEX REPLACE "${_name_regex}" "\\1" _name "${_name_string}")
+#        message("_name: ${_name}")
+        list(APPEND _gRPC_FILEGROUPS ${_name})
+      endif()
+      # Groups
+      string(REGEX MATCH "${_group_regex}"
+        _group_string "${_string}")
+      if(_group_string)
+        string(REGEX REPLACE "${_group_regex}" "\\1" _group_name "${_group_string}")
+        string(REGEX REPLACE "${_group_regex}" "\\2" _group_group "${_group_string}")
+#        message("_filegroup: ${_group_name} --> ${_group_group}")
+        string(REPLACE " " "" _group_group "${_group_group}")
+        string(REPLACE "," ";" _group_group "${_group_group}")
+        string(REPLACE ";;" ";" _group_group "${_group_group}")
+#        message("gRPC_FILEGROUP_${_name}_${_group_name}: ${_group_group}")
+        set(gRPC_FILEGROUP_${_name}_${_group_name} ${_group_group} PARENT_SCOPE)
+      endif()
 
     # Libraries
-    string(REGEX MATCH "${_libs_regex}"
-      _libs_line "${_string}")
-    if(_libs_line)
-      set(_gRPC_LIBS)
-      #message("_libs: ${_libs_line}")
-      string(REGEX REPLACE "${_libs_regex}"
-        "\\1" _libs "${_libs_line}")
-      string(REPLACE " " "" _libs "${_libs}")
-      string(REPLACE "\t" "" _libs "${_libs}")
-      string(REPLACE ";" "" _libs "${_libs}")
-      string(REGEX MATCHALL "{([^}]+)}" _libs "${_libs}")
-      #message("_libs: ${_libs}")
-      foreach(_lib ${_libs})
-        #message("_lib: ${_lib}")
-        string(REGEX MATCH "${_name_regex}"
-          _lib_name "${_lib}")
-        if(_lib_name)
-          string(REGEX REPLACE "${_name_regex}"
-            "\\1" _lib_name "${_lib_name}")
-          #message("_lib_name: ${_lib_name}")
-          list(APPEND _gRPC_LIBS ${_lib_name})
+    elseif("${_section}" STREQUAL "libs")
 
-          # Values
-          string(REGEX MATCHALL "${_value_regex}"
-            _lib_values "${_lib}")
-          #message("_lib_values: ${_lib_values}")
-          foreach(_lib_value ${_lib_values})
-            string(REGEX REPLACE "${_value_regex}"
-              "\\1" _lib_value_name "${_lib_value}")
-            string(REGEX REPLACE "${_value_regex}"
-              "\\2" _lib_value_value "${_lib_value}")
-            #message("_lib_${_lib_name}_${_lib_value_name} : ${_lib_value_value}")
-            set(gRPC_LIB_${_lib_name}_${_lib_value_name} "${_lib_value_value}" PARENT_SCOPE)
-          endforeach()
-
-          # Groups
-          string(REGEX MATCHALL "${_file_group_regex}"
-            _lib_groups "${_lib}")
-          #message("_lib_groups: ${_lib_groups}")
-          foreach(_lib_group ${_lib_groups})
-            #message("_lib_group: ${_lib_group}")
-            string(REGEX REPLACE "${_file_group_regex}"
-              "\\1" _lib_group_name "${_lib_group}")
-            string(REGEX REPLACE "${_file_group_regex}"
-              "\\2" _lib_group_files "${_lib_group}")
-            string(REPLACE "," ";" _lib_group_files "${_lib_group_files}")
-            string(REPLACE "\"" "" _lib_group_files "${_lib_group_files}")
-            #message("_lib_${_lib_name}_${_lib_group_name}: ${_lib_group_files}")
-            set(gRPC_LIB_${_lib_name}_${_lib_group_name} ${_lib_group_files} PARENT_SCOPE)
-          endforeach()
-        endif()
-      endforeach()
-      set(gRPC_LIBS ${_gRPC_LIBS} PARENT_SCOPE)
-    endif()
+#      message("_string:\n${_string}")
+      # Name
+      string(REGEX MATCH "${_name_regex}"
+        _name_string "${_string}")
+      if(_name_string)
+        string(REGEX REPLACE "${_name_regex}" "\\1" _name "${_name_string}")
+#        message("_name: ${_name}")
+        list(APPEND _gRPC_LIBS ${_name})
+      endif()
+      # Values
+      string(REGEX MATCH "${_value_regex}"
+        _value_string "${_string}")
+      if(_value_string)
+        string(REGEX REPLACE "${_value_regex}" "\\1" _value_name "${_value_string}")
+        string(REGEX REPLACE "${_value_regex}" "\\2" _value_value "${_value_string}")
+#        message("gRPC_LIB_${_name}_${_value_name}: ${_value_value}")
+        set(gRPC_LIB_${_name}_${_value_name} ${_value_value} PARENT_SCOPE)
+      endif()
+      # Groups
+      string(REGEX MATCH "${_group_regex}"
+        _group_string "${_string}")
+      if(_group_string)
+        string(REGEX REPLACE "${_group_regex}" "\\1" _group_name "${_group_string}")
+        string(REGEX REPLACE "${_group_regex}" "\\2" _group_group "${_group_string}")
+#        message("_filegroup: ${_group_name} --> ${_group_group}")
+        string(REPLACE " " "" _group_group "${_group_group}")
+        string(REPLACE "," ";" _group_group "${_group_group}")
+        string(REPLACE ";;" ";" _group_group "${_group_group}")
+#        message("gRPC_LIB_${_name}_${_group_name}: ${_group_group}")
+        set(gRPC_LIB_${_name}_${_group_name} ${_group_group} PARENT_SCOPE)
+      endif()
 
     # Targets
-    string(REGEX MATCH "${_targets_regex}"
-      _targets_line "${_string}")
-    if(_targets_line)
-      set(_gRPC_TARGETS)
-      #message("_targets: ${_targets_line}")
-      string(REGEX REPLACE "${_targets_regex}"
-        "\\1" _targets "${_targets_line}")
-      string(REPLACE " " "" _targets "${_targets}")
-      string(REPLACE "\t" "" _targets "${_targets}")
-      string(REPLACE ";" "" _targets "${_targets}")
-      string(REGEX MATCHALL "{([^}]+)}" _targets "${_targets}")
-      #message("_targets: ${_targets}")
-      foreach(_target ${_targets})
-        #message("_target: ${_target}")
-        string(REGEX MATCH "${_name_regex}"
-          _target_name "${_target}")
-        if(_target_name)
-          string(REGEX REPLACE "${_name_regex}"
-            "\\1" _target_name "${_target_name}")
-          #message("_target_name: ${_target_name}")
-          list(APPEND _gRPC_TARGETS ${_target_name})
+    elseif("${_section}" STREQUAL "targets")
 
-          # Values
-          string(REGEX MATCHALL "${_value_regex}"
-            _target_values "${_target}")
-          #message("_target_values: ${_target_values}")
-          foreach(_target_value ${_target_values})
-            string(REGEX REPLACE "${_value_regex}"
-              "\\1" _target_value_name "${_target_value}")
-            string(REGEX REPLACE "${_value_regex}"
-              "\\2" _target_value_value "${_target_value}")
-            #message("_target_${_target_name}_${_target_value_name} : ${_target_value_value}")
-            set(gRPC_TARGET_${_target_name}_${_target_value_name} "${_target_value_value}" PARENT_SCOPE)
-          endforeach()
+#      message("_string:\n${_string}")
+      # Name
+      string(REGEX MATCH "${_name_regex}"
+        _name_string "${_string}")
+      if(_name_string)
+        string(REGEX REPLACE "${_name_regex}" "\\1" _name "${_name_string}")
+#        message("_name: ${_name}")
+        list(APPEND _gRPC_TARGETS ${_name})
+      endif()
+      # Values
+      string(REGEX MATCH "${_value_regex}"
+        _value_string "${_string}")
+      if(_value_string)
+        string(REGEX REPLACE "${_value_regex}" "\\1" _value_name "${_value_string}")
+        string(REGEX REPLACE "${_value_regex}" "\\2" _value_value "${_value_string}")
+#        message("gRPC_TARGET_${_name}_${_value_name}: ${_value_value}")
+        set(gRPC_TARGET_${_name}_${_value_name} ${_value_value} PARENT_SCOPE)
+      endif()
+      # Groups
+      string(REGEX MATCH "${_group_regex}"
+        _group_string "${_string}")
+      if(_group_string)
+        string(REGEX REPLACE "${_group_regex}" "\\1" _group_name "${_group_string}")
+        string(REGEX REPLACE "${_group_regex}" "\\2" _group_group "${_group_string}")
+#        message("_filegroup: ${_group_name} --> ${_group_group}")
+        string(REPLACE " " "" _group_group "${_group_group}")
+        string(REPLACE "," ";" _group_group "${_group_group}")
+        string(REPLACE ";;" ";" _group_group "${_group_group}")
+#        message("gRPC_TARGET_${_name}_${_group_name}: ${_group_group}")
+        set(gRPC_TARGET_${_name}_${_group_name} ${_group_group} PARENT_SCOPE)
+      endif()
 
-          # Groups
-          string(REGEX MATCHALL "${_file_group_regex}"
-            _target_groups "${_target}")
-          #message("_target_groups: ${_target_groups}")
-          foreach(_target_group ${_target_groups})
-            #message("_target_group: ${_target_group}")
-            string(REGEX REPLACE "${_file_group_regex}"
-              "\\1" _target_group_name "${_target_group}")
-            string(REGEX REPLACE "${_file_group_regex}"
-              "\\2" _target_group_files "${_target_group}")
-            string(REPLACE "," ";" _target_group_files "${_target_group_files}")
-            string(REPLACE "\"" "" _target_group_files "${_target_group_files}")
-            #message("_target_${_target_name}_${_target_group_name}: ${_target_group_files}")
-            set(gRPC_TARGET_${_target_name}_${_target_group_name} ${_target_group_files} PARENT_SCOPE)
-          endforeach()
-        endif()
-      endforeach()
-      set(gRPC_TARGETS ${_gRPC_TARGETS} PARENT_SCOPE)
     endif()
 
   endforeach()
+
+  set(gRPC_FILEGROUPS ${_gRPC_FILEGROUPS} PARENT_SCOPE)
+  set(gRPC_LIBS ${_gRPC_LIBS} PARENT_SCOPE)
+  set(gRPC_TARGETS ${_gRPC_TARGETS} PARENT_SCOPE)
+
 endfunction()
 
-_parse_build_json()
+_parse_build_yaml()
 
 set(gRPC_VERSION
   "${gRPC_VERSION_MAJOR}.${gRPC_VERSION_MINOR}.${gRPC_VERSION_MICRO}.${gRPC_VERSION_BUILD}")
@@ -212,7 +184,7 @@ list(REMOVE_ITEM gRPC_LIBS grpc_zookeeper)
 list(REMOVE_ITEM gRPC_TARGETS zookeeper_test)
 
 # Statistics
-message(STATUS "Project structure from build.json {")
+message(STATUS "Project structure from build.yaml {")
 message(STATUS "  gRPC_VERSION ${gRPC_VERSION}")
 message(STATUS "  gRPC_FILEGROUPS {")
 foreach(gRPC_FILEGROUP ${gRPC_FILEGROUPS})
@@ -296,15 +268,15 @@ foreach(gRPC_LIB
   else()
     set(_lib_build_protoc FALSE)
   endif()
-  if("${${_lib_}_secure}" STREQUAL "yes")
-    set(_lib_secure_yes TRUE)
+  if("${${_lib_}_secure}" STREQUAL "true")
+    set(_lib_secure_true TRUE)
   else()
-    set(_lib_secure_yes FALSE)
+    set(_lib_secure_true FALSE)
   endif()
-  if("${${_lib_}_secure}" STREQUAL "no")
-    set(_lib_secure_no TRUE)
+  if("${${_lib_}_secure}" STREQUAL "false")
+    set(_lib_secure_false TRUE)
   else()
-    set(_lib_secure_no FALSE)
+    set(_lib_secure_false FALSE)
   endif()
   if("${${_lib_}_secure}" STREQUAL "check")
     set(_lib_secure_check TRUE)
@@ -343,7 +315,7 @@ foreach(gRPC_LIB
     if(_lib_build_protoc)
       target_link_libraries(${_lib} PUBLIC ${PROTOBUF_LIBRARIES})
     endif()
-    if(_lib_secure_yes OR (_lib_secure_check AND OPENSSL_FOUND))
+    if(_lib_secure_true OR (_lib_secure_check AND OPENSSL_FOUND))
       target_link_libraries(${_lib} PRIVATE ${OPENSSL_LIBRARIES})
     endif()
     if(_lib_baselib)
@@ -395,9 +367,18 @@ foreach(gRPC_TARGET
   else()
     set(_target_build_protoc FALSE)
   endif()
-  if(_target_build_protoc
-    AND (_target_c OR _target_cxx)
-    AND "${${_target_}_secure}" STREQUAL "no")
+  if("${${_target_}_secure}" STREQUAL "true")
+    set(_target_secure_true TRUE)
+  else()
+    set(_target_secure_true FALSE)
+  endif()
+  if("${${_target_}_secure}" STREQUAL "false")
+    set(_target_secure_false TRUE)
+  else()
+    set(_target_secure_false FALSE)
+  endif()
+  if((_target_c OR _target_cxx) AND _target_build_protoc)
+    message(STATUS "build target: ${_target}")
     set(_target_src ${${_target_}_src})
     #message(STATUS "src: ${_target_src}")
     add_executable(${_target} ${_target_src})
@@ -407,6 +388,9 @@ foreach(gRPC_TARGET
     endif()
     if(_target_build_protoc)
       target_link_libraries(${_target} PRIVATE ${PROTOBUF_LIBRARIES} ${PROTOBUF_PROTOC_LIBRARIES})
+    endif()
+    if(_target_secure_true OR (_target_secure_check AND OPENSSL_FOUND))
+      target_link_libraries(${_target} PRIVATE ${OPENSSL_LIBRARIES})
     endif()
     # Install
     install(TARGETS ${_target} EXPORT grpc-targets
