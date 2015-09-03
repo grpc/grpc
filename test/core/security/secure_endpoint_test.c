@@ -163,12 +163,12 @@ static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
-  grpc_iomgr_init();
+  grpc_init();
   grpc_pollset_init(&g_pollset);
   grpc_endpoint_tests(configs[0], &g_pollset);
   test_leftover(configs[1], 1);
   grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
-  grpc_iomgr_shutdown();
+  grpc_shutdown();
 
   return 0;
 }
