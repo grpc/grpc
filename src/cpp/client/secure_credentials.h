@@ -62,15 +62,13 @@ class MetadataCredentialsPluginWrapper GRPC_FINAL {
  public:
   static void Destroy(void* wrapper);
   static void GetMetadata(void* wrapper, const char* service_url,
-                          grpc_credentials_plugin_metadata_cb cb,
-                          void* user_data);
+                          void* core_context);
 
   explicit MetadataCredentialsPluginWrapper(
       std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
  private:
-  void InvokePlugin(const char* service_url,
-                    grpc_credentials_plugin_metadata_cb cb, void* user_data);
+  void InvokePlugin(const char* service_url, void* core_context);
   std::unique_ptr<ThreadPoolInterface> thread_pool_;
   std::unique_ptr<MetadataCredentialsPlugin> plugin_;
 };

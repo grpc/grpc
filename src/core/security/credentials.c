@@ -1208,7 +1208,7 @@ static int plugin_has_request_metadata_only(const grpc_credentials *creds) {
   return 1;
 }
 
-static void plugin_md_request_metadata_ready(void *request,
+void grpc_credentials_plugin_metadata_notify(void *request,
                                              const grpc_metadata *md,
                                              size_t num_md,
                                              grpc_status_code status,
@@ -1248,8 +1248,7 @@ static void plugin_get_request_metadata(grpc_credentials *creds,
     memset(request, 0, sizeof(*request));
     request->user_data = user_data;
     request->cb = cb;
-    c->plugin.get_metadata(c->plugin.state, service_url,
-                           plugin_md_request_metadata_ready, request);
+    c->plugin.get_metadata(c->plugin.state, service_url, request);
   } else {
     cb(user_data, NULL, 0, GRPC_CREDENTIALS_OK);
   }

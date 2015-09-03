@@ -131,20 +131,22 @@ grpc_credentials *grpc_google_iam_credentials_create(
     const char *authorization_token, const char *authority_selector,
     void *reserved);
 
-/* Callback function to be called by the metadata credentials plugin
-   implementation when the metadata is ready. */
-typedef void (*grpc_credentials_plugin_metadata_cb)(
-    void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
+/* Function to be called by the metadata credentials plugin implementation when
+   the metadata is ready. */
+void grpc_credentials_plugin_metadata_notify(
+    void *core_context, const grpc_metadata *creds_md, size_t num_creds_md,
     grpc_status_code status, const char *error_details);
 
 typedef struct {
-  /* The implementation of this method has to be non-blocking.
+  /* The implementation of this method has to be non-blocking. The implementer
+     of this function MUST call grpc_credentials_plugin_metadata_notify when
+     the metadata is ready.
      - service_url is the fully qualified URL that the client stack is
        connecting to.
-     - cb is the callback that needs to be called when the metadata is ready.
-     - user_data needs to be passed as the first parameter of the callback. */
+     - core_context needs to be passed as the first parameter of
+       grpc_credentials_plugin_metadata_notify. */
   void (*get_metadata)(void *state, const char *service_url,
-                       grpc_credentials_plugin_metadata_cb cb, void *user_data);
+                       void *core_context);
 
   /* Destroys the plugin state. */
   void (*destroy)(void *state);

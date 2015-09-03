@@ -151,28 +151,28 @@ void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   delete w;
 }
 
-void MetadataCredentialsPluginWrapper::GetMetadata(
-    void* wrapper, const char* service_url,
-    grpc_credentials_plugin_metadata_cb cb, void* user_data) {
+void MetadataCredentialsPluginWrapper::GetMetadata(void* wrapper,
+                                                   const char* service_url,
+                                                   void* core_context) {
   GPR_ASSERT(wrapper != nullptr);
   MetadataCredentialsPluginWrapper* w =
       reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   if (w->plugin_ == nullptr) {
-    cb(user_data, NULL, 0, GRPC_STATUS_OK, NULL);
+    grpc_credentials_plugin_metadata_notify(core_context, NULL, 0,
+                                            GRPC_STATUS_OK, NULL);
     return;
   }
   if (w->plugin_->IsBlocking()) {
     w->thread_pool_->Add(
         std::bind(&MetadataCredentialsPluginWrapper::InvokePlugin, w,
-                  service_url, cb, user_data));
+                  service_url, core_context));
   } else {
-    w->InvokePlugin(service_url, cb, user_data);
+    w->InvokePlugin(service_url, core_context);
   }
 }
 
-void MetadataCredentialsPluginWrapper::InvokePlugin(
-    const char* service_url, grpc_credentials_plugin_metadata_cb cb,
-    void* user_data) {
+void MetadataCredentialsPluginWrapper::InvokePlugin(const char* service_url,
+                                                    void* core_context) {
   std::multimap<grpc::string, grpc::string_ref> metadata;
   Status status = plugin_->GetMetadata(service_url, &metadata);
   std::vector<grpc_metadata> md;
@@ -183,9 +183,10 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
                   0,
                   {{nullptr, nullptr, nullptr, nullptr}}});
   }
-  cb(user_data, &md[0], md.size(),
-     static_cast<grpc_status_code>(status.error_code()),
-     status.error_message().c_str());
+  grpc_credentials_plugin_metadata_notify(
+      core_context, &md[0], md.size(),
+      static_cast<grpc_status_code>(status.error_code()),
+      status.error_message().c_str());
 }
 
 MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(
