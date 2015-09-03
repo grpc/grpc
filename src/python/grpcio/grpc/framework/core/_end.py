@@ -168,7 +168,7 @@ class _End(End):
 
   def operate(
       self, group, method, subscription, timeout, initial_metadata=None,
-      payload=None, completion=None):
+      payload=None, completion=None, protocol_options=None):
     """See base.End.operate for specification."""
     operation_id = uuid.uuid4()
     with self._lock:
@@ -177,9 +177,9 @@ class _End(End):
       termination_action = _termination_action(
           self._lock, self._stats, operation_id, self._cycle)
       operation = _operation.invocation_operate(
-          operation_id, group, method, subscription, timeout, initial_metadata,
-          payload, completion, self._mate.accept_ticket, termination_action,
-          self._cycle.pool)
+          operation_id, group, method, subscription, timeout, protocol_options,
+          initial_metadata, payload, completion, self._mate.accept_ticket,
+          termination_action, self._cycle.pool)
       self._cycle.operations[operation_id] = operation
       return operation.context, operation.operator
 

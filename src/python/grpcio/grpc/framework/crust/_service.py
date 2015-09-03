@@ -52,6 +52,9 @@ class _ServicerContext(face.ServicerContext):
   def cancel(self):
     self._rendezvous.cancel()
 
+  def protocol_context(self):
+    return self._rendezvous.protocol_context()
+
   def invocation_metadata(self):
     return self._rendezvous.initial_metadata()
 
