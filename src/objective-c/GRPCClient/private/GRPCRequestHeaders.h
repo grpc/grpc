@@ -34,9 +34,9 @@
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
 
-@class GRPCCall;
+#import "GRPCCall.h"
 
-@interface GRPCRequestHeaders : NSObject
+@interface GRPCRequestHeaders : NSObject<GRPCRequestHeaders>
 
 @property(nonatomic, readonly) NSUInteger count;
 @property(nonatomic, readonly) grpc_metadata *grpc_metadataArray;
