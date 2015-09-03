@@ -47,6 +47,6 @@
 - (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
 
 - (void)removeAllObjects;
-- (void)removeObjectForKey:(NSString *)aKey;
+- (void)removeObjectForKey:(NSString *)key;
 
 @end
