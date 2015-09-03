@@ -34,64 +34,19 @@
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
 
-#import "GRPCChannel.h"
-#import "GRPCRequestHeaders.h"
+#import "GRPCCall.h"
 
-@interface GRPCOperation : NSObject
-@property(nonatomic, readonly) grpc_op op;
-// Guaranteed to be called when the operation has finished.
-- (void)finish;
-@end
+@interface GRPCRequestHeaders : NSObject<GRPCRequestHeaders>
 
-@interface GRPCOpSendMetadata : GRPCOperation
+@property(nonatomic, readonly) NSUInteger count;
+@property(nonatomic, readonly) grpc_metadata *grpc_metadataArray;
 
-- (instancetype)initWithMetadata:(GRPCRequestHeaders *)metadata
-                         handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithCall:(GRPCCall *)call;
 
-@end
+- (id)objectForKeyedSubscript:(NSString *)key;
+- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
 
-@interface GRPCOpSendMessage : GRPCOperation
+- (void)removeAllObjects;
+- (void)removeObjectForKey:(NSString *)key;
 
-- (instancetype)initWithMessage:(NSData *)message
-                        handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
-
-@end
-
-@interface GRPCOpSendClose : GRPCOperation
-
-- (instancetype)initWithHandler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
-
-@end
-
-@interface GRPCOpRecvMetadata : GRPCOperation
-
-- (instancetype)initWithHandler:(void(^)(NSDictionary *))handler NS_DESIGNATED_INITIALIZER;
-
-@end
-
-@interface GRPCOpRecvMessage : GRPCOperation
-
-- (instancetype)initWithHandler:(void(^)(grpc_byte_buffer *))handler NS_DESIGNATED_INITIALIZER;
-
-@end
-
-@interface GRPCOpRecvStatus : GRPCOperation
-
-- (instancetype)initWithHandler:(void(^)(NSError *, NSDictionary *))handler
-    NS_DESIGNATED_INITIALIZER;
-
-@end
-
-#pragma mark GRPCWrappedCall
-
-@interface GRPCWrappedCall : NSObject
-
-- (instancetype)initWithHost:(NSString *)host
-                        path:(NSString *)path NS_DESIGNATED_INITIALIZER;
-
-- (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void(^)())errorHandler;
-
-- (void)startBatchWithOperations:(NSArray *)ops;
-
-- (void)cancel;
 @end
