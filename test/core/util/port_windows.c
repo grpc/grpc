@@ -47,59 +47,72 @@
 
 #define NUM_RANDOM_PORTS_TO_PICK 100
 
-static int is_port_available(int *port, int is_tcp) {
+static int
+is_port_available (int *port, int is_tcp)
+{
   const int proto = is_tcp ? IPPROTO_TCP : 0;
-  const SOCKET fd = socket(AF_INET, is_tcp ? SOCK_STREAM : SOCK_DGRAM, proto);
+  const SOCKET fd =
+    socket (AF_INET, is_tcp ? SOCK_STREAM : SOCK_DGRAM, proto);
   int one = 1;
   struct sockaddr_in addr;
-  socklen_t alen = sizeof(addr);
+  socklen_t alen = sizeof (addr);
   int actual_port;
 
-  GPR_ASSERT(*port >= 0);
-  GPR_ASSERT(*port <= 65535);
-  if (INVALID_SOCKET == fd) {
-    gpr_log(GPR_ERROR, "socket() failed: %s", strerror(errno));
-    return 0;
-  }
+  GPR_ASSERT (*port >= 0);
+  GPR_ASSERT (*port <= 65535);
+  if (INVALID_SOCKET == fd)
+    {
+      gpr_log (GPR_ERROR, "socket() failed: %s", strerror (errno));
+      return 0;
+    }
 
   /* Reuseaddr lets us start up a server immediately after it exits */
-  if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (const char *)&one,
-                 sizeof(one)) < 0) {
-    gpr_log(GPR_ERROR, "setsockopt() failed: %s", strerror(errno));
-    closesocket(fd);
-    return 0;
-  }
+  if (setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, (const char *) &one,
+		  sizeof (one)) < 0)
+    {
+      gpr_log (GPR_ERROR, "setsockopt() failed: %s", strerror (errno));
+      closesocket (fd);
+      return 0;
+    }
 
   /* Try binding to port */
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons(*port);
-  if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-    gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
-    closesocket(fd);
-    return 0;
-  }
+  addr.sin_port = htons (*port);
+  if (bind (fd, (struct sockaddr *) &addr, sizeof (addr)) < 0)
+    {
+      gpr_log (GPR_DEBUG, "bind(port=%d) failed: %s", *port,
+	       strerror (errno));
+      closesocket (fd);
+      return 0;
+    }
 
   /* Get the bound port number */
-  if (getsockname(fd, (struct sockaddr *)&addr, &alen) < 0) {
-    gpr_log(GPR_ERROR, "getsockname() failed: %s", strerror(errno));
-    closesocket(fd);
-    return 0;
-  }
-  GPR_ASSERT(alen <= sizeof(addr));
-  actual_port = ntohs(addr.sin_port);
-  GPR_ASSERT(actual_port > 0);
-  if (*port == 0) {
-    *port = actual_port;
-  } else {
-    GPR_ASSERT(*port == actual_port);
-  }
+  if (getsockname (fd, (struct sockaddr *) &addr, &alen) < 0)
+    {
+      gpr_log (GPR_ERROR, "getsockname() failed: %s", strerror (errno));
+      closesocket (fd);
+      return 0;
+    }
+  GPR_ASSERT (alen <= sizeof (addr));
+  actual_port = ntohs (addr.sin_port);
+  GPR_ASSERT (actual_port > 0);
+  if (*port == 0)
+    {
+      *port = actual_port;
+    }
+  else
+    {
+      GPR_ASSERT (*port == actual_port);
+    }
 
-  closesocket(fd);
+  closesocket (fd);
   return 1;
 }
 
-int grpc_pick_unused_port(void) {
+int
+grpc_pick_unused_port (void)
+{
   /* We repeatedly pick a port and then see whether or not it is
      available for use both as a TCP socket and a UDP socket.  First, we
      pick a random large port number.  For subsequent
@@ -114,47 +127,55 @@ int grpc_pick_unused_port(void) {
 
   /* Type of port to first pick in next iteration */
   int is_tcp = 1;
-  int try
-    = 0;
+  int try = 0;
 
-  for (;;) {
-    int port;
-    try
-      ++;
-    if (try == 1) {
-      port = _getpid() % (65536 - 30000) + 30000;
-    } else if (try <= NUM_RANDOM_PORTS_TO_PICK) {
-      port = rand() % (65536 - 30000) + 30000;
-    } else {
-      port = 0;
+  for (;;)
+    {
+      int port;
+      try++;
+      if (try == 1)
+	{
+	  port = _getpid () % (65536 - 30000) + 30000;
+	}
+      else if (try <= NUM_RANDOM_PORTS_TO_PICK)
+	{
+	  port = rand () % (65536 - 30000) + 30000;
+	}
+      else
+	{
+	  port = 0;
+	}
+
+      if (!is_port_available (&port, is_tcp))
+	{
+	  continue;
+	}
+
+      GPR_ASSERT (port > 0);
+      /* Check that the port # is free for the other type of socket also */
+      if (!is_port_available (&port, !is_tcp))
+	{
+	  /* In the next iteration try to bind to the other type first
+	     because perhaps it is more rare. */
+	  is_tcp = !is_tcp;
+	  continue;
+	}
+
+      /* TODO(ctiller): consider caching this port in some structure, to avoid
+         handing it out again */
+
+      return port;
     }
-
-    if (!is_port_available(&port, is_tcp)) {
-      continue;
-    }
-
-    GPR_ASSERT(port > 0);
-    /* Check that the port # is free for the other type of socket also */
-    if (!is_port_available(&port, !is_tcp)) {
-      /* In the next iteration try to bind to the other type first
-         because perhaps it is more rare. */
-      is_tcp = !is_tcp;
-      continue;
-    }
-
-    /* TODO(ctiller): consider caching this port in some structure, to avoid
-                      handing it out again */
-
-    return port;
-  }
 
   /* The port iterator reached the end without finding a suitable port. */
   return 0;
 }
 
-int grpc_pick_unused_port_or_die(void) {
-  int port = grpc_pick_unused_port();
-  GPR_ASSERT(port > 0);
+int
+grpc_pick_unused_port_or_die (void)
+{
+  int port = grpc_pick_unused_port ();
+  GPR_ASSERT (port > 0);
   return port;
 }
 

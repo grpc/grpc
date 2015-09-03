@@ -37,7 +37,8 @@
 /* Thread local storage based on gcc compiler primitives.
    #include tls.h to use this - and see that file for documentation */
 
-struct gpr_gcc_thread_local {
+struct gpr_gcc_thread_local
+{
   gpr_intptr value;
 };
 

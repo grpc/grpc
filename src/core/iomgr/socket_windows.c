@@ -45,16 +45,18 @@
 #include "src/core/iomgr/pollset_windows.h"
 #include "src/core/iomgr/socket_windows.h"
 
-grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
+grpc_winsocket *
+grpc_winsocket_create (SOCKET socket, const char *name)
+{
   char *final_name;
-  grpc_winsocket *r = gpr_malloc(sizeof(grpc_winsocket));
-  memset(r, 0, sizeof(grpc_winsocket));
+  grpc_winsocket *r = gpr_malloc (sizeof (grpc_winsocket));
+  memset (r, 0, sizeof (grpc_winsocket));
   r->socket = socket;
-  gpr_mu_init(&r->state_mu);
-  gpr_asprintf(&final_name, "%s:socket=0x%p", name, r);
-  grpc_iomgr_register_object(&r->iomgr_object, final_name);
-  gpr_free(final_name);
-  grpc_iocp_add_socket(r);
+  gpr_mu_init (&r->state_mu);
+  gpr_asprintf (&final_name, "%s:socket=0x%p", name, r);
+  grpc_iomgr_register_object (&r->iomgr_object, final_name);
+  gpr_free (final_name);
+  grpc_iocp_add_socket (r);
   return r;
 }
 
@@ -62,27 +64,31 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
    operations to abort them. We need to do that this way because of the
    various callsites of that function, which happens to be in various
    mutex hold states, and that'd be unsafe to call them directly. */
-int grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
+int
+grpc_winsocket_shutdown (grpc_winsocket * winsocket)
+{
   int callbacks_set = 0;
   SOCKET socket;
-  gpr_mu_lock(&winsocket->state_mu);
+  gpr_mu_lock (&winsocket->state_mu);
   socket = winsocket->socket;
-  if (winsocket->read_info.cb) {
-    callbacks_set++;
-    grpc_iomgr_closure_init(&winsocket->shutdown_closure,
-                            winsocket->read_info.cb,
-                            winsocket->read_info.opaque);
-    grpc_iomgr_add_delayed_callback(&winsocket->shutdown_closure, 0);
-  }
-  if (winsocket->write_info.cb) {
-    callbacks_set++;
-    grpc_iomgr_closure_init(&winsocket->shutdown_closure,
-                            winsocket->write_info.cb,
-                            winsocket->write_info.opaque);
-    grpc_iomgr_add_delayed_callback(&winsocket->shutdown_closure, 0);
-  }
-  gpr_mu_unlock(&winsocket->state_mu);
-  closesocket(socket);
+  if (winsocket->read_info.cb)
+    {
+      callbacks_set++;
+      grpc_iomgr_closure_init (&winsocket->shutdown_closure,
+			       winsocket->read_info.cb,
+			       winsocket->read_info.opaque);
+      grpc_iomgr_add_delayed_callback (&winsocket->shutdown_closure, 0);
+    }
+  if (winsocket->write_info.cb)
+    {
+      callbacks_set++;
+      grpc_iomgr_closure_init (&winsocket->shutdown_closure,
+			       winsocket->write_info.cb,
+			       winsocket->write_info.opaque);
+      grpc_iomgr_add_delayed_callback (&winsocket->shutdown_closure, 0);
+    }
+  gpr_mu_unlock (&winsocket->state_mu);
+  closesocket (socket);
   return callbacks_set;
 }
 
@@ -92,18 +98,25 @@ int grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
    explicitly know that we don't. If there is a future case where we can have
    an "idle" socket which is neither trying to read or write, we'd start leaking
    both memory and sockets. */
-void grpc_winsocket_orphan(grpc_winsocket *winsocket) {
-  grpc_iomgr_unregister_object(&winsocket->iomgr_object);
-  if (winsocket->read_info.outstanding || winsocket->write_info.outstanding) {
-    grpc_iocp_socket_orphan(winsocket);
-  } else {
-    grpc_winsocket_destroy(winsocket);
-  }
+void
+grpc_winsocket_orphan (grpc_winsocket * winsocket)
+{
+  grpc_iomgr_unregister_object (&winsocket->iomgr_object);
+  if (winsocket->read_info.outstanding || winsocket->write_info.outstanding)
+    {
+      grpc_iocp_socket_orphan (winsocket);
+    }
+  else
+    {
+      grpc_winsocket_destroy (winsocket);
+    }
 }
 
-void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
-  gpr_mu_destroy(&winsocket->state_mu);
-  gpr_free(winsocket);
+void
+grpc_winsocket_destroy (grpc_winsocket * winsocket)
+{
+  gpr_mu_destroy (&winsocket->state_mu);
+  gpr_free (winsocket);
 }
 
 #endif /* GPR_WINSOCK_SOCKET */

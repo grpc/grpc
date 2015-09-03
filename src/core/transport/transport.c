@@ -36,103 +36,134 @@
 #include <grpc/support/log.h>
 #include "src/core/transport/transport_impl.h"
 
-size_t grpc_transport_stream_size(grpc_transport *transport) {
+size_t
+grpc_transport_stream_size (grpc_transport * transport)
+{
   return transport->vtable->sizeof_stream;
 }
 
-void grpc_transport_destroy(grpc_transport *transport) {
-  transport->vtable->destroy(transport);
+void
+grpc_transport_destroy (grpc_transport * transport)
+{
+  transport->vtable->destroy (transport);
 }
 
-int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
-                               const void *server_data,
-                               grpc_transport_stream_op *initial_op) {
-  return transport->vtable->init_stream(transport, stream, server_data,
-                                        initial_op);
+int
+grpc_transport_init_stream (grpc_transport * transport, grpc_stream * stream,
+			    const void *server_data,
+			    grpc_transport_stream_op * initial_op)
+{
+  return transport->vtable->init_stream (transport, stream, server_data,
+					 initial_op);
 }
 
-void grpc_transport_perform_stream_op(grpc_transport *transport,
-                                      grpc_stream *stream,
-                                      grpc_transport_stream_op *op) {
-  transport->vtable->perform_stream_op(transport, stream, op);
+void
+grpc_transport_perform_stream_op (grpc_transport * transport,
+				  grpc_stream * stream,
+				  grpc_transport_stream_op * op)
+{
+  transport->vtable->perform_stream_op (transport, stream, op);
 }
 
-void grpc_transport_perform_op(grpc_transport *transport,
-                               grpc_transport_op *op) {
-  transport->vtable->perform_op(transport, op);
+void
+grpc_transport_perform_op (grpc_transport * transport, grpc_transport_op * op)
+{
+  transport->vtable->perform_op (transport, op);
 }
 
-void grpc_transport_destroy_stream(grpc_transport *transport,
-                                   grpc_stream *stream) {
-  transport->vtable->destroy_stream(transport, stream);
+void
+grpc_transport_destroy_stream (grpc_transport * transport,
+			       grpc_stream * stream)
+{
+  transport->vtable->destroy_stream (transport, stream);
 }
 
-char *grpc_transport_get_peer(grpc_transport *transport) {
-  return transport->vtable->get_peer(transport);
+char *
+grpc_transport_get_peer (grpc_transport * transport)
+{
+  return transport->vtable->get_peer (transport);
 }
 
-void grpc_transport_stream_op_finish_with_failure(
-    grpc_transport_stream_op *op) {
-  if (op->send_ops) {
-    op->on_done_send->cb(op->on_done_send->cb_arg, 0);
-  }
-  if (op->recv_ops) {
-    op->on_done_recv->cb(op->on_done_recv->cb_arg, 0);
-  }
-  if (op->on_consumed) {
-    op->on_consumed->cb(op->on_consumed->cb_arg, 0);
-  }
-}
-
-void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
-                                               grpc_status_code status) {
-  GPR_ASSERT(status != GRPC_STATUS_OK);
-  if (op->cancel_with_status == GRPC_STATUS_OK) {
-    op->cancel_with_status = status;
-  }
-  if (op->close_with_status != GRPC_STATUS_OK) {
-    op->close_with_status = GRPC_STATUS_OK;
-    if (op->optional_close_message != NULL) {
-      gpr_slice_unref(*op->optional_close_message);
-      op->optional_close_message = NULL;
+void
+grpc_transport_stream_op_finish_with_failure (grpc_transport_stream_op * op)
+{
+  if (op->send_ops)
+    {
+      op->on_done_send->cb (op->on_done_send->cb_arg, 0);
     }
-  }
+  if (op->recv_ops)
+    {
+      op->on_done_recv->cb (op->on_done_recv->cb_arg, 0);
+    }
+  if (op->on_consumed)
+    {
+      op->on_consumed->cb (op->on_consumed->cb_arg, 0);
+    }
 }
 
-typedef struct {
+void
+grpc_transport_stream_op_add_cancellation (grpc_transport_stream_op * op,
+					   grpc_status_code status)
+{
+  GPR_ASSERT (status != GRPC_STATUS_OK);
+  if (op->cancel_with_status == GRPC_STATUS_OK)
+    {
+      op->cancel_with_status = status;
+    }
+  if (op->close_with_status != GRPC_STATUS_OK)
+    {
+      op->close_with_status = GRPC_STATUS_OK;
+      if (op->optional_close_message != NULL)
+	{
+	  gpr_slice_unref (*op->optional_close_message);
+	  op->optional_close_message = NULL;
+	}
+    }
+}
+
+typedef struct
+{
   gpr_slice message;
   grpc_iomgr_closure *then_call;
   grpc_iomgr_closure closure;
 } close_message_data;
 
-static void free_message(void *p, int iomgr_success) {
+static void
+free_message (void *p, int iomgr_success)
+{
   close_message_data *cmd = p;
-  gpr_slice_unref(cmd->message);
-  if (cmd->then_call != NULL) {
-    cmd->then_call->cb(cmd->then_call->cb_arg, iomgr_success);
-  }
-  gpr_free(cmd);
+  gpr_slice_unref (cmd->message);
+  if (cmd->then_call != NULL)
+    {
+      cmd->then_call->cb (cmd->then_call->cb_arg, iomgr_success);
+    }
+  gpr_free (cmd);
 }
 
-void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
-                                        grpc_status_code status,
-                                        gpr_slice *optional_message) {
+void
+grpc_transport_stream_op_add_close (grpc_transport_stream_op * op,
+				    grpc_status_code status,
+				    gpr_slice * optional_message)
+{
   close_message_data *cmd;
-  GPR_ASSERT(status != GRPC_STATUS_OK);
+  GPR_ASSERT (status != GRPC_STATUS_OK);
   if (op->cancel_with_status != GRPC_STATUS_OK ||
-      op->close_with_status != GRPC_STATUS_OK) {
-    if (optional_message) {
-      gpr_slice_unref(*optional_message);
+      op->close_with_status != GRPC_STATUS_OK)
+    {
+      if (optional_message)
+	{
+	  gpr_slice_unref (*optional_message);
+	}
+      return;
     }
-    return;
-  }
-  if (optional_message) {
-    cmd = gpr_malloc(sizeof(*cmd));
-    cmd->message = *optional_message;
-    cmd->then_call = op->on_consumed;
-    grpc_iomgr_closure_init(&cmd->closure, free_message, cmd);
-    op->on_consumed = &cmd->closure;
-    op->optional_close_message = &cmd->message;
-  }
+  if (optional_message)
+    {
+      cmd = gpr_malloc (sizeof (*cmd));
+      cmd->message = *optional_message;
+      cmd->then_call = op->on_consumed;
+      grpc_iomgr_closure_init (&cmd->closure, free_message, cmd);
+      op->on_consumed = &cmd->closure;
+      op->optional_close_message = &cmd->message;
+    }
   op->close_with_status = status;
 }

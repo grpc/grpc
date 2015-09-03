@@ -40,30 +40,36 @@
 #include "src/core/iomgr/alarm.h"
 #include "src/core/surface/completion_queue.h"
 
-grpc_connectivity_state grpc_channel_check_connectivity_state(
-    grpc_channel *channel, int try_to_connect) {
+grpc_connectivity_state
+grpc_channel_check_connectivity_state (grpc_channel * channel,
+				       int try_to_connect)
+{
   /* forward through to the underlying client channel */
   grpc_channel_element *client_channel_elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  if (client_channel_elem->filter != &grpc_client_channel_filter) {
-    gpr_log(GPR_ERROR,
-            "grpc_channel_check_connectivity_state called on something that is "
-            "not a client channel, but '%s'",
-            client_channel_elem->filter->name);
-    return GRPC_CHANNEL_FATAL_FAILURE;
-  }
-  return grpc_client_channel_check_connectivity_state(client_channel_elem,
-                                                      try_to_connect);
+    grpc_channel_stack_last_element (grpc_channel_get_channel_stack
+				     (channel));
+  if (client_channel_elem->filter != &grpc_client_channel_filter)
+    {
+      gpr_log (GPR_ERROR,
+	       "grpc_channel_check_connectivity_state called on something that is "
+	       "not a client channel, but '%s'",
+	       client_channel_elem->filter->name);
+      return GRPC_CHANNEL_FATAL_FAILURE;
+    }
+  return grpc_client_channel_check_connectivity_state (client_channel_elem,
+						       try_to_connect);
 }
 
-typedef enum {
+typedef enum
+{
   WAITING,
   CALLING_BACK,
   CALLING_BACK_AND_FINISHED,
   CALLED_BACK
 } callback_phase;
 
-typedef struct {
+typedef struct
+{
   gpr_mu mu;
   callback_phase phase;
   int success;
@@ -76,25 +82,31 @@ typedef struct {
   void *tag;
 } state_watcher;
 
-static void delete_state_watcher(state_watcher *w) {
-  grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
-      grpc_channel_get_channel_stack(w->channel));
-  grpc_client_channel_del_interested_party(client_channel_elem,
-                                           grpc_cq_pollset(w->cq));
-  GRPC_CHANNEL_INTERNAL_UNREF(w->channel, "watch_connectivity");
-  gpr_mu_destroy(&w->mu);
-  gpr_free(w);
+static void
+delete_state_watcher (state_watcher * w)
+{
+  grpc_channel_element *client_channel_elem =
+    grpc_channel_stack_last_element (grpc_channel_get_channel_stack
+				     (w->channel));
+  grpc_client_channel_del_interested_party (client_channel_elem,
+					    grpc_cq_pollset (w->cq));
+  GRPC_CHANNEL_INTERNAL_UNREF (w->channel, "watch_connectivity");
+  gpr_mu_destroy (&w->mu);
+  gpr_free (w);
 }
 
-static void finished_completion(void *pw, grpc_cq_completion *ignored) {
+static void
+finished_completion (void *pw, grpc_cq_completion * ignored)
+{
   int delete = 0;
   state_watcher *w = pw;
-  gpr_mu_lock(&w->mu);
-  switch (w->phase) {
+  gpr_mu_lock (&w->mu);
+  switch (w->phase)
+    {
     case WAITING:
     case CALLED_BACK:
-      gpr_log(GPR_ERROR, "should never reach here");
-      abort();
+      gpr_log (GPR_ERROR, "should never reach here");
+      abort ();
       break;
     case CALLING_BACK:
       w->phase = CALLED_BACK;
@@ -102,64 +114,83 @@ static void finished_completion(void *pw, grpc_cq_completion *ignored) {
     case CALLING_BACK_AND_FINISHED:
       delete = 1;
       break;
-  }
-  gpr_mu_unlock(&w->mu);
+    }
+  gpr_mu_unlock (&w->mu);
 
-  if (delete) {
-    delete_state_watcher(w);
-  }
+  if (delete)
+    {
+      delete_state_watcher (w);
+    }
 }
 
-static void partly_done(state_watcher *w, int due_to_completion) {
+static void
+partly_done (state_watcher * w, int due_to_completion)
+{
   int delete = 0;
 
-  if (due_to_completion) {
-    gpr_mu_lock(&w->mu);
-    w->success = 1;
-    gpr_mu_unlock(&w->mu);
-    grpc_alarm_cancel(&w->alarm);
-  }
+  if (due_to_completion)
+    {
+      gpr_mu_lock (&w->mu);
+      w->success = 1;
+      gpr_mu_unlock (&w->mu);
+      grpc_alarm_cancel (&w->alarm);
+    }
 
-  gpr_mu_lock(&w->mu);
-  switch (w->phase) {
+  gpr_mu_lock (&w->mu);
+  switch (w->phase)
+    {
     case WAITING:
       w->phase = CALLING_BACK;
-      grpc_cq_end_op(w->cq, w->tag, w->success, finished_completion, w,
-                     &w->completion_storage);
+      grpc_cq_end_op (w->cq, w->tag, w->success, finished_completion, w,
+		      &w->completion_storage);
       break;
     case CALLING_BACK:
       w->phase = CALLING_BACK_AND_FINISHED;
       break;
     case CALLING_BACK_AND_FINISHED:
-      gpr_log(GPR_ERROR, "should never reach here");
-      abort();
+      gpr_log (GPR_ERROR, "should never reach here");
+      abort ();
       break;
     case CALLED_BACK:
       delete = 1;
       break;
-  }
-  gpr_mu_unlock(&w->mu);
+    }
+  gpr_mu_unlock (&w->mu);
 
-  if (delete) {
-    delete_state_watcher(w);
-  }
+  if (delete)
+    {
+      delete_state_watcher (w);
+    }
 }
 
-static void watch_complete(void *pw, int success) { partly_done(pw, 1); }
+static void
+watch_complete (void *pw, int success)
+{
+  partly_done (pw, 1);
+}
 
-static void timeout_complete(void *pw, int success) { partly_done(pw, 0); }
+static void
+timeout_complete (void *pw, int success)
+{
+  partly_done (pw, 0);
+}
 
-void grpc_channel_watch_connectivity_state(
-    grpc_channel *channel, grpc_connectivity_state last_observed_state,
-    gpr_timespec deadline, grpc_completion_queue *cq, void *tag) {
+void
+grpc_channel_watch_connectivity_state (grpc_channel * channel,
+				       grpc_connectivity_state
+				       last_observed_state,
+				       gpr_timespec deadline,
+				       grpc_completion_queue * cq, void *tag)
+{
   grpc_channel_element *client_channel_elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  state_watcher *w = gpr_malloc(sizeof(*w));
+    grpc_channel_stack_last_element (grpc_channel_get_channel_stack
+				     (channel));
+  state_watcher *w = gpr_malloc (sizeof (*w));
 
-  grpc_cq_begin_op(cq);
+  grpc_cq_begin_op (cq);
 
-  gpr_mu_init(&w->mu);
-  grpc_iomgr_closure_init(&w->on_complete, watch_complete, w);
+  gpr_mu_init (&w->mu);
+  grpc_iomgr_closure_init (&w->on_complete, watch_complete, w);
   w->phase = WAITING;
   w->state = last_observed_state;
   w->success = 0;
@@ -167,21 +198,25 @@ void grpc_channel_watch_connectivity_state(
   w->tag = tag;
   w->channel = channel;
 
-  grpc_alarm_init(&w->alarm,
-                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_alarm_init (&w->alarm,
+		   gpr_convert_clock_type (deadline, GPR_CLOCK_MONOTONIC),
+		   timeout_complete, w, gpr_now (GPR_CLOCK_MONOTONIC));
 
-  if (client_channel_elem->filter != &grpc_client_channel_filter) {
-    gpr_log(GPR_ERROR,
-            "grpc_channel_watch_connectivity_state called on something that is "
-            "not a client channel, but '%s'",
-            client_channel_elem->filter->name);
-    grpc_iomgr_add_delayed_callback(&w->on_complete, 1);
-  } else {
-    GRPC_CHANNEL_INTERNAL_REF(channel, "watch_connectivity");
-    grpc_client_channel_add_interested_party(client_channel_elem,
-                                             grpc_cq_pollset(cq));
-    grpc_client_channel_watch_connectivity_state(client_channel_elem, &w->state,
-                                                 &w->on_complete);
-  }
+  if (client_channel_elem->filter != &grpc_client_channel_filter)
+    {
+      gpr_log (GPR_ERROR,
+	       "grpc_channel_watch_connectivity_state called on something that is "
+	       "not a client channel, but '%s'",
+	       client_channel_elem->filter->name);
+      grpc_iomgr_add_delayed_callback (&w->on_complete, 1);
+    }
+  else
+    {
+      GRPC_CHANNEL_INTERNAL_REF (channel, "watch_connectivity");
+      grpc_client_channel_add_interested_party (client_channel_elem,
+						grpc_cq_pollset (cq));
+      grpc_client_channel_watch_connectivity_state (client_channel_elem,
+						    &w->state,
+						    &w->on_complete);
+    }
 }

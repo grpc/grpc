@@ -46,14 +46,15 @@
 #define GRPC_GRPC_ZOOKEEPER_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /** Register zookeeper name resolver in grpc */
-void grpc_zookeeper_register();
+  void grpc_zookeeper_register ();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_GRPC_ZOOKEEPER_H */
+#endif				/* GRPC_GRPC_ZOOKEEPER_H */

@@ -37,22 +37,23 @@
 #include <stddef.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* malloc, never returns NULL */
-void *gpr_malloc(size_t size);
+  void *gpr_malloc (size_t size);
 /* free */
-void gpr_free(void *ptr);
+  void gpr_free (void *ptr);
 /* realloc, never returns NULL */
-void *gpr_realloc(void *p, size_t size);
+  void *gpr_realloc (void *p, size_t size);
 /* aligned malloc, never returns NULL, will align to 1 << alignment_log */
-void *gpr_malloc_aligned(size_t size, size_t alignment_log);
+  void *gpr_malloc_aligned (size_t size, size_t alignment_log);
 /* free memory allocated by gpr_malloc_aligned */
-void gpr_free_aligned(void *ptr);
+  void gpr_free_aligned (void *ptr);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_SUPPORT_ALLOC_H */
+#endif				/* GRPC_SUPPORT_ALLOC_H */

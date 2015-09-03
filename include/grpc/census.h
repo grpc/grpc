@@ -41,33 +41,35 @@
 #include <grpc/grpc.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Identify census features that can be enabled via census_initialize(). */
-enum census_features {
-  CENSUS_FEATURE_NONE = 0,    /* Do not enable census. */
-  CENSUS_FEATURE_TRACING = 1, /* Enable census tracing. */
-  CENSUS_FEATURE_STATS = 2,   /* Enable Census stats collection. */
-  CENSUS_FEATURE_CPU = 4,     /* Enable Census CPU usage collection. */
-  CENSUS_FEATURE_ALL =
+  enum census_features
+  {
+    CENSUS_FEATURE_NONE = 0,	/* Do not enable census. */
+    CENSUS_FEATURE_TRACING = 1,	/* Enable census tracing. */
+    CENSUS_FEATURE_STATS = 2,	/* Enable Census stats collection. */
+    CENSUS_FEATURE_CPU = 4,	/* Enable Census CPU usage collection. */
+    CENSUS_FEATURE_ALL =
       CENSUS_FEATURE_TRACING | CENSUS_FEATURE_STATS | CENSUS_FEATURE_CPU
-};
+  };
 
 /** Shutdown and startup census subsystem. The 'features' argument should be
  * the OR (|) of census_features values. If census fails to initialize, then
  * census_initialize() will return a non-zero value. It is an error to call
  * census_initialize() more than once (without an intervening
  * census_shutdown()). */
-int census_initialize(int features);
-void census_shutdown(void);
+  int census_initialize (int features);
+  void census_shutdown (void);
 
 /** Return the features supported by the current census implementation (not all
  * features will be available on all platforms). */
-int census_supported(void);
+  int census_supported (void);
 
 /** Return the census features currently enabled. */
-int census_enabled(void);
+  int census_enabled (void);
 
 /**
   Context is a handle used by census to represent the current tracing and
@@ -77,7 +79,7 @@ int census_enabled(void);
   should be thought of as specific to single RPC/thread. The context can be
   serialized for passing across the wire, via census_context_serialize().
 */
-typedef struct census_context census_context;
+  typedef struct census_context census_context;
 
 /* This function is called by the RPC subsystem whenever it needs to get a
  * serialized form of the current census context (presumably to pass across
@@ -90,21 +92,22 @@ typedef struct census_context census_context;
  *
  * TODO(aveitch): determine how best to communicate required/max buffer size
  * so caller doesn't have to guess. */
-size_t census_context_serialize(const census_context *context, char *buffer,
-                                size_t buf_size);
+  size_t census_context_serialize (const census_context * context,
+				   char *buffer, size_t buf_size);
 
 /* Distributed traces can have a number of options. */
-enum census_trace_mask_values {
-  CENSUS_TRACE_MASK_NONE = 0,      /* Default, empty flags */
-  CENSUS_TRACE_MASK_IS_SAMPLED = 1 /* RPC tracing enabled for this context. */
-};
+  enum census_trace_mask_values
+  {
+    CENSUS_TRACE_MASK_NONE = 0,	/* Default, empty flags */
+    CENSUS_TRACE_MASK_IS_SAMPLED = 1	/* RPC tracing enabled for this context. */
+  };
 
 /** Get the current trace mask associated with this context. The value returned
     will be the logical or of census_trace_mask_values values. */
-int census_trace_mask(const census_context *context);
+  int census_trace_mask (const census_context * context);
 
 /** Set the trace mask associated with a context. */
-void census_set_trace_mask(int trace_mask);
+  void census_set_trace_mask (int trace_mask);
 
 /* The concept of "operation" is a fundamental concept for Census. In an RPC
    system, and operation typcially represents a single RPC, or a significant
@@ -132,11 +135,12 @@ void census_set_trace_mask(int trace_mask);
   This structure represents a timestamp as used by census to record the time
   at which an operation begins.
 */
-typedef struct {
-  /* Use gpr_timespec for default implementation. High performance
-   * implementations should use a cycle-counter based timestamp. */
-  gpr_timespec ts;
-} census_timestamp;
+  typedef struct
+  {
+    /* Use gpr_timespec for default implementation. High performance
+     * implementations should use a cycle-counter based timestamp. */
+    gpr_timespec ts;
+  } census_timestamp;
 
 /**
   Mark the beginning of an RPC operation. The information required to call the
@@ -152,7 +156,7 @@ typedef struct {
 
   @return A timestamp representing the operation start time.
 */
-census_timestamp census_start_rpc_op_timestamp(void);
+  census_timestamp census_start_rpc_op_timestamp (void);
 
 /**
   Represent functions to map RPC name ID to service/method names. Census
@@ -165,10 +169,11 @@ census_timestamp census_start_rpc_op_timestamp(void);
   TODO(aveitch): Instead of providing this as an argument to the rpc_start_op()
   functions, maybe it should be set once at census initialization.
 */
-typedef struct {
-  const char *(*get_rpc_service_name)(gpr_int64 id);
-  const char *(*get_rpc_method_name)(gpr_int64 id);
-} census_rpc_name_info;
+  typedef struct
+  {
+    const char *(*get_rpc_service_name) (gpr_int64 id);
+    const char *(*get_rpc_method_name) (gpr_int64 id);
+  } census_rpc_name_info;
 
 /**
    Start a client rpc operation. This function should be called as early in the
@@ -204,15 +209,19 @@ typedef struct {
 
    @return A new census context.
  */
-census_context *census_start_client_rpc_op(
-    const census_context *context, gpr_int64 rpc_name_id,
-    const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
-    const census_timestamp *start_time);
+  census_context *census_start_client_rpc_op (const census_context * context,
+					      gpr_int64 rpc_name_id,
+					      const census_rpc_name_info *
+					      rpc_name_info, const char *peer,
+					      int trace_mask,
+					      const census_timestamp *
+					      start_time);
 
 /**
   Add peer information to a context representing a client RPC operation.
 */
-void census_set_rpc_client_peer(census_context *context, const char *peer);
+  void census_set_rpc_client_peer (census_context * context,
+				   const char *peer);
 
 /**
    Start a server RPC operation. Returns a new context to be used in future
@@ -232,10 +241,12 @@ void census_set_rpc_client_peer(census_context *context, const char *peer);
 
    @return A new census context.
  */
-census_context *census_start_server_rpc_op(
-    const char *buffer, gpr_int64 rpc_name_id,
-    const census_rpc_name_info *rpc_name_info, const char *peer, int trace_mask,
-    census_timestamp *start_time);
+  census_context *census_start_server_rpc_op (const char *buffer,
+					      gpr_int64 rpc_name_id,
+					      const census_rpc_name_info *
+					      rpc_name_info, const char *peer,
+					      int trace_mask,
+					      census_timestamp * start_time);
 
 /**
    Start a new, non-RPC operation. In general, this function works very
@@ -262,8 +273,9 @@ census_context *census_start_server_rpc_op(
 
    @return A new census context.
  */
-census_context *census_start_op(census_context *context, const char *family,
-                                const char *name, int trace_mask);
+  census_context *census_start_op (census_context * context,
+				   const char *family, const char *name,
+				   int trace_mask);
 
 /**
   End an operation started by any of the census_start_*_op*() calls. The
@@ -274,7 +286,7 @@ census_context *census_start_op(census_context *context, const char *family,
   @param status status associated with the operation. Not interpreted by
                 census.
 */
-void census_end_op(census_context *context, int status);
+  void census_end_op (census_context * context, int status);
 
 #define CENSUS_TRACE_RECORD_START_OP ((gpr_uint32)0)
 #define CENSUS_TRACE_RECORD_END_OP ((gpr_uint32)1)
@@ -286,18 +298,19 @@ void census_end_op(census_context *context, int status);
     @param buffer Pointer to buffer to use
     @param n Number of bytes in buffer
 */
-void census_trace_print(census_context *context, gpr_uint32 type,
-                        const char *buffer, size_t n);
+  void census_trace_print (census_context * context, gpr_uint32 type,
+			   const char *buffer, size_t n);
 
 /** Trace record. */
-typedef struct {
-  census_timestamp timestamp; /* Time of record creation */
-  gpr_uint64 trace_id;        /* Trace ID associated with record */
-  gpr_uint64 op_id;           /* Operation ID associated with record */
-  gpr_uint32 type;            /* Type (as used in census_trace_print() */
-  const char *buffer;         /* Buffer (from census_trace_print() */
-  size_t buf_size;            /* Number of bytes inside buffer */
-} census_trace_record;
+  typedef struct
+  {
+    census_timestamp timestamp;	/* Time of record creation */
+    gpr_uint64 trace_id;	/* Trace ID associated with record */
+    gpr_uint64 op_id;		/* Operation ID associated with record */
+    gpr_uint32 type;		/* Type (as used in census_trace_print() */
+    const char *buffer;		/* Buffer (from census_trace_print() */
+    size_t buf_size;		/* Number of bytes inside buffer */
+  } census_trace_record;
 
 /** Start a scan of existing trace records. While a scan is ongoing, addition
     of new trace records will be blocked if the underlying trace buffers
@@ -308,7 +321,7 @@ typedef struct {
          while scanning is ongoing.
   @returns 0 on success, non-zero on failure (e.g. if a scan is already ongoing)
 */
-int census_trace_scan_start(int consume);
+  int census_trace_scan_start (int consume);
 
 /** Get a trace record. The data pointed to by the trace buffer is guaranteed
     stable until the next census_get_trace_record() call (if the consume
@@ -319,10 +332,10 @@ int census_trace_scan_start(int consume);
            census_trace_scan_start()), 0 if there is no more trace data (and
            trace_record will not be modified) or 1 otherwise.
 */
-int census_get_trace_record(census_trace_record *trace_record);
+  int census_get_trace_record (census_trace_record * trace_record);
 
 /** End a scan previously started by census_trace_scan_start() */
-void census_trace_scan_end();
+  void census_trace_scan_end ();
 
 /* Max number of characters in tag key */
 #define CENSUS_MAX_TAG_KEY_LENGTH 20
@@ -332,12 +345,12 @@ void census_trace_scan_end();
 /* A Census tag set is a collection of key:value string pairs; these form the
    basis against which Census metrics will be recorded. Keys are unique within
    a tag set. All contexts have an associated tag set. */
-typedef struct census_tag_set census_tag_set;
+  typedef struct census_tag_set census_tag_set;
 
 /* Returns a pointer to a newly created, empty tag set. If size_hint > 0,
    indicates that the tag set is intended to hold approximately that number
    of tags. */
-census_tag_set *census_tag_set_create(size_t size_hint);
+  census_tag_set *census_tag_set_create (size_t size_hint);
 
 /* Add a new tag key/value to an existing tag set; if the tag key already exists
    in the tag set, then its value is overwritten with the new one. Can also be
@@ -346,38 +359,40 @@ census_tag_set *census_tag_set_create(size_t size_hint);
    Return values:
    -1: invalid length key or value
    non-negative value: the number of tags in the tag set. */
-int census_tag_set_add(census_tag_set *tags, const char *key,
-                       const char *value);
+  int census_tag_set_add (census_tag_set * tags, const char *key,
+			  const char *value);
 
 /* Destroys a tag set. This function must be called to prevent memory leaks.
    Once called, the tag set cannot be used again. */
-void census_tag_set_destroy(census_tag_set *tags);
+  void census_tag_set_destroy (census_tag_set * tags);
 
 /* Get a contexts tag set. */
-census_tag_set *census_context_tag_set(census_context *context);
+  census_tag_set *census_context_tag_set (census_context * context);
 
 /* A read-only representation of a tag for use by census clients. */
-typedef struct {
-  size_t key_len;    /* Number of bytes in tag key. */
-  const char *key;   /* A pointer to the tag key. May not be null-terminated. */
-  size_t value_len;  /* Number of bytes in tag value. */
-  const char *value; /* Pointer to the tag value. May not be null-terminated. */
-} census_tag_const;
+  typedef struct
+  {
+    size_t key_len;		/* Number of bytes in tag key. */
+    const char *key;		/* A pointer to the tag key. May not be null-terminated. */
+    size_t value_len;		/* Number of bytes in tag value. */
+    const char *value;		/* Pointer to the tag value. May not be null-terminated. */
+  } census_tag_const;
 
 /* Used to iterate through a tag sets contents. */
-typedef struct census_tag_set_iterator census_tag_set_iterator;
+  typedef struct census_tag_set_iterator census_tag_set_iterator;
 
 /* Open a tag set for iteration. The tag set must not be modified while
    iteration is ongoing. Returns an iterator for use in following functions. */
-census_tag_set_iterator *census_tag_set_open(census_tag_set *tags);
+  census_tag_set_iterator *census_tag_set_open (census_tag_set * tags);
 
 /* Get the next tag in the tag set, by writing into the 'tag' argument. Returns
    1 if there is a "next" tag, 0 if there are no more tags. */
-int census_tag_set_next(census_tag_set_iterator *it, census_tag_const *tag);
+  int census_tag_set_next (census_tag_set_iterator * it,
+			   census_tag_const * tag);
 
 /* Close an iterator opened by census_tag_set_open(). The iterator will be
    invalidated, and should not be used once close is called. */
-void census_tag_set_close(census_tag_set_iterator *it);
+  void census_tag_set_close (census_tag_set_iterator * it);
 
 /* Core stats collection API's. The following concepts are used:
    * Aggregation: A collection of values. Census supports the following
@@ -402,34 +417,35 @@ void census_tag_set_close(census_tag_set_iterator *it);
 
 /* A single value to be recorded comprises two parts: an ID for the particular
  * metric and the value to be recorded against it. */
-typedef struct {
-  gpr_uint32 metric_id;
-  double value;
-} census_value;
+  typedef struct
+  {
+    gpr_uint32 metric_id;
+    double value;
+  } census_value;
 
 /* Record new usage values against the given context. */
-void census_record_values(census_context *context, census_value *values,
-                          size_t nvalues);
+  void census_record_values (census_context * context, census_value * values,
+			     size_t nvalues);
 
 /** Type representing a particular aggregation */
-typedef struct census_aggregation_ops census_aggregation_ops;
+  typedef struct census_aggregation_ops census_aggregation_ops;
 
 /* Predefined aggregation types, for use with census_view_create(). */
-extern census_aggregation_ops census_agg_sum;
-extern census_aggregation_ops census_agg_distribution;
-extern census_aggregation_ops census_agg_histogram;
-extern census_aggregation_ops census_agg_window;
+  extern census_aggregation_ops census_agg_sum;
+  extern census_aggregation_ops census_agg_distribution;
+  extern census_aggregation_ops census_agg_histogram;
+  extern census_aggregation_ops census_agg_window;
 
 /** Information needed to instantiate a new aggregation. Used in view
     construction via census_define_view(). */
-typedef struct {
-  const census_aggregation_ops *ops;
-  const void
-      *create_arg; /* Argument to be used for aggregation initialization. */
-} census_aggregation;
+  typedef struct
+  {
+    const census_aggregation_ops *ops;
+    const void *create_arg;	/* Argument to be used for aggregation initialization. */
+  } census_aggregation;
 
 /** A census view type. Opaque. */
-typedef struct census_view census_view;
+  typedef struct census_view census_view;
 
 /** Create a new view.
   @param metric_id Metric with which this view is associated.
@@ -439,50 +455,53 @@ typedef struct census_view census_view;
 
   @return A new census view
 */
-census_view *census_view_create(gpr_uint32 metric_id,
-                                const census_tag_set *tags,
-                                const census_aggregation *aggregations,
-                                size_t naggregations);
+  census_view *census_view_create (gpr_uint32 metric_id,
+				   const census_tag_set * tags,
+				   const census_aggregation * aggregations,
+				   size_t naggregations);
 
 /** Destroy a previously created view. */
-void census_view_delete(census_view *view);
+  void census_view_delete (census_view * view);
 
 /** Metric ID associated with a view */
-size_t census_view_metric(const census_view *view);
+  size_t census_view_metric (const census_view * view);
 
 /** Number of aggregations associated with view. */
-size_t census_view_naggregations(const census_view *view);
+  size_t census_view_naggregations (const census_view * view);
 
 /** Get tags associated with view. */
-const census_tag_set *census_view_tags(const census_view *view);
+  const census_tag_set *census_view_tags (const census_view * view);
 
 /** Get aggregation descriptors associated with a view. */
-const census_aggregation *census_view_aggregrations(const census_view *view);
+  const census_aggregation *census_view_aggregrations (const census_view *
+						       view);
 
 /** Holds all the aggregation data for a particular view instantiation. Forms
   part of the data returned by census_view_data(). */
-typedef struct {
-  const census_tag_set *tags; /* Tags for this set of aggregations. */
-  const void **data; /* One data set for every aggregation in the view. */
-} census_view_aggregation_data;
+  typedef struct
+  {
+    const census_tag_set *tags;	/* Tags for this set of aggregations. */
+    const void **data;		/* One data set for every aggregation in the view. */
+  } census_view_aggregation_data;
 
 /** Census view data as returned by census_view_get_data(). */
-typedef struct {
-  size_t n_tag_sets; /* Number of unique tag sets that matched view. */
-  const census_view_aggregation_data *data; /* n_tag_sets entries */
-} census_view_data;
+  typedef struct
+  {
+    size_t n_tag_sets;		/* Number of unique tag sets that matched view. */
+    const census_view_aggregation_data *data;	/* n_tag_sets entries */
+  } census_view_data;
 
 /** Get data from aggregations associated with a view.
   @param view View from which to get data.
   @return Full set of data for all aggregations for the view.
 */
-const census_view_data *census_view_get_data(const census_view *view);
+  const census_view_data *census_view_get_data (const census_view * view);
 
 /** Reset all view data to zero for the specified view */
-void census_view_reset(census_view *view);
+  void census_view_reset (census_view * view);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* CENSUS_CENSUS_H */
+#endif				/* CENSUS_CENSUS_H */

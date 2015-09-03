@@ -35,7 +35,8 @@
 #define GRPC_SUPPORT_CMDLINE_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Simple command line parser.
@@ -64,34 +65,36 @@ extern "C" {
      return 0;
    } */
 
-typedef struct gpr_cmdline gpr_cmdline;
+  typedef struct gpr_cmdline gpr_cmdline;
 
 /* Construct a command line parser: takes a short description of the tool
    doing the parsing */
-gpr_cmdline *gpr_cmdline_create(const char *description);
+  gpr_cmdline *gpr_cmdline_create (const char *description);
 /* Add an integer parameter, with a name (used on the command line) and some
    helpful text (used in the command usage) */
-void gpr_cmdline_add_int(gpr_cmdline *cl, const char *name, const char *help,
-                         int *value);
+  void gpr_cmdline_add_int (gpr_cmdline * cl, const char *name,
+			    const char *help, int *value);
 /* The same, for a boolean flag */
-void gpr_cmdline_add_flag(gpr_cmdline *cl, const char *name, const char *help,
-                          int *value);
+  void gpr_cmdline_add_flag (gpr_cmdline * cl, const char *name,
+			     const char *help, int *value);
 /* And for a string */
-void gpr_cmdline_add_string(gpr_cmdline *cl, const char *name, const char *help,
-                            char **value);
+  void gpr_cmdline_add_string (gpr_cmdline * cl, const char *name,
+			       const char *help, char **value);
 /* Set a callback for non-named arguments */
-void gpr_cmdline_on_extra_arg(
-    gpr_cmdline *cl, const char *name, const char *help,
-    void (*on_extra_arg)(void *user_data, const char *arg), void *user_data);
+  void gpr_cmdline_on_extra_arg (gpr_cmdline * cl, const char *name,
+				 const char *help,
+				 void (*on_extra_arg) (void *user_data,
+						       const char *arg),
+				 void *user_data);
 /* Parse the command line */
-void gpr_cmdline_parse(gpr_cmdline *cl, int argc, char **argv);
+  void gpr_cmdline_parse (gpr_cmdline * cl, int argc, char **argv);
 /* Destroy the parser */
-void gpr_cmdline_destroy(gpr_cmdline *cl);
+  void gpr_cmdline_destroy (gpr_cmdline * cl);
 /* Get a string describing usage */
-char *gpr_cmdline_usage_string(gpr_cmdline *cl, const char *argv0);
+  char *gpr_cmdline_usage_string (gpr_cmdline * cl, const char *argv0);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_SUPPORT_CMDLINE_H */
+#endif				/* GRPC_SUPPORT_CMDLINE_H */

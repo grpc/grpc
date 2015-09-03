@@ -35,14 +35,15 @@
 #define GRPC_SUPPORT_STRING_UTIL_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* String utility functions */
 
 /* Returns a copy of src that can be passed to gpr_free().
    If allocation fails or if src is NULL, returns NULL. */
-char *gpr_strdup(const char *src);
+  char *gpr_strdup (const char *src);
 
 /* printf to a newly-allocated string.  The set of supported formats may vary
    between platforms.
@@ -52,10 +53,10 @@ char *gpr_strdup(const char *src);
 
    On error, returns -1 and sets *strp to NULL. If the format string is bad,
    the result is undefined. */
-int gpr_asprintf(char **strp, const char *format, ...);
+  int gpr_asprintf (char **strp, const char *format, ...);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_SUPPORT_STRING_UTIL_H */
+#endif				/* GRPC_SUPPORT_STRING_UTIL_H */

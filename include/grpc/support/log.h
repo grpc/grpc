@@ -34,11 +34,12 @@
 #ifndef GRPC_SUPPORT_LOG_H
 #define GRPC_SUPPORT_LOG_H
 
-#include <stdlib.h> /* for abort() */
+#include <stdlib.h>		/* for abort() */
 #include <stdarg.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* GPR log API.
@@ -53,14 +54,15 @@ extern "C" {
 
 /* The severity of a log message - use the #defines below when calling into
    gpr_log to additionally supply file and line data */
-typedef enum gpr_log_severity {
-  GPR_LOG_SEVERITY_DEBUG,
-  GPR_LOG_SEVERITY_INFO,
-  GPR_LOG_SEVERITY_ERROR
-} gpr_log_severity;
+  typedef enum gpr_log_severity
+  {
+    GPR_LOG_SEVERITY_DEBUG,
+    GPR_LOG_SEVERITY_INFO,
+    GPR_LOG_SEVERITY_ERROR
+  } gpr_log_severity;
 
 /* Returns a string representation of the log severity */
-const char *gpr_log_severity_string(gpr_log_severity severity);
+  const char *gpr_log_severity_string (gpr_log_severity severity);
 
 /* Macros to build log contexts at various severity levels */
 #define GPR_DEBUG __FILE__, __LINE__, GPR_LOG_SEVERITY_DEBUG
@@ -69,24 +71,25 @@ const char *gpr_log_severity_string(gpr_log_severity severity);
 
 /* Log a message. It's advised to use GPR_xxx above to generate the context
  * for each message */
-void gpr_log(const char *file, int line, gpr_log_severity severity,
-             const char *format, ...);
+  void gpr_log (const char *file, int line, gpr_log_severity severity,
+		const char *format, ...);
 
-void gpr_log_message(const char *file, int line, gpr_log_severity severity,
-                     const char *message);
+  void gpr_log_message (const char *file, int line, gpr_log_severity severity,
+			const char *message);
 
 /* Log overrides: applications can use this API to intercept logging calls
    and use their own implementations */
 
-typedef struct {
-  const char *file;
-  int line;
-  gpr_log_severity severity;
-  const char *message;
-} gpr_log_func_args;
+  typedef struct
+  {
+    const char *file;
+    int line;
+    gpr_log_severity severity;
+    const char *message;
+  } gpr_log_func_args;
 
-typedef void (*gpr_log_func)(gpr_log_func_args *args);
-void gpr_set_log_function(gpr_log_func func);
+  typedef void (*gpr_log_func) (gpr_log_func_args * args);
+  void gpr_set_log_function (gpr_log_func func);
 
 /* abort() the process if x is zero, having written a line to the log.
 
@@ -105,4 +108,4 @@ void gpr_set_log_function(gpr_log_func func);
 }
 #endif
 
-#endif /* GRPC_SUPPORT_LOG_H */
+#endif				/* GRPC_SUPPORT_LOG_H */

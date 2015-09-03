@@ -49,131 +49,154 @@ static grpc_pollset g_pollset;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
 
-static void on_connect(void *arg, grpc_endpoint *udp) {}
+static void
+on_connect (void *arg, grpc_endpoint * udp)
+{
+}
 
-static void on_read(int fd, grpc_udp_server_cb new_transport_cb, void *cb_arg) {
+static void
+on_read (int fd, grpc_udp_server_cb new_transport_cb, void *cb_arg)
+{
   char read_buffer[512];
   int byte_count;
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  byte_count = recv(fd, read_buffer, sizeof(read_buffer), 0);
+  gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
+  byte_count = recv (fd, read_buffer, sizeof (read_buffer), 0);
 
   g_number_of_reads++;
   g_number_of_bytes_read += byte_count;
 
-  grpc_pollset_kick(&g_pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  grpc_pollset_kick (&g_pollset, NULL);
+  gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
 }
 
-static void test_no_op(void) {
-  grpc_udp_server *s = grpc_udp_server_create();
-  grpc_udp_server_destroy(s, NULL, NULL);
+static void
+test_no_op (void)
+{
+  grpc_udp_server *s = grpc_udp_server_create ();
+  grpc_udp_server_destroy (s, NULL, NULL);
 }
 
-static void test_no_op_with_start(void) {
-  grpc_udp_server *s = grpc_udp_server_create();
-  LOG_TEST("test_no_op_with_start");
-  grpc_udp_server_start(s, NULL, 0, on_connect, NULL);
-  grpc_udp_server_destroy(s, NULL, NULL);
+static void
+test_no_op_with_start (void)
+{
+  grpc_udp_server *s = grpc_udp_server_create ();
+  LOG_TEST ("test_no_op_with_start");
+  grpc_udp_server_start (s, NULL, 0, on_connect, NULL);
+  grpc_udp_server_destroy (s, NULL, NULL);
 }
 
-static void test_no_op_with_port(void) {
+static void
+test_no_op_with_port (void)
+{
   struct sockaddr_in addr;
-  grpc_udp_server *s = grpc_udp_server_create();
-  LOG_TEST("test_no_op_with_port");
+  grpc_udp_server *s = grpc_udp_server_create ();
+  LOG_TEST ("test_no_op_with_port");
 
-  memset(&addr, 0, sizeof(addr));
+  memset (&addr, 0, sizeof (addr));
   addr.sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
-                                      on_read));
+  GPR_ASSERT (grpc_udp_server_add_port
+	      (s, (struct sockaddr *) &addr, sizeof (addr), on_read));
 
-  grpc_udp_server_destroy(s, NULL, NULL);
+  grpc_udp_server_destroy (s, NULL, NULL);
 }
 
-static void test_no_op_with_port_and_start(void) {
+static void
+test_no_op_with_port_and_start (void)
+{
   struct sockaddr_in addr;
-  grpc_udp_server *s = grpc_udp_server_create();
-  LOG_TEST("test_no_op_with_port_and_start");
+  grpc_udp_server *s = grpc_udp_server_create ();
+  LOG_TEST ("test_no_op_with_port_and_start");
 
-  memset(&addr, 0, sizeof(addr));
+  memset (&addr, 0, sizeof (addr));
   addr.sin_family = AF_INET;
-  GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
-                                      on_read));
+  GPR_ASSERT (grpc_udp_server_add_port
+	      (s, (struct sockaddr *) &addr, sizeof (addr), on_read));
 
-  grpc_udp_server_start(s, NULL, 0, on_connect, NULL);
+  grpc_udp_server_start (s, NULL, 0, on_connect, NULL);
 
-  grpc_udp_server_destroy(s, NULL, NULL);
+  grpc_udp_server_destroy (s, NULL, NULL);
 }
 
-static void test_receive(int number_of_clients) {
+static void
+test_receive (int number_of_clients)
+{
   struct sockaddr_storage addr;
-  socklen_t addr_len = sizeof(addr);
+  socklen_t addr_len = sizeof (addr);
   int clifd, svrfd;
-  grpc_udp_server *s = grpc_udp_server_create();
+  grpc_udp_server *s = grpc_udp_server_create ();
   int i;
   int number_of_reads_before;
   gpr_timespec deadline;
   grpc_pollset *pollsets[1];
-  LOG_TEST("test_receive");
-  gpr_log(GPR_INFO, "clients=%d", number_of_clients);
+  LOG_TEST ("test_receive");
+  gpr_log (GPR_INFO, "clients=%d", number_of_clients);
 
   g_number_of_bytes_read = 0;
 
-  memset(&addr, 0, sizeof(addr));
+  memset (&addr, 0, sizeof (addr));
   addr.ss_family = AF_INET;
-  GPR_ASSERT(
-      grpc_udp_server_add_port(s, (struct sockaddr *)&addr, addr_len, on_read));
+  GPR_ASSERT (grpc_udp_server_add_port
+	      (s, (struct sockaddr *) &addr, addr_len, on_read));
 
-  svrfd = grpc_udp_server_get_fd(s, 0);
-  GPR_ASSERT(svrfd >= 0);
-  GPR_ASSERT(getsockname(svrfd, (struct sockaddr *)&addr, &addr_len) == 0);
-  GPR_ASSERT(addr_len <= sizeof(addr));
+  svrfd = grpc_udp_server_get_fd (s, 0);
+  GPR_ASSERT (svrfd >= 0);
+  GPR_ASSERT (getsockname (svrfd, (struct sockaddr *) &addr, &addr_len) == 0);
+  GPR_ASSERT (addr_len <= sizeof (addr));
 
   pollsets[0] = &g_pollset;
-  grpc_udp_server_start(s, pollsets, 1, on_connect, NULL);
+  grpc_udp_server_start (s, pollsets, 1, on_connect, NULL);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
 
-  for (i = 0; i < number_of_clients; i++) {
-    deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10);
+  for (i = 0; i < number_of_clients; i++)
+    {
+      deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE (10);
 
-    number_of_reads_before = g_number_of_reads;
-    /* Create a socket, send a packet to the UDP server. */
-    clifd = socket(addr.ss_family, SOCK_DGRAM, 0);
-    GPR_ASSERT(clifd >= 0);
-    GPR_ASSERT(connect(clifd, (struct sockaddr *)&addr, addr_len) == 0);
-    GPR_ASSERT(5 == write(clifd, "hello", 5));
-    while (g_number_of_reads == number_of_reads_before &&
-           gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
-      grpc_pollset_worker worker;
-      grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                        deadline);
+      number_of_reads_before = g_number_of_reads;
+      /* Create a socket, send a packet to the UDP server. */
+      clifd = socket (addr.ss_family, SOCK_DGRAM, 0);
+      GPR_ASSERT (clifd >= 0);
+      GPR_ASSERT (connect (clifd, (struct sockaddr *) &addr, addr_len) == 0);
+      GPR_ASSERT (5 == write (clifd, "hello", 5));
+      while (g_number_of_reads == number_of_reads_before &&
+	     gpr_time_cmp (deadline, gpr_now (deadline.clock_type)) > 0)
+	{
+	  grpc_pollset_worker worker;
+	  grpc_pollset_work (&g_pollset, &worker,
+			     gpr_now (GPR_CLOCK_MONOTONIC), deadline);
+	}
+      GPR_ASSERT (g_number_of_reads == number_of_reads_before + 1);
+      close (clifd);
     }
-    GPR_ASSERT(g_number_of_reads == number_of_reads_before + 1);
-    close(clifd);
-  }
-  GPR_ASSERT(g_number_of_bytes_read == 5 * number_of_clients);
+  GPR_ASSERT (g_number_of_bytes_read == 5 * number_of_clients);
 
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
 
-  grpc_udp_server_destroy(s, NULL, NULL);
+  grpc_udp_server_destroy (s, NULL, NULL);
 }
 
-static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
+static void
+destroy_pollset (void *p)
+{
+  grpc_pollset_destroy (p);
+}
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  grpc_iomgr_init();
-  grpc_pollset_init(&g_pollset);
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  grpc_iomgr_init ();
+  grpc_pollset_init (&g_pollset);
 
-  test_no_op();
-  test_no_op_with_start();
-  test_no_op_with_port();
-  test_no_op_with_port_and_start();
-  test_receive(1);
-  test_receive(10);
+  test_no_op ();
+  test_no_op_with_start ();
+  test_no_op_with_port ();
+  test_no_op_with_port_and_start ();
+  test_receive (1);
+  test_receive (10);
 
-  grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
-  grpc_iomgr_shutdown();
+  grpc_pollset_shutdown (&g_pollset, destroy_pollset, &g_pollset);
+  grpc_iomgr_shutdown ();
   return 0;
 }

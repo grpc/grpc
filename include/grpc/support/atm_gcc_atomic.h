@@ -54,19 +54,25 @@ typedef gpr_intptr gpr_atm;
 #define gpr_atm_full_fetch_add(p, delta) \
   (__atomic_fetch_add((p), (gpr_intptr)(delta), __ATOMIC_ACQ_REL))
 
-static __inline int gpr_atm_no_barrier_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_RELAXED,
-                                     __ATOMIC_RELAXED);
+static __inline int
+gpr_atm_no_barrier_cas (gpr_atm * p, gpr_atm o, gpr_atm n)
+{
+  return __atomic_compare_exchange_n (p, &o, n, 0, __ATOMIC_RELAXED,
+				      __ATOMIC_RELAXED);
 }
 
-static __inline int gpr_atm_acq_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_ACQUIRE,
-                                     __ATOMIC_RELAXED);
+static __inline int
+gpr_atm_acq_cas (gpr_atm * p, gpr_atm o, gpr_atm n)
+{
+  return __atomic_compare_exchange_n (p, &o, n, 0, __ATOMIC_ACQUIRE,
+				      __ATOMIC_RELAXED);
 }
 
-static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
-  return __atomic_compare_exchange_n(p, &o, n, 0, __ATOMIC_RELEASE,
-                                     __ATOMIC_RELAXED);
+static __inline int
+gpr_atm_rel_cas (gpr_atm * p, gpr_atm o, gpr_atm n)
+{
+  return __atomic_compare_exchange_n (p, &o, n, 0, __ATOMIC_RELEASE,
+				      __ATOMIC_RELAXED);
 }
 
 #endif /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */

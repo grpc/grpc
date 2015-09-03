@@ -51,25 +51,33 @@ typedef gpr_intptr gpr_atm;
 
 #define gpr_atm_full_barrier() (__sync_synchronize())
 
-static __inline gpr_atm gpr_atm_acq_load(const gpr_atm *p) {
+static __inline gpr_atm
+gpr_atm_acq_load (const gpr_atm * p)
+{
   gpr_atm value = *p;
-  GPR_ATM_LS_BARRIER_();
+  GPR_ATM_LS_BARRIER_ ();
   return value;
 }
 
-static __inline gpr_atm gpr_atm_no_barrier_load(const gpr_atm *p) {
+static __inline gpr_atm
+gpr_atm_no_barrier_load (const gpr_atm * p)
+{
   gpr_atm value = *p;
-  GPR_ATM_COMPILE_BARRIER_();
+  GPR_ATM_COMPILE_BARRIER_ ();
   return value;
 }
 
-static __inline void gpr_atm_rel_store(gpr_atm *p, gpr_atm value) {
-  GPR_ATM_LS_BARRIER_();
+static __inline void
+gpr_atm_rel_store (gpr_atm * p, gpr_atm value)
+{
+  GPR_ATM_LS_BARRIER_ ();
   *p = value;
 }
 
-static __inline void gpr_atm_no_barrier_store(gpr_atm *p, gpr_atm value) {
-  GPR_ATM_COMPILE_BARRIER_();
+static __inline void
+gpr_atm_no_barrier_store (gpr_atm * p, gpr_atm value)
+{
+  GPR_ATM_COMPILE_BARRIER_ ();
   *p = value;
 }
 
