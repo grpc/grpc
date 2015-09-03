@@ -91,6 +91,7 @@ grpc_channel *grpc_channel_create_from_filters(
   size_t size =
       sizeof(grpc_channel) + grpc_channel_stack_size(filters, num_filters);
   grpc_channel *channel = gpr_malloc(size);
+  memset(channel, 0, sizeof(*channel));
   GPR_ASSERT(grpc_is_initialized() && "call grpc_init()");
   channel->is_client = is_client;
   /* decremented by grpc_channel_destroy */
