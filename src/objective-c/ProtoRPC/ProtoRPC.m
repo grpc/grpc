@@ -40,7 +40,9 @@
 static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError) {
   NSDictionary *info = @{
                          NSLocalizedDescriptionKey: @"Unable to parse response from the server",
-                         NSLocalizedRecoverySuggestionErrorKey: @"Retry with exponential backoff",
+                         NSLocalizedRecoverySuggestionErrorKey: @"If this RPC is idempotent, retry "
+                         @"with exponential backoff. Otherwise, query the server status before "
+                         @"retrying.",
                          NSUnderlyingErrorKey: parsingError,
                          @"Expected class": expectedClass,
                          @"Received value": proto,
