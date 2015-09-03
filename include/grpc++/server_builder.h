@@ -51,57 +51,68 @@ class ServerCredentials;
 class SynchronousService;
 class ThreadPoolInterface;
 
+/// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
  public:
   ServerBuilder();
 
-  // Register a service. This call does not take ownership of the service.
-  // The service must exist for the lifetime of the Server instance returned by
-  // BuildAndStart().
-  // Matches requests with any :authority
+  /// Register a service. This call does not take ownership of the service.
+  /// The service must exist for the lifetime of the \a Server instance returned
+  /// by \a BuildAndStart().
+  /// Matches requests with any :authority
   void RegisterService(SynchronousService* service);
 
-  // Register an asynchronous service.
-  // This call does not take ownership of the service or completion queue.
-  // The service and completion queuemust exist for the lifetime of the Server
-  // instance returned by BuildAndStart().
-  // Matches requests with any :authority
+  /// Register an asynchronous service.
+  /// This call does not take ownership of the service or completion queue.
+  /// The service and completion queuemust exist for the lifetime of the \a
+  /// Server instance returned by \a BuildAndStart().
+  /// Matches requests with any :authority
   void RegisterAsyncService(AsynchronousService* service);
 
-  // Register a generic service.
-  // Matches requests with any :authority
+  /// Register a generic service.
+  /// Matches requests with any :authority
   void RegisterAsyncGenericService(AsyncGenericService* service);
 
-  // Register a service. This call does not take ownership of the service.
-  // The service must exist for the lifetime of the Server instance returned by
-  // BuildAndStart().
-  // Only matches requests with :authority \a host
+  /// Register a service. This call does not take ownership of the service.
+  /// The service must exist for the lifetime of the \a Server instance returned
+  /// by BuildAndStart().
+  /// Only matches requests with :authority \a host
   void RegisterService(const grpc::string& host, SynchronousService* service);
 
-  // Register an asynchronous service.
-  // This call does not take ownership of the service or completion queue.
-  // The service and completion queuemust exist for the lifetime of the Server
-  // instance returned by BuildAndStart().
-  // Only matches requests with :authority \a host
+  /// Register an asynchronous service.
+  /// This call does not take ownership of the service or completion queue.
+  /// The service and completion queuemust exist for the lifetime of the \a
+  /// Server instance returned by \a BuildAndStart().
+  /// Only matches requests with :authority equal to \a host
   void RegisterAsyncService(const grpc::string& host,
                             AsynchronousService* service);
 
-  // Set max message size in bytes.
+  /// Set max message size in bytes.
   void SetMaxMessageSize(int max_message_size) {
     max_message_size_ = max_message_size;
   }
 
-  // Add a listening port. Can be called multiple times.
+  /// Tries to bind \a server to the given \a addr.
+  ///
+  /// It can be invoked multiple times.
+  ///
+  /// \param addr The address to try to bind to the server (eg, localhost:1234,
+  /// 192.168.1.1:31416, [::1]:27182, etc.).
+  /// \params creds The credentials associated with the server.
+  /// \param selected_port[out] Upon success, updated to contain the port
+  /// number. \a nullptr otherwise.
+  ///
+  // TODO(dgq): the "port" part seems to be a misnomer.
   void AddListeningPort(const grpc::string& addr,
                         std::shared_ptr<ServerCredentials> creds,
                         int* selected_port = nullptr);
 
-  // Add a completion queue for handling asynchronous services
-  // Caller is required to keep this completion queue live until
-  // the server is destroyed.
+  /// Add a completion queue for handling asynchronous services
+  /// Caller is required to keep this completion queue live until
+  /// the server is destroyed.
   std::unique_ptr<ServerCompletionQueue> AddCompletionQueue();
 
-  // Return a running server which is ready for processing rpcs.
+  /// Return a running server which is ready for processing calls.
   std::unique_ptr<Server> BuildAndStart();
 
  private:
