@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -127,29 +127,32 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="config_8h.html">grpc++/config.h</a>&gt;</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="credentials_8h.html">grpc++/credentials.h</a>&gt;</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="keyword">namespace </span>grpc {</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">class </span>ChannelArguments;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keyword">class </span>ChannelInterface;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="comment">// If creds does not hold an object or is invalid, a lame channel is returned.</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;std::shared_ptr&lt;ChannelInterface&gt; <a class="code" href="namespacegrpc.html#ad56350897572898b62a33e384c5e4a59">CreateChannel</a>(</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&amp; target, <span class="keyword">const</span> std::shared_ptr&lt;Credentials&gt;&amp; creds,</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    <span class="keyword">const</span> ChannelArguments&amp; args);</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;</div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor">#endif  // GRPCXX_CREATE_CHANNEL_H</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="credentials_8h.html">grpc++/security/credentials.h</a>&gt;</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="channel__arguments_8h.html">grpc++/support/channel_arguments.h</a>&gt;</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="config_8h.html">grpc++/support/config.h</a>&gt;</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">namespace </span>grpc {</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;std::shared_ptr&lt;Channel&gt; <a class="code" href="namespacegrpc.html#af51f7653b14c61753813995dd7c7bbf0">CreateChannel</a>(</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;    <span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&amp; target, <span class="keyword">const</span> std::shared_ptr&lt;Credentials&gt;&amp; creds);</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;std::shared_ptr&lt;Channel&gt; <a class="code" href="namespacegrpc.html#a54c098f38a2ac84652d1f2a3681ffa65">CreateCustomChannel</a>(</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&amp; target, <span class="keyword">const</span> std::shared_ptr&lt;Credentials&gt;&amp; creds,</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keyword">const</span> ChannelArguments&amp; args);</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor">#endif  // GRPCXX_CREATE_CHANNEL_H</span></div>
 <div class="ttc" id="namespacegrpc_html_ab04a87625da3bf85cdaf5e7856b00203"><div class="ttname"><a href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a></div><div class="ttdeci">std::string string</div><div class="ttdef"><b>Definition:</b> config.h:112</div></div>
 <div class="ttc" id="config_8h_html"><div class="ttname"><a href="config_8h.html">config.h</a></div></div>
+<div class="ttc" id="channel__arguments_8h_html"><div class="ttname"><a href="channel__arguments_8h.html">channel_arguments.h</a></div></div>
 <div class="ttc" id="credentials_8h_html"><div class="ttname"><a href="credentials_8h.html">credentials.h</a></div></div>
-<div class="ttc" id="namespacegrpc_html_ad56350897572898b62a33e384c5e4a59"><div class="ttname"><a href="namespacegrpc.html#ad56350897572898b62a33e384c5e4a59">grpc::CreateChannel</a></div><div class="ttdeci">std::shared_ptr&lt; ChannelInterface &gt; CreateChannel(const grpc::string &amp;target, const std::shared_ptr&lt; Credentials &gt; &amp;creds, const ChannelArguments &amp;args)</div></div>
+<div class="ttc" id="namespacegrpc_html_a54c098f38a2ac84652d1f2a3681ffa65"><div class="ttname"><a href="namespacegrpc.html#a54c098f38a2ac84652d1f2a3681ffa65">grpc::CreateCustomChannel</a></div><div class="ttdeci">std::shared_ptr&lt; Channel &gt; CreateCustomChannel(const grpc::string &amp;target, const std::shared_ptr&lt; Credentials &gt; &amp;creds, const ChannelArguments &amp;args)</div><div class="ttdoc">Create a new custom Channel pointing to target. </div></div>
+<div class="ttc" id="namespacegrpc_html_af51f7653b14c61753813995dd7c7bbf0"><div class="ttname"><a href="namespacegrpc.html#af51f7653b14c61753813995dd7c7bbf0">grpc::CreateChannel</a></div><div class="ttdeci">std::shared_ptr&lt; Channel &gt; CreateChannel(const grpc::string &amp;target, const std::shared_ptr&lt; Credentials &gt; &amp;creds)</div><div class="ttdoc">Create a new Channel pointing to target. </div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -159,8 +159,10 @@ Functions</h2></td></tr>
 <tr class="memitem:a0afd3a137c42f46e285b7c7d0b7b657f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subchannel_8c.html#a0afd3a137c42f46e285b7c7d0b7b657f">grpc_subchannel_unref</a> (<a class="el" href="structgrpc__subchannel.html">grpc_subchannel</a> *c <a class="el" href="subchannel_8h.html#aabb025f64b5de653dc110d17add28e74">GRPC_SUBCHANNEL_REF_EXTRA_ARGS</a>)</td></tr>
 <tr class="separator:a0afd3a137c42f46e285b7c7d0b7b657f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad64aa215ea81487204c6598b4f1572ae"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subchannel_8c.html#ad64aa215ea81487204c6598b4f1572ae">grpc_subchannel_add_interested_party</a> (<a class="el" href="structgrpc__subchannel.html">grpc_subchannel</a> *c, <a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset)</td></tr>
+<tr class="memdesc:ad64aa215ea81487204c6598b4f1572ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">express interest in <em>channel's</em> activities through <em>pollset</em>.  <a href="#ad64aa215ea81487204c6598b4f1572ae">More...</a><br/></td></tr>
 <tr class="separator:ad64aa215ea81487204c6598b4f1572ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a72bfe59d8ad11465896034281729279b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subchannel_8c.html#a72bfe59d8ad11465896034281729279b">grpc_subchannel_del_interested_party</a> (<a class="el" href="structgrpc__subchannel.html">grpc_subchannel</a> *c, <a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset)</td></tr>
+<tr class="memdesc:a72bfe59d8ad11465896034281729279b"><td class="mdescLeft">&#160;</td><td class="mdescRight">stop following <em>channel's</em> activity through <em>pollset</em>.  <a href="#a72bfe59d8ad11465896034281729279b">More...</a><br/></td></tr>
 <tr class="separator:a72bfe59d8ad11465896034281729279b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5220a721bb5ad91bffbddd12045efff8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__subchannel.html">grpc_subchannel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subchannel_8c.html#a5220a721bb5ad91bffbddd12045efff8">grpc_subchannel_create</a> (<a class="el" href="structgrpc__connector.html">grpc_connector</a> *<a class="el" href="structconnector.html">connector</a>, <a class="el" href="structgrpc__subchannel__args.html">grpc_subchannel_args</a> *args)</td></tr>
 <tr class="memdesc:a5220a721bb5ad91bffbddd12045efff8"><td class="mdescLeft">&#160;</td><td class="mdescRight">create a subchannel given a connector  <a href="#a5220a721bb5ad91bffbddd12045efff8">More...</a><br/></td></tr>
@@ -475,7 +477,7 @@ Functions</h2></td></tr>
           <td class="memname">void grpc_subchannel_add_interested_party </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__subchannel.html">grpc_subchannel</a> *&#160;</td>
-          <td class="paramname"><em>c</em>, </td>
+          <td class="paramname"><em>channel</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -490,6 +492,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>express interest in <em>channel's</em> activities through <em>pollset</em>. </p>
 
 </div>
 </div>
@@ -665,7 +669,7 @@ Functions</h2></td></tr>
           <td class="memname">void grpc_subchannel_del_interested_party </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__subchannel.html">grpc_subchannel</a> *&#160;</td>
-          <td class="paramname"><em>c</em>, </td>
+          <td class="paramname"><em>channel</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -680,6 +684,8 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>stop following <em>channel's</em> activity through <em>pollset</em>. </p>
 
 </div>
 </div>
@@ -781,7 +787,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

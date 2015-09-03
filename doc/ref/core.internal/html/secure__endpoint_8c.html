@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -112,6 +112,10 @@ Data Structures</h2></td></tr>
 Macros</h2></td></tr>
 <tr class="memitem:a323532623f3183502482bb853c503353"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="secure__endpoint_8c.html#a323532623f3183502482bb853c503353">STAGING_BUFFER_SIZE</a>&#160;&#160;&#160;8192</td></tr>
 <tr class="separator:a323532623f3183502482bb853c503353"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83beb833980e5c04da05fbc4e84b2304"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="secure__endpoint_8c.html#a83beb833980e5c04da05fbc4e84b2304">SECURE_ENDPOINT_UNREF</a>(ep, reason)&#160;&#160;&#160;secure_endpoint_unref((ep))</td></tr>
+<tr class="separator:a83beb833980e5c04da05fbc4e84b2304"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a44a94737ab965459ecc1564cb99b4520"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="secure__endpoint_8c.html#a44a94737ab965459ecc1564cb99b4520">SECURE_ENDPOINT_REF</a>(ep, reason)&#160;&#160;&#160;secure_endpoint_ref((ep))</td></tr>
+<tr class="separator:a44a94737ab965459ecc1564cb99b4520"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -124,6 +128,58 @@ Variables</h2></td></tr>
 <tr class="separator:a7778bdc8c40adac0dc536fe255b75fbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
+<a class="anchor" id="a44a94737ab965459ecc1564cb99b4520"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define SECURE_ENDPOINT_REF</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">ep, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">reason&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td>&#160;&#160;&#160;secure_endpoint_ref((ep))</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a83beb833980e5c04da05fbc4e84b2304"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define SECURE_ENDPOINT_UNREF</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">ep, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">reason&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td>&#160;&#160;&#160;secure_endpoint_unref((ep))</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a323532623f3183502482bb853c503353"></a>
 <div class="memitem">
 <div class="memproto">
@@ -191,7 +247,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -72,6 +72,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li class="current"><a href="functions.html"><span>All</span></a></li>
       <li><a href="functions_func.html"><span>Functions</span></a></li>
       <li><a href="functions_vars.html"><span>Variables</span></a></li>
+      <li><a href="functions_type.html"><span>Typedefs</span></a></li>
       <li><a href="functions_enum.html"><span>Enumerations</span></a></li>
       <li><a href="functions_eval.html"><span>Enumerator</span></a></li>
       <li><a href="functions_rela.html"><span>Related&#160;Functions</span></a></li>
@@ -100,6 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_t.html#index_t"><span>t</span></a></li>
       <li><a href="functions_u.html#index_u"><span>u</span></a></li>
       <li><a href="functions_w.html#index_w"><span>w</span></a></li>
+      <li><a href="functions_x.html#index_x"><span>x</span></a></li>
       <li><a href="functions_~.html#index_~"><span>~</span></a></li>
     </ul>
   </div>
@@ -130,6 +132,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1_time_point.html#adb76465d3bf0fef9ad5b918f0ea6a9b6">grpc::TimePoint&lt; T &gt;</a>
 , <a class="el" href="classgrpc_1_1_time_point_3_01gpr__timespec_01_4.html#a2f952629962fc23855496ac08a70f6e2">grpc::TimePoint&lt; gpr_timespec &gt;</a>
 , <a class="el" href="classgrpc_1_1_time_point_3_01std_1_1chrono_1_1system__clock_1_1time__point_01_4.html#ac6d6a7d1e3ed219fff1dcc5961874f93">grpc::TimePoint&lt; std::chrono::system_clock::time_point &gt;</a>
+</li>
+<li>rbegin()
+: <a class="el" href="classgrpc_1_1string__ref.html#a5c61b5d98aedeb8e5f777deb9f039688">grpc::string_ref</a>
 </li>
 <li>Read()
 : <a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11">grpc::AsyncReaderInterface&lt; R &gt;</a>
@@ -162,13 +167,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1_server_builder.html#ac62b0aa4c0448907e02d15386d58ef86">grpc::ServerBuilder</a>
 </li>
 <li>RegisterAsyncService()
-: <a class="el" href="classgrpc_1_1_server_builder.html#a2107596214baf71230f4f270dec1d064">grpc::ServerBuilder</a>
-</li>
-<li>RegisterMethod()
-: <a class="el" href="classgrpc_1_1_channel_interface.html#a267926300784051328390b2f7648c99f">grpc::ChannelInterface</a>
+: <a class="el" href="classgrpc_1_1_server_builder.html#a2da69a943b10839d6993f9b292aaf578">grpc::ServerBuilder</a>
 </li>
 <li>RegisterService()
 : <a class="el" href="classgrpc_1_1_server_builder.html#a40f39b2ac8224a91c426b0e75bbb3c66">grpc::ServerBuilder</a>
+</li>
+<li>rend()
+: <a class="el" href="classgrpc_1_1string__ref.html#acade09cf1e91b96c094c449b8a5bd126">grpc::string_ref</a>
 </li>
 <li>request
 : <a class="el" href="structgrpc_1_1_method_handler_1_1_handler_parameter.html#a82558a5f8a8d3c9b16be620092f67fa4">grpc::MethodHandler::HandlerParameter</a>
@@ -189,7 +194,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1_asynchronous_service.html#a197117ab963be83b26e1c67d5a7fd564">grpc::AsynchronousService</a>
 </li>
 <li>RpcMethod()
-: <a class="el" href="classgrpc_1_1_rpc_method.html#ab06ace199b65e09f1d4c9fde93dafc94">grpc::RpcMethod</a>
+: <a class="el" href="classgrpc_1_1_rpc_method.html#a06b42037718cf822a4b30d14668613f0">grpc::RpcMethod</a>
 </li>
 <li>RpcMethodHandler
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a76b9bb18b02084e9eaa8c9b99c668676">grpc::CompletionQueue</a>
@@ -208,12 +213,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="classgrpc_1_1_method_handler.html#a8f901c44915f81bb86ecba0278f7db16">grpc::MethodHandler</a>
 , <a class="el" href="classgrpc_1_1_rpc_method_handler.html#a3dd04e9149c844224390b403ff24fa41">grpc::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_streaming_handler.html#afd874fc0f3a73c4037d626d3ecbcccca">grpc::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc_1_1_unknown_method_handler.html#a0722d78b3ee01b290fb8fcef25d1b02f">grpc::UnknownMethodHandler</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
