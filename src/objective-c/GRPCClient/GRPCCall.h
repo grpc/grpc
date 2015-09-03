@@ -48,6 +48,8 @@
 #import <Foundation/Foundation.h>
 #import <RxLibrary/GRXWriter.h>
 
+#include <grpc/grpc.h>
+
 #pragma mark gRPC errors
 
 // Domain of NSError objects produced by gRPC.
@@ -135,6 +137,25 @@ extern id const kGRPCTrailersKey;
 
 #pragma mark GRPCCall
 
+// The container of the request headers of an RPC conforms to this protocol, which is a subset of
+// NSMutableDictionary's interface. It will become a NSMutableDictionary later on.
+// The keys of this container are the header names, which per the HTTP standard are case-
+// insensitive. They are stored in lowercase (which is how HTTP/2 mandates them on the wire), and
+// can only consist of ASCII characters.
+// A header value is a NSString object (with only ASCII characters), unless the header name has the
+// suffix "-bin", in which case the value has to be a NSData object.
+@protocol GRPCRequestHeaders <NSObject>
+
+@property(nonatomic, readonly) NSUInteger count;
+
+- (id)objectForKeyedSubscript:(NSString *)key;
+- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
+
+- (void)removeAllObjects;
+- (void)removeObjectForKey:(NSString *)key;
+
+@end
+
 // Represents a single gRPC remote call.
 @interface GRPCCall : GRXWriter
 
@@ -152,7 +173,7 @@ extern id const kGRPCTrailersKey;
 //
 // For convenience, the property is initialized to an empty NSMutableDictionary, and the setter
 // accepts (and copies) both mutable and immutable dictionaries.
-- (NSMutableDictionary *)requestHeaders; // nonatomic
+- (id<GRPCRequestHeaders>)requestHeaders; // nonatomic
 - (void)setRequestHeaders:(NSDictionary *)requestHeaders; // nonatomic, copy
 
 // This dictionary is populated with the HTTP headers received from the server. This happens before
