@@ -31,6 +31,7 @@
  *
  */
 
+#include "src/core/client_config/lb_policy_factory.h"
 #include "src/core/client_config/lb_policies/pick_first.h"
 
 #include <string.h>
@@ -314,8 +315,13 @@ static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_check_connectivity,
     pf_notify_on_state_change};
 
-grpc_lb_policy *grpc_create_pick_first_lb_policy(grpc_subchannel **subchannels,
-                                                 size_t num_subchannels) {
+static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}
+
+static void pick_first_factory_unref(grpc_lb_policy_factory *factory) {}
+
+static grpc_lb_policy *create_pick_first(grpc_lb_policy_factory *factory,
+                                         grpc_subchannel **subchannels,
+                                         size_t num_subchannels) {
   pick_first_lb_policy *p = gpr_malloc(sizeof(*p));
   GPR_ASSERT(num_subchannels);
   memset(p, 0, sizeof(*p));
@@ -329,4 +335,15 @@ grpc_lb_policy *grpc_create_pick_first_lb_policy(grpc_subchannel **subchannels,
   grpc_iomgr_closure_init(&p->connectivity_changed, pf_connectivity_changed, p);
   gpr_mu_init(&p->mu);
   return &p->base;
+}
+
+static const grpc_lb_policy_factory_vtable pick_first_factory_vtable = {
+    pick_first_factory_ref, pick_first_factory_unref, create_pick_first,
+    "pick_first"};
+
+static grpc_lb_policy_factory pick_first_lb_policy_factory = {
+    &pick_first_factory_vtable};
+
+grpc_lb_policy_factory *grpc_pick_first_lb_factory_create() {
+  return &pick_first_lb_policy_factory;
 }

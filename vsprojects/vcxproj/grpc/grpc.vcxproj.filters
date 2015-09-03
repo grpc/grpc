@@ -106,6 +106,12 @@
     <ClCompile Include="..\..\..\src\core\client_config\lb_policy.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policy_factory.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policy_registry.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\resolver.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
@@ -528,6 +534,12 @@
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policy_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policy_registry.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\resolver.h">

@@ -31,13 +31,40 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_PICK_FIRST_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_PICK_FIRST_H
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
 
-#include "src/core/client_config/lb_policy_factory.h"
+#include "src/core/client_config/lb_policy.h"
+#include "src/core/client_config/subchannel.h"
 
-/** Returns a load balancing factory for the pick first policy, which picks up
- * the first subchannel from \a subchannels to succesfully connect */
-grpc_lb_policy_factory *grpc_pick_first_lb_factory_create();
+typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
+typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
 
-#endif
+/** grpc_lb_policy provides grpc_client_config objects to grpc_channel
+    objects */
+struct grpc_lb_policy_factory {
+  const grpc_lb_policy_factory_vtable *vtable;
+};
+
+struct grpc_lb_policy_factory_vtable {
+  void (*ref)(grpc_lb_policy_factory *factory);
+  void (*unref)(grpc_lb_policy_factory *factory);
+
+  /** Implementation of grpc_lb_policy_factory_create_lb_policy */
+  grpc_lb_policy *(*create_lb_policy)(grpc_lb_policy_factory *factory,
+                                      grpc_subchannel **subchannels,
+                                      size_t num_subchannels);
+
+  /** Name for the LB policy this factory implements */
+  const char *name;
+};
+
+void grpc_lb_policy_factory_ref(grpc_lb_policy_factory *factory);
+void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory);
+
+/** Create a lb_policy instance. */
+grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
+    grpc_lb_policy_factory *factory, grpc_subchannel **subchannels,
+    size_t num_subchannels);
+
+#endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_FACTORY_H */

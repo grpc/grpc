@@ -31,13 +31,25 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_PICK_FIRST_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_PICK_FIRST_H
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
 
 #include "src/core/client_config/lb_policy_factory.h"
 
-/** Returns a load balancing factory for the pick first policy, which picks up
- * the first subchannel from \a subchannels to succesfully connect */
-grpc_lb_policy_factory *grpc_pick_first_lb_factory_create();
+/** Initialize the registry and set \a default_factory as the factory to be
+ * returned when no name is provided in a lookup */
+void grpc_lb_policy_registry_init(grpc_lb_policy_factory *default_factory);
+void grpc_lb_policy_registry_shutdown(void);
 
-#endif
+/** Register a LB policy factory. */
+void grpc_register_lb_policy(grpc_lb_policy_factory *factory);
+
+/** Create a \a grpc_lb_policy instance.
+ *
+ * If \a name is NULL, the default factory from \a grpc_lb_policy_registry_init
+ * will be returned. */
+grpc_lb_policy *grpc_lb_policy_create(const char *name,
+                                      grpc_subchannel **subchannels,
+                                      size_t num_subchannels);
+
+#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H */
