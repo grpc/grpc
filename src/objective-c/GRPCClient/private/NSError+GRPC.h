@@ -34,29 +34,6 @@
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
 
-// TODO(jcanizales): Make the domain string public.
-extern NSString *const kGRPCErrorDomain;
-
-// TODO(jcanizales): Make this public and document each code.
-typedef NS_ENUM(NSInteger, GRPCErrorCode) {
-  GRPCErrorCodeCancelled = 1,
-  GRPCErrorCodeUnknown = 2,
-  GRPCErrorCodeInvalidArgument = 3,
-  GRPCErrorCodeDeadlineExceeded = 4,
-  GRPCErrorCodeNotFound = 5,
-  GRPCErrorCodeAlreadyExists = 6,
-  GRPCErrorCodePermissionDenied = 7,
-  GRPCErrorCodeUnauthenticated = 16,
-  GRPCErrorCodeResourceExhausted = 8,
-  GRPCErrorCodeFailedPrecondition = 9,
-  GRPCErrorCodeAborted = 10,
-  GRPCErrorCodeOutOfRange = 11,
-  GRPCErrorCodeUnimplemented = 12,
-  GRPCErrorCodeInternal = 13,
-  GRPCErrorCodeUnavailable = 14,
-  GRPCErrorCodeDataLoss = 15
-};
-
 @interface NSError (GRPC)
 // Returns nil if the status code is OK. Otherwise, a NSError whose code is one of |GRPCErrorCode|
 // and whose domain is |kGRPCErrorDomain|.
