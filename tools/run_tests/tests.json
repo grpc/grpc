@@ -1572,6 +1572,22 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
+    "name": "streaming_throughput_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
     "name": "sync_streaming_ping_pong_test", 
     "platforms": [
       "linux", 
