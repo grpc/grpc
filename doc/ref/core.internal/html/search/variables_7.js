@@ -1,8 +1,9 @@
 var searchData=
 [
+  ['handshake',['handshake',['../structgrpc__httpcli__handshaker.html#adf4238372959e3de14196fc65a67e84e',1,'grpc_httpcli_handshaker']]],
   ['handshake_5fbuffer',['handshake_buffer',['../structgrpc__secure__transport__setup.html#a4ac21c122779d771e91d59bc1c74a723',1,'grpc_secure_transport_setup']]],
   ['handshake_5fbuffer_5fsize',['handshake_buffer_size',['../structgrpc__secure__transport__setup.html#a0edef695f006557a299ea4384f3a5438',1,'grpc_secure_transport_setup']]],
-  ['handshaker',['handshaker',['../structgrpc__secure__transport__setup.html#acb477ffb68f62bc22048abef085575c3',1,'grpc_secure_transport_setup']]],
+  ['handshaker',['handshaker',['../structgrpc__httpcli__request.html#a88acb903c6b5a75d917dbecc54754b8e',1,'grpc_httpcli_request::handshaker()'],['../structgrpc__secure__transport__setup.html#acb477ffb68f62bc22048abef085575c3',1,'grpc_secure_transport_setup::handshaker()'],['../structinternal__request.html#aef1d13d21215dd942491e405c6c41db3',1,'internal_request::handshaker()']]],
   ['handshaker_5ffactory',['handshaker_factory',['../structgrpc__httpcli__ssl__channel__security__connector.html#a4ec68b3563b321823c2386381727b9c6',1,'grpc_httpcli_ssl_channel_security_connector::handshaker_factory()'],['../structgrpc__ssl__channel__security__connector.html#aea121da234d473666c85221663f00241',1,'grpc_ssl_channel_security_connector::handshaker_factory()'],['../structgrpc__ssl__server__security__connector.html#aa18f372b18a7dc70e96cc6cf751d58e3',1,'grpc_ssl_server_security_connector::handshaker_factory()']]],
   ['handshaking_5ftcp_5fendpoints',['handshaking_tcp_endpoints',['../structgrpc__server__secure__state.html#acba74fb1730945adb6b8d60421321b26',1,'grpc_server_secure_state']]],
   ['has_5fbase64_5fand_5fhuffman_5fencoded',['has_base64_and_huffman_encoded',['../structinternal__string.html#ad30156b9bc8f7fc9c60b09e3dcaef00a',1,'internal_string']]],
@@ -26,9 +27,10 @@ var searchData=
   ['heap',['heap',['../structshard__type.html#ae212a2061cff7c73ff1c208174272070',1,'shard_type']]],
   ['heap_5findex',['heap_index',['../structgrpc__alarm.html#adef760998486aa79b9637e95a83e061b',1,'grpc_alarm']]],
   ['help',['help',['../structarg.html#a7c3bb14ce3710281f4f5c511961823df',1,'arg']]],
-  ['host',['host',['../structgrpc__call__details.html#a869b5db96e2e0fbd573381e77b859631',1,'grpc_call_details::host()'],['../structgrpc__httpcli__request.html#a907d00d1b3d1b8b0b8dddc0e7adbd48d',1,'grpc_httpcli_request::host()'],['../structinternal__request.html#ab545c1a0948fde5ebcf3a38e4bb2e976',1,'internal_request::host()'],['../structcall__data.html#a5b3ab9bd0e3c549bf9ad739f0011b995',1,'call_data::host()'],['../structchannel__registered__method.html#a6f9cc4376a5b8955a060f089720f2e9d',1,'channel_registered_method::host()'],['../structregistered__method.html#ac8947363747871cca9a921739b686545',1,'registered_method::host()']]],
+  ['host',['host',['../structgrpc__call__details.html#a869b5db96e2e0fbd573381e77b859631',1,'grpc_call_details::host()'],['../structgrpc__httpcli__request.html#a907d00d1b3d1b8b0b8dddc0e7adbd48d',1,'grpc_httpcli_request::host()'],['../structcall__data.html#a5b3ab9bd0e3c549bf9ad739f0011b995',1,'call_data::host()'],['../structinternal__request.html#ab545c1a0948fde5ebcf3a38e4bb2e976',1,'internal_request::host()'],['../structchannel__registered__method.html#a6f9cc4376a5b8955a060f089720f2e9d',1,'channel_registered_method::host()'],['../structregistered__method.html#ac8947363747871cca9a921739b686545',1,'registered_method::host()']]],
   ['host_5fcapacity',['host_capacity',['../structgrpc__call__details.html#aeab0d9e754bbb1aac1a21ad4ef63d8b1',1,'grpc_call_details']]],
   ['host_5fkey',['host_key',['../structchannel__data.html#acf1f4e1f7664686d2c41072763080cf6',1,'channel_data']]],
+  ['hour_5fstats',['hour_stats',['../structcensus__per__method__rpc__stats.html#ac2503eae6b803676341f2bf9650d1126',1,'census_per_method_rpc_stats']]],
   ['hpack_5fcompressor',['hpack_compressor',['../structgrpc__chttp2__transport__writing.html#a99f5a7439100ab7bab790117458af460',1,'grpc_chttp2_transport_writing']]],
   ['hpack_5fparser',['hpack_parser',['../structgrpc__chttp2__transport__parsing.html#a5c0031bc09c803f4b1440690a896812d',1,'grpc_chttp2_transport_parsing']]],
   ['hs_5fon_5frecv',['hs_on_recv',['../structcall__data.html#a449389cf74cdadc8a00b52990c7052d5',1,'call_data']]],

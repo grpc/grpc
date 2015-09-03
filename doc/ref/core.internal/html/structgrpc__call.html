@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -94,6 +94,10 @@ Data Fields</h2></td></tr>
 <tr class="separator:ae24201f3b8347e790898e3bc2ae1ad09"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aefaa9e839c97ca63876add3d3a04a94d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__channel.html">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#aefaa9e839c97ca63876add3d3a04a94d">channel</a></td></tr>
 <tr class="separator:aefaa9e839c97ca63876add3d3a04a94d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a39d401a45e785c245652eff3db801222"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#a39d401a45e785c245652eff3db801222">parent</a></td></tr>
+<tr class="separator:a39d401a45e785c245652eff3db801222"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad2a67e97fd30a9962d2e5a3b3f1ad5fc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#ad2a67e97fd30a9962d2e5a3b3f1ad5fc">first_child</a></td></tr>
+<tr class="separator:ad2a67e97fd30a9962d2e5a3b3f1ad5fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1fcf672edf744df8c192aba2da0da3f2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdctx.html">grpc_mdctx</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#a1fcf672edf744df8c192aba2da0da3f2">metadata_context</a></td></tr>
 <tr class="separator:a1fcf672edf744df8c192aba2da0da3f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0641698dba5cf939dbc61e2a6019199c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__mu.html">gpr_mu</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#a0641698dba5cf939dbc61e2a6019199c">mu</a></td></tr>
@@ -131,6 +135,9 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a7fa8c9ad3543546625b2aaa7d2853c05"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#a7fa8c9ad3543546625b2aaa7d2853c05">allocated_completions</a></td></tr>
 <tr class="memdesc:a7fa8c9ad3543546625b2aaa7d2853c05"><td class="mdescLeft">&#160;</td><td class="mdescRight">bitmask of allocated completion events in completions  <a href="#a7fa8c9ad3543546625b2aaa7d2853c05">More...</a><br/></td></tr>
 <tr class="separator:a7fa8c9ad3543546625b2aaa7d2853c05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a14bb527b6a288e7b3dbae57791e565"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#a5a14bb527b6a288e7b3dbae57791e565">cancellation_is_inherited</a></td></tr>
+<tr class="memdesc:a5a14bb527b6a288e7b3dbae57791e565"><td class="mdescLeft">&#160;</td><td class="mdescRight">flag indicating that cancellation is inherited  <a href="#a5a14bb527b6a288e7b3dbae57791e565">More...</a><br/></td></tr>
+<tr class="separator:a5a14bb527b6a288e7b3dbae57791e565"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4428a5f3615eb7ed703cb5650c379225"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#abb7bceac4325643af77af51c7b6af371">gpr_uint16</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#a4428a5f3615eb7ed703cb5650c379225">last_send_contains</a></td></tr>
 <tr class="separator:a4428a5f3615eb7ed703cb5650c379225"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a52b7e350723f5cd4a577a86a4b72f026"><td class="memItemLeft" align="right" valign="top"><a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#a52b7e350723f5cd4a577a86a4b72f026">cancel_with_status</a></td></tr>
@@ -159,6 +166,8 @@ Data Fields</h2></td></tr>
 <tr class="separator:ac4f49d27f54bd1436da3ad7cfe662639"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afa14a32dc253da1909a2dd6e44304fdc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#afa14a32dc253da1909a2dd6e44304fdc">compression_algorithm</a></td></tr>
 <tr class="separator:afa14a32dc253da1909a2dd6e44304fdc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c4410483cb4356b8f5087b2f80c840c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#a8c4410483cb4356b8f5087b2f80c840c">encodings_accepted_by_peer</a></td></tr>
+<tr class="separator:a8c4410483cb4356b8f5087b2f80c840c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a91cd558ccf432aa44bbe813c4acd022c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call__context__element.html">grpc_call_context_element</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#a91cd558ccf432aa44bbe813c4acd022c">context</a> [<a class="el" href="channel_2context_8h.html#ad9f29fba1468a9a1384b9104bf368dffa7cc0d6f72e8a72421b89aa61683324a7">GRPC_CONTEXT_COUNT</a>]</td></tr>
 <tr class="separator:a91cd558ccf432aa44bbe813c4acd022c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a673a0cdde6bc7ebe5ff66820b8bd0b91"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__alarm.html">grpc_alarm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#a673a0cdde6bc7ebe5ff66820b8bd0b91">alarm</a></td></tr>
@@ -198,6 +207,11 @@ Data Fields</h2></td></tr>
 <tr class="memitem:ad48e9f752753814bf9ee0233c392fccd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__cq__completion.html">grpc_cq_completion</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#ad48e9f752753814bf9ee0233c392fccd">completions</a> [6]</td></tr>
 <tr class="memdesc:ad48e9f752753814bf9ee0233c392fccd"><td class="mdescLeft">&#160;</td><td class="mdescRight">completion events - for completion queue use  <a href="#ad48e9f752753814bf9ee0233c392fccd">More...</a><br/></td></tr>
 <tr class="separator:ad48e9f752753814bf9ee0233c392fccd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa8c44532eee3fc767638a5d186a27565"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#aa8c44532eee3fc767638a5d186a27565">sibling_next</a></td></tr>
+<tr class="memdesc:aa8c44532eee3fc767638a5d186a27565"><td class="mdescLeft">&#160;</td><td class="mdescRight">siblings: children of the same parent form a list, and this list is protected under parent-&gt;mu  <a href="#aa8c44532eee3fc767638a5d186a27565">More...</a><br/></td></tr>
+<tr class="separator:aa8c44532eee3fc767638a5d186a27565"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aebff80f720bb770443da09f87247c84e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__call.html#aebff80f720bb770443da09f87247c84e">sibling_prev</a></td></tr>
+<tr class="separator:aebff80f720bb770443da09f87247c84e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a673a0cdde6bc7ebe5ff66820b8bd0b91"></a>
@@ -273,6 +287,20 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a5a14bb527b6a288e7b3dbae57791e565"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a> grpc_call::cancellation_is_inherited</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>flag indicating that cancellation is inherited </p>
 
 </div>
 </div>
@@ -412,12 +440,36 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a8c4410483cb4356b8f5087b2f80c840c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> grpc_call::encodings_accepted_by_peer</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a5cb38ade0e31380920c4afe56eea7b85"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a> grpc_call::error_status_set</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ad2a67e97fd30a9962d2e5a3b3f1ad5fc"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__call.html">grpc_call</a>* grpc_call::first_child</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -640,6 +692,18 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a39d401a45e785c245652eff3db801222"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__call.html">grpc_call</a>* grpc_call::parent</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a9f26a9a6519f11d88d97cd0b1f92c440"></a>
 <div class="memitem">
 <div class="memproto">
@@ -796,6 +860,32 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="aa8c44532eee3fc767638a5d186a27565"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__call.html">grpc_call</a>* grpc_call::sibling_next</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>siblings: children of the same parent form a list, and this list is protected under parent-&gt;mu </p>
+
+</div>
+</div>
+<a class="anchor" id="aebff80f720bb770443da09f87247c84e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__call.html">grpc_call</a>* grpc_call::sibling_prev</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="ac4f49d27f54bd1436da3ad7cfe662639"></a>
 <div class="memitem">
 <div class="memproto">
@@ -838,7 +928,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

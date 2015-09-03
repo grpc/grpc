@@ -32,6 +32,7 @@
 import time
 
 from grpc.framework.core import _interfaces
+from grpc.framework.core import _utilities
 from grpc.framework.foundation import later
 from grpc.framework.interfaces.base import base
 
@@ -73,7 +74,8 @@ class _ExpirationManager(_interfaces.ExpirationManager):
         if self._future is not None and index == self._index:
           self._future = None
           self._termination_manager.expire()
-          self._transmission_manager.abort(base.Outcome.EXPIRED, None, None)
+          self._transmission_manager.abort(
+              _utilities.Outcome(base.Outcome.Kind.EXPIRED, None, None))
     return expire
 
   def start(self):

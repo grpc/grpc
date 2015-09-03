@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -130,30 +130,44 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="comment">/* There isn&#39;t really any such thing as a pollset under Windows, due to the</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="comment">   nature of the IO completion ports. A Windows &quot;pollset&quot; is merely a mutex</span></div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment">   and a condition variable, used to synchronize with the IOCP. */</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgrpc__pollset.html">grpc_pollset</a> {</div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;  <a class="code" href="structgpr__mu.html">gpr_mu</a> <a class="code" href="structgrpc__pollset.html#ad0ca06526200d8e29888467458f4a924">mu</a>;</div>
-<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="structgrpc__pollset.html#aa329ffda9a09596eeb29b228b66db844">   47</a></span>&#160;  <a class="code" href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> <a class="code" href="structgrpc__pollset.html#aa329ffda9a09596eeb29b228b66db844">cv</a>;</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keywordtype">int</span> <a class="code" href="structgrpc__pollset.html#a890a0c1aa2061769dcd141cf97f83c1c">shutting_down</a>;</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;} <a class="code" href="pollset__windows_8h.html#a3651117ed8881e20c179f0c677c622ad">grpc_pollset</a>;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;</div>
-<div class="line"><a name="l00051"></a><span class="lineno"><a class="line" href="pollset__windows_8h.html#a717ebde9fd8a72d07e06d2255ee7b50f">   51</a></span>&#160;<span class="preprocessor">#define GRPC_POLLSET_MU(pollset) (&amp;(pollset)-&gt;mu)</span></div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="comment">   used to synchronize with the IOCP, and workers are condition variables</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="comment">   used to block threads until work is ready. */</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> {</div>
+<div class="line"><a name="l00047"></a><span class="lineno"><a class="line" href="structgrpc__pollset__worker.html#a6c8d525fcaff2b2c7bf5451c6fba2bbe">   47</a></span>&#160;  <a class="code" href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> <a class="code" href="structgrpc__pollset__worker.html#a6c8d525fcaff2b2c7bf5451c6fba2bbe">cv</a>;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keyword">struct </span><a class="code" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> *<a class="code" href="structgrpc__pollset__worker.html#a5a9df2608b49f621b113690ebaf4e634">next</a>;</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="keyword">struct </span><a class="code" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> *<a class="code" href="structgrpc__pollset__worker.html#aeefd06fbe4f5c4abea6121862f5d3aba">prev</a>;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;} <a class="code" href="pollset__windows_8h.html#a4ed45598900de5aa50513ce46c290d29">grpc_pollset_worker</a>;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgrpc__pollset.html">grpc_pollset</a> {</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;  <a class="code" href="structgpr__mu.html">gpr_mu</a> <a class="code" href="structgrpc__pollset.html#ad0ca06526200d8e29888467458f4a924">mu</a>;</div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;  <span class="keywordtype">int</span> <a class="code" href="structgrpc__pollset.html#a890a0c1aa2061769dcd141cf97f83c1c">shutting_down</a>;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;  <span class="keywordtype">int</span> <a class="code" href="structgrpc__pollset.html#ad77a6f6b37e35255da61fe17dbc340ca">kicked_without_pollers</a>;</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;  <a class="code" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> <a class="code" href="structgrpc__pollset.html#a658aca158a35f5b4055143c8ed41039b">root_worker</a>;</div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;} <a class="code" href="pollset__windows_8h.html#a3651117ed8881e20c179f0c677c622ad">grpc_pollset</a>;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;</div>
+<div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="pollset__windows_8h.html#a717ebde9fd8a72d07e06d2255ee7b50f">   59</a></span>&#160;<span class="preprocessor">#define GRPC_POLLSET_MU(pollset) (&amp;(pollset)-&gt;mu)</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="socket__windows_8h_html"><div class="ttname"><a href="socket__windows_8h.html">socket_windows.h</a></div></div>
-<div class="ttc" id="structgrpc__pollset_html_aa329ffda9a09596eeb29b228b66db844"><div class="ttname"><a href="structgrpc__pollset.html#aa329ffda9a09596eeb29b228b66db844">grpc_pollset::cv</a></div><div class="ttdeci">gpr_cv cv</div><div class="ttdef"><b>Definition:</b> pollset_windows.h:47</div></div>
+<div class="ttc" id="pollset__windows_8h_html_a4ed45598900de5aa50513ce46c290d29"><div class="ttname"><a href="pollset__windows_8h.html#a4ed45598900de5aa50513ce46c290d29">grpc_pollset_worker</a></div><div class="ttdeci">struct grpc_pollset_worker grpc_pollset_worker</div></div>
 <div class="ttc" id="pollset__windows_8h_html_a3651117ed8881e20c179f0c677c622ad"><div class="ttname"><a href="pollset__windows_8h.html#a3651117ed8881e20c179f0c677c622ad">grpc_pollset</a></div><div class="ttdeci">struct grpc_pollset grpc_pollset</div></div>
-<div class="ttc" id="structgrpc__pollset_html_ad0ca06526200d8e29888467458f4a924"><div class="ttname"><a href="structgrpc__pollset.html#ad0ca06526200d8e29888467458f4a924">grpc_pollset::mu</a></div><div class="ttdeci">gpr_mu mu</div><div class="ttdef"><b>Definition:</b> pollset_posix.h:54</div></div>
-<div class="ttc" id="structgrpc__pollset_html"><div class="ttname"><a href="structgrpc__pollset.html">grpc_pollset</a></div><div class="ttdef"><b>Definition:</b> pollset_posix.h:48</div></div>
+<div class="ttc" id="structgrpc__pollset_html_ad77a6f6b37e35255da61fe17dbc340ca"><div class="ttname"><a href="structgrpc__pollset.html#ad77a6f6b37e35255da61fe17dbc340ca">grpc_pollset::kicked_without_pollers</a></div><div class="ttdeci">int kicked_without_pollers</div><div class="ttdef"><b>Definition:</b> pollset_posix.h:66</div></div>
+<div class="ttc" id="structgrpc__pollset_html_ad0ca06526200d8e29888467458f4a924"><div class="ttname"><a href="structgrpc__pollset.html#ad0ca06526200d8e29888467458f4a924">grpc_pollset::mu</a></div><div class="ttdeci">gpr_mu mu</div><div class="ttdef"><b>Definition:</b> pollset_posix.h:61</div></div>
+<div class="ttc" id="structgrpc__pollset_html_a658aca158a35f5b4055143c8ed41039b"><div class="ttname"><a href="structgrpc__pollset.html#a658aca158a35f5b4055143c8ed41039b">grpc_pollset::root_worker</a></div><div class="ttdeci">grpc_pollset_worker root_worker</div><div class="ttdef"><b>Definition:</b> pollset_posix.h:62</div></div>
+<div class="ttc" id="structgrpc__pollset__worker_html_aeefd06fbe4f5c4abea6121862f5d3aba"><div class="ttname"><a href="structgrpc__pollset__worker.html#aeefd06fbe4f5c4abea6121862f5d3aba">grpc_pollset_worker::prev</a></div><div class="ttdeci">struct grpc_pollset_worker * prev</div><div class="ttdef"><b>Definition:</b> pollset_posix.h:52</div></div>
+<div class="ttc" id="structgrpc__pollset_html"><div class="ttname"><a href="structgrpc__pollset.html">grpc_pollset</a></div><div class="ttdef"><b>Definition:</b> pollset_posix.h:55</div></div>
 <div class="ttc" id="sync__posix_8h_html_a1ad613e07180c0459cda9f3f6d881885"><div class="ttname"><a href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a></div><div class="ttdeci">pthread_cond_t gpr_cv</div><div class="ttdef"><b>Definition:</b> sync_posix.h:42</div></div>
 <div class="ttc" id="structgpr__mu_html"><div class="ttname"><a href="structgpr__mu.html">gpr_mu</a></div><div class="ttdef"><b>Definition:</b> sync_win32.h:39</div></div>
 <div class="ttc" id="sync_8h_html"><div class="ttname"><a href="sync_8h.html">sync.h</a></div></div>
-<div class="ttc" id="structgrpc__pollset_html_a890a0c1aa2061769dcd141cf97f83c1c"><div class="ttname"><a href="structgrpc__pollset.html#a890a0c1aa2061769dcd141cf97f83c1c">grpc_pollset::shutting_down</a></div><div class="ttdeci">int shutting_down</div><div class="ttdef"><b>Definition:</b> pollset_posix.h:58</div></div>
+<div class="ttc" id="structgrpc__pollset__worker_html_a6c8d525fcaff2b2c7bf5451c6fba2bbe"><div class="ttname"><a href="structgrpc__pollset__worker.html#a6c8d525fcaff2b2c7bf5451c6fba2bbe">grpc_pollset_worker::cv</a></div><div class="ttdeci">gpr_cv cv</div><div class="ttdef"><b>Definition:</b> pollset_windows.h:47</div></div>
+<div class="ttc" id="structgrpc__pollset_html_a890a0c1aa2061769dcd141cf97f83c1c"><div class="ttname"><a href="structgrpc__pollset.html#a890a0c1aa2061769dcd141cf97f83c1c">grpc_pollset::shutting_down</a></div><div class="ttdeci">int shutting_down</div><div class="ttdef"><b>Definition:</b> pollset_posix.h:64</div></div>
+<div class="ttc" id="structgrpc__pollset__worker_html"><div class="ttname"><a href="structgrpc__pollset__worker.html">grpc_pollset_worker</a></div><div class="ttdef"><b>Definition:</b> pollset_posix.h:49</div></div>
+<div class="ttc" id="structgrpc__pollset__worker_html_a5a9df2608b49f621b113690ebaf4e634"><div class="ttname"><a href="structgrpc__pollset__worker.html#a5a9df2608b49f621b113690ebaf4e634">grpc_pollset_worker::next</a></div><div class="ttdeci">struct grpc_pollset_worker * next</div><div class="ttdef"><b>Definition:</b> pollset_posix.h:51</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

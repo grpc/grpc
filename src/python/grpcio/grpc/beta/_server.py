@@ -32,14 +32,33 @@
 import threading
 
 from grpc._links import service
+from grpc.beta import interfaces
 from grpc.framework.core import implementations as _core_implementations
 from grpc.framework.crust import implementations as _crust_implementations
 from grpc.framework.foundation import logging_pool
+from grpc.framework.interfaces.base import base
 from grpc.framework.interfaces.links import utilities
 
 _DEFAULT_POOL_SIZE = 8
 _DEFAULT_TIMEOUT = 300
 _MAXIMUM_TIMEOUT = 24 * 60 * 60
+
+
+class _GRPCServicer(base.Servicer):
+
+  def __init__(self, delegate):
+    self._delegate = delegate
+
+  def service(self, group, method, context, output_operator):
+    try:
+      return self._delegate.service(group, method, context, output_operator)
+    except base.NoSuchMethodError as e:
+      if e.code is None and e.details is None:
+        raise base.NoSuchMethodError(
+            interfaces.StatusCode.UNIMPLEMENTED,
+            b'Method "%s" of service "%s" not implemented!' % (method, group))
+      else:
+        raise
 
 
 def _disassemble(grpc_link, end_link, pool, event, grace):
@@ -99,8 +118,9 @@ def server(
     service_thread_pool = thread_pool
     assembly_thread_pool = None
 
-  servicer = _crust_implementations.servicer(
-      implementations, multi_implementation, service_thread_pool)
+  servicer = _GRPCServicer(
+      _crust_implementations.servicer(
+          implementations, multi_implementation, service_thread_pool))
 
   grpc_link = service.service_link(request_deserializers, response_serializers)
 
