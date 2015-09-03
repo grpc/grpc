@@ -58,7 +58,6 @@ extern id const kGRPCTrailersKey;
 @protocol GRPCRequestHeaders <NSObject>
 
 @property(nonatomic, readonly) NSUInteger count;
-@property(nonatomic, readonly) grpc_metadata *grpc_metadataArray;
 
 - (id)objectForKeyedSubscript:(NSString *)key;
 - (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
