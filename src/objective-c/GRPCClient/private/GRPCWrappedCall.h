@@ -35,7 +35,7 @@
 #include <grpc/grpc.h>
 
 #import "GRPCChannel.h"
-#import "GRPCCall.h"
+#import "GRPCRequestHeaders.h"
 
 @interface GRPCOperation : NSObject
 @property(nonatomic, readonly) grpc_op op;
@@ -45,7 +45,7 @@
 
 @interface GRPCOpSendMetadata : GRPCOperation
 
-- (instancetype)initWithMetadata:(id<GRPCRequestHeaders>)metadata
+- (instancetype)initWithMetadata:(GRPCRequestHeaders *)metadata
                          handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
 
 @end
