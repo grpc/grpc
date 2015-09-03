@@ -39,13 +39,13 @@
 #import "NSDictionary+GRPC.h"
 
 // Used by the setter.
-static void CheckKeyIsValid(NSString* key) {
-  if (!key) {
-    [NSException raise:NSInvalidArgumentException format:@"Key cannot be nil"];
+static void CheckIsNonNilASCII(NSString *name, NSString* value) {
+  if (!value) {
+    [NSException raise:NSInvalidArgumentException format:@"%@ cannot be nil", name];
   }
-  if (![key canBeConvertedToEncoding:NSASCIIStringEncoding]) {
+  if (![value canBeConvertedToEncoding:NSASCIIStringEncoding]) {
     [NSException raise:NSInvalidArgumentException
-                format:@"Key %@ contains non-ASCII characters", key];
+                format:@"%@ %@ contains non-ASCII characters", name, value];
   }
 }
 
@@ -63,6 +63,7 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
                   format:@"Expected NSString value for header %@ not ending in \"-bin\", "
        @"instead got %@", key, value];
     }
+    CheckIsNonNilASCII(@"Text header value", (NSString *)value);
   }
 }
 
@@ -92,7 +93,7 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
 
 - (void)setObject:(id)obj forKeyedSubscript:(NSString *)key {
   [self checkCallIsNotStarted];
-  CheckKeyIsValid(key);
+  CheckIsNonNilASCII(@"Header name", key);
   key = key.lowercaseString;
   CheckKeyValuePairIsValid(key, obj);
   _delegate[key] = obj;
