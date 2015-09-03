@@ -38,8 +38,8 @@
 #import "GRPCCall.h"
 #import "NSDictionary+GRPC.h"
 
-// Used by the setters.
-static NSString* NormalizeKey(NSString* key) {
+// Used by the setter.
+static void CheckKeyIsValid(NSString* key) {
   if (!key) {
     [NSException raise:NSInvalidArgumentException format:@"Key cannot be nil"];
   }
@@ -47,7 +47,6 @@ static NSString* NormalizeKey(NSString* key) {
     [NSException raise:NSInvalidArgumentException
                 format:@"Key %@ contains non-ASCII characters", key];
   }
-  return key.lowercaseString;
 }
 
 // Precondition: key isn't nil.
@@ -93,14 +92,15 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
 
 - (void)setObject:(id)obj forKeyedSubscript:(NSString *)key {
   [self checkCallIsNotStarted];
-  key = NormalizeKey(key);
+  CheckKeyIsValid(key);
+  key = key.lowercaseString;
   CheckKeyValuePairIsValid(key, obj);
   _proxy[key] = obj;
 }
 
 - (void)removeObjectForKey:(NSString *)key {
   [self checkCallIsNotStarted];
-  [_proxy removeObjectForKey:NormalizeKey(key)];
+  [_proxy removeObjectForKey:key.lowercaseString];
 }
 
 - (void)removeAllObjects {
