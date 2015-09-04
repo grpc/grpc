@@ -39,6 +39,7 @@
 #include "src/core/security/secure_endpoint.h"
 #include "src/core/iomgr/endpoint_pair.h"
 #include "src/core/iomgr/iomgr.h"
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
