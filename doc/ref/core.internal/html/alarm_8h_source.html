@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -176,28 +176,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="comment">   Requires:  cancel() must happen after add() on a given alarm */</span></div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keywordtype">void</span> <a class="code" href="alarm_8h.html#a921e9a2f728d338f42ad586e6d4eaf60">grpc_alarm_cancel</a>(<a class="code" href="structgrpc__alarm.html">grpc_alarm</a> *alarm);</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="preprocessor">#endif  </span><span class="comment">/* GRPC_INTERNAL_CORE_IOMGR_ALARM_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_INTERNAL_CORE_IOMGR_ALARM_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="structgrpc__alarm_html"><div class="ttname"><a href="structgrpc__alarm.html">grpc_alarm</a></div><div class="ttdef"><b>Definition:</b> alarm.h:41</div></div>
 <div class="ttc" id="port__platform_8h_html"><div class="ttname"><a href="port__platform_8h.html">port_platform.h</a></div></div>
-<div class="ttc" id="alarm_8h_html_a921e9a2f728d338f42ad586e6d4eaf60"><div class="ttname"><a href="alarm_8h.html#a921e9a2f728d338f42ad586e6d4eaf60">grpc_alarm_cancel</a></div><div class="ttdeci">void grpc_alarm_cancel(grpc_alarm *alarm)</div><div class="ttdef"><b>Definition:</b> alarm.c:227</div></div>
+<div class="ttc" id="alarm_8h_html_a921e9a2f728d338f42ad586e6d4eaf60"><div class="ttname"><a href="alarm_8h.html#a921e9a2f728d338f42ad586e6d4eaf60">grpc_alarm_cancel</a></div><div class="ttdeci">void grpc_alarm_cancel(grpc_alarm *alarm)</div><div class="ttdef"><b>Definition:</b> alarm.c:226</div></div>
 <div class="ttc" id="structgrpc__alarm_html_a85a6797057eb75a49d63f4301b4b32dd"><div class="ttname"><a href="structgrpc__alarm.html#a85a6797057eb75a49d63f4301b4b32dd">grpc_alarm::cb</a></div><div class="ttdeci">grpc_iomgr_cb_func cb</div><div class="ttdef"><b>Definition:</b> alarm.h:47</div></div>
 <div class="ttc" id="time_8h_html"><div class="ttname"><a href="time_8h.html">time.h</a></div></div>
 <div class="ttc" id="structgrpc__alarm_html_a2f83596c1a3e1337f333dcffebabb7ab"><div class="ttname"><a href="structgrpc__alarm.html#a2f83596c1a3e1337f333dcffebabb7ab">grpc_alarm::next</a></div><div class="ttdeci">struct grpc_alarm * next</div><div class="ttdef"><b>Definition:</b> alarm.h:45</div></div>
-<div class="ttc" id="port__platform_8h_html_aa6abd4df815a5498d1a04b5e691a74a9"><div class="ttname"><a href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a></div><div class="ttdeci">uint32_t gpr_uint32</div><div class="ttdef"><b>Definition:</b> port_platform.h:309</div></div>
+<div class="ttc" id="port__platform_8h_html_aa6abd4df815a5498d1a04b5e691a74a9"><div class="ttname"><a href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a></div><div class="ttdeci">uint32_t gpr_uint32</div><div class="ttdef"><b>Definition:</b> port_platform.h:312</div></div>
 <div class="ttc" id="structgrpc__alarm_html_a0f9db224dc882f41a1d676115ede23c3"><div class="ttname"><a href="structgrpc__alarm.html#a0f9db224dc882f41a1d676115ede23c3">grpc_alarm::cb_arg</a></div><div class="ttdeci">void * cb_arg</div><div class="ttdef"><b>Definition:</b> alarm.h:48</div></div>
-<div class="ttc" id="alarm_8h_html_a50483486a229b573a29ed9fa30807999"><div class="ttname"><a href="alarm_8h.html#a50483486a229b573a29ed9fa30807999">grpc_alarm_init</a></div><div class="ttdeci">void grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline, grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg, gpr_timespec now)</div><div class="ttdef"><b>Definition:</b> alarm.c:176</div></div>
+<div class="ttc" id="alarm_8h_html_a50483486a229b573a29ed9fa30807999"><div class="ttname"><a href="alarm_8h.html#a50483486a229b573a29ed9fa30807999">grpc_alarm_init</a></div><div class="ttdeci">void grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline, grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg, gpr_timespec now)</div><div class="ttdef"><b>Definition:</b> alarm.c:175</div></div>
 <div class="ttc" id="structgrpc__alarm_html_adef760998486aa79b9637e95a83e061b"><div class="ttname"><a href="structgrpc__alarm.html#adef760998486aa79b9637e95a83e061b">grpc_alarm::heap_index</a></div><div class="ttdeci">gpr_uint32 heap_index</div><div class="ttdef"><b>Definition:</b> alarm.h:43</div></div>
 <div class="ttc" id="structgrpc__alarm_html_a8f3f1ae9b65a0cc76971ea7daed1b126"><div class="ttname"><a href="structgrpc__alarm.html#a8f3f1ae9b65a0cc76971ea7daed1b126">grpc_alarm::deadline</a></div><div class="ttdeci">gpr_timespec deadline</div><div class="ttdef"><b>Definition:</b> alarm.h:42</div></div>
 <div class="ttc" id="iomgr_8h_html_ad4037ad983dff2d616a6fb90158baad3"><div class="ttname"><a href="iomgr_8h.html#ad4037ad983dff2d616a6fb90158baad3">grpc_iomgr_cb_func</a></div><div class="ttdeci">void(* grpc_iomgr_cb_func)(void *arg, int success)</div><div class="ttdoc">gRPC Callback definition. </div><div class="ttdef"><b>Definition:</b> iomgr.h:42</div></div>
 <div class="ttc" id="alarm_8h_html_a2a31b5bd57cc9f6b862e9b8ef0ec2bea"><div class="ttname"><a href="alarm_8h.html#a2a31b5bd57cc9f6b862e9b8ef0ec2bea">grpc_alarm</a></div><div class="ttdeci">struct grpc_alarm grpc_alarm</div></div>
 <div class="ttc" id="structgrpc__alarm_html_a75136c755eae954d2955f3519ea2919f"><div class="ttname"><a href="structgrpc__alarm.html#a75136c755eae954d2955f3519ea2919f">grpc_alarm::triggered</a></div><div class="ttdeci">int triggered</div><div class="ttdef"><b>Definition:</b> alarm.h:44</div></div>
 <div class="ttc" id="structgrpc__alarm_html_a806b141943b6b45f16cc7459ab035b97"><div class="ttname"><a href="structgrpc__alarm.html#a806b141943b6b45f16cc7459ab035b97">grpc_alarm::prev</a></div><div class="ttdeci">struct grpc_alarm * prev</div><div class="ttdef"><b>Definition:</b> alarm.h:46</div></div>
-<div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdef"><b>Definition:</b> time.h:60</div></div>
+<div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdef"><b>Definition:</b> time.h:63</div></div>
 <div class="ttc" id="iomgr_8h_html"><div class="ttname"><a href="iomgr_8h.html">iomgr.h</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

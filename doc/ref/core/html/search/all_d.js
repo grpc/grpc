@@ -1,8 +1,7 @@
 var searchData=
 [
-  ['p',['p',['../structgrpc__arg.html#aab5d11432a11b03a53e5d959d9a5328d',1,'grpc_arg']]],
-  ['pointer',['pointer',['../structgrpc__arg.html#a85b5bbfbdec09ae46cff15628096137a',1,'grpc_arg']]],
-  ['port_5fplatform_2eh',['port_platform.h',['../port__platform_8h.html',1,'']]],
-  ['prev',['prev',['../structgpr__cancellable__list__.html#a58fba7e59ac49bbb9468c2669e21b8b4',1,'gpr_cancellable_list_']]],
-  ['private_5fkey',['private_key',['../structgrpc__ssl__pem__key__cert__pair.html#a2d4e3bdbc59d906bc9ca8b873120fd72',1,'grpc_ssl_pem_key_cert_pair']]]
+  ['obfuscated',['obfuscated',['../structgrpc__metadata.html#a737f2161d2ccc9da44f340d923c97658',1,'grpc_metadata']]],
+  ['op',['op',['../structgrpc__op.html#a702bcecc2462646b6740ed7c05f42115',1,'grpc_op']]],
+  ['op_5fid',['op_id',['../structcensus__trace__record.html#a9bb150a1752a810cde915432976f1839',1,'census_trace_record']]],
+  ['ops',['ops',['../structcensus__aggregation.html#afce3bda99fdeb6c77dde6368e1c45ffa',1,'census_aggregation']]]
 ];

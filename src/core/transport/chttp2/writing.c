@@ -37,7 +37,6 @@
 #include <grpc/support/log.h>
 
 static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing);
-static void finish_write_cb(void *tw, grpc_endpoint_cb_status write_status);
 
 int grpc_chttp2_unlocking_check_writes(
     grpc_chttp2_transport_global *transport_global,
@@ -114,6 +113,10 @@ int grpc_chttp2_unlocking_check_writes(
 
     if (!stream_global->read_closed &&
         stream_global->unannounced_incoming_window > 0) {
+      GPR_ASSERT(stream_writing->announce_window == 0);
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "write", transport_writing, stream_writing, announce_window,
+          stream_global->unannounced_incoming_window);
       stream_writing->announce_window =
           stream_global->unannounced_incoming_window;
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
@@ -165,16 +168,15 @@ void grpc_chttp2_perform_writes(
   GPR_ASSERT(transport_writing->outbuf.count > 0);
   GPR_ASSERT(endpoint);
 
-  switch (grpc_endpoint_write(endpoint, transport_writing->outbuf.slices,
-                              transport_writing->outbuf.count, finish_write_cb,
-                              transport_writing)) {
-    case GRPC_ENDPOINT_WRITE_DONE:
+  switch (grpc_endpoint_write(endpoint, &transport_writing->outbuf,
+                              &transport_writing->done_cb)) {
+    case GRPC_ENDPOINT_DONE:
       grpc_chttp2_terminate_writing(transport_writing, 1);
       break;
-    case GRPC_ENDPOINT_WRITE_ERROR:
+    case GRPC_ENDPOINT_ERROR:
       grpc_chttp2_terminate_writing(transport_writing, 0);
       break;
-    case GRPC_ENDPOINT_WRITE_PENDING:
+    case GRPC_ENDPOINT_PENDING:
       break;
   }
 }
@@ -198,6 +200,9 @@ static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
           &transport_writing->outbuf,
           grpc_chttp2_window_update_create(stream_writing->id,
                                            stream_writing->announce_window));
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "write", transport_writing, stream_writing, announce_window,
+          -(gpr_int64)stream_writing->announce_window);
       stream_writing->announce_window = 0;
     }
     if (stream_writing->send_closed == GRPC_SEND_CLOSED_WITH_RST_STREAM) {
@@ -207,12 +212,6 @@ static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
     }
     grpc_chttp2_list_add_written_stream(transport_writing, stream_writing);
   }
-}
-
-static void finish_write_cb(void *tw, grpc_endpoint_cb_status write_status) {
-  grpc_chttp2_transport_writing *transport_writing = tw;
-  grpc_chttp2_terminate_writing(transport_writing,
-                                write_status == GRPC_ENDPOINT_CB_OK);
 }
 
 void grpc_chttp2_cleanup_writing(
@@ -243,6 +242,5 @@ void grpc_chttp2_cleanup_writing(
     grpc_chttp2_list_add_read_write_state_changed(transport_global,
                                                   stream_global);
   }
-  transport_writing->outbuf.count = 0;
-  transport_writing->outbuf.length = 0;
+  gpr_slice_buffer_reset_and_unref(&transport_writing->outbuf);
 }

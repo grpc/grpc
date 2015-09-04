@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -100,34 +100,45 @@ Functions</h2></td></tr>
 <tr class="separator:a10ad765940e4f2ebf9d6bdc6b97d0fb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7e9178815fe26123c9413514e1212ca6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="resolver__registry_8h.html#a7e9178815fe26123c9413514e1212ca6">grpc_resolver_registry_shutdown</a> (void)</td></tr>
 <tr class="separator:a7e9178815fe26123c9413514e1212ca6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a563d9d398ed1757d9c5f78ae2ec7b9d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="resolver__registry_8h.html#a563d9d398ed1757d9c5f78ae2ec7b9d7">grpc_register_resolver_type</a> (const char *scheme, <a class="el" href="structgrpc__resolver__factory.html">grpc_resolver_factory</a> *factory)</td></tr>
-<tr class="memdesc:a563d9d398ed1757d9c5f78ae2ec7b9d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a resolver type.  <a href="#a563d9d398ed1757d9c5f78ae2ec7b9d7">More...</a><br/></td></tr>
-<tr class="separator:a563d9d398ed1757d9c5f78ae2ec7b9d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a42ba392534ac248b5a4ac1f87cd9b3b0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__resolver.html">grpc_resolver</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="resolver__registry_8h.html#a42ba392534ac248b5a4ac1f87cd9b3b0">grpc_resolver_create</a> (const char *name, <a class="el" href="structgrpc__subchannel__factory.html">grpc_subchannel_factory</a> *<a class="el" href="structsubchannel__factory.html">subchannel_factory</a>)</td></tr>
-<tr class="memdesc:a42ba392534ac248b5a4ac1f87cd9b3b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a resolver given <em>name</em>.  <a href="#a42ba392534ac248b5a4ac1f87cd9b3b0">More...</a><br/></td></tr>
-<tr class="separator:a42ba392534ac248b5a4ac1f87cd9b3b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5d4a6fdf0b8725ec0bf4e8dda33ed6ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="resolver__registry_8h.html#a5d4a6fdf0b8725ec0bf4e8dda33ed6ea">grpc_register_resolver_type</a> (<a class="el" href="structgrpc__resolver__factory.html">grpc_resolver_factory</a> *factory)</td></tr>
+<tr class="memdesc:a5d4a6fdf0b8725ec0bf4e8dda33ed6ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a resolver type.  <a href="#a5d4a6fdf0b8725ec0bf4e8dda33ed6ea">More...</a><br/></td></tr>
+<tr class="separator:a5d4a6fdf0b8725ec0bf4e8dda33ed6ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a45f8cdaaf830576b675ee63209e9e29f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__resolver.html">grpc_resolver</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="resolver__registry_8h.html#a45f8cdaaf830576b675ee63209e9e29f">grpc_resolver_create</a> (const char *target, <a class="el" href="structgrpc__subchannel__factory.html">grpc_subchannel_factory</a> *<a class="el" href="structsubchannel__factory.html">subchannel_factory</a>)</td></tr>
+<tr class="memdesc:a45f8cdaaf830576b675ee63209e9e29f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a resolver given <em>target</em>.  <a href="#a45f8cdaaf830576b675ee63209e9e29f">More...</a><br/></td></tr>
+<tr class="separator:a45f8cdaaf830576b675ee63209e9e29f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade4375aeeaf1d8848b9fbf373021e885"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="resolver__registry_8h.html#ade4375aeeaf1d8848b9fbf373021e885">grpc_get_default_authority</a> (const char *target)</td></tr>
+<tr class="memdesc:ade4375aeeaf1d8848b9fbf373021e885"><td class="mdescLeft">&#160;</td><td class="mdescRight">Given a target, return a (freshly allocated with gpr_malloc) string representing the default authority to pass from a client.  <a href="#ade4375aeeaf1d8848b9fbf373021e885">More...</a><br/></td></tr>
+<tr class="separator:ade4375aeeaf1d8848b9fbf373021e885"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a563d9d398ed1757d9c5f78ae2ec7b9d7"></a>
+<a class="anchor" id="ade4375aeeaf1d8848b9fbf373021e885"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">char* grpc_get_default_authority </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>target</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Given a target, return a (freshly allocated with gpr_malloc) string representing the default authority to pass from a client. </p>
+
+</div>
+</div>
+<a class="anchor" id="a5d4a6fdf0b8725ec0bf4e8dda33ed6ea"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void grpc_register_resolver_type </td>
           <td>(</td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>scheme</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype"><a class="el" href="structgrpc__resolver__factory.html">grpc_resolver_factory</a> *&#160;</td>
-          <td class="paramname"><em>factory</em>&#160;</td>
-        </tr>
-        <tr>
+          <td class="paramname"><em>factory</em></td><td>)</td>
           <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -137,7 +148,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a42ba392534ac248b5a4ac1f87cd9b3b0"></a>
+<a class="anchor" id="a45f8cdaaf830576b675ee63209e9e29f"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -145,7 +156,7 @@ Functions</h2></td></tr>
           <td class="memname"><a class="el" href="structgrpc__resolver.html">grpc_resolver</a>* grpc_resolver_create </td>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>name</em>, </td>
+          <td class="paramname"><em>target</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -161,8 +172,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Create a resolver given <em>name</em>. </p>
-<p>First tries to parse <em>name</em> as a URI. If this succeeds, tries to locate a registered resolver factory based on the URI scheme. If parsing or location fails, prefixes default_prefix from grpc_resolver_registry_init to name, and tries again (if default_prefix was not NULL). If a resolver factory was found, use it to instantiate a resolver and return it. If a resolver factory was not found, return NULL. </p>
+<p>Create a resolver given <em>target</em>. </p>
+<p>First tries to parse <em>target</em> as a URI. If this succeeds, tries to locate a registered resolver factory based on the URI scheme. If parsing or location fails, prefixes default_prefix from grpc_resolver_registry_init to target, and tries again (if default_prefix was not NULL). If a resolver factory was found, use it to instantiate a resolver and return it. If a resolver factory was not found, return NULL. </p>
 
 </div>
 </div>
@@ -201,7 +212,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
