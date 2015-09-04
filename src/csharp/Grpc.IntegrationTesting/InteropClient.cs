@@ -396,7 +396,9 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("running per_rpc_creds");
 
             ITokenAccess credential = await GoogleCredential.GetApplicationDefaultAsync();
-            string accessToken = await credential.GetAccessTokenForRequestAsync();
+            // TODO: currently there's no way how to obtain AuthURI for JWT per-rpc creds.
+            string authUri = "https://grpc-test.sandbox.google.com/grpc.testing.TestService";
+            string accessToken = await credential.GetAccessTokenForRequestAsync(authUri);
             var headerInterceptor = AuthInterceptors.FromAccessToken(accessToken);
 
             var request = new SimpleRequest
