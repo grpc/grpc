@@ -133,18 +133,18 @@ grpc_credentials *grpc_google_iam_credentials_create(
 
 /* Function to be called by the metadata credentials plugin implementation when
    the metadata is ready. */
-void grpc_credentials_plugin_metadata_notify(
+void grpc_metadata_credentials_notify_from_plugin(
     void *core_context, const grpc_metadata *creds_md, size_t num_creds_md,
     grpc_status_code status, const char *error_details);
 
 typedef struct {
-  /* The implementation of this method has to be non-blocking. The implementer
-     of this function MUST call grpc_credentials_plugin_metadata_notify when
+  /* The implementation of this method MUST be non-blocking. The implementer of
+     this function MUST call grpc_metadata_credentials_notify_from_plugin when
      the metadata is ready.
      - service_url is the fully qualified URL that the client stack is
        connecting to.
      - core_context needs to be passed as the first parameter of
-       grpc_credentials_plugin_metadata_notify. */
+       grpc_metadata_credentials_notify_from_plugin. */
   void (*get_metadata)(void *state, const char *service_url,
                        void *core_context);
 

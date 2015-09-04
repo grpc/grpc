@@ -158,8 +158,8 @@ void MetadataCredentialsPluginWrapper::GetMetadata(void* wrapper,
   MetadataCredentialsPluginWrapper* w =
       reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   if (w->plugin_ == nullptr) {
-    grpc_credentials_plugin_metadata_notify(core_context, NULL, 0,
-                                            GRPC_STATUS_OK, NULL);
+    grpc_metadata_credentials_notify_from_plugin(core_context, NULL, 0,
+                                                 GRPC_STATUS_OK, NULL);
     return;
   }
   if (w->plugin_->IsBlocking()) {
@@ -183,7 +183,7 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(const char* service_url,
                   0,
                   {{nullptr, nullptr, nullptr, nullptr}}});
   }
-  grpc_credentials_plugin_metadata_notify(
+  grpc_metadata_credentials_notify_from_plugin(
       core_context, &md[0], md.size(),
       static_cast<grpc_status_code>(status.error_code()),
       status.error_message().c_str());

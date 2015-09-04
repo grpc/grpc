@@ -1208,11 +1208,11 @@ static int plugin_has_request_metadata_only(const grpc_credentials *creds) {
   return 1;
 }
 
-void grpc_credentials_plugin_metadata_notify(void *request,
-                                             const grpc_metadata *md,
-                                             size_t num_md,
-                                             grpc_status_code status,
-                                             const char *error_details) {
+void grpc_metadata_credentials_notify_from_plugin(void *request,
+                                                  const grpc_metadata *md,
+                                                  size_t num_md,
+                                                  grpc_status_code status,
+                                                  const char *error_details) {
   grpc_metadata_plugin_request *r = (grpc_metadata_plugin_request *)request;
   if (status != GRPC_STATUS_OK) {
     if (error_details != NULL) {
