@@ -513,7 +513,9 @@ token (created by the project's key file)
 
 Test caller should set flag `--service_account_key_file` with the
 path to json key file downloaded from
-https://console.developers.google.com.
+https://console.developers.google.com. Alternately, if using a
+usable auth implementation, she may specify the file location in the environment
+variable GOOGLE_APPLICATION_CREDENTIALS.
 
 Server features:
 * [UnaryCall][]
@@ -540,7 +542,7 @@ Client asserts:
 * call was successful
 * received SimpleResponse.username is not empty and is in the json key file used
 by the auth library. The client can optionally check the username matches the
-email address in the key file.
+email address in the key file or equals the value of `--default_service_account` flag.
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
