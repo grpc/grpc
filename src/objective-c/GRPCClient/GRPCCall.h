@@ -169,10 +169,8 @@ extern id const kGRPCTrailersKey;
 //
 // After the call is started, trying to modify this property is an error.
 //
-// For convenience, the property is initialized to an empty NSMutableDictionary, and the setter
-// accepts (and copies) both mutable and immutable dictionaries.
-- (id<GRPCRequestHeaders>)requestHeaders; // nonatomic
-- (void)setRequestHeaders:(NSDictionary *)requestHeaders; // nonatomic, copy
+// The property is initialized to an empty NSMutableDictionary.
+@property(atomic, readonly) id<GRPCRequestHeaders> requestHeaders;
 
 // This dictionary is populated with the HTTP headers received from the server. This happens before
 // any response message is received from the server. It has the same structure as the request

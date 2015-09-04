@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -129,26 +129,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="keywordtype">void</span> <a class="code" href="resolver__registry_8h.html#a10ad765940e4f2ebf9d6bdc6b97d0fb0">grpc_resolver_registry_init</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *default_prefix);</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="keywordtype">void</span> <a class="code" href="resolver__registry_8h.html#a7e9178815fe26123c9413514e1212ca6">grpc_resolver_registry_shutdown</a>(<span class="keywordtype">void</span>);</div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordtype">void</span> <a class="code" href="resolver__registry_8h.html#a563d9d398ed1757d9c5f78ae2ec7b9d7">grpc_register_resolver_type</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *scheme,</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;                                 <a class="code" href="structgrpc__resolver__factory.html">grpc_resolver_factory</a> *factory);</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<a class="code" href="structgrpc__resolver.html">grpc_resolver</a> *<a class="code" href="resolver__registry_8h.html#a42ba392534ac248b5a4ac1f87cd9b3b0">grpc_resolver_create</a>(</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *name, <a class="code" href="structgrpc__subchannel__factory.html">grpc_subchannel_factory</a> *<a class="code" href="structsubchannel__factory.html">subchannel_factory</a>);</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_REGISTRY_H */</span><span class="preprocessor"></span></div>
-<div class="ttc" id="resolver__registry_8h_html_a563d9d398ed1757d9c5f78ae2ec7b9d7"><div class="ttname"><a href="resolver__registry_8h.html#a563d9d398ed1757d9c5f78ae2ec7b9d7">grpc_register_resolver_type</a></div><div class="ttdeci">void grpc_register_resolver_type(const char *scheme, grpc_resolver_factory *factory)</div><div class="ttdoc">Register a resolver type. </div><div class="ttdef"><b>Definition:</b> resolver_registry.c:68</div></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keywordtype">void</span> <a class="code" href="resolver__registry_8h.html#a5d4a6fdf0b8725ec0bf4e8dda33ed6ea">grpc_register_resolver_type</a>(<a class="code" href="structgrpc__resolver__factory.html">grpc_resolver_factory</a> *factory);</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<a class="code" href="structgrpc__resolver.html">grpc_resolver</a> *<a class="code" href="resolver__registry_8h.html#a45f8cdaaf830576b675ee63209e9e29f">grpc_resolver_create</a>(</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">char</span> *target, <a class="code" href="structgrpc__subchannel__factory.html">grpc_subchannel_factory</a> *<a class="code" href="structsubchannel__factory.html">subchannel_factory</a>);</div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;<span class="keywordtype">char</span> *<a class="code" href="resolver__registry_8h.html#ade4375aeeaf1d8848b9fbf373021e885">grpc_get_default_authority</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *target);</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_REGISTRY_H */</span><span class="preprocessor"></span></div>
+<div class="ttc" id="resolver__registry_8h_html_ade4375aeeaf1d8848b9fbf373021e885"><div class="ttname"><a href="resolver__registry_8h.html#ade4375aeeaf1d8848b9fbf373021e885">grpc_get_default_authority</a></div><div class="ttdeci">char * grpc_get_default_authority(const char *target)</div><div class="ttdoc">Given a target, return a (freshly allocated with gpr_malloc) string representing the default authorit...</div><div class="ttdef"><b>Definition:</b> resolver_registry.c:127</div></div>
+<div class="ttc" id="resolver__registry_8h_html_a45f8cdaaf830576b675ee63209e9e29f"><div class="ttname"><a href="resolver__registry_8h.html#a45f8cdaaf830576b675ee63209e9e29f">grpc_resolver_create</a></div><div class="ttdeci">grpc_resolver * grpc_resolver_create(const char *target, grpc_subchannel_factory *subchannel_factory)</div><div class="ttdoc">Create a resolver given target. </div><div class="ttdef"><b>Definition:</b> resolver_registry.c:117</div></div>
+<div class="ttc" id="resolver__registry_8h_html_a5d4a6fdf0b8725ec0bf4e8dda33ed6ea"><div class="ttname"><a href="resolver__registry_8h.html#a5d4a6fdf0b8725ec0bf4e8dda33ed6ea">grpc_register_resolver_type</a></div><div class="ttdeci">void grpc_register_resolver_type(grpc_resolver_factory *factory)</div><div class="ttdoc">Register a resolver type. </div><div class="ttdef"><b>Definition:</b> resolver_registry.c:62</div></div>
 <div class="ttc" id="structgrpc__resolver_html"><div class="ttname"><a href="structgrpc__resolver.html">grpc_resolver</a></div><div class="ttdoc">grpc_resolver provides grpc_client_config objects to grpc_channel objects </div><div class="ttdef"><b>Definition:</b> resolver.h:46</div></div>
-<div class="ttc" id="structsubchannel__factory_html"><div class="ttname"><a href="structsubchannel__factory.html">subchannel_factory</a></div><div class="ttdef"><b>Definition:</b> secure_channel_create.c:131</div></div>
+<div class="ttc" id="structsubchannel__factory_html"><div class="ttname"><a href="structsubchannel__factory.html">subchannel_factory</a></div><div class="ttdef"><b>Definition:</b> secure_channel_create.c:132</div></div>
 <div class="ttc" id="resolver__factory_8h_html"><div class="ttname"><a href="resolver__factory_8h.html">resolver_factory.h</a></div></div>
-<div class="ttc" id="resolver__registry_8h_html_a42ba392534ac248b5a4ac1f87cd9b3b0"><div class="ttname"><a href="resolver__registry_8h.html#a42ba392534ac248b5a4ac1f87cd9b3b0">grpc_resolver_create</a></div><div class="ttdeci">grpc_resolver * grpc_resolver_create(const char *name, grpc_subchannel_factory *subchannel_factory)</div><div class="ttdoc">Create a resolver given name. </div><div class="ttdef"><b>Definition:</b> resolver_registry.c:96</div></div>
 <div class="ttc" id="structgrpc__resolver__factory_html"><div class="ttname"><a href="structgrpc__resolver__factory.html">grpc_resolver_factory</a></div><div class="ttdoc">grpc_resolver provides grpc_client_config objects to grpc_channel objects </div><div class="ttdef"><b>Definition:</b> resolver_factory.h:46</div></div>
-<div class="ttc" id="resolver__registry_8h_html_a7e9178815fe26123c9413514e1212ca6"><div class="ttname"><a href="resolver__registry_8h.html#a7e9178815fe26123c9413514e1212ca6">grpc_resolver_registry_shutdown</a></div><div class="ttdeci">void grpc_resolver_registry_shutdown(void)</div><div class="ttdef"><b>Definition:</b> resolver_registry.c:59</div></div>
-<div class="ttc" id="resolver__registry_8h_html_a10ad765940e4f2ebf9d6bdc6b97d0fb0"><div class="ttname"><a href="resolver__registry_8h.html#a10ad765940e4f2ebf9d6bdc6b97d0fb0">grpc_resolver_registry_init</a></div><div class="ttdeci">void grpc_resolver_registry_init(const char *default_prefix)</div><div class="ttdef"><b>Definition:</b> resolver_registry.c:54</div></div>
+<div class="ttc" id="resolver__registry_8h_html_a7e9178815fe26123c9413514e1212ca6"><div class="ttname"><a href="resolver__registry_8h.html#a7e9178815fe26123c9413514e1212ca6">grpc_resolver_registry_shutdown</a></div><div class="ttdeci">void grpc_resolver_registry_shutdown(void)</div><div class="ttdef"><b>Definition:</b> resolver_registry.c:54</div></div>
+<div class="ttc" id="resolver__registry_8h_html_a10ad765940e4f2ebf9d6bdc6b97d0fb0"><div class="ttname"><a href="resolver__registry_8h.html#a10ad765940e4f2ebf9d6bdc6b97d0fb0">grpc_resolver_registry_init</a></div><div class="ttdeci">void grpc_resolver_registry_init(const char *default_prefix)</div><div class="ttdef"><b>Definition:</b> resolver_registry.c:49</div></div>
 <div class="ttc" id="structgrpc__subchannel__factory_html"><div class="ttname"><a href="structgrpc__subchannel__factory.html">grpc_subchannel_factory</a></div><div class="ttdoc">Constructor for new configured channels. </div><div class="ttdef"><b>Definition:</b> subchannel_factory.h:45</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -40,7 +40,7 @@ applications choose.
 # threading is referenced from specification in this module.
 import abc
 import enum
-import threading
+import threading  # pylint: disable=unused-import
 
 # abandonment is referenced from specification in this module.
 from grpc.framework.foundation import abandonment  # pylint: disable=unused-import
@@ -69,19 +69,30 @@ class NoSuchMethodError(Exception):
     self.details = details
 
 
-@enum.unique
-class Outcome(enum.Enum):
-  """Operation outcomes."""
+class Outcome(object):
+  """The outcome of an operation.
 
-  COMPLETED = 'completed'
-  CANCELLED = 'cancelled'
-  EXPIRED = 'expired'
-  LOCAL_SHUTDOWN = 'local shutdown'
-  REMOTE_SHUTDOWN = 'remote shutdown'
-  RECEPTION_FAILURE = 'reception failure'
-  TRANSMISSION_FAILURE = 'transmission failure'
-  LOCAL_FAILURE = 'local failure'
-  REMOTE_FAILURE = 'remote failure'
+  Attributes:
+    kind: A Kind value coarsely identifying how the operation terminated.
+    code: An application-specific code value or None if no such value was
+      provided.
+    details: An application-specific details value or None if no such value was
+      provided.
+  """
+
+  @enum.unique
+  class Kind(enum.Enum):
+    """Ways in which an operation can terminate."""
+
+    COMPLETED = 'completed'
+    CANCELLED = 'cancelled'
+    EXPIRED = 'expired'
+    LOCAL_SHUTDOWN = 'local shutdown'
+    REMOTE_SHUTDOWN = 'remote shutdown'
+    RECEPTION_FAILURE = 'reception failure'
+    TRANSMISSION_FAILURE = 'transmission failure'
+    LOCAL_FAILURE = 'local failure'
+    REMOTE_FAILURE = 'remote failure'
 
 
 class Completion(object):
@@ -294,8 +305,8 @@ class End(object):
     """Reports the number of terminated operations broken down by outcome.
 
     Returns:
-      A dictionary from Outcome value to an integer identifying the number
-        of operations that terminated with that outcome.
+      A dictionary from Outcome.Kind value to an integer identifying the number
+        of operations that terminated with that outcome kind.
     """
     raise NotImplementedError()
 

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -176,15 +176,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keywordtype">void</span> <a class="code" href="slice__buffer_8h.html#a672b80e16cdabf26c7b558a54edfcd2d">gpr_slice_buffer_swap</a>(<a class="code" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> *a, <a class="code" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> *b);</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="comment">/* move all of the elements of src into dst */</span></div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="keywordtype">void</span> <a class="code" href="slice__buffer_8h.html#a0289912040151750bbee19ba632a88f1">gpr_slice_buffer_move_into</a>(<a class="code" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> *src, <a class="code" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> *dst);</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="preprocessor"></span>}</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_SLICE_BUFFER_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="comment">/* remove n bytes from the end of a slice buffer */</span></div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;<span class="keywordtype">void</span> <a class="code" href="slice__buffer_8h.html#a00a37040bf492ad0962312a59a73b4eb">gpr_slice_buffer_trim_end</a>(<a class="code" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> *src, <span class="keywordtype">size_t</span> n);</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="preprocessor"></span>}</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_SLICE_BUFFER_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="slice__buffer_8h_html_a223fc0bf1beb3866aee902dea0a599c0"><div class="ttname"><a href="slice__buffer_8h.html#a223fc0bf1beb3866aee902dea0a599c0">gpr_slice_buffer_tiny_add</a></div><div class="ttdeci">gpr_uint8 * gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, unsigned len)</div></div>
 <div class="ttc" id="structgpr__slice__buffer_html_a07c0e3196f5e197af878ee94fd5df3ba"><div class="ttname"><a href="structgpr__slice__buffer.html#a07c0e3196f5e197af878ee94fd5df3ba">gpr_slice_buffer::slices</a></div><div class="ttdeci">gpr_slice * slices</div><div class="ttdef"><b>Definition:</b> slice_buffer.h:50</div></div>
-<div class="ttc" id="port__platform_8h_html_aeeb41e29e7c7a916a4e0fb6cfb9f92e0"><div class="ttname"><a href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a></div><div class="ttdeci">uint8_t gpr_uint8</div><div class="ttdef"><b>Definition:</b> port_platform.h:307</div></div>
+<div class="ttc" id="slice__buffer_8h_html_a00a37040bf492ad0962312a59a73b4eb"><div class="ttname"><a href="slice__buffer_8h.html#a00a37040bf492ad0962312a59a73b4eb">gpr_slice_buffer_trim_end</a></div><div class="ttdeci">void gpr_slice_buffer_trim_end(gpr_slice_buffer *src, size_t n)</div></div>
+<div class="ttc" id="port__platform_8h_html_aeeb41e29e7c7a916a4e0fb6cfb9f92e0"><div class="ttname"><a href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a></div><div class="ttdeci">uint8_t gpr_uint8</div><div class="ttdef"><b>Definition:</b> port_platform.h:310</div></div>
 <div class="ttc" id="slice__buffer_8h_html_acd745eec745573eeace3861da3e2c045"><div class="ttname"><a href="slice__buffer_8h.html#acd745eec745573eeace3861da3e2c045">gpr_slice_buffer_add_indexed</a></div><div class="ttdeci">size_t gpr_slice_buffer_add_indexed(gpr_slice_buffer *sb, gpr_slice slice)</div></div>
 <div class="ttc" id="structgpr__slice__buffer_html_a2150637602d9080cdb111d09c1d669c3"><div class="ttname"><a href="structgpr__slice__buffer.html#a2150637602d9080cdb111d09c1d669c3">gpr_slice_buffer::length</a></div><div class="ttdeci">size_t length</div><div class="ttdef"><b>Definition:</b> slice_buffer.h:56</div></div>
 <div class="ttc" id="structgpr__slice__buffer_html_a48b6efc57238e7abd0bcbb579219456e"><div class="ttname"><a href="structgpr__slice__buffer.html#a48b6efc57238e7abd0bcbb579219456e">gpr_slice_buffer::capacity</a></div><div class="ttdeci">size_t capacity</div><div class="ttdef"><b>Definition:</b> slice_buffer.h:54</div></div>
@@ -204,7 +207,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

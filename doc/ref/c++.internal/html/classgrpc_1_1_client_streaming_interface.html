@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -94,16 +94,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="stream_8h_source.html">stream.h</a>&gt;</code></p>
+<p>Common interface for all synchronous client side streaming.  
+ <a href="classgrpc_1_1_client_streaming_interface.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="sync__stream_8h_source.html">sync_stream.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a312c9454c0f950e1c75b5c802bcbb00e"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_streaming_interface.html#a312c9454c0f950e1c75b5c802bcbb00e">~ClientStreamingInterface</a> ()</td></tr>
 <tr class="separator:a312c9454c0f950e1c75b5c802bcbb00e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a98e2927a42c793017ce7d8c6e88539c4"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_streaming_interface.html#a98e2927a42c793017ce7d8c6e88539c4">Finish</a> ()=0</td></tr>
+<tr class="memdesc:a98e2927a42c793017ce7d8c6e88539c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wait until the stream finishes, and return the final status.  <a href="#a98e2927a42c793017ce7d8c6e88539c4">More...</a><br/></td></tr>
 <tr class="separator:a98e2927a42c793017ce7d8c6e88539c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Common interface for all synchronous client side streaming. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a312c9454c0f950e1c75b5c802bcbb00e"></a>
 <div class="memitem">
 <div class="memproto">
@@ -149,17 +155,25 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Wait until the stream finishes, and return the final status. </p>
+<p>When the client side declares it has no more message to send, either implicitly or by calling <em>WritesDone()</em>, it needs to make sure there is no more message to be received from the server, either implicitly or by getting a false from a <em>Read()</em>.</p>
+<p>This function will return either:</p>
+<ul>
+<li>when all incoming messages have been read and the server has returned status.</li>
+<li>OR when the server has returned a non-OK status. </li>
+</ul>
+
 <p>Implemented in <a class="el" href="classgrpc_1_1_client_reader_writer.html#aabd46ba35f39419bbcfeff8c0843c116">grpc::ClientReaderWriter&lt; R, W &gt;</a>, <a class="el" href="classgrpc_1_1_client_writer.html#afe847df1fec5c40f6650498c026eb658">grpc::ClientWriter&lt; W &gt;</a>, and <a class="el" href="classgrpc_1_1_client_reader.html#abb69eb7672e42eb09fbc4d7110d142df">grpc::ClientReader&lt; R &gt;</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/<a class="el" href="stream_8h_source.html">stream.h</a></li>
+<li>include/grpc++/support/<a class="el" href="sync__stream_8h_source.html">sync_stream.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
