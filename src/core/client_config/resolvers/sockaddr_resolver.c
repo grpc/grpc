@@ -337,7 +337,7 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
   static grpc_resolver *name##_factory_create_resolver(                     \
       grpc_resolver_factory *factory, grpc_uri *uri,                        \
       grpc_subchannel_factory *subchannel_factory) {                        \
-    return sockaddr_create(uri, "pick_first",                               \
+    return sockaddr_create(uri, "round_robin",                               \
                            subchannel_factory, parse_##name);               \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
