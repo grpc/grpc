@@ -207,18 +207,19 @@ class TransmissionManager(_interfaces.TransmissionManager):
     self._transmitting = True
 
   def kick_off(
-      self, group, method, timeout, initial_metadata, payload, completion,
-      allowance):
+      self, group, method, timeout, protocol_options, initial_metadata,
+      payload, completion, allowance):
     """See _interfaces.TransmissionManager.kickoff for specification."""
     # TODO(nathaniel): Support other subscriptions.
     subscription = links.Ticket.Subscription.FULL
     terminal_metadata, code, message, termination = _explode_completion(
         completion)
     self._remote_allowance = 1 if payload is None else 0
+    protocol = links.Protocol(links.Protocol.Kind.CALL_OPTION, protocol_options)
     ticket = links.Ticket(
         self._operation_id, 0, group, method, subscription, timeout, allowance,
         initial_metadata, payload, terminal_metadata, code, message,
-        termination, None)
+        termination, protocol)
     self._lowest_unused_sequence_number = 1
     self._transmit(ticket)
 
