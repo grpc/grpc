@@ -16,10 +16,10 @@ INSTALLATION
 
 **Linux (Debian):**
 
-Add [Debian testing][] to your `sources.list` file. Example:
+Add [Debian jessie-backports][] to your `sources.list` file. Example:
 
 ```sh
-echo "deb http://ftp.us.debian.org/debian testing main contrib non-free" | \
+echo "deb http://http.debian.net/debian jessie-backports main" | \
 sudo tee -a /etc/apt/sources.list
 ```
 
@@ -92,4 +92,4 @@ $ ../../tools/distrib/python/submit.py
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Quick Start]:http://www.grpc.io/docs/tutorials/basic/python.html
 [detailed example]:http://www.grpc.io/docs/installation/python.html
-[Debian testing]:https://www.debian.org/releases/stretch/
+[Debian jessie-backports]:http://backports.debian.org/Instructions/
