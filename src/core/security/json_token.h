@@ -115,4 +115,4 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
 /* Destructs the object. */
 void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token *refresh_token);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_JSON_TOKEN_H */
+#endif /* GRPC_INTERNAL_CORE_SECURITY_JSON_TOKEN_H */

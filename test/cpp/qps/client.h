@@ -34,14 +34,14 @@
 #ifndef TEST_QPS_CLIENT_H
 #define TEST_QPS_CLIENT_H
 
+#include <condition_variable>
+#include <mutex>
+
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/qps/qpstest.grpc.pb.h"
-
-#include <condition_variable>
-#include <mutex>
-#include <grpc++/config.h>
+#include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {
 
@@ -125,11 +125,11 @@ class Client {
       channel_ = CreateTestChannel(target, config.enable_ssl());
       stub_ = TestService::NewStub(channel_);
     }
-    ChannelInterface* get_channel() { return channel_.get(); }
+    Channel* get_channel() { return channel_.get(); }
     TestService::Stub* get_stub() { return stub_.get(); }
 
    private:
-    std::shared_ptr<ChannelInterface> channel_;
+    std::shared_ptr<Channel> channel_;
     std::unique_ptr<TestService::Stub> stub_;
   };
   std::vector<ClientChannelInfo> channels_;

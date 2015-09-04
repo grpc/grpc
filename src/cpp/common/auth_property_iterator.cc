@@ -31,7 +31,7 @@
  *
  */
 
-#include <grpc++/auth_context.h>
+#include <grpc++/security/auth_context.h>
 
 #include <grpc/grpc_security.h>
 
@@ -64,8 +64,7 @@ AuthPropertyIterator AuthPropertyIterator::operator++(int) {
   return tmp;
 }
 
-bool AuthPropertyIterator::operator==(
-    const AuthPropertyIterator& rhs) const {
+bool AuthPropertyIterator::operator==(const AuthPropertyIterator& rhs) const {
   if (property_ == nullptr || rhs.property_ == nullptr) {
     return property_ == rhs.property_;
   } else {
@@ -73,15 +72,14 @@ bool AuthPropertyIterator::operator==(
   }
 }
 
-bool AuthPropertyIterator::operator!=(
-    const AuthPropertyIterator& rhs) const {
+bool AuthPropertyIterator::operator!=(const AuthPropertyIterator& rhs) const {
   return !operator==(rhs);
 }
 
 const AuthProperty AuthPropertyIterator::operator*() {
-  return std::make_pair<grpc::string, grpc::string>(
-      grpc::string(property_->name),
-      grpc::string(property_->value, property_->value_length));
+  return std::pair<grpc::string_ref, grpc::string_ref>(
+      property_->name,
+      grpc::string_ref(property_->value, property_->value_length));
 }
 
 }  // namespace grpc

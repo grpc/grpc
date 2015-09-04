@@ -43,7 +43,7 @@
 
 - (instancetype)init {
   if ((self = [super init])) {
-    _unmanagedQueue = grpc_completion_queue_create();
+    _unmanagedQueue = grpc_completion_queue_create(NULL);
 
     // This is for the following block to capture the pointer by value (instead
     // of retaining self and doing self->_unmanagedQueue). This is essential
@@ -64,7 +64,8 @@
       while (YES) {
         // The following call blocks until an event is available.
         grpc_event event = grpc_completion_queue_next(unmanagedQueue,
-                                                      gpr_inf_future(GPR_CLOCK_REALTIME));
+                                                      gpr_inf_future(GPR_CLOCK_REALTIME),
+                                                      NULL);
         GRPCQueueCompletionHandler handler;
         switch (event.type) {
           case GRPC_OP_COMPLETE:

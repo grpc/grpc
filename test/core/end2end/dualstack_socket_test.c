@@ -32,12 +32,16 @@
  */
 
 #include <string.h>
-#include "src/core/iomgr/socket_utils_posix.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/support/string.h"
+#include "src/core/iomgr/socket_utils_posix.h"
+
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -53,10 +57,11 @@ static gpr_timespec ms_from_now(int ms) {
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, ms_from_now(5000));
+    ev = grpc_completion_queue_next(cq, ms_from_now(5000), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
+static void do_nothing(void *ignored) {}
 void test_connect(const char *server_host, const char *client_host, int port,
                   int expect_ok) {
   char *client_hostport;
@@ -75,6 +80,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_status_code status;
+  grpc_call_error error;
   char *details = NULL;
   size_t details_capacity = 0;
   int was_cancelled = 2;
@@ -93,9 +99,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
   grpc_call_details_init(&call_details);
 
   /* Create server. */
-  cq = grpc_completion_queue_create();
-  server = grpc_server_create(NULL);
-  grpc_server_register_completion_queue(server, cq);
+  cq = grpc_completion_queue_create(NULL);
+  server = grpc_server_create(NULL, NULL);
+  grpc_server_register_completion_queue(server, cq, NULL);
   GPR_ASSERT((got_port = grpc_server_add_insecure_http2_port(
                   server, server_hostport)) > 0);
   if (port == 0) {
@@ -108,12 +114,34 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   /* Create client. */
   if (client_host[0] == 'i') {
-    /* for ipv4:/ipv6: addresses, just concatenate the port */
-    gpr_asprintf(&client_hostport, "%s:%d", client_host, port);
+    /* for ipv4:/ipv6: addresses, concatenate the port to each of the parts */
+    size_t i;
+    gpr_slice uri_slice;
+    gpr_slice_buffer uri_parts;
+    char **hosts_with_port;
+
+    uri_slice =
+        gpr_slice_new((char *)client_host, strlen(client_host), do_nothing);
+    gpr_slice_buffer_init(&uri_parts);
+    gpr_slice_split(uri_slice, ",", &uri_parts);
+    hosts_with_port = gpr_malloc(sizeof(char*) * uri_parts.count);
+    for (i = 0; i < uri_parts.count; i++) {
+      char *uri_part_str = gpr_dump_slice(uri_parts.slices[i], GPR_DUMP_ASCII);
+      gpr_asprintf(&hosts_with_port[i], "%s:%d", uri_part_str, port);
+      gpr_free(uri_part_str);
+    }
+    client_hostport = gpr_strjoin_sep((const char **)hosts_with_port,
+                                      uri_parts.count, ",", NULL);
+    for (i = 0; i < uri_parts.count; i++) {
+      gpr_free(hosts_with_port[i]);
+    }
+    gpr_free(hosts_with_port);
+    gpr_slice_buffer_destroy(&uri_parts);
+    gpr_slice_unref(uri_slice);
   } else {
     gpr_join_host_port(&client_hostport, client_host, port);
   }
-  client = grpc_insecure_channel_create(client_hostport, NULL);
+  client = grpc_insecure_channel_create(client_hostport, NULL, NULL);
 
   gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
           server_hostport, client_hostport, expect_ok ? "success" : "failure");
@@ -132,20 +160,23 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   /* Send a trivial request. */
   c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
-                               "/foo", "foo.test.google.fr", deadline);
+                               "/foo", "foo.test.google.fr", deadline, NULL);
   GPR_ASSERT(c);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
   op->data.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
@@ -153,14 +184,16 @@ void test_connect(const char *server_host, const char *client_host, int port,
   op->data.recv_status_on_client.status_details = &details;
   op->data.recv_status_on_client.status_details_capacity = &details_capacity;
   op->flags = 0;
+  op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, ops, op - ops, tag(1)));
+  error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (expect_ok) {
     /* Check for a successful request. */
-    GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                   server, &s, &call_details,
-                                   &request_metadata_recv, cq, cq, tag(101)));
+    error = grpc_server_request_call(server, &s, &call_details,
+                                     &request_metadata_recv, cq, cq, tag(101));
+    GPR_ASSERT(GRPC_CALL_OK == error);
     cq_expect_completion(cqv, tag(101), 1);
     cq_verify(cqv);
 
@@ -179,8 +212,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
     op->data.recv_close_on_server.cancelled = &was_cancelled;
     op->flags = 0;
     op++;
-    GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_call_start_batch(s, ops, op - ops, tag(102)));
+    error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
+    GPR_ASSERT(GRPC_CALL_OK == error);
 
     cq_expect_completion(cqv, tag(102), 1);
     cq_expect_completion(cqv, tag(1), 1);
@@ -214,8 +247,8 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   /* Destroy server. */
   grpc_server_shutdown_and_notify(server, cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);
@@ -254,7 +287,8 @@ int main(int argc, char **argv) {
     test_connect("0.0.0.0", "127.0.0.1", 0, 1);
     test_connect("0.0.0.0", "::ffff:127.0.0.1", 0, 1);
     test_connect("0.0.0.0", "ipv4:127.0.0.1", 0, 1);
-    test_connect("0.0.0.0", "ipv6:[::ffff:127.0.0.1]", 0, 1);
+    test_connect("0.0.0.0", "ipv4:127.0.0.1,127.0.0.2,127.0.0.3", 0, 1);
+    test_connect("0.0.0.0", "ipv6:[::ffff:127.0.0.1],[::ffff:127.0.0.2]", 0, 1);
     test_connect("0.0.0.0", "localhost", 0, 1);
     if (do_ipv6) {
       test_connect("::", "::1", 0, 1);

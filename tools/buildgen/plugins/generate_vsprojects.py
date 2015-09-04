@@ -57,14 +57,27 @@ def mako_plugin(dictionary):
   projects = []
   projects.extend(libs)
   projects.extend(targets)
-  if dictionary.get('debug', False):
-    for target in projects:
-      if not target.get('vs_project_guid', None) and 'windows' in target.get('platforms', ['windows']):
-        name = target['name']
-        guid = re.sub('(........)(....)(....)(....)(.*)',
-               r'{\1-\2-\3-\4-\5}',
-               hashlib.md5(name).hexdigest())
-        target['vs_project_guid'] = guid.upper()
+  for target in projects:
+    if 'build' in target and target['build'] == 'test':
+      default_test_dir = 'test'
+    else:
+      default_test_dir = '.'
+    if 'vs_config_type' not in target:
+      if 'build' in target and target['build'] == 'test':
+        target['vs_config_type'] = 'Application'
+      else:
+        target['vs_config_type'] = 'StaticLibrary'
+    if 'vs_packages' not in target:
+      target['vs_packages'] = []
+    if 'vs_props' not in target:
+      target['vs_props'] = []
+    target['vs_proj_dir'] = target.get('vs_proj_dir', default_test_dir)
+    if target.get('vs_project_guid', None) is None and 'windows' in target.get('platforms', ['windows']):
+      name = target['name']
+      guid = re.sub('(........)(....)(....)(....)(.*)',
+             r'{\1-\2-\3-\4-\5}',
+             hashlib.md5(name).hexdigest())
+      target['vs_project_guid'] = guid.upper()
   # Exclude projects without a visual project guid, such as the tests.
   projects = [project for project in projects
                 if project.get('vs_project_guid', None)]
@@ -74,5 +87,9 @@ def mako_plugin(dictionary):
 
   project_dict = dict([(p['name'], p) for p in projects])
 
+  packages = dictionary.get('vspackages', [])
+  packages_dict = dict([(p['name'], p) for p in packages])
+
   dictionary['vsprojects'] = projects
   dictionary['vsproject_dict'] = project_dict
+  dictionary['vspackages_dict'] = packages_dict

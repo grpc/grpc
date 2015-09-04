@@ -111,7 +111,7 @@ int main(int argc, char **argv) {
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   while (!sync.is_done) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&sync.pollset, &worker,
+    grpc_pollset_work(&sync.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
@@ -120,4 +120,3 @@ int main(int argc, char **argv) {
   gpr_cmdline_destroy(cl);
   return !sync.success;
 }
-

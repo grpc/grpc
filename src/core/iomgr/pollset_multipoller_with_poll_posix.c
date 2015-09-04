@@ -74,7 +74,7 @@ static void multipoll_with_poll_pollset_add_fd(grpc_pollset *pollset,
   }
   h->fds[h->fd_count++] = fd;
   GRPC_FD_REF(fd, "multipoller");
-exit:  
+exit:
   if (and_unlock_pollset) {
     gpr_mu_unlock(&pollset->mu);
   }
@@ -144,7 +144,7 @@ static void multipoll_with_poll_pollset_maybe_work(
                                         POLLOUT, &watchers[i]);
   }
 
-  r = poll(pfds, pfd_count, timeout);
+  r = grpc_poll_function(pfds, pfd_count, timeout);
 
   for (i = 1; i < pfd_count; i++) {
     grpc_fd_end_poll(&watchers[i], pfds[i].revents & POLLIN,
@@ -202,8 +202,7 @@ static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable multipoll_with_poll_pollset = {
-    multipoll_with_poll_pollset_add_fd,
-    multipoll_with_poll_pollset_del_fd,
+    multipoll_with_poll_pollset_add_fd, multipoll_with_poll_pollset_del_fd,
     multipoll_with_poll_pollset_maybe_work,
     multipoll_with_poll_pollset_finish_shutdown,
     multipoll_with_poll_pollset_destroy};

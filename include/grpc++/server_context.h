@@ -39,9 +39,10 @@
 
 #include <grpc/compression.h>
 #include <grpc/support/time.h>
-#include <grpc++/auth_context.h>
-#include <grpc++/config.h>
-#include <grpc++/time.h>
+#include <grpc++/security/auth_context.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/string_ref.h>
+#include <grpc++/support/time.h>
 
 struct gpr_timespec;
 struct grpc_metadata;
@@ -73,6 +74,7 @@ template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
+class UnknownMethodHandler;
 
 class Call;
 class CallOpBuffer;
@@ -80,7 +82,7 @@ class CompletionQueue;
 class Server;
 
 namespace testing {
-class InteropContextInspector;
+class InteropServerContextInspector;
 }  // namespace testing
 
 // Interface of server side rpc context.
@@ -102,7 +104,7 @@ class ServerContext {
 
   bool IsCancelled() const;
 
-  const std::multimap<grpc::string, grpc::string>& client_metadata() {
+  const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata() {
     return client_metadata_;
   }
 
@@ -135,7 +137,7 @@ class ServerContext {
   }
 
  private:
-  friend class ::grpc::testing::InteropContextInspector;
+  friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::Server;
   template <class W, class R>
   friend class ::grpc::ServerAsyncReader;
@@ -159,6 +161,7 @@ class ServerContext {
   friend class ServerStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class BidiStreamingHandler;
+  friend class UnknownMethodHandler;
   friend class ::grpc::ClientContext;
 
   // Prevent copying.
@@ -183,7 +186,7 @@ class ServerContext {
   CompletionQueue* cq_;
   bool sent_initial_metadata_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
-  std::multimap<grpc::string, grpc::string> client_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref> client_metadata_;
   std::multimap<grpc::string, grpc::string> initial_metadata_;
   std::multimap<grpc::string, grpc::string> trailing_metadata_;
 

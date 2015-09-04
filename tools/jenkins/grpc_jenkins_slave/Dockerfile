@@ -52,6 +52,7 @@ RUN apt-get update && apt-get install -y \
   strace \
   python-dev \
   python-setuptools \
+  python-yaml \
   telnet \
   unzip \
   wget \
@@ -145,6 +146,14 @@ RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
 
 RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip
+
+##################
+# Zookeeper dependencies
+
+# Install dependencies
+
+RUN apt-get install -y libzookeeper-mt-dev
+
 
 RUN mkdir /var/local/jenkins
 

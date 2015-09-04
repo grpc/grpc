@@ -88,4 +88,4 @@ void gpr_thd_join(gpr_thd_id t);
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_THD_H */
+#endif /* GRPC_SUPPORT_THD_H */

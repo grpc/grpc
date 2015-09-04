@@ -41,6 +41,8 @@ var client = require('./src/client.js');
 
 var server = require('./src/server.js');
 
+var Metadata = require('./src/metadata.js');
+
 var grpc = require('bindings')('grpc');
 
 /**
@@ -107,18 +109,12 @@ exports.getGoogleAuthDelegate = function getGoogleAuthDelegate(credential) {
    * @param {function(Error, Object)} callback
    */
   return function updateMetadata(authURI, metadata, callback) {
-    metadata = _.clone(metadata);
-    if (metadata.Authorization) {
-      metadata.Authorization = _.clone(metadata.Authorization);
-    } else {
-      metadata.Authorization = [];
-    }
     credential.getRequestMetadata(authURI, function(err, header) {
       if (err) {
         callback(err);
         return;
       }
-      metadata.Authorization.push(header.Authorization);
+      metadata.add('authorization', header.Authorization);
       callback(null, metadata);
     });
   };
@@ -130,14 +126,29 @@ exports.getGoogleAuthDelegate = function getGoogleAuthDelegate(credential) {
 exports.Server = server.Server;
 
 /**
+ * @see module:src/metadata
+ */
+exports.Metadata = Metadata;
+
+/**
  * Status name to code number mapping
  */
 exports.status = grpc.status;
 
 /**
+ * Propagate flag name to number mapping
+ */
+exports.propagate = grpc.propagate;
+
+/**
  * Call error name to code number mapping
  */
 exports.callError = grpc.callError;
+
+/**
+ * Write flag name to code number mapping
+ */
+exports.writeFlags = grpc.writeFlags;
 
 /**
  * Credentials factories
@@ -153,3 +164,13 @@ exports.ServerCredentials = grpc.ServerCredentials;
  * @see module:src/client.makeClientConstructor
  */
 exports.makeGenericClientConstructor = client.makeClientConstructor;
+
+/**
+ * @see module:src/client.getClientChannel
+ */
+exports.getClientChannel = client.getClientChannel;
+
+/**
+ * @see module:src/client.waitForClientReady
+ */
+exports.waitForClientReady = client.waitForClientReady;

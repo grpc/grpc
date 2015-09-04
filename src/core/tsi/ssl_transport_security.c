@@ -43,7 +43,7 @@
 #include "src/core/tsi/transport_security.h"
 
 #include <openssl/bio.h>
-#include <openssl/crypto.h>  /* For OPENSSL_free */
+#include <openssl/crypto.h> /* For OPENSSL_free */
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
@@ -53,7 +53,6 @@
 
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_UPPER_BOUND 16384
 #define TSI_SSL_MAX_PROTECTED_FRAME_SIZE_LOWER_BOUND 1024
-
 
 /* Putting a macro like this and littering the source file with #if is really
    bad practice.
@@ -116,7 +115,7 @@ typedef struct {
 /* --- Library Initialization. ---*/
 
 static gpr_once init_openssl_once = GPR_ONCE_INIT;
-static gpr_mu *openssl_mutexes = NULL;
+static gpr_mu* openssl_mutexes = NULL;
 
 static void openssl_locking_cb(int mode, int type, const char* file, int line) {
   if (mode & CRYPTO_LOCK) {
@@ -195,7 +194,7 @@ static void ssl_info_callback(const SSL* ssl, int where, int ret) {
 /* Returns 1 if name looks like an IP address, 0 otherwise.
    This is a very rough heuristic as it does not handle IPV6 or things like:
    0300.0250.00.01, 0xC0.0Xa8.0x0.0x1, 000030052000001, 0xc0.052000001 */
-static int looks_like_ip_address(const char *name) {
+static int looks_like_ip_address(const char* name) {
   size_t i;
   size_t dot_count = 0;
   size_t num_size = 0;
@@ -214,7 +213,6 @@ static int looks_like_ip_address(const char *name) {
   if (dot_count < 3 || num_size == 0) return 0;
   return 1;
 }
-
 
 /* Gets the subject CN from an X509 cert. */
 static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
@@ -630,7 +628,8 @@ static tsi_result build_alpn_protocol_name_list(
   }
   /* Safety check. */
   if ((current < *protocol_name_list) ||
-      ((gpr_uintptr)(current - *protocol_name_list) != *protocol_name_list_length)) {
+      ((gpr_uintptr)(current - *protocol_name_list) !=
+       *protocol_name_list_length)) {
     return TSI_INTERNAL_ERROR;
   }
   return TSI_OK;
@@ -768,7 +767,8 @@ static void ssl_protector_destroy(tsi_frame_protector* self) {
 
 static const tsi_frame_protector_vtable frame_protector_vtable = {
     ssl_protector_protect, ssl_protector_protect_flush, ssl_protector_unprotect,
-    ssl_protector_destroy, };
+    ssl_protector_destroy,
+};
 
 /* --- tsi_handshaker methods implementation. ---*/
 
@@ -948,7 +948,8 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     ssl_handshaker_get_result,
     ssl_handshaker_extract_peer,
     ssl_handshaker_create_frame_protector,
-    ssl_handshaker_destroy, };
+    ssl_handshaker_destroy,
+};
 
 /* --- tsi_ssl_handshaker_factory common methods. --- */
 
@@ -1075,9 +1076,11 @@ static void ssl_client_handshaker_factory_destroy(
   free(impl);
 }
 
-static int client_handshaker_factory_npn_callback(
-    SSL* ssl, unsigned char** out, unsigned char* outlen,
-    const unsigned char* in, unsigned int inlen, void* arg) {
+static int client_handshaker_factory_npn_callback(SSL* ssl, unsigned char** out,
+                                                  unsigned char* outlen,
+                                                  const unsigned char* in,
+                                                  unsigned int inlen,
+                                                  void* arg) {
   tsi_ssl_client_handshaker_factory* factory =
       (tsi_ssl_client_handshaker_factory*)arg;
   return select_protocol_list((const unsigned char**)out, outlen,
@@ -1121,7 +1124,7 @@ static void ssl_server_handshaker_factory_destroy(
 
 static int does_entry_match_name(const char* entry, size_t entry_length,
                                  const char* name) {
-  const char *dot;
+  const char* dot;
   const char* name_subdomain = NULL;
   size_t name_length = strlen(name);
   size_t name_subdomain_length;
@@ -1153,7 +1156,7 @@ static int does_entry_match_name(const char* entry, size_t entry_length,
   if (name_subdomain_length < 2) return 0;
   name_subdomain++; /* Starts after the dot. */
   name_subdomain_length--;
-  entry += 2;       /* Remove *. */
+  entry += 2; /* Remove *. */
   entry_length -= 2;
   dot = strchr(name_subdomain, '.');
   if ((dot == NULL) || (dot == &name_subdomain[name_subdomain_length - 1])) {
@@ -1170,7 +1173,7 @@ static int does_entry_match_name(const char* entry, size_t entry_length,
 static int ssl_server_handshaker_factory_servername_callback(SSL* ssl, int* ap,
                                                              void* arg) {
   tsi_ssl_server_handshaker_factory* impl =
-     (tsi_ssl_server_handshaker_factory*)arg;
+      (tsi_ssl_server_handshaker_factory*)arg;
   size_t i = 0;
   const char* servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
   if (servername == NULL || strlen(servername) == 0) {

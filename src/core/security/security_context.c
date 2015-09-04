@@ -42,19 +42,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-/* --- grpc_process_auth_metadata_func --- */
-
-static grpc_auth_metadata_processor server_processor = {NULL, NULL};
-
-grpc_auth_metadata_processor grpc_server_get_auth_metadata_processor(void) {
-  return server_processor;
-}
-
-void grpc_server_register_auth_metadata_processor(
-    grpc_auth_metadata_processor processor) {
-  server_processor = processor;
-}
-
 /* --- grpc_call --- */
 
 grpc_call_error grpc_call_set_credentials(grpc_call *call,
@@ -204,8 +191,7 @@ int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context *ctx,
   return 1;
 }
 
-int grpc_auth_context_peer_is_authenticated(
-    const grpc_auth_context *ctx) {
+int grpc_auth_context_peer_is_authenticated(const grpc_auth_context *ctx) {
   return ctx->peer_identity_property_name == NULL ? 0 : 1;
 }
 
@@ -326,4 +312,3 @@ grpc_auth_metadata_processor *grpc_find_auth_metadata_processor_in_args(
   }
   return NULL;
 }
-

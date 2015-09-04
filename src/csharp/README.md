@@ -19,7 +19,7 @@ Usage: Windows
   That will also pull all the transitive dependencies (including the native libraries that
   gRPC C# is internally using).
 
-- Helloworld project example can be found in https://github.com/grpc/grpc-common/tree/master/csharp.
+- Helloworld project example can be found in https://github.com/grpc/grpc/tree/master/examples/csharp.
 
 Usage: Linux (Mono)
 --------------
@@ -50,7 +50,7 @@ Usage: Linux (Mono)
 
 - Add NuGet package `Grpc` as a dependency (Project -> Add NuGet packages).
 
-- Helloworld project example can be found in https://github.com/grpc/grpc-common/tree/master/csharp.
+- Helloworld project example can be found in https://github.com/grpc/grpc/tree/master/examples/csharp.
 
 Usage: MacOS (Mono)
 --------------
@@ -73,7 +73,7 @@ Usage: MacOS (Mono)
 - *You will be able to build your project in Xamarin Studio, but to run or test it,
   you will need to run it under 64-bit version of Mono.*
 
-- Helloworld project example can be found in https://github.com/grpc/grpc-common/tree/master/csharp.
+- Helloworld project example can be found in https://github.com/grpc/grpc/tree/master/examples/csharp.
 
 Building: Windows
 -----------------
@@ -158,3 +158,20 @@ Contents
   An example client that sends some requests to math server.
 - Grpc.IntegrationTesting:
   Cross-language gRPC implementation testing (interop testing).
+
+Troubleshooting
+---------------
+
+### Problem: Unable to load DLL 'grpc_csharp_ext.dll'
+
+Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes its functionality via P/Invoke. `grpc_csharp_ext` library is a native extension library that facilitates this by wrapping some C core API into a form that's more digestible for P/Invoke. If you get the above error, it means that the native dependencies could not be located by the C# runtime (or they are incompatible with the current runtime, so they could not be loaded). The solution to this is environment specific.
+
+- If you are developing on Windows in Visual Studio, the `grpc_csharp_ext.dll` that is shipped by gRPC nuget packages should be automatically copied to your build destination folder once you build. By adjusting project properties in your VS project file, you can influence which exact configuration of `grpc_csharp_ext.dll` will be used (based on VS version, bitness, debug/release configuration).
+
+- If you are running your application that is using gRPC on Windows machine that doesn't have Visual Studio installed, you might need to install [Visual C++ 2013 redistributable](https://www.microsoft.com/en-us/download/details.aspx?id=40784) that contains some system .dll libraries that `grpc_csharp_ext.dll` depends on (see #905 for more details).
+
+- On Linux (or Docker), you need to first install gRPC C core and `libgrpc_csharp_ext.so` shared libraries. Currently, the libraries can be installed by `make install_grpc_csharp_ext` or using Linuxbrew (a Debian package is coming soon). Installation on a machine where your application is going to be deployed is no different. 
+
+- On Mac, you need to first install gRPC C core and `libgrpc_csharp_ext.dylib` shared libraries using Homebrew. See above for installation instruction. Installation on a machine where your application is going to be deployed is no different. 
+
+- Possible cause for the problem is that the `grpc_csharp_ext` library is installed, but it has different bitness (32/64bit) than your C# runtime (in case you are using mono) or C# application.

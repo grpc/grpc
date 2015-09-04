@@ -341,4 +341,4 @@ void tsi_handshaker_destroy(tsi_handshaker* self);
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H */
+#endif /* GRPC_INTERNAL_CORE_TSI_TRANSPORT_SECURITY_INTERFACE_H */

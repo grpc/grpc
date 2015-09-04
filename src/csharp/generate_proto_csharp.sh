@@ -38,11 +38,11 @@ EXAMPLES_DIR=Grpc.Examples
 INTEROP_DIR=Grpc.IntegrationTesting
 HEALTHCHECK_DIR=Grpc.HealthCheck
 
-$PROTOC --plugin=$PLUGIN --grpc_out=$EXAMPLES_DIR \
+$PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
     -I $EXAMPLES_DIR/proto $EXAMPLES_DIR/proto/math.proto
 
-$PROTOC --plugin=$PLUGIN --grpc_out=$INTEROP_DIR \
-    -I $INTEROP_DIR/proto $INTEROP_DIR/proto/test.proto
+$PROTOC --plugin=$PLUGIN --csharp_out=$INTEROP_DIR --grpc_out=$INTEROP_DIR \
+    -I $INTEROP_DIR/proto $INTEROP_DIR/proto/*.proto
 
-$PROTOC --plugin=$PLUGIN --grpc_out=$HEALTHCHECK_DIR \
+$PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
     -I $HEALTHCHECK_DIR/proto $HEALTHCHECK_DIR/proto/health.proto

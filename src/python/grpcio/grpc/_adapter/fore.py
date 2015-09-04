@@ -288,7 +288,7 @@ class ForeLink(base_interfaces.ForeLink, activated.Activated):
         self._port = self._server.add_http2_addr(address)
       else:
         server_credentials = _low.ServerCredentials(
-          self._root_certificates, self._key_chain_pairs)
+          self._root_certificates, self._key_chain_pairs, False)
         self._server = _low.Server(self._completion_queue)
         self._port = self._server.add_secure_http2_addr(
             address, server_credentials)

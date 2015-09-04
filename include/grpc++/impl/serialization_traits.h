@@ -37,12 +37,12 @@
 namespace grpc {
 
 /// Defines how to serialize and deserialize some type.
-/// 
+///
 /// Used for hooking different message serialization API's into GRPC.
 /// Each SerializationTraits implementation must provide the following
 /// functions:
 ///   static Status Serialize(const Message& msg,
-///                           grpc_byte_buffer** buffer, 
+///                           grpc_byte_buffer** buffer,
 //                            bool* own_buffer);
 ///   static Status Deserialize(grpc_byte_buffer* buffer,
 ///                             Message* msg,
@@ -57,7 +57,7 @@ namespace grpc {
 /// msg. max_message_size is passed in as a bound on the maximum number of
 /// message bytes Deserialize should accept.
 ///
-/// Both functions return a Status, allowing them to explain what went 
+/// Both functions return a Status, allowing them to explain what went
 /// wrong if required.
 template <class Message,
           class UnusedButHereForPartialTemplateSpecialization = void>

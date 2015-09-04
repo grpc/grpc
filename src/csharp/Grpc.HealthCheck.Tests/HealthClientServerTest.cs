@@ -71,10 +71,9 @@ namespace Grpc.HealthCheck.Tests
         [TestFixtureTearDown]
         public void Cleanup()
         {
-            channel.Dispose();
+            channel.ShutdownAsync().Wait();
 
             server.ShutdownAsync().Wait();
-            GrpcEnvironment.Shutdown();
         }
 
         [Test]
@@ -82,14 +81,14 @@ namespace Grpc.HealthCheck.Tests
         {
             serviceImpl.SetStatus("", "", HealthCheckResponse.Types.ServingStatus.SERVING);
 
-            var response = client.Check(HealthCheckRequest.CreateBuilder().SetHost("").SetService("").Build());
+            var response = client.Check(new HealthCheckRequest { Host = "", Service = "" });
             Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, response.Status);
         }
 
         [Test]
         public void ServiceDoesntExist()
         {
-            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => client.Check(HealthCheckRequest.CreateBuilder().SetHost("").SetService("nonexistent.service").Build()));
+            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => client.Check(new HealthCheckRequest { Host = "", Service = "nonexistent.service" }));
         }
 
         // TODO(jtattermusch): add test with timeout once timeouts are supported

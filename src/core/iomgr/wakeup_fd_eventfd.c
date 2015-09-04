@@ -75,8 +75,7 @@ static int eventfd_check_availability(void) {
 }
 
 const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable = {
-  eventfd_create, eventfd_consume, eventfd_wakeup, eventfd_destroy,
-  eventfd_check_availability
-};
+    eventfd_create, eventfd_consume, eventfd_wakeup, eventfd_destroy,
+    eventfd_check_availability};
 
 #endif /* GPR_LINUX_EVENTFD */

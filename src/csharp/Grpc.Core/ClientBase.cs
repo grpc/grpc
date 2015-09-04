@@ -32,15 +32,15 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
-
-using Grpc.Core.Internal;
-using Grpc.Core.Utils;
+using System.Threading.Tasks;
 
 namespace Grpc.Core
 {
-    public delegate void MetadataInterceptorDelegate(string authUri, Metadata metadata);
+    /// <summary>
+    /// Interceptor for call headers.
+    /// </summary>
+    public delegate void HeaderInterceptor(IMethod method, string authUri, Metadata metadata);
 
     /// <summary>
     /// Base class for client-side stubs.
@@ -53,6 +53,10 @@ namespace Grpc.Core
         readonly Channel channel;
         readonly string authUriBase;
 
+        /// <summary>
+        /// Initializes a new instance of <c>ClientBase</c> class.
+        /// </summary>
+        /// <param name="channel">The channel to use for remote call invocation.</param>
         public ClientBase(Channel channel)
         {
             this.channel = channel;
@@ -60,10 +64,10 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Can be used to register a custom header (initial metadata) interceptor.
-        /// The delegate each time before a new call on this client is started.
+        /// Can be used to register a custom header (request metadata) interceptor.
+        /// The interceptor is invoked each time a new call on this client is started.
         /// </summary>
-        public MetadataInterceptorDelegate HeaderInterceptor
+        public HeaderInterceptor HeaderInterceptor
         {
             get;
             set;
@@ -95,6 +99,11 @@ namespace Grpc.Core
         /// <summary>
         /// Creates a new call to given method.
         /// </summary>
+        /// <param name="method">The method to invoke.</param>
+        /// <param name="options">The call options.</param>
+        /// <typeparam name="TRequest">Request message type.</typeparam>
+        /// <typeparam name="TResponse">Response message type.</typeparam>
+        /// <returns>The call invocation details.</returns>
         protected CallInvocationDetails<TRequest, TResponse> CreateCall<TRequest, TResponse>(Method<TRequest, TResponse> method, CallOptions options)
             where TRequest : class
             where TResponse : class
@@ -107,7 +116,7 @@ namespace Grpc.Core
                     options = options.WithHeaders(new Metadata());
                 }
                 var authUri = authUriBase != null ? authUriBase + method.ServiceName : null;
-                interceptor(authUri, options.Headers);
+                interceptor(method, authUri, options.Headers);
             }
             return new CallInvocationDetails<TRequest, TResponse>(channel, method, Host, options);
         }
@@ -119,7 +128,8 @@ namespace Grpc.Core
         internal static string GetAuthUriBase(string target)
         {
             var match = ChannelTargetPattern.Match(target);
-            if (!match.Success) {
+            if (!match.Success)
+            {
                 return null;
             }
             return "https://" + match.Groups[2].Value + "/";

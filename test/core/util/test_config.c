@@ -78,16 +78,16 @@ void abort_handler(int sig) {
 }
 
 static void install_crash_handler() {
-  SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER) crash_handler);
+  SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)crash_handler);
   _set_abort_behavior(0, _WRITE_ABORT_MSG);
   _set_abort_behavior(0, _CALL_REPORTFAULT);
   signal(SIGABRT, abort_handler);
 }
 #else
-static void install_crash_handler() { }
+static void install_crash_handler() {}
 #endif
 
-void grpc_test_init(int argc, char **argv) {
+void grpc_test_init(int argc, char** argv) {
   install_crash_handler();
   gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
           (double)GRPC_TEST_SLOWDOWN_MACHINE_FACTOR,

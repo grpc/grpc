@@ -41,13 +41,15 @@ from grpc.framework.base import util as _base_utilities
 from grpc.framework.face import implementations as _face_implementations
 from grpc.framework.foundation import logging_pool
 
-_THREAD_POOL_SIZE = 8
+_DEFAULT_THREAD_POOL_SIZE = 8
 _ONE_DAY_IN_SECONDS = 24 * 60 * 60
 
 
 class _Server(interfaces.Server):
 
-  def __init__(self, breakdown, port, private_key, certificate_chain):
+  def __init__(
+        self, breakdown, port, private_key, certificate_chain,
+        thread_pool_size=_DEFAULT_THREAD_POOL_SIZE):
     self._lock = threading.Lock()
     self._breakdown = breakdown
     self._port = port
@@ -56,6 +58,7 @@ class _Server(interfaces.Server):
     else:
       self._key_chain_pairs = ((private_key, certificate_chain),)
 
+    self._pool_size = thread_pool_size
     self._pool = None
     self._back = None
     self._fore_link = None
@@ -63,7 +66,7 @@ class _Server(interfaces.Server):
   def _start(self):
     with self._lock:
       if self._pool is None:
-        self._pool = logging_pool.pool(_THREAD_POOL_SIZE)
+        self._pool = logging_pool.pool(self._pool_size)
         servicer = _face_implementations.servicer(
             self._pool, self._breakdown.implementations, None)
         self._back = _base_implementations.back_link(
@@ -114,7 +117,8 @@ class _Stub(interfaces.Stub):
 
   def __init__(
       self, breakdown, host, port, secure, root_certificates, private_key,
-      certificate_chain, metadata_transformer=None, server_host_override=None):
+      certificate_chain, metadata_transformer=None, server_host_override=None,
+      thread_pool_size=_DEFAULT_THREAD_POOL_SIZE):
     self._lock = threading.Lock()
     self._breakdown = breakdown
     self._host = host
@@ -126,6 +130,7 @@ class _Stub(interfaces.Stub):
     self._metadata_transformer = metadata_transformer
     self._server_host_override = server_host_override
 
+    self._pool_size = thread_pool_size
     self._pool = None
     self._front = None
     self._rear_link = None
@@ -134,7 +139,7 @@ class _Stub(interfaces.Stub):
   def __enter__(self):
     with self._lock:
       if self._pool is None:
-        self._pool = logging_pool.pool(_THREAD_POOL_SIZE)
+        self._pool = logging_pool.pool(self._pool_size)
         self._front = _base_implementations.front_link(
             self._pool, self._pool, self._pool)
         self._rear_link = _rear.RearLink(
@@ -193,7 +198,7 @@ class _Stub(interfaces.Stub):
 def stub(
     service_name, methods, host, port, metadata_transformer=None, secure=False,
     root_certificates=None, private_key=None, certificate_chain=None,
-    server_host_override=None):
+    server_host_override=None, thread_pool_size=_DEFAULT_THREAD_POOL_SIZE):
   """Constructs an interfaces.Stub.
 
   Args:
@@ -216,6 +221,8 @@ def stub(
       certificate chain should be used.
     server_host_override: (For testing only) the target name used for SSL
       host name checking.
+    thread_pool_size: The maximum number of threads to allow in the backing
+      thread pool.
 
   Returns:
     An interfaces.Stub affording RPC invocation.
@@ -224,11 +231,13 @@ def stub(
   return _Stub(
       breakdown, host, port, secure, root_certificates, private_key,
       certificate_chain, server_host_override=server_host_override,
-      metadata_transformer=metadata_transformer)
+      metadata_transformer=metadata_transformer,
+      thread_pool_size=thread_pool_size)
 
 
 def server(
-    service_name, methods, port, private_key=None, certificate_chain=None):
+    service_name, methods, port, private_key=None, certificate_chain=None,
+    thread_pool_size=_DEFAULT_THREAD_POOL_SIZE):
   """Constructs an interfaces.Server.
 
   Args:
@@ -242,9 +251,12 @@ def server(
     private_key: A pem-encoded private key, or None for an insecure server.
     certificate_chain: A pem-encoded certificate chain, or None for an insecure
       server.
+    thread_pool_size: The maximum number of threads to allow in the backing
+      thread pool.
 
   Returns:
     An interfaces.Server that will serve secure traffic.
   """
   breakdown = _face_utilities.break_down_service(service_name, methods)
-  return _Server(breakdown, port, private_key, certificate_chain)
+  return _Server(breakdown, port, private_key, certificate_chain,
+      thread_pool_size=thread_pool_size)

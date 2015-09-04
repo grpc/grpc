@@ -67,7 +67,7 @@ namespace Grpc.Core.Internal
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment);
+                environment, newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -123,7 +123,7 @@ namespace Grpc.Core.Internal
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment);
+                environment, newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -179,7 +179,7 @@ namespace Grpc.Core.Internal
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment);
+                environment, newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -239,7 +239,7 @@ namespace Grpc.Core.Internal
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.Serializer,
                 method.RequestMarshaller.Deserializer,
-                environment);
+                environment, newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call);
             var finishedTask = asyncCall.ServerSideCallAsync();
@@ -278,7 +278,7 @@ namespace Grpc.Core.Internal
         {
             // We don't care about the payload type here.
             var asyncCall = new AsyncCallServer<byte[], byte[]>(
-                (payload) => payload, (payload) => payload, environment);
+                (payload) => payload, (payload) => payload, environment, newRpc.Server);
             
             asyncCall.Initialize(newRpc.Call);
             var finishedTask = asyncCall.ServerSideCallAsync();

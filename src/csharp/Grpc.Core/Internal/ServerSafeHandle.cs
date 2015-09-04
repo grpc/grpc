@@ -74,6 +74,9 @@ namespace Grpc.Core.Internal
 
         public static ServerSafeHandle NewServer(CompletionQueueSafeHandle cq, ChannelArgsSafeHandle args)
         {
+            // Increment reference count for the native gRPC environment to make sure we don't do grpc_shutdown() before destroying the server handle.
+            // Doing so would make object finalizer crash if we end up abandoning the handle.
+            GrpcEnvironment.GrpcNativeInit();
             return grpcsharp_server_create(cq, args);
         }
 
@@ -109,6 +112,7 @@ namespace Grpc.Core.Internal
         protected override bool ReleaseHandle()
         {
             grpcsharp_server_destroy(handle);
+            GrpcEnvironment.GrpcNativeShutdown();
             return true;
         }
             

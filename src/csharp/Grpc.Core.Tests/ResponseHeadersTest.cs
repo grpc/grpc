@@ -32,13 +32,16 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
+
 using NUnit.Framework;
 
 namespace Grpc.Core.Tests
@@ -69,14 +72,82 @@ namespace Grpc.Core.Tests
         [TearDown]
         public void Cleanup()
         {
-            channel.Dispose();
+            channel.ShutdownAsync().Wait();
             server.ShutdownAsync().Wait();
         }
 
-        [TestFixtureTearDown]
-        public void CleanupClass()
+        [Test]
+        public async Task ResponseHeadersAsync_UnaryCall()
         {
-            GrpcEnvironment.Shutdown();
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                await context.WriteResponseHeadersAsync(headers);
+                return "PASS";
+            });
+
+            var call = Calls.AsyncUnaryCall(helper.CreateUnaryCall(), "");
+            var responseHeaders = await call.ResponseHeadersAsync;
+
+            Assert.AreEqual(headers.Count, responseHeaders.Count);
+            Assert.AreEqual("ascii-header", responseHeaders[0].Key);
+            Assert.AreEqual("abcdefg", responseHeaders[0].Value);
+
+            Assert.AreEqual("PASS", await call.ResponseAsync);
+        }
+
+        [Test]
+        public async Task ResponseHeadersAsync_ClientStreamingCall()
+        {
+            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            {
+                await context.WriteResponseHeadersAsync(headers);
+                return "PASS";
+            });
+
+            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());
+            await call.RequestStream.CompleteAsync();
+            var responseHeaders = await call.ResponseHeadersAsync;
+
+            Assert.AreEqual("ascii-header", responseHeaders[0].Key);
+            Assert.AreEqual("PASS", await call.ResponseAsync);
+        }
+
+        [Test]
+        public async Task ResponseHeadersAsync_ServerStreamingCall()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+                await context.WriteResponseHeadersAsync(headers);
+                await responseStream.WriteAsync("PASS");
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
+            var responseHeaders = await call.ResponseHeadersAsync;
+
+            Assert.AreEqual("ascii-header", responseHeaders[0].Key);
+            CollectionAssert.AreEqual(new[] { "PASS" }, await call.ResponseStream.ToListAsync());
+        }
+
+        [Test]
+        public async Task ResponseHeadersAsync_DuplexStreamingCall()
+        {
+            helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
+            {
+                await context.WriteResponseHeadersAsync(headers);
+                while (await requestStream.MoveNext())
+                {
+                    await responseStream.WriteAsync(requestStream.Current);
+                }
+            });
+
+            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
+            var responseHeaders = await call.ResponseHeadersAsync;
+
+            var messages = new[] { "PASS" };
+            await call.RequestStream.WriteAllAsync(messages);
+
+            Assert.AreEqual("ascii-header", responseHeaders[0].Key);
+            CollectionAssert.AreEqual(messages, await call.ResponseStream.ToListAsync());
         }
 
         [Test]

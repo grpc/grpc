@@ -284,7 +284,8 @@ gpr_slice gpr_slice_split_head(gpr_slice *source, size_t split) {
     head.refcount = NULL;
     head.data.inlined.length = (gpr_uint8)split;
     memcpy(head.data.inlined.bytes, source->data.inlined.bytes, split);
-    source->data.inlined.length = (gpr_uint8)(source->data.inlined.length - split);
+    source->data.inlined.length =
+        (gpr_uint8)(source->data.inlined.length - split);
     memmove(source->data.inlined.bytes, source->data.inlined.bytes + split,
             source->data.inlined.length);
   } else if (split < sizeof(head.data.inlined.bytes)) {

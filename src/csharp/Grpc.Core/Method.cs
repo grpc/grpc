@@ -55,9 +55,38 @@ namespace Grpc.Core
     }
 
     /// <summary>
+    /// A non-generic representation of a remote method.
+    /// </summary>
+    public interface IMethod
+    {
+        /// <summary>
+        /// Gets the type of the method.
+        /// </summary>
+        MethodType Type { get; }
+
+        /// <summary>
+        /// Gets the name of the service to which this method belongs.
+        /// </summary>
+        string ServiceName { get; }
+
+        /// <summary>
+        /// Gets the unqualified name of the method.
+        /// </summary>
+        string Name { get; }
+
+        /// <summary>
+        /// Gets the fully qualified name of the method. On the server side, methods are dispatched
+        /// based on this name.
+        /// </summary>
+        string FullName { get; }
+    }
+
+    /// <summary>
     /// A description of a remote method.
     /// </summary>
-    public class Method<TRequest, TResponse>
+    /// <typeparam name="TRequest">Request message type for this method.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this method.</typeparam>
+    public class Method<TRequest, TResponse> : IMethod
     {
         readonly MethodType type;
         readonly string serviceName;

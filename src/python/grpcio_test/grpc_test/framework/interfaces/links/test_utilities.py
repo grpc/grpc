@@ -29,9 +29,42 @@
 
 """State and behavior appropriate for use in tests."""
 
+import logging
 import threading
+import time
 
 from grpc.framework.interfaces.links import links
+from grpc.framework.interfaces.links import utilities
+
+# A more-or-less arbitrary limit on the length of raw data values to be logged.
+_UNCOMFORTABLY_LONG = 48
+
+
+def _safe_for_log_ticket(ticket):
+  """Creates a safe-for-printing-to-the-log ticket for a given ticket.
+
+  Args:
+    ticket: Any links.Ticket.
+
+  Returns:
+    A links.Ticket that is as much as can be equal to the given ticket but
+      possibly features values like the string "<payload of length 972321>" in
+      place of the actual values of the given ticket.
+  """
+  if isinstance(ticket.payload, (basestring,)):
+    payload_length = len(ticket.payload)
+  else:
+    payload_length = -1
+  if payload_length < _UNCOMFORTABLY_LONG:
+    return ticket
+  else:
+    return links.Ticket(
+        ticket.operation_id, ticket.sequence_number,
+        ticket.group, ticket.method, ticket.subscription, ticket.timeout,
+        ticket.allowance, ticket.initial_metadata,
+        '<payload of length {}>'.format(payload_length),
+        ticket.terminal_metadata, ticket.code, ticket.message,
+        ticket.termination, None)
 
 
 class RecordingLink(links.Link):
@@ -64,3 +97,71 @@ class RecordingLink(links.Link):
     """Returns a copy of the list of all tickets received by this Link."""
     with self._condition:
       return tuple(self._tickets)
+
+
+class _Pipe(object):
+  """A conduit that logs all tickets passed through it."""
+
+  def __init__(self, name):
+    self._lock = threading.Lock()
+    self._name = name
+    self._left_mate = utilities.NULL_LINK
+    self._right_mate = utilities.NULL_LINK
+
+  def accept_left_to_right_ticket(self, ticket):
+    with self._lock:
+      logging.warning(
+          '%s: moving left to right through %s: %s', time.time(), self._name,
+          _safe_for_log_ticket(ticket))
+      try:
+        self._right_mate.accept_ticket(ticket)
+      except Exception as e:  # pylint: disable=broad-except
+        logging.exception(e)
+
+  def accept_right_to_left_ticket(self, ticket):
+    with self._lock:
+      logging.warning(
+          '%s: moving right to left through %s: %s', time.time(), self._name,
+          _safe_for_log_ticket(ticket))
+      try:
+        self._left_mate.accept_ticket(ticket)
+      except Exception as e:  # pylint: disable=broad-except
+        logging.exception(e)
+
+  def join_left_mate(self, left_mate):
+    with self._lock:
+      self._left_mate = utilities.NULL_LINK if left_mate is None else left_mate
+
+  def join_right_mate(self, right_mate):
+    with self._lock:
+      self._right_mate = (
+          utilities.NULL_LINK if right_mate is None else right_mate)
+
+
+class _Facade(links.Link):
+
+  def __init__(self, accept, join):
+    self._accept = accept
+    self._join = join
+
+  def accept_ticket(self, ticket):
+    self._accept(ticket)
+
+  def join_link(self, link):
+    self._join(link)
+
+
+def logging_links(name):
+  """Creates a conduit that logs all tickets passed through it.
+
+  Args:
+    name: A name to use for the conduit to identify itself in logging output.
+
+  Returns:
+    Two links.Links, the first of which is the "left" side of the conduit
+      and the second of which is the "right" side of the conduit.
+  """
+  pipe = _Pipe(name)
+  left_facade = _Facade(pipe.accept_left_to_right_ticket, pipe.join_left_mate)
+  right_facade = _Facade(pipe.accept_right_to_left_ticket, pipe.join_right_mate)
+  return left_facade, right_facade

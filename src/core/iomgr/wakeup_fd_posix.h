@@ -96,4 +96,4 @@ void grpc_wakeup_fd_destroy(grpc_wakeup_fd *fd_info);
  * wakeup_fd_nospecial.c if no such implementation exists. */
 extern const grpc_wakeup_fd_vtable grpc_specialized_wakeup_fd_vtable;
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_POSIX_H */
