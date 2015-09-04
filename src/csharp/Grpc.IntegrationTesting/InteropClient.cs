@@ -166,7 +166,7 @@ namespace Grpc.IntegrationTesting
                     await RunOAuth2AuthTokenAsync(client, options.DefaultServiceAccount, options.OAuthScope);
                     break;
                 case "per_rpc_creds":
-                    await RunPerRpcCredsAsync(client, options.DefaultServiceAccount);
+                    await RunPerRpcCredsAsync(client, options.DefaultServiceAccount, options.OAuthScope);
                     break;
                 case "cancel_after_begin":
                     await RunCancelAfterBeginAsync(client);
@@ -391,14 +391,11 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunPerRpcCredsAsync(TestService.TestServiceClient client, string defaultServiceAccount)
+        public static async Task RunPerRpcCredsAsync(TestService.TestServiceClient client, string defaultServiceAccount, string oauthScope)
         {
             Console.WriteLine("running per_rpc_creds");
-
-            ITokenAccess credential = await GoogleCredential.GetApplicationDefaultAsync();
-            // TODO: currently there's no way how to obtain AuthURI for JWT per-rpc creds.
-            string authUri = "https://grpc-test.sandbox.google.com/grpc.testing.TestService";
-            string accessToken = await credential.GetAccessTokenForRequestAsync(authUri);
+            ITokenAccess credential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { oauthScope });
+            string accessToken = await credential.GetAccessTokenForRequestAsync();
             var headerInterceptor = AuthInterceptors.FromAccessToken(accessToken);
 
             var request = new SimpleRequest
