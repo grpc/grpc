@@ -106,9 +106,10 @@ Channel *pygrpc_Channel_new(
   }
   self = (Channel *)type->tp_alloc(type, 0);
   if (creds) {
-    self->c_chan = grpc_secure_channel_create(creds->c_creds, target, &c_args);
+    self->c_chan =
+        grpc_secure_channel_create(creds->c_creds, target, &c_args, NULL);
   } else {
-    self->c_chan = grpc_insecure_channel_create(target, &c_args);
+    self->c_chan = grpc_insecure_channel_create(target, &c_args, NULL);
   }
   pygrpc_discard_channel_args(c_args);
   return self;
@@ -133,7 +134,7 @@ Call *pygrpc_Channel_create_call(
   call = pygrpc_Call_new_empty(cq);
   call->c_call = grpc_channel_create_call(
       self->c_chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq->c_cq, method, host,
-      pygrpc_cast_double_to_gpr_timespec(deadline));
+      pygrpc_cast_double_to_gpr_timespec(deadline), NULL);
   return call;
 }
 
@@ -164,7 +165,7 @@ PyObject *pygrpc_Channel_watch_connectivity_state(
   int last_observed_state;
   CompletionQueue *completion_queue;
   char *keywords[] = {"last_observed_state", "deadline",
-                      "completion_queue", "tag"};
+                      "completion_queue", "tag", NULL};
   if (!PyArg_ParseTupleAndKeywords(
       args, kwargs, "idO!O:watch_connectivity_state", keywords,
       &last_observed_state, &deadline, &pygrpc_CompletionQueue_type,

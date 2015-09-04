@@ -58,6 +58,7 @@ namespace Grpc.Core
 
         static object staticLock = new object();
         static GrpcEnvironment instance;
+        static int refCount;
 
         static ILogger logger = new ConsoleLogger();
 
@@ -67,13 +68,14 @@ namespace Grpc.Core
         bool isClosed;
 
         /// <summary>
-        /// Returns an instance of initialized gRPC environment.
-        /// Subsequent invocations return the same instance unless Shutdown has been called first.
+        /// Returns a reference-counted instance of initialized gRPC environment.
+        /// Subsequent invocations return the same instance unless reference count has dropped to zero previously.
         /// </summary>
-        internal static GrpcEnvironment GetInstance()
+        internal static GrpcEnvironment AddRef()
         {
             lock (staticLock)
             {
+                refCount++;
                 if (instance == null)
                 {
                     instance = new GrpcEnvironment();
@@ -83,18 +85,28 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Shuts down the gRPC environment if it was initialized before.
-        /// Blocks until the environment has been fully shutdown.
+        /// Decrements the reference count for currently active environment and shuts down the gRPC environment if reference count drops to zero.
+        /// (and blocks until the environment has been fully shutdown).
         /// </summary>
-        public static void Shutdown()
+        internal static void Release()
         {
             lock (staticLock)
             {
-                if (instance != null)
+                Preconditions.CheckState(refCount > 0);
+                refCount--;
+                if (refCount == 0)
                 {
                     instance.Close();
                     instance = null;
                 }
+            }
+        }
+
+        internal static int GetRefCount()
+        {
+            lock (staticLock)
+            {
+                return refCount;
             }
         }
 
@@ -125,12 +137,10 @@ namespace Grpc.Core
         private GrpcEnvironment()
         {
             NativeLogRedirector.Redirect();
-            grpcsharp_init();
+            GrpcNativeInit();
             completionRegistry = new CompletionRegistry(this);
             threadPool = new GrpcThreadPool(this, THREAD_POOL_SIZE);
             threadPool.Start();
-            // TODO: use proper logging here
-            Logger.Info("gRPC initialized.");
         }
 
         /// <summary>
@@ -175,6 +185,16 @@ namespace Grpc.Core
             return Marshal.PtrToStringAnsi(ptr);
         }
 
+        internal static void GrpcNativeInit()
+        {
+            grpcsharp_init();
+        }
+
+        internal static void GrpcNativeShutdown()
+        {
+            grpcsharp_shutdown();
+        }
+
         /// <summary>
         /// Shuts down this environment.
         /// </summary>
@@ -185,12 +205,10 @@ namespace Grpc.Core
                 throw new InvalidOperationException("Close has already been called");
             }
             threadPool.Stop();
-            grpcsharp_shutdown();
+            GrpcNativeShutdown();
             isClosed = true;
 
             debugStats.CheckOK();
-
-            Logger.Info("gRPC shutdown.");
         }
     }
 }

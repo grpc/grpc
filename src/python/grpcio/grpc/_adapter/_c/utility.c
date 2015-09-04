@@ -184,6 +184,7 @@ int pygrpc_produce_op(PyObject *op, grpc_op *result) {
     return 0;
   }
   c_op.op = type;
+  c_op.reserved = NULL;
   c_op.flags = PyInt_AsLong(PyTuple_GET_ITEM(op, WRITE_FLAGS_INDEX));
   if (PyErr_Occurred()) {
     return 0;

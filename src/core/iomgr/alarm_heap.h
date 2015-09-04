@@ -54,4 +54,4 @@ void grpc_alarm_heap_pop(grpc_alarm_heap *heap);
 
 int grpc_alarm_heap_is_empty(grpc_alarm_heap *heap);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H */

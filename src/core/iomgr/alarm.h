@@ -86,4 +86,4 @@ void grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
    Requires:  cancel() must happen after add() on a given alarm */
 void grpc_alarm_cancel(grpc_alarm *alarm);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_ALARM_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_ALARM_H */

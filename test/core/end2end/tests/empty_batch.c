@@ -70,15 +70,15 @@ static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
 static void drain_cq(grpc_completion_queue *cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time());
+    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5))
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
@@ -103,13 +103,15 @@ static void empty_batch_body(grpc_end2end_test_fixture f) {
   grpc_call *c;
   gpr_timespec deadline = five_seconds_time();
   cq_verifier *cqv = cq_verifier_create(f.cq);
+  grpc_call_error error;
   grpc_op *op = NULL;
 
   c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline);
+                               "/foo", "foo.test.google.fr", deadline, NULL);
   GPR_ASSERT(c);
 
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(c, op, 0, tag(1)));
+  error = grpc_call_start_batch(c, op, 0, tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 

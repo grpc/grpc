@@ -153,7 +153,8 @@ static void send_security_metadata(grpc_call_element *elem,
   }
 
   if (channel_creds_has_md && call_creds_has_md) {
-    calld->creds = grpc_composite_credentials_create(channel_creds, ctx->creds);
+    calld->creds =
+        grpc_composite_credentials_create(channel_creds, ctx->creds, NULL);
     if (calld->creds == NULL) {
       bubble_up_error(elem, GRPC_STATUS_INVALID_ARGUMENT,
                       "Incompatible credentials set on channel and call.");
@@ -200,7 +201,7 @@ static void auth_start_transport_op(grpc_call_element *elem,
   channel_data *chand = elem->channel_data;
   grpc_linked_mdelem *l;
   size_t i;
-  grpc_client_security_context* sec_ctx = NULL;
+  grpc_client_security_context *sec_ctx = NULL;
 
   if (calld->security_context_set == 0) {
     calld->security_context_set = 1;
@@ -316,9 +317,11 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
       (grpc_channel_security_connector *)GRPC_SECURITY_CONNECTOR_REF(
           sc, "client_auth_filter");
   chand->md_ctx = metadata_context;
-  chand->authority_string = grpc_mdstr_from_string(chand->md_ctx, ":authority", 0);
+  chand->authority_string =
+      grpc_mdstr_from_string(chand->md_ctx, ":authority", 0);
   chand->path_string = grpc_mdstr_from_string(chand->md_ctx, ":path", 0);
-  chand->error_msg_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-message", 0);
+  chand->error_msg_key =
+      grpc_mdstr_from_string(chand->md_ctx, "grpc-message", 0);
   chand->status_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-status", 0);
 }
 

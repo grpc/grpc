@@ -163,6 +163,9 @@ class Call(object):
   def cancel(self):
     return self._internal.cancel()
 
+  def set_credentials(self, creds):
+    return self._internal.set_credentials(creds)
+
 
 class Channel(object):
   """Adapter from old _low.Channel interface to new _low.Channel."""
@@ -255,5 +258,6 @@ class ClientCredentials(object):
 class ServerCredentials(object):
   """Adapter from old _low.ServerCredentials interface to new _low.ServerCredentials."""
 
-  def __init__(self, root_credentials, pair_sequence):
-    self._internal = _low.ServerCredentials.ssl(root_credentials, list(pair_sequence))
+  def __init__(self, root_credentials, pair_sequence, force_client_auth):
+    self._internal = _low.ServerCredentials.ssl(
+        root_credentials, list(pair_sequence), force_client_auth)

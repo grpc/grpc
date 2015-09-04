@@ -36,9 +36,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
+using Grpc.Testing;
 using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting
@@ -75,9 +75,8 @@ namespace Grpc.IntegrationTesting
         [TestFixtureTearDown]
         public void Cleanup()
         {
-            channel.Dispose();
+            channel.ShutdownAsync().Wait();
             server.ShutdownAsync().Wait();
-            GrpcEnvironment.Shutdown();
         }
 
         [Test]
@@ -126,6 +125,12 @@ namespace Grpc.IntegrationTesting
         public async Task CancelAfterFirstResponse()
         {
             await InteropClient.RunCancelAfterFirstResponseAsync(client);
+        }
+
+        [Test]
+        public async Task TimeoutOnSleepingServerAsync()
+        {
+            await InteropClient.RunTimeoutOnSleepingServerAsync(client);
         }
     }
 }

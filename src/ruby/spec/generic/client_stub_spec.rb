@@ -408,6 +408,26 @@ describe 'ClientStub' do
 
       it_behaves_like 'bidi streaming'
     end
+
+    describe 'without enough time to run' do
+      before(:each) do
+        @sent_msgs = Array.new(3) { |i| 'msg_' + (i + 1).to_s }
+        @replys = Array.new(3) { |i| 'reply_' + (i + 1).to_s }
+        server_port = create_test_server
+        @host = "localhost:#{server_port}"
+      end
+
+      it 'should fail with DeadlineExceeded', bidi: true do
+        @server.start
+        stub = GRPC::ClientStub.new(@host, @cq)
+        blk = proc do
+          e = stub.bidi_streamer(@method, @sent_msgs, noop, noop,
+                                 timeout: 0.001)
+          e.collect { |r| r }
+        end
+        expect(&blk).to raise_error GRPC::BadStatus, /Deadline Exceeded/
+      end
+    end
   end
 
   def run_server_streamer(expected_input, replys, status, **kw)
@@ -478,7 +498,7 @@ describe 'ClientStub' do
   def create_test_server
     @server_queue = GRPC::Core::CompletionQueue.new
     @server = GRPC::Core::Server.new(@server_queue, nil)
-    @server.add_http2_port('0.0.0.0:0')
+    @server.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
   end
 
   def expect_server_to_be_invoked(notifier)

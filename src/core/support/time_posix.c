@@ -32,6 +32,7 @@
  */
 
 #include <grpc/support/port_platform.h>
+#include <src/core/support/time_precise.h>
 
 #ifdef GPR_POSIX_TIME
 
@@ -66,8 +67,14 @@ void gpr_time_init(void) {}
 gpr_timespec gpr_now(gpr_clock_type clock) {
   struct timespec now;
   GPR_ASSERT(clock != GPR_TIMESPAN);
-  clock_gettime(clockid_for_gpr_clock[clock], &now);
-  return gpr_from_timespec(now, clock);
+  if (clock == GPR_CLOCK_PRECISE) {
+    gpr_timespec ret;
+    gpr_precise_clock_now(&ret);
+    return ret;
+  } else {
+    clock_gettime(clockid_for_gpr_clock[clock], &now);
+    return gpr_from_timespec(now, clock);
+  }
 }
 #else
 /* For some reason Apple's OSes haven't implemented clock_gettime. */
@@ -103,6 +110,9 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
       now_dbl = (mach_absolute_time() - g_time_start) * g_time_scale;
       now.tv_sec = now_dbl * 1e-9;
       now.tv_nsec = now_dbl - now.tv_sec * 1e9;
+      break;
+    case GPR_CLOCK_PRECISE:
+      gpr_precise_clock_now(&now);
       break;
     case GPR_TIMESPAN:
       abort();

@@ -216,13 +216,18 @@ PHP_METHOD(Call, __construct) {
   char *method;
   int method_len;
   zval *deadline_obj;
-  /* "OsO" == 1 Object, 1 string, 1 Object */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OsO", &channel_obj,
-                            grpc_ce_channel, &method, &method_len,
-                            &deadline_obj, grpc_ce_timeval) == FAILURE) {
+  char *host_override = NULL;
+  int host_override_len = 0;
+  /* "OsO|s" == 1 Object, 1 string, 1 Object, 1 optional string */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OsO|s",
+                            &channel_obj, grpc_ce_channel,
+                            &method, &method_len,
+                            &deadline_obj, grpc_ce_timeval,
+                            &host_override, &host_override_len)
+      == FAILURE) {
     zend_throw_exception(
         spl_ce_InvalidArgumentException,
-        "Call expects a Channel, a String, and a Timeval",
+        "Call expects a Channel, a String, a Timeval and an optional String",
         1 TSRMLS_CC);
     return;
   }
@@ -241,7 +246,7 @@ PHP_METHOD(Call, __construct) {
           deadline_obj TSRMLS_CC);
   call->wrapped = grpc_channel_create_call(
       channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS, completion_queue, method,
-      channel->target, deadline->wrapped);
+      host_override, deadline->wrapped, NULL);
 }
 
 /**
@@ -260,6 +265,9 @@ PHP_METHOD(Call, startBatch) {
   HashTable *array_hash;
   HashPosition array_pointer;
   HashTable *status_hash;
+  HashTable *message_hash;
+  zval **message_value;
+  zval **message_flags;
   char *key;
   uint key_len;
   ulong index;
@@ -273,7 +281,6 @@ PHP_METHOD(Call, startBatch) {
   grpc_byte_buffer *message;
   int cancelled;
   grpc_call_error error;
-  grpc_event event;
   zval *result;
   char *message_str;
   size_t message_len;
@@ -315,13 +322,33 @@ PHP_METHOD(Call, startBatch) {
             metadata.metadata;
         break;
       case GRPC_OP_SEND_MESSAGE:
-        if (Z_TYPE_PP(value) != IS_STRING) {
+        if (Z_TYPE_PP(value) != IS_ARRAY) {
+          zend_throw_exception(spl_ce_InvalidArgumentException,
+                               "Expected an array for send message",
+                               1 TSRMLS_CC);
+          goto cleanup;
+        }
+        message_hash = Z_ARRVAL_PP(value);
+        if (zend_hash_find(message_hash, "flags", sizeof("flags"),
+                           (void **)&message_flags) == SUCCESS) {
+          if (Z_TYPE_PP(message_flags) != IS_LONG) {
+            zend_throw_exception(spl_ce_InvalidArgumentException,
+                                 "Expected an int for message flags",
+                                 1 TSRMLS_CC);
+          }
+          ops[op_num].flags = Z_LVAL_PP(message_flags) & GRPC_WRITE_USED_MASK;
+        }
+        if (zend_hash_find(message_hash, "message", sizeof("message"),
+                           (void **)&message_value) != SUCCESS ||
+            Z_TYPE_PP(message_value) != IS_STRING) {
           zend_throw_exception(spl_ce_InvalidArgumentException,
                                "Expected a string for send message",
                                1 TSRMLS_CC);
+          goto cleanup;
         }
         ops[op_num].data.send_message =
-            string_to_byte_buffer(Z_STRVAL_PP(value), Z_STRLEN_PP(value));
+            string_to_byte_buffer(Z_STRVAL_PP(message_value),
+                                  Z_STRLEN_PP(message_value));
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         break;
@@ -398,23 +425,19 @@ PHP_METHOD(Call, startBatch) {
     }
     ops[op_num].op = (grpc_op_type)index;
     ops[op_num].flags = 0;
+    ops[op_num].reserved = NULL;
     op_num++;
   }
-  error = grpc_call_start_batch(call->wrapped, ops, op_num, call->wrapped);
+  error = grpc_call_start_batch(call->wrapped, ops, op_num, call->wrapped,
+                                NULL);
   if (error != GRPC_CALL_OK) {
     zend_throw_exception(spl_ce_LogicException,
                          "start_batch was called incorrectly",
                          (long)error TSRMLS_CC);
     goto cleanup;
   }
-  event = grpc_completion_queue_pluck(completion_queue, call->wrapped,
-                                      gpr_inf_future(GPR_CLOCK_REALTIME));
-  if (!event.success) {
-    zend_throw_exception(spl_ce_LogicException,
-                         "The batch failed for some reason",
-                         1 TSRMLS_CC);
-    goto cleanup;
-  }
+  grpc_completion_queue_pluck(completion_queue, call->wrapped,
+                              gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   for (int i = 0; i < op_num; i++) {
     switch(ops[i].op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
@@ -489,7 +512,7 @@ PHP_METHOD(Call, getPeer) {
 PHP_METHOD(Call, cancel) {
   wrapped_grpc_call *call =
       (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
-  grpc_call_cancel(call->wrapped);
+  grpc_call_cancel(call->wrapped, NULL);
 }
 
 static zend_function_entry call_methods[] = {

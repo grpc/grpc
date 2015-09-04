@@ -34,8 +34,10 @@ set -ex
 cd $(dirname $0)/../..
 
 ROOT=`pwd`
+PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
 GRPCIO=$ROOT/src/python/grpcio
 GRPCIO_TEST=$ROOT/src/python/grpcio_test
+GRPCIO_HEALTH_CHECKING=$ROOT/src/python/grpcio_health_checking
 
 make_virtualenv() {
   virtualenv_name="python"$1"_virtual_environment"
@@ -54,6 +56,9 @@ make_virtualenv() {
     cd $GRPCIO_TEST
     pip install -r requirements.txt
     pip install $GRPCIO_TEST
+
+    # Install grpcio_health_checking
+    pip install $GRPCIO_HEALTH_CHECKING
   else
     source $virtualenv_name/bin/activate
     # Uninstall and re-install the packages we care about. Don't use
@@ -62,12 +67,14 @@ make_virtualenv() {
     # dependency upgrades.
     (yes | pip uninstall grpcio) || true
     (yes | pip uninstall grpcio_test) || true
+    (yes | pip uninstall grpcio_health_checking) || true
     (CFLAGS="-I$ROOT/include -std=c89" LDFLAGS=-L$ROOT/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install $GRPCIO) || (
       # Fall back to rebuilding the entire environment
       rm -rf $virtualenv_name
       make_virtualenv $1
     )
     pip install $GRPCIO_TEST
+    pip install $GRPCIO_HEALTH_CHECKING
   fi
 }
 

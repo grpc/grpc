@@ -6,7 +6,7 @@ Package for GRPC Python.
 Dependencies
 ------------
 
-Ensure you have installed the gRPC core.  On Mac OS X, install homebrew_. On Linux, install linuxbrew_.
+Ensure you have installed the gRPC core.  On Mac OS X, install homebrew_.
 Run the following command to install gRPC Python.
 
 ::
@@ -19,5 +19,4 @@ Otherwise, `install from source`_
 
 .. _`install from source`: https://github.com/grpc/grpc/blob/master/src/python/README.md#building-from-source
 .. _homebrew: http://brew.sh
-.. _linuxbrew: https://github.com/Homebrew/linuxbrew#installation
 .. _`gRPC install script`: https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install

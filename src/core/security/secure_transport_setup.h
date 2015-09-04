@@ -50,4 +50,4 @@ void grpc_setup_secure_transport(grpc_security_connector *connector,
                                  grpc_secure_transport_setup_done_cb cb,
                                  void *user_data);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURE_TRANSPORT_SETUP_H */
+#endif /* GRPC_INTERNAL_CORE_SECURITY_SECURE_TRANSPORT_SETUP_H */

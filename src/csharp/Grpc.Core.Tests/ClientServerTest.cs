@@ -63,14 +63,8 @@ namespace Grpc.Core.Tests
         [TearDown]
         public void Cleanup()
         {
-            channel.Dispose();
+            channel.ShutdownAsync().Wait();
             server.ShutdownAsync().Wait();
-        }
-
-        [TestFixtureTearDown]
-        public void CleanupClass()
-        {
-            GrpcEnvironment.Shutdown();
         }
 
         [Test]
@@ -205,13 +199,6 @@ namespace Grpc.Core.Tests
 
             Assert.AreEqual(headers[1].Key, trailers[1].Key);
             CollectionAssert.AreEqual(headers[1].ValueBytes, trailers[1].ValueBytes);
-        }
-
-        [Test]
-        public void UnaryCall_DisposedChannel()
-        {
-            channel.Dispose();
-            Assert.Throws(typeof(ObjectDisposedException), () => Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "ABC"));
         }
 
         [Test]

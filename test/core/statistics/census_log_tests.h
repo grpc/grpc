@@ -48,4 +48,4 @@ void test_multiple_writers();
 void test_performance();
 void test_small_log();
 
-#endif  /* GRPC_TEST_CORE_STATISTICS_CENSUS_LOG_TESTS_H */
+#endif /* GRPC_TEST_CORE_STATISTICS_CENSUS_LOG_TESTS_H */

@@ -93,8 +93,7 @@ static const char json_key_str_part3_for_custom_email_issuer[] =
     "com\", \"type\": \"service_account\" }";
 
 static grpc_jwt_verifier_email_domain_key_url_mapping custom_mapping = {
-  "bar.com", "keys.bar.com/jwk"
-};
+    "bar.com", "keys.bar.com/jwk"};
 
 static const char expected_user_data[] = "user data";
 
@@ -153,7 +152,7 @@ static const char expired_claims[] =
     "  \"iss\": \"blah.foo.com\","
     "  \"sub\": \"juju@blah.foo.com\","
     "  \"jti\": \"jwtuniqueid\","
-    "  \"iat\": 100,"  /* Way back in the past... */
+    "  \"iat\": 100," /* Way back in the past... */
     "  \"exp\": 120,"
     "  \"nbf\": 60,"
     "  \"foo\": \"bar\"}";
@@ -316,8 +315,8 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_httpcli_set_override(httpcli_get_google_keys_for_email,
                             httpcli_post_should_not_be_called);
-  jwt =
-      grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime, NULL);
+  jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
+                                 NULL);
   grpc_auth_json_key_destruct(&key);
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
@@ -348,8 +347,8 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_httpcli_set_override(httpcli_get_custom_keys_for_email,
                             httpcli_post_should_not_be_called);
-  jwt =
-      grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime, NULL);
+  jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
+                                 NULL);
   grpc_auth_json_key_destruct(&key);
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
@@ -359,9 +358,10 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   grpc_httpcli_set_override(NULL, NULL);
 }
 
-static int httpcli_get_jwk_set(
-    const grpc_httpcli_request *request, gpr_timespec deadline,
-    grpc_httpcli_response_cb on_response, void *user_data) {
+static int httpcli_get_jwk_set(const grpc_httpcli_request *request,
+                               gpr_timespec deadline,
+                               grpc_httpcli_response_cb on_response,
+                               void *user_data) {
   grpc_httpcli_response response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
@@ -396,8 +396,8 @@ static void test_jwt_verifier_url_issuer_success(void) {
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_httpcli_set_override(httpcli_get_openid_config,
                             httpcli_post_should_not_be_called);
-  jwt =
-      grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime, NULL);
+  jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
+                                 NULL);
   grpc_auth_json_key_destruct(&key);
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
@@ -436,8 +436,8 @@ static void test_jwt_verifier_url_issuer_bad_config(void) {
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_httpcli_set_override(httpcli_get_bad_json,
                             httpcli_post_should_not_be_called);
-  jwt =
-      grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime, NULL);
+  jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
+                                 NULL);
   grpc_auth_json_key_destruct(&key);
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
@@ -457,8 +457,8 @@ static void test_jwt_verifier_bad_json_key(void) {
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_httpcli_set_override(httpcli_get_bad_json,
                             httpcli_post_should_not_be_called);
-  jwt =
-      grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime, NULL);
+  jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
+                                 NULL);
   grpc_auth_json_key_destruct(&key);
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
@@ -503,8 +503,8 @@ static void test_jwt_verifier_bad_signature(void) {
   GPR_ASSERT(grpc_auth_json_key_is_valid(&key));
   grpc_httpcli_set_override(httpcli_get_openid_config,
                             httpcli_post_should_not_be_called);
-  jwt =
-      grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime, NULL);
+  jwt = grpc_jwt_encode_and_sign(&key, expected_audience, expected_lifetime,
+                                 NULL);
   grpc_auth_json_key_destruct(&key);
   corrupt_jwt_sig(jwt);
   GPR_ASSERT(jwt != NULL);
@@ -546,7 +546,6 @@ static void test_jwt_verifier_bad_format(void) {
 /* bad signature custom provided email*/
 /* bad key */
 
-
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_claims_success();
@@ -562,4 +561,3 @@ int main(int argc, char **argv) {
   test_jwt_verifier_bad_format();
   return 0;
 }
-

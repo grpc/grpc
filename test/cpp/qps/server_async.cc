@@ -35,28 +35,23 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/signal.h>
 #include <thread>
 
 #include <gflags/gflags.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
-#include <grpc++/async_unary_call.h>
-#include <grpc++/config.h>
+#include <grpc/support/log.h>
+#include <grpc++/support/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
+#include <grpc++/security/server_credentials.h>
 #include <gtest/gtest.h>
+
 #include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 namespace grpc {
 namespace testing {
@@ -73,7 +68,7 @@ class AsyncQpsServerTest : public Server {
 
     builder.RegisterAsyncService(&async_service_);
     for (int i = 0; i < config.threads(); i++) {
-      srv_cqs_.emplace_back(std::move(builder.AddCompletionQueue()));
+      srv_cqs_.emplace_back(builder.AddCompletionQueue());
     }
 
     server_ = builder.BuildAndStart();

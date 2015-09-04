@@ -8,14 +8,19 @@ argp.add_argument('-l', '--language',
 args = argp.parse_args()
 
 # build job
-build_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_build.sh', '%s' % args.language], shortname='build')
+build_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_build.sh', '%s' % args.language],
+                           shortname='build',
+                           timeout_seconds=30*60)
 
 # test jobs, each test is a separate job to run in parallel
 _TESTS = ['large_unary', 'empty_unary', 'ping_pong', 'client_streaming', 'server_streaming']
 jobs = []
 jobNumber = 0
 for test in _TESTS:
-  test_job = jobset.JobSpec(cmdline=['tools/run_tests/run_interops_test.sh', '%s' % args.language, '%s' % test], shortname=test)
+  test_job = jobset.JobSpec(
+        cmdline=['tools/run_tests/run_interops_test.sh', '%s' % args.language, '%s' % test], 
+        shortname=test,
+        timeout_seconds=15*60)
   jobs.append(test_job)
   jobNumber+=1
 

@@ -4,17 +4,41 @@ The Python facility of gRPC.
 
 Status
 -------
-Alpha : Ready for early adopters
+Beta : Core behavior well-used and proven; bugs lurk off the beaten path.
 
 PREREQUISITES
 -------------
 - Python 2.7, virtualenv, pip
-- [homebrew][] on Mac OS X, [linuxbrew][] on Linux.  These simplify the installation of the gRPC C core.
+- [homebrew][] on Mac OS X.  These simplify the installation of the gRPC C core.
 
 INSTALLATION
 -------------
-On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][].
-Run the following command to install gRPC Python.
+
+**Linux (Debian):**
+
+Add [Debian testing][] to your `sources.list` file. Example:
+
+```sh
+echo "deb http://ftp.us.debian.org/debian testing main contrib non-free" | \
+sudo tee -a /etc/apt/sources.list
+```
+
+Install the gRPC Debian package
+
+```sh
+sudo apt-get update
+sudo apt-get install libgrpc-dev
+```
+
+Install the gRPC Python module
+
+```sh
+sudo pip install grpcio
+```
+
+**Mac OS X**
+
+Install [homebrew][]. Run the following command to install gRPC Python.
 ```sh
 $ curl -fsSL https://goo.gl/getgrpc | bash -s python
 ```
@@ -27,15 +51,20 @@ Please read our online documentation for a [Quick Start][] and a [detailed examp
 BUILDING FROM SOURCE
 ---------------------
 - Clone this repository
-- Build the gRPC core from the root of the
-  [gRPC Git repository](https://github.com/grpc/grpc)
+
+- Initialize the git submodules
 ```
-$ make shared_c static_c
+$ git submodule update --init
+```
+
+- Make the libraries
+```
+$ make
 ```
 
 - Use build_python.sh to build the Python code and install it into a virtual environment
 ```
-$ tools/run_tests/build_python.sh
+$ CONFIG=opt tools/run_tests/build_python.sh 2.7
 ```
 
 TESTING
@@ -43,7 +72,7 @@ TESTING
 
 - Use run_python.sh to run gRPC as it was installed into the virtual environment
 ```
-$ tools/run_tests/run_python.sh
+$ CONFIG=opt PYVER=2.7 tools/run_tests/run_python.sh
 ```
 
 PACKAGING
@@ -60,7 +89,7 @@ $ ../../tools/distrib/python/submit.py
 ```
 
 [homebrew]:http://brew.sh
-[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Quick Start]:http://www.grpc.io/docs/tutorials/basic/python.html
 [detailed example]:http://www.grpc.io/docs/installation/python.html
+[Debian testing]:https://www.debian.org/releases/stretch/

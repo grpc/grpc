@@ -44,16 +44,17 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-extern "C" {
-#include "src/core/iomgr/socket_utils_posix.h"
-#include "src/core/support/string.h"
-}
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include "test/core/util/port.h"
+
+extern "C" {
+#include "src/core/iomgr/socket_utils_posix.h"
+#include "src/core/support/string.h"
+}
+
 
 int test_client(const char* root, const char* host, int port) {
   int status;

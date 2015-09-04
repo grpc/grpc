@@ -203,9 +203,6 @@ static grpc_resolver *dns_create(
     grpc_subchannel_factory *subchannel_factory) {
   dns_resolver *r;
   const char *path = uri->path;
-  grpc_arg default_host_arg;
-  char *host;
-  char *port;
 
   if (0 != strcmp(uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority based uri's not supported");
@@ -213,16 +210,6 @@ static grpc_resolver *dns_create(
   }
 
   if (path[0] == '/') ++path;
-
-  gpr_split_host_port(path, &host, &port);
-
-  default_host_arg.type = GRPC_ARG_STRING;
-  default_host_arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
-  default_host_arg.value.string = host;
-  subchannel_factory = grpc_subchannel_factory_add_channel_arg(subchannel_factory, &default_host_arg);
-
-  gpr_free(host);
-  gpr_free(port);
 
   r = gpr_malloc(sizeof(dns_resolver));
   memset(r, 0, sizeof(*r));
@@ -232,6 +219,7 @@ static grpc_resolver *dns_create(
   r->name = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   r->subchannel_factory = subchannel_factory;
+  grpc_subchannel_factory_ref(subchannel_factory);
   r->lb_policy_factory = lb_policy_factory;
   return &r->base;
 }
@@ -251,8 +239,16 @@ static grpc_resolver *dns_factory_create_resolver(
                     subchannel_factory);
 }
 
+char *dns_factory_get_default_host_name(grpc_resolver_factory *factory,
+                                        grpc_uri *uri) {
+  const char *path = uri->path;
+  if (path[0] == '/') ++path;
+  return gpr_strdup(path);
+}
+
 static const grpc_resolver_factory_vtable dns_factory_vtable = {
-    dns_factory_ref, dns_factory_unref, dns_factory_create_resolver};
+    dns_factory_ref, dns_factory_unref, dns_factory_create_resolver,
+    dns_factory_get_default_host_name, "dns"};
 static grpc_resolver_factory dns_resolver_factory = {&dns_factory_vtable};
 
 grpc_resolver_factory *grpc_dns_resolver_factory_create() {

@@ -60,7 +60,7 @@ static void thd_body(void *v) {
   gpr_mu_unlock(&t->mu);
 }
 
-static void thd_body_joinable(void *v) { }
+static void thd_body_joinable(void *v) {}
 
 /* Test that we can create a number of threads and wait for them. */
 static void test(void) {

@@ -10,5 +10,8 @@ var searchData=
   ['performopsoncall',['PerformOpsOnCall',['../classgrpc_1_1_call_hook.html#acf08b6dd7d1faba4efeeb4937bc81d29',1,'grpc::CallHook']]],
   ['permission_5fdenied',['PERMISSION_DENIED',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba671e44044d68f82be37c8ec3b0a9c449',1,'grpc']]],
   ['private_5fkey',['private_key',['../structgrpc_1_1_ssl_server_credentials_options_1_1_pem_key_cert_pair.html#ad9fa2a2083a40127d264e61cca637050',1,'grpc::SslServerCredentialsOptions::PemKeyCertPair']]],
+  ['process',['Process',['../classgrpc_1_1_auth_metadata_processor.html#adc0db66aa261c59bd29f81c53f466303',1,'grpc::AuthMetadataProcessor']]],
+  ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html',1,'grpc']]],
+  ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html#a450cdedbc72cbda17cb8d93f31c0f878',1,'grpc::PropagationOptions']]],
   ['proto_5futils_2eh',['proto_utils.h',['../proto__utils_8h.html',1,'']]]
 ];

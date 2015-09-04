@@ -50,6 +50,8 @@ typedef struct {
 typedef struct {
   grpc_mdctx *mdctx;
   grpc_channel *master;
+  grpc_status_code error_code;
+  const char *error_message;
 } channel_data;
 
 static void lame_start_transport_stream_op(grpc_call_element *elem,
@@ -64,11 +66,11 @@ static void lame_start_transport_stream_op(grpc_call_element *elem,
   if (op->recv_ops != NULL) {
     char tmp[GPR_LTOA_MIN_BUFSIZE];
     grpc_metadata_batch mdb;
-    gpr_ltoa(GRPC_STATUS_UNKNOWN, tmp);
+    gpr_ltoa(chand->error_code, tmp);
     calld->status.md =
         grpc_mdelem_from_strings(chand->mdctx, "grpc-status", tmp);
     calld->details.md = grpc_mdelem_from_strings(chand->mdctx, "grpc-message",
-                                                 "Rpc sent on a lame channel.");
+                                                 chand->error_message);
     calld->status.prev = calld->details.next = NULL;
     calld->status.next = &calld->details;
     calld->details.prev = &calld->status;
@@ -138,8 +140,21 @@ static const grpc_channel_filter lame_filter = {
     "lame-client",
 };
 
-grpc_channel *grpc_lame_client_channel_create(const char *target) {
+#define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))
+
+grpc_channel *grpc_lame_client_channel_create(const char *target,
+                                              grpc_status_code error_code,
+                                              const char *error_message) {
+  grpc_channel *channel;
+  grpc_channel_element *elem;
+  channel_data *chand;
   static const grpc_channel_filter *filters[] = {&lame_filter};
-  return grpc_channel_create_from_filters(target, filters, 1, NULL,
-                                          grpc_mdctx_create(), 1);
+  channel = grpc_channel_create_from_filters(target, filters, 1, NULL,
+                                             grpc_mdctx_create(), 1);
+  elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
+  GPR_ASSERT(elem->filter == &lame_filter);
+  chand = (channel_data *)elem->channel_data;
+  chand->error_code = error_code;
+  chand->error_message = error_message;
+  return channel;
 }

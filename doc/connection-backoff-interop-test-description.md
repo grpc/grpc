@@ -31,9 +31,9 @@ Clients should accept these arguments:
 * --server_retry_port=PORT
     * The server port to connect to for testing backoffs. For example, "8081"
 
-The client must connect to the control port without TLS. The client should
-either assert on the server returned backoff status or check the returned
-backoffs on its own.
+The client must connect to the control port without TLS. The client must connect
+to the retry port with TLS. The client should either assert on the server
+returned backoff status or check the returned backoffs on its own.
 
 Procedure of client:
 

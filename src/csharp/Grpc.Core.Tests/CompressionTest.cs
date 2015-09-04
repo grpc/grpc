@@ -62,14 +62,8 @@ namespace Grpc.Core.Tests
         [TearDown]
         public void Cleanup()
         {
-            channel.Dispose();
+            channel.ShutdownAsync().Wait();
             server.ShutdownAsync().Wait();
-        }
-
-        [TestFixtureTearDown]
-        public void CleanupClass()
-        {
-            GrpcEnvironment.Shutdown();
         }
 
         [Test]

@@ -43,31 +43,40 @@ namespace Grpc.Core.Tests
         [Test]
         public void InitializeAndShutdownGrpcEnvironment()
         {
-            var env = GrpcEnvironment.GetInstance();
+            var env = GrpcEnvironment.AddRef();
             Assert.IsNotNull(env.CompletionQueue);
-            GrpcEnvironment.Shutdown();
+            GrpcEnvironment.Release();
         }
 
         [Test]
         public void SubsequentInvocations()
         {
-            var env1 = GrpcEnvironment.GetInstance();
-            var env2 = GrpcEnvironment.GetInstance();
-            Assert.IsTrue(object.ReferenceEquals(env1, env2));
-            GrpcEnvironment.Shutdown();
-            GrpcEnvironment.Shutdown();
+            var env1 = GrpcEnvironment.AddRef();
+            var env2 = GrpcEnvironment.AddRef();
+            Assert.AreSame(env1, env2);
+            GrpcEnvironment.Release();
+            GrpcEnvironment.Release();
         }
 
         [Test]
         public void InitializeAfterShutdown()
         {
-            var env1 = GrpcEnvironment.GetInstance();
-            GrpcEnvironment.Shutdown();
+            Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
 
-            var env2 = GrpcEnvironment.GetInstance();
-            GrpcEnvironment.Shutdown();
+            var env1 = GrpcEnvironment.AddRef();
+            GrpcEnvironment.Release();
 
-            Assert.IsFalse(object.ReferenceEquals(env1, env2));
+            var env2 = GrpcEnvironment.AddRef();
+            GrpcEnvironment.Release();
+
+            Assert.AreNotSame(env1, env2);
+        }
+
+        [Test]
+        public void ReleaseWithoutAddRef()
+        {
+            Assert.AreEqual(0, GrpcEnvironment.GetRefCount());
+            Assert.Throws(typeof(InvalidOperationException), () => GrpcEnvironment.Release());
         }
 
         [Test]
