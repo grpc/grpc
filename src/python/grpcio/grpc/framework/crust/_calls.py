@@ -42,10 +42,12 @@ def _invoke(
     end, group, method, timeout, protocol_options, initial_metadata, payload,
     complete):
   rendezvous = _control.Rendezvous(None, None)
+  subscription = utilities.full_subscription(
+      rendezvous, _control.protocol_receiver(rendezvous))
   operation_context, operator = end.operate(
-      group, method, utilities.full_subscription(rendezvous), timeout,
-      protocol_options=protocol_options, initial_metadata=initial_metadata,
-      payload=payload, completion=_EMPTY_COMPLETION if complete else None)
+      group, method, subscription, timeout, protocol_options=protocol_options,
+      initial_metadata=initial_metadata, payload=payload,
+      completion=_EMPTY_COMPLETION if complete else None)
   rendezvous.set_operator_and_context(operator, operation_context)
   outcome = operation_context.add_termination_callback(rendezvous.set_outcome)
   if outcome is not None:
