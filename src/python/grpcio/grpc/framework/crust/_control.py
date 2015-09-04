@@ -442,6 +442,10 @@ class Rendezvous(base.Operator, future.Future, stream.Consumer, face.Call):
         else:
           return self._termination.abortion
 
+  def protocol_context(self):
+    with self._condition:
+      raise NotImplementedError('TODO: protocol context implementation!')
+
   def initial_metadata(self):
     with self._condition:
       while True:

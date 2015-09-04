@@ -38,12 +38,14 @@ _ITERATOR_EXCEPTION_LOG_MESSAGE = 'Exception iterating over requests!'
 _EMPTY_COMPLETION = utilities.completion(None, None, None)
 
 
-def _invoke(end, group, method, timeout, initial_metadata, payload, complete):
+def _invoke(
+    end, group, method, timeout, protocol_options, initial_metadata, payload,
+    complete):
   rendezvous = _control.Rendezvous(None, None)
   operation_context, operator = end.operate(
       group, method, utilities.full_subscription(rendezvous), timeout,
-      initial_metadata=initial_metadata, payload=payload,
-      completion=_EMPTY_COMPLETION if complete else None)
+      protocol_options=protocol_options, initial_metadata=initial_metadata,
+      payload=payload, completion=_EMPTY_COMPLETION if complete else None)
   rendezvous.set_operator_and_context(operator, operation_context)
   outcome = operation_context.add_termination_callback(rendezvous.set_outcome)
   if outcome is not None:
@@ -93,36 +95,43 @@ def _event_return_stream(
 
 
 def blocking_unary_unary(
-    end, group, method, timeout, with_call, initial_metadata, payload):
+    end, group, method, timeout, with_call, protocol_options, initial_metadata,
+    payload):
   """Services in a blocking fashion a unary-unary servicer method."""
   rendezvous, unused_operation_context, unused_outcome = _invoke(
-      end, group, method, timeout, initial_metadata, payload, True)
+      end, group, method, timeout, protocol_options, initial_metadata, payload,
+      True)
   if with_call:
     return next(rendezvous), rendezvous
   else:
     return next(rendezvous)
 
 
-def future_unary_unary(end, group, method, timeout, initial_metadata, payload):
+def future_unary_unary(
+    end, group, method, timeout, protocol_options, initial_metadata, payload):
   """Services a value-in value-out servicer method by returning a Future."""
   rendezvous, unused_operation_context, unused_outcome = _invoke(
-      end, group, method, timeout, initial_metadata, payload, True)
+      end, group, method, timeout, protocol_options, initial_metadata, payload,
+      True)
   return rendezvous
 
 
-def inline_unary_stream(end, group, method, timeout, initial_metadata, payload):
+def inline_unary_stream(
+    end, group, method, timeout, protocol_options, initial_metadata, payload):
   """Services a value-in stream-out servicer method."""
   rendezvous, unused_operation_context, unused_outcome = _invoke(
-      end, group, method, timeout, initial_metadata, payload, True)
+      end, group, method, timeout, protocol_options, initial_metadata, payload,
+      True)
   return rendezvous
 
 
 def blocking_stream_unary(
-    end, group, method, timeout, with_call, initial_metadata, payload_iterator,
-    pool):
+    end, group, method, timeout, with_call, protocol_options, initial_metadata,
+    payload_iterator, pool):
   """Services in a blocking fashion a stream-in value-out servicer method."""
   rendezvous, operation_context, outcome = _invoke(
-      end, group, method, timeout, initial_metadata, None, False)
+      end, group, method, timeout, protocol_options, initial_metadata, None,
+      False)
   if outcome is None:
     def in_pool():
       for payload in payload_iterator:
@@ -141,10 +150,12 @@ def blocking_stream_unary(
 
 
 def future_stream_unary(
-    end, group, method, timeout, initial_metadata, payload_iterator, pool):
+    end, group, method, timeout, protocol_options, initial_metadata,
+    payload_iterator, pool):
   """Services a stream-in value-out servicer method by returning a Future."""
   rendezvous, operation_context, outcome = _invoke(
-      end, group, method, timeout, initial_metadata, None, False)
+      end, group, method, timeout, protocol_options, initial_metadata, None,
+      False)
   if outcome is None:
     def in_pool():
       for payload in payload_iterator:
@@ -155,10 +166,12 @@ def future_stream_unary(
 
 
 def inline_stream_stream(
-    end, group, method, timeout, initial_metadata, payload_iterator, pool):
+    end, group, method, timeout, protocol_options, initial_metadata,
+    payload_iterator, pool):
   """Services a stream-in stream-out servicer method."""
   rendezvous, operation_context, outcome = _invoke(
-      end, group, method, timeout, initial_metadata, None, False)
+      end, group, method, timeout, protocol_options, initial_metadata, None,
+      False)
   if outcome is None:
     def in_pool():
       for payload in payload_iterator:
@@ -169,36 +182,40 @@ def inline_stream_stream(
 
 
 def event_unary_unary(
-    end, group, method, timeout, initial_metadata, payload, receiver,
-    abortion_callback, pool):
+    end, group, method, timeout, protocol_options, initial_metadata, payload,
+    receiver, abortion_callback, pool):
   rendezvous, operation_context, outcome = _invoke(
-      end, group, method, timeout, initial_metadata, payload, True)
+      end, group, method, timeout, protocol_options, initial_metadata, payload,
+      True)
   return _event_return_unary(
       receiver, abortion_callback, rendezvous, operation_context, outcome, pool)
 
 
 def event_unary_stream(
-    end, group, method, timeout, initial_metadata, payload,
+    end, group, method, timeout, protocol_options, initial_metadata, payload,
     receiver, abortion_callback, pool):
   rendezvous, operation_context, outcome = _invoke(
-      end, group, method, timeout, initial_metadata, payload, True)
+      end, group, method, timeout, protocol_options, initial_metadata, payload,
+      True)
   return _event_return_stream(
       receiver, abortion_callback, rendezvous, operation_context, outcome, pool)
 
 
 def event_stream_unary(
-    end, group, method, timeout, initial_metadata, receiver, abortion_callback,
-    pool):
+    end, group, method, timeout, protocol_options, initial_metadata, receiver,
+    abortion_callback, pool):
   rendezvous, operation_context, outcome = _invoke(
-      end, group, method, timeout, initial_metadata, None, False)
+      end, group, method, timeout, protocol_options, initial_metadata, None,
+      False)
   return _event_return_unary(
       receiver, abortion_callback, rendezvous, operation_context, outcome, pool)
 
 
 def event_stream_stream(
-    end, group, method, timeout, initial_metadata, receiver, abortion_callback,
-    pool):
+    end, group, method, timeout, protocol_options, initial_metadata, receiver,
+    abortion_callback, pool):
   rendezvous, operation_context, outcome = _invoke(
-      end, group, method, timeout, initial_metadata, None, False)
+      end, group, method, timeout, protocol_options, initial_metadata, None,
+      False)
   return _event_return_stream(
       receiver, abortion_callback, rendezvous, operation_context, outcome, pool)

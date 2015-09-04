@@ -111,8 +111,8 @@ class TransmissionManager(object):
 
   @abc.abstractmethod
   def kick_off(
-      self, group, method, timeout, initial_metadata, payload, completion,
-      allowance):
+      self, group, method, timeout, protocol_options, initial_metadata,
+      payload, completion, allowance):
     """Transmits the values associated with operation invocation."""
     raise NotImplementedError()
 
