@@ -52,6 +52,30 @@
 
 #define NUM_RANDOM_PORTS_TO_PICK 100
 
+static int *chosen_ports = NULL;
+static size_t num_chosen_ports = 0;
+
+static int has_port_been_chosen(int port) {
+  size_t i;
+  for (i = 0; i < num_chosen_ports; i++) {
+    if (chosen_ports[i] == port) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static void free_chosen_ports() { gpr_free(chosen_ports); }
+
+static void chose_port(int port) {
+  if (chosen_ports == NULL) {
+    atexit(free_chosen_ports);
+  }
+  num_chosen_ports++;
+  chosen_ports = gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);
+  chosen_ports[num_chosen_ports - 1] = port;
+}
+
 static int is_port_available(int *port, int is_tcp) {
   const int proto = is_tcp ? IPPROTO_TCP : 0;
   const SOCKET fd = socket(AF_INET, is_tcp ? SOCK_STREAM : SOCK_DGRAM, proto);
@@ -202,6 +226,10 @@ int grpc_pick_unused_port(void) {
       port = 0;
     }
 
+    if (has_port_been_chosen(port)) {
+      continue;
+    }
+
     if (!is_port_available(&port, is_tcp)) {
       continue;
     }
@@ -218,6 +246,7 @@ int grpc_pick_unused_port(void) {
     /* TODO(ctiller): consider caching this port in some structure, to avoid
                       handing it out again */
 
+    chose_port(port);
     return port;
   }
 
