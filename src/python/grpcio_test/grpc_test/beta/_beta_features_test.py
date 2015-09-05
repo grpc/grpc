@@ -32,7 +32,7 @@
 import threading
 import unittest
 
-from grpc.beta import beta
+from grpc.beta import implementations
 from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.interfaces.face import utilities
@@ -159,20 +159,21 @@ class BetaFeaturesTest(unittest.TestCase):
         _STREAM_STREAM: cardinality.Cardinality.STREAM_STREAM,
     }
 
-    server_options = beta.server_options(
+    server_options = implementations.server_options(
         thread_pool_size=test_constants.POOL_SIZE)
-    self._server = beta.server(method_implementations, options=server_options)
-    server_credentials = beta.ssl_server_credentials(
+    self._server = implementations.server(
+        method_implementations, options=server_options)
+    server_credentials = implementations.ssl_server_credentials(
         [(resources.private_key(), resources.certificate_chain(),),])
     port = self._server.add_secure_port('[::]:0', server_credentials)
     self._server.start()
-    self._client_credentials = beta.ssl_client_credentials(
+    self._client_credentials = implementations.ssl_client_credentials(
         resources.test_root_certificates(), None, None)
-    channel = test_utilities.create_not_really_secure_channel(
+    channel = test_utilities.not_really_secure_channel(
         'localhost', port, self._client_credentials, _SERVER_HOST_OVERRIDE)
-    stub_options = beta.stub_options(
+    stub_options = implementations.stub_options(
         thread_pool_size=test_constants.POOL_SIZE)
-    self._dynamic_stub = beta.dynamic_stub(
+    self._dynamic_stub = implementations.dynamic_stub(
         channel, _GROUP, cardinalities, options=stub_options)
 
   def tearDown(self):

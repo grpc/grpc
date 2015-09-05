@@ -36,13 +36,8 @@ import unittest
 from grpc._adapter import _low
 from grpc._adapter import _types
 from grpc.beta import _connectivity_channel
+from grpc.beta import interfaces
 from grpc_test.framework.common import test_constants
-
-_MAPPING_FUNCTION = lambda integer: integer * 200 + 17
-_MAPPING = {
-    state: _MAPPING_FUNCTION(state) for state in _types.ConnectivityState}
-_IDLE, _CONNECTING, _READY, _TRANSIENT_FAILURE, _FATAL_FAILURE = map(
-    _MAPPING_FUNCTION, _types.ConnectivityState)
 
 
 def _drive_completion_queue(completion_queue):
@@ -84,7 +79,7 @@ class ChannelConnectivityTest(unittest.TestCase):
     callback = _Callback()
 
     connectivity_channel = _connectivity_channel.ConnectivityChannel(
-        low_channel, _MAPPING)
+        low_channel)
     connectivity_channel.subscribe(callback.update, try_to_connect=False)
     first_connectivities = callback.block_until_connectivities_satisfy(bool)
     connectivity_channel.subscribe(callback.update, try_to_connect=True)
@@ -98,11 +93,16 @@ class ChannelConnectivityTest(unittest.TestCase):
     connectivity_channel.unsubscribe(callback.update)
     fifth_connectivities = callback.connectivities()
 
-    self.assertSequenceEqual((_IDLE,), first_connectivities)
-    self.assertNotIn(_READY, second_connectivities)
-    self.assertNotIn(_READY, third_connectivities)
-    self.assertNotIn(_READY, fourth_connectivities)
-    self.assertNotIn(_READY, fifth_connectivities)
+    self.assertSequenceEqual(
+        (interfaces.ChannelConnectivity.IDLE,), first_connectivities)
+    self.assertNotIn(
+        interfaces.ChannelConnectivity.READY, second_connectivities)
+    self.assertNotIn(
+        interfaces.ChannelConnectivity.READY, third_connectivities)
+    self.assertNotIn(
+        interfaces.ChannelConnectivity.READY, fourth_connectivities)
+    self.assertNotIn(
+        interfaces.ChannelConnectivity.READY, fifth_connectivities)
 
   def test_immediately_connectable_channel_connectivity(self):
     server_completion_queue = _low.CompletionQueue()
@@ -117,7 +117,7 @@ class ChannelConnectivityTest(unittest.TestCase):
     second_callback = _Callback()
 
     connectivity_channel = _connectivity_channel.ConnectivityChannel(
-        low_channel, _MAPPING)
+        low_channel)
     connectivity_channel.subscribe(first_callback.update, try_to_connect=False)
     first_connectivities = first_callback.block_until_connectivities_satisfy(
         bool)
@@ -132,9 +132,11 @@ class ChannelConnectivityTest(unittest.TestCase):
         bool)
     # Wait for a connection that will happen (or may already have happened).
     first_callback.block_until_connectivities_satisfy(
-        lambda connectivities: _READY in connectivities)
+        lambda connectivities:
+        interfaces.ChannelConnectivity.READY in connectivities)
     second_callback.block_until_connectivities_satisfy(
-        lambda connectivities: _READY in connectivities)
+        lambda connectivities:
+        interfaces.ChannelConnectivity.READY in connectivities)
     connectivity_channel.unsubscribe(first_callback.update)
     connectivity_channel.unsubscribe(second_callback.update)
 
@@ -142,12 +144,19 @@ class ChannelConnectivityTest(unittest.TestCase):
     server_completion_queue.shutdown()
     server_completion_queue_thread.join()
 
-    self.assertSequenceEqual((_IDLE,), first_connectivities)
-    self.assertSequenceEqual((_IDLE,), second_connectivities)
-    self.assertNotIn(_TRANSIENT_FAILURE, third_connectivities)
-    self.assertNotIn(_FATAL_FAILURE, third_connectivities)
-    self.assertNotIn(_TRANSIENT_FAILURE, fourth_connectivities)
-    self.assertNotIn(_FATAL_FAILURE, fourth_connectivities)
+    self.assertSequenceEqual(
+        (interfaces.ChannelConnectivity.IDLE,), first_connectivities)
+    self.assertSequenceEqual(
+        (interfaces.ChannelConnectivity.IDLE,), second_connectivities)
+    self.assertNotIn(
+        interfaces.ChannelConnectivity.TRANSIENT_FAILURE, third_connectivities)
+    self.assertNotIn(
+        interfaces.ChannelConnectivity.FATAL_FAILURE, third_connectivities)
+    self.assertNotIn(
+        interfaces.ChannelConnectivity.TRANSIENT_FAILURE,
+        fourth_connectivities)
+    self.assertNotIn(
+        interfaces.ChannelConnectivity.FATAL_FAILURE, fourth_connectivities)
 
   def test_reachable_then_unreachable_channel_connectivity(self):
     server_completion_queue = _low.CompletionQueue()
@@ -161,14 +170,16 @@ class ChannelConnectivityTest(unittest.TestCase):
     callback = _Callback()
 
     connectivity_channel = _connectivity_channel.ConnectivityChannel(
-        low_channel, _MAPPING)
+        low_channel)
     connectivity_channel.subscribe(callback.update, try_to_connect=True)
     callback.block_until_connectivities_satisfy(
-        lambda connectivities: _READY in connectivities)
+        lambda connectivities:
+        interfaces.ChannelConnectivity.READY in connectivities)
     # Now take down the server and confirm that channel readiness is repudiated.
     server.shutdown()
     callback.block_until_connectivities_satisfy(
-        lambda connectivities: connectivities[-1] is not _READY)
+        lambda connectivities:
+        connectivities[-1] is not interfaces.ChannelConnectivity.READY)
     connectivity_channel.unsubscribe(callback.update)
 
     server.shutdown()
