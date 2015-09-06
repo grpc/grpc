@@ -1,4 +1,4 @@
-grpc (0.10.2-2~bpo8+1) jessie-backports; urgency=low
+grpc (0.10.2-1~bpo8+1) jessie-backports; urgency=low
 
   * Backport for jessie
 
