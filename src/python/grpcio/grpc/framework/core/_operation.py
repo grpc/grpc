@@ -36,6 +36,7 @@ from grpc.framework.core import _emission
 from grpc.framework.core import _expiration
 from grpc.framework.core import _ingestion
 from grpc.framework.core import _interfaces
+from grpc.framework.core import _protocol
 from grpc.framework.core import _reception
 from grpc.framework.core import _termination
 from grpc.framework.core import _transmission
@@ -123,16 +124,19 @@ def invocation_operate(
         operation_id, ticket_sink, lock, pool, termination_manager)
     expiration_manager = _expiration.invocation_expiration_manager(
         timeout, lock, termination_manager, transmission_manager)
+    protocol_manager = _protocol.invocation_protocol_manager(
+        subscription, lock, pool, termination_manager, transmission_manager,
+        expiration_manager)
     operation_context = _context.OperationContext(
         lock, termination_manager, transmission_manager, expiration_manager)
     emission_manager = _emission.EmissionManager(
         lock, termination_manager, transmission_manager, expiration_manager)
     ingestion_manager = _ingestion.invocation_ingestion_manager(
         subscription, lock, pool, termination_manager, transmission_manager,
-        expiration_manager)
+        expiration_manager, protocol_manager)
     reception_manager = _reception.ReceptionManager(
         termination_manager, transmission_manager, expiration_manager,
-        ingestion_manager)
+        protocol_manager, ingestion_manager)
 
     termination_manager.set_expiration_manager(expiration_manager)
     transmission_manager.set_expiration_manager(expiration_manager)
@@ -174,16 +178,20 @@ def service_operate(
         ticket.timeout, servicer_package.default_timeout,
         servicer_package.maximum_timeout, lock, termination_manager,
         transmission_manager)
+    protocol_manager = _protocol.service_protocol_manager(
+        lock, pool, termination_manager, transmission_manager,
+        expiration_manager)
     operation_context = _context.OperationContext(
         lock, termination_manager, transmission_manager, expiration_manager)
     emission_manager = _emission.EmissionManager(
         lock, termination_manager, transmission_manager, expiration_manager)
     ingestion_manager = _ingestion.service_ingestion_manager(
         servicer_package.servicer, operation_context, emission_manager, lock,
-        pool, termination_manager, transmission_manager, expiration_manager)
+        pool, termination_manager, transmission_manager, expiration_manager,
+        protocol_manager)
     reception_manager = _reception.ReceptionManager(
         termination_manager, transmission_manager, expiration_manager,
-        ingestion_manager)
+        protocol_manager, ingestion_manager)
 
     termination_manager.set_expiration_manager(expiration_manager)
     transmission_manager.set_expiration_manager(expiration_manager)

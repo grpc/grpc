@@ -182,6 +182,8 @@ class Rendezvous(base.Operator, future.Future, stream.Consumer, face.Call):
     self._operator = operator
     self._operation_context = operation_context
 
+    self._protocol_context = _NOT_YET_ARRIVED
+
     self._up_initial_metadata = _NOT_YET_ARRIVED
     self._up_payload = None
     self._up_allowance = 1
@@ -444,7 +446,13 @@ class Rendezvous(base.Operator, future.Future, stream.Consumer, face.Call):
 
   def protocol_context(self):
     with self._condition:
-      raise NotImplementedError('TODO: protocol context implementation!')
+      while True:
+        if self._protocol_context.kind is _Awaited.Kind.ARRIVED:
+          return self._protocol_context.value
+        elif self._termination.abortion_error is not None:
+          raise self._termination.abortion_error
+        else:
+          self._condition.wait()
 
   def initial_metadata(self):
     with self._condition:
@@ -518,9 +526,28 @@ class Rendezvous(base.Operator, future.Future, stream.Consumer, face.Call):
       else:
         self._down_details = _Transitory(_Transitory.Kind.PRESENT, details)
 
+  def set_protocol_context(self, protocol_context):
+    with self._condition:
+      self._protocol_context = _Awaited(
+          _Awaited.Kind.ARRIVED, protocol_context)
+      self._condition.notify_all()
+
   def set_outcome(self, outcome):
     with self._condition:
       return self._set_outcome(outcome)
+
+
+class _ProtocolReceiver(base.ProtocolReceiver):
+
+  def __init__(self, rendezvous):
+    self._rendezvous = rendezvous
+
+  def context(self, protocol_context):
+    self._rendezvous.set_protocol_context(protocol_context)
+
+
+def protocol_receiver(rendezvous):
+  return _ProtocolReceiver(rendezvous)
 
 
 def pool_wrap(behavior, operation_context):
