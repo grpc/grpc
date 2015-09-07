@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -103,9 +103,9 @@ Data Structures</h2></td></tr>
 Macros</h2></td></tr>
 <tr class="memitem:ab2c3baa4e4ceb366668aaf51379340fd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__gcc_8h.html#ab2c3baa4e4ceb366668aaf51379340fd">GPR_TLS_DECL</a>(name)&#160;&#160;&#160;static __thread struct <a class="el" href="structgpr__gcc__thread__local.html">gpr_gcc_thread_local</a> name = {0}</td></tr>
 <tr class="separator:ab2c3baa4e4ceb366668aaf51379340fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a43768a42ff705cc028b4a483dc3b65c5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__gcc_8h.html#a43768a42ff705cc028b4a483dc3b65c5">gpr_tls_init</a>(tls)&#160;&#160;&#160;do {} while (0)</td></tr>
+<tr class="memitem:a43768a42ff705cc028b4a483dc3b65c5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__gcc_8h.html#a43768a42ff705cc028b4a483dc3b65c5">gpr_tls_init</a>(tls)</td></tr>
 <tr class="separator:a43768a42ff705cc028b4a483dc3b65c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a187108e1078d2ce05388cb17bc59ce74"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__gcc_8h.html#a187108e1078d2ce05388cb17bc59ce74">gpr_tls_destroy</a>(tls)&#160;&#160;&#160;do {} while (0)</td></tr>
+<tr class="memitem:a187108e1078d2ce05388cb17bc59ce74"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__gcc_8h.html#a187108e1078d2ce05388cb17bc59ce74">gpr_tls_destroy</a>(tls)</td></tr>
 <tr class="separator:a187108e1078d2ce05388cb17bc59ce74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8f01b3e40178b80d098650f42c529e7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="tls__gcc_8h.html#aa8f01b3e40178b80d098650f42c529e7">gpr_tls_set</a>(tls, new_value)&#160;&#160;&#160;(((tls)-&gt;value) = (new_value))</td></tr>
 <tr class="separator:aa8f01b3e40178b80d098650f42c529e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -138,11 +138,13 @@ Macros</h2></td></tr>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">tls</td><td>)</td>
-          <td>&#160;&#160;&#160;do {} while (0)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
+<b>Value:</b><div class="fragment"><div class="line"><span class="keywordflow">do</span> {                       \</div>
+<div class="line">  } <span class="keywordflow">while</span> (0)</div>
+</div><!-- fragment -->
 </div>
 </div>
 <a class="anchor" id="a9aa9e55eddbe7fed424526c23e1b55a3"></a>
@@ -170,11 +172,13 @@ Macros</h2></td></tr>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">tls</td><td>)</td>
-          <td>&#160;&#160;&#160;do {} while (0)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-
+<b>Value:</b><div class="fragment"><div class="line"><span class="keywordflow">do</span> {                    \</div>
+<div class="line">  } <span class="keywordflow">while</span> (0)</div>
+</div><!-- fragment -->
 </div>
 </div>
 <a class="anchor" id="aa8f01b3e40178b80d098650f42c529e7"></a>
@@ -206,7 +210,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

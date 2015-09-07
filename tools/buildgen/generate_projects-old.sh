@@ -40,7 +40,7 @@ cd `dirname $0`/../..
 mako_renderer=tools/buildgen/mako_renderer.py
 
 if [ "x$TEST" != "x" ] ; then
-  tools/buildgen/build-cleaner.py build.json
+  tools/buildgen/build-cleaner.py build.yaml
 fi
 
 . tools/buildgen/generate_build_additions.sh
@@ -58,8 +58,8 @@ for dir in . ; do
     out=${dir}/${file#$dir/templates/}  # strip templates dir prefix
     out=${out%.*}  # strip template extension
     echo "generating file: $out"
-    json_files="build.json $gen_build_files"
-    data=`for i in $json_files ; do echo $i ; done | awk ' { printf "-d %s ", $0 } '`
+    yaml_files="build.yaml $gen_build_files"
+    data=`for i in $yaml_files ; do echo $i ; done | awk ' { printf "-d %s ", $0 } '`
     if [ "x$TEST" = "xtrue" ] ; then
       actual_out=$out
       out=`mktemp /tmp/gentXXXXXX`

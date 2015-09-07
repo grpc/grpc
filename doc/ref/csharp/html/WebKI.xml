@@ -454,8 +454,8 @@
   <HelpKINode Title="Grpc.Core.Logging namespace" Url="html/N_Grpc_Core_Logging.htm" />
   <HelpKINode Title="Grpc.Core.Logging.ConsoleLogger class" Url="html/T_Grpc_Core_Logging_ConsoleLogger.htm" />
   <HelpKINode Title="Grpc.Core.Logging.ILogger interface" Url="html/T_Grpc_Core_Logging_ILogger.htm" />
-  <HelpKINode Title="Grpc.Core.Marshaller(Of T) structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
-  <HelpKINode Title="Grpc.Core.Marshaller&lt;T&gt; structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+  <HelpKINode Title="Grpc.Core.Marshaller(Of T) class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+  <HelpKINode Title="Grpc.Core.Marshaller&lt;T&gt; class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
   <HelpKINode Title="Grpc.Core.Marshallers class" Url="html/T_Grpc_Core_Marshallers.htm" />
   <HelpKINode Title="Grpc.Core.Metadata class" Url="html/T_Grpc_Core_Metadata.htm" />
   <HelpKINode Title="Grpc.Core.Metadata.Entry structure" Url="html/T_Grpc_Core_Metadata_Entry.htm" />
@@ -621,9 +621,9 @@
   <HelpKINode Title="KillAsync method" Url="html/M_Grpc_Core_Server_KillAsync.htm" />
   <HelpKINode Title="Logger property" Url="html/P_Grpc_Core_GrpcEnvironment_Logger.htm" />
   <HelpKINode Title="Low enumeration member" Url="html/T_Grpc_Core_CompressionLevel.htm" />
-  <HelpKINode Title="Marshaller(Of T) structure">
-    <HelpKINode Title="Marshaller(T) Structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
-    <HelpKINode Title="about Marshaller(Of T) structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+  <HelpKINode Title="Marshaller(Of T) class">
+    <HelpKINode Title="Marshaller(T) Class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+    <HelpKINode Title="about Marshaller(Of T) class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
     <HelpKINode Title="constructor" Url="html/M_Grpc_Core_Marshaller_1__ctor.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_Marshaller_1.htm" />
     <HelpKINode Title="properties" Url="html/Properties_T_Grpc_Core_Marshaller_1.htm" />
@@ -631,9 +631,9 @@
   <HelpKINode Title="Marshaller(Of T).Deserializer property" Url="html/P_Grpc_Core_Marshaller_1_Deserializer.htm" />
   <HelpKINode Title="Marshaller(Of T).Marshaller constructor" Url="html/M_Grpc_Core_Marshaller_1__ctor.htm" />
   <HelpKINode Title="Marshaller(Of T).Serializer property" Url="html/P_Grpc_Core_Marshaller_1_Serializer.htm" />
-  <HelpKINode Title="Marshaller&lt;T&gt; structure">
-    <HelpKINode Title="Marshaller(T) Structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
-    <HelpKINode Title="about Marshaller&lt;T&gt; structure" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+  <HelpKINode Title="Marshaller&lt;T&gt; class">
+    <HelpKINode Title="Marshaller(T) Class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
+    <HelpKINode Title="about Marshaller&lt;T&gt; class" Url="html/T_Grpc_Core_Marshaller_1.htm" />
     <HelpKINode Title="constructor" Url="html/M_Grpc_Core_Marshaller_1__ctor.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_Grpc_Core_Marshaller_1.htm" />
     <HelpKINode Title="properties" Url="html/Properties_T_Grpc_Core_Marshaller_1.htm" />

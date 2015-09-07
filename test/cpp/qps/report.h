@@ -116,8 +116,8 @@ class PerfDbReporter : public Reporter {
         test_name_(test_name),
         sys_info_(sys_info),
         tag_(tag) {
-    perf_db_client_.init(grpc::CreateChannel(
-        server_address, grpc::InsecureCredentials(), ChannelArguments()));
+    perf_db_client_.init(
+        grpc::CreateChannel(server_address, grpc::InsecureCredentials()));
   }
   ~PerfDbReporter() GRPC_OVERRIDE { SendData(); };
 

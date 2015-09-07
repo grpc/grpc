@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -132,8 +132,11 @@ Data Fields</h2></td></tr>
 <tr class="memdesc:a12c9f137d984cf478ab590b35e42f3c4"><td class="mdescLeft">&#160;</td><td class="mdescRight">is this stream in the stream map? (boolean)  <a href="#a12c9f137d984cf478ab590b35e42f3c4">More...</a><br/></td></tr>
 <tr class="separator:a12c9f137d984cf478ab590b35e42f3c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a80827ad1a2e6f7ddce4f73c1b8964c2c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__stream__global.html#a80827ad1a2e6f7ddce4f73c1b8964c2c">writing_now</a></td></tr>
-<tr class="memdesc:a80827ad1a2e6f7ddce4f73c1b8964c2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">is this stream actively being written?  <a href="#a80827ad1a2e6f7ddce4f73c1b8964c2c">More...</a><br/></td></tr>
+<tr class="memdesc:a80827ad1a2e6f7ddce4f73c1b8964c2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">bitmask of GRPC_CHTTP2_WRITING_xxx above  <a href="#a80827ad1a2e6f7ddce4f73c1b8964c2c">More...</a><br/></td></tr>
 <tr class="separator:a80827ad1a2e6f7ddce4f73c1b8964c2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a10dddd2f174d5d79b33a20d0bcc97db6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__stream__global.html#a10dddd2f174d5d79b33a20d0bcc97db6">written_anything</a></td></tr>
+<tr class="memdesc:a10dddd2f174d5d79b33a20d0bcc97db6"><td class="mdescLeft">&#160;</td><td class="mdescRight">has anything been written to this stream?  <a href="#a10dddd2f174d5d79b33a20d0bcc97db6">More...</a><br/></td></tr>
+<tr class="separator:a10dddd2f174d5d79b33a20d0bcc97db6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9e33abb09685b8b27f46befe38c82665"><td class="memItemLeft" align="right" valign="top"><a class="el" href="transport_8h.html#a5988f9c4b3b23409cda5a38636d97f7b">grpc_stream_state</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__stream__global.html#a9e33abb09685b8b27f46befe38c82665">published_state</a></td></tr>
 <tr class="memdesc:a9e33abb09685b8b27f46befe38c82665"><td class="mdescLeft">&#160;</td><td class="mdescRight">stream state already published to the upper layer  <a href="#a9e33abb09685b8b27f46befe38c82665">More...</a><br/></td></tr>
 <tr class="separator:a9e33abb09685b8b27f46befe38c82665"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -435,7 +438,21 @@ Data Fields</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>is this stream actively being written? </p>
+<p>bitmask of GRPC_CHTTP2_WRITING_xxx above </p>
+
+</div>
+</div>
+<a class="anchor" id="a10dddd2f174d5d79b33a20d0bcc97db6"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a> grpc_chttp2_stream_global::written_anything</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>has anything been written to this stream? </p>
 
 </div>
 </div>
@@ -445,7 +462,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

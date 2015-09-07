@@ -33,7 +33,6 @@
 
 #include "test/core/util/reconnect_server.h"
 
-#include <arpa/inet.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -42,6 +41,7 @@
 #include <grpc/support/time.h>
 #include <string.h>
 #include "src/core/iomgr/endpoint.h"
+#include "src/core/iomgr/sockaddr.h"
 #include "src/core/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
 
@@ -116,7 +116,7 @@ void reconnect_server_start(reconnect_server *server, int port) {
 
   addr.sin_family = AF_INET;
   addr.sin_port = htons(port);
-  inet_pton(AF_INET, "0.0.0.0", &addr.sin_addr);
+  memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
 
   server->tcp_server = grpc_tcp_server_create();
   port_added =

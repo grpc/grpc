@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include <algorithm>
+#include <iostream>
 
 namespace grpc {
 

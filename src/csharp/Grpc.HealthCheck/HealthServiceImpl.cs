@@ -105,8 +105,8 @@ namespace Grpc.HealthCheck
         {
             lock (myLock)
             {
-                var host = request.HasHost ? request.Host : "";
-                var service = request.HasService ? request.Service : "";
+                var host = request.Host;
+                var service = request.Service;
 
                 HealthCheckResponse.Types.ServingStatus status;
                 if (!statusMap.TryGetValue(CreateKey(host, service), out status))
@@ -114,7 +114,7 @@ namespace Grpc.HealthCheck
                     // TODO(jtattermusch): returning specific status from server handler is not supported yet.
                     throw new RpcException(new Status(StatusCode.NotFound, ""));
                 }
-                return Task.FromResult(HealthCheckResponse.CreateBuilder().SetStatus(status).Build());
+                return Task.FromResult(new HealthCheckResponse { Status = status });
             }
         }
 

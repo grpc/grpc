@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.10.1.0
+PROJECT_NUMBER         = 0.11.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -764,7 +764,6 @@ INPUT                  = include/grpc++/channel.h \
 include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
 include/grpc++/create_channel.h \
-include/grpc++/credentials.h \
 include/grpc++/generic/async_generic_service.h \
 include/grpc++/generic/generic_stub.h \
 include/grpc++/impl/call.h \
@@ -781,13 +780,15 @@ include/grpc++/impl/sync_no_cxx11.h \
 include/grpc++/impl/thd.h \
 include/grpc++/impl/thd_cxx11.h \
 include/grpc++/impl/thd_no_cxx11.h \
+include/grpc++/security/auth_context.h \
+include/grpc++/security/auth_metadata_processor.h \
+include/grpc++/security/credentials.h \
+include/grpc++/security/server_credentials.h \
 include/grpc++/server.h \
 include/grpc++/server_builder.h \
 include/grpc++/server_context.h \
-include/grpc++/server_credentials.h \
 include/grpc++/support/async_stream.h \
 include/grpc++/support/async_unary_call.h \
-include/grpc++/support/auth_context.h \
 include/grpc++/support/byte_buffer.h \
 include/grpc++/support/channel_arguments.h \
 include/grpc++/support/config.h \

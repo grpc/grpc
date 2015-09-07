@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -102,11 +102,15 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a3d3d40590716456f336738170ad3f3e8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__lb__policy.html">grpc_lb_policy</a> *(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsockaddr__resolver.html#a3d3d40590716456f336738170ad3f3e8">lb_policy_factory</a> )(<a class="el" href="structgrpc__subchannel.html">grpc_subchannel</a> **subchannels, size_t num_subchannels)</td></tr>
 <tr class="memdesc:a3d3d40590716456f336738170ad3f3e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">load balancing policy factory  <a href="#a3d3d40590716456f336738170ad3f3e8">More...</a><br/></td></tr>
 <tr class="separator:a3d3d40590716456f336738170ad3f3e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a35fd9ba04c766da4556c76e6f32a6356"><td class="memItemLeft" align="right" valign="top">struct sockaddr_storage&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsockaddr__resolver.html#a35fd9ba04c766da4556c76e6f32a6356">addr</a></td></tr>
-<tr class="memdesc:a35fd9ba04c766da4556c76e6f32a6356"><td class="mdescLeft">&#160;</td><td class="mdescRight">the address that we've 'resolved'  <a href="#a35fd9ba04c766da4556c76e6f32a6356">More...</a><br/></td></tr>
-<tr class="separator:a35fd9ba04c766da4556c76e6f32a6356"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acad714ee68d2e23a4157f49f7fc35e91"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsockaddr__resolver.html#acad714ee68d2e23a4157f49f7fc35e91">addr_len</a></td></tr>
-<tr class="separator:acad714ee68d2e23a4157f49f7fc35e91"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f3adc10d0f589872b270db685e5377d"><td class="memItemLeft" align="right" valign="top">struct sockaddr_storage *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsockaddr__resolver.html#a0f3adc10d0f589872b270db685e5377d">addrs</a></td></tr>
+<tr class="memdesc:a0f3adc10d0f589872b270db685e5377d"><td class="mdescLeft">&#160;</td><td class="mdescRight">the addresses that we've 'resolved'  <a href="#a0f3adc10d0f589872b270db685e5377d">More...</a><br/></td></tr>
+<tr class="separator:a0f3adc10d0f589872b270db685e5377d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a651ec066d80c1f818281288208a6c6b1"><td class="memItemLeft" align="right" valign="top">int *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsockaddr__resolver.html#a651ec066d80c1f818281288208a6c6b1">addrs_len</a></td></tr>
+<tr class="memdesc:a651ec066d80c1f818281288208a6c6b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">the corresponding length of the addresses  <a href="#a651ec066d80c1f818281288208a6c6b1">More...</a><br/></td></tr>
+<tr class="separator:a651ec066d80c1f818281288208a6c6b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13e25905e75c27eaef787b5a1903842f"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsockaddr__resolver.html#a13e25905e75c27eaef787b5a1903842f">num_addrs</a></td></tr>
+<tr class="memdesc:a13e25905e75c27eaef787b5a1903842f"><td class="mdescLeft">&#160;</td><td class="mdescRight">how many elements in <em>addrs</em>  <a href="#a13e25905e75c27eaef787b5a1903842f">More...</a><br/></td></tr>
+<tr class="separator:a13e25905e75c27eaef787b5a1903842f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ac37ca23a45425c9af702236f53c81d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__mu.html">gpr_mu</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structsockaddr__resolver.html#a9ac37ca23a45425c9af702236f53c81d">mu</a></td></tr>
 <tr class="memdesc:a9ac37ca23a45425c9af702236f53c81d"><td class="mdescLeft">&#160;</td><td class="mdescRight">mutex guarding the rest of the state  <a href="#a9ac37ca23a45425c9af702236f53c81d">More...</a><br/></td></tr>
 <tr class="separator:a9ac37ca23a45425c9af702236f53c81d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -121,29 +125,31 @@ Data Fields</h2></td></tr>
 <tr class="separator:ad9d11ab81955963bff8db90903241efa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
-<a class="anchor" id="a35fd9ba04c766da4556c76e6f32a6356"></a>
+<a class="anchor" id="a0f3adc10d0f589872b270db685e5377d"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">struct sockaddr_storage sockaddr_resolver::addr</td>
+          <td class="memname">struct sockaddr_storage* sockaddr_resolver::addrs</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>the address that we've 'resolved' </p>
+<p>the addresses that we've 'resolved' </p>
 
 </div>
 </div>
-<a class="anchor" id="acad714ee68d2e23a4157f49f7fc35e91"></a>
+<a class="anchor" id="a651ec066d80c1f818281288208a6c6b1"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int sockaddr_resolver::addr_len</td>
+          <td class="memname">int* sockaddr_resolver::addrs_len</td>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>the corresponding length of the addresses </p>
 
 </div>
 </div>
@@ -200,6 +206,20 @@ Data Fields</h2></td></tr>
 </div><div class="memdoc">
 
 <p>pending next completion, or NULL </p>
+
+</div>
+</div>
+<a class="anchor" id="a13e25905e75c27eaef787b5a1903842f"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">size_t sockaddr_resolver::num_addrs</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>how many elements in <em>addrs</em> </p>
 
 </div>
 </div>
@@ -265,7 +285,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['host',['host',['../structgrpc__call__details.html#a869b5db96e2e0fbd573381e77b859631',1,'grpc_call_details']]],
-  ['host_5fcapacity',['host_capacity',['../structgrpc__call__details.html#aeab0d9e754bbb1aac1a21ad4ef63d8b1',1,'grpc_call_details']]]
+  ['get_5frpc_5fmethod_5fname',['get_rpc_method_name',['../structcensus__rpc__name__info.html#a28515ce96da75622b396a50d73b5194c',1,'census_rpc_name_info']]],
+  ['get_5frpc_5fservice_5fname',['get_rpc_service_name',['../structcensus__rpc__name__info.html#a118286ec604a75b5427ba5084892f77d',1,'census_rpc_name_info']]],
+  ['grpc_5fmax_5fauth_5ftoken_5flifetime',['grpc_max_auth_token_lifetime',['../grpc__security_8h.html#a6112c5b60b1c0197531f80fdc56f7772',1,'grpc_security.h']]]
 ];

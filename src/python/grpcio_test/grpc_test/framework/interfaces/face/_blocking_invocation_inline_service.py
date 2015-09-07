@@ -73,6 +73,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
     Overriding implementations must call this implementation.
     """
+    self._invoker = None
     self.implementation.destantiate(self._memo)
 
   def testSuccessfulUnaryRequestUnaryResponse(self):
@@ -81,8 +82,8 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
       for test_messages in test_messages_sequence:
         request = test_messages.request()
 
-        response = self._invoker.blocking(group, method)(
-            request, test_constants.LONG_TIMEOUT)
+        response, call = self._invoker.blocking(group, method)(
+            request, test_constants.LONG_TIMEOUT, with_call=True)
 
         test_messages.verify(request, response, self)
 
@@ -104,8 +105,8 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
       for test_messages in test_messages_sequence:
         requests = test_messages.requests()
 
-        response = self._invoker.blocking(group, method)(
-            iter(requests), test_constants.LONG_TIMEOUT)
+        response, call = self._invoker.blocking(group, method)(
+            iter(requests), test_constants.LONG_TIMEOUT, with_call=True)
 
         test_messages.verify(requests, response, self)
 

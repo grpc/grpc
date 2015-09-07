@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\cpp\client\channel_arguments_test.cc">
+      <Filter>test\cpp\client</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{74eee7ed-dbd7-190f-f073-edf641a325f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{16fb3cfd-129c-a846-b9a5-dbec55fd83a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\client">
+      <UniqueIdentifier>{49a87562-f2d0-2d95-9dfa-87ebf2aed951}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -50,6 +50,7 @@ typedef struct call_data {
      handling it. */
   grpc_iomgr_closure auth_on_recv;
   grpc_transport_stream_op transport_op;
+  grpc_metadata_array md;
   const grpc_metadata *consumed_md;
   size_t num_consumed_md;
   grpc_stream_op *md_op;
@@ -90,13 +91,17 @@ static grpc_mdelem *remove_consumed_md(void *user_data, grpc_mdelem *md) {
   call_data *calld = elem->call_data;
   size_t i;
   for (i = 0; i < calld->num_consumed_md; i++) {
+    const grpc_metadata *consumed_md = &calld->consumed_md[i];
     /* Maybe we could do a pointer comparison but we do not have any guarantee
        that the metadata processor used the same pointers for consumed_md in the
        callback. */
-    if (memcmp(GPR_SLICE_START_PTR(md->key->slice), calld->consumed_md[i].key,
+    if (GPR_SLICE_LENGTH(md->key->slice) != strlen(consumed_md->key) ||
+        GPR_SLICE_LENGTH(md->value->slice) != consumed_md->value_length) {
+      continue;
+    }
+    if (memcmp(GPR_SLICE_START_PTR(md->key->slice), consumed_md->key,
                GPR_SLICE_LENGTH(md->key->slice)) == 0 &&
-        memcmp(GPR_SLICE_START_PTR(md->value->slice),
-               calld->consumed_md[i].value,
+        memcmp(GPR_SLICE_START_PTR(md->value->slice), consumed_md->value,
                GPR_SLICE_LENGTH(md->value->slice)) == 0) {
       return NULL; /* Delete. */
     }
@@ -134,6 +139,7 @@ static void on_md_processing_done(
     grpc_transport_stream_op_add_close(&calld->transport_op, status, &message);
     grpc_call_next_op(elem, &calld->transport_op);
   }
+  grpc_metadata_array_destroy(&calld->md);
 }
 
 static void auth_on_recv(void *user_data, int success) {
@@ -145,17 +151,15 @@ static void auth_on_recv(void *user_data, int success) {
     size_t nops = calld->recv_ops->nops;
     grpc_stream_op *ops = calld->recv_ops->ops;
     for (i = 0; i < nops; i++) {
-      grpc_metadata_array md_array;
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA || calld->got_client_metadata) continue;
       calld->got_client_metadata = 1;
       if (chand->processor.process == NULL) continue;
       calld->md_op = op;
-      md_array = metadata_batch_to_md_array(&op->data.metadata);
+      calld->md = metadata_batch_to_md_array(&op->data.metadata);
       chand->processor.process(chand->processor.state, calld->auth_context,
-                               md_array.metadata, md_array.count,
+                               calld->md.metadata, calld->md.count,
                                on_md_processing_done, elem);
-      grpc_metadata_array_destroy(&md_array);
       return;
     }
   }

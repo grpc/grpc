@@ -154,7 +154,7 @@ def adapt_multi_method(multi_method, pool):
     outcome = operation_context.add_termination_callback(rendezvous.set_outcome)
     if outcome is None:
       def in_pool():
-        request_consumer = multi_method(
+        request_consumer = multi_method.service(
             group, method, rendezvous, _ServicerContext(rendezvous))
         for request in rendezvous:
           request_consumer.consume(request)
