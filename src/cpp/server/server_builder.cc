@@ -128,7 +128,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       *port->selected_port = r;
     }
   }
-  if (!server->Start(&cqs_[0], cqs_.size())) {
+  auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
+  if (!server->Start(cqs_data, cqs_.size())) {
     return nullptr;
   }
   return server;
