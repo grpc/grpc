@@ -1,11 +1,3 @@
-grpc (0.10.2-2) unstable; urgency=low
-
-  * Also ship the C# bindings:
-    - debian/control: add package definition
-    - debian/rules: add build and installation of C# bindings
-
- -- Andrew Pollock <apollock@debian.org>  Fri, 28 Aug 2015 12:36:46 +1000
-
 grpc (0.10.2-1) unstable; urgency=medium
 
   * New upstream release (closes: #795766)
