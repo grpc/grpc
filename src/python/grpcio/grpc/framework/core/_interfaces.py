@@ -111,8 +111,8 @@ class TransmissionManager(object):
 
   @abc.abstractmethod
   def kick_off(
-      self, group, method, timeout, initial_metadata, payload, completion,
-      allowance):
+      self, group, method, timeout, protocol_options, initial_metadata,
+      payload, completion, allowance):
     """Transmits the values associated with operation invocation."""
     raise NotImplementedError()
 
@@ -200,6 +200,31 @@ class ExpirationManager(object):
   @abc.abstractmethod
   def terminate(self):
     """Indicates to this manager that the operation has terminated."""
+    raise NotImplementedError()
+
+
+class ProtocolManager(object):
+  """A manager of protocol-specific values passing through an operation."""
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def set_protocol_receiver(self, protocol_receiver):
+    """Registers the customer object that will receive protocol objects.
+
+    Args:
+      protocol_receiver: A base.ProtocolReceiver to which protocol objects for
+        the operation should be passed.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def accept_protocol_context(self, protocol_context):
+    """Accepts the protocol context object for the operation.
+
+    Args:
+      protocol_context: An object designated for use as the protocol context
+        of the operation, with further semantics implementation-determined.
+    """
     raise NotImplementedError()
 
 

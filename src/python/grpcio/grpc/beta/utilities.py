@@ -32,7 +32,9 @@
 import threading
 import time
 
-from grpc.beta import beta
+# implementations is referenced from specification in this module.
+from grpc.beta import implementations  # pylint: disable=unused-import
+from grpc.beta import interfaces
 from grpc.framework.foundation import callable_util
 from grpc.framework.foundation import future
 
@@ -70,7 +72,8 @@ class _ChannelReadyFuture(future.Future):
 
   def _update(self, connectivity):
     with self._condition:
-      if not self._cancelled and connectivity is beta.ChannelConnectivity.READY:
+      if (not self._cancelled and
+          connectivity is interfaces.ChannelConnectivity.READY):
         self._matured = True
         self._channel.unsubscribe(self._update)
         self._condition.notify_all()
@@ -141,19 +144,19 @@ class _ChannelReadyFuture(future.Future):
 
 
 def channel_ready_future(channel):
-  """Creates a future.Future that matures when a beta.Channel is ready.
+  """Creates a future.Future tracking when an implementations.Channel is ready.
 
-  Cancelling the returned future.Future does not tell the given beta.Channel to
-  abandon attempts it may have been making to connect; cancelling merely
-  deactivates the return future.Future's subscription to the given
-  beta.Channel's connectivity.
+  Cancelling the returned future.Future does not tell the given
+  implementations.Channel to abandon attempts it may have been making to
+  connect; cancelling merely deactivates the return future.Future's
+  subscription to the given implementations.Channel's connectivity.
 
   Args:
-    channel: A beta.Channel.
+    channel: An implementations.Channel.
 
   Returns:
     A future.Future that matures when the given Channel has connectivity
-      beta.ChannelConnectivity.READY.
+      interfaces.ChannelConnectivity.READY.
   """
   ready_future = _ChannelReadyFuture(channel)
   ready_future.start()

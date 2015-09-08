@@ -59,6 +59,7 @@ from grpc._adapter import _types
 
 _IGNORE_ME_TAG = object()
 Code = _types.StatusCode
+WriteFlags = _types.OpWriteFlags
 
 
 class Status(collections.namedtuple('Status', ['code', 'details'])):
@@ -125,9 +126,9 @@ class Call(object):
       ], _TagAdapter(finish_tag, Event.Kind.FINISH))
     return err0 if err0 != _types.CallError.OK else err1 if err1 != _types.CallError.OK else err2 if err2 != _types.CallError.OK else _types.CallError.OK
 
-  def write(self, message, tag):
+  def write(self, message, tag, flags):
     return self._internal.start_batch([
-          _types.OpArgs.send_message(message, 0)
+          _types.OpArgs.send_message(message, flags)
       ], _TagAdapter(tag, Event.Kind.WRITE_ACCEPTED))
 
   def complete(self, tag):
@@ -163,8 +164,11 @@ class Call(object):
   def cancel(self):
     return self._internal.cancel()
 
+  def peer(self):
+    return self._internal.peer()
+
   def set_credentials(self, creds):
-    return self._internal.set_credentials(creds)
+    return self._internal.set_credentials(creds._internal)
 
 
 class Channel(object):
