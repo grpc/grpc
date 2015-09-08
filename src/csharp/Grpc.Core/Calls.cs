@@ -100,6 +100,7 @@ namespace Grpc.Core
         /// Invokes a client streaming call asynchronously.
         /// In client streaming scenario, client sends a stream of requests and server responds with a single response.
         /// </summary>
+        /// <param name="call">The call defintion.</param>
         /// <returns>An awaitable call object providing access to the response.</returns>
         /// <typeparam name="TRequest">Type of request messages.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>

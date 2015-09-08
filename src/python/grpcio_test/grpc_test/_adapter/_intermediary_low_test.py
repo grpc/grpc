@@ -191,7 +191,7 @@ class EchoTest(unittest.TestCase):
                      metadata[server_leading_binary_metadata_key])
 
     for datum in test_data:
-      client_call.write(datum, write_tag)
+      client_call.write(datum, write_tag, _low.WriteFlags.WRITE_NO_COMPRESS)
       write_accepted = self.client_events.get()
       self.assertIsNotNone(write_accepted)
       self.assertIs(write_accepted.kind, _low.Event.Kind.WRITE_ACCEPTED)
@@ -206,7 +206,7 @@ class EchoTest(unittest.TestCase):
       self.assertIsNotNone(read_accepted.bytes)
       server_data.append(read_accepted.bytes)
 
-      server_call.write(read_accepted.bytes, write_tag)
+      server_call.write(read_accepted.bytes, write_tag, 0)
       write_accepted = self.server_events.get()
       self.assertIsNotNone(write_accepted)
       self.assertEqual(_low.Event.Kind.WRITE_ACCEPTED, write_accepted.kind)
@@ -370,14 +370,14 @@ class CancellationTest(unittest.TestCase):
     self.assertIsNotNone(metadata_accepted)
 
     for datum in test_data:
-      client_call.write(datum, write_tag)
+      client_call.write(datum, write_tag, 0)
       write_accepted = self.client_events.get()
 
       server_call.read(read_tag)
       read_accepted = self.server_events.get()
       server_data.append(read_accepted.bytes)
 
-      server_call.write(read_accepted.bytes, write_tag)
+      server_call.write(read_accepted.bytes, write_tag, 0)
       write_accepted = self.server_events.get()
       self.assertIsNotNone(write_accepted)
 

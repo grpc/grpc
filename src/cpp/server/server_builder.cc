@@ -53,55 +53,42 @@ std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
   return std::unique_ptr<ServerCompletionQueue>(cq);
 }
 
-ServerBuilder& ServerBuilder::RegisterService(SynchronousService* service) {
+void ServerBuilder::RegisterService(SynchronousService* service) {
   services_.emplace_back(new NamedService<RpcService>(service->service()));
-  return *this;
 }
 
-ServerBuilder& ServerBuilder::RegisterAsyncService(
-    AsynchronousService* service) {
+void ServerBuilder::RegisterAsyncService(AsynchronousService* service) {
   async_services_.emplace_back(new NamedService<AsynchronousService>(service));
-  return *this;
 }
 
-ServerBuilder& ServerBuilder::RegisterService(const grpc::string& addr,
-                                              SynchronousService* service) {
+void ServerBuilder::RegisterService(const grpc::string& addr,
+                                    SynchronousService* service) {
   services_.emplace_back(
       new NamedService<RpcService>(addr, service->service()));
-  return *this;
 }
 
-ServerBuilder& ServerBuilder::RegisterAsyncService(
-    const grpc::string& addr, AsynchronousService* service) {
+void ServerBuilder::RegisterAsyncService(const grpc::string& addr,
+                                         AsynchronousService* service) {
   async_services_.emplace_back(
       new NamedService<AsynchronousService>(addr, service));
-  return *this;
 }
 
-ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
-    AsyncGenericService* service) {
+void ServerBuilder::RegisterAsyncGenericService(AsyncGenericService* service) {
   if (generic_service_) {
     gpr_log(GPR_ERROR,
             "Adding multiple AsyncGenericService is unsupported for now. "
             "Dropping the service %p",
             service);
-  } else {
-    generic_service_ = service;
+    return;
   }
-  return *this;
+  generic_service_ = service;
 }
 
-ServerBuilder& ServerBuilder::SetMaxMessageSize(int max_message_size) {
-  max_message_size_ = max_message_size;
-  return *this;
-}
-
-ServerBuilder& ServerBuilder::AddListeningPort(const grpc::string& addr,
+void ServerBuilder::AddListeningPort(const grpc::string& addr,
                                      std::shared_ptr<ServerCredentials> creds,
                                      int* selected_port) {
   Port port = {addr, creds, selected_port};
   ports_.push_back(port);
-  return *this;
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
@@ -144,7 +131,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       *port->selected_port = r;
     }
   }
-  if (!server->Start(&cqs_[0], cqs_.size())) {
+  auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
+  if (!server->Start(cqs_data, cqs_.size())) {
     return nullptr;
   }
   return server;

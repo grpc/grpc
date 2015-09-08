@@ -70,7 +70,13 @@ def _oauth_access_token(args):
 
 def _stub(args):
   if args.oauth_scope:
-    metadata_transformer = lambda x: [('Authorization', 'Bearer %s' % _oauth_access_token(args))]
+    if args.test_case == 'oauth2_auth_token':
+      access_token = _oauth_access_token(args)
+      metadata_transformer = lambda x: [
+          ('Authorization', 'Bearer %s' % access_token)]
+    else:
+      metadata_transformer = lambda x: [
+          ('Authorization', 'Bearer %s' % _oauth_access_token(args))]
   else:
     metadata_transformer = lambda x: []
   if args.use_tls:

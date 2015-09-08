@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -117,6 +117,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 &#160;
 
 <h3><a class="anchor" id="index_a"></a>- a -</h3><ul>
+<li>accept_encoding_storage
+: <a class="el" href="structcall__data.html#a3fff0f0041810162f27d0be82470fcda">call_data</a>
+</li>
 <li>accept_stream
 : <a class="el" href="structgrpc__chttp2__transport.html#a563b98e58df202ea2654dcada575ff2a">grpc_chttp2_transport</a>
 </li>
@@ -128,7 +131,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>access_token_md
 : <a class="el" href="structgrpc__access__token__credentials.html#a194d95853f9a3b3c8a4d9e421628ab09">grpc_access_token_credentials</a>
-, <a class="el" href="structgrpc__fake__oauth2__credentials.html#a497212470e93de0f855f946c4e38b693">grpc_fake_oauth2_credentials</a>
 , <a class="el" href="structgrpc__oauth2__token__fetcher__credentials.html#abf3f319f98882bf7ae8fc81bd95076be">grpc_oauth2_token_fetcher_credentials</a>
 </li>
 <li>active
@@ -154,19 +156,21 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="structgrpc__resolved__address.html#a664035b0fc073c4a49f5e7c1cc765c9d">grpc_resolved_address</a>
 , <a class="el" href="structgrpc__subchannel.html#a1133699340905f7c7f8c50fc97591647">grpc_subchannel</a>
 , <a class="el" href="structgrpc__subchannel__args.html#a70a5fadf5d3d346932fd6140c6bc7fcb">grpc_subchannel_args</a>
-, <a class="el" href="structsockaddr__resolver.html#a35fd9ba04c766da4556c76e6f32a6356">sockaddr_resolver</a>
 </li>
 <li>addr_len
 : <a class="el" href="structgrpc__connect__in__args.html#a258a95ae88f73e33680be007cf68521b">grpc_connect_in_args</a>
 , <a class="el" href="structgrpc__subchannel.html#ab74ce5a1e1067a508e74048ec68aea10">grpc_subchannel</a>
 , <a class="el" href="structgrpc__subchannel__args.html#a971dc93e9701406ff4b38e62a6b93026">grpc_subchannel_args</a>
-, <a class="el" href="structsockaddr__resolver.html#acad714ee68d2e23a4157f49f7fc35e91">sockaddr_resolver</a>
 </li>
 <li>addresses
 : <a class="el" href="structinternal__request.html#a0ab2a9ca4e299dc1f8fa41de2e3384b0">internal_request</a>
 </li>
 <li>addrs
 : <a class="el" href="structgrpc__resolved__addresses.html#afdf4d95430fcf478a164c665d71e913c">grpc_resolved_addresses</a>
+, <a class="el" href="structsockaddr__resolver.html#a0f3adc10d0f589872b270db685e5377d">sockaddr_resolver</a>
+</li>
+<li>addrs_len
+: <a class="el" href="structsockaddr__resolver.html#a651ec066d80c1f818281288208a6c6b1">sockaddr_resolver</a>
 </li>
 <li>after_prioritization
 : <a class="el" href="structgrpc__chttp2__hpack__parser.html#ace46342325728ee279253c5ee146d6d0">grpc_chttp2_hpack_parser</a>
@@ -221,8 +225,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>announce_window
 : <a class="el" href="structgrpc__chttp2__stream__writing.html#a261161be44a3f481f38c7d498da4aa17">grpc_chttp2_stream_writing</a>
 </li>
+<li>api_request_bytes
+: <a class="el" href="structcensus__rpc__stats.html#a60ab9dbda01dcf9b52b06af5d24dc911">census_rpc_stats</a>
+</li>
+<li>api_response_bytes
+: <a class="el" href="structcensus__rpc__stats.html#af15bc42eaddba1e0811f3c3c9e8b5597">census_rpc_stats</a>
+</li>
+<li>app_error_cnt
+: <a class="el" href="structcensus__rpc__stats.html#a49deb06154ece850b56ed0aa6b932d8b">census_rpc_stats</a>
+</li>
 <li>arg
 : <a class="el" href="structlistener.html#a979a29a26af9ef7a83a22f0cdd7fe1a4">listener</a>
+, <a class="el" href="structon__done__closure.html#a4c2285e1a2b3e57cc55ca52b37a61683">on_done_closure</a>
 </li>
 <li>args
 : <a class="el" href="structconnector.html#ad3d70fc61b888fcb246a4a307b16c4ec">connector</a>
@@ -233,6 +247,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>argv0
 : <a class="el" href="structgpr__cmdline.html#ad262ed090b9dca4ea6d4bd7be222a40e">gpr_cmdline</a>
+</li>
+<li>array
+: <a class="el" href="structgrpc__auth__property__array.html#a1bded08924c3d180d54f0496e705cda6">grpc_auth_property_array</a>
 </li>
 <li>async_setup_task
 : <a class="el" href="structcall__data.html#ab21ef8aafd3c095825805e29e69670ce">call_data</a>
@@ -247,9 +264,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="structverifier__cb__ctx.html#afdbd6e54ed44e9938991b0ed1915ed2d">verifier_cb_ctx</a>
 </li>
 <li>auth_context
-: <a class="el" href="structgrpc__client__security__context.html#add1cf1d4ba571e2a7de7bbe9bcdeda7c">grpc_client_security_context</a>
+: <a class="el" href="structcall__data.html#a4a8c8939c2035ae477b96a53943df07c">call_data</a>
+, <a class="el" href="structgrpc__client__security__context.html#add1cf1d4ba571e2a7de7bbe9bcdeda7c">grpc_client_security_context</a>
 , <a class="el" href="structgrpc__security__connector.html#a076a1d251960f6c9c3b173d1d8eb9a17">grpc_security_connector</a>
 , <a class="el" href="structgrpc__server__security__context.html#a75d2dbb8f1f384376186fabb4df937e1">grpc_server_security_context</a>
+</li>
+<li>auth_on_recv
+: <a class="el" href="structcall__data.html#a678c39056cc0b7ee525e1feac308be0c">call_data</a>
 </li>
 <li>authority
 : <a class="el" href="structcall__data.html#a216c8a3e91a659b6ad5f3de09bbf8ff0">call_data</a>
@@ -267,7 +288,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

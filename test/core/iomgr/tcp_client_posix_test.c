@@ -39,10 +39,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/socket_utils_posix.h"
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/socket_utils_posix.h"
 #include "test/core/util/test_config.h"
 
 static grpc_pollset_set g_pollset_set;
@@ -198,16 +200,21 @@ void test_times_out(void) {
 
   /* Make sure the event doesn't trigger early */
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  while (gpr_time_cmp(gpr_time_add(connect_deadline,
-                                   gpr_time_from_seconds(2, GPR_TIMESPAN)),
-                      gpr_now(connect_deadline.clock_type)) > 0) {
-    int is_after_deadline =
-        gpr_time_cmp(connect_deadline, gpr_now(GPR_CLOCK_MONOTONIC)) <= 0;
+  for (;;) {
     grpc_pollset_worker worker;
+    gpr_timespec now = gpr_now(connect_deadline.clock_type);
+    gpr_timespec continue_verifying_time = gpr_time_from_seconds(2, GPR_TIMESPAN);
+    gpr_timespec grace_time = gpr_time_from_seconds(1, GPR_TIMESPAN);
+    gpr_timespec finish_time = gpr_time_add(connect_deadline, continue_verifying_time);
+    gpr_timespec restart_verifying_time = gpr_time_add(connect_deadline, grace_time);
+    int is_after_deadline = gpr_time_cmp(now, connect_deadline) > 0;
+    if (gpr_time_cmp(now, finish_time) > 0) {
+      break;
+    }
+    gpr_log(GPR_DEBUG, "now=%d.%09d connect_deadline=%d.%09d", 
+        now.tv_sec, now.tv_nsec, connect_deadline.tv_sec, connect_deadline.tv_nsec);
     if (is_after_deadline &&
-        gpr_time_cmp(gpr_time_add(connect_deadline,
-                                  gpr_time_from_seconds(1, GPR_TIMESPAN)),
-                     gpr_now(GPR_CLOCK_MONOTONIC)) > 0) {
+        gpr_time_cmp(now, restart_verifying_time) <= 0) {
       /* allow some slack before insisting that things be done */
     } else {
       GPR_ASSERT(g_connections_complete ==
@@ -228,7 +235,7 @@ static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
+  grpc_init();
   grpc_pollset_set_init(&g_pollset_set);
   grpc_pollset_init(&g_pollset);
   grpc_pollset_set_add_pollset(&g_pollset_set, &g_pollset);
@@ -238,6 +245,6 @@ int main(int argc, char **argv) {
   test_times_out();
   grpc_pollset_set_destroy(&g_pollset_set);
   grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
-  grpc_iomgr_shutdown();
+  grpc_shutdown();
   return 0;
 }

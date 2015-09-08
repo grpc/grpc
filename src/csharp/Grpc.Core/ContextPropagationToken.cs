@@ -44,8 +44,8 @@ namespace Grpc.Core
     /// In situations when a backend is making calls to another backend,
     /// it makes sense to propagate properties like deadline and cancellation 
     /// token of the server call to the child call.
-    /// C core provides some other contexts (like tracing context) that
-    /// are not accessible to C# layer, but this token still allows propagating them.
+    /// The gRPC native layer provides some other contexts (like tracing context) that
+    /// are not accessible to explicitly C# layer, but this token still allows propagating them.
     /// </summary>
     public class ContextPropagationToken
     {
@@ -143,13 +143,13 @@ namespace Grpc.Core
             this.propagateCancellation = propagateCancellation;
         }
             
-        /// <value><c>true</c> if parent call's deadline should be propagated to the child call.</value>
+        /// <summary><c>true</c> if parent call's deadline should be propagated to the child call.</summary>
         public bool IsPropagateDeadline
         {
             get { return this.propagateDeadline; }
         }
 
-        /// <value><c>true</c> if parent call's cancellation token should be propagated to the child call.</value>
+        /// <summary><c>true</c> if parent call's cancellation token should be propagated to the child call.</summary>
         public bool IsPropagateCancellation
         {
             get { return this.propagateCancellation; }

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -99,6 +99,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <code>#include &lt;<a class="el" href="alloc_8h_source.html">grpc/support/alloc.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="log_8h_source.html">grpc/support/log.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="string__util_8h_source.html">grpc/support/string_util.h</a>&gt;</code><br/>
+<code>#include &quot;<a class="el" href="resolver__registry_8h_source.html">src/core/client_config/resolver_registry.h</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="iomgr_8h_source.html">src/core/iomgr/iomgr.h</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="call_8h_source.html">src/core/surface/call.h</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="init_8h_source.html">src/core/surface/init.h</a>&quot;</code><br/>
@@ -136,15 +137,15 @@ Functions</h2></td></tr>
 <tr class="memitem:a108ef86bc0e5ebcb05f744315e2a6499"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#a108ef86bc0e5ebcb05f744315e2a6499">grpc_channel_get_target</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel)</td></tr>
 <tr class="memdesc:a108ef86bc0e5ebcb05f744315e2a6499"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a newly allocated string representing the target a channel was created for.  <a href="#a108ef86bc0e5ebcb05f744315e2a6499">More...</a><br/></td></tr>
 <tr class="separator:a108ef86bc0e5ebcb05f744315e2a6499"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa6b80c5019007f758b1bf414e323db05"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#aa6b80c5019007f758b1bf414e323db05">grpc_channel_create_call</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel, <a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cq, const char *method, const char *host, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline)</td></tr>
-<tr class="memdesc:aa6b80c5019007f758b1bf414e323db05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a call given a <a class="el" href="structgrpc__channel.html">grpc_channel</a>, in order to call 'method'.  <a href="#aa6b80c5019007f758b1bf414e323db05">More...</a><br/></td></tr>
-<tr class="separator:aa6b80c5019007f758b1bf414e323db05"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af00855f27d8b7c6b232982446371c04d"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#af00855f27d8b7c6b232982446371c04d">grpc_channel_register_call</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel, const char *method, const char *host)</td></tr>
-<tr class="memdesc:af00855f27d8b7c6b232982446371c04d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pre-register a method/host pair on a channel.  <a href="#af00855f27d8b7c6b232982446371c04d">More...</a><br/></td></tr>
-<tr class="separator:af00855f27d8b7c6b232982446371c04d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a38aa45cdbc3d9a9529bcb6ee8b2c68aa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#a38aa45cdbc3d9a9529bcb6ee8b2c68aa">grpc_channel_create_registered_call</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel, <a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *completion_queue, void *registered_call_handle, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline)</td></tr>
-<tr class="memdesc:a38aa45cdbc3d9a9529bcb6ee8b2c68aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a call given a handle returned from grpc_channel_register_call.  <a href="#a38aa45cdbc3d9a9529bcb6ee8b2c68aa">More...</a><br/></td></tr>
-<tr class="separator:a38aa45cdbc3d9a9529bcb6ee8b2c68aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7def7c2ffbfbc8080146342512db27c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#aa7def7c2ffbfbc8080146342512db27c">grpc_channel_create_call</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel, <a class="el" href="structgrpc__call.html">grpc_call</a> *parent_call, <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> propagation_mask, <a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cq, const char *method, const char *host, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *reserved)</td></tr>
+<tr class="memdesc:aa7def7c2ffbfbc8080146342512db27c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a call given a <a class="el" href="structgrpc__channel.html">grpc_channel</a>, in order to call 'method'.  <a href="#aa7def7c2ffbfbc8080146342512db27c">More...</a><br/></td></tr>
+<tr class="separator:aa7def7c2ffbfbc8080146342512db27c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8bc360e945fb5f6bacf632c34adbc57f"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#a8bc360e945fb5f6bacf632c34adbc57f">grpc_channel_register_call</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel, const char *method, const char *host, void *reserved)</td></tr>
+<tr class="memdesc:a8bc360e945fb5f6bacf632c34adbc57f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pre-register a method/host pair on a channel.  <a href="#a8bc360e945fb5f6bacf632c34adbc57f">More...</a><br/></td></tr>
+<tr class="separator:a8bc360e945fb5f6bacf632c34adbc57f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a233585e49ad4a4c7681a6e37e942e2d8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#a233585e49ad4a4c7681a6e37e942e2d8">grpc_channel_create_registered_call</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel, <a class="el" href="structgrpc__call.html">grpc_call</a> *parent_call, <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> propagation_mask, <a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *completion_queue, void *registered_call_handle, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *reserved)</td></tr>
+<tr class="memdesc:a233585e49ad4a4c7681a6e37e942e2d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a call given a handle returned from grpc_channel_register_call.  <a href="#a233585e49ad4a4c7681a6e37e942e2d8">More...</a><br/></td></tr>
+<tr class="separator:a233585e49ad4a4c7681a6e37e942e2d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7e9137c2c6f7cc3c1cdc27fbc5f23b41"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#a7e9137c2c6f7cc3c1cdc27fbc5f23b41">grpc_channel_internal_ref</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *c)</td></tr>
 <tr class="separator:a7e9137c2c6f7cc3c1cdc27fbc5f23b41"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7fe6e3f3337487d8b584cb8d51bdfa6b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#a7fe6e3f3337487d8b584cb8d51bdfa6b">grpc_channel_internal_unref</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel)</td></tr>
@@ -162,6 +163,8 @@ Functions</h2></td></tr>
 <tr class="separator:a2192de2d31a54523311ce241f933e048"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aee69f0f30f9cdcdd3961b1d253fa29af"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#aee69f0f30f9cdcdd3961b1d253fa29af">grpc_channel_get_compression_algorithm_string</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel)</td></tr>
 <tr class="separator:aee69f0f30f9cdcdd3961b1d253fa29af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af2e096869bc751569080e29231604f91"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#af2e096869bc751569080e29231604f91">grpc_channel_get_encodings_accepted_by_peer_string</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel)</td></tr>
+<tr class="separator:af2e096869bc751569080e29231604f91"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49c14becac82008119b5e9fd9d554983"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdelem.html">grpc_mdelem</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="channel_8c.html#a49c14becac82008119b5e9fd9d554983">grpc_channel_get_reffed_status_elem</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel, int i)</td></tr>
 <tr class="memdesc:a49c14becac82008119b5e9fd9d554983"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a <a class="el" href="structgrpc__mdelem.html">grpc_mdelem</a> of grpc-status: X where X is the numeric value of status_code.  <a href="#a49c14becac82008119b5e9fd9d554983">More...</a><br/></td></tr>
 <tr class="separator:a49c14becac82008119b5e9fd9d554983"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -260,7 +263,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="aa6b80c5019007f758b1bf414e323db05"></a>
+<a class="anchor" id="aa7def7c2ffbfbc8080146342512db27c"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -269,6 +272,18 @@ Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__channel.html">grpc_channel</a> *&#160;</td>
           <td class="paramname"><em>channel</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>parent_call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>&#160;</td>
+          <td class="paramname"><em>propagation_mask</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -292,7 +307,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
-          <td class="paramname"><em>deadline</em>&#160;</td>
+          <td class="paramname"><em>deadline</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -303,7 +324,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Create a call given a <a class="el" href="structgrpc__channel.html">grpc_channel</a>, in order to call 'method'. </p>
-<p>All completions are sent to 'completion_queue'. 'method' and 'host' need only live through the invocation of this function. </p>
+<p>All completions are sent to 'completion_queue'. 'method' and 'host' need only live through the invocation of this function. If parent_call is non-NULL, it must be a server-side call. It will be used to propagate properties from the server call to this new client call. </p>
 
 </div>
 </div>
@@ -357,7 +378,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a38aa45cdbc3d9a9529bcb6ee8b2c68aa"></a>
+<a class="anchor" id="a233585e49ad4a4c7681a6e37e942e2d8"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -366,6 +387,18 @@ Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__channel.html">grpc_channel</a> *&#160;</td>
           <td class="paramname"><em>channel</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>parent_call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>&#160;</td>
+          <td class="paramname"><em>propagation_mask</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -383,7 +416,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
-          <td class="paramname"><em>deadline</em>&#160;</td>
+          <td class="paramname"><em>deadline</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -439,6 +478,22 @@ Functions</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a>* grpc_channel_get_compression_algorithm_string </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__channel.html">grpc_channel</a> *&#160;</td>
+          <td class="paramname"><em>channel</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="af2e096869bc751569080e29231604f91"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a>* grpc_channel_get_encodings_accepted_by_peer_string </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__channel.html">grpc_channel</a> *&#160;</td>
           <td class="paramname"><em>channel</em></td><td>)</td>
@@ -594,7 +649,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="af00855f27d8b7c6b232982446371c04d"></a>
+<a class="anchor" id="a8bc360e945fb5f6bacf632c34adbc57f"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -614,7 +669,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>host</em>&#160;</td>
+          <td class="paramname"><em>host</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -631,7 +692,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

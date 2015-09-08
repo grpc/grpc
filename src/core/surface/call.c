@@ -630,9 +630,6 @@ static void unlock(grpc_call *call) {
   call->cancel_alarm = 0;
 
   if (!call->receiving && need_more_data(call)) {
-    op.recv_ops = &call->recv_ops;
-    op.recv_state = &call->recv_state;
-    op.on_done_recv = &call->on_done_recv;
     if (grpc_bbq_empty(&call->incoming_queue) && call->reading_message) {
       op.max_recv_bytes = call->incoming_message_length -
                           call->incoming_message.length + MAX_RECV_PEEK_AHEAD;
@@ -644,9 +641,16 @@ static void unlock(grpc_call *call) {
         op.max_recv_bytes = MAX_RECV_PEEK_AHEAD - buffered_bytes;
       }
     }
-    call->receiving = 1;
-    GRPC_CALL_INTERNAL_REF(call, "receiving");
-    start_op = 1;
+    /* TODO(ctiller): 1024 is basically to cover a bug
+       I don't understand yet */
+    if (op.max_recv_bytes > 1024) {
+      op.recv_ops = &call->recv_ops;
+      op.recv_state = &call->recv_state;
+      op.on_done_recv = &call->on_done_recv;
+      call->receiving = 1;
+      GRPC_CALL_INTERNAL_REF(call, "receiving");
+      start_op = 1;
+    }
   }
 
   if (!call->sending) {
@@ -1046,10 +1050,11 @@ static int prepare_application_metadata(grpc_call *call, size_t count,
                                                (const gpr_uint8 *)md->value,
                                                md->value_length, 1);
     if (!grpc_mdstr_is_legal_header(l->md->key)) {
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata key");
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
+              grpc_mdstr_as_c_string(l->md->key));
       return 0;
     } else if (!grpc_mdstr_is_bin_suffixed(l->md->key) &&
-               !grpc_mdstr_is_legal_header(l->md->value)) {
+               !grpc_mdstr_is_legal_nonbin_header(l->md->value)) {
       gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
       return 0;
     }

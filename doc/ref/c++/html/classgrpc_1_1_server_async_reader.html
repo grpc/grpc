@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -103,6 +103,7 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5d05028563e789203225c0ba548710b6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader.html#a5d05028563e789203225c0ba548710b6">SendInitialMetadata</a> (void *tag) <a class="el" href="config_8h.html#a9a884d706be26697c9c892365a3402a9">GRPC_OVERRIDE</a></td></tr>
 <tr class="separator:a5d05028563e789203225c0ba548710b6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac60c1f8d5373644f952377096f1a5b2f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader.html#ac60c1f8d5373644f952377096f1a5b2f">Read</a> (R *msg, void *tag) <a class="el" href="config_8h.html#a9a884d706be26697c9c892365a3402a9">GRPC_OVERRIDE</a></td></tr>
+<tr class="memdesc:ac60c1f8d5373644f952377096f1a5b2f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read a message of type <em>R</em> into <em>msg</em>.  <a href="#ac60c1f8d5373644f952377096f1a5b2f">More...</a><br/></td></tr>
 <tr class="separator:ac60c1f8d5373644f952377096f1a5b2f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa77b67709c07ab60bc190bce5ee9a59"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_async_reader.html#aaa77b67709c07ab60bc190bce5ee9a59">Finish</a> (const W &amp;msg, const <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;status, void *tag)</td></tr>
 <tr class="separator:aaa77b67709c07ab60bc190bce5ee9a59"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -255,6 +256,16 @@ template&lt;class W , class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Read a message of type <em>R</em> into <em>msg</em>. </p>
+<p>Completion will be notified by <em>tag</em> on the associated completion queue.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">msg</td><td>Where to eventually store the read message. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>The tag identifying the operation. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 <p>Implements <a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11">grpc::AsyncReaderInterface&lt; R &gt;</a>.</p>
 
 </div>
@@ -289,12 +300,12 @@ template&lt;class W , class R &gt; </div>
 </div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>include/grpc++/<a class="el" href="server__context_8h_source.html">server_context.h</a></li>
-<li>include/grpc++/<a class="el" href="stream_8h_source.html">stream.h</a></li>
+<li>include/grpc++/support/<a class="el" href="async__stream_8h_source.html">async_stream.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

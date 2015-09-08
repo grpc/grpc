@@ -64,7 +64,7 @@ def _safe_for_log_ticket(ticket):
         ticket.allowance, ticket.initial_metadata,
         '<payload of length {}>'.format(payload_length),
         ticket.terminal_metadata, ticket.code, ticket.message,
-        ticket.termination)
+        ticket.termination, None)
 
 
 class RecordingLink(links.Link):

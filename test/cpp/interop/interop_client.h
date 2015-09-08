@@ -33,11 +33,11 @@
 
 #ifndef GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
 #define GRPC_TEST_CPP_INTEROP_INTEROP_CLIENT_H
+
 #include <memory>
 
 #include <grpc/grpc.h>
-#include <grpc++/channel_interface.h>
-#include <grpc++/status.h>
+#include <grpc++/channel.h>
 #include "test/proto/messages.grpc.pb.h"
 
 namespace grpc {
@@ -45,10 +45,10 @@ namespace testing {
 
 class InteropClient {
  public:
-  explicit InteropClient(std::shared_ptr<ChannelInterface> channel);
+  explicit InteropClient(std::shared_ptr<Channel> channel);
   ~InteropClient() {}
 
-  void Reset(std::shared_ptr<ChannelInterface> channel) { channel_ = channel; }
+  void Reset(std::shared_ptr<Channel> channel) { channel_ = channel; }
 
   void DoEmpty();
   void DoLargeUnary();
@@ -68,21 +68,17 @@ class InteropClient {
   void DoJwtTokenCreds(const grpc::string& username);
   void DoComputeEngineCreds(const grpc::string& default_service_account,
                             const grpc::string& oauth_scope);
-  // username is a string containing the user email
-  void DoServiceAccountCreds(const grpc::string& username,
-                             const grpc::string& oauth_scope);
-  // username is a string containing the user email
+  // username the GCE default service account email
   void DoOauth2AuthToken(const grpc::string& username,
                          const grpc::string& oauth_scope);
   // username is a string containing the user email
-  void DoPerRpcCreds(const grpc::string& username,
-                     const grpc::string& oauth_scope);
+  void DoPerRpcCreds(const grpc::string& json_key);
 
  private:
   void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
   void AssertOkOrPrintErrorStatus(const Status& s);
 
-  std::shared_ptr<ChannelInterface> channel_;
+  std::shared_ptr<Channel> channel_;
 };
 
 }  // namespace testing

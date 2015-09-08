@@ -33,26 +33,24 @@
 
 #include "test/cpp/interop/interop_client.h"
 
+#include <unistd.h>
+
 #include <fstream>
 #include <memory>
-
-#include <unistd.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
-#include <grpc++/channel_interface.h>
+#include <grpc++/channel.h>
 #include <grpc++/client_context.h>
-#include <grpc++/credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
+#include <grpc++/security/credentials.h>
 
+#include "src/core/transport/stream_op.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/proto/test.grpc.pb.h"
 #include "test/proto/empty.grpc.pb.h"
 #include "test/proto/messages.grpc.pb.h"
-#include "src/core/transport/stream_op.h"
 
 namespace grpc {
 namespace testing {
@@ -84,7 +82,7 @@ CompressionType GetInteropCompressionTypeFromCompressionAlgorithm(
 }
 }  // namespace
 
-InteropClient::InteropClient(std::shared_ptr<ChannelInterface> channel)
+InteropClient::InteropClient(std::shared_ptr<Channel> channel)
     : channel_(channel) {}
 
 void InteropClient::AssertOkOrPrintErrorStatus(const Status& s) {
@@ -181,24 +179,6 @@ void InteropClient::DoComputeEngineCreds(
   gpr_log(GPR_INFO, "Large unary with compute engine creds done.");
 }
 
-void InteropClient::DoServiceAccountCreds(const grpc::string& username,
-                                          const grpc::string& oauth_scope) {
-  gpr_log(GPR_INFO,
-          "Sending a large unary rpc with service account credentials ...");
-  SimpleRequest request;
-  SimpleResponse response;
-  request.set_fill_username(true);
-  request.set_fill_oauth_scope(true);
-  request.set_response_type(PayloadType::COMPRESSABLE);
-  PerformLargeUnary(&request, &response);
-  GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(!response.oauth_scope().empty());
-  GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
-  const char* oauth_scope_str = response.oauth_scope().c_str();
-  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
-  gpr_log(GPR_INFO, "Large unary with service account creds done.");
-}
-
 void InteropClient::DoOauth2AuthToken(const grpc::string& username,
                                       const grpc::string& oauth_scope) {
   gpr_log(GPR_INFO,
@@ -216,36 +196,33 @@ void InteropClient::DoOauth2AuthToken(const grpc::string& username,
   AssertOkOrPrintErrorStatus(s);
   GPR_ASSERT(!response.username().empty());
   GPR_ASSERT(!response.oauth_scope().empty());
-  GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
+  GPR_ASSERT(username == response.username());
   const char* oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Unary with oauth2 access token credentials done.");
 }
 
-void InteropClient::DoPerRpcCreds(const grpc::string& username,
-                                  const grpc::string& oauth_scope) {
+void InteropClient::DoPerRpcCreds(const grpc::string& json_key) {
   gpr_log(GPR_INFO,
-          "Sending a unary rpc with per-rpc raw oauth2 access token ...");
+          "Sending a unary rpc with per-rpc JWT access token ...");
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
-  request.set_fill_oauth_scope(true);
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
 
   ClientContext context;
-  grpc::string access_token = GetOauth2AccessToken();
-  std::shared_ptr<Credentials> creds = AccessTokenCredentials(access_token);
+  std::chrono::seconds token_lifetime = std::chrono::hours(1);
+  std::shared_ptr<Credentials> creds =
+      ServiceAccountJWTAccessCredentials(json_key, token_lifetime.count());
+
   context.set_credentials(creds);
 
   Status s = stub->UnaryCall(&context, request, &response);
 
   AssertOkOrPrintErrorStatus(s);
   GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(!response.oauth_scope().empty());
-  GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
-  const char* oauth_scope_str = response.oauth_scope().c_str();
-  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
-  gpr_log(GPR_INFO, "Unary with per-rpc oauth2 access token done.");
+  GPR_ASSERT(json_key.find(response.username()) != grpc::string::npos);
+  gpr_log(GPR_INFO, "Unary with per-rpc JWT access token done.");
 }
 
 void InteropClient::DoJwtTokenCreds(const grpc::string& username) {
@@ -364,20 +341,37 @@ void InteropClient::DoResponseCompressedStreaming() {
       request.set_response_type(payload_types[i]);
       request.set_response_compression(compression_types[j]);
 
-      for (unsigned int i = 0; i < response_stream_sizes.size(); ++i) {
+      for (size_t k = 0; k < response_stream_sizes.size(); ++k) {
         ResponseParameters* response_parameter =
             request.add_response_parameters();
-        response_parameter->set_size(response_stream_sizes[i]);
+        response_parameter->set_size(response_stream_sizes[k]);
       }
       StreamingOutputCallResponse response;
 
       std::unique_ptr<ClientReader<StreamingOutputCallResponse>> stream(
           stub->StreamingOutputCall(&context, request));
 
-      unsigned int i = 0;
+      size_t k = 0;
       while (stream->Read(&response)) {
-        GPR_ASSERT(response.payload().body() ==
-                   grpc::string(response_stream_sizes[i], '\0'));
+        // Payload related checks.
+        if (request.response_type() != PayloadType::RANDOM) {
+          GPR_ASSERT(response.payload().type() == request.response_type());
+        }
+        switch (response.payload().type()) {
+          case PayloadType::COMPRESSABLE:
+            GPR_ASSERT(response.payload().body() ==
+                       grpc::string(response_stream_sizes[k], '\0'));
+            break;
+          case PayloadType::UNCOMPRESSABLE: {
+            std::ifstream rnd_file(kRandomFile);
+            GPR_ASSERT(rnd_file.good());
+            for (int n = 0; n < response_stream_sizes[k]; n++) {
+              GPR_ASSERT(response.payload().body()[n] == (char)rnd_file.get());
+            }
+          } break;
+          default:
+            GPR_ASSERT(false);
+        }
 
         // Compression related checks.
         GPR_ASSERT(request.response_compression() ==
@@ -393,10 +387,10 @@ void InteropClient::DoResponseCompressedStreaming() {
                      GRPC_WRITE_INTERNAL_COMPRESS);
         }
 
-        ++i;
+        ++k;
       }
 
-      GPR_ASSERT(response_stream_sizes.size() == i);
+      GPR_ASSERT(response_stream_sizes.size() == k);
       Status s = stream->Finish();
 
       AssertOkOrPrintErrorStatus(s);
