@@ -339,7 +339,7 @@ bool PrintAlphaServerFactory(const grpc::string& package_qualified_service_name,
     }
     out->Print("}\n");
     out->Print(
-        "return implementations.server("
+        "return early_adopter_implementations.server("
         "\"$PackageQualifiedServiceName$\","
         " method_service_descriptions, port, private_key=private_key,"
         " certificate_chain=certificate_chain)\n",
@@ -422,7 +422,7 @@ bool PrintAlphaStubFactory(const grpc::string& package_qualified_service_name,
     }
     out->Print("}\n");
     out->Print(
-        "return implementations.stub("
+        "return early_adopter_implementations.stub("
         "\"$PackageQualifiedServiceName$\","
         " method_invocation_descriptions, host, port,"
         " metadata_transformer=metadata_transformer, secure=secure,"
@@ -586,13 +586,13 @@ bool PrintBetaServerFactory(const grpc::string& package_qualified_service_name,
                  "Constructor", name_and_implementation_constructor->second);
     }
     out->Print("}\n");
-    out->Print("server_options = beta.server_options("
+    out->Print("server_options = beta_implementations.server_options("
                "request_deserializers=request_deserializers, "
                "response_serializers=response_serializers, "
                "thread_pool=pool, thread_pool_size=pool_size, "
                "default_timeout=default_timeout, "
                "maximum_timeout=maximum_timeout)\n");
-    out->Print("return beta.server(method_implementations, "
+    out->Print("return beta_implementations.server(method_implementations, "
                "options=server_options)\n");
   }
   return true;
@@ -685,13 +685,13 @@ bool PrintBetaStubFactory(const grpc::string& package_qualified_service_name,
                  "Cardinality", name_and_cardinality->second);
     }
     out->Print("}\n");
-    out->Print("stub_options = beta.stub_options("
+    out->Print("stub_options = beta_implementations.stub_options("
                "host=host, metadata_transformer=metadata_transformer, "
                "request_serializers=request_serializers, "
                "response_deserializers=response_deserializers, "
                "thread_pool=pool, thread_pool_size=pool_size)\n");
     out->Print(
-        "return beta.dynamic_stub(channel, \'$PackageQualifiedServiceName$\', "
+        "return beta_implementations.dynamic_stub(channel, \'$PackageQualifiedServiceName$\', "
         "cardinalities, options=stub_options)\n",
         "PackageQualifiedServiceName", package_qualified_service_name);
   }
@@ -701,9 +701,9 @@ bool PrintBetaStubFactory(const grpc::string& package_qualified_service_name,
 bool PrintPreamble(const FileDescriptor* file,
                    const GeneratorConfiguration& config, Printer* out) {
   out->Print("import abc\n");
-  out->Print("from $Package$ import beta\n",
+  out->Print("from $Package$ import implementations as beta_implementations\n",
              "Package", config.beta_package_root);
-  out->Print("from $Package$ import implementations\n",
+  out->Print("from $Package$ import implementations as early_adopter_implementations\n",
              "Package", config.early_adopter_package_root);
   out->Print("from grpc.framework.alpha import utilities as alpha_utilities\n");
   out->Print("from grpc.framework.common import cardinality\n");
