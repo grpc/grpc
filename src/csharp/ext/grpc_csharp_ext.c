@@ -68,7 +68,7 @@ grpc_byte_buffer *string_to_byte_buffer(const char *buffer, size_t len) {
 /*
  * Helper to maintain lifetime of batch op inputs and store batch op outputs.
  */
-typedef struct gprcsharp_batch_context {
+typedef struct grpcsharp_batch_context {
   grpc_metadata_array send_initial_metadata;
   grpc_byte_buffer *send_message;
   struct {
@@ -890,6 +890,45 @@ GPR_EXPORT gpr_int32 GPR_CALLTYPE
 grpcsharp_server_add_secure_http2_port(grpc_server *server, const char *addr,
                                        grpc_server_credentials *creds) {
   return grpc_server_add_secure_http2_port(server, addr, creds);
+}
+
+GPR_EXPORT grpc_credentials *GPR_CALLTYPE grpcsharp_composite_credentials_create(
+	grpc_credentials *creds1,
+	grpc_credentials *creds2) {
+	return grpc_composite_credentials_create(creds1, creds2, NULL);
+}
+
+/* Metadata credentials plugin */
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_metadata_credentials_notify_from_plugin(
+	void *callback_ptr, void *user_data, grpc_metadata_array *metadata,
+	grpc_status_code status, const char *error_details) {
+	grpc_credentials_plugin_metadata_cb cb = (grpc_credentials_plugin_metadata_cb)callback_ptr;
+	cb(user_data, metadata->metadata, metadata->count, status, error_details);
+}
+
+typedef void(GPR_CALLTYPE *grpcsharp_metadata_interceptor_func)(
+	void *state, const char *service_url, void *callback_ptr,
+	void *user_data, gpr_int32 is_destroy);
+
+static void grpcsharp_get_metadata_handler(void *state, const char *service_url,
+	grpc_credentials_plugin_metadata_cb cb, void *user_data) {
+	grpcsharp_metadata_interceptor_func interceptor = (grpcsharp_metadata_interceptor_func)state;
+	interceptor(state, service_url, (void*)cb, user_data, 0);
+}
+
+static void grpcsharp_metadata_credentials_destroy_handler(void *state) {
+	grpcsharp_metadata_interceptor_func interceptor = (grpcsharp_metadata_interceptor_func)state;
+	interceptor(state, NULL, NULL, NULL, 1);
+}
+
+GPR_EXPORT grpc_credentials *GPR_CALLTYPE grpcsharp_metadata_credentials_create_from_plugin(
+	grpcsharp_metadata_interceptor_func metadata_interceptor) {
+  grpc_metadata_credentials_plugin plugin;
+  plugin.get_metadata = grpcsharp_get_metadata_handler;
+  plugin.destroy = grpcsharp_metadata_credentials_destroy_handler;
+  plugin.state = metadata_interceptor;
+  return grpc_metadata_credentials_create_from_plugin(plugin, NULL);
 }
 
 /* Logging */
