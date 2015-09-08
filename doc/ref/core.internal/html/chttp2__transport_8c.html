@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -137,8 +137,8 @@ Functions</h2></td></tr>
 <tr class="separator:ae19b5968ebea2a077650652f1a3af46d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a25a39d1d95e7140c1ae8f765ffd92847"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__chttp2__stream__parsing.html">grpc_chttp2_stream_parsing</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="chttp2__transport_8c.html#a25a39d1d95e7140c1ae8f765ffd92847">grpc_chttp2_parsing_accept_stream</a> (<a class="el" href="structgrpc__chttp2__transport__parsing.html">grpc_chttp2_transport_parsing</a> *transport_parsing, <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> id)</td></tr>
 <tr class="separator:a25a39d1d95e7140c1ae8f765ffd92847"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a83baade3ee315270b6d34fc6fbecb30c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="chttp2__transport_8c.html#a83baade3ee315270b6d34fc6fbecb30c">grpc_chttp2_terminate_writing</a> (<a class="el" href="structgrpc__chttp2__transport__writing.html">grpc_chttp2_transport_writing</a> *transport_writing, int success)</td></tr>
-<tr class="separator:a83baade3ee315270b6d34fc6fbecb30c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a40f917379f4ddffb4c2b13028288bb3f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="chttp2__transport_8c.html#a40f917379f4ddffb4c2b13028288bb3f">grpc_chttp2_terminate_writing</a> (void *transport_writing_ptr, int success)</td></tr>
+<tr class="separator:a40f917379f4ddffb4c2b13028288bb3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb6a160980622d4e5d1b8e9e608c6771"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="chttp2__transport_8c.html#aeb6a160980622d4e5d1b8e9e608c6771">grpc_chttp2_add_incoming_goaway</a> (<a class="el" href="structgrpc__chttp2__transport__global.html">grpc_chttp2_transport_global</a> *transport_global, <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> goaway_error, <a class="el" href="structgpr__slice.html">gpr_slice</a> goaway_text)</td></tr>
 <tr class="separator:aeb6a160980622d4e5d1b8e9e608c6771"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f8b16bb6048f85107966a4be9ff4a4d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="chttp2__transport_8c.html#a6f8b16bb6048f85107966a4be9ff4a4d">grpc_chttp2_schedule_closure</a> (<a class="el" href="structgrpc__chttp2__transport__global.html">grpc_chttp2_transport_global</a> *transport_global, <a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> *closure, int success)</td></tr>
@@ -264,7 +264,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">((<a class="code" href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a> *)((<span class="keywordtype">char</span> *)(tg)-offsetof(<a class="code" href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a>, \</div>
 <div class="line">                                                   global)))</div>
-<div class="ttc" id="structgrpc__chttp2__transport_html"><div class="ttname"><a href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a></div><div class="ttdef"><b>Definition:</b> internal.h:283</div></div>
+<div class="ttc" id="structgrpc__chttp2__transport_html"><div class="ttname"><a href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a></div><div class="ttdef"><b>Definition:</b> internal.h:289</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -283,7 +283,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">((<a class="code" href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a> *)((<span class="keywordtype">char</span> *)(tw)-offsetof(<a class="code" href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a>, \</div>
 <div class="line">                                                   parsing)))</div>
-<div class="ttc" id="structgrpc__chttp2__transport_html"><div class="ttname"><a href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a></div><div class="ttdef"><b>Definition:</b> internal.h:283</div></div>
+<div class="ttc" id="structgrpc__chttp2__transport_html"><div class="ttname"><a href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a></div><div class="ttdef"><b>Definition:</b> internal.h:289</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -302,7 +302,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">((<a class="code" href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a> *)((<span class="keywordtype">char</span> *)(tw)-offsetof(<a class="code" href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a>, \</div>
 <div class="line">                                                   writing)))</div>
-<div class="ttc" id="structgrpc__chttp2__transport_html"><div class="ttname"><a href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a></div><div class="ttdef"><b>Definition:</b> internal.h:283</div></div>
+<div class="ttc" id="structgrpc__chttp2__transport_html"><div class="ttname"><a href="structgrpc__chttp2__transport.html">grpc_chttp2_transport</a></div><div class="ttdef"><b>Definition:</b> internal.h:289</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -519,15 +519,15 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a83baade3ee315270b6d34fc6fbecb30c"></a>
+<a class="anchor" id="a40f917379f4ddffb4c2b13028288bb3f"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void grpc_chttp2_terminate_writing </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structgrpc__chttp2__transport__writing.html">grpc_chttp2_transport_writing</a> *&#160;</td>
-          <td class="paramname"><em>transport_writing</em>, </td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>transport_writing_ptr</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -643,7 +643,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

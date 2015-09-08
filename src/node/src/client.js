@@ -637,7 +637,7 @@ exports.makeClientConstructor = function(methods, serviceName) {
     // Remove the optional DNS scheme, trailing port, and trailing backslash
     address = address.replace(/^(dns:\/{3})?([^:\/]+)(:\d+)?\/?$/, '$2');
     this.$server_address = address;
-    this.$auth_uri = 'https://' + this.server_address + '/' + serviceName;
+    this.$auth_uri = 'https://' + this.$server_address + '/' + serviceName;
     this.$updateMetadata = updateMetadata;
   }
 

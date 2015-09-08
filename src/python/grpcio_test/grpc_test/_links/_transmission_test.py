@@ -34,6 +34,7 @@ import unittest
 from grpc._adapter import _intermediary_low
 from grpc._links import invocation
 from grpc._links import service
+from grpc.beta import interfaces as beta_interfaces
 from grpc.framework.interfaces.links import links
 from grpc_test import test_common
 from grpc_test._links import _proto_scenarios
@@ -93,7 +94,8 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
     return None, None
 
   def create_service_completion(self):
-    return _intermediary_low.Code.OK, 'An exuberant test "details" message!'
+    return (
+        beta_interfaces.StatusCode.OK, b'An exuberant test "details" message!')
 
   def assertMetadataTransmitted(self, original_metadata, transmitted_metadata):
     self.assertTrue(
@@ -110,7 +112,7 @@ class RoundTripTest(unittest.TestCase):
     test_group = 'test package.Test Group'
     test_method = 'test method'
     identity_transformation = {(test_group, test_method): _IDENTITY}
-    test_code = _intermediary_low.Code.OK
+    test_code = beta_interfaces.StatusCode.OK
     test_message = 'a test message'
 
     service_link = service.service_link(
@@ -150,11 +152,13 @@ class RoundTripTest(unittest.TestCase):
     self.assertIs(
         invocation_mate.tickets()[-1].termination,
         links.Ticket.Termination.COMPLETION)
+    self.assertIs(invocation_mate.tickets()[-1].code, test_code)
+    self.assertEqual(invocation_mate.tickets()[-1].message, test_message)
 
   def _perform_scenario_test(self, scenario):
     test_operation_id = object()
     test_group, test_method = scenario.group_and_method()
-    test_code = _intermediary_low.Code.OK
+    test_code = beta_interfaces.StatusCode.OK
     test_message = 'a scenario test message'
 
     service_link = service.service_link(

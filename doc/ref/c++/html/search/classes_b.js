@@ -1,8 +1,7 @@
 var searchData=
 [
-  ['readerinterface',['ReaderInterface',['../classgrpc_1_1_reader_interface.html',1,'grpc']]],
-  ['rpcmethod',['RpcMethod',['../classgrpc_1_1_rpc_method.html',1,'grpc']]],
-  ['rpcmethodhandler',['RpcMethodHandler',['../classgrpc_1_1_rpc_method_handler.html',1,'grpc']]],
-  ['rpcservice',['RpcService',['../classgrpc_1_1_rpc_service.html',1,'grpc']]],
-  ['rpcservicemethod',['RpcServiceMethod',['../classgrpc_1_1_rpc_service_method.html',1,'grpc']]]
+  ['thread',['thread',['../classgrpc_1_1thread.html',1,'grpc']]],
+  ['timepoint',['TimePoint',['../classgrpc_1_1_time_point.html',1,'grpc']]],
+  ['timepoint_3c_20gpr_5ftimespec_20_3e',['TimePoint&lt; gpr_timespec &gt;',['../classgrpc_1_1_time_point_3_01gpr__timespec_01_4.html',1,'grpc']]],
+  ['timepoint_3c_20std_3a_3achrono_3a_3asystem_5fclock_3a_3atime_5fpoint_20_3e',['TimePoint&lt; std::chrono::system_clock::time_point &gt;',['../classgrpc_1_1_time_point_3_01std_1_1chrono_1_1system__clock_1_1time__point_01_4.html',1,'grpc']]]
 ];

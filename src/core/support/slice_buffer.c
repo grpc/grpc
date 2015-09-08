@@ -207,3 +207,25 @@ void gpr_slice_buffer_move_into(gpr_slice_buffer *src, gpr_slice_buffer *dst) {
   src->count = 0;
   src->length = 0;
 }
+
+void gpr_slice_buffer_trim_end(gpr_slice_buffer *sb, size_t n) {
+  GPR_ASSERT(n <= sb->length);
+  sb->length -= n;
+  for (;;) {
+    size_t idx = sb->count - 1;
+    gpr_slice slice = sb->slices[idx];
+    size_t slice_len = GPR_SLICE_LENGTH(slice);
+    if (slice_len > n) {
+      sb->slices[idx] = gpr_slice_sub_no_ref(slice, 0, slice_len - n);
+      return;
+    } else if (slice_len == n) {
+      gpr_slice_unref(slice);
+      sb->count = idx;
+      return;
+    } else {
+      gpr_slice_unref(slice);
+      n -= slice_len;
+      sb->count = idx;
+    }
+  }
+}

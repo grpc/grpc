@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -108,8 +108,10 @@ Public Types</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:ab06ace199b65e09f1d4c9fde93dafc94"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_method.html#ab06ace199b65e09f1d4c9fde93dafc94">RpcMethod</a> (const char *<a class="el" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a>, <a class="el" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> type, void *<a class="el" href="classgrpc_1_1_rpc_method.html#a59527e676d274583ec6961fb3f4356b3">channel_tag</a>)</td></tr>
-<tr class="separator:ab06ace199b65e09f1d4c9fde93dafc94"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a06b42037718cf822a4b30d14668613f0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_method.html#a06b42037718cf822a4b30d14668613f0">RpcMethod</a> (const char *<a class="el" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a>, <a class="el" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> type)</td></tr>
+<tr class="separator:a06b42037718cf822a4b30d14668613f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc1bb5475a21dd0a9d64bb0546a5452e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_method.html#adc1bb5475a21dd0a9d64bb0546a5452e">RpcMethod</a> (const char *<a class="el" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a>, <a class="el" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a> type, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt; &amp;channel)</td></tr>
+<tr class="separator:adc1bb5475a21dd0a9d64bb0546a5452e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6fb4872e0af4c79faffe2bb30b2cafe3"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_method.html#a6fb4872e0af4c79faffe2bb30b2cafe3">name</a> () const </td></tr>
 <tr class="separator:a6fb4872e0af4c79faffe2bb30b2cafe3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1de5a64a1e57b5938c4733f9152291b6"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_rpc_method.html#a1de5a64a1e57b5938c4733f9152291b6">method_type</a> () const </td></tr>
@@ -141,7 +143,41 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="ab06ace199b65e09f1d4c9fde93dafc94"></a>
+<a class="anchor" id="a06b42037718cf822a4b30d14668613f0"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::RpcMethod::RpcMethod </td>
+          <td>(</td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_rpc_method.html#ace95416ed07409e43059a0dfe9e23688">RpcType</a>&#160;</td>
+          <td class="paramname"><em>type</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="adc1bb5475a21dd0a9d64bb0546a5452e"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -163,8 +199,8 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">void *&#160;</td>
-          <td class="paramname"><em>channel_tag</em>&#160;</td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>channel</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -257,7 +293,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

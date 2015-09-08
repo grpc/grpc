@@ -32,8 +32,8 @@
 import collections
 import unittest
 
-from grpc._adapter import _intermediary_low
 from grpc.beta import beta
+from grpc.beta import interfaces
 from grpc_test import resources
 from grpc_test import test_common as grpc_test_common
 from grpc_test.beta import test_utilities
@@ -116,7 +116,7 @@ class _Implementation(test_interfaces.Implementation):
     return grpc_test_common.SERVICE_TERMINAL_METADATA
 
   def code(self):
-    return _intermediary_low.Code.OK
+    return interfaces.StatusCode.OK
 
   def details(self):
     return grpc_test_common.DETAILS

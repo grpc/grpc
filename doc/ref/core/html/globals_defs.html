@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -77,6 +77,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   </div>
   <div id="navrow4" class="tabs3">
     <ul class="tablist">
+      <li><a href="#index_c"><span>c</span></a></li>
       <li class="current"><a href="#index_g"><span>g</span></a></li>
     </ul>
   </div>
@@ -98,6 +99,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 &#160;
 
+<h3><a class="anchor" id="index_c"></a>- c -</h3><ul>
+<li>CENSUS_MAX_TAG_KEY_LENGTH
+: <a class="el" href="census_8h.html#aa89c96f0f32d85a1b28b68f0ef326dd4">census.h</a>
+</li>
+<li>CENSUS_MAX_TAG_VALUE_LENGTH
+: <a class="el" href="census_8h.html#a22d6971ca41fd944e13e5b4c2a42bf8c">census.h</a>
+</li>
+<li>CENSUS_TRACE_RECORD_END_OP
+: <a class="el" href="census_8h.html#a003fb5bda98c95408a21d3a47571a1e9">census.h</a>
+</li>
+<li>CENSUS_TRACE_RECORD_START_OP
+: <a class="el" href="census_8h.html#acb35403ed23ba2615457fabaa0b430e7">census.h</a>
+</li>
+</ul>
+
+
 <h3><a class="anchor" id="index_g"></a>- g -</h3><ul>
 <li>GPR_ARRAY_SIZE
 : <a class="el" href="useful_8h.html#a0e411d4f81a169c97c319d4e84df5747">useful.h</a>
@@ -115,9 +132,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="atm__gcc__sync_8h.html#a5a1f94112dcd03309d6716d43c8edf3f">atm_gcc_sync.h</a>
 </li>
 <li>gpr_atm_full_barrier
-: <a class="el" href="atm__win32_8h.html#a8e58c94aff5c7161bc3cbfde878dd03d">atm_win32.h</a>
+: <a class="el" href="atm__gcc__sync_8h.html#a95f86e51ae9a479026bd237cb792193e">atm_gcc_sync.h</a>
+, <a class="el" href="atm__win32_8h.html#a8e58c94aff5c7161bc3cbfde878dd03d">atm_win32.h</a>
 , <a class="el" href="atm__gcc__atomic_8h.html#a95f86e51ae9a479026bd237cb792193e">atm_gcc_atomic.h</a>
-, <a class="el" href="atm__gcc__sync_8h.html#a95f86e51ae9a479026bd237cb792193e">atm_gcc_sync.h</a>
 </li>
 <li>gpr_atm_full_fetch_add
 : <a class="el" href="atm__gcc__atomic_8h.html#abada8771b338845e4c6ef93c8392582c">atm_gcc_atomic.h</a>
@@ -253,8 +270,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="tls__pthread_8h.html#a187108e1078d2ce05388cb17bc59ce74">tls_pthread.h</a>
 </li>
 <li>gpr_tls_get
-: <a class="el" href="tls__msvc_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">tls_msvc.h</a>
-, <a class="el" href="tls__gcc_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">tls_gcc.h</a>
+: <a class="el" href="tls__gcc_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">tls_gcc.h</a>
+, <a class="el" href="tls__msvc_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">tls_msvc.h</a>
 , <a class="el" href="tls__pthread_8h.html#a9aa9e55eddbe7fed424526c23e1b55a3">tls_pthread.h</a>
 </li>
 <li>gpr_tls_init
@@ -296,20 +313,41 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>GRPC_COMPRESSION_ALGORITHM_ARG
 : <a class="el" href="compression_8h.html#a9340488e193921e62bb1f240f9016a9b">compression.h</a>
 </li>
+<li>GRPC_COMPRESSION_ALGORITHM_STATE_ARG
+: <a class="el" href="compression_8h.html#ad5c78531e2ddf025a9fd3e74f30330d3">compression.h</a>
+</li>
 <li>GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR
 : <a class="el" href="grpc__security_8h.html#a48565da473b7c82fa2453798f620fd59">grpc_security.h</a>
 </li>
 <li>GRPC_GOOGLE_CREDENTIALS_ENV_VAR
 : <a class="el" href="grpc__security_8h.html#a3874f70577fc9fe15fd2c4ce68a36ecd">grpc_security.h</a>
 </li>
+<li>GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
+: <a class="el" href="grpc_8h.html#a7fa47963513b9ce50ca4006b9db94c5e">grpc.h</a>
+</li>
 <li>GRPC_MUST_USE_RESULT
 : <a class="el" href="port__platform_8h.html#aef49047a3be38448a61332117b306686">port_platform.h</a>
+</li>
+<li>GRPC_PROPAGATE_CANCELLATION
+: <a class="el" href="grpc_8h.html#aa87041a20c89c31d27217b22ef79d066">grpc.h</a>
+</li>
+<li>GRPC_PROPAGATE_CENSUS_STATS_CONTEXT
+: <a class="el" href="grpc_8h.html#a1729fbf455d0a10d31246086187bc9b3">grpc.h</a>
+</li>
+<li>GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT
+: <a class="el" href="grpc_8h.html#ab78096727057fdd2f6794df351e26243">grpc.h</a>
+</li>
+<li>GRPC_PROPAGATE_DEADLINE
+: <a class="el" href="grpc_8h.html#a8d4d1f2973b2f5e4e3cdb515b7507868">grpc.h</a>
+</li>
+<li>GRPC_PROPAGATE_DEFAULTS
+: <a class="el" href="grpc_8h.html#aab5e717edb406d236313f70f304772cc">grpc.h</a>
 </li>
 <li>GRPC_SLICE_BUFFER_INLINE_ELEMENTS
 : <a class="el" href="slice__buffer_8h.html#a81db47a2be0a079aa797cd77f3864809">slice_buffer.h</a>
 </li>
 <li>GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
-: <a class="el" href="grpc__security_8h.html#a218bf55b665134a11baf07ada5980825">grpc_security.h</a>
+: <a class="el" href="grpc_8h.html#a218bf55b665134a11baf07ada5980825">grpc.h</a>
 </li>
 <li>GRPC_SSL_TRANSPORT_SECURITY_TYPE
 : <a class="el" href="grpc__security_8h.html#a35a35c597b7090b8ac7e2d854c9bcc7a">grpc_security.h</a>
@@ -336,7 +374,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
