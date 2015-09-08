@@ -120,11 +120,10 @@ int main(int argc, char** argv) {
     grpc::string json_key = GetServiceAccountJsonKey();
     client.DoJwtTokenCreds(json_key);
   } else if (FLAGS_test_case == "oauth2_auth_token") {
-    grpc::string json_key = GetServiceAccountJsonKey();
-    client.DoOauth2AuthToken(json_key, FLAGS_oauth_scope);
+    client.DoOauth2AuthToken(FLAGS_default_service_account, FLAGS_oauth_scope);
   } else if (FLAGS_test_case == "per_rpc_creds") {
     grpc::string json_key = GetServiceAccountJsonKey();
-    client.DoPerRpcCreds(json_key, FLAGS_oauth_scope);
+    client.DoPerRpcCreds(json_key);
   } else if (FLAGS_test_case == "status_code_and_message") {
     client.DoStatusWithMessage();
   } else if (FLAGS_test_case == "all") {
@@ -143,8 +142,9 @@ int main(int argc, char** argv) {
     if (FLAGS_enable_ssl) {
       grpc::string json_key = GetServiceAccountJsonKey();
       client.DoJwtTokenCreds(json_key);
-      client.DoOauth2AuthToken(json_key, FLAGS_oauth_scope);
-      client.DoPerRpcCreds(json_key, FLAGS_oauth_scope);
+      client.DoOauth2AuthToken(
+          FLAGS_default_service_account, FLAGS_oauth_scope);
+      client.DoPerRpcCreds(json_key);
     }
     // compute_engine_creds only runs in GCE.
   } else {
