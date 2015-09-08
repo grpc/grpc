@@ -19,6 +19,12 @@ After that, you can build the solution using one of these options:
 1. open `grpc.sln` with Visual Studio and hit "Build".
 2. build from commandline using `msbuild grpc.sln /p:Configuration=Debug`
 
+#Making a Project that uses GRPC
+Include zlib/OpenSSL libraries and GRPC headers/libraries in your project in the C/C++ option `Additional Include Directories` and Linker option `Additional Library Directories`.  Open grpc.sln and find "edit..." in the drop down for Additional Include Directories for example settings (under "inherited values" which is what the project gets from its .props file).
+
+Gotcha: GRPC is built with `/D "_USE_32BIT_TIME_T"`.  Building a dependent project without this option will cause some odd behavior.  This option has a conflict on VS 2013 and earlier with std::chrono, so if you need std::chrono a possible workaround is to build both library and dependent project with the option removed.
+
+
 #C++ Test Dependencies
  * open gtest.sln in `/third_party/googletest/msvc`
   * opening this in vs2013 will prompt an upgrade notice
@@ -38,7 +44,7 @@ After that, you can build the solution using one of these options:
   * run `cmake <path to gflags directory>`
   * this will build a `.sln` and fill up the `/third_party/gflags/include/gflags/` directory with headers
   * build all
- * install [NuGet](http://www.nuget.org)
+ * install [NuGet](http://www.nuget.org) and manually trigger an OpenSSL/zlib import
   * nuget should automatically bring in built versions of zlib and openssl when building grpc.sln (the versions in `/third_party/` are not used)
   * before running run_tests.py, open grpc.sln and initiate a manual build to trigger nuget
   * If it doesn't work use `tools->nuget...->manage...`.  The packages are put in `/vsprojects/packages/`
