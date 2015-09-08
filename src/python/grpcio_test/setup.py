@@ -71,7 +71,7 @@ _SETUP_REQUIRES = (
 
 _INSTALL_REQUIRES = (
     'oauth2client>=1.4.7',
-    'grpcio>=0.10.0a0',
+    'grpcio>=0.11.0',
 )
 
 _COMMAND_CLASS = {
@@ -80,7 +80,7 @@ _COMMAND_CLASS = {
 
 setuptools.setup(
     name='grpcio_test',
-    version='0.10.0a0',
+    version='0.11.0',
     packages=_PACKAGES,
     package_dir=_PACKAGE_DIRECTORIES,
     package_data=_PACKAGE_DATA,
