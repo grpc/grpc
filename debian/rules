@@ -16,7 +16,6 @@ export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
 override_dh_auto_build:
 	make shared_c prefix=/usr
-	make grpc_csharp_ext prefix=/usr
 
 override_dh_auto_test:
 ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
@@ -25,7 +24,6 @@ endif
 
 override_dh_auto_install:
 	make install_c prefix=$(CURDIR)/debian/tmp/usr
-	make install_grpc_csharp_ext prefix=$(CURDIR)/debian/tmp/usr
 
 %:
 	dh $@ --parallel
