@@ -86,13 +86,13 @@ class Server(interfaces.Server):
     return self._grpc_link.add_port(
         address, server_credentials._intermediary_low_credentials)  # pylint: disable=protected-access
 
-  def start(self):
+  def _start(self):
     self._grpc_link.join_link(self._end_link)
     self._end_link.join_link(self._grpc_link)
     self._grpc_link.start()
     self._end_link.start()
 
-  def stop(self, grace):
+  def _stop(self, grace):
     stop_event = threading.Event()
     if 0 < grace:
       disassembly_thread = threading.Thread(
@@ -104,6 +104,20 @@ class Server(interfaces.Server):
     else:
       _disassemble(self._grpc_link, self._end_link, self._pool, stop_event, 0)
       return stop_event
+
+  def start(self):
+    self._start()
+
+  def stop(self, grace):
+    return self._stop(grace)
+
+  def __enter__(self):
+    self._start()
+    return self
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    self._stop(0).wait()
+    return False
 
 
 def server(
