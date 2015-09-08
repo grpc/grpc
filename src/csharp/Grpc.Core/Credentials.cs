@@ -32,10 +32,17 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
+    // TODO: rename
+    public delegate Task AsyncAuthInterceptor(string authUri, Metadata metadata);
+
     /// <summary>
     /// Client-side credentials. Used for creation of a secure channel.
     /// </summary>
@@ -133,6 +140,51 @@ namespace Grpc.Core
         internal override CredentialsSafeHandle ToNativeCredentials()
         {
             return CredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair);
+        }
+    }
+
+    /// <summary>
+    /// Client-side credentials that delegate metadata based auth to an interceptor.
+    /// </summary>
+    public partial class MetadataCredentials : Credentials
+    {
+        readonly AsyncAuthInterceptor interceptor;
+
+        public MetadataCredentials(AsyncAuthInterceptor interceptor)
+        {
+            this.interceptor = interceptor;
+        }
+
+        internal override CredentialsSafeHandle ToNativeCredentials()
+        {
+            NativeMetadataCredentialsPlugin plugin = new NativeMetadataCredentialsPlugin(interceptor);
+            return plugin.Credentials;
+        }
+    }
+
+    public sealed class CompositeCredentials : Credentials
+    {
+        readonly List<Credentials> credentials;
+
+        public CompositeCredentials(params Credentials[] credentials)
+        {
+            Preconditions.CheckArgument(credentials.Length >= 2, "Composite credentials object can only be created from 2 or more credentials.");
+            this.credentials = new List<Credentials>(credentials);
+        }
+
+        public static CompositeCredentials Create(params Credentials[] credentials)
+        {
+            return new CompositeCredentials(credentials);
+        }
+
+        internal override CredentialsSafeHandle ToNativeCredentials()
+        {
+            var nativeComposite = credentials[0].ToNativeCredentials();
+            for (int i = 1; i < credentials.Count; i++)
+            {
+                nativeComposite = CredentialsSafeHandle.CreateComposite(nativeComposite, credentials[i].ToNativeCredentials());
+            }
+            return nativeComposite;
         }
     }
 }
