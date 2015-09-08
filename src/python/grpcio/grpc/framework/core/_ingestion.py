@@ -140,7 +140,7 @@ class _IngestionManager(_interfaces.IngestionManager):
 
   def __init__(
       self, lock, pool, subscription, subscription_creator, termination_manager,
-      transmission_manager, expiration_manager):
+      transmission_manager, expiration_manager, protocol_manager):
     """Constructor.
 
     Args:
@@ -157,12 +157,14 @@ class _IngestionManager(_interfaces.IngestionManager):
       transmission_manager: The _interfaces.TransmissionManager for the
         operation.
       expiration_manager: The _interfaces.ExpirationManager for the operation.
+      protocol_manager: The _interfaces.ProtocolManager for the operation.
     """
     self._lock = lock
     self._pool = pool
     self._termination_manager = termination_manager
     self._transmission_manager = transmission_manager
     self._expiration_manager = expiration_manager
+    self._protocol_manager = protocol_manager
 
     if subscription is None:
       self._subscription_creator = subscription_creator
@@ -296,6 +298,8 @@ class _IngestionManager(_interfaces.IngestionManager):
           self._abort_and_notify(
               base.Outcome.Kind.REMOTE_FAILURE, code, details)
     elif outcome.return_value.subscription.kind is base.Subscription.Kind.FULL:
+      self._protocol_manager.set_protocol_receiver(
+          outcome.return_value.subscription.protocol_receiver)
       self._operator_post_create(outcome.return_value.subscription)
     else:
       # TODO(nathaniel): Support other subscriptions.
@@ -378,7 +382,7 @@ class _IngestionManager(_interfaces.IngestionManager):
 
 def invocation_ingestion_manager(
     subscription, lock, pool, termination_manager, transmission_manager,
-    expiration_manager):
+    expiration_manager, protocol_manager):
   """Creates an IngestionManager appropriate for invocation-side use.
 
   Args:
@@ -390,18 +394,20 @@ def invocation_ingestion_manager(
     transmission_manager: The _interfaces.TransmissionManager for the
       operation.
     expiration_manager: The _interfaces.ExpirationManager for the operation.
+    protocol_manager: The _interfaces.ProtocolManager for the operation.
 
   Returns:
     An IngestionManager appropriate for invocation-side use.
   """
   return _IngestionManager(
       lock, pool, subscription, None, termination_manager, transmission_manager,
-      expiration_manager)
+      expiration_manager, protocol_manager)
 
 
 def service_ingestion_manager(
     servicer, operation_context, output_operator, lock, pool,
-    termination_manager, transmission_manager, expiration_manager):
+    termination_manager, transmission_manager, expiration_manager,
+    protocol_manager):
   """Creates an IngestionManager appropriate for service-side use.
 
   The returned IngestionManager will require its set_group_and_name method to be
@@ -420,6 +426,7 @@ def service_ingestion_manager(
     transmission_manager: The _interfaces.TransmissionManager for the
       operation.
     expiration_manager: The _interfaces.ExpirationManager for the operation.
+    protocol_manager: The _interfaces.ProtocolManager for the operation.
 
   Returns:
     An IngestionManager appropriate for service-side use.
@@ -428,4 +435,4 @@ def service_ingestion_manager(
       servicer, operation_context, output_operator)
   return _IngestionManager(
       lock, pool, None, subscription_creator, termination_manager,
-      transmission_manager, expiration_manager)
+      transmission_manager, expiration_manager, protocol_manager)
