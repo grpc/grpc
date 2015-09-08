@@ -29,6 +29,7 @@
 
 """Constants and interfaces of the Beta API of gRPC Python."""
 
+import abc
 import enum
 
 
@@ -52,3 +53,60 @@ class StatusCode(enum.Enum):
   UNAVAILABLE         = 14
   DATA_LOSS           = 15
   UNAUTHENTICATED     = 16
+
+
+class GRPCCallOptions(object):
+  """A value encapsulating gRPC-specific options passed on RPC invocation.
+
+  This class and its instances have no supported interface - it exists to
+  define the type of its instances and its instances exist to be passed to
+  other functions.
+  """
+
+  def __init__(self, disable_compression, subcall_of, credentials):
+    self.disable_compression = disable_compression
+    self.subcall_of = subcall_of
+    self.credentials = credentials
+
+
+def grpc_call_options(disable_compression=False, credentials=None):
+  """Creates a GRPCCallOptions value to be passed at RPC invocation.
+
+  All parameters are optional and should always be passed by keyword.
+
+  Args:
+    disable_compression: A boolean indicating whether or not compression should
+      be disabled for the request object of the RPC. Only valid for
+      request-unary RPCs.
+    credentials: A ClientCredentials object to use for the invoked RPC.
+  """
+  return GRPCCallOptions(disable_compression, None, credentials)
+
+
+class GRPCServicerContext(object):
+  """Exposes gRPC-specific options and behaviors to code servicing RPCs."""
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def peer(self):
+    """Identifies the peer that invoked the RPC being serviced.
+
+    Returns:
+      A string identifying the peer that invoked the RPC being serviced.
+    """
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def disable_next_response_compression(self):
+    """Disables compression of the next response passed by the application."""
+    raise NotImplementedError()
+
+
+class GRPCInvocationContext(object):
+  """Exposes gRPC-specific options and behaviors to code invoking RPCs."""
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def disable_next_request_compression(self):
+    """Disables compression of the next request passed by the application."""
+    raise NotImplementedError()
