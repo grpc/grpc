@@ -61,18 +61,6 @@
       - status/close recv (depending on client/server) */
 #define MAX_CONCURRENT_COMPLETIONS 6
 
-typedef enum { REQ_INITIAL = 0, REQ_READY, REQ_DONE } req_state;
-
-typedef enum {
-  SEND_NOTHING,
-  SEND_INITIAL_METADATA,
-  SEND_BUFFERED_INITIAL_METADATA,
-  SEND_MESSAGE,
-  SEND_BUFFERED_MESSAGE,
-  SEND_TRAILING_METADATA_AND_FINISH,
-  SEND_FINISH
-} send_action;
-
 typedef struct {
   grpc_ioreq_completion_func on_complete;
   void *user_data;
