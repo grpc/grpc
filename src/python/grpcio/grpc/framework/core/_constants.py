@@ -44,14 +44,15 @@ TICKET_SUBSCRIPTION_FOR_BASE_SUBSCRIPTION_KIND = {
 # ticket should be sent to the other side in the event of such an
 # outcome.
 ABORTION_OUTCOME_TO_TICKET_TERMINATION = {
-    base.Outcome.CANCELLED: links.Ticket.Termination.CANCELLATION,
-    base.Outcome.EXPIRED: links.Ticket.Termination.EXPIRATION,
-    base.Outcome.LOCAL_SHUTDOWN: links.Ticket.Termination.SHUTDOWN,
-    base.Outcome.REMOTE_SHUTDOWN: None,
-    base.Outcome.RECEPTION_FAILURE: links.Ticket.Termination.RECEPTION_FAILURE,
-    base.Outcome.TRANSMISSION_FAILURE: None,
-    base.Outcome.LOCAL_FAILURE: links.Ticket.Termination.LOCAL_FAILURE,
-    base.Outcome.REMOTE_FAILURE: links.Ticket.Termination.REMOTE_FAILURE,
+    base.Outcome.Kind.CANCELLED: links.Ticket.Termination.CANCELLATION,
+    base.Outcome.Kind.EXPIRED: links.Ticket.Termination.EXPIRATION,
+    base.Outcome.Kind.LOCAL_SHUTDOWN: links.Ticket.Termination.SHUTDOWN,
+    base.Outcome.Kind.REMOTE_SHUTDOWN: None,
+    base.Outcome.Kind.RECEPTION_FAILURE:
+        links.Ticket.Termination.RECEPTION_FAILURE,
+    base.Outcome.Kind.TRANSMISSION_FAILURE: None,
+    base.Outcome.Kind.LOCAL_FAILURE: links.Ticket.Termination.LOCAL_FAILURE,
+    base.Outcome.Kind.REMOTE_FAILURE: links.Ticket.Termination.REMOTE_FAILURE,
 }
 
 INTERNAL_ERROR_LOG_MESSAGE = ':-( RPC Framework (Core) internal error! )-:'

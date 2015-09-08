@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -94,16 +94,25 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="stream_8h_source.html">stream.h</a>&gt;</code></p>
+<p>An interface that yields a sequence of messages of type <em>R</em>.  
+ <a href="classgrpc_1_1_async_reader_interface.html#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="async__stream_8h_source.html">async_stream.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ac7845d2df90fb380008aadb7f5f2f379"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_reader_interface.html#ac7845d2df90fb380008aadb7f5f2f379">~AsyncReaderInterface</a> ()</td></tr>
 <tr class="separator:ac7845d2df90fb380008aadb7f5f2f379"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa644cf63c12ae8c9d5fda16a361f8a11"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11">Read</a> (R *msg, void *tag)=0</td></tr>
+<tr class="memdesc:aa644cf63c12ae8c9d5fda16a361f8a11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read a message of type <em>R</em> into <em>msg</em>.  <a href="#aa644cf63c12ae8c9d5fda16a361f8a11">More...</a><br/></td></tr>
 <tr class="separator:aa644cf63c12ae8c9d5fda16a361f8a11"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><h3>template&lt;class R&gt;<br/>
+class grpc::AsyncReaderInterface&lt; R &gt;</h3>
+
+<p>An interface that yields a sequence of messages of type <em>R</em>. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="ac7845d2df90fb380008aadb7f5f2f379"></a>
 <div class="memitem">
 <div class="memproto">
@@ -164,17 +173,27 @@ template&lt;class R &gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Read a message of type <em>R</em> into <em>msg</em>. </p>
+<p>Completion will be notified by <em>tag</em> on the associated completion queue.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">msg</td><td>Where to eventually store the read message. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tag</td><td>The tag identifying the operation. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 <p>Implemented in <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a7d8d9d36449700c19cd08ecc608cb96a">grpc::ServerAsyncReaderWriter&lt; R, W &gt;</a>, <a class="el" href="classgrpc_1_1_server_async_reader.html#ac60c1f8d5373644f952377096f1a5b2f">grpc::ServerAsyncReader&lt; W, R &gt;</a>, <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a8b6a32ede877fc2d5d4cfc5b95ac163f">grpc::ClientAsyncReaderWriter&lt; R, W &gt;</a>, and <a class="el" href="classgrpc_1_1_client_async_reader.html#aaf9f76ba76be0a0144bbdf44d740731d">grpc::ClientAsyncReader&lt; R &gt;</a>.</p>
 
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/<a class="el" href="stream_8h_source.html">stream.h</a></li>
+<li>include/grpc++/support/<a class="el" href="async__stream_8h_source.html">async_stream.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

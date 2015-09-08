@@ -43,6 +43,8 @@ PyMethodDef pygrpc_Call_methods[] = {
     {"start_batch", (PyCFunction)pygrpc_Call_start_batch, METH_KEYWORDS, ""},
     {"cancel", (PyCFunction)pygrpc_Call_cancel, METH_KEYWORDS, ""},
     {"peer", (PyCFunction)pygrpc_Call_peer, METH_NOARGS, ""},
+    {"set_credentials", (PyCFunction)pygrpc_Call_set_credentials, METH_KEYWORDS,
+     ""},
     {NULL}
 };
 const char pygrpc_Call_doc[] = "See grpc._adapter._types.Call.";
@@ -168,4 +170,17 @@ PyObject *pygrpc_Call_peer(Call *self) {
   PyObject *py_peer = PyString_FromString(peer);
   gpr_free(peer);
   return py_peer;
+}
+PyObject *pygrpc_Call_set_credentials(Call *self, PyObject *args,
+                                      PyObject *kwargs) {
+  ClientCredentials *creds;
+  grpc_call_error errcode;
+  static char *keywords[] = {"creds", NULL};
+  if (!PyArg_ParseTupleAndKeywords(
+      args, kwargs, "O!:set_credentials", keywords,
+      &pygrpc_ClientCredentials_type, &creds)) {
+    return NULL;
+  }
+  errcode = grpc_call_set_credentials(self->c_call, creds->c_creds);
+  return PyInt_FromLong(errcode);
 }

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -156,31 +156,31 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="comment">/* InterlockedCompareExchangePointerNoFence() not available on vista or</span></div>
 <div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;<span class="comment">   windows7 */</span></div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;<span class="preprocessor">#ifdef GPR_ARCH_64</span></div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeAcquire64((<span class="keyword">volatile</span> LONGLONG *) p,</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                                                           (LONGLONG) n, (LONGLONG) o);</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeAcquire64(</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;                  (<span class="keyword">volatile</span> LONGLONG *)p, (LONGLONG)n, (LONGLONG)o);</div>
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeAcquire((<span class="keyword">volatile</span> LONG *) p,</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                                                         (LONG) n, (LONG) o);</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeAcquire((<span class="keyword">volatile</span> LONG *)p,</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;                                                         (LONG)n, (LONG)o);</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="preprocessor"></span>}</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;</div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="keyword">static</span> __inline <span class="keywordtype">int</span> <a class="code" href="atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">gpr_atm_acq_cas</a>(<a class="code" href="atm__gcc__atomic_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a> o, <a class="code" href="atm__gcc__atomic_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a> n) {</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor">#ifdef GPR_ARCH_64</span></div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeAcquire64((<span class="keyword">volatile</span> LONGLONG *) p,</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                                                           (LONGLONG) n, (LONGLONG) o);</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeAcquire64(</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;                  (<span class="keyword">volatile</span> LONGLONG *)p, (LONGLONG)n, (LONGLONG)o);</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeAcquire((<span class="keyword">volatile</span> LONG *) p,</div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                                                         (LONG) n, (LONG) o);</div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeAcquire((<span class="keyword">volatile</span> LONG *)p,</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;                                                         (LONG)n, (LONG)o);</div>
 <div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="preprocessor"></span>}</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="keyword">static</span> __inline <span class="keywordtype">int</span> <a class="code" href="atm__gcc__sync_8h.html#ae7c3b215cda868ee9ee778822000c3f2">gpr_atm_rel_cas</a>(<a class="code" href="atm__gcc__atomic_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a> *p, <a class="code" href="atm__gcc__atomic_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a> o, <a class="code" href="atm__gcc__atomic_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a> n) {</div>
 <div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;<span class="preprocessor">#ifdef GPR_ARCH_64</span></div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeRelease64((<span class="keyword">volatile</span> LONGLONG *) p,</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                                                           (LONGLONG) n, (LONGLONG) o);</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeRelease64(</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;                  (<span class="keyword">volatile</span> LONGLONG *)p, (LONGLONG)n, (LONGLONG)o);</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeRelease((<span class="keyword">volatile</span> LONG *) p,</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                                                         (LONG) n, (LONG) o);</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> o == (<a class="code" href="atm__win32_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchangeRelease((<span class="keyword">volatile</span> LONG *)p,</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;                                                         (LONG)n, (LONG)o);</div>
 <div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="preprocessor"></span>}</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;</div>
@@ -200,23 +200,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="preprocessor">#ifdef GPR_ARCH_64</span></div>
 <div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">do</span> {</div>
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    old = *p;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  } <span class="keywordflow">while</span> (old != (<a class="code" href="atm__gcc__atomic_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchange64((<span class="keyword">volatile</span> LONGLONG *) p,</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                                                        (LONGLONG) old + delta,</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;                                                        (LONGLONG) old));</div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;  } <span class="keywordflow">while</span> (old != (<a class="code" href="atm__gcc__atomic_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchange64((<span class="keyword">volatile</span> LONGLONG *)p,</div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;                                                        (LONGLONG)old + delta,</div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;                                                        (LONGLONG)old));</div>
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">do</span> {</div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    old = *p;</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  } <span class="keywordflow">while</span> (old != (<a class="code" href="atm__gcc__atomic_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchange((<span class="keyword">volatile</span> LONG *) p,</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;                                                      (LONG) old + delta,</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;                                                      (LONG) old));</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> old;</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;}</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;<span class="preprocessor">#endif  </span><span class="comment">/* GRPC_SUPPORT_ATM_WIN32_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;  } <span class="keywordflow">while</span> (old != (<a class="code" href="atm__gcc__atomic_8h.html#aa9e4b16c09888debe306f14e8090b1cc">gpr_atm</a>)InterlockedCompareExchange(</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;                      (<span class="keyword">volatile</span> LONG *)p, (LONG)old + delta, (LONG)old));</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;<span class="preprocessor"></span>  <span class="keywordflow">return</span> old;</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;}</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_ATM_WIN32_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="hpack__table_8c_html_a8556878012feffc9e0beb86cd78f424d"><div class="ttname"><a href="hpack__table_8c.html#a8556878012feffc9e0beb86cd78f424d">value</a></div><div class="ttdeci">const char * value</div><div class="ttdef"><b>Definition:</b> hpack_table.c:44</div></div>
 <div class="ttc" id="port__platform_8h_html"><div class="ttname"><a href="port__platform_8h.html">port_platform.h</a></div></div>
-<div class="ttc" id="port__platform_8h_html_a72d9d0d00bd576cfc8eab61aaea76db2"><div class="ttname"><a href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a></div><div class="ttdeci">intptr_t gpr_intptr</div><div class="ttdef"><b>Definition:</b> port_platform.h:312</div></div>
+<div class="ttc" id="port__platform_8h_html_a72d9d0d00bd576cfc8eab61aaea76db2"><div class="ttname"><a href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a></div><div class="ttdeci">intptr_t gpr_intptr</div><div class="ttdef"><b>Definition:</b> port_platform.h:315</div></div>
 <div class="ttc" id="atm__gcc__atomic_8h_html_ae337dc477a6a45ac3d91e41e8f3f2f8c"><div class="ttname"><a href="atm__gcc__atomic_8h.html#ae337dc477a6a45ac3d91e41e8f3f2f8c">gpr_atm_no_barrier_fetch_add</a></div><div class="ttdeci">#define gpr_atm_no_barrier_fetch_add(p, delta)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:52</div></div>
 <div class="ttc" id="atm__gcc__atomic_8h_html_a44607f95f7ee40eba592c7fe10960a06"><div class="ttname"><a href="atm__gcc__atomic_8h.html#a44607f95f7ee40eba592c7fe10960a06">gpr_atm_acq_load</a></div><div class="ttdeci">#define gpr_atm_acq_load(p)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:45</div></div>
 <div class="ttc" id="atm__gcc__atomic_8h_html_aa647aa9c97294a6709bbf2ac401cd9a6"><div class="ttname"><a href="atm__gcc__atomic_8h.html#aa647aa9c97294a6709bbf2ac401cd9a6">gpr_atm_no_barrier_load</a></div><div class="ttdeci">#define gpr_atm_no_barrier_load(p)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:46</div></div>
@@ -232,7 +231,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

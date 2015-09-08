@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -196,14 +196,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="structgrpc__lb__policy_html_a83d1624912fcce199cb291023abe453a"><div class="ttname"><a href="structgrpc__lb__policy.html#a83d1624912fcce199cb291023abe453a">grpc_lb_policy::vtable</a></div><div class="ttdeci">const grpc_lb_policy_vtable * vtable</div><div class="ttdef"><b>Definition:</b> lb_policy.h:48</div></div>
-<div class="ttc" id="grpc_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2"><div class="ttname"><a href="grpc_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a></div><div class="ttdeci">grpc_connectivity_state</div><div class="ttdoc">Connectivity state of a channel. </div><div class="ttdef"><b>Definition:</b> grpc.h:139</div></div>
-<div class="ttc" id="structgpr__refcount_html"><div class="ttname"><a href="structgpr__refcount.html">gpr_refcount</a></div><div class="ttdef"><b>Definition:</b> sync_generic.h:49</div></div>
+<div class="ttc" id="grpc_8h_html_a065b65f5cdd062a67d82e2b6bcf68cf2"><div class="ttname"><a href="grpc_8h.html#a065b65f5cdd062a67d82e2b6bcf68cf2">grpc_connectivity_state</a></div><div class="ttdeci">grpc_connectivity_state</div><div class="ttdoc">Connectivity state of a channel. </div><div class="ttdef"><b>Definition:</b> grpc.h:145</div></div>
+<div class="ttc" id="structgpr__refcount_html"><div class="ttname"><a href="structgpr__refcount.html">gpr_refcount</a></div><div class="ttdef"><b>Definition:</b> sync_generic.h:47</div></div>
 <div class="ttc" id="lb__policy_8h_html_a163a863a51690daa93984d7b7bd0ac88"><div class="ttname"><a href="lb__policy_8h.html#a163a863a51690daa93984d7b7bd0ac88">grpc_lb_policy_exit_idle</a></div><div class="ttdeci">void grpc_lb_policy_exit_idle(grpc_lb_policy *policy)</div><div class="ttdef"><b>Definition:</b> lb_policy.c:81</div></div>
-<div class="ttc" id="structgrpc__metadata__batch_html"><div class="ttname"><a href="structgrpc__metadata__batch.html">grpc_metadata_batch</a></div><div class="ttdef"><b>Definition:</b> stream_op.h:87</div></div>
+<div class="ttc" id="structgrpc__metadata__batch_html"><div class="ttname"><a href="structgrpc__metadata__batch.html">grpc_metadata_batch</a></div><div class="ttdef"><b>Definition:</b> stream_op.h:88</div></div>
 <div class="ttc" id="lb__policy_8h_html_a115550f997d572ed49c8906c2cb347b8"><div class="ttname"><a href="lb__policy_8h.html#a115550f997d572ed49c8906c2cb347b8">grpc_lb_policy_check_connectivity</a></div><div class="ttdeci">grpc_connectivity_state grpc_lb_policy_check_connectivity(grpc_lb_policy *policy)</div><div class="ttdef"><b>Definition:</b> lb_policy.c:91</div></div>
 <div class="ttc" id="structgrpc__lb__policy__vtable_html_abccc94e7f91ee59b360ee425493d9e6f"><div class="ttname"><a href="structgrpc__lb__policy__vtable.html#abccc94e7f91ee59b360ee425493d9e6f">grpc_lb_policy_vtable::pick</a></div><div class="ttdeci">void(* pick)(grpc_lb_policy *policy, grpc_pollset *pollset, grpc_metadata_batch *initial_metadata, grpc_subchannel **target, grpc_iomgr_closure *on_complete)</div><div class="ttdoc">implement grpc_lb_policy_pick </div><div class="ttdef"><b>Definition:</b> lb_policy.h:58</div></div>
 <div class="ttc" id="structgrpc__lb__policy__vtable_html_a0a12509ba4569fb4c87b4d325e0f89d3"><div class="ttname"><a href="structgrpc__lb__policy__vtable.html#a0a12509ba4569fb4c87b4d325e0f89d3">grpc_lb_policy_vtable::broadcast</a></div><div class="ttdeci">void(* broadcast)(grpc_lb_policy *policy, grpc_transport_op *op)</div><div class="ttdoc">broadcast a transport op to all subchannels </div><div class="ttdef"><b>Definition:</b> lb_policy.h:66</div></div>
-<div class="ttc" id="structgrpc__pollset_html"><div class="ttname"><a href="structgrpc__pollset.html">grpc_pollset</a></div><div class="ttdef"><b>Definition:</b> pollset_posix.h:48</div></div>
+<div class="ttc" id="structgrpc__pollset_html"><div class="ttname"><a href="structgrpc__pollset.html">grpc_pollset</a></div><div class="ttdef"><b>Definition:</b> pollset_posix.h:55</div></div>
 <div class="ttc" id="structgrpc__subchannel_html"><div class="ttname"><a href="structgrpc__subchannel.html">grpc_subchannel</a></div><div class="ttdef"><b>Definition:</b> subchannel.c:77</div></div>
 <div class="ttc" id="lb__policy_8h_html_a82191ae9ee04740368256ebfe25ec9d5"><div class="ttname"><a href="lb__policy_8h.html#a82191ae9ee04740368256ebfe25ec9d5">grpc_lb_completion</a></div><div class="ttdeci">void(* grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel, grpc_status_code status, const char *errmsg)</div><div class="ttdef"><b>Definition:</b> lb_policy.h:44</div></div>
 <div class="ttc" id="lb__policy_8h_html_a1d03d2f71dda12c97863cf387559e47a"><div class="ttname"><a href="lb__policy_8h.html#a1d03d2f71dda12c97863cf387559e47a">grpc_lb_policy_broadcast</a></div><div class="ttdeci">void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op)</div><div class="ttdef"><b>Definition:</b> lb_policy.c:77</div></div>
@@ -223,12 +223,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="lb__policy_8h_html_a246a7f5b971f672fa6a8dba8d7264790"><div class="ttname"><a href="lb__policy_8h.html#a246a7f5b971f672fa6a8dba8d7264790">grpc_lb_policy_notify_on_state_change</a></div><div class="ttdeci">void grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy, grpc_connectivity_state *state, grpc_iomgr_closure *closure)</div><div class="ttdef"><b>Definition:</b> lb_policy.c:85</div></div>
 <div class="ttc" id="lb__policy_8h_html_aa20fbb7fdf68dadcae6aaba3e227ac50"><div class="ttname"><a href="lb__policy_8h.html#aa20fbb7fdf68dadcae6aaba3e227ac50">grpc_lb_policy_init</a></div><div class="ttdeci">void grpc_lb_policy_init(grpc_lb_policy *policy, const grpc_lb_policy_vtable *vtable)</div><div class="ttdoc">called by concrete implementations to initialize the base struct </div><div class="ttdef"><b>Definition:</b> lb_policy.c:36</div></div>
 <div class="ttc" id="structgrpc__lb__policy_html"><div class="ttname"><a href="structgrpc__lb__policy.html">grpc_lb_policy</a></div><div class="ttdef"><b>Definition:</b> lb_policy.h:47</div></div>
-<div class="ttc" id="structgrpc__transport__op_html"><div class="ttname"><a href="structgrpc__transport__op.html">grpc_transport_op</a></div><div class="ttdoc">Transport op: a set of operations to perform on a transport as a whole. </div><div class="ttdef"><b>Definition:</b> transport.h:90</div></div>
+<div class="ttc" id="structgrpc__transport__op_html"><div class="ttname"><a href="structgrpc__transport__op.html">grpc_transport_op</a></div><div class="ttdoc">Transport op: a set of operations to perform on a transport as a whole. </div><div class="ttdef"><b>Definition:</b> transport.h:96</div></div>
 <div class="ttc" id="structgrpc__lb__policy__vtable_html_af1251501a613435c27688a15b1f76e25"><div class="ttname"><a href="structgrpc__lb__policy__vtable.html#af1251501a613435c27688a15b1f76e25">grpc_lb_policy_vtable::check_connectivity</a></div><div class="ttdeci">grpc_connectivity_state(* check_connectivity)(grpc_lb_policy *policy)</div><div class="ttdoc">check the current connectivity of the lb_policy </div><div class="ttdef"><b>Definition:</b> lb_policy.h:69</div></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
