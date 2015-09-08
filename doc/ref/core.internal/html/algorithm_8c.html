@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -96,9 +96,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a996f65ae42d05dd7ef9da9c6d6586397"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="algorithm_8c.html#a996f65ae42d05dd7ef9da9c6d6586397">grpc_compression_algorithm_parse</a> (const char *name, <a class="el" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> *algorithm)</td></tr>
-<tr class="memdesc:a996f65ae42d05dd7ef9da9c6d6586397"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parses <em>name</em> as a grpc_compression_algorithm instance, updating <em>algorithm</em>.  <a href="#a996f65ae42d05dd7ef9da9c6d6586397">More...</a><br/></td></tr>
-<tr class="separator:a996f65ae42d05dd7ef9da9c6d6586397"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48df44a3ccd7035103e824da2fd474ac"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="algorithm_8c.html#a48df44a3ccd7035103e824da2fd474ac">grpc_compression_algorithm_parse</a> (const char *name, size_t name_length, <a class="el" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> *algorithm)</td></tr>
+<tr class="memdesc:a48df44a3ccd7035103e824da2fd474ac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parses the first <em>name_length</em> bytes of <em>name</em> as a grpc_compression_algorithm instance, updating <em>algorithm</em>.  <a href="#a48df44a3ccd7035103e824da2fd474ac">More...</a><br/></td></tr>
+<tr class="separator:a48df44a3ccd7035103e824da2fd474ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adce0341ab8fd560dc39e9e96daf7cb14"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="algorithm_8c.html#adce0341ab8fd560dc39e9e96daf7cb14">grpc_compression_algorithm_name</a> (<a class="el" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> algorithm, char **name)</td></tr>
 <tr class="memdesc:adce0341ab8fd560dc39e9e96daf7cb14"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates <em>name</em> with the encoding name corresponding to a valid <em>algorithm</em>.  <a href="#adce0341ab8fd560dc39e9e96daf7cb14">More...</a><br/></td></tr>
 <tr class="separator:adce0341ab8fd560dc39e9e96daf7cb14"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -158,7 +158,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a996f65ae42d05dd7ef9da9c6d6586397"></a>
+<a class="anchor" id="a48df44a3ccd7035103e824da2fd474ac"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -167,6 +167,12 @@ Functions</h2></td></tr>
           <td>(</td>
           <td class="paramtype">const char *&#160;</td>
           <td class="paramname"><em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>name_length</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -182,7 +188,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Parses <em>name</em> as a grpc_compression_algorithm instance, updating <em>algorithm</em>. </p>
+<p>Parses the first <em>name_length</em> bytes of <em>name</em> as a grpc_compression_algorithm instance, updating <em>algorithm</em>. </p>
 <p>Returns 1 upon success, 0 otherwise. </p>
 
 </div>
@@ -209,7 +215,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

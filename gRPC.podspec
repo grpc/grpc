@@ -68,6 +68,7 @@ Pod::Spec.new do |s|
                       'src/core/support/grpc_string.h',
                       'src/core/support/string_win32.h',
                       'src/core/support/thd_internal.h',
+                      'src/core/support/time_precise.h',
                       'grpc/support/alloc.h',
                       'grpc/support/atm.h',
                       'grpc/support/atm_gcc_atomic.h',
@@ -145,7 +146,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/transport_security.h',
                       'src/core/tsi/transport_security_interface.h',
-                      'src/core/channel/census_filter.h',
+                      'src/core/census/grpc_filter.h',
                       'src/core/channel/channel_args.h',
                       'src/core/channel/channel_stack.h',
                       'src/core/channel/client_channel.h',
@@ -210,7 +211,8 @@ Pod::Spec.new do |s|
                       'src/core/json/json_reader.h',
                       'src/core/json/json_writer.h',
                       'src/core/profiling/timers.h',
-                      'src/core/profiling/timers_preciseclock.h',
+                      'src/core/statistics/census_interface.h',
+                      'src/core/statistics/census_rpc_stats.h',
                       'src/core/surface/byte_buffer_queue.h',
                       'src/core/surface/call.h',
                       'src/core/surface/channel.h',
@@ -245,8 +247,9 @@ Pod::Spec.new do |s|
                       'src/core/transport/stream_op.h',
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
+                      'src/core/census/aggregation.h',
                       'src/core/census/context.h',
-                      'src/core/census/rpc_stat_id.h',
+                      'src/core/census/rpc_metric_id.h',
                       'grpc/grpc_security.h',
                       'grpc/byte_buffer.h',
                       'grpc/byte_buffer_reader.h',
@@ -276,6 +279,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/ssl_transport_security.c',
                       'src/core/tsi/transport_security.c',
                       'src/core/census/grpc_context.c',
+                      'src/core/census/grpc_filter.c',
                       'src/core/channel/channel_args.c',
                       'src/core/channel/channel_stack.c',
                       'src/core/channel/client_channel.c',
@@ -392,7 +396,8 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport_op_string.c',
                       'src/core/census/context.c',
                       'src/core/census/initialize.c',
-                      'src/core/census/record_stat.c'
+                      'src/core/census/operation.c',
+                      'src/core/census/tracing.c'
 
     ss.private_header_files = 'src/core/support/env.h',
                               'src/core/support/file.h',
@@ -401,6 +406,7 @@ Pod::Spec.new do |s|
                               'src/core/support/string.h',
                               'src/core/support/string_win32.h',
                               'src/core/support/thd_internal.h',
+                              'src/core/support/time_precise.h',
                               'src/core/security/auth_filters.h',
                               'src/core/security/base64.h',
                               'src/core/security/credentials.h',
@@ -414,7 +420,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/ssl_transport_security.h',
                               'src/core/tsi/transport_security.h',
                               'src/core/tsi/transport_security_interface.h',
-                              'src/core/channel/census_filter.h',
+                              'src/core/census/grpc_filter.h',
                               'src/core/channel/channel_args.h',
                               'src/core/channel/channel_stack.h',
                               'src/core/channel/client_channel.h',
@@ -479,7 +485,8 @@ Pod::Spec.new do |s|
                               'src/core/json/json_reader.h',
                               'src/core/json/json_writer.h',
                               'src/core/profiling/timers.h',
-                              'src/core/profiling/timers_preciseclock.h',
+                              'src/core/statistics/census_interface.h',
+                              'src/core/statistics/census_rpc_stats.h',
                               'src/core/surface/byte_buffer_queue.h',
                               'src/core/surface/call.h',
                               'src/core/surface/channel.h',
@@ -514,8 +521,9 @@ Pod::Spec.new do |s|
                               'src/core/transport/stream_op.h',
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
+                              'src/core/census/aggregation.h',
                               'src/core/census/context.h',
-                              'src/core/census/rpc_stat_id.h'
+                              'src/core/census/rpc_metric_id.h'
 
     ss.header_mappings_dir = '.'
 

@@ -47,11 +47,9 @@ extern "C" {
 
 /*! \mainpage GRPC Core
  *
- * \section intro_sec The GRPC Core library is a low-level library designed
- * to be wrapped by higher level libraries.
- *
- * The top-level API is provided in grpc.h.
- * Security related functionality lives in grpc_security.h.
+ * The GRPC Core library is a low-level library designed to be wrapped by higher
+ * level libraries. The top-level API is provided in grpc.h. Security related
+ * functionality lives in grpc_security.h.
  */
 
 /** Completion Queues enable notification of the completion of asynchronous
@@ -134,6 +132,14 @@ typedef struct {
 /** Secondary user agent: goes at the end of the user-agent metadata
     sent on each request */
 #define GRPC_ARG_SECONDARY_USER_AGENT_STRING "grpc.secondary_user_agent"
+/* The caller of the secure_channel_create functions may override the target
+   name used for SSL host name checking using this channel argument which is of
+   type GRPC_ARG_STRING. This *should* be used for testing only.
+   If this argument is not specified, the name used for SSL host name checking
+   will be the target parameter (assuming that the secure channel is an SSL
+   channel). If this parameter is specified and the underlying is not an SSL
+   channel, it will just be ignored. */
+#define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
 
 /** Connectivity state of a channel. */
 typedef enum {
@@ -206,8 +212,7 @@ typedef struct grpc_metadata {
 
   /** The following fields are reserved for grpc internal use.
       There is no need to initialize them, and they will be set to garbage
-     during
-      calls to grpc. */
+      during calls to grpc. */
   struct {
     void *obfuscated[4];
   } internal_data;

@@ -34,27 +34,21 @@
 #include <mutex>
 #include <thread>
 
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
+#include <grpc++/channel.h>
+#include <grpc++/client_context.h>
+#include <grpc++/create_channel.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
+#include <grpc++/server_context.h>
+#include <gtest/gtest.h>
+
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/echo.grpc.pb.h"
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include <grpc++/time.h>
-#include <gtest/gtest.h>
-
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
@@ -195,9 +189,9 @@ class End2endTest : public ::testing::Test {
   void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel = CreateChannel(
-        server_address_.str(), InsecureCredentials(), ChannelArguments());
-    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureCredentials());
+    stub_ = grpc::cpp::test::util::TestService::NewStub(channel);
   }
 
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;

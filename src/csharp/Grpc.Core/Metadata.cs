@@ -33,15 +33,23 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Provides access to read and write metadata values to be exchanged during a call.
+    /// A collection of metadata entries that can be exchanged during a call.
+    /// gRPC supports these types of metadata:
+    /// <list type="bullet">
+    /// <item><term>Request headers</term><description>are sent by the client at the beginning of a remote call before any request messages are sent.</description></item>
+    /// <item><term>Response headers</term><description>are sent by the server at the beginning of a remote call handler before any response messages are sent.</description></item>
+    /// <item><term>Response trailers</term><description>are sent by the server at the end of a remote call along with resulting call status.</description></item>
+    /// </list>
     /// </summary>
     public sealed class Metadata : IList<Metadata.Entry>
     {
@@ -58,21 +66,19 @@ namespace Grpc.Core
         readonly List<Entry> entries;
         bool readOnly;
 
+        /// <summary>
+        /// Initializes a new instance of <c>Metadata</c>.
+        /// </summary>
         public Metadata()
         {
             this.entries = new List<Entry>();
-        }
-
-        public Metadata(ICollection<Entry> entries)
-        {
-            this.entries = new List<Entry>(entries);
         }
 
         /// <summary>
         /// Makes this object read-only.
         /// </summary>
         /// <returns>this object</returns>
-        public Metadata Freeze()
+        internal Metadata Freeze()
         {
             this.readOnly = true;
             return this;
@@ -184,6 +190,7 @@ namespace Grpc.Core
         public struct Entry
         {
             private static readonly Encoding Encoding = Encoding.ASCII;
+            private static readonly Regex ValidKeyRegex = new Regex("^[a-z0-9_-]+$");
 
             readonly string key;
             readonly string value;
@@ -197,7 +204,7 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata+Entry"/> struct with a binary value.
+            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct with a binary value.
             /// </summary>
             /// <param name="key">Metadata key, needs to have suffix indicating a binary valued metadata entry.</param>
             /// <param name="valueBytes">Value bytes.</param>
@@ -213,7 +220,7 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata+Entry"/> struct holding an ASCII value.
+            /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct holding an ASCII value.
             /// </summary>
             /// <param name="key">Metadata key, must not use suffix indicating a binary valued metadata entry.</param>
             /// <param name="value">Value string. Only ASCII characters are allowed.</param>
@@ -280,7 +287,7 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Returns a <see cref="System.String"/> that represents the current <see cref="Grpc.Core.Metadata+Entry"/>.
+            /// Returns a <see cref="System.String"/> that represents the current <see cref="Grpc.Core.Metadata.Entry"/>.
             /// </summary>
             public override string ToString()
             {
@@ -316,7 +323,10 @@ namespace Grpc.Core
 
             private static string NormalizeKey(string key)
             {
-                return Preconditions.CheckNotNull(key, "key").ToLower();
+                var normalized = Preconditions.CheckNotNull(key, "key").ToLower(CultureInfo.InvariantCulture);
+                Preconditions.CheckArgument(ValidKeyRegex.IsMatch(normalized), 
+                    "Metadata entry key not valid. Keys can only contain lowercase alphanumeric characters, underscores and hyphens.");
+                return normalized;
             }
         }
     }

@@ -32,18 +32,19 @@
  */
 
 #include <grpc++/server.h>
+
 #include <utility>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
-#include <grpc++/async_generic_service.h>
+#include <grpc++/generic/async_generic_service.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/time.h>
+#include <grpc++/security/server_credentials.h>
+#include <grpc++/support/time.h>
 
 #include "src/core/profiling/timers.h"
 #include "src/cpp/server/thread_pool_interface.h"
@@ -361,7 +362,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
       unknown_method_.reset(new RpcServiceMethod(
           "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
       // Use of emplace_back with just constructor arguments is not accepted
-      // here by gcc-4.4 because it can't match the anonymous nullptr with a 
+      // here by gcc-4.4 because it can't match the anonymous nullptr with a
       // proper constructor implicitly. Construct the object and use push_back.
       sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
     }
@@ -391,7 +392,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Spin, eating requests until the completion queue is completely shutdown.
     // If the deadline expires then cancel anything that's pending and keep
     // spinning forever until the work is actually drained.
-    // Since nothing else needs to touch state guarded by mu_, holding it 
+    // Since nothing else needs to touch state guarded by mu_, holding it
     // through this loop is fine.
     SyncRequest* request;
     bool ok;
@@ -446,11 +447,12 @@ Server::BaseAsyncRequest::~BaseAsyncRequest() {}
 bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
   if (*status) {
     for (size_t i = 0; i < initial_metadata_array_.count; i++) {
-      context_->client_metadata_.insert(std::make_pair(
-          grpc::string(initial_metadata_array_.metadata[i].key),
-          grpc::string(initial_metadata_array_.metadata[i].value,
-                       initial_metadata_array_.metadata[i].value +
-                           initial_metadata_array_.metadata[i].value_length)));
+      context_->client_metadata_.insert(
+          std::pair<grpc::string_ref, grpc::string_ref>(
+              initial_metadata_array_.metadata[i].key,
+              grpc::string_ref(
+                  initial_metadata_array_.metadata[i].value,
+                  initial_metadata_array_.metadata[i].value_length)));
     }
   }
   grpc_metadata_array_destroy(&initial_metadata_array_);

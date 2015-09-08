@@ -32,12 +32,16 @@
  */
 
 #include <string.h>
-#include "src/core/iomgr/socket_utils_posix.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/support/string.h"
+#include "src/core/iomgr/socket_utils_posix.h"
+
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -57,6 +61,7 @@ static void drain_cq(grpc_completion_queue *cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
+static void do_nothing(void *ignored) {}
 void test_connect(const char *server_host, const char *client_host, int port,
                   int expect_ok) {
   char *client_hostport;
@@ -109,8 +114,30 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   /* Create client. */
   if (client_host[0] == 'i') {
-    /* for ipv4:/ipv6: addresses, just concatenate the port */
-    gpr_asprintf(&client_hostport, "%s:%d", client_host, port);
+    /* for ipv4:/ipv6: addresses, concatenate the port to each of the parts */
+    size_t i;
+    gpr_slice uri_slice;
+    gpr_slice_buffer uri_parts;
+    char **hosts_with_port;
+
+    uri_slice =
+        gpr_slice_new((char *)client_host, strlen(client_host), do_nothing);
+    gpr_slice_buffer_init(&uri_parts);
+    gpr_slice_split(uri_slice, ",", &uri_parts);
+    hosts_with_port = gpr_malloc(sizeof(char*) * uri_parts.count);
+    for (i = 0; i < uri_parts.count; i++) {
+      char *uri_part_str = gpr_dump_slice(uri_parts.slices[i], GPR_DUMP_ASCII);
+      gpr_asprintf(&hosts_with_port[i], "%s:%d", uri_part_str, port);
+      gpr_free(uri_part_str);
+    }
+    client_hostport = gpr_strjoin_sep((const char **)hosts_with_port,
+                                      uri_parts.count, ",", NULL);
+    for (i = 0; i < uri_parts.count; i++) {
+      gpr_free(hosts_with_port[i]);
+    }
+    gpr_free(hosts_with_port);
+    gpr_slice_buffer_destroy(&uri_parts);
+    gpr_slice_unref(uri_slice);
   } else {
     gpr_join_host_port(&client_hostport, client_host, port);
   }
@@ -260,7 +287,8 @@ int main(int argc, char **argv) {
     test_connect("0.0.0.0", "127.0.0.1", 0, 1);
     test_connect("0.0.0.0", "::ffff:127.0.0.1", 0, 1);
     test_connect("0.0.0.0", "ipv4:127.0.0.1", 0, 1);
-    test_connect("0.0.0.0", "ipv6:[::ffff:127.0.0.1]", 0, 1);
+    test_connect("0.0.0.0", "ipv4:127.0.0.1,127.0.0.2,127.0.0.3", 0, 1);
+    test_connect("0.0.0.0", "ipv6:[::ffff:127.0.0.1],[::ffff:127.0.0.2]", 0, 1);
     test_connect("0.0.0.0", "localhost", 0, 1);
     if (do_ipv6) {
       test_connect("::", "::1", 0, 1);

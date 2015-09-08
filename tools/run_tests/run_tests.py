@@ -70,13 +70,14 @@ def platform_string():
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
-  def __init__(self, config, environ=None):
+  def __init__(self, config, environ=None, timeout_seconds=5*60):
     if environ is None:
       environ = {}
     self.build_config = config
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
+    self.timeout_seconds = timeout_seconds
 
   def job_spec(self, cmdline, hash_targets, shortname=None, environ={}):
     """Construct a jobset.JobSpec for a test under this config
@@ -96,6 +97,7 @@ class SimpleConfig(object):
     return jobset.JobSpec(cmdline=cmdline,
                           shortname=shortname,
                           environ=actual_environ,
+                          timeout_seconds=self.timeout_seconds,
                           hash_targets=hash_targets
                               if self.allow_hashing else None)
 
@@ -139,7 +141,8 @@ class CLanguage(object):
       if travis and target['flaky']:
         continue
       if self.platform == 'windows':
-        binary = 'vsprojects/test_bin/%s.exe' % (target['name'])
+        binary = 'vsprojects/%s/%s.exe' % (
+            _WINDOWS_CONFIG[config.build_config], target['name'])
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
       if os.path.isfile(binary):
@@ -149,6 +152,9 @@ class CLanguage(object):
     return sorted(out)
 
   def make_targets(self):
+    if platform_string() == 'windows':
+      # don't build tools on windows just yet
+      return ['buildtests_%s' % self.make_target]
     return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
   def build_steps(self):
@@ -279,7 +285,10 @@ class CSharpLanguage(object):
   def make_targets(self):
     # For Windows, this target doesn't really build anything,
     # everything is build by buildall script later.
-    return ['grpc_csharp_ext']
+    if self.platform == 'windows':
+      return []
+    else:
+      return ['grpc_csharp_ext']
 
   def build_steps(self):
     if self.platform == 'windows':
@@ -354,11 +363,11 @@ class Build(object):
 _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
-    'tsan': SimpleConfig('tsan', environ={
+    'tsan': SimpleConfig('tsan', timeout_seconds=10*60, environ={
         'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
-    'msan': SimpleConfig('msan'),
+    'msan': SimpleConfig('msan', timeout_seconds=7*60),
     'ubsan': SimpleConfig('ubsan'),
-    'asan': SimpleConfig('asan', environ={
+    'asan': SimpleConfig('asan', timeout_seconds=7*60, environ={
         'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt',
         'LSAN_OPTIONS': 'report_objects=1'}),
     'asan-noleaks': SimpleConfig('asan', environ={
@@ -381,6 +390,11 @@ _LANGUAGES = {
     'objc' : ObjCLanguage(),
     'sanity': Sanity(),
     'build': Build(),
+    }
+
+_WINDOWS_CONFIG = {
+    'dbg': 'Debug',
+    'opt': 'Release',
     }
 
 # parse command line
@@ -450,7 +464,6 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 if args.travis:
   _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'surface,batch'}
 
-make_targets = []
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
                       _LANGUAGES.iterkeys() if x == 'all' else [x]
@@ -464,21 +477,33 @@ if len(build_configs) > 1:
 
 if platform.system() == 'Windows':
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec(['make.bat', 'CONFIG=%s' % cfg] + targets,
-                          cwd='vsprojects', shell=True)
+    extra_args = []
+    # better do parallel compilation
+    extra_args.extend(["/m"])
+    # disable PDB generation: it's broken, and we don't need it during CI
+    extra_args.extend(["/p:GenerateDebugInformation=false", "/p:DebugInformationFormat=None"])
+    return [
+      jobset.JobSpec(['vsprojects\\build.bat', 
+                      'vsprojects\\%s.sln' % target, 
+                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
+                      extra_args,
+                      shell=True, timeout_seconds=90*60)
+      for target in targets]
 else:
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec([os.getenv('MAKE', 'make'),
-                           '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                           'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
-                               args.slowdown,
-                           'CONFIG=%s' % cfg] + targets,
-                          timeout_seconds=30*60)
+    return [jobset.JobSpec([os.getenv('MAKE', 'make'),
+                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
+                                args.slowdown,
+                            'CONFIG=%s' % cfg] + targets,
+                           timeout_seconds=30*60)]
 
-build_steps = [make_jobspec(cfg,
-                            list(set(itertools.chain.from_iterable(
-                                         l.make_targets() for l in languages))))
-               for cfg in build_configs]
+make_targets = list(set(itertools.chain.from_iterable(
+                                         l.make_targets() for l in languages)))
+build_steps = []
+if make_targets:
+  make_commands = itertools.chain.from_iterable(make_jobspec(cfg, make_targets) for cfg in build_configs)
+  build_steps.extend(set(make_commands))
 build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs
@@ -535,7 +560,8 @@ def _start_port_server(port_server_port):
   # if not running ==> start a new one
   # otherwise, leave it up
   try:
-    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port).read()
+    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port,
+                              timeout=1).read()
     running = True
   except Exception:
     running = False
@@ -553,12 +579,20 @@ def _start_port_server(port_server_port):
         stderr=subprocess.STDOUT,
         stdout=port_log)
     # ensure port server is up
+    waits = 0
     while True:
+      if waits > 10:
+        port_server.kill()
+        print "port_server failed to start"
+        sys.exit(1)
       try:
-        urllib2.urlopen('http://localhost:%d/get' % port_server_port).read()
+        urllib2.urlopen('http://localhost:%d/get' % port_server_port,
+                        timeout=1).read()
         break
       except urllib2.URLError:
+        print "waiting for port_server"
         time.sleep(0.5)
+        waits += 1
       except:
         port_server.kill()
         raise

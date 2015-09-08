@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -128,12 +128,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="structgrpc__chttp2__transport.html#aafdcf31c8c77411e25dfa9b94eeb283f">grpc_chttp2_transport</a>
 , <a class="el" href="structgrpc__composite__credentials.html#a96e8d7c765b0b1e37d025d8726fe57d2">grpc_composite_credentials</a>
 , <a class="el" href="structgrpc__fake__channel__security__connector.html#a3a30ba1484411dcedb12607e1a523431">grpc_fake_channel_security_connector</a>
-, <a class="el" href="structgrpc__fake__oauth2__credentials.html#a706b02614122deadad3f0fa9713c9901">grpc_fake_oauth2_credentials</a>
+, <a class="el" href="structgrpc__google__iam__credentials.html#a143cba2baf99785c3c4938ea4f7441e0">grpc_google_iam_credentials</a>
+, <a class="el" href="structgrpc__google__refresh__token__credentials.html#acb22938435113c5479024c9e07648771">grpc_google_refresh_token_credentials</a>
 , <a class="el" href="structgrpc__httpcli__ssl__channel__security__connector.html#a4da06be1278854b4447140407d81db25">grpc_httpcli_ssl_channel_security_connector</a>
-, <a class="el" href="structgrpc__iam__credentials.html#a0470518ebd35b41e23f35fb85080750d">grpc_iam_credentials</a>
+, <a class="el" href="structgrpc__md__only__test__credentials.html#acd1af26470e81702392e992e7f94cc31">grpc_md_only_test_credentials</a>
 , <a class="el" href="structgrpc__oauth2__token__fetcher__credentials.html#acf21ce59c27d145279e5a26d561ea2d5">grpc_oauth2_token_fetcher_credentials</a>
-, <a class="el" href="structgrpc__refresh__token__credentials.html#a2be1d1da67694fe3a5c496f832908b9e">grpc_refresh_token_credentials</a>
-, <a class="el" href="structgrpc__service__account__credentials.html#acb97b3d4e8dd7783520e82d6416f25d0">grpc_service_account_credentials</a>
 , <a class="el" href="structgrpc__service__account__jwt__access__credentials.html#a9da87dad6986e218d5246fc125db04f4">grpc_service_account_jwt_access_credentials</a>
 , <a class="el" href="structgrpc__ssl__channel__security__connector.html#af7253d985a9b58d3f7a363d05fdb148c">grpc_ssl_channel_security_connector</a>
 , <a class="el" href="structgrpc__ssl__credentials.html#a2745d407b41a3278d6701b10dd94c6e4">grpc_ssl_credentials</a>
@@ -159,7 +158,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="structgrpc__chttp2__hpack__parser.html#af48331853250257b1640d07e06d6e47e">grpc_chttp2_hpack_parser</a>
 </li>
 <li>batch
-: <a class="el" href="structrequested__call.html#a664afa5ffde3750f0ff04f69813fbcd2">requested_call</a>
+: <a class="el" href="structrequested__call.html#a2e905405b533c306dbf1c77a9c74ecae">requested_call</a>
 </li>
 <li>batch_num_samples
 : <a class="el" href="structgrpc__time__averaged__stats.html#a630c3447f5023f4ab790a311ec93f6fb">grpc_time_averaged_stats</a>
@@ -206,8 +205,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>buckets
 : <a class="el" href="structgpr__histogram.html#abc707964e4925f4b7abf4c69daaaef73">gpr_histogram</a>
 </li>
+<li>buf_size
+: <a class="el" href="structcensus__trace__record.html#abc4f9330e28d906f90346d7fd5769d53">census_trace_record</a>
+</li>
 <li>buffer
-: <a class="el" href="structgrpc__jwt__claims.html#a62be74275bf0b7d887d70229bb9e497b">grpc_jwt_claims</a>
+: <a class="el" href="structcensus__trace__record.html#a4ba324fb39273bf3c0c0f15852d9d130">census_trace_record</a>
+, <a class="el" href="structgrpc__jwt__claims.html#a62be74275bf0b7d887d70229bb9e497b">grpc_jwt_claims</a>
 , <a class="el" href="structjose__header.html#af14380ad49201179d4ad6e3fa7a0e58b">jose_header</a>
 , <a class="el" href="structtsi__ssl__frame__protector.html#a3df125b5b712526ea26ba5dbaa8a71ee">tsi_ssl_frame_protector</a>
 </li>
@@ -232,7 +235,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="structgrpc__chttp2__window__update__parser.html#a9e8db4c14f00aa3572c81566448cba79">grpc_chttp2_window_update_parser</a>
 </li>
 <li>bytes
-: <a class="el" href="structgpr__slice.html#a39592633c4ad594a15b3a52aadff398d">gpr_slice</a>
+: <a class="el" href="structgpr__slice.html#a16646e1a137851f2b031cf2c431b2864">gpr_slice</a>
 , <a class="el" href="structgrpc__byte__buffer__queue.html#a16c6f1877a10ab226a2fd9988612ea59">grpc_byte_buffer_queue</a>
 </li>
 <li>bytes_transfered
@@ -242,7 +245,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

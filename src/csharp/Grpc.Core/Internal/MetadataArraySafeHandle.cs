@@ -35,7 +35,7 @@ using System.Threading.Tasks;
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_metadata_array from <grpc/grpc.h>
+    /// grpc_metadata_array from <c>grpc/grpc.h</c>
     /// </summary>
     internal class MetadataArraySafeHandle : SafeHandleZeroIsInvalid
     {

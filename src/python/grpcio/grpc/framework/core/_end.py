@@ -30,7 +30,6 @@
 """Implementation of base.End."""
 
 import abc
-import enum
 import threading
 import uuid
 
@@ -70,12 +69,12 @@ class _Cycle(object):
 
 def _abort(operations):
   for operation in operations:
-    operation.abort(base.Outcome.LOCAL_SHUTDOWN)
+    operation.abort(base.Outcome.Kind.LOCAL_SHUTDOWN)
 
 
 def _cancel_futures(futures):
   for future in futures:
-    futures.cancel()
+    future.cancel()
 
 
 def _future_shutdown(lock, cycle, event):
@@ -83,8 +82,6 @@ def _future_shutdown(lock, cycle, event):
     with lock:
       _abort(cycle.operations.values())
       _cancel_futures(cycle.futures)
-      pool = cycle.pool
-    cycle.pool.shutdown(wait=True)
   return in_future
 
 
@@ -93,19 +90,19 @@ def _termination_action(lock, stats, operation_id, cycle):
 
   Args:
     lock: A lock to hold during the termination action.
-    states: A mapping from base.Outcome values to integers to increment with
-      the outcome given to the termination action.
+    stats: A mapping from base.Outcome.Kind values to integers to increment
+      with the outcome kind given to the termination action.
     operation_id: The operation ID for the termination action.
     cycle: A _Cycle value to be updated during the termination action.
 
   Returns:
-    A callable that takes an operation outcome as its sole parameter and that
-      should be used as the termination action for the operation associated
-      with the given operation ID.
+    A callable that takes an operation outcome kind as its sole parameter and
+      that should be used as the termination action for the operation
+      associated with the given operation ID.
   """
-  def termination_action(outcome):
+  def termination_action(outcome_kind):
     with lock:
-      stats[outcome] += 1
+      stats[outcome_kind] += 1
       cycle.operations.pop(operation_id, None)
       if not cycle.operations:
         for action in cycle.idle_actions:
@@ -113,6 +110,7 @@ def _termination_action(lock, stats, operation_id, cycle):
         cycle.idle_actions = []
         if cycle.grace:
           _cancel_futures(cycle.futures)
+          cycle.pool.shutdown(wait=False)
   return termination_action
 
 
@@ -129,7 +127,7 @@ class _End(End):
     self._lock = threading.Condition()
     self._servicer_package = servicer_package
 
-    self._stats = {outcome: 0 for outcome in base.Outcome}
+    self._stats = {outcome_kind: 0 for outcome_kind in base.Outcome.Kind}
 
     self._mate = None
 
@@ -170,7 +168,7 @@ class _End(End):
 
   def operate(
       self, group, method, subscription, timeout, initial_metadata=None,
-      payload=None, completion=None):
+      payload=None, completion=None, protocol_options=None):
     """See base.End.operate for specification."""
     operation_id = uuid.uuid4()
     with self._lock:
@@ -179,9 +177,9 @@ class _End(End):
       termination_action = _termination_action(
           self._lock, self._stats, operation_id, self._cycle)
       operation = _operation.invocation_operate(
-          operation_id, group, method, subscription, timeout, initial_metadata,
-          payload, completion, self._mate.accept_ticket, termination_action,
-          self._cycle.pool)
+          operation_id, group, method, subscription, timeout, protocol_options,
+          initial_metadata, payload, completion, self._mate.accept_ticket,
+          termination_action, self._cycle.pool)
       self._cycle.operations[operation_id] = operation
       return operation.context, operation.operator
 
@@ -205,11 +203,11 @@ class _End(End):
   def accept_ticket(self, ticket):
     """See links.Link.accept_ticket for specification."""
     with self._lock:
-      if self._cycle is not None and not self._cycle.grace:
+      if self._cycle is not None:
         operation = self._cycle.operations.get(ticket.operation_id)
         if operation is not None:
           operation.handle_ticket(ticket)
-        elif self._servicer_package is not None:
+        elif self._servicer_package is not None and not self._cycle.grace:
           termination_action = _termination_action(
               self._lock, self._stats, ticket.operation_id, self._cycle)
           operation = _operation.service_operate(

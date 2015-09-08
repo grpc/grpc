@@ -44,7 +44,7 @@ var assert = require('assert');
 
 var AUTH_SCOPE = 'https://www.googleapis.com/auth/xapi.zoo';
 var AUTH_SCOPE_RESPONSE = 'xapi.zoo';
-var AUTH_USER = ('155450119199-3psnrh1sdr3d8cpj1v46naggf81mhdnk' +
+var AUTH_USER = ('155450119199-vefjjaekcc6cmsd5914v6lqufunmh9ue' +
     '@developer.gserviceaccount.com');
 var COMPUTE_ENGINE_USER = ('155450119199-r5aaqa2vqoa9g5mv2m6s3m1l293rlmel' +
     '@developer.gserviceaccount.com');
@@ -285,7 +285,7 @@ function authTest(expected_user, scope, client, done) {
     if (credential.createScopedRequired() && scope) {
       credential = credential.createScoped(scope);
     }
-    client.updateMetadata = grpc.getGoogleAuthDelegate(credential);
+    client.$updateMetadata = grpc.getGoogleAuthDelegate(credential);
     var arg = {
       response_type: 'COMPRESSABLE',
       response_size: 314159,
@@ -321,13 +321,7 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
     credential.getAccessToken(function(err, token) {
       assert.ifError(err);
       var updateMetadata = function(authURI, metadata, callback) {
-        metadata = _.clone(metadata);
-        if (metadata.Authorization) {
-          metadata.Authorization = _.clone(metadata.Authorization);
-        } else {
-          metadata.Authorization = [];
-        }
-        metadata.Authorization.push('Bearer ' + token);
+        metadata.add('authorization', 'Bearer ' + token);
         callback(null, metadata);
       };
       var makeTestCall = function(error, client_metadata) {
@@ -342,10 +336,10 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
         }, client_metadata);
       };
       if (per_rpc) {
-        updateMetadata('', {}, makeTestCall);
+        updateMetadata('', new grpc.Metadata(), makeTestCall);
       } else {
-        client.updateMetadata = updateMetadata;
-        makeTestCall(null, {});
+        client.$updateMetadata = updateMetadata;
+        makeTestCall(null, new grpc.Metadata());
       }
     });
   });

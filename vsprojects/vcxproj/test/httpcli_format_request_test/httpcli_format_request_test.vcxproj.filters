@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\httpcli\format_request_test.c">
+      <Filter>test\core\httpcli</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{650cb665-1351-e3e5-e319-dd700356a83e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{f033cf49-b830-5698-3989-6ec75817333b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\httpcli">
+      <UniqueIdentifier>{75330e6a-521e-5f90-defd-652a4591dbe9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

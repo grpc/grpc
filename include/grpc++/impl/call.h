@@ -34,18 +34,17 @@
 #ifndef GRPCXX_IMPL_CALL_H
 #define GRPCXX_IMPL_CALL_H
 
-#include <grpc/support/alloc.h>
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/config.h>
-#include <grpc++/status.h>
-#include <grpc++/impl/serialization_traits.h>
-
 #include <functional>
 #include <memory>
 #include <map>
+#include <cstring>
 
-#include <string.h>
+#include <grpc/support/alloc.h>
+#include <grpc++/client_context.h>
+#include <grpc++/completion_queue.h>
+#include <grpc++/impl/serialization_traits.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
 
 struct grpc_call;
 struct grpc_op;
@@ -55,8 +54,9 @@ namespace grpc {
 class ByteBuffer;
 class Call;
 
-void FillMetadataMap(grpc_metadata_array* arr,
-                     std::multimap<grpc::string, grpc::string>* metadata);
+void FillMetadataMap(
+    grpc_metadata_array* arr,
+    std::multimap<grpc::string_ref, grpc::string_ref>* metadata);
 grpc_metadata* FillMetadataArray(
     const std::multimap<grpc::string, grpc::string>& metadata);
 
@@ -419,7 +419,7 @@ class CallOpRecvInitialMetadata {
   }
 
  private:
-  std::multimap<grpc::string, grpc::string>* recv_initial_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref>* recv_initial_metadata_;
   grpc_metadata_array recv_initial_metadata_arr_;
 };
 
@@ -462,7 +462,7 @@ class CallOpClientRecvStatus {
   }
 
  private:
-  std::multimap<grpc::string, grpc::string>* recv_trailing_metadata_;
+  std::multimap<grpc::string_ref, grpc::string_ref>* recv_trailing_metadata_;
   Status* recv_status_;
   grpc_metadata_array recv_trailing_metadata_arr_;
   grpc_status_code status_code_;

@@ -325,7 +325,7 @@ static void test_threading(int producers, int consumers) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
-  grpc_iomgr_init();
+  grpc_init();
   test_no_op();
   test_wait_empty();
   test_shutdown_then_next_polling();
@@ -336,6 +336,6 @@ int main(int argc, char **argv) {
   test_threading(1, 10);
   test_threading(10, 1);
   test_threading(10, 10);
-  grpc_iomgr_shutdown();
+  grpc_shutdown();
   return 0;
 }

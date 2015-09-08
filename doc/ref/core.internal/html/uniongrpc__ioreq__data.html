@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -96,37 +96,37 @@ Data Fields</h2></td></tr>
 <tr class="separator:a4e3eb01d90e05b23a70c19ad92cdafc8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5ea7284dc03df43bf75f8111bd9339f0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> **&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__ioreq__data.html#a5ea7284dc03df43bf75f8111bd9339f0">recv_message</a></td></tr>
 <tr class="separator:a5ea7284dc03df43bf75f8111bd9339f0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab9788c1a37dea6052f004111bc67d6e7"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:ade88b1652253c49359b642214142d9f9"><td class="memItemLeft" >&#160;&#160;&#160;void(*&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#aedb6839ded1488cf3bd6905345fba0d2">set_value</a> )(<a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> status, <br class="typebreak"/>
+<tr class="memitem:a90e0ff6b94bc7197fd3bf8352cccacda"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a8d8fb5ad573f760a847e88ed679d1cc6"><td class="memItemLeft" >&#160;&#160;&#160;void(*&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#aedb6839ded1488cf3bd6905345fba0d2">set_value</a> )(<a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> status, <br class="typebreak"/>
 &#160;&#160;&#160;&#160;&#160;&#160;void *<a class="el" href="uniongrpc__ioreq__data.html#a442beede6948f0efc06a0a9404b49331">user_data</a>)</td></tr>
-<tr class="separator:ade88b1652253c49359b642214142d9f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d257602691f2ce9c1db83d9c6991e96"><td class="memItemLeft" >&#160;&#160;&#160;void *&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a442beede6948f0efc06a0a9404b49331">user_data</a></td></tr>
-<tr class="separator:a7d257602691f2ce9c1db83d9c6991e96"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab9788c1a37dea6052f004111bc67d6e7"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__ioreq__data.html#ab9788c1a37dea6052f004111bc67d6e7">recv_status</a></td></tr>
-<tr class="separator:ab9788c1a37dea6052f004111bc67d6e7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acddc8869b041b695c617cb46e941859e"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:ac131233f1aa5198bd56bd4d657f9bbc7"><td class="memItemLeft" >&#160;&#160;&#160;char **&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a6b5db9dd6e61e416c3514b787b25dcc6">details</a></td></tr>
-<tr class="separator:ac131233f1aa5198bd56bd4d657f9bbc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa2919fa2a459d3def55719a56cacf2bb"><td class="memItemLeft" >&#160;&#160;&#160;size_t *&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a42f927cee57659aa72d79546b897b468">details_capacity</a></td></tr>
-<tr class="separator:aa2919fa2a459d3def55719a56cacf2bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acddc8869b041b695c617cb46e941859e"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__ioreq__data.html#acddc8869b041b695c617cb46e941859e">recv_status_details</a></td></tr>
-<tr class="separator:acddc8869b041b695c617cb46e941859e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b9337cc24e8b42caa5c1502be083952"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:ade02032ad41eb27299af91b14f6109c3"><td class="memItemLeft" >&#160;&#160;&#160;size_t&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a34eacee09dcb1156021aaeea8206a42a">count</a></td></tr>
-<tr class="separator:ade02032ad41eb27299af91b14f6109c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a009bfe6b610d376d36c21ba205c78872"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a58b11308558f97bf335ce5575d951968">metadata</a></td></tr>
-<tr class="separator:a009bfe6b610d376d36c21ba205c78872"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4b9337cc24e8b42caa5c1502be083952"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__ioreq__data.html#a4b9337cc24e8b42caa5c1502be083952">send_metadata</a></td></tr>
-<tr class="separator:a4b9337cc24e8b42caa5c1502be083952"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:a8d8fb5ad573f760a847e88ed679d1cc6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5144b68ec5e2473f6df72fdd44572d70"><td class="memItemLeft" >&#160;&#160;&#160;void *&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a442beede6948f0efc06a0a9404b49331">user_data</a></td></tr>
+<tr class="separator:a5144b68ec5e2473f6df72fdd44572d70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90e0ff6b94bc7197fd3bf8352cccacda"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__ioreq__data.html#a90e0ff6b94bc7197fd3bf8352cccacda">recv_status</a></td></tr>
+<tr class="separator:a90e0ff6b94bc7197fd3bf8352cccacda"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5e88053a971308c7f336f0e82f453e0"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a0e33c524246fdc3ce31d92e8eafe3faa"><td class="memItemLeft" >&#160;&#160;&#160;char **&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a6b5db9dd6e61e416c3514b787b25dcc6">details</a></td></tr>
+<tr class="separator:a0e33c524246fdc3ce31d92e8eafe3faa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a68cd1fbe1c251a286dd2dbaa97f72b99"><td class="memItemLeft" >&#160;&#160;&#160;size_t *&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a42f927cee57659aa72d79546b897b468">details_capacity</a></td></tr>
+<tr class="separator:a68cd1fbe1c251a286dd2dbaa97f72b99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5e88053a971308c7f336f0e82f453e0"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__ioreq__data.html#ad5e88053a971308c7f336f0e82f453e0">recv_status_details</a></td></tr>
+<tr class="separator:ad5e88053a971308c7f336f0e82f453e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abdafc0e2f10121ee09e88037eb8e0829"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a51c969e7c04994b337d16c235f813ecb"><td class="memItemLeft" >&#160;&#160;&#160;size_t&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a34eacee09dcb1156021aaeea8206a42a">count</a></td></tr>
+<tr class="separator:a51c969e7c04994b337d16c235f813ecb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa4796dda2149868befa896a3748b1ed0"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a58b11308558f97bf335ce5575d951968">metadata</a></td></tr>
+<tr class="separator:aa4796dda2149868befa896a3748b1ed0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abdafc0e2f10121ee09e88037eb8e0829"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__ioreq__data.html#abdafc0e2f10121ee09e88037eb8e0829">send_metadata</a></td></tr>
+<tr class="separator:abdafc0e2f10121ee09e88037eb8e0829"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abcf05c127005fb6267a4f1ef73daec45"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__ioreq__data.html#abcf05c127005fb6267a4f1ef73daec45">send_message</a></td></tr>
 <tr class="separator:abcf05c127005fb6267a4f1ef73daec45"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3711b0c39c293284a4e4897f74c974ab"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:a843cbed5ab3882a94d5f75a675134a54"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a77fea25992234ba3a0174207114ebbb1">code</a></td></tr>
-<tr class="separator:a843cbed5ab3882a94d5f75a675134a54"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9185bca808aed2ffcd2d923192aaef27"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a> *&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#aabf2513498a2eee60eec1d1d70968169">details</a></td></tr>
-<tr class="separator:a9185bca808aed2ffcd2d923192aaef27"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3711b0c39c293284a4e4897f74c974ab"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__ioreq__data.html#a3711b0c39c293284a4e4897f74c974ab">send_status</a></td></tr>
-<tr class="separator:a3711b0c39c293284a4e4897f74c974ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f60bdc23b3bcb3b993c085c07171dc0"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:a68aee156896876264564481dd27828b4"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#a77fea25992234ba3a0174207114ebbb1">code</a></td></tr>
+<tr class="separator:a68aee156896876264564481dd27828b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6d78b7911cf2bdfbca9402399cbe3cbb"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a> *&#160;&#160;&#160;<a class="el" href="uniongrpc__ioreq__data.html#aabf2513498a2eee60eec1d1d70968169">details</a></td></tr>
+<tr class="separator:a6d78b7911cf2bdfbca9402399cbe3cbb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f60bdc23b3bcb3b993c085c07171dc0"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="uniongrpc__ioreq__data.html#a0f60bdc23b3bcb3b993c085c07171dc0">send_status</a></td></tr>
+<tr class="separator:a0f60bdc23b3bcb3b993c085c07171dc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a77fea25992234ba3a0174207114ebbb1"></a>
@@ -225,7 +225,7 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ab9788c1a37dea6052f004111bc67d6e7"></a>
+<a class="anchor" id="a90e0ff6b94bc7197fd3bf8352cccacda"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -237,7 +237,7 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="acddc8869b041b695c617cb46e941859e"></a>
+<a class="anchor" id="ad5e88053a971308c7f336f0e82f453e0"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -261,7 +261,7 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a4b9337cc24e8b42caa5c1502be083952"></a>
+<a class="anchor" id="abdafc0e2f10121ee09e88037eb8e0829"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -273,7 +273,7 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a3711b0c39c293284a4e4897f74c974ab"></a>
+<a class="anchor" id="a0f60bdc23b3bcb3b993c085c07171dc0"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -315,7 +315,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

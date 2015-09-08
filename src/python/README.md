@@ -4,7 +4,7 @@ The Python facility of gRPC.
 
 Status
 -------
-Alpha : Ready for early adopters
+Beta : Core behavior well-used and proven; bugs lurk off the beaten path.
 
 PREREQUISITES
 -------------
@@ -16,10 +16,10 @@ INSTALLATION
 
 **Linux (Debian):**
 
-Add [Debian unstable][] to your `sources.list` file. Example:
+Add [Debian jessie-backports][] to your `sources.list` file. Example:
 
 ```sh
-echo "deb http://ftp.us.debian.org/debian unstable main contrib non-free" | \
+echo "deb http://http.debian.net/debian jessie-backports main" | \
 sudo tee -a /etc/apt/sources.list
 ```
 
@@ -52,9 +52,19 @@ BUILDING FROM SOURCE
 ---------------------
 - Clone this repository
 
+- Initialize the git submodules
+```
+$ git submodule update --init
+```
+
+- Make the libraries
+```
+$ make
+```
+
 - Use build_python.sh to build the Python code and install it into a virtual environment
 ```
-$ tools/run_tests/build_python.sh
+$ CONFIG=opt tools/run_tests/build_python.sh 2.7
 ```
 
 TESTING
@@ -62,7 +72,7 @@ TESTING
 
 - Use run_python.sh to run gRPC as it was installed into the virtual environment
 ```
-$ tools/run_tests/run_python.sh
+$ CONFIG=opt PYVER=2.7 tools/run_tests/run_python.sh
 ```
 
 PACKAGING
@@ -82,4 +92,4 @@ $ ../../tools/distrib/python/submit.py
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Quick Start]:http://www.grpc.io/docs/tutorials/basic/python.html
 [detailed example]:http://www.grpc.io/docs/installation/python.html
-[Debian unstable]:https://www.debian.org/releases/sid/
+[Debian jessie-backports]:http://backports.debian.org/Instructions/
