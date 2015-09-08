@@ -40,37 +40,12 @@ from grpc._adapter import _types
 from grpc.beta import _connectivity_channel
 from grpc.beta import _server
 from grpc.beta import _stub
+from grpc.beta import interfaces
 from grpc.framework.common import cardinality  # pylint: disable=unused-import
 from grpc.framework.interfaces.face import face  # pylint: disable=unused-import
 
 _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE = (
     'Exception calling channel subscription callback!')
-
-
-@enum.unique
-class ChannelConnectivity(enum.Enum):
-  """Mirrors grpc_connectivity_state in the gRPC Core.
-
-  Attributes:
-    IDLE: The channel is idle.
-    CONNECTING: The channel is connecting.
-    READY: The channel is ready to conduct RPCs.
-    TRANSIENT_FAILURE: The channel has seen a failure from which it expects to
-      recover.
-    FATAL_FAILURE: The channel has seen a failure from which it cannot recover.
-  """
-
-  IDLE = (_types.ConnectivityState.IDLE, 'idle',)
-  CONNECTING = (_types.ConnectivityState.CONNECTING, 'connecting',)
-  READY = (_types.ConnectivityState.READY, 'ready',)
-  TRANSIENT_FAILURE = (
-      _types.ConnectivityState.TRANSIENT_FAILURE, 'transient failure',)
-  FATAL_FAILURE = (_types.ConnectivityState.FATAL_FAILURE, 'fatal failure',)
-
-_LOW_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
-    state: connectivity for state, connectivity in zip(
-        _types.ConnectivityState, ChannelConnectivity)
-}
 
 
 class ClientCredentials(object):
@@ -118,13 +93,14 @@ class Channel(object):
     self._low_channel = low_channel
     self._intermediary_low_channel = intermediary_low_channel
     self._connectivity_channel = _connectivity_channel.ConnectivityChannel(
-        low_channel, _LOW_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY)
+        low_channel)
 
   def subscribe(self, callback, try_to_connect=None):
     """Subscribes to this Channel's connectivity.
 
     Args:
-      callback: A callable to be invoked and passed this Channel's connectivity.
+      callback: A callable to be invoked and passed an
+        interfaces.ChannelConnectivity identifying this Channel's connectivity.
         The callable will be invoked immediately upon subscription and again for
         every change to this Channel's connectivity thereafter until it is
         unsubscribed.
@@ -144,7 +120,7 @@ class Channel(object):
     self._connectivity_channel.unsubscribe(callback)
 
 
-def create_insecure_channel(host, port):
+def insecure_channel(host, port):
   """Creates an insecure Channel to a remote host.
 
   Args:
@@ -159,7 +135,7 @@ def create_insecure_channel(host, port):
   return Channel(intermediary_low_channel._internal, intermediary_low_channel)  # pylint: disable=protected-access
 
 
-def create_secure_channel(host, port, client_credentials):
+def secure_channel(host, port, client_credentials):
   """Creates a secure Channel to a remote host.
 
   Args:
@@ -313,86 +289,6 @@ def ssl_server_credentials(
         intermediary_low_credentials._internal, intermediary_low_credentials)  # pylint: disable=protected-access
 
 
-class Server(object):
-  """Services RPCs."""
-  __metaclass__ = abc.ABCMeta
-
-  @abc.abstractmethod
-  def add_insecure_port(self, address):
-    """Reserves a port for insecure RPC service once this Server becomes active.
-
-    This method may only be called before calling this Server's start method is
-    called.
-
-    Args:
-      address: The address for which to open a port.
-
-    Returns:
-      An integer port on which RPCs will be serviced after this link has been
-        started. This is typically the same number as the port number contained
-        in the passed address, but will likely be different if the port number
-        contained in the passed address was zero.
-    """
-    raise NotImplementedError()
-
-  @abc.abstractmethod
-  def add_secure_port(self, address, server_credentials):
-    """Reserves a port for secure RPC service after this Server becomes active.
-
-    This method may only be called before calling this Server's start method is
-    called.
-
-    Args:
-      address: The address for which to open a port.
-      server_credentials: A ServerCredentials.
-
-    Returns:
-      An integer port on which RPCs will be serviced after this link has been
-        started. This is typically the same number as the port number contained
-        in the passed address, but will likely be different if the port number
-        contained in the passed address was zero.
-    """
-    raise NotImplementedError()
-
-  @abc.abstractmethod
-  def start(self):
-    """Starts this Server's service of RPCs.
-
-    This method may only be called while the server is not serving RPCs (i.e. it
-    is not idempotent).
-    """
-    raise NotImplementedError()
-
-  @abc.abstractmethod
-  def stop(self, grace):
-    """Stops this Server's service of RPCs.
-
-    All calls to this method immediately stop service of new RPCs. When existing
-    RPCs are aborted is controlled by the grace period parameter passed to this
-    method.
-
-    This method may be called at any time and is idempotent. Passing a smaller
-    grace value than has been passed in a previous call will have the effect of
-    stopping the Server sooner. Passing a larger grace value than has been
-    passed in a previous call will not have the effect of stopping the sooner
-    later.
-
-    Args:
-      grace: A duration of time in seconds to allow existing RPCs to complete
-        before being aborted by this Server's stopping. May be zero for
-        immediate abortion of all in-progress RPCs.
-
-    Returns:
-      A threading.Event that will be set when this Server has completely
-      stopped. The returned event may not be set until after the full grace
-      period (if some ongoing RPC continues for the full length of the period)
-      of it may be set much sooner (such as if this Server had no RPCs underway
-      at the time it was stopped or if all RPCs that it had underway completed
-      very early in the grace period).
-    """
-    raise NotImplementedError()
-
-
 class ServerOptions(object):
   """A value encapsulating the various options for creation of a Server.
 
@@ -450,27 +346,8 @@ def server_options(
       thread_pool, thread_pool_size, default_timeout, maximum_timeout)
 
 
-class _Server(Server):
-
-  def __init__(self, underserver):
-    self._underserver = underserver
-
-  def add_insecure_port(self, address):
-    return self._underserver.add_insecure_port(address)
-
-  def add_secure_port(self, address, server_credentials):
-    return self._underserver.add_secure_port(
-        address, server_credentials._intermediary_low_credentials)  # pylint: disable=protected-access
-
-  def start(self):
-    self._underserver.start()
-
-  def stop(self, grace):
-    return self._underserver.stop(grace)
-
-
 def server(service_implementations, options=None):
-  """Creates a Server with which RPCs can be serviced.
+  """Creates an interfaces.Server with which RPCs can be serviced.
 
   Args:
     service_implementations: A dictionary from service name-method name pair to
@@ -479,13 +356,12 @@ def server(service_implementations, options=None):
       functionality of the returned Server.
 
   Returns:
-    A Server with which RPCs can be serviced.
+    An interfaces.Server with which RPCs can be serviced.
   """
   effective_options = _EMPTY_SERVER_OPTIONS if options is None else options
-  underserver = _server.server(
+  return _server.server(
       service_implementations, effective_options.multi_method_implementation,
       effective_options.request_deserializers,
       effective_options.response_serializers, effective_options.thread_pool,
       effective_options.thread_pool_size, effective_options.default_timeout,
       effective_options.maximum_timeout)
-  return _Server(underserver)

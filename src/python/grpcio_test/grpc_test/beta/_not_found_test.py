@@ -31,7 +31,7 @@
 
 import unittest
 
-from grpc.beta import beta
+from grpc.beta import implementations
 from grpc.beta import interfaces
 from grpc.framework.interfaces.face import face
 from grpc_test.framework.common import test_constants
@@ -40,10 +40,10 @@ from grpc_test.framework.common import test_constants
 class NotFoundTest(unittest.TestCase):
 
   def setUp(self):
-    self._server = beta.server({})
+    self._server = implementations.server({})
     port = self._server.add_insecure_port('[::]:0')
-    channel = beta.create_insecure_channel('localhost', port)
-    self._generic_stub = beta.generic_stub(channel)
+    channel = implementations.insecure_channel('localhost', port)
+    self._generic_stub = implementations.generic_stub(channel)
     self._server.start()
 
   def tearDown(self):
