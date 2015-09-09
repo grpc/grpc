@@ -47,6 +47,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
 /* -- Common. -- */
@@ -54,7 +55,6 @@
 struct grpc_credentials_metadata_request {
   grpc_credentials *creds;
   grpc_credentials_metadata_cb cb;
-  grpc_iomgr_closure *on_simulated_token_fetch_done_closure;
   void *user_data;
 };
 
@@ -66,8 +66,6 @@ grpc_credentials_metadata_request_create(grpc_credentials *creds,
       gpr_malloc(sizeof(grpc_credentials_metadata_request));
   r->creds = grpc_credentials_ref(creds);
   r->cb = cb;
-  r->on_simulated_token_fetch_done_closure =
-      gpr_malloc(sizeof(grpc_iomgr_closure));
   r->user_data = user_data;
   return r;
 }
@@ -75,7 +73,6 @@ grpc_credentials_metadata_request_create(grpc_credentials *creds,
 static void grpc_credentials_metadata_request_destroy(
     grpc_credentials_metadata_request *r) {
   grpc_credentials_unref(r->creds);
-  gpr_free(r->on_simulated_token_fetch_done_closure);
   gpr_free(r);
 }
 
@@ -746,11 +743,10 @@ static int md_only_test_has_request_metadata_only(
   return 1;
 }
 
-void on_simulated_token_fetch_done(void *user_data, int success) {
+void on_simulated_token_fetch_done(void *user_data) {
   grpc_credentials_metadata_request *r =
       (grpc_credentials_metadata_request *)user_data;
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)r->creds;
-  GPR_ASSERT(success);
   r->cb(r->user_data, c->md_store->entries, c->md_store->num_entries,
         GRPC_CREDENTIALS_OK);
   grpc_credentials_metadata_request_destroy(r);
@@ -764,11 +760,10 @@ static void md_only_test_get_request_metadata(grpc_credentials *creds,
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
 
   if (c->is_async) {
+    gpr_thd_id thd_id;
     grpc_credentials_metadata_request *cb_arg =
         grpc_credentials_metadata_request_create(creds, cb, user_data);
-    grpc_iomgr_closure_init(cb_arg->on_simulated_token_fetch_done_closure,
-                            on_simulated_token_fetch_done, cb_arg);
-    grpc_iomgr_add_callback(cb_arg->on_simulated_token_fetch_done_closure);
+    gpr_thd_new(&thd_id, on_simulated_token_fetch_done, cb_arg, NULL);
   } else {
     cb(user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK);
   }

@@ -95,7 +95,7 @@ static void on_secure_transport_setup_done(void *arg,
   }
   notify = c->notify;
   c->notify = NULL;
-  grpc_iomgr_add_callback(notify);
+  notify->cb(notify->cb_arg, 1);
 }
 
 static void connected(void *arg, grpc_endpoint *tcp) {
@@ -108,7 +108,7 @@ static void connected(void *arg, grpc_endpoint *tcp) {
     memset(c->result, 0, sizeof(*c->result));
     notify = c->notify;
     c->notify = NULL;
-    grpc_iomgr_add_callback(notify);
+    notify->cb(notify->cb_arg, 1);
   }
 }
 

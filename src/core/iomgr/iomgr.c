@@ -46,38 +46,8 @@
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
-static grpc_iomgr_closure *g_cbs_head = NULL;
-static grpc_iomgr_closure *g_cbs_tail = NULL;
 static int g_shutdown;
-static gpr_event g_background_callback_executor_done;
 static grpc_iomgr_object g_root_object;
-
-/* Execute followup callbacks continuously.
-   Other threads may check in and help during pollset_work() */
-static void background_callback_executor(void *ignored) {
-  gpr_mu_lock(&g_mu);
-  while (!g_shutdown) {
-    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-    gpr_timespec short_deadline = gpr_time_add(
-        gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_millis(100, GPR_TIMESPAN));
-    if (g_cbs_head) {
-      grpc_iomgr_closure *closure = g_cbs_head;
-      g_cbs_head = closure->next;
-      if (!g_cbs_head) g_cbs_tail = NULL;
-      gpr_mu_unlock(&g_mu);
-      closure->cb(closure->cb_arg, closure->success);
-      gpr_mu_lock(&g_mu);
-    } else if (grpc_alarm_check(&g_mu, gpr_now(GPR_CLOCK_MONOTONIC),
-                                &deadline)) {
-    } else {
-      gpr_mu_unlock(&g_mu);
-      gpr_sleep_until(gpr_time_min(short_deadline, deadline));
-      gpr_mu_lock(&g_mu);
-    }
-  }
-  gpr_mu_unlock(&g_mu);
-  gpr_event_set(&g_background_callback_executor_done, (void *)1);
-}
 
 void grpc_kick_poller(void) {
   /* Empty. The background callback executor polls periodically. The activity
