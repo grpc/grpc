@@ -60,10 +60,11 @@ static void test_add_closure(void) {
   grpc_workqueue_add_to_pollset(wq, &g_pollset);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  GPR_ASSERT(!done);
-  grpc_pollset_work(&g_pollset, &worker, gpr_now(deadline.clock_type),
-                    deadline);
-  GPR_ASSERT(done);
+  while (!done) {
+    gpr_timespec now = gpr_now(deadline.clock_type);
+    GPR_ASSERT(gpr_time_cmp(now, deadline) < 0);
+    grpc_pollset_work(&g_pollset, &worker, now, deadline);
+  }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
   grpc_workqueue_unref(wq);

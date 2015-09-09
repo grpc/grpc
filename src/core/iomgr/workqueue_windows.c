@@ -35,6 +35,39 @@
 
 #ifdef GPR_WIN32
 
+#include <grpc/support/alloc.h>
+
 #include "src/core/iomgr/workqueue.h"
+
+struct grpc_workqueue {
+  gpr_refcount refs;
+};
+
+grpc_workqueue *grpc_workqueue_create(void) {
+  grpc_workqueue *workqueue = gpr_malloc(sizeof(grpc_workqueue));
+  gpr_ref_init(&workqueue->refs, 1);
+  return workqueue;
+}
+
+static void workqueue_destroy(grpc_workqueue *workqueue) {
+  gpr_free(workqueue);
+}
+
+void grpc_workqueue_ref(grpc_workqueue *workqueue) {
+  gpr_ref(&workqueue->refs);
+}
+
+void grpc_workqueue_unref(grpc_workqueue *workqueue) {
+  if (gpr_unref(workqueue)) {
+    workqueue_destroy(workqueue);
+  }
+}
+
+void grpc_workqueue_add_to_pollset(grpc_workqueue *workqueue, grpc_pollset *pollset) {}
+
+void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_iomgr_closure *closure, int success) {
+  /* TODO(ctiller): migrate current iomgr callback loop into this file */
+  grpc_iomgr_add_delayed_callback(closure, success);
+}
 
 #endif /* GPR_WIN32 */
