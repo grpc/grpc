@@ -38,8 +38,10 @@ RUN apt-get update && apt-get install -y \
   autotools-dev \
   build-essential \
   bzip2 \
+  ccache \
   curl \
   gcc \
+  gcc-multilib \
   git \
   libc6 \
   libc6-dbg \
@@ -50,10 +52,19 @@ RUN apt-get update && apt-get install -y \
   strace \
   python-dev \
   python-setuptools \
+  python-yaml \
   telnet \
   unzip \
   wget \
   zip && apt-get clean
+
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 ##################
 # C++ dependencies
@@ -135,6 +146,14 @@ RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
 
 RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip
+
+##################
+# Zookeeper dependencies
+
+# Install dependencies
+
+RUN apt-get install -y libzookeeper-mt-dev
+
 
 RUN mkdir /var/local/jenkins
 

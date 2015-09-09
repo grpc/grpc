@@ -38,6 +38,8 @@
 #include <stdlib.h>
 #include <signal.h>
 
+double g_fixture_slowdown_factor = 1.0;
+
 #if GPR_GETPID_IN_UNISTD_H
 #include <unistd.h>
 static int seed(void) { return getpid(); }
@@ -48,7 +50,45 @@ static int seed(void) { return getpid(); }
 static int seed(void) { return _getpid(); }
 #endif
 
-void grpc_test_init(int argc, char **argv) {
+#if GPR_WINDOWS_CRASH_HANDLER
+LONG crash_handler(struct _EXCEPTION_POINTERS* ex_info) {
+  gpr_log(GPR_DEBUG, "Exception handler called, dumping information");
+  while (ex_info->ExceptionRecord) {
+    DWORD code = ex_info->ExceptionRecord->ExceptionCode;
+    DWORD flgs = ex_info->ExceptionRecord->ExceptionFlags;
+    PVOID addr = ex_info->ExceptionRecord->ExceptionAddress;
+    gpr_log("code: %x - flags: %d - address: %p", code, flgs, addr);
+    ex_info->ExceptionRecord = ex_info->ExceptionRecord->ExceptionRecord;
+  }
+  if (IsDebuggerPresent()) {
+    __debugbreak();
+  } else {
+    _exit(1);
+  }
+  return EXCEPTION_EXECUTE_HANDLER;
+}
+
+void abort_handler(int sig) {
+  gpr_log(GPR_DEBUG, "Abort handler called.");
+  if (IsDebuggerPresent()) {
+    __debugbreak();
+  } else {
+    _exit(1);
+  }
+}
+
+static void install_crash_handler() {
+  SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)crash_handler);
+  _set_abort_behavior(0, _WRITE_ABORT_MSG);
+  _set_abort_behavior(0, _CALL_REPORTFAULT);
+  signal(SIGABRT, abort_handler);
+}
+#else
+static void install_crash_handler() {}
+#endif
+
+void grpc_test_init(int argc, char** argv) {
+  install_crash_handler();
   gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
           (double)GRPC_TEST_SLOWDOWN_MACHINE_FACTOR,
           (double)GRPC_TEST_SLOWDOWN_BUILD_FACTOR,

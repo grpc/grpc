@@ -60,4 +60,4 @@ FILE *gpr_tmpfile(const char *prefix, char **tmp_filename);
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_SUPPORT_FILE_H */
+#endif /* GRPC_INTERNAL_CORE_SUPPORT_FILE_H */

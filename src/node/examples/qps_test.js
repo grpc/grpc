@@ -60,8 +60,9 @@ var interop_server = require('../interop/interop_server.js');
  */
 function runTest(concurrent_calls, seconds, callback) {
   var testServer = interop_server.getServer(0, false);
-  testServer.server.listen();
-  var client = new testProto.TestService('localhost:' + testServer.port);
+  testServer.server.start();
+  var client = new testProto.TestService('localhost:' + testServer.port,
+                                         grpc.Credentials.createInsecure());
 
   var warmup_num = 100;
 

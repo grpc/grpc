@@ -31,11 +31,11 @@
  *
  */
 
+#import "InteropTests.h"
+
 #include <grpc/status.h>
 
-#import <UIKit/UIKit.h>
-#import <XCTest/XCTest.h>
-
+#import <GRPCClient/GRPCCall+Tests.h>
 #import <ProtoRPC/ProtoRPC.h>
 #import <RemoteTest/Empty.pbobjc.h>
 #import <RemoteTest/Messages.pbobjc.h>
@@ -76,18 +76,21 @@
 }
 @end
 
-@interface InteropTests : XCTestCase
-@end
+#pragma mark Tests
+
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.google.com";
 
 @implementation InteropTests {
   RMTTestService *_service;
 }
 
-- (void)setUp {
-  _service = [[RMTTestService alloc] initWithHost:@"grpc-test.sandbox.google.com"];
++ (NSString *)host {
+  return kRemoteSSLHost;
 }
 
-// Tests as described here: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
+- (void)setUp {
+  _service = [[RMTTestService alloc] initWithHost:self.class.host];
+}
 
 - (void)testEmptyUnaryRPC {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"EmptyUnary"];
@@ -103,7 +106,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:2 handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testLargeUnaryRPC {
@@ -125,7 +128,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:16 handler:nil];
 }
 
 - (void)testClientStreamingRPC {
@@ -143,7 +146,7 @@
   RMTStreamingInputCallRequest *request4 = [RMTStreamingInputCallRequest message];
   request4.payload.body = [NSMutableData dataWithLength:45904];
 
-  id<GRXWriter> writer = [GRXWriter writerWithContainer:@[request1, request2, request3, request4]];
+  GRXWriter *writer = [GRXWriter writerWithContainer:@[request1, request2, request3, request4]];
 
   [_service streamingInputCallWithRequestsWriter:writer
                                          handler:^(RMTStreamingInputCallResponse *response,
@@ -157,7 +160,7 @@
     [expectation fulfill];
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testServerStreamingRPC {
@@ -193,7 +196,7 @@
     }
   }];
 
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 - (void)testPingPongRPC {
@@ -236,7 +239,7 @@
       [expectation fulfill];
     }
   }];
-  [self waitForExpectationsWithTimeout:2 handler:nil];
+  [self waitForExpectationsWithTimeout:4 handler:nil];
 }
 
 - (void)testEmptyStreamRPC {
@@ -282,10 +285,11 @@
   
   [requestsBuffer writeValue:request];
   
-  __block ProtoRPC *call = [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
-                                                              eventHandler:^(BOOL done,
-                                                                             RMTStreamingOutputCallResponse *response,
-                                                                             NSError *error) {
+  __block ProtoRPC *call =
+      [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
+                                         eventHandler:^(BOOL done,
+                                                        RMTStreamingOutputCallResponse *response,
+                                                        NSError *error) {
     if (receivedResponse) {
       XCTAssert(done, @"Unexpected extra response %@", response);
       XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
@@ -299,7 +303,7 @@
     }
   }];
   [call start];
-  [self waitForExpectationsWithTimeout:4 handler:nil];
+  [self waitForExpectationsWithTimeout:8 handler:nil];
 }
 
 @end

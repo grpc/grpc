@@ -88,7 +88,7 @@ enum grpc_profiling_tags {
   } while (0)
 
 #define GRPC_TIMER_IMPORTANT_MARK(tag, id) \
-  do {                           \
+  do {                                     \
   } while (0)
 
 #define GRPC_TIMER_BEGIN(tag, id) \

@@ -54,34 +54,35 @@ static void assert_encodes_as(gpr_timespec ts, const char *s) {
 
 void test_encoding(void) {
   LOG_TEST("test_encoding");
-  assert_encodes_as(gpr_time_from_micros(-1), "1n");
-  assert_encodes_as(gpr_time_from_seconds(-10), "1n");
-  assert_encodes_as(gpr_time_from_nanos(10), "10n");
-  assert_encodes_as(gpr_time_from_nanos(999999999), "1S");
-  assert_encodes_as(gpr_time_from_micros(1), "1u");
-  assert_encodes_as(gpr_time_from_micros(10), "10u");
-  assert_encodes_as(gpr_time_from_micros(100), "100u");
-  assert_encodes_as(gpr_time_from_micros(890), "890u");
-  assert_encodes_as(gpr_time_from_micros(900), "900u");
-  assert_encodes_as(gpr_time_from_micros(901), "901u");
-  assert_encodes_as(gpr_time_from_millis(1), "1m");
-  assert_encodes_as(gpr_time_from_millis(2), "2m");
-  assert_encodes_as(gpr_time_from_micros(10001), "10100u");
-  assert_encodes_as(gpr_time_from_micros(999999), "1S");
-  assert_encodes_as(gpr_time_from_millis(1000), "1S");
-  assert_encodes_as(gpr_time_from_millis(2000), "2S");
-  assert_encodes_as(gpr_time_from_millis(2500), "2500m");
-  assert_encodes_as(gpr_time_from_millis(59900), "59900m");
-  assert_encodes_as(gpr_time_from_seconds(50), "50S");
-  assert_encodes_as(gpr_time_from_seconds(59), "59S");
-  assert_encodes_as(gpr_time_from_seconds(60), "1M");
-  assert_encodes_as(gpr_time_from_seconds(80), "80S");
-  assert_encodes_as(gpr_time_from_seconds(90), "90S");
-  assert_encodes_as(gpr_time_from_minutes(2), "2M");
-  assert_encodes_as(gpr_time_from_minutes(20), "20M");
-  assert_encodes_as(gpr_time_from_hours(1), "1H");
-  assert_encodes_as(gpr_time_from_hours(10), "10H");
-  assert_encodes_as(gpr_time_from_seconds(1000000000), "1000000000S");
+  assert_encodes_as(gpr_time_from_micros(-1, GPR_TIMESPAN), "1n");
+  assert_encodes_as(gpr_time_from_seconds(-10, GPR_TIMESPAN), "1n");
+  assert_encodes_as(gpr_time_from_nanos(10, GPR_TIMESPAN), "10n");
+  assert_encodes_as(gpr_time_from_nanos(999999999, GPR_TIMESPAN), "1S");
+  assert_encodes_as(gpr_time_from_micros(1, GPR_TIMESPAN), "1u");
+  assert_encodes_as(gpr_time_from_micros(10, GPR_TIMESPAN), "10u");
+  assert_encodes_as(gpr_time_from_micros(100, GPR_TIMESPAN), "100u");
+  assert_encodes_as(gpr_time_from_micros(890, GPR_TIMESPAN), "890u");
+  assert_encodes_as(gpr_time_from_micros(900, GPR_TIMESPAN), "900u");
+  assert_encodes_as(gpr_time_from_micros(901, GPR_TIMESPAN), "901u");
+  assert_encodes_as(gpr_time_from_millis(1, GPR_TIMESPAN), "1m");
+  assert_encodes_as(gpr_time_from_millis(2, GPR_TIMESPAN), "2m");
+  assert_encodes_as(gpr_time_from_micros(10001, GPR_TIMESPAN), "10100u");
+  assert_encodes_as(gpr_time_from_micros(999999, GPR_TIMESPAN), "1S");
+  assert_encodes_as(gpr_time_from_millis(1000, GPR_TIMESPAN), "1S");
+  assert_encodes_as(gpr_time_from_millis(2000, GPR_TIMESPAN), "2S");
+  assert_encodes_as(gpr_time_from_millis(2500, GPR_TIMESPAN), "2500m");
+  assert_encodes_as(gpr_time_from_millis(59900, GPR_TIMESPAN), "59900m");
+  assert_encodes_as(gpr_time_from_seconds(50, GPR_TIMESPAN), "50S");
+  assert_encodes_as(gpr_time_from_seconds(59, GPR_TIMESPAN), "59S");
+  assert_encodes_as(gpr_time_from_seconds(60, GPR_TIMESPAN), "1M");
+  assert_encodes_as(gpr_time_from_seconds(80, GPR_TIMESPAN), "80S");
+  assert_encodes_as(gpr_time_from_seconds(90, GPR_TIMESPAN), "90S");
+  assert_encodes_as(gpr_time_from_minutes(2, GPR_TIMESPAN), "2M");
+  assert_encodes_as(gpr_time_from_minutes(20, GPR_TIMESPAN), "20M");
+  assert_encodes_as(gpr_time_from_hours(1, GPR_TIMESPAN), "1H");
+  assert_encodes_as(gpr_time_from_hours(10, GPR_TIMESPAN), "10H");
+  assert_encodes_as(gpr_time_from_seconds(1000000000, GPR_TIMESPAN),
+                    "1000000000S");
 }
 
 static void assert_decodes_as(const char *buffer, gpr_timespec expected) {
@@ -91,7 +92,8 @@ static void assert_decodes_as(const char *buffer, gpr_timespec expected) {
   GPR_ASSERT(0 == gpr_time_cmp(got, expected));
 }
 
-void decode_suite(char ext, gpr_timespec (*answer)(long x)) {
+void decode_suite(char ext,
+                  gpr_timespec (*answer)(long x, gpr_clock_type clock)) {
   long test_vals[] = {1,       12,       123,       1234,     12345,   123456,
                       1234567, 12345678, 123456789, 98765432, 9876543, 987654,
                       98765,   9876,     987,       98,       9};
@@ -99,19 +101,19 @@ void decode_suite(char ext, gpr_timespec (*answer)(long x)) {
   char *input;
   for (i = 0; i < GPR_ARRAY_SIZE(test_vals); i++) {
     gpr_asprintf(&input, "%ld%c", test_vals[i], ext);
-    assert_decodes_as(input, answer(test_vals[i]));
+    assert_decodes_as(input, answer(test_vals[i], GPR_TIMESPAN));
     gpr_free(input);
 
     gpr_asprintf(&input, "   %ld%c", test_vals[i], ext);
-    assert_decodes_as(input, answer(test_vals[i]));
+    assert_decodes_as(input, answer(test_vals[i], GPR_TIMESPAN));
     gpr_free(input);
 
     gpr_asprintf(&input, "%ld %c", test_vals[i], ext);
-    assert_decodes_as(input, answer(test_vals[i]));
+    assert_decodes_as(input, answer(test_vals[i], GPR_TIMESPAN));
     gpr_free(input);
 
     gpr_asprintf(&input, "%ld %c  ", test_vals[i], ext);
-    assert_decodes_as(input, answer(test_vals[i]));
+    assert_decodes_as(input, answer(test_vals[i], GPR_TIMESPAN));
     gpr_free(input);
   }
 }
@@ -124,7 +126,8 @@ void test_decoding(void) {
   decode_suite('S', gpr_time_from_seconds);
   decode_suite('M', gpr_time_from_minutes);
   decode_suite('H', gpr_time_from_hours);
-  assert_decodes_as("1000000000000000000000u", gpr_inf_future);
+  assert_decodes_as("1000000000000000000000u",
+                    gpr_inf_future(GPR_CLOCK_REALTIME));
 }
 
 void test_decoding_fails(void) {

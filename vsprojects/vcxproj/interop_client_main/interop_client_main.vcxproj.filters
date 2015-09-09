@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\test\proto\empty.proto">
+      <Filter>test\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\proto\messages.proto">
+      <Filter>test\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\proto\test.proto">
+      <Filter>test\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\cpp\interop\client.cc">
+      <Filter>test\cpp\interop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\cpp\interop\interop_client.cc">
+      <Filter>test\cpp\interop</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\test\cpp\interop\interop_client.h">
+      <Filter>test\cpp\interop</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{bd02b37c-f3ec-86c0-0511-d2e1feeae251}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{08d911cf-9536-b45d-c54f-342a9b18e986}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\interop">
+      <UniqueIdentifier>{7b56f732-09fc-3a65-4d2e-bcdd9ce4309d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\proto">
+      <UniqueIdentifier>{243fbb01-7396-5edc-5680-2aed26221188}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

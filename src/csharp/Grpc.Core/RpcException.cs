@@ -36,22 +36,34 @@ using System;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Thrown when remote procedure call fails.
+    /// Thrown when remote procedure call fails. Every <c>RpcException</c> is associated with a resulting <see cref="Status"/> of the call.
     /// </summary>
     public class RpcException : Exception
     {
         private readonly Status status;
 
+        /// <summary>
+        /// Creates a new <c>RpcException</c> associated with given status.
+        /// </summary>
+        /// <param name="status">Resulting status of a call.</param>
         public RpcException(Status status) : base(status.ToString())
         {
             this.status = status;
         }
 
+        /// <summary>
+        /// Creates a new <c>RpcException</c> associated with given status and message.
+        /// </summary>
+        /// <param name="status">Resulting status of a call.</param>
+        /// <param name="message">The exception message.</param> 
         public RpcException(Status status, string message) : base(message)
         {
             this.status = status;
         }
 
+        /// <summary>
+        /// Resulting status of the call.
+        /// </summary>
         public Status Status
         {
             get

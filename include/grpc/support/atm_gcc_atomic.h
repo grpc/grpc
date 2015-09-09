@@ -46,6 +46,8 @@ typedef gpr_intptr gpr_atm;
 #define gpr_atm_no_barrier_load(p) (__atomic_load_n((p), __ATOMIC_RELAXED))
 #define gpr_atm_rel_store(p, value) \
   (__atomic_store_n((p), (gpr_intptr)(value), __ATOMIC_RELEASE))
+#define gpr_atm_no_barrier_store(p, value) \
+  (__atomic_store_n((p), (gpr_intptr)(value), __ATOMIC_RELAXED))
 
 #define gpr_atm_no_barrier_fetch_add(p, delta) \
   (__atomic_fetch_add((p), (gpr_intptr)(delta), __ATOMIC_RELAXED))
@@ -67,4 +69,4 @@ static __inline int gpr_atm_rel_cas(gpr_atm *p, gpr_atm o, gpr_atm n) {
                                      __ATOMIC_RELAXED);
 }
 
-#endif  /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */
+#endif /* GRPC_SUPPORT_ATM_GCC_ATOMIC_H */

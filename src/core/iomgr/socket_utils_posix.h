@@ -110,4 +110,4 @@ extern int grpc_forbid_dualstack_sockets_for_testing;
 int grpc_create_dualstack_socket(const struct sockaddr *addr, int type,
                                  int protocol, grpc_dualstack_mode *dsmode);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_SOCKET_UTILS_POSIX_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_SOCKET_UTILS_POSIX_H */

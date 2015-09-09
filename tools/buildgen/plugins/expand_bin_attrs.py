@@ -37,15 +37,16 @@ This fills in any optional attributes.
 def mako_plugin(dictionary):
   """The exported plugin code for expand_filegroups.
 
-  The list of libs in the build.json file can contain "filegroups" tags.
+  The list of libs in the build.yaml file can contain "filegroups" tags.
   These refer to the filegroups in the root object. We will expand and
   merge filegroups on the src, headers and public_headers properties.
 
   """
 
   targets = dictionary.get('targets')
+  default_platforms = ['windows', 'posix', 'linux', 'mac']
 
   for tgt in targets:
     tgt['flaky'] = tgt.get('flaky', False)
-    tgt['platforms'] = tgt.get('platforms', ['windows', 'posix'])
-
+    tgt['platforms'] = sorted(tgt.get('platforms', default_platforms))
+    tgt['ci_platforms'] = sorted(tgt.get('ci_platforms', tgt['platforms']))

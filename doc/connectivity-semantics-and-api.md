@@ -38,7 +38,7 @@ because the server is not yet available), the channel may spend increasingly
 large amounts of time in this state.
 
 IDLE: This is the state where the channel is not even trying to create a
-connection because of a lack of new or pending RPCs. New channels MAY be created
+connection because of a lack of new or pending RPCs. New RPCs  MAY be created
 in this state. Any attempt to start an RPC on the channel will push the channel
 out of this state to connecting. When there has been no RPC activity on a channel
 for a specified IDLE_TIMEOUT, i.e., no new or pending (active) RPCs for this

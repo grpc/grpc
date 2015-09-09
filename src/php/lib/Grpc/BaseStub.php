@@ -60,8 +60,63 @@ class BaseStub {
       }
       unset($opts['update_metadata']);
     }
-         
+    $package_config = json_decode(
+        file_get_contents(dirname(__FILE__) . '/../../composer.json'), true);
+    $opts['grpc.primary_user_agent'] =
+        'grpc-php/' . $package_config['version'];
     $this->channel = new Channel($hostname, $opts);
+  }
+
+  /**
+   * @return string The URI of the endpoint.
+   */
+  public function getTarget() {
+    return $this->channel->getTarget();
+  }
+
+  /**
+   * @param $try_to_connect bool
+   * @return int The grpc connectivity state
+   */
+  public function getConnectivityState($try_to_connect = false) {
+    return $this->channel->getConnectivityState($try_to_connect);
+  }
+
+  /**
+   * @param $timeout in microseconds
+   * @return bool true if channel is ready
+   * @throw Exception if channel is in FATAL_ERROR state
+   */
+  public function waitForReady($timeout) {
+    $new_state = $this->getConnectivityState(true);
+    if ($this->_checkConnectivityState($new_state)) {
+      return true;
+    }
+
+    $now = Timeval::now();
+    $delta = new Timeval($timeout);
+    $deadline = $now->add($delta);
+
+    while ($this->channel->watchConnectivityState($new_state, $deadline)) {
+      // state has changed before deadline
+      $new_state = $this->getConnectivityState();
+      if ($this->_checkConnectivityState($new_state)) {
+        return true;
+      }
+    }
+    // deadline has passed
+    $new_state = $this->getConnectivityState();
+    return $this->_checkConnectivityState($new_state);
+  }
+
+  private function _checkConnectivityState($new_state) {
+    if ($new_state == \Grpc\CHANNEL_READY) {
+      return true;
+    }
+    if ($new_state == \Grpc\CHANNEL_FATAL_FAILURE) {
+      throw new Exception('Failed to connect to server');
+    }
+    return false;
   }
 
   /**
@@ -113,7 +168,8 @@ class BaseStub {
   public function _simpleRequest($method,
                                  $argument,
                                  callable $deserialize,
-                                 $metadata = array()) {
+                                 $metadata = array(),
+                                 $options = array()) {
     list($actual_metadata, $timeout)  = $this->_extract_timeout_from_metadata($metadata);
     $call = new UnaryCall($this->channel, $method, $deserialize, $timeout);
     $jwt_aud_uri = $this->_get_jwt_aud_uri($method);
@@ -122,7 +178,7 @@ class BaseStub {
                                         $actual_metadata,
                                         $jwt_aud_uri);
     }
-    $call->start($argument, $actual_metadata);
+    $call->start($argument, $actual_metadata, $options);
     return $call;
   }
 
@@ -138,7 +194,6 @@ class BaseStub {
    * @return ClientStreamingSurfaceActiveCall The active call object
    */
   public function _clientStreamRequest($method,
-                                       $arguments,
                                        callable $deserialize,
                                        $metadata = array()) {
     list($actual_metadata, $timeout)  = $this->_extract_timeout_from_metadata($metadata);
@@ -149,7 +204,7 @@ class BaseStub {
                                         $actual_metadata,
                                         $jwt_aud_uri);
     }
-    $call->start($arguments, $actual_metadata);
+    $call->start($actual_metadata);
     return $call;
   }
 
@@ -166,7 +221,8 @@ class BaseStub {
   public function _serverStreamRequest($method,
                                        $argument,
                                        callable $deserialize,
-                                       $metadata = array()) {
+                                       $metadata = array(),
+                                       $options = array()) {
     list($actual_metadata, $timeout)  = $this->_extract_timeout_from_metadata($metadata);
     $call = new ServerStreamingCall($this->channel, $method, $deserialize, $timeout);
     $jwt_aud_uri = $this->_get_jwt_aud_uri($method);
@@ -175,7 +231,7 @@ class BaseStub {
                                         $actual_metadata,
                                         $jwt_aud_uri);
     }
-    $call->start($argument, $actual_metadata);
+    $call->start($argument, $actual_metadata, $options);
     return $call;
   }
 

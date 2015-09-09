@@ -38,7 +38,7 @@
 
 namespace grpc {
 
-template<class mutex>
+template <class mutex>
 class lock_guard;
 class condition_variable;
 
@@ -46,6 +46,7 @@ class mutex {
  public:
   mutex() { gpr_mu_init(&mu_); }
   ~mutex() { gpr_mu_destroy(&mu_); }
+
  private:
   ::gpr_mu mu_;
   template <class mutex>
@@ -58,6 +59,7 @@ class lock_guard {
  public:
   lock_guard(mutex &mu) : mu_(mu), locked(true) { gpr_mu_lock(&mu.mu_); }
   ~lock_guard() { unlock_internal(); }
+
  protected:
   void lock_internal() {
     if (!locked) gpr_mu_lock(&mu_.mu_);
@@ -67,6 +69,7 @@ class lock_guard {
     if (locked) gpr_mu_unlock(&mu_.mu_);
     locked = false;
   }
+
  private:
   mutex &mu_;
   bool locked;
@@ -76,7 +79,7 @@ class lock_guard {
 template <class mutex>
 class unique_lock : public lock_guard<mutex> {
  public:
-  unique_lock(mutex &mu) : lock_guard<mutex>(mu) { }
+  unique_lock(mutex &mu) : lock_guard<mutex>(mu) {}
   void lock() { this->lock_internal(); }
   void unlock() { this->unlock_internal(); }
 };
@@ -87,11 +90,12 @@ class condition_variable {
   ~condition_variable() { gpr_cv_destroy(&cv_); }
   void wait(lock_guard<mutex> &mu) {
     mu.locked = false;
-    gpr_cv_wait(&cv_, &mu.mu_.mu_, gpr_inf_future);
+    gpr_cv_wait(&cv_, &mu.mu_.mu_, gpr_inf_future(GPR_CLOCK_REALTIME));
     mu.locked = true;
   }
   void notify_one() { gpr_cv_signal(&cv_); }
   void notify_all() { gpr_cv_broadcast(&cv_); }
+
  private:
   gpr_cv cv_;
 };

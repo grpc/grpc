@@ -33,13 +33,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Google.ProtocolBuffers;
-using grpc.testing;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using NUnit.Framework;
@@ -78,7 +75,7 @@ namespace Grpc.IntegrationTesting
             var keyCertPair = new KeyCertificatePair(
                 File.ReadAllText(ServerCertChainPath),
                 File.ReadAllText(ServerPrivateKeyPath));
-            return new SslServerCredentials(ImmutableList.Create(keyCertPair));
+            return new SslServerCredentials(new[] { keyCertPair });
         }
     }
 }

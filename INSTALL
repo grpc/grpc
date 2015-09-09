@@ -9,25 +9,40 @@ wiki pages:
 * If you are in a hurry *
 *************************
 
+On Linux (Debian):
+
+ Note: you will need to add the Debian 'jessie-backports' distribution to your sources
+ file first.
+
+ Add the following line to your `/etc/apt/sources.list` file:
+
+   deb http://http.debian.net/debian jessie-backports main
+
+ Install the gRPC library:
+
+ $ [sudo] apt-get install libgrpc-dev
+
+OR
+
  $ git clone https://github.com/grpc/grpc.git
  $ cd grpc
  $ git submodule update --init
  $ make 
- $ sudo make install
+ $ [sudo] make install
 
 You don't need anything else than GNU Make, gcc and autotools. Under a Debian
 or Ubuntu system, this should boil down to the following packages:
 
-  $ apt-get install build-essential autoconf libtool
+ $ [sudo] apt-get install build-essential autoconf libtool
 
 Building the python wrapper requires the following:
 
-  # apt-get install python-all-dev python-virtualenv
+ $ [sudo] apt-get install python-all-dev python-virtualenv
 
 If you want to install in a different directory than the default /usr/lib, you can
 override it on the command line:
 
-  # make install prefix=/opt
+ $ [sudo] make install prefix=/opt
 
 
 *******************************
@@ -117,7 +132,7 @@ most Mac installations. Do the "git submodule" command listed above.
 Then execute the following for all the needed build dependencies
 
   $ sudo /opt/local/bin/port install autoconf automake libtool gflags cmake
-  $ mkdir ~/gtest
+  $ mkdir ~/gtest-svn
   $ svn checkout http://googletest.googlecode.com/svn/trunk/ gtest-svn
   $ mkdir mybuild
   $ cd mybuild
@@ -132,6 +147,7 @@ We will also need to make openssl and install it appropriately
 
   $ cd <git directory>
   $ cd third_party/openssl
+  $ ./config
   $ sudo make install
   $ cd ../../
 
