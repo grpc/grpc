@@ -45,8 +45,8 @@ Pod::Spec.new do |s|
   # s.source = { :git => 'https://github.com/grpc/grpc.git',
   #              :tag => 'release-0_11_0-objectivec-0.11.0' }
 
-  s.ios.deployment_target = '6.0'
-  s.osx.deployment_target = '10.8'
+  s.ios.deployment_target = '7.1'
+  s.osx.deployment_target = '10.9'
   s.requires_arc = true
 
   objc_dir = 'src/objective-c'
