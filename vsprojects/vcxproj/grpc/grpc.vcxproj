@@ -302,6 +302,9 @@
     <ClInclude Include="..\..\..\src\core\iomgr\udp_server.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\wakeup_fd_posix.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\workqueue.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\workqueue_posix.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\workqueue_windows.h" />
     <ClInclude Include="..\..\..\src\core\json\json.h" />
     <ClInclude Include="..\..\..\src\core\json\json_common.h" />
     <ClInclude Include="..\..\..\src\core\json\json_reader.h" />
@@ -519,6 +522,10 @@
     <ClCompile Include="..\..\..\src\core\iomgr\wakeup_fd_pipe.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\wakeup_fd_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\workqueue_posix.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\workqueue_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\json\json.c">
     </ClCompile>

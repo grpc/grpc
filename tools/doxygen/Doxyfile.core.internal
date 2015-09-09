@@ -840,6 +840,9 @@ src/core/iomgr/time_averaged_stats.h \
 src/core/iomgr/udp_server.h \
 src/core/iomgr/wakeup_fd_pipe.h \
 src/core/iomgr/wakeup_fd_posix.h \
+src/core/iomgr/workqueue.h \
+src/core/iomgr/workqueue_posix.h \
+src/core/iomgr/workqueue_windows.h \
 src/core/json/json.h \
 src/core/json/json_common.h \
 src/core/json/json_reader.h \
@@ -970,6 +973,8 @@ src/core/iomgr/wakeup_fd_eventfd.c \
 src/core/iomgr/wakeup_fd_nospecial.c \
 src/core/iomgr/wakeup_fd_pipe.c \
 src/core/iomgr/wakeup_fd_posix.c \
+src/core/iomgr/workqueue_posix.c \
+src/core/iomgr/workqueue_windows.c \
 src/core/json/json.c \
 src/core/json/json_reader.c \
 src/core/json/json_string.c \
