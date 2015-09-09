@@ -93,4 +93,4 @@ census_trace_obj** census_get_active_ops(int* num_active_ops);
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_TRACING_H */
+#endif /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_TRACING_H */

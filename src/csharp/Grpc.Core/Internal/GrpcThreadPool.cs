@@ -36,7 +36,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core.Internal;
+using Grpc.Core.Logging;
 
 namespace Grpc.Core.Internal
 {
@@ -45,14 +45,18 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class GrpcThreadPool
     {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<GrpcThreadPool>();
+
+        readonly GrpcEnvironment environment;
         readonly object myLock = new object();
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
 
         CompletionQueueSafeHandle cq;
 
-        public GrpcThreadPool(int poolSize)
+        public GrpcThreadPool(GrpcEnvironment environment, int poolSize)
         {
+            this.environment = environment;
             this.poolSize = poolSize;
         }
 
@@ -79,8 +83,6 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 cq.Shutdown();
-
-                Console.WriteLine("Waiting for GPRC threads to finish.");
                 foreach (var thread in threads)
                 {
                     thread.Join();
@@ -122,17 +124,16 @@ namespace Grpc.Core.Internal
                     IntPtr tag = ev.tag;
                     try
                     {
-                        var callback = GrpcEnvironment.CompletionRegistry.Extract(tag);
+                        var callback = environment.CompletionRegistry.Extract(tag);
                         callback(success);
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine("Exception occured while invoking completion delegate: " + e);
+                        Logger.Error(e, "Exception occured while invoking completion delegate");
                     }
                 }
             }
             while (ev.type != GRPCCompletionType.Shutdown);
-            Console.WriteLine("Completion queue has shutdown successfully, thread " + Thread.CurrentThread.Name + " exiting.");
         }
     }
 }

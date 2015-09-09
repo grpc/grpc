@@ -128,4 +128,4 @@ typedef void (*census_ht_itr_cb)(census_ht_key key, const void* val_ptr,
    should not invalidate data entries. */
 gpr_uint64 census_ht_for_all(const census_ht* ht, census_ht_itr_cb);
 
-#endif  /* GRPC_INTERNAL_CORE_STATISTICS_HASH_TABLE_H */
+#endif /* GRPC_INTERNAL_CORE_STATISTICS_HASH_TABLE_H */

@@ -35,70 +35,67 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Google.ProtocolBuffers;
+using Google.Protobuf;
 using Grpc.Core;
 using Grpc.Core.Utils;
 
-namespace grpc.testing
+namespace Grpc.Testing
 {
     /// <summary>
     /// Implementation of TestService server
     /// </summary>
     public class TestServiceImpl : TestService.ITestService
     {
-        public Task<Empty> EmptyCall(ServerCallContext context, Empty request)
+        public Task<Empty> EmptyCall(Empty request, ServerCallContext context)
         {
-            return Task.FromResult(Empty.DefaultInstance);
+            return Task.FromResult(new Empty());
         }
 
-        public Task<SimpleResponse> UnaryCall(ServerCallContext context, SimpleRequest request)
+        public Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
         {
-            var response = SimpleResponse.CreateBuilder()
-                .SetPayload(CreateZerosPayload(request.ResponseSize)).Build();
+            var response = new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
             return Task.FromResult(response);
         }
 
-        public async Task StreamingOutputCall(ServerCallContext context, StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream)
+        public async Task StreamingOutputCall(StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
-            foreach (var responseParam in request.ResponseParametersList)
+            foreach (var responseParam in request.ResponseParameters)
             {
-                var response = StreamingOutputCallResponse.CreateBuilder()
-                    .SetPayload(CreateZerosPayload(responseParam.Size)).Build();
+                var response = new StreamingOutputCallResponse { Payload = CreateZerosPayload(responseParam.Size) };
                 await responseStream.WriteAsync(response);
             }
         }
 
-        public async Task<StreamingInputCallResponse> StreamingInputCall(ServerCallContext context, IAsyncStreamReader<StreamingInputCallRequest> requestStream)
+        public async Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream, ServerCallContext context)
         {
             int sum = 0;
-            await requestStream.ForEach(async request =>
+            await requestStream.ForEachAsync(async request =>
             {
                 sum += request.Payload.Body.Length;
             });
-            return StreamingInputCallResponse.CreateBuilder().SetAggregatedPayloadSize(sum).Build();
+            return new StreamingInputCallResponse { AggregatedPayloadSize = sum };
         }
 
-        public async Task FullDuplexCall(ServerCallContext context, IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream)
+        public async Task FullDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
-            await requestStream.ForEach(async request =>
+            await requestStream.ForEachAsync(async request =>
             {
-                foreach (var responseParam in request.ResponseParametersList)
+                foreach (var responseParam in request.ResponseParameters)
                 {
-                    var response = StreamingOutputCallResponse.CreateBuilder()
-                        .SetPayload(CreateZerosPayload(responseParam.Size)).Build();
+                    var response = new StreamingOutputCallResponse { Payload = CreateZerosPayload(responseParam.Size) };
                     await responseStream.WriteAsync(response);
                 }
             });
         }
 
-        public async Task HalfDuplexCall(ServerCallContext context, IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream)
+        public async Task HalfDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
             throw new NotImplementedException();
         }
 
         private static Payload CreateZerosPayload(int size)
         {
-            return Payload.CreateBuilder().SetBody(ByteString.CopyFrom(new byte[size])).Build();
+            return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
         }
     }
 }

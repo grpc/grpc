@@ -37,12 +37,12 @@ using Grpc.Core.Utils;
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_server_credentials from <grpc/grpc_security.h>
+    /// grpc_server_credentials from <c>grpc/grpc_security.h</c>
     /// </summary>
     internal class ServerCredentialsSafeHandle : SafeHandleZeroIsInvalid
     {
         [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs);
+        static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, bool forceClientAuth);
 
         [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_server_credentials_release(IntPtr credentials);
@@ -51,12 +51,13 @@ namespace Grpc.Core.Internal
         {
         }
 
-        public static ServerCredentialsSafeHandle CreateSslCredentials(string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray)
+        public static ServerCredentialsSafeHandle CreateSslCredentials(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, bool forceClientAuth)
         {
             Preconditions.CheckArgument(keyCertPairCertChainArray.Length == keyCertPairPrivateKeyArray.Length);
-            return grpcsharp_ssl_server_credentials_create(null,
+            return grpcsharp_ssl_server_credentials_create(pemRootCerts,
                                                            keyCertPairCertChainArray, keyCertPairPrivateKeyArray,
-                                                           new UIntPtr((ulong)keyCertPairCertChainArray.Length));
+                                                           new UIntPtr((ulong)keyCertPairCertChainArray.Length),
+                                                           forceClientAuth);
         }
 
         protected override bool ReleaseHandle()

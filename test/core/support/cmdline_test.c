@@ -287,8 +287,9 @@ static void test_usage(void) {
   gpr_cmdline_add_flag(cl, "flag", NULL, &flag);
 
   usage = gpr_cmdline_usage_string(cl, "test");
-  GPR_ASSERT(0 == strcmp(usage,
-    "Usage: test [--str=string] [--x=int] [--flag|--no-flag]\n"));
+  GPR_ASSERT(
+      0 == strcmp(usage,
+                  "Usage: test [--str=string] [--x=int] [--flag|--no-flag]\n"));
   gpr_free(usage);
 
   gpr_cmdline_destroy(cl);

@@ -85,8 +85,8 @@ static void delete_key(void* key) { gpr_free(key); }
 
 static const census_ht_option ht_opt = {
     CENSUS_HT_POINTER /* key type */, 1999 /* n_of_buckets */,
-    simple_hash /* hash function */, cmp_str_keys /* key comparator */,
-    delete_stats /* data deleter */, delete_key /* key deleter */
+    simple_hash /* hash function */,  cmp_str_keys /* key comparator */,
+    delete_stats /* data deleter */,  delete_key /* key deleter */
 };
 
 static void init_rpc_stats(void* stats) {
@@ -157,7 +157,7 @@ static void record_stats(census_ht* store, census_op_id op_id,
         key.ptr = gpr_strdup(key.ptr);
         census_ht_insert(store, key, (void*)window_stats);
       }
-      census_window_stats_add(window_stats, gpr_now(), stats);
+      census_window_stats_add(window_stats, gpr_now(GPR_CLOCK_REALTIME), stats);
     } else {
       census_internal_unlock_trace_store();
     }
@@ -185,7 +185,7 @@ static void get_stats(census_ht* store, census_aggregated_rpc_stats* data) {
   if (store != NULL) {
     size_t n;
     unsigned i, j;
-    gpr_timespec now = gpr_now();
+    gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
     census_ht_kv* kv = census_ht_get_all_elements(store, &n);
     if (kv != NULL) {
       data->num_entries = n;

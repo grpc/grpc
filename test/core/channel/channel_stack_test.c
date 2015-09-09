@@ -37,6 +37,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
 #include "test/core/util/test_config.h"
 
 static void channel_init_func(grpc_channel_element *elem, grpc_channel *master,
@@ -73,11 +75,14 @@ static void channel_func(grpc_channel_element *elem, grpc_transport_op *op) {
   ++*(int *)(elem->channel_data);
 }
 
+static char *get_peer(grpc_call_element *elem) { return gpr_strdup("peer"); }
+
 static void test_create_channel_stack(void) {
-  const grpc_channel_filter filter = {
-      call_func,         channel_func,         sizeof(int),
-      call_init_func,    call_destroy_func,    sizeof(int),
-      channel_init_func, channel_destroy_func, "some_test_filter"};
+  const grpc_channel_filter filter = {call_func,         channel_func,
+                                      sizeof(int),       call_init_func,
+                                      call_destroy_func, sizeof(int),
+                                      channel_init_func, channel_destroy_func,
+                                      get_peer,          "some_test_filter"};
   const grpc_channel_filter *filters = &filter;
   grpc_channel_stack *channel_stack;
   grpc_call_stack *call_stack;

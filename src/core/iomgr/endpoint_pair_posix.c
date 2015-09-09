@@ -66,12 +66,12 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
   create_sockets(sv);
 
   gpr_asprintf(&final_name, "%s:client", name);
-  p.client =
-      grpc_tcp_create(grpc_fd_create(sv[1], final_name), read_slice_size);
+  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name), read_slice_size,
+                             "socketpair-server");
   gpr_free(final_name);
   gpr_asprintf(&final_name, "%s:server", name);
-  p.server =
-      grpc_tcp_create(grpc_fd_create(sv[0], final_name), read_slice_size);
+  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name), read_slice_size,
+                             "socketpair-client");
   gpr_free(final_name);
   return p;
 }

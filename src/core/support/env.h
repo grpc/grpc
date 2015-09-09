@@ -57,4 +57,4 @@ void gpr_setenv(const char *name, const char *value);
 }
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_SUPPORT_ENV_H */
+#endif /* GRPC_INTERNAL_CORE_SUPPORT_ENV_H */

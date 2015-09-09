@@ -34,28 +34,21 @@
 #include <mutex>
 #include <thread>
 
+#include <grpc/grpc.h>
+#include <grpc/support/thd.h>
+#include <grpc/support/time.h>
+#include <grpc++/channel.h>
+#include <grpc++/client_context.h>
+#include <grpc++/create_channel.h>
+#include <grpc++/server.h>
+#include <grpc++/server_builder.h>
+#include <grpc++/server_context.h>
+#include <gtest/gtest.h>
+
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/echo_duplicate.grpc.pb.h"
 #include "test/cpp/util/echo.grpc.pb.h"
-#include "src/cpp/server/thread_pool.h"
-#include <grpc++/channel_arguments.h>
-#include <grpc++/channel_interface.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include <grpc++/time.h>
-#include <gtest/gtest.h>
-
-#include <grpc/grpc.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/time.h>
 
 using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
@@ -71,7 +64,7 @@ namespace {
 void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
                        EchoResponse* response) {
   if (request->has_param() && request->param().echo_deadline()) {
-    gpr_timespec deadline = gpr_inf_future;
+    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     if (context->deadline() != system_clock::time_point::max()) {
       Timepoint2Timespec(context->deadline(), &deadline);
     }
@@ -96,15 +89,17 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
       }
       while (!context->IsCancelled()) {
         gpr_sleep_until(gpr_time_add(
-            gpr_now(),
-            gpr_time_from_micros(request->param().client_cancel_after_us())));
+            gpr_now(GPR_CLOCK_REALTIME),
+            gpr_time_from_micros(request->param().client_cancel_after_us(),
+                                 GPR_TIMESPAN)));
       }
       return Status::CANCELLED;
     } else if (request->has_param() &&
                request->param().server_cancel_after_us()) {
       gpr_sleep_until(gpr_time_add(
-          gpr_now(),
-          gpr_time_from_micros(request->param().server_cancel_after_us())));
+          gpr_now(GPR_CLOCK_REALTIME),
+          gpr_time_from_micros(request->param().server_cancel_after_us(),
+                               GPR_TIMESPAN)));
       return Status::CANCELLED;
     } else {
       EXPECT_FALSE(context->IsCancelled());
@@ -175,7 +170,7 @@ class TestServiceImplDupPkg
 
 class End2endTest : public ::testing::Test {
  protected:
-  End2endTest() : kMaxMessageSize_(8192), thread_pool_(2) {}
+  End2endTest() : kMaxMessageSize_(8192) {}
 
   void SetUp() GRPC_OVERRIDE {
     int port = grpc_pick_unused_port_or_die();
@@ -188,15 +183,14 @@ class End2endTest : public ::testing::Test {
     builder.SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
     builder.RegisterService(&dup_pkg_service_);
-    builder.SetThreadPool(&thread_pool_);
     server_ = builder.BuildAndStart();
   }
 
   void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<ChannelInterface> channel = CreateChannel(
-        server_address_.str(), InsecureCredentials(), ChannelArguments());
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureCredentials());
     stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
   }
 
@@ -206,7 +200,6 @@ class End2endTest : public ::testing::Test {
   const int kMaxMessageSize_;
   TestServiceImpl service_;
   TestServiceImplDupPkg dup_pkg_service_;
-  ThreadPool thread_pool_;
 };
 
 static void SendRpc(grpc::cpp::test::util::TestService::Stub* stub,

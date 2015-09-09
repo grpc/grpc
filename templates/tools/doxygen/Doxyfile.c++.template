@@ -1,2 +1,4 @@
-<%namespace file="Doxyfile.include" import="gen_doxyfile"/>\
-${gen_doxyfile(['grpc++'], 'C++', libs, False)}
+%YAML 1.2
+--- |
+  <%namespace file="Doxyfile.include" import="gen_doxyfile"/>\
+  ${gen_doxyfile(['grpc++'], 'C++', libs, False)}

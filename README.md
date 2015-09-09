@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/grpc/grpc.svg?branch=master)](https://travis-ci.org/grpc/grpc)
+[![Build Status](https://grpc-testing.appspot.com/job/gRPC_master/badge/icon)](https://grpc-testing.appspot.com/job/gRPC_master)
 [![Coverage Status](https://img.shields.io/coveralls/grpc/grpc.svg)](https://coveralls.io/r/grpc/grpc?branch=master)
 
 [gRPC - An RPC library and framework](http://github.com/grpc/grpc)
@@ -8,7 +8,7 @@ Copyright 2015 Google Inc.
 
 #Documentation
 
-You can find more detailed documentation and examples in the [grpc-common repository](http://github.com/grpc/grpc-common).
+You can find more detailed documentation and examples in the [doc](doc) and [examples](examples) directories respectively.
 
 #Installation
 
@@ -39,9 +39,9 @@ Libraries in different languages are in different state of development. We are s
    * Ruby Library: [src/ruby] (src/ruby) : Early adopter ready - Alpha.
    * NodeJS Library: [src/node] (src/node) : Early adopter ready - Alpha.
    * Python Library: [src/python] (src/python) : Early adopter ready - Alpha.
-   * C# Library: [src/csharp] (src/csharp) : Early adopter ready - Alpha.   
+   * C# Library: [src/csharp] (src/csharp) : Early adopter ready - Alpha.
+   * Objective-C Library: [src/objective-c] (src/objective-c): Early adopter ready - Alpha.
    * PHP Library: [src/php] (src/php) : Pre-Alpha.
-   * Objective-C Library: [src/objective-c] (src/objective-c): Pre-Alpha.
 
 #Overview
 
@@ -95,7 +95,7 @@ messages are delivered in the order they were sent.
 
 #Protocol
 
-The [gRPC protocol](https://github.com/grpc/grpc-common/blob/master/PROTOCOL-HTTP2.md) specifies the abstract requirements for communication between
+The [gRPC protocol](doc/PROTOCOL-HTTP2.md) specifies the abstract requirements for communication between
 clients and servers. A concrete embedding over HTTP/2 completes the picture by
 fleshing out the details of each of the required operations.
 

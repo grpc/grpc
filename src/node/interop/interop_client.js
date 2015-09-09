@@ -44,7 +44,7 @@ var assert = require('assert');
 
 var AUTH_SCOPE = 'https://www.googleapis.com/auth/xapi.zoo';
 var AUTH_SCOPE_RESPONSE = 'xapi.zoo';
-var AUTH_USER = ('155450119199-3psnrh1sdr3d8cpj1v46naggf81mhdnk' +
+var AUTH_USER = ('155450119199-vefjjaekcc6cmsd5914v6lqufunmh9ue' +
     '@developer.gserviceaccount.com');
 var COMPUTE_ENGINE_USER = ('155450119199-r5aaqa2vqoa9g5mv2m6s3m1l293rlmel' +
     '@developer.gserviceaccount.com');
@@ -67,11 +67,8 @@ function zeroBuffer(size) {
  *     primarily for use with mocha
  */
 function emptyUnary(client, done) {
-  var call = client.emptyCall({}, function(err, resp) {
+  client.emptyCall({}, function(err, resp) {
     assert.ifError(err);
-  });
-  call.on('status', function(status) {
-    assert.strictEqual(status.code, grpc.status.OK);
     if (done) {
       done();
     }
@@ -92,13 +89,10 @@ function largeUnary(client, done) {
       body: zeroBuffer(271828)
     }
   };
-  var call = client.unaryCall(arg, function(err, resp) {
+  client.unaryCall(arg, function(err, resp) {
     assert.ifError(err);
     assert.strictEqual(resp.payload.type, 'COMPRESSABLE');
     assert.strictEqual(resp.payload.body.length, 314159);
-  });
-  call.on('status', function(status) {
-    assert.strictEqual(status.code, grpc.status.OK);
     if (done) {
       done();
     }
@@ -115,9 +109,6 @@ function clientStreaming(client, done) {
   var call = client.streamingInputCall(function(err, resp) {
     assert.ifError(err);
     assert.strictEqual(resp.aggregated_payload_size, 74922);
-  });
-  call.on('status', function(status) {
-    assert.strictEqual(status.code, grpc.status.OK);
     if (done) {
       done();
     }
@@ -268,12 +259,14 @@ function cancelAfterFirstResponse(client, done) {
 function timeoutOnSleepingServer(client, done) {
   var deadline = new Date();
   deadline.setMilliseconds(deadline.getMilliseconds() + 1);
-  var call = client.fullDuplexCall(null, deadline);
+  var call = client.fullDuplexCall(null, {deadline: deadline});
   call.write({
     payload: {body: zeroBuffer(27182)}
   });
   call.on('error', function(error) {
-    assert.strictEqual(error.code, grpc.status.DEADLINE_EXCEEDED);
+
+    assert(error.code === grpc.status.DEADLINE_EXCEEDED ||
+        error.code === grpc.status.INTERNAL);
     done();
   });
 }
@@ -292,7 +285,7 @@ function authTest(expected_user, scope, client, done) {
     if (credential.createScopedRequired() && scope) {
       credential = credential.createScoped(scope);
     }
-    client.updateMetadata = grpc.getGoogleAuthDelegate(credential);
+    client.$updateMetadata = grpc.getGoogleAuthDelegate(credential);
     var arg = {
       response_type: 'COMPRESSABLE',
       response_size: 314159,
@@ -302,17 +295,51 @@ function authTest(expected_user, scope, client, done) {
       fill_username: true,
       fill_oauth_scope: true
     };
-    var call = client.unaryCall(arg, function(err, resp) {
+    client.unaryCall(arg, function(err, resp) {
       assert.ifError(err);
       assert.strictEqual(resp.payload.type, 'COMPRESSABLE');
       assert.strictEqual(resp.payload.body.length, 314159);
       assert.strictEqual(resp.username, expected_user);
-      assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
-    });
-    call.on('status', function(status) {
-      assert.strictEqual(status.code, grpc.status.OK);
+      if (scope) {
+        assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+      }
       if (done) {
         done();
+      }
+    });
+  });
+}
+
+function oauth2Test(expected_user, scope, per_rpc, client, done) {
+  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
+    assert.ifError(err);
+    var arg = {
+      fill_username: true,
+      fill_oauth_scope: true
+    };
+    credential = credential.createScoped(scope);
+    credential.getAccessToken(function(err, token) {
+      assert.ifError(err);
+      var updateMetadata = function(authURI, metadata, callback) {
+        metadata.add('authorization', 'Bearer ' + token);
+        callback(null, metadata);
+      };
+      var makeTestCall = function(error, client_metadata) {
+        assert.ifError(error);
+        client.unaryCall(arg, function(err, resp) {
+          assert.ifError(err);
+          assert.strictEqual(resp.username, expected_user);
+          assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+          if (done) {
+            done();
+          }
+        }, client_metadata);
+      };
+      if (per_rpc) {
+        updateMetadata('', new grpc.Metadata(), makeTestCall);
+      } else {
+        client.$updateMetadata = updateMetadata;
+        makeTestCall(null, new grpc.Metadata());
       }
     });
   });
@@ -333,7 +360,9 @@ var test_cases = {
   timeout_on_sleeping_server: timeoutOnSleepingServer,
   compute_engine_creds: _.partial(authTest, COMPUTE_ENGINE_USER, null),
   service_account_creds: _.partial(authTest, AUTH_USER, AUTH_SCOPE),
-  jwt_token_creds: _.partial(authTest, AUTH_USER, null)
+  jwt_token_creds: _.partial(authTest, AUTH_USER, null),
+  oauth2_auth_token: _.partial(oauth2Test, AUTH_USER, AUTH_SCOPE, false),
+  per_rpc_creds: _.partial(oauth2Test, AUTH_USER, AUTH_SCOPE, true)
 };
 
 /**
@@ -350,6 +379,7 @@ var test_cases = {
 function runTest(address, host_override, test_case, tls, test_ca, done) {
   // TODO(mlumish): enable TLS functionality
   var options = {};
+  var creds;
   if (tls) {
     var ca_path;
     if (test_ca) {
@@ -358,13 +388,15 @@ function runTest(address, host_override, test_case, tls, test_ca, done) {
       ca_path = process.env.SSL_CERT_FILE;
     }
     var ca_data = fs.readFileSync(ca_path);
-    var creds = grpc.Credentials.createSsl(ca_data);
-    options.credentials = creds;
+    creds = grpc.Credentials.createSsl(ca_data);
     if (host_override) {
       options['grpc.ssl_target_name_override'] = host_override;
+      options['grpc.default_authority'] = host_override;
     }
+  } else {
+    creds = grpc.Credentials.createInsecure();
   }
-  var client = new testProto.TestService(address, options);
+  var client = new testProto.TestService(address, creds, options);
 
   test_cases[test_case](client, done);
 }

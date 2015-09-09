@@ -38,4 +38,4 @@
 
 extern grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable;
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_PIPE_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_WAKEUP_FD_PIPE_H */

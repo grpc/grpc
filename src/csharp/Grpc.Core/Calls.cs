@@ -31,90 +31,107 @@
 
 #endregion
 
-using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
     /// <summary>
-    /// Helper methods for generated client stubs to make RPC calls.
+    /// Helper methods for generated clients to make RPC calls.
+    /// Most users will use this class only indirectly and will be 
+    /// making calls using client object generated from protocol
+    /// buffer definition files.
     /// </summary>
     public static class Calls
     {
-        public static TResponse BlockingUnaryCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
+        /// <summary>
+        /// Invokes a simple remote call in a blocking fashion.
+        /// </summary>
+        /// <returns>The response.</returns>
+        /// <param name="call">The call defintion.</param>
+        /// <param name="req">Request message.</param>
+        /// <typeparam name="TRequest">Type of request message.</typeparam>
+        /// <typeparam name="TResponse">The of response message.</typeparam>
+        public static TResponse BlockingUnaryCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call, TRequest req)
             where TRequest : class
             where TResponse : class
         {
-            var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestMarshaller.Serializer, call.ResponseMarshaller.Deserializer);
-            // TODO(jtattermusch): this gives a race that cancellation can be requested before the call even starts.
-            RegisterCancellationCallback(asyncCall, token);
-            return asyncCall.UnaryCall(call.Channel, call.Name, req, call.Headers);
-        }
-
-        public static async Task<TResponse> AsyncUnaryCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
-            where TRequest : class
-            where TResponse : class
-        {
-            var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestMarshaller.Serializer, call.ResponseMarshaller.Deserializer);
-            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.Name);
-            var asyncResult = asyncCall.UnaryCallAsync(req, call.Headers);
-            RegisterCancellationCallback(asyncCall, token);
-            return await asyncResult;
-        }
-
-        public static AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, TRequest req, CancellationToken token)
-            where TRequest : class
-            where TResponse : class
-        {
-            var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestMarshaller.Serializer, call.ResponseMarshaller.Deserializer);
-            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.Name);
-            asyncCall.StartServerStreamingCall(req, call.Headers);
-            RegisterCancellationCallback(asyncCall, token);
-            var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
-            return new AsyncServerStreamingCall<TResponse>(responseStream, asyncCall.Cancel);
-        }
-
-        public static AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, CancellationToken token)
-            where TRequest : class
-            where TResponse : class
-        {
-            var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestMarshaller.Serializer, call.ResponseMarshaller.Deserializer);
-            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.Name);
-            var resultTask = asyncCall.ClientStreamingCallAsync(call.Headers);
-            RegisterCancellationCallback(asyncCall, token);
-            var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
-            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask, asyncCall.Cancel);
-        }
-
-        public static AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Call<TRequest, TResponse> call, CancellationToken token)
-            where TRequest : class
-            where TResponse : class
-        {
-            var asyncCall = new AsyncCall<TRequest, TResponse>(call.RequestMarshaller.Serializer, call.ResponseMarshaller.Deserializer);
-            asyncCall.Initialize(call.Channel, GetCompletionQueue(), call.Name);
-            asyncCall.StartDuplexStreamingCall(call.Headers);
-            RegisterCancellationCallback(asyncCall, token);
-            var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
-            var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
-            return new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream, asyncCall.Cancel);
-        }
-
-        private static void RegisterCancellationCallback<TRequest, TResponse>(AsyncCall<TRequest, TResponse> asyncCall, CancellationToken token)
-        {
-            if (token.CanBeCanceled)
-            {
-                token.Register(() => asyncCall.Cancel());
-            }
+            var asyncCall = new AsyncCall<TRequest, TResponse>(call);
+            return asyncCall.UnaryCall(req);
         }
 
         /// <summary>
-        /// Gets shared completion queue used for async calls.
+        /// Invokes a simple remote call asynchronously.
         /// </summary>
-        private static CompletionQueueSafeHandle GetCompletionQueue()
+        /// <returns>An awaitable call object providing access to the response.</returns>
+        /// <param name="call">The call defintion.</param>
+        /// <param name="req">Request message.</param>
+        /// <typeparam name="TRequest">Type of request message.</typeparam>
+        /// <typeparam name="TResponse">The of response message.</typeparam>
+        public static AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call, TRequest req)
+            where TRequest : class
+            where TResponse : class
         {
-            return GrpcEnvironment.ThreadPool.CompletionQueue;
+            var asyncCall = new AsyncCall<TRequest, TResponse>(call);
+            var asyncResult = asyncCall.UnaryCallAsync(req);
+            return new AsyncUnaryCall<TResponse>(asyncResult, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+        }
+
+        /// <summary>
+        /// Invokes a server streaming call asynchronously.
+        /// In server streaming scenario, client sends on request and server responds with a stream of responses.
+        /// </summary>
+        /// <returns>A call object providing access to the asynchronous response stream.</returns>
+        /// <param name="call">The call defintion.</param>
+        /// <param name="req">Request message.</param>
+        /// <typeparam name="TRequest">Type of request message.</typeparam>
+        /// <typeparam name="TResponse">The of response messages.</typeparam>
+        public static AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call, TRequest req)
+            where TRequest : class
+            where TResponse : class
+        {
+            var asyncCall = new AsyncCall<TRequest, TResponse>(call);
+            asyncCall.StartServerStreamingCall(req);
+            var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
+            return new AsyncServerStreamingCall<TResponse>(responseStream, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+        }
+
+        /// <summary>
+        /// Invokes a client streaming call asynchronously.
+        /// In client streaming scenario, client sends a stream of requests and server responds with a single response.
+        /// </summary>
+        /// <param name="call">The call defintion.</param>
+        /// <returns>An awaitable call object providing access to the response.</returns>
+        /// <typeparam name="TRequest">Type of request messages.</typeparam>
+        /// <typeparam name="TResponse">The of response message.</typeparam>
+        public static AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call)
+            where TRequest : class
+            where TResponse : class
+        {
+            var asyncCall = new AsyncCall<TRequest, TResponse>(call);
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
+            return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, resultTask, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
+        }
+
+        /// <summary>
+        /// Invokes a duplex streaming call asynchronously.
+        /// In duplex streaming scenario, client sends a stream of requests and server responds with a stream of responses.
+        /// The response stream is completely independent and both side can be sending messages at the same time.
+        /// </summary>
+        /// <returns>A call object providing access to the asynchronous request and response streams.</returns>
+        /// <param name="call">The call definition.</param>
+        /// <typeparam name="TRequest">Type of request messages.</typeparam>
+        /// <typeparam name="TResponse">Type of reponse messages.</typeparam>
+        public static AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call)
+            where TRequest : class
+            where TResponse : class
+        {
+            var asyncCall = new AsyncCall<TRequest, TResponse>(call);
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<TRequest, TResponse>(asyncCall);
+            var responseStream = new ClientResponseStream<TRequest, TResponse>(asyncCall);
+            return new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream, asyncCall.ResponseHeadersAsync, asyncCall.GetStatus, asyncCall.GetTrailers, asyncCall.Cancel);
         }
     }
 }

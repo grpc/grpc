@@ -94,21 +94,6 @@ void *gpr_event_wait(gpr_event *ev, gpr_timespec abs_deadline) {
   return result;
 }
 
-void *gpr_event_cancellable_wait(gpr_event *ev, gpr_timespec abs_deadline,
-                                 gpr_cancellable *c) {
-  void *result = (void *)gpr_atm_acq_load(&ev->state);
-  if (result == NULL) {
-    struct sync_array_s *s = hash(ev);
-    gpr_mu_lock(&s->mu);
-    do {
-      result = (void *)gpr_atm_acq_load(&ev->state);
-    } while (result == NULL &&
-             !gpr_cv_cancellable_wait(&s->cv, &s->mu, abs_deadline, c));
-    gpr_mu_unlock(&s->mu);
-  }
-  return result;
-}
-
 void gpr_ref_init(gpr_refcount *r, int n) { gpr_atm_rel_store(&r->count, n); }
 
 void gpr_ref(gpr_refcount *r) { gpr_atm_no_barrier_fetch_add(&r->count, 1); }

@@ -38,7 +38,7 @@
 
 /* A grpc_pollset_set is a set of pollsets that are interested in an
    action. Adding a pollset to a pollset_set automatically adds any
-   fd's (etc) that have been registered with the set_set with that pollset.
+   fd's (etc) that have been registered with the set_set to that pollset.
    Registering fd's automatically adds them to all current pollsets. */
 
 #ifdef GPR_POSIX_SOCKET

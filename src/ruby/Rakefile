@@ -20,7 +20,8 @@ SPEC_SUITES = [
   { id: :bidi, title: 'bidi tests', dir: %w(spec/generic),
     tag: 'bidi' },
   { id: :server, title: 'rpc server thread tests', dir: %w(spec/generic),
-    tag: 'server' }
+    tag: 'server' },
+  { id: :pb, title: 'protobuf service tests', dir: %w(spec/pb) }
 ]
 namespace :suite do
   SPEC_SUITES.each do |suite|
@@ -50,7 +51,8 @@ task 'suite:wrapper' => [:compile, :rubocop]
 task 'suite:idiomatic' => 'suite:wrapper'
 task 'suite:bidi' => 'suite:wrapper'
 task 'suite:server' => 'suite:wrapper'
+task 'suite:pb' => 'suite:server'
 
 desc 'Compiles the gRPC extension then runs all the tests'
-task all: ['suite:idiomatic', 'suite:bidi', 'suite:server']
+task all: ['suite:idiomatic', 'suite:bidi', 'suite:pb', 'suite:server']
 task default: :all

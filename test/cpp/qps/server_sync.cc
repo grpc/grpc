@@ -31,28 +31,22 @@
  *
  */
 
-#include <sys/signal.h>
 #include <thread>
 
-#include <unistd.h>
-
 #include <gflags/gflags.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
-#include <grpc++/config.h>
+#include <grpc/support/log.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
-#include "src/cpp/server/thread_pool.h"
+#include <grpc++/security/server_credentials.h>
+
 #include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/timer.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 namespace grpc {
 namespace testing {
@@ -92,7 +86,8 @@ class TestServiceImpl GRPC_FINAL : public TestService::Service {
 class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
  public:
   SynchronousServer(const ServerConfig& config, int port)
-      : thread_pool_(config.threads()), impl_(MakeImpl(port)) {}
+      : impl_(MakeImpl(port)) {
+  }
 
  private:
   std::unique_ptr<grpc::Server> MakeImpl(int port) {
@@ -105,13 +100,10 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
 
     builder.RegisterService(&service_);
 
-    builder.SetThreadPool(&thread_pool_);
-
     return builder.BuildAndStart();
   }
 
   TestServiceImpl service_;
-  ThreadPool thread_pool_;
   std::unique_ptr<grpc::Server> impl_;
 };
 

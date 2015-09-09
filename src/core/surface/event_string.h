@@ -39,4 +39,4 @@
 /* Returns a string describing an event. Must be later freed with gpr_free() */
 char *grpc_event_string(grpc_event *ev);
 
-#endif  /* GRPC_INTERNAL_CORE_SURFACE_EVENT_STRING_H */
+#endif /* GRPC_INTERNAL_CORE_SURFACE_EVENT_STRING_H */

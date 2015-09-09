@@ -56,7 +56,7 @@ typedef struct next_call_stack {
 static void *grpc_rb_completion_queue_next_no_gil(void *param) {
   next_call_stack *const next_call = (next_call_stack*)param;
   next_call->event =
-      grpc_completion_queue_next(next_call->cq, next_call->timeout);
+      grpc_completion_queue_next(next_call->cq, next_call->timeout, NULL);
   return NULL;
 }
 
@@ -64,7 +64,7 @@ static void *grpc_rb_completion_queue_next_no_gil(void *param) {
 static void *grpc_rb_completion_queue_pluck_no_gil(void *param) {
   next_call_stack *const next_call = (next_call_stack*)param;
   next_call->event = grpc_completion_queue_pluck(next_call->cq, next_call->tag,
-                                                 next_call->timeout);
+                                                 next_call->timeout, NULL);
   return NULL;
 }
 
@@ -82,7 +82,7 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
   next_call.cq = cq;
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
   /* TODO: the timeout should be a module level constant that defaults
-   * to gpr_inf_future.
+   * to gpr_inf_future(GPR_CLOCK_REALTIME).
    *
    * - at the moment this does not work, it stalls.  Using a small timeout like
    *   this one works, and leads to fast test run times; a longer timeout was
@@ -91,7 +91,8 @@ static void grpc_rb_completion_queue_shutdown_drain(grpc_completion_queue *cq) {
    * - investigate further, this is probably another example of C-level cleanup
    * not working consistently in all cases.
    */
-  next_call.timeout = gpr_time_add(gpr_now(), gpr_time_from_micros(5e3));
+  next_call.timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                   gpr_time_from_micros(5e3, GPR_TIMESPAN));
   do {
     rb_thread_call_without_gvl(grpc_rb_completion_queue_next_no_gil,
                                (void *)&next_call, NULL, NULL);
@@ -118,7 +119,7 @@ static void grpc_rb_completion_queue_destroy(void *p) {
 static rb_data_type_t grpc_rb_completion_queue_data_type = {
     "grpc_completion_queue",
     {GRPC_RB_GC_NOT_MARKED, grpc_rb_completion_queue_destroy,
-     GRPC_RB_MEMSIZE_UNAVAILABLE},
+     GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
     NULL, NULL,
     /* cannot immediately free because grpc_rb_completion_queue_shutdown_drain
      * calls rb_thread_call_without_gvl. */
@@ -127,7 +128,7 @@ static rb_data_type_t grpc_rb_completion_queue_data_type = {
 
 /* Allocates a completion queue. */
 static VALUE grpc_rb_completion_queue_alloc(VALUE cls) {
-  grpc_completion_queue *cq = grpc_completion_queue_create();
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   if (cq == NULL) {
     rb_raise(rb_eArgError, "could not create a completion queue: not sure why");
   }
@@ -143,7 +144,7 @@ grpc_event grpc_rb_completion_queue_pluck_event(VALUE self, VALUE tag,
   TypedData_Get_Struct(self, grpc_completion_queue,
                        &grpc_rb_completion_queue_data_type, next_call.cq);
   if (TYPE(timeout) == T_NIL) {
-    next_call.timeout = gpr_inf_future;
+    next_call.timeout = gpr_inf_future(GPR_CLOCK_REALTIME);
   } else {
     next_call.timeout = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   }

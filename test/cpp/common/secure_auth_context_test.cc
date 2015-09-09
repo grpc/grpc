@@ -31,10 +31,17 @@
  *
  */
 
-#include <grpc++/auth_context.h>
+#include <grpc/grpc_security.h>
+#include <grpc++/security/auth_context.h>
 #include <gtest/gtest.h>
 #include "src/cpp/common/secure_auth_context.h"
+#include "test/cpp/util/string_ref_helper.h"
+
+extern "C" {
 #include "src/core/security/security_context.h"
+}
+
+using grpc::testing::ToString;
 
 namespace grpc {
 namespace {
@@ -43,35 +50,61 @@ class SecureAuthContextTest : public ::testing::Test {};
 
 // Created with nullptr
 TEST_F(SecureAuthContextTest, EmptyContext) {
-  SecureAuthContext context(nullptr);
+  SecureAuthContext context(nullptr, true);
   EXPECT_TRUE(context.GetPeerIdentity().empty());
   EXPECT_TRUE(context.GetPeerIdentityPropertyName().empty());
   EXPECT_TRUE(context.FindPropertyValues("").empty());
   EXPECT_TRUE(context.FindPropertyValues("whatever").empty());
+  EXPECT_TRUE(context.begin() == context.end());
 }
 
 TEST_F(SecureAuthContextTest, Properties) {
-  grpc_auth_context* ctx = grpc_auth_context_create(NULL, 3);
-  ctx->properties[0] = grpc_auth_property_init_from_cstring("name", "chapi");
-  ctx->properties[1] = grpc_auth_property_init_from_cstring("name", "chapo");
-  ctx->properties[2] = grpc_auth_property_init_from_cstring("foo", "bar");
-  ctx->peer_identity_property_name = ctx->properties[0].name;
+  grpc_auth_context* ctx = grpc_auth_context_create(NULL);
+  SecureAuthContext context(ctx, true);
+  context.AddProperty("name", "chapi");
+  context.AddProperty("name", "chapo");
+  context.AddProperty("foo", "bar");
+  EXPECT_TRUE(context.SetPeerIdentityPropertyName("name"));
 
-  SecureAuthContext context(ctx);
-  std::vector<grpc::string> peer_identity = context.GetPeerIdentity();
+  std::vector<grpc::string_ref> peer_identity = context.GetPeerIdentity();
   EXPECT_EQ(2u, peer_identity.size());
-  EXPECT_EQ("chapi", peer_identity[0]);
-  EXPECT_EQ("chapo", peer_identity[1]);
+  EXPECT_EQ("chapi", ToString(peer_identity[0]));
+  EXPECT_EQ("chapo", ToString(peer_identity[1]));
   EXPECT_EQ("name", context.GetPeerIdentityPropertyName());
-  std::vector<grpc::string> bar = context.FindPropertyValues("foo");
+  std::vector<grpc::string_ref> bar = context.FindPropertyValues("foo");
   EXPECT_EQ(1u, bar.size());
-  EXPECT_EQ("bar", bar[0]);
+  EXPECT_EQ("bar", ToString(bar[0]));
+}
+
+TEST_F(SecureAuthContextTest, Iterators) {
+  grpc_auth_context* ctx = grpc_auth_context_create(NULL);
+  SecureAuthContext context(ctx, true);
+  context.AddProperty("name", "chapi");
+  context.AddProperty("name", "chapo");
+  context.AddProperty("foo", "bar");
+  EXPECT_TRUE(context.SetPeerIdentityPropertyName("name"));
+
+  AuthPropertyIterator iter = context.begin();
+  EXPECT_TRUE(context.end() != iter);
+  AuthProperty p0 = *iter;
+  ++iter;
+  AuthProperty p1 = *iter;
+  iter++;
+  AuthProperty p2 = *iter;
+  EXPECT_EQ("name", ToString(p0.first));
+  EXPECT_EQ("chapi", ToString(p0.second));
+  EXPECT_EQ("name", ToString(p1.first));
+  EXPECT_EQ("chapo", ToString(p1.second));
+  EXPECT_EQ("foo", ToString(p2.first));
+  EXPECT_EQ("bar", ToString(p2.second));
+  ++iter;
+  EXPECT_EQ(context.end(), iter);
 }
 
 }  // namespace
 }  // namespace grpc
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
