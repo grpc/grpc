@@ -600,7 +600,7 @@ json key file or GCE default service account email.
 
 Similar to the other auth tests, this test is only for cloud-to-prod path.
 
-This test verifies unary calls succeed in sending messages using a JWT
+This test verifies unary calls succeed in sending messages using a JWT or a service account
 credentials set on the RPC.
 
 The test
@@ -608,6 +608,10 @@ The test
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
+- optionally uses the flag `--oauth_scope` for the oauth scope if implementator 
+wishes to use service account credential instead of JWT credential. For testing
+against grpc-test.sandbox.google.com, oauth scope 
+"https://www.googleapis.com/auth/xapi.zoo" should be used.
 
 Server features:
 * [UnaryCall][]
