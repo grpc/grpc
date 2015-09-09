@@ -30,7 +30,7 @@ Description: high performance general RPC framework
  .
  This package provides the gRPC C bindings.
 
-Package: libgrpc_csharp_ext0
+Package: libgrpc-csharp-ext0
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: high performance general RPC framework -- C# extension library
