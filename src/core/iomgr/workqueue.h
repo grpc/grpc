@@ -31,67 +31,36 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_INTERNAL_CORE_IOMGR_WORKQUEUE_H
+#define GRPC_INTERNAL_CORE_IOMGR_WORKQUEUE_H
 
-#ifdef GPR_POSIX_WAKEUP_FD
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/pollset.h"
 
-#include "src/core/iomgr/wakeup_fd_posix.h"
+#ifdef GPR_POSIX_SOCKET
+#include "src/core/iomgr/workqueue_posix.h"
+#endif
 
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
+#ifdef GPR_WIN32
+#include "src/core/iomgr/workqueue_windows.h"
+#endif
 
-#include "src/core/iomgr/socket_utils_posix.h"
-#include <grpc/support/log.h>
+/** A workqueue represents a list of work to be executed asynchronously. */
+struct grpc_workqueue;
+typedef struct grpc_workqueue grpc_workqueue;
 
-static void pipe_init(grpc_wakeup_fd *fd_info) {
-  int pipefd[2];
-  /* TODO(klempner): Make this nonfatal */
-  GPR_ASSERT(0 == pipe(pipefd));
-  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[0], 1));
-  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[1], 1));
-  fd_info->read_fd = pipefd[0];
-  fd_info->write_fd = pipefd[1];
-}
+/** Create a work queue */
+grpc_workqueue *grpc_workqueue_create(void);
 
-static void pipe_consume(grpc_wakeup_fd *fd_info) {
-  char buf[128];
-  int r;
+void grpc_workqueue_ref(grpc_workqueue *workqueue);
+void grpc_workqueue_unref(grpc_workqueue *workqueue);
 
-  for (;;) {
-    r = read(fd_info->read_fd, buf, sizeof(buf));
-    if (r > 0) continue;
-    if (r == 0) return;
-    switch (errno) {
-      case EAGAIN:
-        return;
-      case EINTR:
-        continue;
-      default:
-        gpr_log(GPR_ERROR, "error reading pipe: %s", strerror(errno));
-        return;
-    }
-  }
-}
+/** Bind this workqueue to a pollset */
+void grpc_workqueue_add_to_pollset(grpc_workqueue *workqueue,
+                                   grpc_pollset *pollset);
 
-static void pipe_wakeup(grpc_wakeup_fd *fd_info) {
-  char c = 0;
-  while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR)
-    ;
-}
+/** Add a work item to a workqueue */
+void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_iomgr_closure *closure,
+                         int success);
 
-static void pipe_destroy(grpc_wakeup_fd *fd_info) {
-  if (fd_info->read_fd != 0) close(fd_info->read_fd);
-  if (fd_info->write_fd != 0) close(fd_info->write_fd);
-}
-
-static int pipe_check_availability(void) {
-  /* Assume that pipes are always available. */
-  return 1;
-}
-
-const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {
-    pipe_init, pipe_consume, pipe_wakeup, pipe_destroy,
-    pipe_check_availability};
-
-#endif /* GPR_POSIX_WAKUP_FD */
+#endif

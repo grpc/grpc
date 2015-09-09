@@ -31,67 +31,54 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/iomgr/workqueue.h"
 
-#ifdef GPR_POSIX_WAKEUP_FD
-
-#include "src/core/iomgr/wakeup_fd_posix.h"
-
-#include <errno.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "src/core/iomgr/socket_utils_posix.h"
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-static void pipe_init(grpc_wakeup_fd *fd_info) {
-  int pipefd[2];
-  /* TODO(klempner): Make this nonfatal */
-  GPR_ASSERT(0 == pipe(pipefd));
-  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[0], 1));
-  GPR_ASSERT(grpc_set_socket_nonblocking(pipefd[1], 1));
-  fd_info->read_fd = pipefd[0];
-  fd_info->write_fd = pipefd[1];
+#include "test/core/util/test_config.h"
+
+static grpc_pollset g_pollset;
+
+static void must_succeed(void *p, int success) {
+  GPR_ASSERT(success == 1);
+  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  *(int *)p = 1;
+  grpc_pollset_kick(&g_pollset, NULL);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
-static void pipe_consume(grpc_wakeup_fd *fd_info) {
-  char buf[128];
-  int r;
+static void test_add_closure(void) {
+  grpc_iomgr_closure c;
+  int done = 0;
+  grpc_workqueue *wq = grpc_workqueue_create();
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+  grpc_pollset_worker worker;
+  grpc_iomgr_closure_init(&c, must_succeed, &done);
 
-  for (;;) {
-    r = read(fd_info->read_fd, buf, sizeof(buf));
-    if (r > 0) continue;
-    if (r == 0) return;
-    switch (errno) {
-      case EAGAIN:
-        return;
-      case EINTR:
-        continue;
-      default:
-        gpr_log(GPR_ERROR, "error reading pipe: %s", strerror(errno));
-        return;
-    }
-  }
+  grpc_workqueue_push(wq, &c, 1);
+  grpc_workqueue_add_to_pollset(wq, &g_pollset);
+
+  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  GPR_ASSERT(!done);
+  grpc_pollset_work(&g_pollset, &worker, gpr_now(deadline.clock_type),
+                    deadline);
+  GPR_ASSERT(done);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+
+  grpc_workqueue_unref(wq);
 }
 
-static void pipe_wakeup(grpc_wakeup_fd *fd_info) {
-  char c = 0;
-  while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR)
-    ;
+static void done_shutdown(void *arg) { grpc_pollset_destroy(arg); }
+
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  grpc_init();
+  grpc_pollset_init(&g_pollset);
+
+  test_add_closure();
+
+  grpc_pollset_shutdown(&g_pollset, done_shutdown, &g_pollset);
+  grpc_shutdown();
+  return 0;
 }
-
-static void pipe_destroy(grpc_wakeup_fd *fd_info) {
-  if (fd_info->read_fd != 0) close(fd_info->read_fd);
-  if (fd_info->write_fd != 0) close(fd_info->write_fd);
-}
-
-static int pipe_check_availability(void) {
-  /* Assume that pipes are always available. */
-  return 1;
-}
-
-const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {
-    pipe_init, pipe_consume, pipe_wakeup, pipe_destroy,
-    pipe_check_availability};
-
-#endif /* GPR_POSIX_WAKUP_FD */
