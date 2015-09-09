@@ -29,3 +29,13 @@ Description: high performance general RPC framework
  transparently, and makes it easier to build connected systems.
  .
  This package provides the gRPC C bindings.
+
+Package: libgrpc_csharp_ext0
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: high performance general RPC framework -- C# extension library
+ A modern, open source remote procedure call (RPC) framework that can
+ run anywhere. It enables client and server applications to communicate
+ transparently, and makes it easier to build connected systems.
+ .
+ This package provides the native extension library required by gRPC C#.
