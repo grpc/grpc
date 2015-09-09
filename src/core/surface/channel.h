@@ -36,6 +36,7 @@
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/subchannel_factory.h"
+#include "src/core/iomgr/workqueue.h"
 
 grpc_channel *grpc_channel_create_from_filters(
     const char *target, const grpc_channel_filter **filters, size_t count,
@@ -60,6 +61,8 @@ grpc_mdstr *grpc_channel_get_encodings_accepted_by_peer_string(
     grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
 gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
+
+grpc_workqueue *grpc_channel_get_workqueue(grpc_channel *channel);
 
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);

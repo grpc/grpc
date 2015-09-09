@@ -178,9 +178,6 @@ void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
   worker->next = worker->prev = NULL;
   /* TODO(ctiller): pool these */
   grpc_wakeup_fd_init(&worker->wakeup_fd);
-  if (grpc_maybe_call_delayed_callbacks(&pollset->mu, 1)) {
-    goto done;
-  }
   if (grpc_alarm_check(&pollset->mu, now, &deadline)) {
     goto done;
   }

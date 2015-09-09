@@ -68,13 +68,4 @@ void grpc_iomgr_init(void);
 /** Signals the intention to shutdown the iomgr. */
 void grpc_iomgr_shutdown(void);
 
-/** Registers a closure to be invoked at some point in the future.
- *
- * Can be called from within a callback or from anywhere else */
-void grpc_iomgr_add_callback(grpc_iomgr_closure *closure);
-
-/** As per grpc_iomgr_add_callback, with the ability to set the success
-    argument. */
-void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *iocb, int success);
-
 #endif /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_H */
