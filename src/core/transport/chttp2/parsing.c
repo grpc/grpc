@@ -131,7 +131,7 @@ void grpc_chttp2_publish_reads(
      published later */
   if (transport_parsing->goaway_received) {
     grpc_chttp2_add_incoming_goaway(transport_global,
-                                    transport_parsing->goaway_error,
+                                    (gpr_uint32)transport_parsing->goaway_error,
                                     transport_parsing->goaway_text);
     transport_parsing->goaway_text = gpr_empty_slice();
     transport_parsing->goaway_received = 0;
@@ -212,7 +212,7 @@ void grpc_chttp2_publish_reads(
     if (stream_parsing->saw_rst_stream) {
       stream_global->cancelled = 1;
       stream_global->cancelled_status = grpc_chttp2_http2_error_to_grpc_status(
-          stream_parsing->rst_stream_reason);
+          (grpc_chttp2_error_code)stream_parsing->rst_stream_reason);
       if (stream_parsing->rst_stream_reason == GRPC_CHTTP2_NO_ERROR) {
         stream_global->published_cancelled = 1;
       }

@@ -75,8 +75,8 @@ static void verify_sopb(size_t window_available, int eof,
   gpr_slice_buffer_init(&output);
   grpc_sopb_init(&encops);
   GPR_ASSERT(expect_window_used ==
-             grpc_chttp2_preencode(g_sopb.ops, &g_sopb.nops, window_available,
-                                   &encops));
+             grpc_chttp2_preencode(g_sopb.ops, &g_sopb.nops,
+                                   (gpr_uint32)window_available, &encops));
   grpc_chttp2_encode(encops.ops, encops.nops, eof, 0xdeadbeef, &g_compressor,
                      &output);
   encops.nops = 0;

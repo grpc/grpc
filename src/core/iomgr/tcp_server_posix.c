@@ -83,7 +83,7 @@ typedef struct {
     struct sockaddr sockaddr;
     struct sockaddr_un un;
   } addr;
-  int addr_len;
+  size_t addr_len;
   grpc_iomgr_closure read_closure;
   grpc_iomgr_closure destroyed_closure;
 } server_port;
@@ -236,7 +236,7 @@ static void init_max_accept_queue_size(void) {
     char *end;
     long i = strtol(buf, &end, 10);
     if (i > 0 && i <= INT_MAX && end && *end == 0) {
-      n = i;
+      n = (int)i;
     }
   }
   fclose(fp);
@@ -274,7 +274,8 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
     goto error;
   }
 
-  if (bind(fd, addr, addr_len) < 0) {
+  GPR_ASSERT(addr_len < ~(socklen_t)0);
+  if (bind(fd, addr, (socklen_t)addr_len) < 0) {
     char *addr_str;
     grpc_sockaddr_to_string(&addr_str, addr, 0);
     gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));

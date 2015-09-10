@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
   grpc_test_init(1, fake_argv);
 
   grpc_init();
-  srand(clock());
+  srand((unsigned)clock());
 
   cl = gpr_cmdline_create("fling server");
   gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);

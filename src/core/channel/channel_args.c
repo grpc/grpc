@@ -132,7 +132,7 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
         !strcmp(GRPC_COMPRESSION_ALGORITHM_ARG, a->args[i].key)) {
-      return a->args[i].value.integer;
+      return (grpc_compression_algorithm)a->args[i].value.integer;
       break;
     }
   }

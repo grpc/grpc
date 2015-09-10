@@ -32,9 +32,12 @@
  */
 
 #include "src/core/transport/chttp2/internal.h"
-#include "src/core/transport/chttp2/http2_errors.h"
+
+#include <limits.h>
 
 #include <grpc/support/log.h>
+
+#include "src/core/transport/chttp2/http2_errors.h"
 
 static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing);
 
@@ -78,12 +81,13 @@ int grpc_chttp2_unlocking_check_writes(
     stream_writing->send_closed = GRPC_DONT_SEND_CLOSED;
 
     if (stream_global->outgoing_sopb) {
-      window_delta =
-          grpc_chttp2_preencode(stream_global->outgoing_sopb->ops,
-                                &stream_global->outgoing_sopb->nops,
-                                GPR_MIN(transport_global->outgoing_window,
-                                        stream_global->outgoing_window),
-                                &stream_writing->sopb);
+      window_delta = grpc_chttp2_preencode(
+          stream_global->outgoing_sopb->ops,
+          &stream_global->outgoing_sopb->nops,
+          (gpr_uint32)GPR_MIN(GPR_MIN(transport_global->outgoing_window,
+                                      stream_global->outgoing_window),
+                              GPR_UINT32_MAX),
+          &stream_writing->sopb);
       GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(
           "write", transport_global, outgoing_window, -(gpr_int64)window_delta);
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("write", transport_global, stream_global,

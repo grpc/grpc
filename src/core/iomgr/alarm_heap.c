@@ -45,7 +45,7 @@
    its argument. */
 static void adjust_upwards(grpc_alarm **first, gpr_uint32 i, grpc_alarm *t) {
   while (i > 0) {
-    gpr_uint32 parent = (i - 1u) / 2u;
+    gpr_uint32 parent = (gpr_uint32)(((int)i - 1) / 2);
     if (gpr_time_cmp(first[parent]->deadline, t->deadline) >= 0) break;
     first[i] = first[parent];
     first[i]->heap_index = i;
@@ -94,7 +94,7 @@ static void maybe_shrink(grpc_alarm_heap *heap) {
 
 static void note_changed_priority(grpc_alarm_heap *heap, grpc_alarm *alarm) {
   gpr_uint32 i = alarm->heap_index;
-  gpr_uint32 parent = (i - 1u) / 2u;
+  gpr_uint32 parent = (gpr_uint32)(((int)i - 1) / 2);
   if (gpr_time_cmp(heap->alarms[parent]->deadline, alarm->deadline) < 0) {
     adjust_upwards(heap->alarms, i, alarm);
   } else {

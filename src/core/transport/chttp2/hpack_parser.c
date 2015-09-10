@@ -1085,7 +1085,8 @@ static int parse_string_prefix(grpc_chttp2_hpack_parser *p,
 static void append_bytes(grpc_chttp2_hpack_parser_string *str,
                          const gpr_uint8 *data, size_t length) {
   if (length + str->length > str->capacity) {
-    str->capacity = str->length + length;
+    GPR_ASSERT(str->length + length <= GPR_UINT32_MAX);
+    str->capacity = (gpr_uint32)(str->length + length);
     str->str = gpr_realloc(str->str, str->capacity);
   }
   memcpy(str->str + str->length, data, length);
