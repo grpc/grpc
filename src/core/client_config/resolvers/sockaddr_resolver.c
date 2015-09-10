@@ -272,7 +272,7 @@ done:
 
 static void do_nothing(void *ignored) {}
 static grpc_resolver *sockaddr_create(
-    grpc_uri *uri, const char *lb_policy_name,
+    grpc_uri *uri, const char *default_lb_policy_name,
     grpc_subchannel_factory *subchannel_factory,
     int parse(grpc_uri *uri, struct sockaddr_storage *dst, int *len)) {
   size_t i;
@@ -288,6 +288,25 @@ static grpc_resolver *sockaddr_create(
 
   r = gpr_malloc(sizeof(sockaddr_resolver));
   memset(r, 0, sizeof(*r));
+
+  r->lb_policy_name = NULL;
+  if (0 != strcmp(uri->query, "")) {
+    gpr_slice query_slice;
+    gpr_slice_buffer query_parts;
+
+    query_slice = gpr_slice_new(uri->query, strlen(uri->query), do_nothing);
+    gpr_slice_buffer_init(&query_parts);
+    gpr_slice_split(query_slice, "=", &query_parts);
+    GPR_ASSERT(query_parts.count == 2);
+    if (0 == gpr_slice_str_cmp(query_parts.slices[0], "lb_policy")) {
+      r->lb_policy_name = gpr_dump_slice(query_parts.slices[1], GPR_DUMP_ASCII);
+    }
+    gpr_slice_buffer_destroy(&query_parts);
+    gpr_slice_unref(query_slice);
+  }
+  if (r->lb_policy_name == NULL) {
+    r->lb_policy_name = gpr_strdup(default_lb_policy_name);
+  }
 
   path_slice = gpr_slice_new(uri->path, strlen(uri->path), do_nothing);
   gpr_slice_buffer_init(&path_parts);
@@ -319,7 +338,6 @@ static grpc_resolver *sockaddr_create(
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
   r->subchannel_factory = subchannel_factory;
-  r->lb_policy_name = gpr_strdup(lb_policy_name);
 
   grpc_subchannel_factory_ref(subchannel_factory);
   return &r->base;
@@ -337,7 +355,7 @@ static void sockaddr_factory_unref(grpc_resolver_factory *factory) {}
   static grpc_resolver *name##_factory_create_resolver(                     \
       grpc_resolver_factory *factory, grpc_uri *uri,                        \
       grpc_subchannel_factory *subchannel_factory) {                        \
-    return sockaddr_create(uri, "round_robin",                               \
+    return sockaddr_create(uri, "pick_first",                               \
                            subchannel_factory, parse_##name);               \
   }                                                                         \
   static const grpc_resolver_factory_vtable name##_factory_vtable = {       \
