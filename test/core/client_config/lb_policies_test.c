@@ -31,19 +31,21 @@
  *
  */
 
+#include <stdarg.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/surface/channel.h"
 #include "src/core/channel/client_channel.h"
-#include "src/core/surface/server.h"
 #include "src/core/support/string.h"
+#include "src/core/surface/server.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/port.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -66,6 +68,8 @@ typedef struct test_spec {
 
   int **kill_at;
   int **revive_at;
+
+  const char *description;
 
   verifier_fn verifier;
 
@@ -378,16 +382,51 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
 }
 
 static void assert_channel_connectivity(
-    grpc_channel *ch, grpc_connectivity_state expected_conn_state) {
+    grpc_channel *ch, size_t num_accepted_conn_states,
+    grpc_connectivity_state accepted_conn_states, ...) {
+  size_t i;
   grpc_channel_stack *client_stack;
   grpc_channel_element *client_channel_filter;
   grpc_connectivity_state actual_conn_state;
+  va_list ap;
 
   client_stack = grpc_channel_get_channel_stack(ch);
   client_channel_filter = grpc_channel_stack_last_element(client_stack);
+
   actual_conn_state = grpc_client_channel_check_connectivity_state(
       client_channel_filter, 0 /* don't try to connect */);
-  GPR_ASSERT(actual_conn_state == expected_conn_state);
+  va_start(ap, accepted_conn_states);
+  for (i = 0; i < num_accepted_conn_states; i++) {
+    va_arg(ap, grpc_connectivity_state);
+    if (actual_conn_state == accepted_conn_states) {
+      break;
+    }
+  }
+  va_end(ap);
+  if (i == num_accepted_conn_states) {
+    char **accepted_strs = gpr_malloc(sizeof(char*) * num_accepted_conn_states);
+    char *accepted_str_joined;
+    va_start(ap, accepted_conn_states);
+    for (i = 0; i < num_accepted_conn_states; i++) {
+      va_arg(ap, grpc_connectivity_state);
+      GPR_ASSERT(gpr_asprintf(&accepted_strs[i], "%d", accepted_conn_states) >
+                 0);
+    }
+    va_end(ap);
+    accepted_str_joined = gpr_strjoin_sep((const char **)accepted_strs,
+                                          num_accepted_conn_states, ", ", NULL);
+    gpr_log(
+        GPR_ERROR,
+        "Channel connectivity assertion failed: expected <one of [%s]>, got %d",
+        accepted_str_joined, actual_conn_state);
+
+    for (i = 0; i < num_accepted_conn_states; i++) {
+      gpr_free(accepted_strs[i]);
+    }
+    gpr_free(accepted_strs);
+    gpr_free(accepted_str_joined);
+    abort();
+  }
 }
 
 void run_spec(const test_spec *spec) {
@@ -400,10 +439,11 @@ void run_spec(const test_spec *spec) {
   /* Create client. */
   servers_hostports_str = gpr_strjoin_sep((const char **)f->servers_hostports,
                                           f->num_servers, ",", NULL);
-  gpr_asprintf(&client_hostport, "ipv4:%s", servers_hostports_str);
+  gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin",
+               servers_hostports_str);
   client = grpc_insecure_channel_create(client_hostport, NULL, NULL);
 
-  gpr_log(GPR_INFO, "Testing with servers=%s client=%s",
+  gpr_log(GPR_INFO, "Testing '%s' with servers=%s client=%s", spec->description,
           servers_hostports_str, client_hostport);
 
   actual_connection_sequence = perform_request(f, client, spec);
@@ -456,7 +496,7 @@ static void verify_vanilla_round_robin(const servers_fixture *f,
       abort();
     }
   }
-  assert_channel_connectivity(client, GRPC_CHANNEL_READY);
+  assert_channel_connectivity(client, 1, GRPC_CHANNEL_READY);
 
   gpr_free(expected_connection_sequence);
 }
@@ -477,8 +517,17 @@ static void verify_vanishing_floor_round_robin(
          expected_seq_length * sizeof(int));
 
   /* first three elements of the sequence should be [<1st>, -1] */
-  GPR_ASSERT(actual_connection_sequence[0] == expected_connection_sequence[0]);
+  if (actual_connection_sequence[0] != expected_connection_sequence[0]) {
+    gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %d",
+            expected_connection_sequence[0], actual_connection_sequence[0], 0);
+    print_failed_expectations(expected_connection_sequence,
+                              actual_connection_sequence, expected_seq_length,
+                              1);
+    abort();
+  }
+
   GPR_ASSERT(actual_connection_sequence[1] == -1);
+
 
   for (i = 2; i < num_iters; i++) {
     const int actual = actual_connection_sequence[i];
@@ -512,7 +561,8 @@ static void verify_total_carnage_round_robin(
 
   /* even though we know all the servers are dead, the client is still trying
    * retrying, believing it's in a transient failure situation */
-  assert_channel_connectivity(client, GRPC_CHANNEL_TRANSIENT_FAILURE);
+  assert_channel_connectivity(client, 2, GRPC_CHANNEL_TRANSIENT_FAILURE,
+                              GRPC_CHANNEL_CONNECTING);
 }
 
 static void verify_partial_carnage_round_robin(
@@ -548,7 +598,8 @@ static void verify_partial_carnage_round_robin(
 
   /* even though we know all the servers are dead, the client is still trying
    * retrying, believing it's in a transient failure situation */
-  assert_channel_connectivity(client, GRPC_CHANNEL_TRANSIENT_FAILURE);
+  assert_channel_connectivity(client, 2, GRPC_CHANNEL_TRANSIENT_FAILURE,
+                              GRPC_CHANNEL_CONNECTING);
   gpr_free(expected_connection_sequence);
 }
 
@@ -569,8 +620,12 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   /* first iteration succeeds */
   GPR_ASSERT(actual_connection_sequence[0] != -1);
 
-  /* back up on the third iteration */
-  for (i = 3; i < num_iters; i++) {
+  /* back up on the third (or maybe fourth) iteration */
+  i = 3;
+  if (actual_connection_sequence[i] == -1) {
+    i = 4;
+  }
+  for (; i < num_iters; i++) {
     const int actual = actual_connection_sequence[i];
     const int expected = expected_connection_sequence[i % expected_seq_length];
     if (actual != expected) {
@@ -584,7 +639,7 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   }
 
   /* things are fine once the servers are brought back up */
-  assert_channel_connectivity(client, GRPC_CHANNEL_READY);
+  assert_channel_connectivity(client, 1, GRPC_CHANNEL_READY);
   gpr_free(expected_connection_sequence);
 }
 
@@ -601,48 +656,47 @@ int main(int argc, char **argv) {
   /* everything is fine, all servers stay up the whole time and life's peachy */
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);
   spec->verifier = verify_vanilla_round_robin;
-  gpr_log(GPR_DEBUG, "test_all_server_up");
-  run_spec(spec);
+  spec->description = "test_all_server_up";
+  /*run_spec(spec);*/
 
   /* Kill all servers first thing in the morning */
   test_spec_reset(spec);
   spec->verifier = verify_total_carnage_round_robin;
+  spec->description = "test_kill_all_server";
   for (i = 0; i < NUM_SERVERS; i++) {
     spec->kill_at[0][i] = 1;
   }
-  gpr_log(GPR_DEBUG, "test_kill_all_server");
   run_spec(spec);
 
   /* at the start of the 2nd iteration, kill all but the first and last servers.
    * This should knock down the server bound to be selected next */
   test_spec_reset(spec);
   spec->verifier = verify_vanishing_floor_round_robin;
+  spec->description = "test_kill_all_server_at_2nd_iteration";
   for (i = 1; i < NUM_SERVERS - 1; i++) {
     spec->kill_at[1][i] = 1;
   }
-  gpr_log(GPR_DEBUG, "test_kill_all_server_at_2nd_iteration");
-  run_spec(spec);
+  /*run_spec(spec);*/
 
   /* Midway, kill all servers. */
   test_spec_reset(spec);
   spec->verifier = verify_partial_carnage_round_robin;
+  spec->description = "test_kill_all_server_midway";
   for (i = 0; i < NUM_SERVERS; i++) {
     spec->kill_at[spec->num_iters / 2][i] = 1;
   }
-  gpr_log(GPR_DEBUG, "test_kill_all_server_midway");
-  run_spec(spec);
-
+  /*run_spec(spec);*/
 
   /* After first iteration, kill all servers. On the third one, bring them all
    * back up. */
   test_spec_reset(spec);
   spec->verifier = verify_rebirth_round_robin;
+  spec->description = "test_kill_all_server_after_1st_resurrect_at_3rd";
   for (i = 0; i < NUM_SERVERS; i++) {
     spec->kill_at[1][i] = 1;
     spec->revive_at[3][i] = 1;
   }
-  gpr_log(GPR_DEBUG, "test_kill_all_server_after_1st_resurrect_at_3rd");
-  run_spec(spec);
+  /*run_spec(spec);*/
 
   test_spec_destroy(spec);
 
