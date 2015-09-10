@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.6"/>
-<title>GRPC C++: include/grpc++/dynamic_thread_pool.h Source File</title>
+<title>GRPC C++: src/cpp/server/dynamic_thread_pool.h Source File</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -81,7 +81,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_f1b2ab2a88927c1e950e43c1cf4b634b.html">grpc++</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_68267d1309a1af8e8297ef4c3efbcdba.html">src</a></li><li class="navelem"><a class="el" href="dir_dfdbda394c3f7a3aa55229f33a559c41.html">cpp</a></li><li class="navelem"><a class="el" href="dir_0b10d04e5d7dad9a62c383a9247be3d1.html">server</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -122,18 +122,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="comment"> */</span></div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPCXX_DYNAMIC_THREAD_POOL_H</span></div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPCXX_DYNAMIC_THREAD_POOL_H</span></div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#ifndef GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H</span></div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="config_8h.html">grpc++/config.h</a>&gt;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="sync_8h.html">grpc++/impl/sync.h</a>&gt;</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="thd_8h.html">grpc++/impl/thd.h</a>&gt;</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="thread__pool__interface_8h.html">grpc++/thread_pool_interface.h</a>&gt;</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;</div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#include &lt;list&gt;</span></div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor">#include &lt;queue&gt;</span></div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;list&gt;</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &lt;queue&gt;</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="sync_8h.html">grpc++/impl/sync.h</a>&gt;</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="thd_8h.html">grpc++/impl/thd.h</a>&gt;</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="config_8h.html">grpc++/support/config.h</a>&gt;</span></div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="thread__pool__interface_8h.html">src/cpp/server/thread_pool_interface.h</a>&quot;</span></div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;</div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">namespace </span>grpc {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;</div>
@@ -146,40 +146,41 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;</div>
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; <span class="keyword">private</span>:</div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;  <span class="keyword">class </span>DynamicThread {</div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;  <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    DynamicThread(<a class="code" href="classgrpc_1_1_dynamic_thread_pool.html">DynamicThreadPool</a> *pool);</div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;   <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;    DynamicThread(<a class="code" href="classgrpc_1_1_dynamic_thread_pool.html">DynamicThreadPool</a>* pool);</div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;    ~DynamicThread();</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keyword">private</span>:</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;    <a class="code" href="classgrpc_1_1_dynamic_thread_pool.html">DynamicThreadPool</a> *pool_;</div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    std::unique_ptr&lt;grpc::thread&gt; thd_;</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    <span class="keywordtype">void</span> ThreadFunc();</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;  };</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  <a class="code" href="classgrpc_1_1mutex.html">grpc::mutex</a> mu_;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <a class="code" href="classgrpc_1_1condition__variable.html">grpc::condition_variable</a> cv_;</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <a class="code" href="classgrpc_1_1condition__variable.html">grpc::condition_variable</a> shutdown_cv_;</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <span class="keywordtype">bool</span> shutdown_;</div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  std::queue&lt;std::function&lt;void()&gt;&gt; callbacks_;</div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  <span class="keywordtype">int</span> reserve_threads_;</div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordtype">int</span> nthreads_;</div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keywordtype">int</span> threads_waiting_;</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  std::list&lt;DynamicThread*&gt; dead_threads_;</div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;</div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;  <span class="keywordtype">void</span> ThreadFunc();</div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> ReapThreads(std::list&lt;DynamicThread*&gt;* tlist);</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;};</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;}  <span class="comment">// namespace grpc</span></div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;</div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor">#endif  // GRPCXX_DYNAMIC_THREAD_POOL_H</span></div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;   <span class="keyword">private</span>:</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;    <a class="code" href="classgrpc_1_1_dynamic_thread_pool.html">DynamicThreadPool</a>* pool_;</div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;    std::unique_ptr&lt;grpc::thread&gt; thd_;</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;    <span class="keywordtype">void</span> ThreadFunc();</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;  };</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;  <a class="code" href="classgrpc_1_1mutex.html">grpc::mutex</a> mu_;</div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;  <a class="code" href="classgrpc_1_1condition__variable.html">grpc::condition_variable</a> cv_;</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;  <a class="code" href="classgrpc_1_1condition__variable.html">grpc::condition_variable</a> shutdown_cv_;</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;  <span class="keywordtype">bool</span> shutdown_;</div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;  std::queue&lt;std::function&lt;void()&gt;&gt; callbacks_;</div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;  <span class="keywordtype">int</span> reserve_threads_;</div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  <span class="keywordtype">int</span> nthreads_;</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;  <span class="keywordtype">int</span> threads_waiting_;</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;  std::list&lt;DynamicThread*&gt; dead_threads_;</div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;</div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;  <span class="keywordtype">void</span> ThreadFunc();</div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;  <span class="keyword">static</span> <span class="keywordtype">void</span> ReapThreads(std::list&lt;DynamicThread*&gt;* tlist);</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;};</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;}  <span class="comment">// namespace grpc</span></div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#endif  // GRPC_INTERNAL_CPP_DYNAMIC_THREAD_POOL_H</span></div>
 <div class="ttc" id="classgrpc_1_1mutex_html"><div class="ttname"><a href="classgrpc_1_1mutex.html">grpc::mutex</a></div><div class="ttdef"><b>Definition:</b> sync_no_cxx11.h:45</div></div>
 <div class="ttc" id="config_8h_html"><div class="ttname"><a href="config_8h.html">config.h</a></div></div>
 <div class="ttc" id="config_8h_html_ab2216aa6e0ffe505e1ec362a9621a7f9"><div class="ttname"><a href="config_8h.html#ab2216aa6e0ffe505e1ec362a9621a7f9">GRPC_FINAL</a></div><div class="ttdeci">#define GRPC_FINAL</div><div class="ttdef"><b>Definition:</b> config.h:71</div></div>
 <div class="ttc" id="classgrpc_1_1_thread_pool_interface_html"><div class="ttname"><a href="classgrpc_1_1_thread_pool_interface.html">grpc::ThreadPoolInterface</a></div><div class="ttdef"><b>Definition:</b> thread_pool_interface.h:42</div></div>
-<div class="ttc" id="classgrpc_1_1_dynamic_thread_pool_html_af4b6567a60ddfa8551dfbddab4cb7209"><div class="ttname"><a href="classgrpc_1_1_dynamic_thread_pool.html#af4b6567a60ddfa8551dfbddab4cb7209">grpc::DynamicThreadPool::DynamicThreadPool</a></div><div class="ttdeci">DynamicThreadPool(int reserve_threads)</div><div class="ttdef"><b>Definition:</b> dynamic_thread_pool.cc:87</div></div>
-<div class="ttc" id="classgrpc_1_1condition__variable_html"><div class="ttname"><a href="classgrpc_1_1condition__variable.html">grpc::condition_variable</a></div><div class="ttdef"><b>Definition:</b> sync_no_cxx11.h:84</div></div>
+<div class="ttc" id="classgrpc_1_1_dynamic_thread_pool_html_af4b6567a60ddfa8551dfbddab4cb7209"><div class="ttname"><a href="classgrpc_1_1_dynamic_thread_pool.html#af4b6567a60ddfa8551dfbddab4cb7209">grpc::DynamicThreadPool::DynamicThreadPool</a></div><div class="ttdeci">DynamicThreadPool(int reserve_threads)</div><div class="ttdef"><b>Definition:</b> dynamic_thread_pool.cc:88</div></div>
+<div class="ttc" id="classgrpc_1_1condition__variable_html"><div class="ttname"><a href="classgrpc_1_1condition__variable.html">grpc::condition_variable</a></div><div class="ttdef"><b>Definition:</b> sync_no_cxx11.h:87</div></div>
 <div class="ttc" id="thread__pool__interface_8h_html"><div class="ttname"><a href="thread__pool__interface_8h.html">thread_pool_interface.h</a></div></div>
-<div class="ttc" id="classgrpc_1_1_dynamic_thread_pool_html_aea1cdc7989a2d6ab8fb1906428dbea30"><div class="ttname"><a href="classgrpc_1_1_dynamic_thread_pool.html#aea1cdc7989a2d6ab8fb1906428dbea30">grpc::DynamicThreadPool::Add</a></div><div class="ttdeci">void Add(const std::function&lt; void()&gt; &amp;callback) GRPC_OVERRIDE</div><div class="ttdef"><b>Definition:</b> dynamic_thread_pool.cc:113</div></div>
-<div class="ttc" id="classgrpc_1_1_dynamic_thread_pool_html_a9a81f1b15a357a8ca6cb3d7fef7a5456"><div class="ttname"><a href="classgrpc_1_1_dynamic_thread_pool.html#a9a81f1b15a357a8ca6cb3d7fef7a5456">grpc::DynamicThreadPool::~DynamicThreadPool</a></div><div class="ttdeci">~DynamicThreadPool()</div><div class="ttdef"><b>Definition:</b> dynamic_thread_pool.cc:103</div></div>
+<div class="ttc" id="classgrpc_1_1_dynamic_thread_pool_html_aea1cdc7989a2d6ab8fb1906428dbea30"><div class="ttname"><a href="classgrpc_1_1_dynamic_thread_pool.html#aea1cdc7989a2d6ab8fb1906428dbea30">grpc::DynamicThreadPool::Add</a></div><div class="ttdeci">void Add(const std::function&lt; void()&gt; &amp;callback) GRPC_OVERRIDE</div><div class="ttdef"><b>Definition:</b> dynamic_thread_pool.cc:116</div></div>
+<div class="ttc" id="classgrpc_1_1_dynamic_thread_pool_html_a9a81f1b15a357a8ca6cb3d7fef7a5456"><div class="ttname"><a href="classgrpc_1_1_dynamic_thread_pool.html#a9a81f1b15a357a8ca6cb3d7fef7a5456">grpc::DynamicThreadPool::~DynamicThreadPool</a></div><div class="ttdeci">~DynamicThreadPool()</div><div class="ttdef"><b>Definition:</b> dynamic_thread_pool.cc:106</div></div>
 <div class="ttc" id="sync_8h_html"><div class="ttname"><a href="sync_8h.html">sync.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_dynamic_thread_pool_html"><div class="ttname"><a href="classgrpc_1_1_dynamic_thread_pool.html">grpc::DynamicThreadPool</a></div><div class="ttdef"><b>Definition:</b> dynamic_thread_pool.h:49</div></div>
 <div class="ttc" id="config_8h_html_a9a884d706be26697c9c892365a3402a9"><div class="ttname"><a href="config_8h.html#a9a884d706be26697c9c892365a3402a9">GRPC_OVERRIDE</a></div><div class="ttdeci">#define GRPC_OVERRIDE</div><div class="ttdef"><b>Definition:</b> config.h:77</div></div>
@@ -187,7 +188,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

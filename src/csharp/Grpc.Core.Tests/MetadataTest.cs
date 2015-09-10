@@ -75,6 +75,17 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
+        public void AsciiEntry_KeyValidity()
+        {
+            new Metadata.Entry("ABC", "XYZ");
+            new Metadata.Entry("0123456789abc", "XYZ");
+            new Metadata.Entry("-abc", "XYZ");
+            new Metadata.Entry("a_bc_", "XYZ");
+            Assert.Throws(typeof(ArgumentException), () => new Metadata.Entry("abc[", "xyz"));
+            Assert.Throws(typeof(ArgumentException), () => new Metadata.Entry("abc/", "xyz"));
+        }
+
+        [Test]
         public void Entry_ConstructionPreconditions()
         {
             Assert.Throws(typeof(ArgumentNullException), () => new Metadata.Entry(null, "xyz"));

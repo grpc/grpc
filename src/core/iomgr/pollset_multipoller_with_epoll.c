@@ -99,7 +99,6 @@ static void perform_delayed_add(void *arg, int iomgr_status) {
   if (da->pollset->shutting_down) {
     /* We don't care about this pollset anymore. */
     if (da->pollset->in_flight_cbs == 0 && !da->pollset->called_shutdown) {
-      GPR_ASSERT(!grpc_pollset_has_workers(da->pollset));
       da->pollset->called_shutdown = 1;
       do_shutdown_cb = 1;
     }

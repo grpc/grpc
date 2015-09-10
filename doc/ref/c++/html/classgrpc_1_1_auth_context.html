@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -88,11 +88,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a>  </div>
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::AuthContext Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
+
+<p>Class encapsulating the Authentication Information.  
+ <a href="classgrpc_1_1_auth_context.html#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="auth__context_8h_source.html">auth_context.h</a>&gt;</code></p>
 <table class="memberdecls">
@@ -100,18 +104,44 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a3784c5f4eeab56a8524da29981548464"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#a3784c5f4eeab56a8524da29981548464">~AuthContext</a> ()</td></tr>
 <tr class="separator:a3784c5f4eeab56a8524da29981548464"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a94f653509ddd988ce8fd4f22746fead9"><td class="memItemLeft" align="right" valign="top">virtual std::vector&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#a94f653509ddd988ce8fd4f22746fead9">GetPeerIdentity</a> () const =0</td></tr>
-<tr class="separator:a94f653509ddd988ce8fd4f22746fead9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1d6a5c7cd67694d1a485c4127eb63dc"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#af1d6a5c7cd67694d1a485c4127eb63dc">IsPeerAuthenticated</a> () const =0</td></tr>
+<tr class="memdesc:af1d6a5c7cd67694d1a485c4127eb63dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns true if the peer is authenticated.  <a href="#af1d6a5c7cd67694d1a485c4127eb63dc">More...</a><br/></td></tr>
+<tr class="separator:af1d6a5c7cd67694d1a485c4127eb63dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56a84468c1c3814a185cb6a2a3badf99"><td class="memItemLeft" align="right" valign="top">virtual std::vector<br class="typebreak"/>
+&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#a56a84468c1c3814a185cb6a2a3badf99">GetPeerIdentity</a> () const =0</td></tr>
+<tr class="memdesc:a56a84468c1c3814a185cb6a2a3badf99"><td class="mdescLeft">&#160;</td><td class="mdescRight">A peer identity.  <a href="#a56a84468c1c3814a185cb6a2a3badf99">More...</a><br/></td></tr>
+<tr class="separator:a56a84468c1c3814a185cb6a2a3badf99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad7b2e589590246b953decd05cdaa4465"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#ad7b2e589590246b953decd05cdaa4465">GetPeerIdentityPropertyName</a> () const =0</td></tr>
 <tr class="separator:ad7b2e589590246b953decd05cdaa4465"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad34c79f4934c974aa9e77ca69eed82aa"><td class="memItemLeft" align="right" valign="top">virtual std::vector&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#ad34c79f4934c974aa9e77ca69eed82aa">FindPropertyValues</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name) const =0</td></tr>
-<tr class="separator:ad34c79f4934c974aa9e77ca69eed82aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac32b53377f8b7e44328f791f44bd6732"><td class="memItemLeft" align="right" valign="top">virtual std::vector<br class="typebreak"/>
+&lt; <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#ac32b53377f8b7e44328f791f44bd6732">FindPropertyValues</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name) const =0</td></tr>
+<tr class="memdesc:ac32b53377f8b7e44328f791f44bd6732"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns all the property values with the given name.  <a href="#ac32b53377f8b7e44328f791f44bd6732">More...</a><br/></td></tr>
+<tr class="separator:ac32b53377f8b7e44328f791f44bd6732"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4a4a9e18e05e1a06cf25b8a77edd8c89"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_auth_property_iterator.html">AuthPropertyIterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#a4a4a9e18e05e1a06cf25b8a77edd8c89">begin</a> () const =0</td></tr>
+<tr class="memdesc:a4a4a9e18e05e1a06cf25b8a77edd8c89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iteration over all the properties.  <a href="#a4a4a9e18e05e1a06cf25b8a77edd8c89">More...</a><br/></td></tr>
 <tr class="separator:a4a4a9e18e05e1a06cf25b8a77edd8c89"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a81d358b427e0f1096e148918cdeef991"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classgrpc_1_1_auth_property_iterator.html">AuthPropertyIterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#a81d358b427e0f1096e148918cdeef991">end</a> () const =0</td></tr>
 <tr class="separator:a81d358b427e0f1096e148918cdeef991"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add9dbb40b1a822f683a7ebad71e774f2"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#add9dbb40b1a822f683a7ebad71e774f2">AddProperty</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;key, const <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &amp;value)=0</td></tr>
+<tr class="separator:add9dbb40b1a822f683a7ebad71e774f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a218158a0698137b9c5d6fff0c8054cc4"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#a218158a0698137b9c5d6fff0c8054cc4">SetPeerIdentityPropertyName</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;name)=0</td></tr>
+<tr class="separator:a218158a0698137b9c5d6fff0c8054cc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:aea2b8bbca62cd5dd959a7259b333937c"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#aea2b8bbca62cd5dd959a7259b333937c">transport_security_type_property_name</a> ()</td></tr>
+<tr class="separator:aea2b8bbca62cd5dd959a7259b333937c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9930aeaa826dad849ddea192a2393df9"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#a9930aeaa826dad849ddea192a2393df9">ssl_transport_security_type</a> ()</td></tr>
+<tr class="separator:a9930aeaa826dad849ddea192a2393df9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5c92f7ec00da2bf58de56a1b5983b296"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#a5c92f7ec00da2bf58de56a1b5983b296">x509_cn_property_name</a> ()</td></tr>
+<tr class="separator:a5c92f7ec00da2bf58de56a1b5983b296"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac78faedce700883d917c37990c1746de"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_auth_context.html#ac78faedce700883d917c37990c1746de">x509_san_property_name</a> ()</td></tr>
+<tr class="separator:ac78faedce700883d917c37990c1746de"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Class encapsulating the Authentication Information. </p>
+<p>It includes the secure identity of the peer, the type of secure transport used as well as any other properties required by the authorization layer. </p>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a3784c5f4eeab56a8524da29981548464"></a>
 <div class="memitem">
 <div class="memproto">
@@ -136,6 +166,40 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="add9dbb40b1a822f683a7ebad71e774f2"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual void grpc::AuthContext::AddProperty </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramname"><em>key</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a> &amp;&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a4a4a9e18e05e1a06cf25b8a77edd8c89"></a>
 <div class="memitem">
 <div class="memproto">
@@ -156,6 +220,8 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Iteration over all the properties. </p>
 
 </div>
 </div>
@@ -182,7 +248,7 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ad34c79f4934c974aa9e77ca69eed82aa"></a>
+<a class="anchor" id="ac32b53377f8b7e44328f791f44bd6732"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -190,7 +256,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual std::vector&lt;<a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&gt; grpc::AuthContext::FindPropertyValues </td>
+          <td class="memname">virtual std::vector&lt;<a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>&gt; grpc::AuthContext::FindPropertyValues </td>
           <td>(</td>
           <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
           <td class="paramname"><em>name</em></td><td>)</td>
@@ -204,9 +270,11 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Returns all the property values with the given name. </p>
+
 </div>
 </div>
-<a class="anchor" id="a94f653509ddd988ce8fd4f22746fead9"></a>
+<a class="anchor" id="a56a84468c1c3814a185cb6a2a3badf99"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -214,7 +282,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">virtual std::vector&lt;<a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&gt; grpc::AuthContext::GetPeerIdentity </td>
+          <td class="memname">virtual std::vector&lt;<a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>&gt; grpc::AuthContext::GetPeerIdentity </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -226,6 +294,9 @@ Public Member Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>A peer identity. </p>
+<p>It is, in general, comprised of one or more properties (in which case they have the same name). </p>
 
 </div>
 </div>
@@ -252,13 +323,154 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="af1d6a5c7cd67694d1a485c4127eb63dc"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual bool grpc::AuthContext::IsPeerAuthenticated </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns true if the peer is authenticated. </p>
+
+</div>
+</div>
+<a class="anchor" id="a218158a0698137b9c5d6fff0c8054cc4"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual bool grpc::AuthContext::SetPeerIdentityPropertyName </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
+          <td class="paramname"><em>name</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a9930aeaa826dad849ddea192a2393df9"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a> grpc::AuthContext::ssl_transport_security_type </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aea2b8bbca62cd5dd959a7259b333937c"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a> grpc::AuthContext::transport_security_type_property_name </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a5c92f7ec00da2bf58de56a1b5983b296"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a> grpc::AuthContext::x509_cn_property_name </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ac78faedce700883d917c37990c1746de"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">string</a> grpc::AuthContext::x509_san_property_name </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/<a class="el" href="auth__context_8h_source.html">auth_context.h</a></li>
+<li>include/grpc++/security/<a class="el" href="auth__context_8h_source.html">auth_context.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

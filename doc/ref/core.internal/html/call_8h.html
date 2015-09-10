@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -149,8 +149,8 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a0199bd70012c6e2dfa8667dd1d280109"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="call_8h.html#a0199bd70012c6e2dfa8667dd1d280109">grpc_call_create</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel, <a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cq, const void *server_transport_data, <a class="el" href="structgrpc__mdelem.html">grpc_mdelem</a> **add_initial_metadata, size_t add_initial_metadata_count, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> send_deadline)</td></tr>
-<tr class="separator:a0199bd70012c6e2dfa8667dd1d280109"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab74ce915ef80c7f45fcc71939f81998f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="call_8h.html#ab74ce915ef80c7f45fcc71939f81998f">grpc_call_create</a> (<a class="el" href="structgrpc__channel.html">grpc_channel</a> *channel, <a class="el" href="structgrpc__call.html">grpc_call</a> *parent_call, <a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> propagation_mask, <a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cq, const void *server_transport_data, <a class="el" href="structgrpc__mdelem.html">grpc_mdelem</a> **add_initial_metadata, size_t add_initial_metadata_count, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> send_deadline)</td></tr>
+<tr class="separator:ab74ce915ef80c7f45fcc71939f81998f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a29e0a4ca5d3d86c071b41dcb30c117bd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="call_8h.html#a29e0a4ca5d3d86c071b41dcb30c117bd">grpc_call_set_completion_queue</a> (<a class="el" href="structgrpc__call.html">grpc_call</a> *call, <a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cq)</td></tr>
 <tr class="separator:a29e0a4ca5d3d86c071b41dcb30c117bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a383950ef84646c0f3cb3cb38807503db"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="call_8h.html#a383950ef84646c0f3cb3cb38807503db">grpc_call_get_completion_queue</a> (<a class="el" href="structgrpc__call.html">grpc_call</a> *call)</td></tr>
@@ -177,6 +177,13 @@ Functions</h2></td></tr>
 <tr class="separator:a039322642b1682808002d1302c248c5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af101e4a67c8995de55cbd8b113e3b394"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="call_8h.html#af101e4a67c8995de55cbd8b113e3b394">grpc_call_is_client</a> (<a class="el" href="structgrpc__call.html">grpc_call</a> *call)</td></tr>
 <tr class="separator:af101e4a67c8995de55cbd8b113e3b394"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5128cbee3e5ed3cd97b4043c0f6d7d04"><td class="memItemLeft" align="right" valign="top"><a class="el" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="call_8h.html#a5128cbee3e5ed3cd97b4043c0f6d7d04">grpc_call_get_compression_algorithm</a> (const <a class="el" href="structgrpc__call.html">grpc_call</a> *call)</td></tr>
+<tr class="separator:a5128cbee3e5ed3cd97b4043c0f6d7d04"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f154dbe6acd0c3a817a1892f4989c58"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="call_8h.html#a4f154dbe6acd0c3a817a1892f4989c58">grpc_call_get_message_flags</a> (const <a class="el" href="structgrpc__call.html">grpc_call</a> *call)</td></tr>
+<tr class="separator:a4f154dbe6acd0c3a817a1892f4989c58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab79165a9b8e03791e2a4d2c695e7aebd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="call_8h.html#ab79165a9b8e03791e2a4d2c695e7aebd">grpc_call_get_encodings_accepted_by_peer</a> (<a class="el" href="structgrpc__call.html">grpc_call</a> *call)</td></tr>
+<tr class="memdesc:ab79165a9b8e03791e2a4d2c695e7aebd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a bitset for the encodings (compression algorithms) supported by <em>call's</em> peer.  <a href="#ab79165a9b8e03791e2a4d2c695e7aebd">More...</a><br/></td></tr>
+<tr class="separator:ab79165a9b8e03791e2a4d2c695e7aebd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -348,7 +355,7 @@ Variables</h2></td></tr>
 <b>Value:</b><div class="fragment"><div class="line"><span class="keywordflow">if</span> (<a class="code" href="call_8h.html#a9fa9c0e067be7cfea08021b019544382">grpc_trace_batch</a>)                                                      <a class="code" href="call_8h.html#a731e08efd7f3cab089d2239f0ed931d5">\</a></div>
 <div class="line"><a class="code" href="call_8h.html#a731e08efd7f3cab089d2239f0ed931d5">  grpc_server_log_request_call</a>(sev, server, call, details, initial_metadata, \</div>
 <div class="line">                               cq_bound_to_call, cq_for_notifications, tag)</div>
-<div class="ttc" id="call_8h_html_a731e08efd7f3cab089d2239f0ed931d5"><div class="ttname"><a href="call_8h.html#a731e08efd7f3cab089d2239f0ed931d5">grpc_server_log_request_call</a></div><div class="ttdeci">void grpc_server_log_request_call(char *file, int line, gpr_log_severity severity, grpc_server *server, grpc_call **call, grpc_call_details *details, grpc_metadata_array *initial_metadata, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag)</div><div class="ttdef"><b>Definition:</b> call_log_batch.c:124</div></div>
+<div class="ttc" id="call_8h_html_a731e08efd7f3cab089d2239f0ed931d5"><div class="ttname"><a href="call_8h.html#a731e08efd7f3cab089d2239f0ed931d5">grpc_server_log_request_call</a></div><div class="ttdeci">void grpc_server_log_request_call(char *file, int line, gpr_log_severity severity, grpc_server *server, grpc_call **call, grpc_call_details *details, grpc_metadata_array *initial_metadata, grpc_completion_queue *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void *tag)</div><div class="ttdef"><b>Definition:</b> call_log_batch.c:125</div></div>
 <div class="ttc" id="call_8h_html_a9fa9c0e067be7cfea08021b019544382"><div class="ttname"><a href="call_8h.html#a9fa9c0e067be7cfea08021b019544382">grpc_trace_batch</a></div><div class="ttdeci">int grpc_trace_batch</div><div class="ttdef"><b>Definition:</b> call_log_batch.c:40</div></div>
 </div><!-- fragment -->
 </div>
@@ -508,7 +515,7 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a0199bd70012c6e2dfa8667dd1d280109"></a>
+<a class="anchor" id="ab74ce915ef80c7f45fcc71939f81998f"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -517,6 +524,18 @@ Variables</h2></td></tr>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__channel.html">grpc_channel</a> *&#160;</td>
           <td class="paramname"><em>channel</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>parent_call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>&#160;</td>
+          <td class="paramname"><em>propagation_mask</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -598,6 +617,57 @@ Variables</h2></td></tr>
           <td class="memname"><a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a>* grpc_call_get_completion_queue </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a5128cbee3e5ed3cd97b4043c0f6d7d04"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="compression_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a> grpc_call_get_compression_algorithm </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ab79165a9b8e03791e2a4d2c695e7aebd"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> grpc_call_get_encodings_accepted_by_peer </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td>
+          <td class="paramname"><em>call</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns a bitset for the encodings (compression algorithms) supported by <em>call's</em> peer. </p>
+<p>To be indexed by grpc_compression_algorithm enum values. </p>
+
+</div>
+</div>
+<a class="anchor" id="a4f154dbe6acd0c3a817a1892f4989c58"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> grpc_call_get_message_flags </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td>
           <td class="paramname"><em>call</em></td><td>)</td>
           <td></td>
         </tr>
@@ -930,7 +1000,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

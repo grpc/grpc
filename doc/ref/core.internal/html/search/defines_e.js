@@ -1,5 +1,7 @@
 var searchData=
 [
+  ['secure_5fendpoint_5fref',['SECURE_ENDPOINT_REF',['../secure__endpoint_8c.html#a44a94737ab965459ecc1564cb99b4520',1,'secure_endpoint.c']]],
+  ['secure_5fendpoint_5funref',['SECURE_ENDPOINT_UNREF',['../secure__endpoint_8c.html#a83beb833980e5c04da05fbc4e84b2304',1,'secure_endpoint.c']]],
   ['server_5ffrom_5fcall_5felem',['SERVER_FROM_CALL_ELEM',['../server_8c.html#ad74e7a97d516828e54c49eb3e4878da3',1,'server.c']]],
   ['shrink_5ffullness_5ffactor',['SHRINK_FULLNESS_FACTOR',['../alarm__heap_8c.html#ac5064e56882ef0a36524cae10ac800ce',1,'alarm_heap.c']]],
   ['shrink_5fmin_5felems',['SHRINK_MIN_ELEMS',['../alarm__heap_8c.html#acea3d7e412eaa9246638bc218372f55e',1,'alarm_heap.c']]],

@@ -61,18 +61,6 @@
       - status/close recv (depending on client/server) */
 #define MAX_CONCURRENT_COMPLETIONS 6
 
-typedef enum { REQ_INITIAL = 0, REQ_READY, REQ_DONE } req_state;
-
-typedef enum {
-  SEND_NOTHING,
-  SEND_INITIAL_METADATA,
-  SEND_BUFFERED_INITIAL_METADATA,
-  SEND_MESSAGE,
-  SEND_BUFFERED_MESSAGE,
-  SEND_TRAILING_METADATA_AND_FINISH,
-  SEND_FINISH
-} send_action;
-
 typedef struct {
   grpc_ioreq_completion_func on_complete;
   void *user_data;
@@ -630,9 +618,6 @@ static void unlock(grpc_call *call) {
   call->cancel_alarm = 0;
 
   if (!call->receiving && need_more_data(call)) {
-    op.recv_ops = &call->recv_ops;
-    op.recv_state = &call->recv_state;
-    op.on_done_recv = &call->on_done_recv;
     if (grpc_bbq_empty(&call->incoming_queue) && call->reading_message) {
       op.max_recv_bytes = call->incoming_message_length -
                           call->incoming_message.length + MAX_RECV_PEEK_AHEAD;
@@ -644,9 +629,16 @@ static void unlock(grpc_call *call) {
         op.max_recv_bytes = MAX_RECV_PEEK_AHEAD - buffered_bytes;
       }
     }
-    call->receiving = 1;
-    GRPC_CALL_INTERNAL_REF(call, "receiving");
-    start_op = 1;
+    /* TODO(ctiller): 1024 is basically to cover a bug
+       I don't understand yet */
+    if (op.max_recv_bytes > 1024) {
+      op.recv_ops = &call->recv_ops;
+      op.recv_state = &call->recv_state;
+      op.on_done_recv = &call->on_done_recv;
+      call->receiving = 1;
+      GRPC_CALL_INTERNAL_REF(call, "receiving");
+      start_op = 1;
+    }
   }
 
   if (!call->sending) {

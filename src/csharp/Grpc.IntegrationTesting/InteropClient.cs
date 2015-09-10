@@ -37,34 +37,62 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
+using CommandLine;
 using Google.Apis.Auth.OAuth2;
-using Google.ProtocolBuffers;
-
-using grpc.testing;
+using Google.Protobuf;
 using Grpc.Auth;
 using Grpc.Core;
 using Grpc.Core.Utils;
-
+using Grpc.Testing;
 using NUnit.Framework;
+using CommandLine.Text;
+using System.IO;
 
 namespace Grpc.IntegrationTesting
 {
     public class InteropClient
     {
-        private const string ServiceAccountUser = "155450119199-3psnrh1sdr3d8cpj1v46naggf81mhdnk@developer.gserviceaccount.com";
-        private const string ComputeEngineUser = "155450119199-r5aaqa2vqoa9g5mv2m6s3m1l293rlmel@developer.gserviceaccount.com";
-        private const string AuthScope = "https://www.googleapis.com/auth/xapi.zoo";
-        private const string AuthScopeResponse = "xapi.zoo";
-
         private class ClientOptions
         {
-            public bool help;
-            public string serverHost = "127.0.0.1";
-            public string serverHostOverride = TestCredentials.DefaultHostOverride;
-            public int? serverPort;
-            public string testCase = "large_unary";
-            public bool useTls;
-            public bool useTestCa;
+            [Option("server_host", DefaultValue = "127.0.0.1")]
+            public string ServerHost { get; set; }
+
+            [Option("server_host_override", DefaultValue = TestCredentials.DefaultHostOverride)]
+            public string ServerHostOverride { get; set; }
+
+            [Option("server_port", Required = true)]
+            public int ServerPort { get; set; }
+
+            [Option("test_case", DefaultValue = "large_unary")]
+            public string TestCase { get; set; }
+
+            [Option("use_tls")]
+            public bool UseTls { get; set; }
+
+            [Option("use_test_ca")]
+            public bool UseTestCa { get; set; }
+
+            [Option("default_service_account", Required = false)]
+            public string DefaultServiceAccount { get; set; }
+
+            [Option("oauth_scope", Required = false)]
+            public string OAuthScope { get; set; }
+
+            [Option("service_account_key_file", Required = false)]
+            public string ServiceAccountKeyFile { get; set; }
+
+            [HelpOption]
+            public string GetUsage()
+            {
+                var help = new HelpText
+                {
+                    Heading = "gRPC C# interop testing client",
+                    AddDashesToOption = true
+                };
+                help.AddPreOptionsLine("Usage:");
+                help.AddOptions(this);
+                return help;
+            }
         }
 
         ClientOptions options;
@@ -76,26 +104,9 @@ namespace Grpc.IntegrationTesting
 
         public static void Run(string[] args)
         {
-            Console.WriteLine("gRPC C# interop testing client");
-            ClientOptions options = ParseArguments(args);
-
-            if (options.serverHost == null || !options.serverPort.HasValue || options.testCase == null)
+            var options = new ClientOptions();
+            if (!Parser.Default.ParseArguments(args, options))
             {
-                Console.WriteLine("Missing required argument.");
-                Console.WriteLine();
-                options.help = true;
-            }
-
-            if (options.help)
-            {
-                Console.WriteLine("Usage:");
-                Console.WriteLine("  --server_host=HOSTNAME");
-                Console.WriteLine("  --server_host_override=HOSTNAME");
-                Console.WriteLine("  --server_port=PORT");
-                Console.WriteLine("  --test_case=TESTCASE");
-                Console.WriteLine("  --use_tls=BOOLEAN");
-                Console.WriteLine("  --use_test_ca=BOOLEAN");
-                Console.WriteLine();
                 Environment.Exit(1);
             }
 
@@ -105,30 +116,27 @@ namespace Grpc.IntegrationTesting
 
         private async Task Run()
         {
-            Credentials credentials = null;
-            if (options.useTls)
-            {
-                credentials = TestCredentials.CreateTestClientCredentials(options.useTestCa);
-            }
-
+            var credentials = options.UseTls ? TestCredentials.CreateTestClientCredentials(options.UseTestCa) : Credentials.Insecure;
+            
             List<ChannelOption> channelOptions = null;
-            if (!string.IsNullOrEmpty(options.serverHostOverride))
+            if (!string.IsNullOrEmpty(options.ServerHostOverride))
             {
                 channelOptions = new List<ChannelOption>
                 {
-                    new ChannelOption(ChannelOptions.SslTargetNameOverride, options.serverHostOverride)
+                    new ChannelOption(ChannelOptions.SslTargetNameOverride, options.ServerHostOverride)
                 };
             }
-
-            var channel = new Channel(options.serverHost, options.serverPort.Value, credentials, channelOptions);
+            Console.WriteLine(options.ServerHost);
+            Console.WriteLine(options.ServerPort);
+            var channel = new Channel(options.ServerHost, options.ServerPort, credentials, channelOptions);
             TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
-            await RunTestCaseAsync(options.testCase, client);
+            await RunTestCaseAsync(client, options);
             channel.ShutdownAsync().Wait();
         }
 
-        private async Task RunTestCaseAsync(string testCase, TestService.TestServiceClient client)
+        private async Task RunTestCaseAsync(TestService.TestServiceClient client, ClientOptions options)
         {
-            switch (testCase)
+            switch (options.TestCase)
             {
                 case "empty_unary":
                     RunEmptyUnary(client);
@@ -148,20 +156,17 @@ namespace Grpc.IntegrationTesting
                 case "empty_stream":
                     await RunEmptyStreamAsync(client);
                     break;
-                case "service_account_creds":
-                    await RunServiceAccountCredsAsync(client);
-                    break;
                 case "compute_engine_creds":
-                    await RunComputeEngineCredsAsync(client);
+                    await RunComputeEngineCredsAsync(client, options.DefaultServiceAccount, options.OAuthScope);
                     break;
                 case "jwt_token_creds":
-                    await RunJwtTokenCredsAsync(client);
+                    await RunJwtTokenCredsAsync(client, options.DefaultServiceAccount);
                     break;
                 case "oauth2_auth_token":
-                    await RunOAuth2AuthTokenAsync(client);
+                    await RunOAuth2AuthTokenAsync(client, options.DefaultServiceAccount, options.OAuthScope);
                     break;
                 case "per_rpc_creds":
-                    await RunPerRpcCredsAsync(client);
+                    await RunPerRpcCredsAsync(client, options.DefaultServiceAccount, options.OAuthScope);
                     break;
                 case "cancel_after_begin":
                     await RunCancelAfterBeginAsync(client);
@@ -176,14 +181,14 @@ namespace Grpc.IntegrationTesting
                     RunBenchmarkEmptyUnary(client);
                     break;
                 default:
-                    throw new ArgumentException("Unknown test case " + testCase);
+                    throw new ArgumentException("Unknown test case " + options.TestCase);
             }
         }
 
         public static void RunEmptyUnary(TestService.ITestServiceClient client)
         {
             Console.WriteLine("running empty_unary");
-            var response = client.EmptyCall(Empty.DefaultInstance);
+            var response = client.EmptyCall(new Empty());
             Assert.IsNotNull(response);
             Console.WriteLine("Passed!");
         }
@@ -191,11 +196,12 @@ namespace Grpc.IntegrationTesting
         public static void RunLargeUnary(TestService.ITestServiceClient client)
         {
             Console.WriteLine("running large_unary");
-            var request = SimpleRequest.CreateBuilder()
-                    .SetResponseType(PayloadType.COMPRESSABLE)
-                    .SetResponseSize(314159)
-                    .SetPayload(CreateZerosPayload(271828))
-                    .Build();
+            var request = new SimpleRequest
+            {
+                ResponseType = PayloadType.COMPRESSABLE,
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828)
+            };
 
             var response = client.UnaryCall(request);
 
@@ -208,7 +214,7 @@ namespace Grpc.IntegrationTesting
         {
             Console.WriteLine("running client_streaming");
 
-            var bodySizes = new List<int> { 27182, 8, 1828, 45904 }.ConvertAll((size) => StreamingInputCallRequest.CreateBuilder().SetPayload(CreateZerosPayload(size)).Build());
+            var bodySizes = new List<int> { 27182, 8, 1828, 45904 }.ConvertAll((size) => new StreamingInputCallRequest { Payload = CreateZerosPayload(size) });
 
             using (var call = client.StreamingInputCall())
             {
@@ -226,11 +232,11 @@ namespace Grpc.IntegrationTesting
 
             var bodySizes = new List<int> { 31415, 9, 2653, 58979 };
 
-            var request = StreamingOutputCallRequest.CreateBuilder()
-            .SetResponseType(PayloadType.COMPRESSABLE)
-            .AddRangeResponseParameters(bodySizes.ConvertAll(
-                (size) => ResponseParameters.CreateBuilder().SetSize(size).Build()))
-            .Build();
+            var request = new StreamingOutputCallRequest
+            {
+                ResponseType = PayloadType.COMPRESSABLE,
+                ResponseParameters = { bodySizes.ConvertAll((size) => new ResponseParameters { Size = size }) }
+            };
 
             using (var call = client.StreamingOutputCall(request))
             {
@@ -250,37 +256,45 @@ namespace Grpc.IntegrationTesting
 
             using (var call = client.FullDuplexCall())
             {
-                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                .SetResponseType(PayloadType.COMPRESSABLE)
-                .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
-                .SetPayload(CreateZerosPayload(27182)).Build());
+                await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 31415 } },
+                    Payload = CreateZerosPayload(27182)
+                });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(31415, call.ResponseStream.Current.Payload.Body.Length);
 
-                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                            .SetResponseType(PayloadType.COMPRESSABLE)
-                            .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(9))
-                            .SetPayload(CreateZerosPayload(8)).Build());
+                await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 9 } },
+                    Payload = CreateZerosPayload(8)
+                });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(9, call.ResponseStream.Current.Payload.Body.Length);
 
-                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                            .SetResponseType(PayloadType.COMPRESSABLE)
-                            .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(2653))
-                            .SetPayload(CreateZerosPayload(1828)).Build());
+                await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 2653 } },
+                    Payload = CreateZerosPayload(1828)
+                });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
                 Assert.AreEqual(2653, call.ResponseStream.Current.Payload.Body.Length);
 
-                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                            .SetResponseType(PayloadType.COMPRESSABLE)
-                            .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(58979))
-                            .SetPayload(CreateZerosPayload(45904)).Build());
+                await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 58979 } },
+                    Payload = CreateZerosPayload(45904)
+                });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
@@ -306,117 +320,94 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunServiceAccountCredsAsync(TestService.TestServiceClient client)
-        {
-            Console.WriteLine("running service_account_creds");
-            var credential = await GoogleCredential.GetApplicationDefaultAsync();
-            credential = credential.CreateScoped(new[] { AuthScope });
-            client.HeaderInterceptor = AuthInterceptors.FromCredential(credential);
-
-            var request = SimpleRequest.CreateBuilder()
-                .SetResponseType(PayloadType.COMPRESSABLE)
-                    .SetResponseSize(314159)
-                    .SetPayload(CreateZerosPayload(271828))
-                    .SetFillUsername(true)
-                    .SetFillOauthScope(true)
-                    .Build();
-
-            var response = client.UnaryCall(request);
-
-            Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
-            Assert.AreEqual(314159, response.Payload.Body.Length);
-            Assert.AreEqual(AuthScopeResponse, response.OauthScope);
-            Assert.AreEqual(ServiceAccountUser, response.Username);
-            Console.WriteLine("Passed!");
-        }
-
-        public static async Task RunComputeEngineCredsAsync(TestService.TestServiceClient client)
+        public static async Task RunComputeEngineCredsAsync(TestService.TestServiceClient client, string defaultServiceAccount, string oauthScope)
         {
             Console.WriteLine("running compute_engine_creds");
             var credential = await GoogleCredential.GetApplicationDefaultAsync();
             Assert.IsFalse(credential.IsCreateScopedRequired);
             client.HeaderInterceptor = AuthInterceptors.FromCredential(credential);
             
-            var request = SimpleRequest.CreateBuilder()
-                .SetResponseType(PayloadType.COMPRESSABLE)
-                    .SetResponseSize(314159)
-                    .SetPayload(CreateZerosPayload(271828))
-                    .SetFillUsername(true)
-                    .SetFillOauthScope(true)
-                    .Build();
+            var request = new SimpleRequest
+            {
+                ResponseType = PayloadType.COMPRESSABLE,
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828),
+                FillUsername = true,
+                FillOauthScope = true
+            };
 
             var response = client.UnaryCall(request);
 
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(314159, response.Payload.Body.Length);
-            Assert.AreEqual(AuthScopeResponse, response.OauthScope);
-            Assert.AreEqual(ComputeEngineUser, response.Username);
+            Assert.False(string.IsNullOrEmpty(response.OauthScope));
+            Assert.True(oauthScope.Contains(response.OauthScope));
+            Assert.AreEqual(defaultServiceAccount, response.Username);
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunJwtTokenCredsAsync(TestService.TestServiceClient client)
+        public static async Task RunJwtTokenCredsAsync(TestService.TestServiceClient client, string defaultServiceAccount)
         {
             Console.WriteLine("running jwt_token_creds");
             var credential = await GoogleCredential.GetApplicationDefaultAsync();
-            // check this a credential with scope support, but don't add the scope.
             Assert.IsTrue(credential.IsCreateScopedRequired);
             client.HeaderInterceptor = AuthInterceptors.FromCredential(credential);
 
-            var request = SimpleRequest.CreateBuilder()
-                .SetResponseType(PayloadType.COMPRESSABLE)
-                    .SetResponseSize(314159)
-                    .SetPayload(CreateZerosPayload(271828))
-                    .SetFillUsername(true)
-                    .SetFillOauthScope(true)
-                    .Build();
+            var request = new SimpleRequest
+            {
+                ResponseType = PayloadType.COMPRESSABLE,
+                ResponseSize = 314159,
+                Payload = CreateZerosPayload(271828),
+                FillUsername = true,
+            };
 
             var response = client.UnaryCall(request);
 
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(314159, response.Payload.Body.Length);
-            Assert.AreEqual(ServiceAccountUser, response.Username);
+            Assert.AreEqual(defaultServiceAccount, response.Username);
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunOAuth2AuthTokenAsync(TestService.TestServiceClient client)
+        public static async Task RunOAuth2AuthTokenAsync(TestService.TestServiceClient client, string defaultServiceAccount, string oauthScope)
         {
             Console.WriteLine("running oauth2_auth_token");
-            ITokenAccess credential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { AuthScope });
+            ITokenAccess credential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { oauthScope });
             string oauth2Token = await credential.GetAccessTokenForRequestAsync();
 
             client.HeaderInterceptor = AuthInterceptors.FromAccessToken(oauth2Token);
 
-            var request = SimpleRequest.CreateBuilder()
-                .SetFillUsername(true)
-                .SetFillOauthScope(true)
-                .Build();
+            var request = new SimpleRequest
+            {
+                FillUsername = true,
+                FillOauthScope = true
+            };
 
             var response = client.UnaryCall(request);
 
-            Assert.AreEqual(AuthScopeResponse, response.OauthScope);
-            Assert.AreEqual(ServiceAccountUser, response.Username);
+            Assert.False(string.IsNullOrEmpty(response.OauthScope));
+            Assert.True(oauthScope.Contains(response.OauthScope));
+            Assert.AreEqual(defaultServiceAccount, response.Username);
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunPerRpcCredsAsync(TestService.TestServiceClient client)
+        public static async Task RunPerRpcCredsAsync(TestService.TestServiceClient client, string defaultServiceAccount, string oauthScope)
         {
             Console.WriteLine("running per_rpc_creds");
+            ITokenAccess credential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { oauthScope });
+            string accessToken = await credential.GetAccessTokenForRequestAsync();
+            var headerInterceptor = AuthInterceptors.FromAccessToken(accessToken);
 
-            ITokenAccess credential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { AuthScope });
-            string oauth2Token = await credential.GetAccessTokenForRequestAsync();
-            var headerInterceptor = AuthInterceptors.FromAccessToken(oauth2Token);
-
-            var request = SimpleRequest.CreateBuilder()
-                .SetFillUsername(true)
-                .SetFillOauthScope(true)
-                .Build();
+            var request = new SimpleRequest
+            {
+                FillUsername = true,
+            };
 
             var headers = new Metadata();
             headerInterceptor(null, "", headers);
             var response = client.UnaryCall(request, headers: headers);
 
-            Assert.AreEqual(AuthScopeResponse, response.OauthScope);
-            Assert.AreEqual(ServiceAccountUser, response.Username);
+            Assert.AreEqual(defaultServiceAccount, response.Username);
             Console.WriteLine("Passed!");
         }
 
@@ -444,10 +435,12 @@ namespace Grpc.IntegrationTesting
             var cts = new CancellationTokenSource();
             using (var call = client.FullDuplexCall(cancellationToken: cts.Token))
             {
-                await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                    .SetResponseType(PayloadType.COMPRESSABLE)
-                    .AddResponseParameters(ResponseParameters.CreateBuilder().SetSize(31415))
-                    .SetPayload(CreateZerosPayload(27182)).Build());
+                await call.RequestStream.WriteAsync(new StreamingOutputCallRequest
+                {
+                    ResponseType = PayloadType.COMPRESSABLE,
+                    ResponseParameters = { new ResponseParameters { Size = 31415 } },
+                    Payload = CreateZerosPayload(27182)
+                });
 
                 Assert.IsTrue(await call.ResponseStream.MoveNext());
                 Assert.AreEqual(PayloadType.COMPRESSABLE, call.ResponseStream.Current.Payload.Type);
@@ -470,8 +463,7 @@ namespace Grpc.IntegrationTesting
             {
                 try
                 {
-                    await call.RequestStream.WriteAsync(StreamingOutputCallRequest.CreateBuilder()
-                        .SetPayload(CreateZerosPayload(27182)).Build());
+                    await call.RequestStream.WriteAsync(new StreamingOutputCallRequest { Payload = CreateZerosPayload(27182) });
                 }
                 catch (InvalidOperationException)
                 {
@@ -488,75 +480,12 @@ namespace Grpc.IntegrationTesting
         public static void RunBenchmarkEmptyUnary(TestService.ITestServiceClient client)
         {
             BenchmarkUtil.RunBenchmark(10000, 10000,
-                                       () => { client.EmptyCall(Empty.DefaultInstance); });
+                                       () => { client.EmptyCall(new Empty()); });
         }
 
         private static Payload CreateZerosPayload(int size)
         {
-            return Payload.CreateBuilder().SetBody(ByteString.CopyFrom(new byte[size])).Build();
-        }
-
-        private static ClientOptions ParseArguments(string[] args)
-        {
-            var options = new ClientOptions();
-            foreach (string arg in args)
-            {
-                ParseArgument(arg, options);
-                if (options.help)
-                {
-                    break;
-                }
-            }
-            return options;
-        }
-
-        private static void ParseArgument(string arg, ClientOptions options)
-        {
-            Match match;
-            match = Regex.Match(arg, "--server_host=(.*)");
-            if (match.Success)
-            {
-                options.serverHost = match.Groups[1].Value.Trim();
-                return;
-            }
-
-            match = Regex.Match(arg, "--server_host_override=(.*)");
-            if (match.Success)
-            {
-                options.serverHostOverride = match.Groups[1].Value.Trim();
-                return;
-            }
-
-            match = Regex.Match(arg, "--server_port=(.*)");
-            if (match.Success)
-            {
-                options.serverPort = int.Parse(match.Groups[1].Value.Trim());
-                return;
-            }
-
-            match = Regex.Match(arg, "--test_case=(.*)");
-            if (match.Success)
-            {
-                options.testCase = match.Groups[1].Value.Trim();
-                return;
-            }
-
-            match = Regex.Match(arg, "--use_tls=(.*)");
-            if (match.Success)
-            {
-                options.useTls = bool.Parse(match.Groups[1].Value.Trim());
-                return;
-            }
-
-            match = Regex.Match(arg, "--use_test_ca=(.*)");
-            if (match.Success)
-            {
-                options.useTestCa = bool.Parse(match.Groups[1].Value.Trim());
-                return;
-            }
-
-            Console.WriteLine(string.Format("Unrecognized argument \"{0}\"", arg));
-            options.help = true;
+            return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
         }
     }
 }

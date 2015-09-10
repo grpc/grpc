@@ -56,7 +56,7 @@ class _LowWrite(enum.Enum):
 def _write(call, rpc_state, payload):
   serialized_payload = rpc_state.serializer(payload)
   if rpc_state.write.low is _LowWrite.OPEN:
-    call.write(serialized_payload, call)
+    call.write(serialized_payload, call, 0)
     rpc_state.write.low = _LowWrite.ACTIVE
   else:
     rpc_state.write.pending.append(serialized_payload)
@@ -164,7 +164,7 @@ class ForeLink(base_interfaces.ForeLink, activated.Activated):
 
     if rpc_state.write.pending:
       serialized_payload = rpc_state.write.pending.pop(0)
-      call.write(serialized_payload, call)
+      call.write(serialized_payload, call, 0)
     elif rpc_state.write.high is _common.HighWrite.CLOSED:
       _status(call, rpc_state)
     else:
@@ -288,7 +288,7 @@ class ForeLink(base_interfaces.ForeLink, activated.Activated):
         self._port = self._server.add_http2_addr(address)
       else:
         server_credentials = _low.ServerCredentials(
-          self._root_certificates, self._key_chain_pairs)
+          self._root_certificates, self._key_chain_pairs, False)
         self._server = _low.Server(self._completion_queue)
         self._port = self._server.add_secure_http2_addr(
             address, server_credentials)
