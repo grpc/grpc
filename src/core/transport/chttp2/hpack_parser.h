@@ -79,7 +79,7 @@ struct grpc_chttp2_hpack_parser {
   /* number of source bytes read for the currently parsing string */
   gpr_uint32 strgot;
   /* huffman decoding state */
-  gpr_uint16 huff_state;
+  gpr_int16 huff_state;
   /* is the string being decoded binary? */
   gpr_uint8 binary;
   /* is the current string huffman encoded? */

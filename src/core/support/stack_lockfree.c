@@ -79,7 +79,7 @@ struct gpr_stack_lockfree {
 #endif
 };
 
-gpr_stack_lockfree *gpr_stack_lockfree_create(int entries) {
+gpr_stack_lockfree *gpr_stack_lockfree_create(size_t entries) {
   gpr_stack_lockfree *stack;
   stack = gpr_malloc(sizeof(*stack));
   /* Since we only allocate 16 bits to represent an entry number,

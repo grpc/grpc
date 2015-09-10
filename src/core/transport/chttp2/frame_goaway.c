@@ -136,7 +136,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_DEBUG:
-      memcpy(p->debug_data + p->debug_pos, cur, end - cur);
+      memcpy(p->debug_data + p->debug_pos, cur, (size_t)(end - cur));
       p->debug_pos += end - cur;
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {

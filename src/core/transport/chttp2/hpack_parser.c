@@ -1099,7 +1099,7 @@ static int append_string(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
   gpr_uint8 decoded[3];
   switch ((binary_state)p->binary) {
     case NOT_BINARY:
-      append_bytes(str, cur, end - cur);
+      append_bytes(str, cur, (size_t)(end - cur));
       return 1;
     b64_byte0:
     case B64_BYTE0:
@@ -1249,7 +1249,7 @@ static int add_str_bytes(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
 static int parse_string(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
                         const gpr_uint8 *end) {
   size_t remaining = p->strlen - p->strgot;
-  size_t given = end - cur;
+  size_t given = (size_t)(end - cur);
   if (remaining <= given) {
     return add_str_bytes(p, cur, cur + remaining) && finish_str(p) &&
            parse_next(p, cur + remaining, end);

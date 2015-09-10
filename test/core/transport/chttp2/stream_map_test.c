@@ -203,9 +203,9 @@ static void test_periodic_compaction(size_t n) {
 }
 
 int main(int argc, char **argv) {
-  int n = 1;
-  int prev = 1;
-  int tmp;
+  size_t n = 1;
+  size_t prev = 1;
+  size_t tmp;
 
   grpc_test_init(argc, argv);
 

@@ -221,7 +221,8 @@ void grpc_udp_server_destroy(
 }
 
 /* Prepare a recently-created socket for listening. */
-static int prepare_socket(int fd, const struct sockaddr *addr, int addr_len) {
+static int prepare_socket(int fd, const struct sockaddr *addr,
+                          size_t addr_len) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
   int get_local_ip;
@@ -287,7 +288,7 @@ static void on_read(void *arg, int success) {
 }
 
 static int add_socket_to_server(grpc_udp_server *s, int fd,
-                                const struct sockaddr *addr, int addr_len,
+                                const struct sockaddr *addr, size_t addr_len,
                                 grpc_udp_server_read_cb read_cb) {
   server_port *sp;
   int port;
@@ -319,8 +320,8 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
   return port;
 }
 
-int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr, int addr_len,
-                             grpc_udp_server_read_cb read_cb) {
+int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
+                             size_t addr_len, grpc_udp_server_read_cb read_cb) {
   int allocated_port1 = -1;
   int allocated_port2 = -1;
   unsigned i;

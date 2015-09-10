@@ -139,7 +139,7 @@ grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
   /* Otherwise, find the value in the list of valid entries */
   index -= (GRPC_CHTTP2_LAST_STATIC_ENTRY + 1);
   if (index < tbl->num_ents) {
-    gpr_uint32 offset = (tbl->num_ents - 1 - index + tbl->first_ent) %
+    gpr_uint32 offset = (tbl->num_ents - 1u - index + tbl->first_ent) %
                         GRPC_CHTTP2_MAX_TABLE_COUNT;
     return tbl->ents[offset];
   }

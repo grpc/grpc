@@ -194,7 +194,8 @@ void grpc_chttp2_publish_reads(
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
           "parsed", transport_parsing, stream_parsing, outgoing_window_update,
           -(gpr_int64)stream_parsing->outgoing_window_update);
-      stream_global->outgoing_window += stream_parsing->outgoing_window_update;
+      stream_global->outgoing_window +=
+          (gpr_uint32)stream_global->outgoing_window;
       stream_parsing->outgoing_window_update = 0;
       is_zero = stream_global->outgoing_window <= 0;
       if (was_zero && !is_zero) {
@@ -379,9 +380,10 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
     case GRPC_DTS_FRAME:
       GPR_ASSERT(cur < end);
       if ((gpr_uint32)(end - cur) == transport_parsing->incoming_frame_size) {
-        if (!parse_frame_slice(
-                transport_parsing,
-                gpr_slice_sub_no_ref(slice, cur - beg, end - beg), 1)) {
+        if (!parse_frame_slice(transport_parsing,
+                               gpr_slice_sub_no_ref(slice, (size_t)(cur - beg),
+                                                    (size_t)(end - beg)),
+                               1)) {
           return 0;
         }
         transport_parsing->deframe_state = GRPC_DTS_FH_0;
@@ -389,11 +391,12 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
         return 1;
       } else if ((gpr_uint32)(end - cur) >
                  transport_parsing->incoming_frame_size) {
+        size_t cur_offset = (size_t)(cur - beg);
         if (!parse_frame_slice(
                 transport_parsing,
                 gpr_slice_sub_no_ref(
-                    slice, cur - beg,
-                    cur + transport_parsing->incoming_frame_size - beg),
+                    slice, cur_offset,
+                    cur_offset + transport_parsing->incoming_frame_size),
                 1)) {
           return 0;
         }
@@ -401,9 +404,10 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
         transport_parsing->incoming_stream = NULL;
         goto dts_fh_0; /* loop */
       } else {
-        if (!parse_frame_slice(
-                transport_parsing,
-                gpr_slice_sub_no_ref(slice, cur - beg, end - beg), 0)) {
+        if (!parse_frame_slice(transport_parsing,
+                               gpr_slice_sub_no_ref(slice, (size_t)(cur - beg),
+                                                    (size_t)(end - beg)),
+                               0)) {
           return 0;
         }
         transport_parsing->incoming_frame_size -= (end - cur);

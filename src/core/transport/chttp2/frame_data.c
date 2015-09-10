@@ -146,19 +146,21 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
       grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
                                                stream_parsing);
       if ((gpr_uint32)(end - cur) == p->frame_size) {
-        grpc_sopb_add_slice(&p->incoming_sopb,
-                            gpr_slice_sub(slice, cur - beg, end - beg));
+        grpc_sopb_add_slice(
+            &p->incoming_sopb,
+            gpr_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
         p->state = GRPC_CHTTP2_DATA_FH_0;
         return GRPC_CHTTP2_PARSE_OK;
       } else if ((gpr_uint32)(end - cur) > p->frame_size) {
-        grpc_sopb_add_slice(
-            &p->incoming_sopb,
-            gpr_slice_sub(slice, cur - beg, cur + p->frame_size - beg));
+        grpc_sopb_add_slice(&p->incoming_sopb,
+                            gpr_slice_sub(slice, (size_t)(cur - beg),
+                                          (size_t)(cur + p->frame_size - beg)));
         cur += p->frame_size;
         goto fh_0; /* loop */
       } else {
-        grpc_sopb_add_slice(&p->incoming_sopb,
-                            gpr_slice_sub(slice, cur - beg, end - beg));
+        grpc_sopb_add_slice(
+            &p->incoming_sopb,
+            gpr_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
         p->frame_size -= (end - cur);
         return GRPC_CHTTP2_PARSE_OK;
       }
