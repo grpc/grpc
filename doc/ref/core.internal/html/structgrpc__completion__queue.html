@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -111,6 +111,10 @@ Data Fields</h2></td></tr>
 <tr class="separator:a81ae0a3f77b40e2a21370e641e9f73e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a495f730490aa5625bb7ce2604ee8e6d7"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue.html#a495f730490aa5625bb7ce2604ee8e6d7">is_server_cq</a></td></tr>
 <tr class="separator:a495f730490aa5625bb7ce2604ee8e6d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac25a7e4a6b32001d5f30abf698d7cfa6"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue.html#ac25a7e4a6b32001d5f30abf698d7cfa6">num_pluckers</a></td></tr>
+<tr class="separator:ac25a7e4a6b32001d5f30abf698d7cfa6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac421b4efba690c5cff76570781f13c87"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structplucker.html">plucker</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue.html#ac421b4efba690c5cff76570781f13c87">pluckers</a> [<a class="el" href="grpc_8h.html#a7fa47963513b9ce50ca4006b9db94c5e">GRPC_MAX_COMPLETION_QUEUE_PLUCKERS</a>]</td></tr>
+<tr class="separator:ac421b4efba690c5cff76570781f13c87"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a484ad9fad34b51c8ab2e0f6a144e6d5e"></a>
@@ -151,6 +155,18 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ac25a7e4a6b32001d5f30abf698d7cfa6"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int grpc_completion_queue::num_pluckers</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="aae47cbaaca85ca3f9e7cb2317709f8e6"></a>
 <div class="memitem">
 <div class="memproto">
@@ -176,6 +192,18 @@ Data Fields</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Number of pending events (+1 if we're not shutdown) </p>
+
+</div>
+</div>
+<a class="anchor" id="ac421b4efba690c5cff76570781f13c87"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structplucker.html">plucker</a> grpc_completion_queue::pluckers[<a class="el" href="grpc_8h.html#a7fa47963513b9ce50ca4006b9db94c5e">GRPC_MAX_COMPLETION_QUEUE_PLUCKERS</a>]</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -225,7 +253,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

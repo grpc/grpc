@@ -31,6 +31,8 @@
 
 import collections
 
+from grpc.framework.interfaces.base import base
+
 
 class ServicerPackage(
     collections.namedtuple(
@@ -44,3 +46,9 @@ class ServicerPackage(
     maximum_timeout: A float indicating the maximum length of time in seconds to
       allow for an operation.
   """
+
+
+class Outcome(
+    base.Outcome,
+    collections.namedtuple('Outcome', ('kind', 'code', 'details',))):
+  """A trivial implementation of base.Outcome."""

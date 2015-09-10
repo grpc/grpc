@@ -44,7 +44,8 @@ from grpc_test.framework.interfaces.base import test_interfaces
 
 _SYNCHRONICITY_VARIATION = (('Sync', False), ('Async', True))
 
-_EMPTY_OUTCOME_DICT = {outcome: 0 for outcome in base.Outcome}
+_EMPTY_OUTCOME_KIND_DICT = {
+    outcome_kind: 0 for outcome_kind in base.Outcome.Kind}
 
 
 class _Serialization(test_interfaces.Serialization):
@@ -118,8 +119,19 @@ class _Operator(base.Operator):
           'Deliberately raised exception from Operator.advance (in a test)!')
 
 
+class _ProtocolReceiver(base.ProtocolReceiver):
+
+  def __init__(self):
+    self._condition = threading.Condition()
+    self._contexts = []
+
+  def context(self, protocol_context):
+    with self._condition:
+      self._contexts.append(protocol_context)
+
+
 class _Servicer(base.Servicer):
-  """An base.Servicer with instrumented for testing."""
+  """A base.Servicer with instrumented for testing."""
 
   def __init__(self, group, method, controllers, pool):
     self._condition = threading.Condition()
@@ -143,7 +155,7 @@ class _Servicer(base.Servicer):
             controller.service_on_termination)
         if outcome is not None:
           controller.service_on_termination(outcome)
-        return utilities.full_subscription(operator)
+        return utilities.full_subscription(operator, _ProtocolReceiver())
 
 
 class _OperationTest(unittest.TestCase):
@@ -168,7 +180,8 @@ class _OperationTest(unittest.TestCase):
       test_operator = _Operator(
           self._controller, self._controller.on_invocation_advance,
           self._pool, None)
-      subscription = utilities.full_subscription(test_operator)
+      subscription = utilities.full_subscription(
+          test_operator, _ProtocolReceiver())
     else:
       # TODO(nathaniel): support and test other subscription kinds.
       self.fail('Non-full subscriptions not yet supported!')
@@ -223,11 +236,12 @@ class _OperationTest(unittest.TestCase):
     self.assertTrue(
         instruction.conclude_success, msg=instruction.conclude_message)
 
-    expected_invocation_stats = dict(_EMPTY_OUTCOME_DICT)
-    expected_invocation_stats[instruction.conclude_invocation_outcome] += 1
+    expected_invocation_stats = dict(_EMPTY_OUTCOME_KIND_DICT)
+    expected_invocation_stats[
+        instruction.conclude_invocation_outcome_kind] += 1
     self.assertDictEqual(expected_invocation_stats, invocation_stats)
-    expected_service_stats = dict(_EMPTY_OUTCOME_DICT)
-    expected_service_stats[instruction.conclude_service_outcome] += 1
+    expected_service_stats = dict(_EMPTY_OUTCOME_KIND_DICT)
+    expected_service_stats[instruction.conclude_service_outcome_kind] += 1
     self.assertDictEqual(expected_service_stats, service_stats)
 
 

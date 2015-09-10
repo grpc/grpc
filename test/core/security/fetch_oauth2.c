@@ -46,19 +46,6 @@
 #include "src/core/support/file.h"
 #include "test/core/security/oauth2_utils.h"
 
-static grpc_credentials *create_service_account_creds(
-    const char *json_key_file_path, const char *scope) {
-  int success;
-  gpr_slice json_key = gpr_load_file(json_key_file_path, 1, &success);
-  if (!success) {
-    gpr_log(GPR_ERROR, "Could not read file %s.", json_key_file_path);
-    exit(1);
-  }
-  return grpc_service_account_credentials_create(
-      (const char *)GPR_SLICE_START_PTR(json_key), scope,
-      grpc_max_auth_token_lifetime);
-}
-
 static grpc_credentials *create_refresh_token_creds(
     const char *json_refresh_token_file_path) {
   int success;
@@ -68,8 +55,8 @@ static grpc_credentials *create_refresh_token_creds(
     gpr_log(GPR_ERROR, "Could not read file %s.", json_refresh_token_file_path);
     exit(1);
   }
-  return grpc_refresh_token_credentials_create(
-      (const char *)GPR_SLICE_START_PTR(refresh_token));
+  return grpc_google_refresh_token_credentials_create(
+      (const char *)GPR_SLICE_START_PTR(refresh_token), NULL);
 }
 
 int main(int argc, char **argv) {
@@ -80,18 +67,9 @@ int main(int argc, char **argv) {
   int use_gce = 0;
   char *scope = NULL;
   gpr_cmdline *cl = gpr_cmdline_create("fetch_oauth2");
-  gpr_cmdline_add_string(cl, "json_key",
-                         "File path of the json key. Mutually exclusive with "
-                         "--json_refresh_token.",
-                         &json_key_file_path);
   gpr_cmdline_add_string(cl, "json_refresh_token",
-                         "File path of the json refresh token. Mutually "
-                         "exclusive with --json_key.",
+                         "File path of the json refresh token.",
                          &json_refresh_token_file_path);
-  gpr_cmdline_add_string(cl, "scope",
-                         "Space delimited permissions. Only used for "
-                         "--json_key, ignored otherwise.",
-                         &scope);
   gpr_cmdline_add_flag(
       cl, "gce",
       "Get a token from the GCE metadata server (only works in GCE).",
@@ -112,7 +90,7 @@ int main(int argc, char **argv) {
               "Ignoring json key and scope to get a token from the GCE "
               "metadata server.");
     }
-    creds = grpc_compute_engine_credentials_create();
+    creds = grpc_google_compute_engine_credentials_create(NULL);
     if (creds == NULL) {
       gpr_log(GPR_ERROR, "Could not create gce credentials.");
       exit(1);
@@ -127,23 +105,8 @@ int main(int argc, char **argv) {
       exit(1);
     }
   } else {
-    if (json_key_file_path == NULL) {
-      gpr_log(GPR_ERROR, "Missing --json_key option.");
-      exit(1);
-    }
-    if (scope == NULL) {
-      gpr_log(GPR_ERROR, "Missing --scope option.");
-      exit(1);
-    }
-
-    creds = create_service_account_creds(json_key_file_path, scope);
-    if (creds == NULL) {
-      gpr_log(GPR_ERROR,
-              "Could not create service account creds. %s does probably not "
-              "contain a valid json key.",
-              json_key_file_path);
-      exit(1);
-    }
+    gpr_log(GPR_ERROR, "Missing --gce or --json_refresh_token option.");
+    exit(1);
   }
   GPR_ASSERT(creds != NULL);
 

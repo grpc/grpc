@@ -265,6 +265,9 @@ PHP_METHOD(Call, startBatch) {
   HashTable *array_hash;
   HashPosition array_pointer;
   HashTable *status_hash;
+  HashTable *message_hash;
+  zval **message_value;
+  zval **message_flags;
   char *key;
   uint key_len;
   ulong index;
@@ -319,13 +322,33 @@ PHP_METHOD(Call, startBatch) {
             metadata.metadata;
         break;
       case GRPC_OP_SEND_MESSAGE:
-        if (Z_TYPE_PP(value) != IS_STRING) {
+        if (Z_TYPE_PP(value) != IS_ARRAY) {
+          zend_throw_exception(spl_ce_InvalidArgumentException,
+                               "Expected an array for send message",
+                               1 TSRMLS_CC);
+          goto cleanup;
+        }
+        message_hash = Z_ARRVAL_PP(value);
+        if (zend_hash_find(message_hash, "flags", sizeof("flags"),
+                           (void **)&message_flags) == SUCCESS) {
+          if (Z_TYPE_PP(message_flags) != IS_LONG) {
+            zend_throw_exception(spl_ce_InvalidArgumentException,
+                                 "Expected an int for message flags",
+                                 1 TSRMLS_CC);
+          }
+          ops[op_num].flags = Z_LVAL_PP(message_flags) & GRPC_WRITE_USED_MASK;
+        }
+        if (zend_hash_find(message_hash, "message", sizeof("message"),
+                           (void **)&message_value) != SUCCESS ||
+            Z_TYPE_PP(message_value) != IS_STRING) {
           zend_throw_exception(spl_ce_InvalidArgumentException,
                                "Expected a string for send message",
                                1 TSRMLS_CC);
+          goto cleanup;
         }
         ops[op_num].data.send_message =
-            string_to_byte_buffer(Z_STRVAL_PP(value), Z_STRLEN_PP(value));
+            string_to_byte_buffer(Z_STRVAL_PP(message_value),
+                                  Z_STRLEN_PP(message_value));
         break;
       case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
         break;

@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -104,14 +104,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structplucker.html">plucker</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a9f69c76c26125e6581491864a06ea44a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#a9f69c76c26125e6581491864a06ea44a">grpc_completion_queue_create</a> (void)</td></tr>
-<tr class="memdesc:a9f69c76c26125e6581491864a06ea44a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a completion queue.  <a href="#a9f69c76c26125e6581491864a06ea44a">More...</a><br/></td></tr>
-<tr class="separator:a9f69c76c26125e6581491864a06ea44a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a488eee9dd5c518a42b887f59c550690a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#a488eee9dd5c518a42b887f59c550690a">grpc_completion_queue_create</a> (void *reserved)</td></tr>
+<tr class="memdesc:a488eee9dd5c518a42b887f59c550690a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a completion queue.  <a href="#a488eee9dd5c518a42b887f59c550690a">More...</a><br/></td></tr>
+<tr class="separator:a488eee9dd5c518a42b887f59c550690a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acec06afc3d55de1701d5831e979dad02"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#acec06afc3d55de1701d5831e979dad02">grpc_cq_internal_ref</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc)</td></tr>
 <tr class="separator:acec06afc3d55de1701d5831e979dad02"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0096a03d441f4b7cfbbe864eb122ed8e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#a0096a03d441f4b7cfbbe864eb122ed8e">grpc_cq_internal_unref</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc)</td></tr>
@@ -120,12 +122,12 @@ Functions</h2></td></tr>
 <tr class="separator:af0798635c22a4eaa66ed25c310b3a776"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2752dafd9e9e02bbd253578fc58b0a7e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#a2752dafd9e9e02bbd253578fc58b0a7e">grpc_cq_end_op</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc, void *tag, int success, void(*done)(void *done_arg, <a class="el" href="structgrpc__cq__completion.html">grpc_cq_completion</a> *storage), void *done_arg, <a class="el" href="structgrpc__cq__completion.html">grpc_cq_completion</a> *storage)</td></tr>
 <tr class="separator:a2752dafd9e9e02bbd253578fc58b0a7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9b582acb0fc4994ccdbf39d40ee3766"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__event.html">grpc_event</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#ac9b582acb0fc4994ccdbf39d40ee3766">grpc_completion_queue_next</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline)</td></tr>
-<tr class="memdesc:ac9b582acb0fc4994ccdbf39d40ee3766"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocks until an event is available, the completion queue is being shut down, or deadline is reached.  <a href="#ac9b582acb0fc4994ccdbf39d40ee3766">More...</a><br/></td></tr>
-<tr class="separator:ac9b582acb0fc4994ccdbf39d40ee3766"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab63b4e63ae13faa3e6786f131a46b5dd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__event.html">grpc_event</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#ab63b4e63ae13faa3e6786f131a46b5dd">grpc_completion_queue_pluck</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc, void *tag, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline)</td></tr>
-<tr class="memdesc:ab63b4e63ae13faa3e6786f131a46b5dd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocks until an event with tag 'tag' is available, the completion queue is being shutdown or deadline is reached.  <a href="#ab63b4e63ae13faa3e6786f131a46b5dd">More...</a><br/></td></tr>
-<tr class="separator:ab63b4e63ae13faa3e6786f131a46b5dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a56bb6e0aa99e2989f9a01299afa9f73a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__event.html">grpc_event</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#a56bb6e0aa99e2989f9a01299afa9f73a">grpc_completion_queue_next</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *reserved)</td></tr>
+<tr class="memdesc:a56bb6e0aa99e2989f9a01299afa9f73a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocks until an event is available, the completion queue is being shut down, or deadline is reached.  <a href="#a56bb6e0aa99e2989f9a01299afa9f73a">More...</a><br/></td></tr>
+<tr class="separator:a56bb6e0aa99e2989f9a01299afa9f73a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9de0ec56b65359ffe948d8d981d09717"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__event.html">grpc_event</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#a9de0ec56b65359ffe948d8d981d09717">grpc_completion_queue_pluck</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc, void *tag, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline, void *reserved)</td></tr>
+<tr class="memdesc:a9de0ec56b65359ffe948d8d981d09717"><td class="mdescLeft">&#160;</td><td class="mdescRight">Blocks until an event with tag 'tag' is available, the completion queue is being shutdown or deadline is reached.  <a href="#a9de0ec56b65359ffe948d8d981d09717">More...</a><br/></td></tr>
+<tr class="separator:a9de0ec56b65359ffe948d8d981d09717"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7a7c60f847e798025d83e2d8ff9b1778"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#a7a7c60f847e798025d83e2d8ff9b1778">grpc_completion_queue_shutdown</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc)</td></tr>
 <tr class="memdesc:a7a7c60f847e798025d83e2d8ff9b1778"><td class="mdescLeft">&#160;</td><td class="mdescRight">Begin destruction of a completion queue.  <a href="#a7a7c60f847e798025d83e2d8ff9b1778">More...</a><br/></td></tr>
 <tr class="separator:a7a7c60f847e798025d83e2d8ff9b1778"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -134,23 +136,21 @@ Functions</h2></td></tr>
 <tr class="separator:a1d73d7983af3030ee119b768095e9627"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0ebca6cf60ce9cc92b9bfa9200fab813"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#a0ebca6cf60ce9cc92b9bfa9200fab813">grpc_cq_pollset</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc)</td></tr>
 <tr class="separator:a0ebca6cf60ce9cc92b9bfa9200fab813"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af56ef17bad0397c6f1305be433aeeb64"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#af56ef17bad0397c6f1305be433aeeb64">grpc_cq_hack_spin_pollset</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc)</td></tr>
-<tr class="separator:af56ef17bad0397c6f1305be433aeeb64"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afbe8f768af201e16309e240ae155ee3d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#afbe8f768af201e16309e240ae155ee3d">grpc_cq_mark_server_cq</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc)</td></tr>
 <tr class="separator:afbe8f768af201e16309e240ae155ee3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a02173d1bf8e55f6903d24c20107d8dbf"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="completion__queue_8c.html#a02173d1bf8e55f6903d24c20107d8dbf">grpc_cq_is_server_cq</a> (<a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cc)</td></tr>
 <tr class="separator:a02173d1bf8e55f6903d24c20107d8dbf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a9f69c76c26125e6581491864a06ea44a"></a>
+<a class="anchor" id="a488eee9dd5c518a42b887f59c550690a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a>* grpc_completion_queue_create </td>
           <td>(</td>
-          <td class="paramtype">void&#160;</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -179,7 +179,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ac9b582acb0fc4994ccdbf39d40ee3766"></a>
+<a class="anchor" id="a56bb6e0aa99e2989f9a01299afa9f73a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -193,7 +193,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
-          <td class="paramname"><em>deadline</em>&#160;</td>
+          <td class="paramname"><em>deadline</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -209,7 +215,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ab63b4e63ae13faa3e6786f131a46b5dd"></a>
+<a class="anchor" id="a9de0ec56b65359ffe948d8d981d09717"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -229,7 +235,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
-          <td class="paramname"><em>deadline</em>&#160;</td>
+          <td class="paramname"><em>deadline</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -241,7 +253,8 @@ Functions</h2></td></tr>
 
 <p>Blocks until an event with tag 'tag' is available, the completion queue is being shutdown or deadline is reached. </p>
 <p>Returns a <a class="el" href="structgrpc__event.html" title="The result of an operation. ">grpc_event</a> with type GRPC_QUEUE_TIMEOUT on timeout, otherwise a <a class="el" href="structgrpc__event.html" title="The result of an operation. ">grpc_event</a> describing the event that occurred.</p>
-<p>Callers must not call grpc_completion_queue_next and grpc_completion_queue_pluck simultaneously on the same completion queue. </p>
+<p>Callers must not call grpc_completion_queue_next and grpc_completion_queue_pluck simultaneously on the same completion queue.</p>
+<p>Completion queues support a maximum of GRPC_MAX_COMPLETION_QUEUE_PLUCKERS concurrently executing plucks at any time. </p>
 
 </div>
 </div>
@@ -331,22 +344,6 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="af56ef17bad0397c6f1305be433aeeb64"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc_cq_hack_spin_pollset </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *&#160;</td>
-          <td class="paramname"><em>cc</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a class="anchor" id="acec06afc3d55de1701d5831e979dad02"></a>
 <div class="memitem">
 <div class="memproto">
@@ -430,7 +427,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
