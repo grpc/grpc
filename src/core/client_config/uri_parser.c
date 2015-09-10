@@ -39,10 +39,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-static grpc_uri *bad_uri(const char *uri_text, int pos, const char *section,
+static grpc_uri *bad_uri(const char *uri_text, size_t pos, const char *section,
                          int suppress_errors) {
   char *line_prefix;
-  int pfx_len;
+  size_t pfx_len;
 
   if (!suppress_errors) {
     gpr_asprintf(&line_prefix, "bad uri.%s: '", section);
@@ -60,8 +60,10 @@ static grpc_uri *bad_uri(const char *uri_text, int pos, const char *section,
   return NULL;
 }
 
-static char *copy_fragment(const char *src, int begin, int end) {
-  char *out = gpr_malloc(end - begin + 1);
+static char *copy_fragment(const char *src, size_t begin, size_t end) {
+  char *out;
+  GPR_ASSERT(end >= begin);
+  out = gpr_malloc(end - begin + 1);
   memcpy(out, src + begin, end - begin);
   out[end - begin] = 0;
   return out;
@@ -69,13 +71,14 @@ static char *copy_fragment(const char *src, int begin, int end) {
 
 grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
   grpc_uri *uri;
-  int scheme_begin = 0;
-  int scheme_end = -1;
-  int authority_begin = -1;
-  int authority_end = -1;
-  int path_begin = -1;
-  int path_end = -1;
-  int i;
+  size_t scheme_begin = 0;
+#define NOT_SET (~(size_t)0)
+  size_t scheme_end = NOT_SET;
+  size_t authority_begin = NOT_SET;
+  size_t authority_end = NOT_SET;
+  size_t path_begin = NOT_SET;
+  size_t path_end = NOT_SET;
+  size_t i;
 
   for (i = scheme_begin; uri_text[i] != 0; i++) {
     if (uri_text[i] == ':') {
@@ -92,13 +95,14 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
     }
     break;
   }
-  if (scheme_end == -1) {
+  if (scheme_end == NOT_SET) {
     return bad_uri(uri_text, i, "scheme", suppress_errors);
   }
 
   if (uri_text[scheme_end + 1] == '/' && uri_text[scheme_end + 2] == '/') {
     authority_begin = scheme_end + 3;
-    for (i = authority_begin; uri_text[i] != 0 && authority_end == -1; i++) {
+    for (i = authority_begin; uri_text[i] != 0 && authority_end == NOT_SET;
+         i++) {
       if (uri_text[i] == '/') {
         authority_end = i;
       }
@@ -109,10 +113,10 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
         return bad_uri(uri_text, i, "fragment_not_supported", suppress_errors);
       }
     }
-    if (authority_end == -1 && uri_text[i] == 0) {
+    if (authority_end == NOT_SET && uri_text[i] == 0) {
       authority_end = i;
     }
-    if (authority_end == -1) {
+    if (authority_end == NOT_SET) {
       return bad_uri(uri_text, i, "authority", suppress_errors);
     }
     /* TODO(ctiller): parse the authority correctly */

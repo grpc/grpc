@@ -101,7 +101,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 /* Cancel after invoke, no payload */
 static void test_cancel_after_invoke(grpc_end2end_test_config config,
-                                     cancellation_mode mode, int test_ops) {
+                                     cancellation_mode mode, size_t test_ops) {
   grpc_op ops[6];
   grpc_op *op;
   grpc_call *c;

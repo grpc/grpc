@@ -420,7 +420,7 @@ static void basic_pollset_maybe_work(grpc_pollset *pollset,
   grpc_fd_watcher fd_watcher;
   int timeout;
   int r;
-  int nfds;
+  nfds_t nfds;
 
   if (pollset->in_flight_cbs) {
     /* Give do_promote priority so we don't starve it out */
