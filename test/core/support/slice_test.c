@@ -116,7 +116,7 @@ static void test_slice_sub_works(unsigned length) {
      beginning of the slice. */
   slice = gpr_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = i;
+    GPR_SLICE_START_PTR(slice)[i] = (gpr_uint8)i;
   }
 
   /* Ensure that for all subsets length is correct and that we start on the
@@ -155,7 +155,7 @@ static void test_slice_split_head_works(size_t length) {
      beginning of the slice. */
   slice = gpr_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = i;
+    GPR_SLICE_START_PTR(slice)[i] = (gpr_uint8)i;
   }
 
   /* Ensure that for all subsets length is correct and that we start on the
@@ -183,7 +183,7 @@ static void test_slice_split_tail_works(size_t length) {
      beginning of the slice. */
   slice = gpr_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = i;
+    GPR_SLICE_START_PTR(slice)[i] = (gpr_uint8)i;
   }
 
   /* Ensure that for all subsets length is correct and that we start on the

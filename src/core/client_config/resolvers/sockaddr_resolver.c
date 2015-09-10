@@ -218,7 +218,7 @@ static int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr,
       gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port);
       goto done;
     }
-    in->sin_port = htons(port_num);
+    in->sin_port = htons((gpr_uint16)port_num);
   } else {
     gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
     goto done;
@@ -259,7 +259,7 @@ static int parse_ipv6(grpc_uri *uri, struct sockaddr_storage *addr,
       gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port);
       goto done;
     }
-    in6->sin6_port = htons(port_num);
+    in6->sin6_port = htons((gpr_uint16)port_num);
   } else {
     gpr_log(GPR_ERROR, "no port given for ipv6 scheme");
     goto done;

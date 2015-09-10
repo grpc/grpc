@@ -411,7 +411,7 @@ int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
                                0)) {
           return 0;
         }
-        transport_parsing->incoming_frame_size -= (end - cur);
+        transport_parsing->incoming_frame_size -= (gpr_uint32)(end - cur);
         return 1;
       }
       gpr_log(GPR_ERROR, "should never reach here");
@@ -479,7 +479,7 @@ static void skip_header(void *tp, grpc_mdelem *md) { GRPC_MDELEM_UNREF(md); }
 static int init_skip_frame_parser(
     grpc_chttp2_transport_parsing *transport_parsing, int is_header) {
   if (is_header) {
-    int is_eoh = transport_parsing->expect_continuation_stream_id != 0;
+    gpr_uint8 is_eoh = transport_parsing->expect_continuation_stream_id != 0;
     transport_parsing->parser = grpc_chttp2_header_parser_parse;
     transport_parsing->parser_data = &transport_parsing->hpack_parser;
     transport_parsing->hpack_parser.on_header = skip_header;
@@ -622,8 +622,8 @@ static void on_header(void *tp, grpc_mdelem *md) {
 
 static int init_header_frame_parser(
     grpc_chttp2_transport_parsing *transport_parsing, int is_continuation) {
-  int is_eoh = (transport_parsing->incoming_frame_flags &
-                GRPC_CHTTP2_DATA_FLAG_END_HEADERS) != 0;
+  gpr_uint8 is_eoh = (transport_parsing->incoming_frame_flags &
+                      GRPC_CHTTP2_DATA_FLAG_END_HEADERS) != 0;
   int via_accept = 0;
   grpc_chttp2_stream_parsing *stream_parsing;
 

@@ -108,7 +108,8 @@ static void json_reader_string_clear(void* userdata) {
 static void json_reader_string_add_char(void* userdata, gpr_uint32 c) {
   json_reader_userdata* state = userdata;
   check_string(state, 1);
-  state->scratchpad[state->string_len++] = c;
+  GPR_ASSERT(c <= 256);
+  state->scratchpad[state->string_len++] = (char)c;
 }
 
 static void json_reader_string_add_utf32(void* userdata, gpr_uint32 c) {

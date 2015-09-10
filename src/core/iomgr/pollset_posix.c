@@ -443,7 +443,7 @@ static void basic_pollset_maybe_work(grpc_pollset *pollset,
     pfd[1].revents = 0;
     gpr_mu_unlock(&pollset->mu);
     pfd[1].events =
-        grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
+        (short)grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
     if (pfd[1].events != 0) {
       nfds++;
     }

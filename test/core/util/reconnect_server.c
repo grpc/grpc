@@ -116,7 +116,7 @@ void reconnect_server_start(reconnect_server *server, int port) {
   int port_added;
 
   addr.sin_family = AF_INET;
-  addr.sin_port = htons(port);
+  addr.sin_port = htons((gpr_uint16)port);
   memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
 
   server->tcp_server = grpc_tcp_server_create();

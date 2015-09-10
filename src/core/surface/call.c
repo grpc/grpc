@@ -421,7 +421,7 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
     if (call->allocated_completions & (1u << i)) {
       continue;
     }
-    call->allocated_completions |= 1u << i;
+    call->allocated_completions |= (gpr_uint8)(1u << i);
     gpr_mu_unlock(&call->completion_mu);
     return &call->completions[i];
   }
@@ -432,7 +432,8 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
 static void done_completion(void *call, grpc_cq_completion *completion) {
   grpc_call *c = call;
   gpr_mu_lock(&c->completion_mu);
-  c->allocated_completions &= ~(1u << (completion - c->completions));
+  c->allocated_completions &=
+      (gpr_uint8) ~(1u << (completion - c->completions));
   gpr_mu_unlock(&c->completion_mu);
   GRPC_CALL_INTERNAL_UNREF(c, "completion", 1);
 }
@@ -743,7 +744,7 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
   size_t i;
   /* ioreq is live: we need to do something */
   master = &call->masters[master_set];
-  master->complete_mask |= 1u << op;
+  master->complete_mask |= (gpr_uint16)(1u << op);
   if (!success) {
     master->success = 0;
   }
@@ -1214,7 +1215,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                                    grpc_ioreq_completion_func completion,
                                    void *user_data) {
   size_t i;
-  gpr_uint32 have_ops = 0;
+  gpr_uint16 have_ops = 0;
   grpc_ioreq_op op;
   reqinfo_master *master;
   grpc_ioreq_data data;
@@ -1251,7 +1252,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                            GRPC_MDSTR_REF(reqs[i].data.send_status.details));
       }
     }
-    have_ops |= 1u << op;
+    have_ops |= (gpr_uint16)(1u << op);
 
     call->request_data[op] = data;
     call->request_flags[op] = reqs[i].flags;

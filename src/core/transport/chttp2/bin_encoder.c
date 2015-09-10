@@ -128,12 +128,13 @@ gpr_slice grpc_chttp2_huffman_compress(gpr_slice input) {
 
     while (temp_length > 8) {
       temp_length -= 8;
-      *out++ = temp >> temp_length;
+      *out++ = (gpr_uint8)(temp >> temp_length);
     }
   }
 
   if (temp_length) {
-    *out++ = (temp << (8u - temp_length)) | (0xffu >> temp_length);
+    *out++ = (gpr_uint8)(temp << (8u - temp_length)) |
+             (gpr_uint8)(0xffu >> temp_length);
   }
 
   GPR_ASSERT(out == GPR_SLICE_END_PTR(output));
@@ -150,7 +151,7 @@ typedef struct {
 static void enc_flush_some(huff_out *out) {
   while (out->temp_length > 8) {
     out->temp_length -= 8;
-    *out->out++ = out->temp >> out->temp_length;
+    *out->out++ = (gpr_uint8)(out->temp >> out->temp_length);
   }
 }
 
@@ -189,8 +190,9 @@ gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input) {
 
   /* encode full triplets */
   for (i = 0; i < input_triplets; i++) {
-    enc_add2(&out, in[0] >> 2, ((in[0] & 0x3) << 4) | (in[1] >> 4));
-    enc_add2(&out, ((in[1] & 0xf) << 2) | (in[2] >> 6), in[2] & 0x3f);
+    enc_add2(&out, in[0] >> 2, (gpr_uint8)((in[0] & 0x3) << 4) | (in[1] >> 4));
+    enc_add2(&out, (gpr_uint8)((in[1] & 0xf) << 2) | (in[2] >> 6),
+             (gpr_uint8)(in[2] & 0x3f));
     in += 3;
   }
 
@@ -199,19 +201,20 @@ gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input) {
     case 0:
       break;
     case 1:
-      enc_add2(&out, in[0] >> 2, (in[0] & 0x3) << 4);
+      enc_add2(&out, in[0] >> 2, (gpr_uint8)((in[0] & 0x3) << 4));
       in += 1;
       break;
     case 2:
-      enc_add2(&out, in[0] >> 2, ((in[0] & 0x3) << 4) | (in[1] >> 4));
-      enc_add1(&out, (in[1] & 0xf) << 2);
+      enc_add2(&out, in[0] >> 2,
+               (gpr_uint8)((in[0] & 0x3) << 4) | (gpr_uint8)(in[1] >> 4));
+      enc_add1(&out, (gpr_uint8)((in[1] & 0xf) << 2));
       in += 2;
       break;
   }
 
   if (out.temp_length) {
-    *out.out++ =
-        (out.temp << (8u - out.temp_length)) | (0xffu >> out.temp_length);
+    *out.out++ = (gpr_uint8)(out.temp << (8u - out.temp_length)) |
+                 (gpr_uint8)(0xffu >> out.temp_length);
   }
 
   GPR_ASSERT(out.out <= GPR_SLICE_END_PTR(output));

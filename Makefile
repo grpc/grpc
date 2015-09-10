@@ -231,10 +231,6 @@ endif
 CXX11_CHECK_CMD = $(CXX) -std=c++11 -o $(TMPOUT) -c test/build/c++11.cc
 HAS_CXX11 = $(shell $(CXX11_CHECK_CMD) 2> /dev/null && echo true || echo false)
 
-# Detect if -Wshorten-64-to-32 is a thing
-SHORTEN_64_TO_32_CHECK_CMD = $(CC) -Wshorten-64-to-32 test/build/empty.c
-HAS_SHORTEN_64_TO_32 = $(shell $(SHORTEN_64_TO_32_CHECK_CMD) 2> /dev/null && echo true || echo false)
-
 # The HOST compiler settings are used to compile the protoc plugins.
 # In most cases, you won't have to change anything, but if you are
 # cross-compiling, you can override these variables from GNU make's
@@ -249,10 +245,7 @@ ifdef EXTRA_DEFINES
 DEFINES += $(EXTRA_DEFINES)
 endif
 
-CFLAGS += -std=c89 -pedantic -Wsign-conversion
-ifeq ($(HAS_SHORTEN_64_TO_32),true)
-CFLAGS += -Wshorten-64-to-32
-endif
+CFLAGS += -std=c89 -pedantic -Wsign-conversion -Wconversion
 ifeq ($(HAS_CXX11),true)
 CXXFLAGS += -std=c++11
 else

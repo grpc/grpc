@@ -77,15 +77,15 @@ typedef struct {
 static void fill_header(gpr_uint8 *p, gpr_uint8 type, gpr_uint32 id, size_t len,
                         gpr_uint8 flags) {
   GPR_ASSERT(len < 16777316);
-  *p++ = len >> 16;
-  *p++ = len >> 8;
-  *p++ = len;
+  *p++ = (gpr_uint8)(len >> 16);
+  *p++ = (gpr_uint8)(len >> 8);
+  *p++ = (gpr_uint8)(len);
   *p++ = type;
   *p++ = flags;
-  *p++ = id >> 24;
-  *p++ = id >> 16;
-  *p++ = id >> 8;
-  *p++ = id;
+  *p++ = (gpr_uint8)(id >> 24);
+  *p++ = (gpr_uint8)(id >> 16);
+  *p++ = (gpr_uint8)(id >> 8);
+  *p++ = (gpr_uint8)(id);
 }
 
 /* finish a frame - fill in the previously reserved header */
@@ -106,11 +106,12 @@ static void finish_frame(framer_state *st, int is_header_boundary,
     case NONE:
       return;
   }
-  fill_header(GPR_SLICE_START_PTR(st->output->slices[st->header_idx]), type,
-              st->stream_id,
-              st->output->length - st->output_length_at_start_of_frame,
-              (is_last_in_stream ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0) |
-                  (is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0));
+  fill_header(
+      GPR_SLICE_START_PTR(st->output->slices[st->header_idx]), type,
+      st->stream_id, st->output->length - st->output_length_at_start_of_frame,
+      (gpr_uint8)(
+          (is_last_in_stream ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0) |
+          (is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0)));
   st->cur_frame_type = NONE;
 }
 
@@ -190,6 +191,8 @@ static grpc_mdelem *add_elem(grpc_chttp2_hpack_compressor *c,
                      GPR_SLICE_LENGTH(elem->value->slice);
   grpc_mdelem *elem_to_unref;
 
+  GPR_ASSERT(elem_size < 65536);
+
   /* Reserve space for this element in the remote table: if this overflows
      the current table, drop elements until it fits, matching the decompressor
      algorithm */
@@ -201,14 +204,16 @@ static grpc_mdelem *add_elem(grpc_chttp2_hpack_compressor *c,
                c->table_elem_size[c->tail_remote_index %
                                   GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS]);
     GPR_ASSERT(c->table_elems > 0);
-    c->table_size -= c->table_elem_size[c->tail_remote_index %
-                                        GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS];
+    c->table_size =
+        (gpr_uint16)(c->table_size -
+                     c->table_elem_size[c->tail_remote_index %
+                                        GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS]);
     c->table_elems--;
   }
   GPR_ASSERT(c->table_elems < GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS);
   c->table_elem_size[new_index % GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS] =
-      elem_size;
-  c->table_size += elem_size;
+      (gpr_uint16)elem_size;
+  c->table_size = (gpr_uint16)(c->table_size + elem_size);
   c->table_elems++;
 
   /* Store this element into {entries,indices}_elem */
@@ -497,7 +502,7 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
   gpr_uint32 flow_controlled_bytes_taken = 0;
   gpr_uint32 curop = 0;
   gpr_uint8 *p;
-  int compressed_flag_set = 0;
+  gpr_uint8 compressed_flag_set = 0;
 
   while (curop < *inops_count) {
     GPR_ASSERT(flow_controlled_bytes_taken <= max_flow_controlled_bytes);
@@ -523,10 +528,10 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
 
         p = GPR_SLICE_START_PTR(slice);
         p[0] = compressed_flag_set;
-        p[1] = op->data.begin_message.length >> 24;
-        p[2] = op->data.begin_message.length >> 16;
-        p[3] = op->data.begin_message.length >> 8;
-        p[4] = op->data.begin_message.length;
+        p[1] = (gpr_uint8)(op->data.begin_message.length >> 24);
+        p[2] = (gpr_uint8)(op->data.begin_message.length >> 16);
+        p[3] = (gpr_uint8)(op->data.begin_message.length >> 8);
+        p[4] = (gpr_uint8)(op->data.begin_message.length);
         op->type = GRPC_OP_SLICE;
         op->data.slice = slice;
       /* fallthrough */
@@ -550,7 +555,7 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
           grpc_sopb_append(outops, op, 1);
           curop++;
         }
-        flow_controlled_bytes_taken += GPR_SLICE_LENGTH(slice);
+        flow_controlled_bytes_taken += (gpr_uint32)GPR_SLICE_LENGTH(slice);
         break;
     }
   }
