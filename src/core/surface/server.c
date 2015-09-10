@@ -203,7 +203,7 @@ struct grpc_server {
   gpr_stack_lockfree *request_freelist;
   /** requested call backing data */
   requested_call *requested_calls;
-  int max_requested_calls;
+  size_t max_requested_calls;
 
   gpr_atm shutdown_flag;
   gpr_uint8 shutdown_published;
@@ -298,7 +298,7 @@ static void channel_broadcaster_shutdown(channel_broadcaster *cb,
  */
 
 static void request_matcher_init(request_matcher *request_matcher,
-                                 int entries) {
+                                 size_t entries) {
   memset(request_matcher, 0, sizeof(*request_matcher));
   request_matcher->requests = gpr_stack_lockfree_create(entries);
 }
@@ -817,7 +817,7 @@ grpc_server *grpc_server_create_from_filters(
      grpc_server_census_filter (optional) - for stats collection and tracing
      {passed in filter stack}
      grpc_connected_channel_filter - for interfacing with transports */
-  server->channel_filter_count = filter_count + 1 + census_enabled;
+  server->channel_filter_count = filter_count + 1u + (census_enabled ? 1u : 0u);
   server->channel_filters =
       gpr_malloc(server->channel_filter_count * sizeof(grpc_channel_filter *));
   server->channel_filters[0] = &server_surface_filter;
@@ -825,7 +825,7 @@ grpc_server *grpc_server_create_from_filters(
     server->channel_filters[1] = &grpc_server_census_filter;
   }
   for (i = 0; i < filter_count; i++) {
-    server->channel_filters[i + 1 + census_enabled] = filters[i];
+    server->channel_filters[i + 1u + (census_enabled ? 1u : 0u)] = filters[i];
   }
 
   server->channel_args = grpc_channel_args_copy(args);
@@ -1246,7 +1246,8 @@ static void begin_call(grpc_server *server, call_data *calld,
   }
 
   GRPC_CALL_INTERNAL_REF(calld->call, "server");
-  grpc_call_start_ioreq_and_call_back(calld->call, req, r - req, publish, rc);
+  grpc_call_start_ioreq_and_call_back(calld->call, req, (size_t)(r - req),
+                                      publish, rc);
 }
 
 static void done_request_event(void *req, grpc_cq_completion *c) {

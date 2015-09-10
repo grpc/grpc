@@ -67,8 +67,8 @@ typedef struct {
   grpc_endpoint base;
   grpc_fd *em_fd;
   int fd;
-  int iov_size; /* Number of slices to allocate per read attempt */
   int finished_edge;
+  size_t iov_size; /* Number of slices to allocate per read attempt */
   size_t slice_size;
   gpr_refcount refcount;
 
@@ -215,8 +215,9 @@ static void tcp_continue_read(grpc_tcp *tcp) {
   } else {
     GPR_ASSERT((size_t)read_bytes <= tcp->incoming_buffer->length);
     if ((size_t)read_bytes < tcp->incoming_buffer->length) {
-      gpr_slice_buffer_trim_end(tcp->incoming_buffer,
-                                tcp->incoming_buffer->length - read_bytes);
+      gpr_slice_buffer_trim_end(
+          tcp->incoming_buffer,
+          tcp->incoming_buffer->length - (size_t)read_bytes);
     } else if (tcp->iov_size < MAX_READ_IOVEC) {
       ++tcp->iov_size;
     }
@@ -264,12 +265,12 @@ static grpc_endpoint_op_status tcp_read(grpc_endpoint *ep,
 static grpc_endpoint_op_status tcp_flush(grpc_tcp *tcp) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
-  int iov_size;
+  size_t iov_size;
   ssize_t sent_length;
-  ssize_t sending_length;
-  ssize_t trailing;
-  ssize_t unwind_slice_idx;
-  ssize_t unwind_byte_idx;
+  size_t sending_length;
+  size_t trailing;
+  size_t unwind_slice_idx;
+  size_t unwind_byte_idx;
 
   for (;;) {
     sending_length = 0;
@@ -319,9 +320,9 @@ static grpc_endpoint_op_status tcp_flush(grpc_tcp *tcp) {
     }
 
     GPR_ASSERT(tcp->outgoing_byte_idx == 0);
-    trailing = sending_length - sent_length;
+    trailing = sending_length - (size_t)sent_length;
     while (trailing > 0) {
-      ssize_t slice_length;
+      size_t slice_length;
 
       tcp->outgoing_slice_idx--;
       slice_length = GPR_SLICE_LENGTH(

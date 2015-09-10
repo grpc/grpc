@@ -52,8 +52,8 @@ int g_failure = 0;
 grpc_stream_op_buffer g_sopb;
 
 void **to_delete = NULL;
-int num_to_delete = 0;
-int cap_to_delete = 0;
+size_t num_to_delete = 0;
+size_t cap_to_delete = 0;
 
 static gpr_slice create_test_slice(size_t length) {
   gpr_slice slice = gpr_slice_malloc(length);
@@ -126,8 +126,8 @@ static void test_small_data_framing(void) {
   verify_sopb(10, 0, 5, "000005 0000 deadbeef 00000000ff");
 }
 
-static void add_sopb_headers(int n, ...) {
-  int i;
+static void add_sopb_headers(size_t n, ...) {
+  size_t i;
   grpc_metadata_batch b;
   va_list l;
   grpc_linked_mdelem *e = gpr_malloc(sizeof(*e) * n);
@@ -336,7 +336,7 @@ static void run_test(void (*test)(), const char *name) {
 }
 
 int main(int argc, char **argv) {
-  int i;
+  size_t i;
   grpc_test_init(argc, argv);
   TEST(test_small_data_framing);
   TEST(test_basic_headers);

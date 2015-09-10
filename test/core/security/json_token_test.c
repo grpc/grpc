@@ -391,20 +391,21 @@ static void test_jwt_encode_and_sign(
   char *jwt = jwt_encode_and_sign_func(&json_key);
   const char *dot = strchr(jwt, '.');
   GPR_ASSERT(dot != NULL);
-  parsed_header = parse_json_part_from_jwt(jwt, dot - jwt, &scratchpad);
+  parsed_header =
+      parse_json_part_from_jwt(jwt, (size_t)(dot - jwt), &scratchpad);
   GPR_ASSERT(parsed_header != NULL);
   check_jwt_header(parsed_header);
-  offset = dot - jwt + 1;
+  offset = (size_t)(dot - jwt) + 1;
   grpc_json_destroy(parsed_header);
   gpr_free(scratchpad);
 
   dot = strchr(jwt + offset, '.');
   GPR_ASSERT(dot != NULL);
-  parsed_claim =
-      parse_json_part_from_jwt(jwt + offset, dot - (jwt + offset), &scratchpad);
+  parsed_claim = parse_json_part_from_jwt(
+      jwt + offset, (size_t)(dot - (jwt + offset)), &scratchpad);
   GPR_ASSERT(parsed_claim != NULL);
   check_jwt_claim_func(parsed_claim);
-  offset = dot - jwt + 1;
+  offset = (size_t)(dot - jwt) + 1;
   grpc_json_destroy(parsed_claim);
   gpr_free(scratchpad);
 

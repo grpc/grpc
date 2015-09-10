@@ -177,11 +177,11 @@ static void test_spin_creating_the_same_thing(void) {
 
 static void test_things_stick_around(void) {
   grpc_mdctx *ctx;
-  int i, j;
+  size_t i, j;
   char *buffer;
-  int nstrs = 1000;
+  size_t nstrs = 1000;
   grpc_mdstr **strs = gpr_malloc(sizeof(grpc_mdstr *) * nstrs);
-  int *shuf = gpr_malloc(sizeof(int) * nstrs);
+  size_t *shuf = gpr_malloc(sizeof(size_t) * nstrs);
   grpc_mdstr *test;
 
   LOG_TEST("test_things_stick_around");
@@ -201,9 +201,9 @@ static void test_things_stick_around(void) {
   }
 
   for (i = 0; i < nstrs; i++) {
-    int p = rand() % nstrs;
-    int q = rand() % nstrs;
-    int temp = shuf[p];
+    size_t p = (size_t)rand() % nstrs;
+    size_t q = (size_t)rand() % nstrs;
+    size_t temp = shuf[p];
     shuf[p] = shuf[q];
     shuf[q] = temp;
   }

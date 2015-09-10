@@ -609,20 +609,21 @@ extern int grpc_flowctl_trace;
   else                               \
   stmt
 
-#define GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(reason, transport, context, var,      \
-                                         delta)                                \
-  if (!(grpc_flowctl_trace)) {                                                 \
-  } else {                                                                     \
-    grpc_chttp2_flowctl_trace(__FILE__, __LINE__, reason, #context, #var,      \
-                              transport->is_client, context->id, context->var, \
-                              delta);                                          \
+#define GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(reason, transport, context, var,     \
+                                         delta)                               \
+  if (!(grpc_flowctl_trace)) {                                                \
+  } else {                                                                    \
+    grpc_chttp2_flowctl_trace(__FILE__, __LINE__, reason, #context, #var,     \
+                              transport->is_client, context->id,              \
+                              (gpr_int64)(context->var), (gpr_int64)(delta)); \
   }
 
-#define GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(reason, context, var, delta)   \
-  if (!(grpc_flowctl_trace)) {                                             \
-  } else {                                                                 \
-    grpc_chttp2_flowctl_trace(__FILE__, __LINE__, reason, #context, #var,  \
-                              context->is_client, 0, context->var, delta); \
+#define GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(reason, context, var, delta)      \
+  if (!(grpc_flowctl_trace)) {                                                \
+  } else {                                                                    \
+    grpc_chttp2_flowctl_trace(__FILE__, __LINE__, reason, #context, #var,     \
+                              context->is_client, 0,                          \
+                              (gpr_int64)(context->var), (gpr_int64)(delta)); \
   }
 
 void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason,

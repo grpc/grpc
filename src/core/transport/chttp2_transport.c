@@ -306,7 +306,7 @@ static void init_transport(grpc_chttp2_transport *t,
                   GRPC_ARG_MAX_CONCURRENT_STREAMS);
         } else {
           push_setting(t, GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS,
-                       channel_args->args[i].value.integer);
+                       (gpr_uint32)channel_args->args[i].value.integer);
         }
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER)) {
@@ -320,7 +320,8 @@ static void init_transport(grpc_chttp2_transport *t,
                   t->global.next_stream_id & 1,
                   is_client ? "client" : "server");
         } else {
-          t->global.next_stream_id = channel_args->args[i].value.integer;
+          t->global.next_stream_id =
+              (gpr_uint32)channel_args->args[i].value.integer;
         }
       }
     }

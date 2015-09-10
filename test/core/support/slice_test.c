@@ -66,7 +66,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
     }
     /* We must be able to write to every byte of the data */
     for (i = 0; i < length; i++) {
-      GPR_SLICE_START_PTR(slice)[i] = (char)i;
+      GPR_SLICE_START_PTR(slice)[i] = (gpr_uint8)i;
     }
     /* And finally we must succeed in destroying the slice */
     gpr_slice_unref(slice);
@@ -143,10 +143,10 @@ static void check_head_tail(gpr_slice slice, gpr_slice head, gpr_slice tail) {
                          GPR_SLICE_START_PTR(tail), GPR_SLICE_LENGTH(tail)));
 }
 
-static void test_slice_split_head_works(int length) {
+static void test_slice_split_head_works(size_t length) {
   gpr_slice slice;
   gpr_slice head, tail;
-  int i;
+  size_t i;
 
   LOG_TEST_NAME("test_slice_split_head_works");
   gpr_log(GPR_INFO, "length=%d", length);
@@ -171,10 +171,10 @@ static void test_slice_split_head_works(int length) {
   gpr_slice_unref(slice);
 }
 
-static void test_slice_split_tail_works(int length) {
+static void test_slice_split_tail_works(size_t length) {
   gpr_slice slice;
   gpr_slice head, tail;
-  int i;
+  size_t i;
 
   LOG_TEST_NAME("test_slice_split_tail_works");
   gpr_log(GPR_INFO, "length=%d", length);
