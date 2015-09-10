@@ -121,6 +121,7 @@ static void sockaddr_next(grpc_resolver *resolver,
 static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r) {
   grpc_client_config *cfg;
   grpc_lb_policy *lb_policy;
+  grpc_lb_policy_args lb_policy_args;
   grpc_subchannel **subchannels;
   grpc_subchannel_args args;
 
@@ -135,8 +136,10 @@ static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r) {
       subchannels[i] = grpc_subchannel_factory_create_subchannel(
           r->subchannel_factory, &args);
     }
+    lb_policy_args.subchannels = subchannels;
+    lb_policy_args.num_subchannels = r->num_addrs;
     lb_policy =
-        grpc_lb_policy_create(r->lb_policy_name, subchannels, r->num_addrs);
+        grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     gpr_free(subchannels);
     grpc_client_config_set_lb_policy(cfg, lb_policy);
     GRPC_LB_POLICY_UNREF(lb_policy, "unix");

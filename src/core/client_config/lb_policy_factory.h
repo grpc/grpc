@@ -46,14 +46,18 @@ struct grpc_lb_policy_factory {
   const grpc_lb_policy_factory_vtable *vtable;
 };
 
+typedef struct grpc_lb_policy_args {
+  grpc_subchannel **subchannels;
+  size_t num_subchannels;
+} grpc_lb_policy_args;
+
 struct grpc_lb_policy_factory_vtable {
   void (*ref)(grpc_lb_policy_factory *factory);
   void (*unref)(grpc_lb_policy_factory *factory);
 
   /** Implementation of grpc_lb_policy_factory_create_lb_policy */
   grpc_lb_policy *(*create_lb_policy)(grpc_lb_policy_factory *factory,
-                                      grpc_subchannel **subchannels,
-                                      size_t num_subchannels);
+                                      grpc_lb_policy_args *args);
 
   /** Name for the LB policy this factory implements */
   const char *name;
@@ -64,7 +68,6 @@ void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory);
 
 /** Create a lb_policy instance. */
 grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
-    grpc_lb_policy_factory *factory, grpc_subchannel **subchannels,
-    size_t num_subchannels);
+    grpc_lb_policy_factory *factory, grpc_lb_policy_args *args);
 
 #endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_FACTORY_H */

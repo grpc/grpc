@@ -80,10 +80,9 @@ static grpc_lb_policy_factory *lookup_factory(const char* name) {
 }
 
 grpc_lb_policy *grpc_lb_policy_create(const char *name,
-                                      grpc_subchannel **subchannels,
-                                      size_t num_subchannels) {
+                                      grpc_lb_policy_args *args) {
   grpc_lb_policy_factory *factory = lookup_factory(name);
   grpc_lb_policy *lb_policy = grpc_lb_policy_factory_create_lb_policy(
-      factory, subchannels, num_subchannels);
+      factory, args);
   return lb_policy;
 }
