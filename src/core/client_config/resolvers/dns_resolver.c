@@ -134,6 +134,7 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   grpc_lb_policy *lb_policy;
   size_t i;
   if (addresses) {
+    grpc_lb_policy_args lb_policy_args;
     config = grpc_client_config_create();
     subchannels = gpr_malloc(sizeof(grpc_subchannel *) * addresses->naddrs);
     for (i = 0; i < addresses->naddrs; i++) {
@@ -143,8 +144,9 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
       subchannels[i] = grpc_subchannel_factory_create_subchannel(
           r->subchannel_factory, &args);
     }
-    lb_policy = grpc_lb_policy_create(r->lb_policy_name, subchannels,
-                                      addresses->naddrs);
+    lb_policy_args.subchannels = subchannels;
+    lb_policy_args.num_subchannels = addresses->naddrs;
+    lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     grpc_client_config_set_lb_policy(config, lb_policy);
     GRPC_LB_POLICY_UNREF(lb_policy, "construction");
     grpc_resolved_addresses_destroy(addresses);

@@ -41,9 +41,7 @@ void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory) {
 }
 
 grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
-    grpc_lb_policy_factory *factory, grpc_subchannel **subchannels,
-    size_t num_subchannels) {
+    grpc_lb_policy_factory *factory, grpc_lb_policy_args *args) {
   if (factory == NULL) return NULL;
-  return factory->vtable->create_lb_policy(factory, subchannels,
-                                           num_subchannels);
+  return factory->vtable->create_lb_policy(factory, args);
 }
