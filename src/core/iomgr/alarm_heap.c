@@ -43,9 +43,9 @@
    position. This functor is called each time immediately after modifying a
    value in the underlying container, with the offset of the modified element as
    its argument. */
-static void adjust_upwards(grpc_alarm **first, int i, grpc_alarm *t) {
+static void adjust_upwards(grpc_alarm **first, gpr_uint32 i, grpc_alarm *t) {
   while (i > 0) {
-    int parent = (i - 1) / 2;
+    gpr_uint32 parent = (i - 1u) / 2u;
     if (gpr_time_cmp(first[parent]->deadline, t->deadline) >= 0) break;
     first[i] = first[parent];
     first[i]->heap_index = i;
@@ -58,12 +58,12 @@ static void adjust_upwards(grpc_alarm **first, int i, grpc_alarm *t) {
 /* Adjusts a heap so as to move a hole at position i farther away from the root,
    until a suitable position is found for element t.  Then, copies t into that
    position. */
-static void adjust_downwards(grpc_alarm **first, int i, int length,
-                             grpc_alarm *t) {
+static void adjust_downwards(grpc_alarm **first, gpr_uint32 i,
+                             gpr_uint32 length, grpc_alarm *t) {
   for (;;) {
-    int left_child = 1 + 2 * i;
-    int right_child;
-    int next_i;
+    gpr_uint32 left_child = 1u + 2u * i;
+    gpr_uint32 right_child;
+    gpr_uint32 next_i;
     if (left_child >= length) break;
     right_child = left_child + 1;
     next_i = right_child < length &&
@@ -93,8 +93,8 @@ static void maybe_shrink(grpc_alarm_heap *heap) {
 }
 
 static void note_changed_priority(grpc_alarm_heap *heap, grpc_alarm *alarm) {
-  int i = alarm->heap_index;
-  int parent = (i - 1) / 2;
+  gpr_uint32 i = alarm->heap_index;
+  gpr_uint32 parent = (i - 1u) / 2u;
   if (gpr_time_cmp(heap->alarms[parent]->deadline, alarm->deadline) < 0) {
     adjust_upwards(heap->alarms, i, alarm);
   } else {
@@ -122,7 +122,7 @@ int grpc_alarm_heap_add(grpc_alarm_heap *heap, grpc_alarm *alarm) {
 }
 
 void grpc_alarm_heap_remove(grpc_alarm_heap *heap, grpc_alarm *alarm) {
-  int i = alarm->heap_index;
+  gpr_uint32 i = alarm->heap_index;
   if (i == heap->alarm_count - 1) {
     heap->alarm_count--;
     maybe_shrink(heap);

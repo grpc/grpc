@@ -83,7 +83,7 @@ static gpr_timespec compute_min_deadline(shard_type *shard) {
 }
 
 void grpc_alarm_list_init(gpr_timespec now) {
-  int i;
+  gpr_uint32 i;
 
   gpr_mu_init(&g_mu);
   gpr_mu_init(&g_checker_mu);

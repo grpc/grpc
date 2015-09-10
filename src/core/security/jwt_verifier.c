@@ -769,7 +769,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier *verifier,
   GPR_ASSERT(verifier != NULL && jwt != NULL && audience != NULL && cb != NULL);
   dot = strchr(cur, '.');
   if (dot == NULL) goto error;
-  json = parse_json_part_from_jwt(cur, dot - cur, &header_buffer);
+  json = parse_json_part_from_jwt(cur, (size_t)(dot - cur), &header_buffer);
   if (json == NULL) goto error;
   header = jose_header_from_json(json, header_buffer);
   if (header == NULL) goto error;
@@ -777,7 +777,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier *verifier,
   cur = dot + 1;
   dot = strchr(cur, '.');
   if (dot == NULL) goto error;
-  json = parse_json_part_from_jwt(cur, dot - cur, &claims_buffer);
+  json = parse_json_part_from_jwt(cur, (size_t)(dot - cur), &claims_buffer);
   if (json == NULL) goto error;
   claims = grpc_jwt_claims_from_json(json, claims_buffer);
   if (claims == NULL) goto error;

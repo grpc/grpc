@@ -171,7 +171,7 @@ static tsi_result fill_frame_from_bytes(const unsigned char* incoming_bytes,
       memcpy(frame->data + frame->offset, bytes_cursor, available_size);
       bytes_cursor += available_size;
       frame->offset += available_size;
-      *incoming_bytes_size = bytes_cursor - incoming_bytes;
+      *incoming_bytes_size = (size_t)(bytes_cursor - incoming_bytes);
       return TSI_INCOMPLETE_DATA;
     }
     memcpy(frame->data + frame->offset, bytes_cursor, to_read_size);
@@ -187,12 +187,12 @@ static tsi_result fill_frame_from_bytes(const unsigned char* incoming_bytes,
     memcpy(frame->data + frame->offset, bytes_cursor, available_size);
     frame->offset += available_size;
     bytes_cursor += available_size;
-    *incoming_bytes_size = bytes_cursor - incoming_bytes;
+    *incoming_bytes_size = (size_t)(bytes_cursor - incoming_bytes);
     return TSI_INCOMPLETE_DATA;
   }
   memcpy(frame->data + frame->offset, bytes_cursor, to_read_size);
   bytes_cursor += to_read_size;
-  *incoming_bytes_size = bytes_cursor - incoming_bytes;
+  *incoming_bytes_size = (size_t)(bytes_cursor - incoming_bytes);
   tsi_fake_frame_reset(frame, 1 /* needs_draining */);
   return TSI_OK;
 }
@@ -384,7 +384,8 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
     return TSI_OK;
   }
   if (!impl->outgoing.needs_draining) {
-    int next_message_to_send = impl->next_message_to_send + 2;
+    tsi_fake_handshake_message next_message_to_send =
+        impl->next_message_to_send + 2;
     const char* msg_string =
         tsi_fake_handshake_message_to_string(impl->next_message_to_send);
     result = bytes_to_frame((unsigned char*)msg_string, strlen(msg_string),
