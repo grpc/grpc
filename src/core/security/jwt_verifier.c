@@ -33,6 +33,7 @@
 
 #include "src/core/security/jwt_verifier.h"
 
+#include <limits.h>
 #include <string.h>
 
 #include "src/core/httpcli/httpcli.h"
@@ -412,7 +413,9 @@ static EVP_PKEY *extract_pkey_from_x509(const char *x509_str) {
   X509 *x509 = NULL;
   EVP_PKEY *result = NULL;
   BIO *bio = BIO_new(BIO_s_mem());
-  BIO_write(bio, x509_str, strlen(x509_str));
+  size_t len = strlen(x509_str);
+  GPR_ASSERT(len < INT_MAX);
+  BIO_write(bio, x509_str, (int)len);
   x509 = PEM_read_bio_X509(bio, NULL, NULL, NULL);
   if (x509 == NULL) {
     gpr_log(GPR_ERROR, "Unable to parse x509 cert.");
@@ -439,7 +442,8 @@ static BIGNUM *bignum_from_base64(const char *b64) {
     gpr_log(GPR_ERROR, "Invalid base64 for big num.");
     return NULL;
   }
-  result = BN_bin2bn(GPR_SLICE_START_PTR(bin), GPR_SLICE_LENGTH(bin), NULL);
+  result =
+      BN_bin2bn(GPR_SLICE_START_PTR(bin), (int)GPR_SLICE_LENGTH(bin), NULL);
   gpr_slice_unref(bin);
   return result;
 }

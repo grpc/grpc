@@ -78,7 +78,7 @@ typedef struct {
     struct sockaddr sockaddr;
     struct sockaddr_un un;
   } addr;
-  int addr_len;
+  size_t addr_len;
   grpc_iomgr_closure read_closure;
   grpc_iomgr_closure destroyed_closure;
   grpc_udp_server_read_cb read_cb;
@@ -242,7 +242,8 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
 #endif
   }
 
-  if (bind(fd, addr, addr_len) < 0) {
+  GPR_ASSERT(addr_len < ~(socklen_t)0);
+  if (bind(fd, addr, (socklen_t)addr_len) < 0) {
     char *addr_str;
     grpc_sockaddr_to_string(&addr_str, addr, 0);
     gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
@@ -431,7 +432,7 @@ void grpc_udp_server_start(grpc_udp_server *s, grpc_pollset **pollsets,
 /* TODO(rjshade): Add a test for this method. */
 void grpc_udp_server_write(server_port *sp, const char *buffer, size_t buf_len,
                            const struct sockaddr *peer_address) {
-  int rc;
+  ssize_t rc;
   rc = sendto(sp->fd, buffer, buf_len, 0, peer_address, sizeof(peer_address));
   if (rc < 0) {
     gpr_log(GPR_ERROR, "Unable to send data: %s", strerror(errno));

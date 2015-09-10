@@ -142,8 +142,9 @@ static void finish_compressed_sopb(grpc_stream_op_buffer *send_ops,
     grpc_stream_op *sop = &send_ops->ops[i];
     switch (sop->type) {
       case GRPC_OP_BEGIN_MESSAGE:
+        GPR_ASSERT(calld->slices.length <= GPR_UINT32_MAX);
         grpc_sopb_add_begin_message(
-            &new_send_ops, calld->slices.length,
+            &new_send_ops, (gpr_uint32)calld->slices.length,
             sop->data.begin_message.flags | GRPC_WRITE_INTERNAL_COMPRESS);
         break;
       case GRPC_OP_SLICE:

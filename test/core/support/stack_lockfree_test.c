@@ -62,7 +62,7 @@ static void test_serial_sized(size_t size) {
   /* Now add repeatedly more items and check them */
   for (i = 1; i < size; i *= 2) {
     for (j = 0; j <= i; j++) {
-      GPR_ASSERT(gpr_stack_lockfree_push(stack, j) == (j == 0));
+      GPR_ASSERT(gpr_stack_lockfree_push(stack, (int)j) == (j == 0));
     }
     for (j = 0; j <= i; j++) {
       GPR_ASSERT(gpr_stack_lockfree_pop(stack) == (int)(i - j));
@@ -118,7 +118,7 @@ static void test_mt_sized(size_t size, int nth) {
   stack = gpr_stack_lockfree_create(size);
   for (i = 0; i < nth; i++) {
     args[i].stack = stack;
-    args[i].stack_size = size;
+    args[i].stack_size = (int)size;
     args[i].nthreads = nth;
     args[i].rank = i;
     args[i].sum = 0;
@@ -137,7 +137,8 @@ static void test_mt_sized(size_t size, int nth) {
 }
 
 static void test_mt() {
-  size_t size, nth;
+  size_t size;
+  int nth;
   for (nth = 1; nth < MAX_THREADS; nth++) {
     for (size = 128; size < MAX_STACK_SIZE; size *= 2) {
       test_mt_sized(size, nth);

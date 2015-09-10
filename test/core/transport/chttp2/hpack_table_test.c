@@ -49,7 +49,7 @@ static void assert_str(const grpc_chttp2_hptbl *tbl, grpc_mdstr *mdstr,
   GPR_ASSERT(gpr_slice_str_cmp(mdstr->slice, str) == 0);
 }
 
-static void assert_index(const grpc_chttp2_hptbl *tbl, size_t idx,
+static void assert_index(const grpc_chttp2_hptbl *tbl, gpr_uint32 idx,
                          const char *key, const char *value) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(tbl, idx);
   assert_str(tbl, md->key, key);

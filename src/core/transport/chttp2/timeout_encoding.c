@@ -123,7 +123,7 @@ void grpc_chttp2_encode_timeout(gpr_timespec timeout, char *buffer) {
     enc_nanos(buffer, timeout.tv_nsec);
   } else if (timeout.tv_sec < 1000 && timeout.tv_nsec != 0) {
     enc_micros(buffer,
-               timeout.tv_sec * 1000000 +
+               (int)(timeout.tv_sec * 1000000) +
                    (timeout.tv_nsec / 1000 + (timeout.tv_nsec % 1000 != 0)));
   } else {
     enc_seconds(buffer, timeout.tv_sec + (timeout.tv_nsec != 0));

@@ -145,7 +145,7 @@ static void list_remove(grpc_alarm *alarm) {
   alarm->prev->next = alarm->next;
 }
 
-static void swap_adjacent_shards_in_queue(size_t first_shard_queue_index) {
+static void swap_adjacent_shards_in_queue(gpr_uint32 first_shard_queue_index) {
   shard_type *temp;
   temp = g_shard_queue[first_shard_queue_index];
   g_shard_queue[first_shard_queue_index] =
@@ -355,7 +355,7 @@ static int run_some_expired_alarms(gpr_mu *drop_mu, gpr_timespec now,
     gpr_mu_lock(drop_mu);
   }
 
-  return n;
+  return (int)n;
 }
 
 int grpc_alarm_check(gpr_mu *drop_mu, gpr_timespec now, gpr_timespec *next) {

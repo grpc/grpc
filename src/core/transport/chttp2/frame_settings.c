@@ -76,7 +76,7 @@ static gpr_uint8 *fill_header(gpr_uint8 *out, gpr_uint32 length,
 gpr_slice grpc_chttp2_settings_create(gpr_uint32 *old, const gpr_uint32 *new,
                                       gpr_uint32 force_mask, size_t count) {
   size_t i;
-  size_t n = 0;
+  gpr_uint32 n = 0;
   gpr_slice output;
   gpr_uint8 *p;
 
