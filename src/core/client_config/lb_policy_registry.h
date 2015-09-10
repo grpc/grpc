@@ -49,7 +49,6 @@ void grpc_register_lb_policy(grpc_lb_policy_factory *factory);
  * If \a name is NULL, the default factory from \a grpc_lb_policy_registry_init
  * will be returned. */
 grpc_lb_policy *grpc_lb_policy_create(const char *name,
-                                      grpc_subchannel **subchannels,
-                                      size_t num_subchannels);
+                                      grpc_lb_policy_args *args);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H */
