@@ -9,6 +9,8 @@ Subpackages
     grpc.framework.alpha
     grpc.framework.base
     grpc.framework.common
+    grpc.framework.core
+    grpc.framework.crust
     grpc.framework.face
     grpc.framework.foundation
     grpc.framework.interfaces

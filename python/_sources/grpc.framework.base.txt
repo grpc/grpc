@@ -20,14 +20,6 @@ grpc.framework.base.implementations module
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.base.implementations_test module
------------------------------------------------
-
-.. automodule:: grpc.framework.base.implementations_test
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 grpc.framework.base.in_memory module
 ------------------------------------
 
@@ -40,14 +32,6 @@ grpc.framework.base.interfaces module
 -------------------------------------
 
 .. automodule:: grpc.framework.base.interfaces
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-grpc.framework.base.interfaces_test_case module
------------------------------------------------
-
-.. automodule:: grpc.framework.base.interfaces_test_case
     :members:
     :undoc-members:
     :show-inheritance:

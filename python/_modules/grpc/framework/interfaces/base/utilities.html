@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.face.testing.serial &mdash; grpcio 0.10.0a0 documentation</title>
+  <title>grpc.framework.interfaces.base.utilities &mdash; grpcio 0.11.0b0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../../index.html"/>
+    <link rel="top" title="grpcio 0.11.0b0 documentation" href="../../../../../index.html"/>
         <link rel="up" title="Module code" href="../../../../index.html"/> 
 
   
@@ -73,10 +73,17 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../grpc.html">grpc package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.beta.html">grpc.beta package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.beta.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.beta.html#module-grpc.beta.implementations">grpc.beta.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.beta.html#module-grpc.beta.interfaces">grpc.beta.interfaces module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.beta.html#module-grpc.beta.utilities">grpc.beta.utilities module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.beta.html#module-grpc.beta">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
 </ul>
 </li>
@@ -116,7 +123,7 @@
       
           <li><a href="../../../../index.html">Module code</a> &raquo;</li>
       
-    <li>grpc.framework.face.testing.serial</li>
+    <li>grpc.framework.interfaces.base.utilities</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -127,7 +134,7 @@
 </div>
           <div role="main" class="document">
             
-  <h1>Source code for grpc.framework.face.testing.serial</h1><div class="highlight"><pre>
+  <h1>Source code for grpc.framework.interfaces.base.utilities</h1><div class="highlight"><pre>
 <span class="c"># Copyright 2015, Google Inc.</span>
 <span class="c"># All rights reserved.</span>
 <span class="c">#</span>
@@ -157,47 +164,59 @@
 <span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
 <span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="sd">&quot;&quot;&quot;Utility for serialization in the context of test RPC services.&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;Utilities for use with the base interface of RPC Framework.&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">collections</span>
 
+<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.base</span> <span class="kn">import</span> <span class="n">base</span>
 
-<div class="viewcode-block" id="Serialization"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.serial.Serialization">[docs]</a><span class="k">class</span> <span class="nc">Serialization</span><span class="p">(</span>
+
+<span class="k">class</span> <span class="nc">_Completion</span><span class="p">(</span>
+    <span class="n">base</span><span class="o">.</span><span class="n">Completion</span><span class="p">,</span>
     <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
-        <span class="s">&#39;_Serialization&#39;</span><span class="p">,</span>
-        <span class="p">[</span><span class="s">&#39;request_serializers&#39;</span><span class="p">,</span>
-         <span class="s">&#39;request_deserializers&#39;</span><span class="p">,</span>
-         <span class="s">&#39;response_serializers&#39;</span><span class="p">,</span>
-         <span class="s">&#39;response_deserializers&#39;</span><span class="p">])):</span>
-  <span class="sd">&quot;&quot;&quot;An aggregation of serialization behaviors for an RPC service.</span>
+        <span class="s">&#39;_Completion&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;terminal_metadata&#39;</span><span class="p">,</span> <span class="s">&#39;code&#39;</span><span class="p">,</span> <span class="s">&#39;message&#39;</span><span class="p">,))):</span>
+  <span class="sd">&quot;&quot;&quot;A trivial implementation of base.Completion.&quot;&quot;&quot;</span>
 
-<span class="sd">  Attributes:</span>
-<span class="sd">    request_serializers: A dict from method name to request object serializer</span>
-<span class="sd">      behavior.</span>
-<span class="sd">    request_deserializers: A dict from method name to request object</span>
-<span class="sd">      deserializer behavior.</span>
-<span class="sd">    response_serializers: A dict from method name to response object serializer</span>
-<span class="sd">      behavior.</span>
-<span class="sd">    response_deserializers: A dict from method name to response object</span>
-<span class="sd">      deserializer behavior.</span>
+
+<span class="k">class</span> <span class="nc">_Subscription</span><span class="p">(</span>
+    <span class="n">base</span><span class="o">.</span><span class="n">Subscription</span><span class="p">,</span>
+    <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
+        <span class="s">&#39;_Subscription&#39;</span><span class="p">,</span>
+        <span class="p">(</span><span class="s">&#39;kind&#39;</span><span class="p">,</span> <span class="s">&#39;termination_callback&#39;</span><span class="p">,</span> <span class="s">&#39;allowance&#39;</span><span class="p">,</span> <span class="s">&#39;operator&#39;</span><span class="p">,</span>
+         <span class="s">&#39;protocol_receiver&#39;</span><span class="p">,))):</span>
+  <span class="sd">&quot;&quot;&quot;A trivial implementation of base.Subscription.&quot;&quot;&quot;</span>
+
+<span class="n">_NONE_SUBSCRIPTION</span> <span class="o">=</span> <span class="n">_Subscription</span><span class="p">(</span>
+    <span class="n">base</span><span class="o">.</span><span class="n">Subscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">NONE</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="completion"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.utilities.completion">[docs]</a><span class="k">def</span> <span class="nf">completion</span><span class="p">(</span><span class="n">terminal_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates a base.Completion aggregating the given operation values.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    terminal_metadata: A terminal metadata value for an operaton.</span>
+<span class="sd">    code: A code value for an operation.</span>
+<span class="sd">    message: A message value for an operation.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    A base.Completion aggregating the given operation values.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_Completion</span><span class="p">(</span><span class="n">terminal_metadata</span><span class="p">,</span> <span class="n">code</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span>
 
 </div>
-<div class="viewcode-block" id="serialization"><a class="viewcode-back" href="../../../../../grpc.framework.face.testing.html#grpc.framework.face.testing.serial.serialization">[docs]</a><span class="k">def</span> <span class="nf">serialization</span><span class="p">(</span><span class="n">methods</span><span class="p">):</span>
-  <span class="sd">&quot;&quot;&quot;Creates a Serialization from a sequences of interfaces.Method objects.&quot;&quot;&quot;</span>
-  <span class="n">request_serializers</span> <span class="o">=</span> <span class="p">{}</span>
-  <span class="n">request_deserializers</span> <span class="o">=</span> <span class="p">{}</span>
-  <span class="n">response_serializers</span> <span class="o">=</span> <span class="p">{}</span>
-  <span class="n">response_deserializers</span> <span class="o">=</span> <span class="p">{}</span>
-  <span class="k">for</span> <span class="n">method</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">name</span><span class="p">()</span>
-    <span class="n">request_serializers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">serialize_request</span>
-    <span class="n">request_deserializers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">deserialize_request</span>
-    <span class="n">response_serializers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">serialize_response</span>
-    <span class="n">response_deserializers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">deserialize_response</span>
-  <span class="k">return</span> <span class="n">Serialization</span><span class="p">(</span>
-      <span class="n">request_serializers</span><span class="p">,</span> <span class="n">request_deserializers</span><span class="p">,</span> <span class="n">response_serializers</span><span class="p">,</span>
-      <span class="n">response_deserializers</span><span class="p">)</span></div>
+<div class="viewcode-block" id="full_subscription"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.base.html#grpc.framework.interfaces.base.utilities.full_subscription">[docs]</a><span class="k">def</span> <span class="nf">full_subscription</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">protocol_receiver</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates a &quot;full&quot; base.Subscription for the given base.Operator.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    operator: A base.Operator to be used in an operation.</span>
+<span class="sd">    protocol_receiver: A base.ProtocolReceiver to be used in an operation.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    A base.Subscription of kind base.Subscription.Kind.FULL wrapping the given</span>
+<span class="sd">      base.Operator and base.ProtocolReceiver.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_Subscription</span><span class="p">(</span>
+      <span class="n">base</span><span class="o">.</span><span class="n">Subscription</span><span class="o">.</span><span class="n">Kind</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="n">operator</span><span class="p">,</span> <span class="n">protocol_receiver</span><span class="p">)</span></div>
 </pre></div>
 
           </div>
@@ -229,7 +248,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../../',
-            VERSION:'0.10.0a0',
+            VERSION:'0.11.0b0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

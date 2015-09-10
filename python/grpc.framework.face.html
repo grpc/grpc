@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.face package &mdash; grpcio 0.10.0a0 documentation</title>
+  <title>grpc.framework.face package &mdash; grpcio 0.11.0b0 documentation</title>
   
 
   
@@ -30,10 +30,10 @@
   
 
   
-    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.11.0b0 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
-        <link rel="next" title="grpc.framework.face.testing package" href="grpc.framework.face.testing.html"/>
-        <link rel="prev" title="grpc.framework.common package" href="grpc.framework.common.html"/> 
+        <link rel="next" title="grpc.framework.foundation package" href="grpc.framework.foundation.html"/>
+        <link rel="prev" title="grpc.framework.crust package" href="grpc.framework.crust.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -75,10 +75,17 @@
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="grpc.beta.html">grpc.beta package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta.implementations">grpc.beta.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta.interfaces">grpc.beta.interfaces module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta.utilities">grpc.beta.utilities module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
 </ul>
 </li>
@@ -135,43 +142,8 @@
             
   <div class="section" id="grpc-framework-face-package">
 <h1>grpc.framework.face package<a class="headerlink" href="#grpc-framework-face-package" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="subpackages">
-<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="grpc.framework.face.testing.html">grpc.framework.face.testing package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.base_util">grpc.framework.face.testing.base_util module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.blocking_invocation_inline_service_test_case">grpc.framework.face.testing.blocking_invocation_inline_service_test_case module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.callback">grpc.framework.face.testing.callback module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.control">grpc.framework.face.testing.control module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.coverage">grpc.framework.face.testing.coverage module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.digest">grpc.framework.face.testing.digest module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case">grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case">grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.interfaces">grpc.framework.face.testing.interfaces module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.serial">grpc.framework.face.testing.serial module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.service">grpc.framework.face.testing.service module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.stock_service">grpc.framework.face.testing.stock_service module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing.test_case">grpc.framework.face.testing.test_case module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="grpc.framework.face.testing.html#module-grpc.framework.face.testing">Module contents</a></li>
-</ul>
-</li>
-</ul>
-</div>
-</div>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="module-grpc.framework.face.blocking_invocation_inline_service_test">
-<span id="grpc-framework-face-blocking-invocation-inline-service-test-module"></span><h2>grpc.framework.face.blocking_invocation_inline_service_test module<a class="headerlink" href="#module-grpc.framework.face.blocking_invocation_inline_service_test" title="Permalink to this headline">¶</a></h2>
-<p>One of the tests of the Face layer of RPC Framework.</p>
-<dl class="class">
-<dt id="grpc.framework.face.blocking_invocation_inline_service_test.BlockingInvocationInlineServiceTest">
-<em class="property">class </em><code class="descclassname">grpc.framework.face.blocking_invocation_inline_service_test.</code><code class="descname">BlockingInvocationInlineServiceTest</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/blocking_invocation_inline_service_test.html#BlockingInvocationInlineServiceTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.blocking_invocation_inline_service_test.BlockingInvocationInlineServiceTest" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face._test_case.FaceTestCase</span></code>, <a class="reference internal" href="grpc.framework.face.testing.html#grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase" title="grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.blocking_invocation_inline_service_test_case.BlockingInvocationInlineServiceTestCase</span></code></a>, <code class="xref py py-class docutils literal"><span class="pre">unittest.case.TestCase</span></code></p>
-</dd></dl>
-
 </div>
 <div class="section" id="module-grpc.framework.face.demonstration">
 <span id="grpc-framework-face-demonstration-module"></span><h2>grpc.framework.face.demonstration module<a class="headerlink" href="#module-grpc.framework.face.demonstration" title="Permalink to this headline">¶</a></h2>
@@ -205,16 +177,6 @@
 <dt id="grpc.framework.face.demonstration.server_and_stub">
 <code class="descclassname">grpc.framework.face.demonstration.</code><code class="descname">server_and_stub</code><span class="sig-paren">(</span><em>default_timeout</em>, <em>inline_value_in_value_out_methods=None</em>, <em>inline_value_in_stream_out_methods=None</em>, <em>inline_stream_in_value_out_methods=None</em>, <em>inline_stream_in_stream_out_methods=None</em>, <em>event_value_in_value_out_methods=None</em>, <em>event_value_in_stream_out_methods=None</em>, <em>event_stream_in_value_out_methods=None</em>, <em>event_stream_in_stream_out_methods=None</em>, <em>multi_method=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/demonstration.html#server_and_stub"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.demonstration.server_and_stub" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a Server and Stub linked together for use.</p>
-</dd></dl>
-
-</div>
-<div class="section" id="module-grpc.framework.face.event_invocation_synchronous_event_service_test">
-<span id="grpc-framework-face-event-invocation-synchronous-event-service-test-module"></span><h2>grpc.framework.face.event_invocation_synchronous_event_service_test module<a class="headerlink" href="#module-grpc.framework.face.event_invocation_synchronous_event_service_test" title="Permalink to this headline">¶</a></h2>
-<p>One of the tests of the Face layer of RPC Framework.</p>
-<dl class="class">
-<dt id="grpc.framework.face.event_invocation_synchronous_event_service_test.EventInvocationSynchronousEventServiceTest">
-<em class="property">class </em><code class="descclassname">grpc.framework.face.event_invocation_synchronous_event_service_test.</code><code class="descname">EventInvocationSynchronousEventServiceTest</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/event_invocation_synchronous_event_service_test.html#EventInvocationSynchronousEventServiceTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.event_invocation_synchronous_event_service_test.EventInvocationSynchronousEventServiceTest" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face._test_case.FaceTestCase</span></code>, <a class="reference internal" href="grpc.framework.face.testing.html#grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase" title="grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.event_invocation_synchronous_event_service_test_case.EventInvocationSynchronousEventServiceTestCase</span></code></a>, <code class="xref py py-class docutils literal"><span class="pre">unittest.case.TestCase</span></code></p>
 </dd></dl>
 
 </div>
@@ -275,16 +237,6 @@
 <em class="property">exception </em><code class="descclassname">grpc.framework.face.exceptions.</code><code class="descname">ServicerError</code><a class="reference internal" href="_modules/grpc/framework/face/exceptions.html#ServicerError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.exceptions.ServicerError" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#grpc.framework.face.exceptions.RpcError" title="grpc.framework.face.exceptions.RpcError"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.exceptions.RpcError</span></code></a></p>
 <p>Indicates that the Servicer failed in the course of servicing an RPC.</p>
-</dd></dl>
-
-</div>
-<div class="section" id="module-grpc.framework.face.future_invocation_asynchronous_event_service_test">
-<span id="grpc-framework-face-future-invocation-asynchronous-event-service-test-module"></span><h2>grpc.framework.face.future_invocation_asynchronous_event_service_test module<a class="headerlink" href="#module-grpc.framework.face.future_invocation_asynchronous_event_service_test" title="Permalink to this headline">¶</a></h2>
-<p>One of the tests of the Face layer of RPC Framework.</p>
-<dl class="class">
-<dt id="grpc.framework.face.future_invocation_asynchronous_event_service_test.FutureInvocationAsynchronousEventServiceTest">
-<em class="property">class </em><code class="descclassname">grpc.framework.face.future_invocation_asynchronous_event_service_test.</code><code class="descname">FutureInvocationAsynchronousEventServiceTest</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/face/future_invocation_asynchronous_event_service_test.html#FutureInvocationAsynchronousEventServiceTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.face.future_invocation_asynchronous_event_service_test.FutureInvocationAsynchronousEventServiceTest" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face._test_case.FaceTestCase</span></code>, <a class="reference internal" href="grpc.framework.face.testing.html#grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase" title="grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.face.testing.future_invocation_asynchronous_event_service_test_case.FutureInvocationAsynchronousEventServiceTestCase</span></code></a>, <code class="xref py py-class docutils literal"><span class="pre">unittest.case.TestCase</span></code></p>
 </dd></dl>
 
 </div>
@@ -1405,10 +1357,10 @@ returns a response value.</td>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="grpc.framework.face.testing.html" class="btn btn-neutral float-right" title="grpc.framework.face.testing package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="grpc.framework.foundation.html" class="btn btn-neutral float-right" title="grpc.framework.foundation package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="grpc.framework.common.html" class="btn btn-neutral" title="grpc.framework.common package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="grpc.framework.crust.html" class="btn btn-neutral" title="grpc.framework.crust package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -1438,7 +1390,7 @@ returns a response value.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.10.0a0',
+            VERSION:'0.11.0b0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

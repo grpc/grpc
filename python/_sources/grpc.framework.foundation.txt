@@ -68,14 +68,6 @@ grpc.framework.foundation.stream module
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.foundation.stream_testing module
------------------------------------------------
-
-.. automodule:: grpc.framework.foundation.stream_testing
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 grpc.framework.foundation.stream_util module
 --------------------------------------------
 

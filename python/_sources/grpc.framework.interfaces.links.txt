@@ -12,22 +12,6 @@ grpc.framework.interfaces.links.links module
     :undoc-members:
     :show-inheritance:
 
-grpc.framework.interfaces.links.test_cases module
--------------------------------------------------
-
-.. automodule:: grpc.framework.interfaces.links.test_cases
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-grpc.framework.interfaces.links.test_utilities module
------------------------------------------------------
-
-.. automodule:: grpc.framework.interfaces.links.test_utilities
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 grpc.framework.interfaces.links.utilities module
 ------------------------------------------------
 

@@ -12,14 +12,6 @@ grpc.early_adopter.implementations module
     :undoc-members:
     :show-inheritance:
 
-grpc.early_adopter.implementations_test module
-----------------------------------------------
-
-.. automodule:: grpc.early_adopter.implementations_test
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 
 Module contents
 ---------------
