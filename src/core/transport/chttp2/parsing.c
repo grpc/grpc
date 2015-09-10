@@ -194,8 +194,9 @@ void grpc_chttp2_publish_reads(
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
           "parsed", transport_parsing, stream_parsing, outgoing_window_update,
           -(gpr_int64)stream_parsing->outgoing_window_update);
+      GPR_ASSERT(stream_parsing->outgoing_window_update <= GPR_UINT32_MAX);
       stream_global->outgoing_window +=
-          (gpr_uint32)stream_global->outgoing_window;
+          (gpr_uint32)stream_parsing->outgoing_window_update;
       stream_parsing->outgoing_window_update = 0;
       is_zero = stream_global->outgoing_window <= 0;
       if (was_zero && !is_zero) {
