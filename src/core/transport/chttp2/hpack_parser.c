@@ -1090,7 +1090,8 @@ static void append_bytes(grpc_chttp2_hpack_parser_string *str,
     str->str = gpr_realloc(str->str, str->capacity);
   }
   memcpy(str->str + str->length, data, length);
-  str->length += length;
+  GPR_ASSERT(length <= GPR_UINT32_MAX - str->length);
+  str->length += (gpr_uint32)length;
 }
 
 static int append_string(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
@@ -1158,9 +1159,9 @@ static int append_string(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
         goto b64_byte3;
       p->base64_buffer |= bits;
       bits = p->base64_buffer;
-      decoded[0] = bits >> 16;
-      decoded[1] = bits >> 8;
-      decoded[2] = bits;
+      decoded[0] = (gpr_uint8)(bits >> 16);
+      decoded[1] = (gpr_uint8)(bits >> 8);
+      decoded[2] = (gpr_uint8)(bits);
       append_bytes(str, decoded, 3);
       goto b64_byte0;
   }
@@ -1190,7 +1191,7 @@ static int finish_str(grpc_chttp2_hpack_parser *p) {
                 bits & 0xffff);
         return 0;
       }
-      decoded[0] = bits >> 16;
+      decoded[0] = (gpr_uint8)(bits >> 16);
       append_bytes(str, decoded, 1);
       break;
     case B64_BYTE3:
@@ -1200,8 +1201,8 @@ static int finish_str(grpc_chttp2_hpack_parser *p) {
                 bits & 0xff);
         return 0;
       }
-      decoded[0] = bits >> 16;
-      decoded[1] = bits >> 8;
+      decoded[0] = (gpr_uint8)(bits >> 16);
+      decoded[1] = (gpr_uint8)(bits >> 8);
       append_bytes(str, decoded, 2);
       break;
   }
@@ -1256,7 +1257,8 @@ static int parse_string(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
            parse_next(p, cur + remaining, end);
   } else {
     if (!add_str_bytes(p, cur, cur + given)) return 0;
-    p->strgot += given;
+    GPR_ASSERT(given <= GPR_UINT32_MAX - p->strgot);
+    p->strgot += (gpr_uint32)given;
     p->state = parse_string;
     return 1;
   }

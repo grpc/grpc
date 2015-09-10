@@ -83,7 +83,8 @@ static void create_test_socket(int port, int *socket_fd,
   /* Use local address for test */
   sin->sin_family = AF_INET;
   sin->sin_addr.s_addr = htonl(0x7f000001);
-  sin->sin_port = htons(port);
+  GPR_ASSERT(port >= 0 && port < 65536);
+  sin->sin_port = htons((gpr_uint16)port);
 }
 
 /* Dummy gRPC callback */

@@ -161,7 +161,8 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
         grpc_sopb_add_slice(
             &p->incoming_sopb,
             gpr_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
-        p->frame_size -= (end - cur);
+        GPR_ASSERT(end - cur <= p->frame_size);
+        p->frame_size -= (gpr_uint32)(end - cur);
         return GRPC_CHTTP2_PARSE_OK;
       }
   }

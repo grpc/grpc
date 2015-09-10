@@ -59,7 +59,7 @@ static gpr_slice create_test_slice(size_t length) {
   gpr_slice slice = gpr_slice_malloc(length);
   size_t i;
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = i;
+    GPR_SLICE_START_PTR(slice)[i] = (gpr_uint8)i;
   }
   return slice;
 }
@@ -196,10 +196,10 @@ static void test_basic_headers(void) {
 }
 
 static void encode_int_to_str(int i, char *p) {
-  p[0] = 'a' + i % 26;
+  p[0] = (char)('a' + i % 26);
   i /= 26;
   GPR_ASSERT(i < 26);
-  p[1] = 'a' + i;
+  p[1] = (char)('a' + i);
   p[2] = 0;
 }
 
@@ -246,7 +246,7 @@ static void randstr(char *p, int bufsz) {
   int i;
   int len = 1 + rand() % bufsz;
   for (i = 0; i < len; i++) {
-    p[i] = 'a' + rand() % 26;
+    p[i] = (char)('a' + rand() % 26);
   }
   p[len] = 0;
 }

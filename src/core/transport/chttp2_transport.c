@@ -209,7 +209,7 @@ static void ref_transport(grpc_chttp2_transport *t) { gpr_ref(&t->refs); }
 static void init_transport(grpc_chttp2_transport *t,
                            const grpc_channel_args *channel_args,
                            grpc_endpoint *ep, grpc_mdctx *mdctx,
-                           int is_client) {
+                           gpr_uint8 is_client) {
   size_t i;
   int j;
 
@@ -683,6 +683,8 @@ static void perform_stream_op_locked(
     stream_global->publish_sopb = op->recv_ops;
     stream_global->publish_sopb->nops = 0;
     stream_global->publish_state = op->recv_state;
+    /* clamp max recv bytes */
+    op->max_recv_bytes = GPR_MIN(op->max_recv_bytes, GPR_UINT32_MAX);
     if (stream_global->max_recv_bytes < op->max_recv_bytes) {
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
           "op", transport_global, stream_global, max_recv_bytes,
@@ -691,9 +693,8 @@ static void perform_stream_op_locked(
           "op", transport_global, stream_global, unannounced_incoming_window,
           op->max_recv_bytes - stream_global->max_recv_bytes);
       stream_global->unannounced_incoming_window +=
-          op->max_recv_bytes - stream_global->max_recv_bytes;
-      stream_global->max_recv_bytes =
-          (gpr_uint32)(GPR_MIN(op->max_recv_bytes, GPR_UINT32_MAX));
+          (gpr_uint32)op->max_recv_bytes - stream_global->max_recv_bytes;
+      stream_global->max_recv_bytes = (gpr_uint32)op->max_recv_bytes;
     }
     grpc_chttp2_incoming_metadata_live_op_buffer_end(
         &stream_global->outstanding_metadata);
@@ -730,14 +731,14 @@ static void send_ping_locked(grpc_chttp2_transport *t,
   p->next = &t->global.pings;
   p->prev = p->next->prev;
   p->prev->next = p->next->prev = p;
-  p->id[0] = (t->global.ping_counter >> 56) & 0xff;
-  p->id[1] = (t->global.ping_counter >> 48) & 0xff;
-  p->id[2] = (t->global.ping_counter >> 40) & 0xff;
-  p->id[3] = (t->global.ping_counter >> 32) & 0xff;
-  p->id[4] = (t->global.ping_counter >> 24) & 0xff;
-  p->id[5] = (t->global.ping_counter >> 16) & 0xff;
-  p->id[6] = (t->global.ping_counter >> 8) & 0xff;
-  p->id[7] = t->global.ping_counter & 0xff;
+  p->id[0] = (gpr_uint8)((t->global.ping_counter >> 56) & 0xff);
+  p->id[1] = (gpr_uint8)((t->global.ping_counter >> 48) & 0xff);
+  p->id[2] = (gpr_uint8)((t->global.ping_counter >> 40) & 0xff);
+  p->id[3] = (gpr_uint8)((t->global.ping_counter >> 32) & 0xff);
+  p->id[4] = (gpr_uint8)((t->global.ping_counter >> 24) & 0xff);
+  p->id[5] = (gpr_uint8)((t->global.ping_counter >> 16) & 0xff);
+  p->id[6] = (gpr_uint8)((t->global.ping_counter >> 8) & 0xff);
+  p->id[7] = (gpr_uint8)(t->global.ping_counter & 0xff);
   p->on_recv = on_recv;
   gpr_slice_buffer_add(&t->global.qbuf, grpc_chttp2_ping_create(0, p->id));
 }
@@ -999,7 +1000,7 @@ static void close_from_api(grpc_chttp2_transport_global *transport_global,
     *p++ = (gpr_uint8)('0' + (status % 10));
   }
   GPR_ASSERT(p == GPR_SLICE_END_PTR(status_hdr));
-  len += GPR_SLICE_LENGTH(status_hdr);
+  len += (gpr_uint32)GPR_SLICE_LENGTH(status_hdr);
 
   if (optional_message) {
     GPR_ASSERT(GPR_SLICE_LENGTH(*optional_message) < 127);
@@ -1019,23 +1020,23 @@ static void close_from_api(grpc_chttp2_transport_global *transport_global,
     *p++ = 'a';
     *p++ = 'g';
     *p++ = 'e';
-    *p++ = GPR_SLICE_LENGTH(*optional_message);
+    *p++ = (gpr_uint8)GPR_SLICE_LENGTH(*optional_message);
     GPR_ASSERT(p == GPR_SLICE_END_PTR(message_pfx));
-    len += GPR_SLICE_LENGTH(message_pfx);
-    len += GPR_SLICE_LENGTH(*optional_message);
+    len += (gpr_uint32)GPR_SLICE_LENGTH(message_pfx);
+    len += (gpr_uint32)GPR_SLICE_LENGTH(*optional_message);
   }
 
   hdr = gpr_slice_malloc(9);
   p = GPR_SLICE_START_PTR(hdr);
-  *p++ = len >> 16;
-  *p++ = len >> 8;
-  *p++ = len;
+  *p++ = (gpr_uint8)(len >> 16);
+  *p++ = (gpr_uint8)(len >> 8);
+  *p++ = (gpr_uint8)(len);
   *p++ = GRPC_CHTTP2_FRAME_HEADER;
   *p++ = GRPC_CHTTP2_DATA_FLAG_END_STREAM | GRPC_CHTTP2_DATA_FLAG_END_HEADERS;
-  *p++ = stream_global->id >> 24;
-  *p++ = stream_global->id >> 16;
-  *p++ = stream_global->id >> 8;
-  *p++ = stream_global->id;
+  *p++ = (gpr_uint8)(stream_global->id >> 24);
+  *p++ = (gpr_uint8)(stream_global->id >> 16);
+  *p++ = (gpr_uint8)(stream_global->id >> 8);
+  *p++ = (gpr_uint8)(stream_global->id);
   GPR_ASSERT(p == GPR_SLICE_END_PTR(hdr));
 
   gpr_slice_buffer_add(&transport_global->qbuf, hdr);
@@ -1281,7 +1282,7 @@ grpc_transport *grpc_create_chttp2_transport(
     const grpc_channel_args *channel_args, grpc_endpoint *ep, grpc_mdctx *mdctx,
     int is_client) {
   grpc_chttp2_transport *t = gpr_malloc(sizeof(grpc_chttp2_transport));
-  init_transport(t, channel_args, ep, mdctx, is_client);
+  init_transport(t, channel_args, ep, mdctx, is_client != 0);
   return &t->base;
 }
 

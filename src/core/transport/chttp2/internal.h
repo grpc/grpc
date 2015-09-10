@@ -168,7 +168,7 @@ typedef struct {
   grpc_iomgr_closure *pending_closures_tail;
 
   /** window available for us to send to peer */
-  gpr_uint32 outgoing_window;
+  gpr_int64 outgoing_window;
   /** window available for peer to send to us - updated after parse */
   gpr_uint32 incoming_window;
   /** how much window would we like to have for incoming_window */
@@ -280,7 +280,7 @@ struct grpc_chttp2_transport_parsing {
   gpr_uint32 goaway_last_stream_index;
   gpr_slice goaway_text;
 
-  gpr_uint64 outgoing_window_update;
+  gpr_int64 outgoing_window_update;
 
   /** pings awaiting responses */
   grpc_chttp2_outstanding_ping pings;

@@ -63,7 +63,7 @@ void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
   do {                                                                        \
     gpr_uint8* tgt = target;                                                  \
     if ((length) == 1u) {                                                     \
-      (tgt)[0] = (prefix_or) | (n);                                           \
+      (tgt)[0] = (gpr_uint8)((prefix_or) | (n));                              \
     } else {                                                                  \
       (tgt)[0] = (prefix_or) | GRPC_CHTTP2_MAX_IN_PREFIX(prefix_bits);        \
       grpc_chttp2_hpack_write_varint_tail(                                    \

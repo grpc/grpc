@@ -140,8 +140,8 @@ static void multipoll_with_poll_pollset_maybe_work(
   gpr_mu_unlock(&pollset->mu);
 
   for (i = 1; i < pfd_count; i++) {
-    pfds[i].events = grpc_fd_begin_poll(watchers[i].fd, pollset, POLLIN,
-                                        POLLOUT, &watchers[i]);
+    pfds[i].events = (short)grpc_fd_begin_poll(watchers[i].fd, pollset, POLLIN,
+                                               POLLOUT, &watchers[i]);
   }
 
   r = grpc_poll_function(pfds, pfd_count, timeout);
