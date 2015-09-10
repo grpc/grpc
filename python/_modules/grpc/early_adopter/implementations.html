@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.early_adopter.implementations &mdash; grpcio 0.10.0a0 documentation</title>
+  <title>grpc.early_adopter.implementations &mdash; grpcio 0.11.0b0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../index.html"/>
+    <link rel="top" title="grpcio 0.11.0b0 documentation" href="../../../index.html"/>
         <link rel="up" title="Module code" href="../../index.html"/> 
 
   
@@ -73,10 +73,17 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc.html">grpc package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../grpc.beta.html">grpc.beta package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.beta.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.beta.html#module-grpc.beta.implementations">grpc.beta.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.beta.html#module-grpc.beta.interfaces">grpc.beta.interfaces module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.beta.html#module-grpc.beta.utilities">grpc.beta.utilities module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../grpc.beta.html#module-grpc.beta">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../grpc.early_adopter.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
 </ul>
 </li>
@@ -171,13 +178,15 @@
 <span class="kn">from</span> <span class="nn">grpc.framework.face</span> <span class="kn">import</span> <span class="n">implementations</span> <span class="k">as</span> <span class="n">_face_implementations</span>
 <span class="kn">from</span> <span class="nn">grpc.framework.foundation</span> <span class="kn">import</span> <span class="n">logging_pool</span>
 
-<span class="n">_THREAD_POOL_SIZE</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="n">_DEFAULT_THREAD_POOL_SIZE</span> <span class="o">=</span> <span class="mi">8</span>
 <span class="n">_ONE_DAY_IN_SECONDS</span> <span class="o">=</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span>
 
 
 <span class="k">class</span> <span class="nc">_Server</span><span class="p">(</span><span class="n">interfaces</span><span class="o">.</span><span class="n">Server</span><span class="p">):</span>
 
-  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">breakdown</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="p">):</span>
+  <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">breakdown</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="p">,</span>
+        <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">_DEFAULT_THREAD_POOL_SIZE</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span> <span class="o">=</span> <span class="n">breakdown</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_port</span> <span class="o">=</span> <span class="n">port</span>
@@ -186,6 +195,7 @@
     <span class="k">else</span><span class="p">:</span>
       <span class="bp">self</span><span class="o">.</span><span class="n">_key_chain_pairs</span> <span class="o">=</span> <span class="p">((</span><span class="n">private_key</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="p">),)</span>
 
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool_size</span> <span class="o">=</span> <span class="n">thread_pool_size</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="bp">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_back</span> <span class="o">=</span> <span class="bp">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_fore_link</span> <span class="o">=</span> <span class="bp">None</span>
@@ -193,7 +203,7 @@
   <span class="k">def</span> <span class="nf">_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
       <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">logging_pool</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="n">_THREAD_POOL_SIZE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">logging_pool</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pool_size</span><span class="p">)</span>
         <span class="n">servicer</span> <span class="o">=</span> <span class="n">_face_implementations</span><span class="o">.</span><span class="n">servicer</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span><span class="o">.</span><span class="n">implementations</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_back</span> <span class="o">=</span> <span class="n">_base_implementations</span><span class="o">.</span><span class="n">back_link</span><span class="p">(</span>
@@ -244,7 +254,8 @@
 
   <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
       <span class="bp">self</span><span class="p">,</span> <span class="n">breakdown</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">secure</span><span class="p">,</span> <span class="n">root_certificates</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span>
-      <span class="n">certificate_chain</span><span class="p">,</span> <span class="n">metadata_transformer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">server_host_override</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+      <span class="n">certificate_chain</span><span class="p">,</span> <span class="n">metadata_transformer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">server_host_override</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+      <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">_DEFAULT_THREAD_POOL_SIZE</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_breakdown</span> <span class="o">=</span> <span class="n">breakdown</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_host</span> <span class="o">=</span> <span class="n">host</span>
@@ -256,6 +267,7 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">_metadata_transformer</span> <span class="o">=</span> <span class="n">metadata_transformer</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_server_host_override</span> <span class="o">=</span> <span class="n">server_host_override</span>
 
+    <span class="bp">self</span><span class="o">.</span><span class="n">_pool_size</span> <span class="o">=</span> <span class="n">thread_pool_size</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="bp">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_front</span> <span class="o">=</span> <span class="bp">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_rear_link</span> <span class="o">=</span> <span class="bp">None</span>
@@ -264,7 +276,7 @@
   <span class="k">def</span> <span class="nf">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
       <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">logging_pool</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="n">_THREAD_POOL_SIZE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span> <span class="o">=</span> <span class="n">logging_pool</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pool_size</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_front</span> <span class="o">=</span> <span class="n">_base_implementations</span><span class="o">.</span><span class="n">front_link</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pool</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_rear_link</span> <span class="o">=</span> <span class="n">_rear</span><span class="o">.</span><span class="n">RearLink</span><span class="p">(</span>
@@ -323,7 +335,7 @@
 <div class="viewcode-block" id="stub"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations.stub">[docs]</a><span class="k">def</span> <span class="nf">stub</span><span class="p">(</span>
     <span class="n">service_name</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">metadata_transformer</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">secure</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
     <span class="n">root_certificates</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">private_key</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-    <span class="n">server_host_override</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">server_host_override</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">_DEFAULT_THREAD_POOL_SIZE</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Constructs an interfaces.Stub.</span>
 
 <span class="sd">  Args:</span>
@@ -346,6 +358,8 @@
 <span class="sd">      certificate chain should be used.</span>
 <span class="sd">    server_host_override: (For testing only) the target name used for SSL</span>
 <span class="sd">      host name checking.</span>
+<span class="sd">    thread_pool_size: The maximum number of threads to allow in the backing</span>
+<span class="sd">      thread pool.</span>
 
 <span class="sd">  Returns:</span>
 <span class="sd">    An interfaces.Stub affording RPC invocation.</span>
@@ -354,11 +368,13 @@
   <span class="k">return</span> <span class="n">_Stub</span><span class="p">(</span>
       <span class="n">breakdown</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">secure</span><span class="p">,</span> <span class="n">root_certificates</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span>
       <span class="n">certificate_chain</span><span class="p">,</span> <span class="n">server_host_override</span><span class="o">=</span><span class="n">server_host_override</span><span class="p">,</span>
-      <span class="n">metadata_transformer</span><span class="o">=</span><span class="n">metadata_transformer</span><span class="p">)</span>
+      <span class="n">metadata_transformer</span><span class="o">=</span><span class="n">metadata_transformer</span><span class="p">,</span>
+      <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">thread_pool_size</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="server"><a class="viewcode-back" href="../../../grpc.early_adopter.html#grpc.early_adopter.implementations.server">[docs]</a><span class="k">def</span> <span class="nf">server</span><span class="p">(</span>
-    <span class="n">service_name</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">private_key</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="n">service_name</span><span class="p">,</span> <span class="n">methods</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">private_key</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+    <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">_DEFAULT_THREAD_POOL_SIZE</span><span class="p">):</span>
   <span class="sd">&quot;&quot;&quot;Constructs an interfaces.Server.</span>
 
 <span class="sd">  Args:</span>
@@ -372,12 +388,15 @@
 <span class="sd">    private_key: A pem-encoded private key, or None for an insecure server.</span>
 <span class="sd">    certificate_chain: A pem-encoded certificate chain, or None for an insecure</span>
 <span class="sd">      server.</span>
+<span class="sd">    thread_pool_size: The maximum number of threads to allow in the backing</span>
+<span class="sd">      thread pool.</span>
 
 <span class="sd">  Returns:</span>
 <span class="sd">    An interfaces.Server that will serve secure traffic.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
   <span class="n">breakdown</span> <span class="o">=</span> <span class="n">_face_utilities</span><span class="o">.</span><span class="n">break_down_service</span><span class="p">(</span><span class="n">service_name</span><span class="p">,</span> <span class="n">methods</span><span class="p">)</span>
-  <span class="k">return</span> <span class="n">_Server</span><span class="p">(</span><span class="n">breakdown</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="p">)</span></div>
+  <span class="k">return</span> <span class="n">_Server</span><span class="p">(</span><span class="n">breakdown</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">private_key</span><span class="p">,</span> <span class="n">certificate_chain</span><span class="p">,</span>
+      <span class="n">thread_pool_size</span><span class="o">=</span><span class="n">thread_pool_size</span><span class="p">)</span></div>
 </pre></div>
 
           </div>
@@ -409,7 +428,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../',
-            VERSION:'0.10.0a0',
+            VERSION:'0.11.0b0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

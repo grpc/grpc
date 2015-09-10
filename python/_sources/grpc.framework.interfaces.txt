@@ -6,6 +6,8 @@ Subpackages
 
 .. toctree::
 
+    grpc.framework.interfaces.base
+    grpc.framework.interfaces.face
     grpc.framework.interfaces.links
 
 Module contents

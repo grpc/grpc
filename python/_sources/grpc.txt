@@ -6,6 +6,7 @@ Subpackages
 
 .. toctree::
 
+    grpc.beta
     grpc.early_adopter
     grpc.framework
 

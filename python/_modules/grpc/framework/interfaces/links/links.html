@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.interfaces.links.links &mdash; grpcio 0.10.0a0 documentation</title>
+  <title>grpc.framework.interfaces.links.links &mdash; grpcio 0.11.0b0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../../index.html"/>
+    <link rel="top" title="grpcio 0.11.0b0 documentation" href="../../../../../index.html"/>
         <link rel="up" title="Module code" href="../../../../index.html"/> 
 
   
@@ -73,10 +73,17 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../../grpc.html">grpc package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.beta.html">grpc.beta package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.beta.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.beta.html#module-grpc.beta.implementations">grpc.beta.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.beta.html#module-grpc.beta.interfaces">grpc.beta.interfaces module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.beta.html#module-grpc.beta.utilities">grpc.beta.utilities module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.beta.html#module-grpc.beta">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
 </ul>
 </li>
@@ -164,12 +171,28 @@
 <span class="kn">import</span> <span class="nn">enum</span>
 
 
+<div class="viewcode-block" id="Protocol"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Protocol">[docs]</a><span class="k">class</span> <span class="nc">Protocol</span><span class="p">(</span><span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;Protocol&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;kind&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">,))):</span>
+  <span class="sd">&quot;&quot;&quot;A sum type for handles to a system that transmits tickets.</span>
+
+<span class="sd">  Attributes:</span>
+<span class="sd">    kind: A Kind value identifying the kind of value being passed.</span>
+<span class="sd">    value: The value being passed between the high-level application and the</span>
+<span class="sd">      system affording ticket transport.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+
+  <span class="nd">@enum.unique</span>
+<div class="viewcode-block" id="Protocol.Kind"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Protocol.Kind">[docs]</a>  <span class="k">class</span> <span class="nc">Kind</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="n">CALL_OPTION</span> <span class="o">=</span> <span class="s">&#39;call option&#39;</span>
+    <span class="n">SERVICER_CONTEXT</span> <span class="o">=</span> <span class="s">&#39;servicer context&#39;</span>
+    <span class="n">INVOCATION_CONTEXT</span> <span class="o">=</span> <span class="s">&#39;invocation context&#39;</span>
+
+</div></div>
 <div class="viewcode-block" id="Ticket"><a class="viewcode-back" href="../../../../../grpc.framework.interfaces.links.html#grpc.framework.interfaces.links.links.Ticket">[docs]</a><span class="k">class</span> <span class="nc">Ticket</span><span class="p">(</span>
     <span class="n">collections</span><span class="o">.</span><span class="n">namedtuple</span><span class="p">(</span>
         <span class="s">&#39;Ticket&#39;</span><span class="p">,</span>
-        <span class="p">[</span><span class="s">&#39;operation_id&#39;</span><span class="p">,</span> <span class="s">&#39;sequence_number&#39;</span><span class="p">,</span> <span class="s">&#39;group&#39;</span><span class="p">,</span> <span class="s">&#39;method&#39;</span><span class="p">,</span> <span class="s">&#39;subscription&#39;</span><span class="p">,</span>
+        <span class="p">(</span><span class="s">&#39;operation_id&#39;</span><span class="p">,</span> <span class="s">&#39;sequence_number&#39;</span><span class="p">,</span> <span class="s">&#39;group&#39;</span><span class="p">,</span> <span class="s">&#39;method&#39;</span><span class="p">,</span> <span class="s">&#39;subscription&#39;</span><span class="p">,</span>
          <span class="s">&#39;timeout&#39;</span><span class="p">,</span> <span class="s">&#39;allowance&#39;</span><span class="p">,</span> <span class="s">&#39;initial_metadata&#39;</span><span class="p">,</span> <span class="s">&#39;payload&#39;</span><span class="p">,</span>
-         <span class="s">&#39;terminal_metadata&#39;</span><span class="p">,</span> <span class="s">&#39;code&#39;</span><span class="p">,</span> <span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="s">&#39;termination&#39;</span><span class="p">])):</span>
+         <span class="s">&#39;terminal_metadata&#39;</span><span class="p">,</span> <span class="s">&#39;code&#39;</span><span class="p">,</span> <span class="s">&#39;message&#39;</span><span class="p">,</span> <span class="s">&#39;termination&#39;</span><span class="p">,</span> <span class="s">&#39;protocol&#39;</span><span class="p">,))):</span>
   <span class="sd">&quot;&quot;&quot;A sum type for all values sent from a front to a back.</span>
 
 <span class="sd">  Attributes:</span>
@@ -211,6 +234,8 @@
 <span class="sd">    termination: A Termination value describing the end of the operation, or</span>
 <span class="sd">      None if the operation has not yet terminated. If set, no further tickets</span>
 <span class="sd">      may be sent in the same direction.</span>
+<span class="sd">    protocol: A Protocol value or None, with further semantics being a matter</span>
+<span class="sd">      between high-level application and underlying ticket transport.</span>
 <span class="sd">  &quot;&quot;&quot;</span>
 
   <span class="nd">@enum.unique</span>
@@ -228,7 +253,7 @@
     <span class="n">COMPLETION</span> <span class="o">=</span> <span class="s">&#39;completion&#39;</span>
     <span class="n">CANCELLATION</span> <span class="o">=</span> <span class="s">&#39;cancellation&#39;</span>
     <span class="n">EXPIRATION</span> <span class="o">=</span> <span class="s">&#39;expiration&#39;</span>
-    <span class="n">LOCAL_SHUTDOWN</span> <span class="o">=</span> <span class="s">&#39;local shutdown&#39;</span>
+    <span class="n">SHUTDOWN</span> <span class="o">=</span> <span class="s">&#39;shutdown&#39;</span>
     <span class="n">RECEPTION_FAILURE</span> <span class="o">=</span> <span class="s">&#39;reception failure&#39;</span>
     <span class="n">TRANSMISSION_FAILURE</span> <span class="o">=</span> <span class="s">&#39;transmission failure&#39;</span>
     <span class="n">LOCAL_FAILURE</span> <span class="o">=</span> <span class="s">&#39;local failure&#39;</span>
@@ -283,7 +308,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../../',
-            VERSION:'0.10.0a0',
+            VERSION:'0.11.0b0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

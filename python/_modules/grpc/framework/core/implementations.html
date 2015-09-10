@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.face.future_invocation_asynchronous_event_service_test &mdash; grpcio 0.10.0a0 documentation</title>
+  <title>grpc.framework.core.implementations &mdash; grpcio 0.11.0b0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.10.0a0 documentation" href="../../../../index.html"/>
+    <link rel="top" title="grpcio 0.11.0b0 documentation" href="../../../../index.html"/>
         <link rel="up" title="Module code" href="../../../index.html"/> 
 
   
@@ -73,10 +73,17 @@
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../../grpc.html">grpc package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../../../grpc.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../grpc.beta.html">grpc.beta package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.beta.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.beta.html#module-grpc.beta.implementations">grpc.beta.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.beta.html#module-grpc.beta.interfaces">grpc.beta.interfaces module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.beta.html#module-grpc.beta.utilities">grpc.beta.utilities module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.beta.html#module-grpc.beta">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../grpc.early_adopter.html">grpc.early_adopter package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
 </ul>
 </li>
@@ -116,7 +123,7 @@
       
           <li><a href="../../../index.html">Module code</a> &raquo;</li>
       
-    <li>grpc.framework.face.future_invocation_asynchronous_event_service_test</li>
+    <li>grpc.framework.core.implementations</li>
       <li class="wy-breadcrumbs-aside">
         
           
@@ -127,7 +134,7 @@
 </div>
           <div role="main" class="document">
             
-  <h1>Source code for grpc.framework.face.future_invocation_asynchronous_event_service_test</h1><div class="highlight"><pre>
+  <h1>Source code for grpc.framework.core.implementations</h1><div class="highlight"><pre>
 <span class="c"># Copyright 2015, Google Inc.</span>
 <span class="c"># All rights reserved.</span>
 <span class="c">#</span>
@@ -157,23 +164,39 @@
 <span class="c"># (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE</span>
 <span class="c"># OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</span>
 
-<span class="sd">&quot;&quot;&quot;One of the tests of the Face layer of RPC Framework.&quot;&quot;&quot;</span>
+<span class="sd">&quot;&quot;&quot;Entry points into the ticket-exchange-based base layer implementation.&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="c"># base and links are referenced from specification in this module.</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.core</span> <span class="kn">import</span> <span class="n">_end</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.base</span> <span class="kn">import</span> <span class="n">base</span>  <span class="c"># pylint: disable=unused-import</span>
+<span class="kn">from</span> <span class="nn">grpc.framework.interfaces.links</span> <span class="kn">import</span> <span class="n">links</span>  <span class="c"># pylint: disable=unused-import</span>
 
-<span class="kn">from</span> <span class="nn">grpc.framework.face</span> <span class="kn">import</span> <span class="n">_test_case</span>
-<span class="kn">from</span> <span class="nn">grpc.framework.face.testing</span> <span class="kn">import</span> <span class="n">future_invocation_asynchronous_event_service_test_case</span> <span class="k">as</span> <span class="n">test_case</span>
 
+<div class="viewcode-block" id="invocation_end_link"><a class="viewcode-back" href="../../../../grpc.framework.core.html#grpc.framework.core.implementations.invocation_end_link">[docs]</a><span class="k">def</span> <span class="nf">invocation_end_link</span><span class="p">():</span>
+  <span class="sd">&quot;&quot;&quot;Creates a base.End-links.Link suitable for operation invocation.</span>
 
-<div class="viewcode-block" id="FutureInvocationAsynchronousEventServiceTest"><a class="viewcode-back" href="../../../../grpc.framework.face.html#grpc.framework.face.future_invocation_asynchronous_event_service_test.FutureInvocationAsynchronousEventServiceTest">[docs]</a><span class="k">class</span> <span class="nc">FutureInvocationAsynchronousEventServiceTest</span><span class="p">(</span>
-    <span class="n">_test_case</span><span class="o">.</span><span class="n">FaceTestCase</span><span class="p">,</span>
-    <span class="n">test_case</span><span class="o">.</span><span class="n">FutureInvocationAsynchronousEventServiceTestCase</span><span class="p">,</span>
-    <span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
-  <span class="k">pass</span>
+<span class="sd">  Returns:</span>
+<span class="sd">    An object that is both a base.End and a links.Link, that supports operation</span>
+<span class="sd">      invocation, and that translates operation invocation into ticket exchange.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_end</span><span class="o">.</span><span class="n">serviceless_end_link</span><span class="p">()</span>
 
 </div>
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-  <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">verbosity</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<div class="viewcode-block" id="service_end_link"><a class="viewcode-back" href="../../../../grpc.framework.core.html#grpc.framework.core.implementations.service_end_link">[docs]</a><span class="k">def</span> <span class="nf">service_end_link</span><span class="p">(</span><span class="n">servicer</span><span class="p">,</span> <span class="n">default_timeout</span><span class="p">,</span> <span class="n">maximum_timeout</span><span class="p">):</span>
+  <span class="sd">&quot;&quot;&quot;Creates a base.End-links.Link suitable for operation service.</span>
+
+<span class="sd">  Args:</span>
+<span class="sd">    servicer: A base.Servicer for servicing operations.</span>
+<span class="sd">    default_timeout: A length of time in seconds to be used as the default</span>
+<span class="sd">      time alloted for a single operation.</span>
+<span class="sd">    maximum_timeout: A length of time in seconds to be used as the maximum</span>
+<span class="sd">      time alloted for a single operation.</span>
+
+<span class="sd">  Returns:</span>
+<span class="sd">    An object that is both a base.End and a links.Link and that services</span>
+<span class="sd">      operations that arrive at it through ticket exchange.</span>
+<span class="sd">  &quot;&quot;&quot;</span>
+  <span class="k">return</span> <span class="n">_end</span><span class="o">.</span><span class="n">serviceful_end_link</span><span class="p">(</span><span class="n">servicer</span><span class="p">,</span> <span class="n">default_timeout</span><span class="p">,</span> <span class="n">maximum_timeout</span><span class="p">)</span></div>
 </pre></div>
 
           </div>
@@ -205,7 +228,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../../../',
-            VERSION:'0.10.0a0',
+            VERSION:'0.11.0b0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

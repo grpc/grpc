@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.foundation package &mdash; grpcio 0.10.0a0 documentation</title>
+  <title>grpc.framework.foundation package &mdash; grpcio 0.11.0b0 documentation</title>
   
 
   
@@ -30,10 +30,10 @@
   
 
   
-    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.11.0b0 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
         <link rel="next" title="grpc.framework.interfaces package" href="grpc.framework.interfaces.html"/>
-        <link rel="prev" title="grpc.framework.face.testing package" href="grpc.framework.face.testing.html"/> 
+        <link rel="prev" title="grpc.framework.face package" href="grpc.framework.face.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -75,10 +75,17 @@
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="grpc.beta.html">grpc.beta package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta.implementations">grpc.beta.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta.interfaces">grpc.beta.interfaces module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta.utilities">grpc.beta.utilities module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
 </ul>
 </li>
@@ -693,54 +700,6 @@ only valid for use as a Relay when activated.</td>
 </dd></dl>
 
 </div>
-<div class="section" id="module-grpc.framework.foundation.stream_testing">
-<span id="grpc-framework-foundation-stream-testing-module"></span><h2>grpc.framework.foundation.stream_testing module<a class="headerlink" href="#module-grpc.framework.foundation.stream_testing" title="Permalink to this headline">¶</a></h2>
-<p>Utilities for testing stream-related code.</p>
-<dl class="class">
-<dt id="grpc.framework.foundation.stream_testing.TestConsumer">
-<em class="property">class </em><code class="descclassname">grpc.framework.foundation.stream_testing.</code><code class="descname">TestConsumer</code><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#grpc.framework.foundation.stream.Consumer" title="grpc.framework.foundation.stream.Consumer"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.foundation.stream.Consumer</span></code></a></p>
-<p>A stream.Consumer instrumented for testing.</p>
-<dl class="attribute">
-<dt id="grpc.framework.foundation.stream_testing.TestConsumer.calls">
-<code class="descname">calls</code><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.calls" title="Permalink to this definition">¶</a></dt>
-<dd><p>A sequence of value-termination pairs describing the history of calls
-made on this object.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.foundation.stream_testing.TestConsumer.consume">
-<code class="descname">consume</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer.consume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.consume" title="Permalink to this definition">¶</a></dt>
-<dd><p>See stream.Consumer.consume for specification.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.foundation.stream_testing.TestConsumer.consume_and_terminate">
-<code class="descname">consume_and_terminate</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer.consume_and_terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.consume_and_terminate" title="Permalink to this definition">¶</a></dt>
-<dd><p>See stream.Consumer.consume_and_terminate for specification.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.foundation.stream_testing.TestConsumer.is_legal">
-<code class="descname">is_legal</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer.is_legal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.is_legal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reports whether or not a legal sequence of calls has been made.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.foundation.stream_testing.TestConsumer.terminate">
-<code class="descname">terminate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.terminate" title="Permalink to this definition">¶</a></dt>
-<dd><p>See stream.Consumer.terminate for specification.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.foundation.stream_testing.TestConsumer.values">
-<code class="descname">values</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/foundation/stream_testing.html#TestConsumer.values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.foundation.stream_testing.TestConsumer.values" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the sequence of values that have been passed to this Consumer.</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="module-grpc.framework.foundation.stream_util">
 <span id="grpc-framework-foundation-stream-util-module"></span><h2>grpc.framework.foundation.stream_util module<a class="headerlink" href="#module-grpc.framework.foundation.stream_util" title="Permalink to this headline">¶</a></h2>
 <p>Helpful utilities related to the stream module.</p>
@@ -830,7 +789,7 @@ made on this object.</p>
         <a href="grpc.framework.interfaces.html" class="btn btn-neutral float-right" title="grpc.framework.interfaces package" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="grpc.framework.face.testing.html" class="btn btn-neutral" title="grpc.framework.face.testing package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="grpc.framework.face.html" class="btn btn-neutral" title="grpc.framework.face package" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -860,7 +819,7 @@ made on this object.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.10.0a0',
+            VERSION:'0.11.0b0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

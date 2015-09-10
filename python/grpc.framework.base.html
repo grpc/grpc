@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>grpc.framework.base package &mdash; grpcio 0.10.0a0 documentation</title>
+  <title>grpc.framework.base package &mdash; grpcio 0.11.0b0 documentation</title>
   
 
   
@@ -30,7 +30,7 @@
   
 
   
-    <link rel="top" title="grpcio 0.10.0a0 documentation" href="index.html"/>
+    <link rel="top" title="grpcio 0.11.0b0 documentation" href="index.html"/>
         <link rel="up" title="grpc.framework package" href="grpc.framework.html"/>
         <link rel="next" title="grpc.framework.common package" href="grpc.framework.common.html"/>
         <link rel="prev" title="grpc.framework.alpha package" href="grpc.framework.alpha.html"/> 
@@ -75,10 +75,17 @@
               <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="grpc.html">grpc package</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="grpc.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="grpc.beta.html">grpc.beta package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta.implementations">grpc.beta.implementations module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta.interfaces">grpc.beta.interfaces module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta.utilities">grpc.beta.utilities module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="grpc.beta.html#module-grpc.beta">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="grpc.early_adopter.html">grpc.early_adopter package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations">grpc.early_adopter.implementations module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter.implementations_test">grpc.early_adopter.implementations_test module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="grpc.early_adopter.html#module-grpc.early_adopter">Module contents</a></li>
 </ul>
 </li>
@@ -205,26 +212,6 @@ for utility tasks.</li>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-</div>
-<div class="section" id="module-grpc.framework.base.implementations_test">
-<span id="grpc-framework-base-implementations-test-module"></span><h2>grpc.framework.base.implementations_test module<a class="headerlink" href="#module-grpc.framework.base.implementations_test" title="Permalink to this headline">¶</a></h2>
-<p>Tests for grpc.framework.base.implementations.</p>
-<dl class="class">
-<dt id="grpc.framework.base.implementations_test.ImplementationsTest">
-<em class="property">class </em><code class="descclassname">grpc.framework.base.implementations_test.</code><code class="descname">ImplementationsTest</code><span class="sig-paren">(</span><em>methodName='runTest'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/implementations_test.html#ImplementationsTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.implementations_test.ImplementationsTest" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest" title="grpc.framework.base.interfaces_test_case.FrontAndBackTest"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces_test_case.FrontAndBackTest</span></code></a>, <code class="xref py py-class docutils literal"><span class="pre">unittest.case.TestCase</span></code></p>
-<dl class="method">
-<dt id="grpc.framework.base.implementations_test.ImplementationsTest.setUp">
-<code class="descname">setUp</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/implementations_test.html#ImplementationsTest.setUp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.implementations_test.ImplementationsTest.setUp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.base.implementations_test.ImplementationsTest.tearDown">
-<code class="descname">tearDown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/implementations_test.html#ImplementationsTest.tearDown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.implementations_test.ImplementationsTest.tearDown" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 </div>
@@ -727,99 +714,6 @@ longer is any reason to service the operation.</li>
 </dd></dl>
 
 </div>
-<div class="section" id="module-grpc.framework.base.interfaces_test_case">
-<span id="grpc-framework-base-interfaces-test-case-module"></span><h2>grpc.framework.base.interfaces_test_case module<a class="headerlink" href="#module-grpc.framework.base.interfaces_test_case" title="Permalink to this headline">¶</a></h2>
-<p>Abstract tests against the interfaces of the base layer of RPC Framework.</p>
-<dl class="class">
-<dt id="grpc.framework.base.interfaces_test_case.AsynchronousEcho">
-<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces_test_case.</code><code class="descname">AsynchronousEcho</code><span class="sig-paren">(</span><em>output_consumer</em>, <em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#AsynchronousEcho"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.AsynchronousEcho" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="grpc.framework.foundation.html#grpc.framework.foundation.stream.Consumer" title="grpc.framework.foundation.stream.Consumer"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.foundation.stream.Consumer</span></code></a></p>
-<p>A stream.Consumer that echoes its input to another stream.Consumer.</p>
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.AsynchronousEcho.consume">
-<code class="descname">consume</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#AsynchronousEcho.consume"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.AsynchronousEcho.consume" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.AsynchronousEcho.consume_and_terminate">
-<code class="descname">consume_and_terminate</code><span class="sig-paren">(</span><em>value</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#AsynchronousEcho.consume_and_terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.AsynchronousEcho.consume_and_terminate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.AsynchronousEcho.terminate">
-<code class="descname">terminate</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#AsynchronousEcho.terminate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.AsynchronousEcho.terminate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="grpc.framework.base.interfaces_test_case.EasyServicedIngestor">
-<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces_test_case.</code><code class="descname">EasyServicedIngestor</code><span class="sig-paren">(</span><em>consumer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#EasyServicedIngestor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.EasyServicedIngestor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.ServicedIngestor" title="grpc.framework.base.interfaces.ServicedIngestor"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.ServicedIngestor</span></code></a></p>
-<p>A trivial implementation of interfaces.ServicedIngestor.</p>
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.EasyServicedIngestor.consumer">
-<code class="descname">consumer</code><span class="sig-paren">(</span><em>operation_context</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#EasyServicedIngestor.consumer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.EasyServicedIngestor.consumer" title="Permalink to this definition">¶</a></dt>
-<dd><p>See interfaces.ServicedIngestor.consumer for specification.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest">
-<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces_test_case.</code><code class="descname">FrontAndBackTest</code><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>A test suite usable against any joined Front and Back.</p>
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest.testBidirectionalStreamingEcho">
-<code class="descname">testBidirectionalStreamingEcho</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest.testBidirectionalStreamingEcho"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testBidirectionalStreamingEcho" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tests sending multiple tickets each way.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest.testCancellation">
-<code class="descname">testCancellation</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest.testCancellation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testCancellation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tests cancelling a long-lived operation.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest.testEntireEcho">
-<code class="descname">testEntireEcho</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest.testEntireEcho"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testEntireEcho" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tests a very simple one-ticket-each-way round-trip.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest.testExpiration">
-<code class="descname">testExpiration</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest.testExpiration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testExpiration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tests that operations time out.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.FrontAndBackTest.testSimplestCall">
-<code class="descname">testSimplestCall</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#FrontAndBackTest.testSimplestCall"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.FrontAndBackTest.testSimplestCall" title="Permalink to this definition">¶</a></dt>
-<dd><p>Tests the absolute simplest call - a one-ticket fire-and-forget.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="grpc.framework.base.interfaces_test_case.TestServicer">
-<em class="property">class </em><code class="descclassname">grpc.framework.base.interfaces_test_case.</code><code class="descname">TestServicer</code><span class="sig-paren">(</span><em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#TestServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.TestServicer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#grpc.framework.base.interfaces.Servicer" title="grpc.framework.base.interfaces.Servicer"><code class="xref py py-class docutils literal"><span class="pre">grpc.framework.base.interfaces.Servicer</span></code></a></p>
-<p>An interfaces.Servicer with instrumented for testing.</p>
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.TestServicer.release">
-<code class="descname">release</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#TestServicer.release"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.TestServicer.release" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="grpc.framework.base.interfaces_test_case.TestServicer.service">
-<code class="descname">service</code><span class="sig-paren">(</span><em>name</em>, <em>context</em>, <em>output_consumer</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/framework/base/interfaces_test_case.html#TestServicer.service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.framework.base.interfaces_test_case.TestServicer.service" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="module-grpc.framework.base.null">
 <span id="grpc-framework-base-null-module"></span><h2>grpc.framework.base.null module<a class="headerlink" href="#module-grpc.framework.base.null" title="Permalink to this headline">¶</a></h2>
 <p>Null links that ignore tickets passed to them.</p>
@@ -936,7 +830,7 @@ the operation.</td>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.10.0a0',
+            VERSION:'0.11.0b0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
