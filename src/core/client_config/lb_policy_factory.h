@@ -31,36 +31,43 @@
  *
  */
 
-#include "src/core/transport/chttp2/varint.h"
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
 
-gpr_uint32 grpc_chttp2_hpack_varint_length(gpr_uint32 tail_value) {
-  if (tail_value < (1 << 7)) {
-    return 2;
-  } else if (tail_value < (1 << 14)) {
-    return 3;
-  } else if (tail_value < (1 << 21)) {
-    return 4;
-  } else if (tail_value < (1 << 28)) {
-    return 5;
-  } else {
-    return 6;
-  }
-}
+#include "src/core/client_config/lb_policy.h"
+#include "src/core/client_config/subchannel.h"
 
-void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
-                                         gpr_uint8* target,
-                                         gpr_uint32 tail_length) {
-  switch (tail_length) {
-    case 5:
-      target[4] = (gpr_uint8)((tail_value >> 28) | 0x80);
-    case 4:
-      target[3] = (gpr_uint8)((tail_value >> 21) | 0x80);
-    case 3:
-      target[2] = (gpr_uint8)((tail_value >> 14) | 0x80);
-    case 2:
-      target[1] = (gpr_uint8)((tail_value >> 7) | 0x80);
-    case 1:
-      target[0] = (gpr_uint8)((tail_value) | 0x80);
-  }
-  target[tail_length - 1] &= 0x7f;
-}
+typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
+typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
+
+/** grpc_lb_policy provides grpc_client_config objects to grpc_channel
+    objects */
+struct grpc_lb_policy_factory {
+  const grpc_lb_policy_factory_vtable *vtable;
+};
+
+typedef struct grpc_lb_policy_args {
+  grpc_subchannel **subchannels;
+  size_t num_subchannels;
+} grpc_lb_policy_args;
+
+struct grpc_lb_policy_factory_vtable {
+  void (*ref)(grpc_lb_policy_factory *factory);
+  void (*unref)(grpc_lb_policy_factory *factory);
+
+  /** Implementation of grpc_lb_policy_factory_create_lb_policy */
+  grpc_lb_policy *(*create_lb_policy)(grpc_lb_policy_factory *factory,
+                                      grpc_lb_policy_args *args);
+
+  /** Name for the LB policy this factory implements */
+  const char *name;
+};
+
+void grpc_lb_policy_factory_ref(grpc_lb_policy_factory *factory);
+void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory);
+
+/** Create a lb_policy instance. */
+grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
+    grpc_lb_policy_factory *factory, grpc_lb_policy_args *args);
+
+#endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_FACTORY_H */

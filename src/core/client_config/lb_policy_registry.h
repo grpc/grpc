@@ -31,36 +31,24 @@
  *
  */
 
-#include "src/core/transport/chttp2/varint.h"
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H
 
-gpr_uint32 grpc_chttp2_hpack_varint_length(gpr_uint32 tail_value) {
-  if (tail_value < (1 << 7)) {
-    return 2;
-  } else if (tail_value < (1 << 14)) {
-    return 3;
-  } else if (tail_value < (1 << 21)) {
-    return 4;
-  } else if (tail_value < (1 << 28)) {
-    return 5;
-  } else {
-    return 6;
-  }
-}
+#include "src/core/client_config/lb_policy_factory.h"
 
-void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
-                                         gpr_uint8* target,
-                                         gpr_uint32 tail_length) {
-  switch (tail_length) {
-    case 5:
-      target[4] = (gpr_uint8)((tail_value >> 28) | 0x80);
-    case 4:
-      target[3] = (gpr_uint8)((tail_value >> 21) | 0x80);
-    case 3:
-      target[2] = (gpr_uint8)((tail_value >> 14) | 0x80);
-    case 2:
-      target[1] = (gpr_uint8)((tail_value >> 7) | 0x80);
-    case 1:
-      target[0] = (gpr_uint8)((tail_value) | 0x80);
-  }
-  target[tail_length - 1] &= 0x7f;
-}
+/** Initialize the registry and set \a default_factory as the factory to be
+ * returned when no name is provided in a lookup */
+void grpc_lb_policy_registry_init(grpc_lb_policy_factory *default_factory);
+void grpc_lb_policy_registry_shutdown(void);
+
+/** Register a LB policy factory. */
+void grpc_register_lb_policy(grpc_lb_policy_factory *factory);
+
+/** Create a \a grpc_lb_policy instance.
+ *
+ * If \a name is NULL, the default factory from \a grpc_lb_policy_registry_init
+ * will be returned. */
+grpc_lb_policy *grpc_lb_policy_create(const char *name,
+                                      grpc_lb_policy_args *args);
+
+#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H */

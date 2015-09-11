@@ -35,22 +35,22 @@
 #include <stdlib.h>
 #include "test/core/util/test_config.h"
 
-void test_log_events(int num_seqs) {
-  int start = 0;
-  int *state;
+void test_log_events(size_t num_seqs) {
+  size_t start = 0;
+  size_t *state;
   state = calloc(num_seqs, sizeof(state[0]));
   while (start < num_seqs) {
-    int i;
-    int row;
+    size_t i;
+    size_t row;
     if (state[start] == 3) { /* Already done with this posn */
       start++;
       continue;
     }
 
-    row = rand() % 10; /* how many in a row */
+    row = (size_t)rand() % 10; /* how many in a row */
     for (i = start; (i < start + row) && (i < num_seqs); i++) {
-      int j;
-      int advance = 1 + rand() % 3; /* how many to advance by */
+      size_t j;
+      size_t advance = 1 + (size_t)rand() % 3; /* how many to advance by */
       for (j = 0; j < advance; j++) {
         switch (state[i]) {
           case 0:

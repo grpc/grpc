@@ -186,7 +186,8 @@ grpc_mdctx *grpc_mdctx_create(void) {
   /* This seed is used to prevent remote connections from controlling hash table
    * collisions. It needs to be somewhat unpredictable to a remote connection.
    */
-  return grpc_mdctx_create_with_seed(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
+  return grpc_mdctx_create_with_seed(
+      (gpr_uint32)gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
 }
 
 static void discard_metadata(grpc_mdctx *ctx) {
@@ -333,7 +334,7 @@ grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str,
       grpc_mdstr *ret;
       for (i = 0; i < len; i++) {
         if (str[i] >= 'A' && str[i] <= 'Z') {
-          copy[i] = str[i] - 'A' + 'a';
+          copy[i] = (char)(str[i] - 'A' + 'a');
         } else {
           copy[i] = str[i];
         }
@@ -378,7 +379,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *buf,
     s->slice.refcount = NULL;
     memcpy(s->slice.data.inlined.bytes, buf, length);
     s->slice.data.inlined.bytes[length] = 0;
-    s->slice.data.inlined.length = length;
+    s->slice.data.inlined.length = (gpr_uint8)length;
   } else {
     /* string data goes after the internal_string header, and we +1 for null
        terminator */

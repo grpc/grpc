@@ -179,6 +179,7 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
+#define GPR_MSG_IOVLEN_TYPE int
 #if TARGET_OS_IPHONE
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
@@ -318,6 +319,7 @@ typedef uintptr_t gpr_uintptr;
 
 /* INT64_MAX is unavailable on some platforms. */
 #define GPR_INT64_MAX (gpr_int64)(~(gpr_uint64)0 >> 1)
+#define GPR_UINT32_MAX (~(gpr_uint32)0)
 
 /* maximum alignment needed for any type on this platform, rounded up to a
    power of two */
