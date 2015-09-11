@@ -67,8 +67,8 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index);
 
 /* TODO(ctiller): deprecate this, and make grpc_udp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr, int addr_len,
-                             grpc_udp_server_read_cb read_cb);
+int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
+                             size_t addr_len, grpc_udp_server_read_cb read_cb);
 
 void grpc_udp_server_destroy(grpc_udp_server *server,
                              void (*shutdown_done)(void *shutdown_done_arg),
