@@ -33,18 +33,24 @@ import threading
 import time
 
 from grpc._adapter import _low
+from grpc._adapter import _types
+from grpc.beta import interfaces
 from grpc.framework.foundation import callable_util
 
 _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE = (
     'Exception calling channel subscription callback!')
 
+_LOW_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
+    state: connectivity for state, connectivity in zip(
+        _types.ConnectivityState, interfaces.ChannelConnectivity)
+}
+
 
 class ConnectivityChannel(object):
 
-  def __init__(self, low_channel, mapping):
+  def __init__(self, low_channel):
     self._lock = threading.Lock()
     self._low_channel = low_channel
-    self._mapping = mapping
 
     self._polling = False
     self._connectivity = None
@@ -88,7 +94,8 @@ class ConnectivityChannel(object):
     try_to_connect = initial_try_to_connect
     low_connectivity = low_channel.check_connectivity_state(try_to_connect)
     with self._lock:
-      self._connectivity = self._mapping[low_connectivity]
+      self._connectivity = _LOW_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
+          low_connectivity]
       callbacks = tuple(
           callback for callback, unused_but_known_to_be_none_connectivity
           in self._callbacks_and_connectivities)
@@ -112,7 +119,8 @@ class ConnectivityChannel(object):
       if event.success or try_to_connect:
         low_connectivity = low_channel.check_connectivity_state(try_to_connect)
         with self._lock:
-          self._connectivity = self._mapping[low_connectivity]
+          self._connectivity = _LOW_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
+              low_connectivity]
           if not self._delivering:
             callbacks = self._deliveries(self._connectivity)
             if callbacks:

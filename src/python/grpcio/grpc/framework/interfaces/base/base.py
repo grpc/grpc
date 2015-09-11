@@ -184,6 +184,19 @@ class Operator(object):
     """
     raise NotImplementedError()
 
+class ProtocolReceiver(object):
+  """A means of receiving protocol values during an operation."""
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def context(self, protocol_context):
+    """Accepts the protocol context object for the operation.
+
+    Args:
+      protocol_context: The protocol context object for the operation.
+    """
+    raise NotImplementedError()
+
 
 class Subscription(object):
   """Describes customer code's interest in values from the other side.
@@ -199,7 +212,11 @@ class Subscription(object):
       otherwise.
     operator: An Operator to be passed values from the other side of the
       operation. Must be non-None if kind is Kind.FULL. Must be None otherwise.
+    protocol_receiver: A ProtocolReceiver to be passed protocol objects as they
+      become available during the operation. Must be non-None if kind is
+      Kind.FULL.
   """
+  __metaclass__ = abc.ABCMeta
 
   @enum.unique
   class Kind(enum.Enum):
@@ -274,7 +291,7 @@ class End(object):
   @abc.abstractmethod
   def operate(
       self, group, method, subscription, timeout, initial_metadata=None,
-      payload=None, completion=None):
+      payload=None, completion=None, protocol_options=None):
     """Commences an operation.
 
     Args:
@@ -290,6 +307,8 @@ class End(object):
       payload: An initial payload for the operation.
       completion: A Completion value indicating the end of transmission to the
         other side of the operation.
+      protocol_options: A value specified by the provider of a Base interface
+        implementation affording custom state and behavior.
 
     Returns:
       A pair of objects affording information about the operation and action

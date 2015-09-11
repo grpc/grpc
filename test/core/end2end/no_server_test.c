@@ -79,8 +79,8 @@ int main(int argc, char **argv) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call, ops, op - ops, tag(1), NULL));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(
+                                 call, ops, (size_t)(op - ops), tag(1), NULL));
   /* verify that all tags get completed */
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);

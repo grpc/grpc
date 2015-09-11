@@ -86,15 +86,15 @@ static void test_spec_reset(test_spec *spec) {
   }
 }
 
-static test_spec *test_spec_create(size_t num_iters, int num_servers) {
+static test_spec *test_spec_create(size_t num_iters, size_t num_servers) {
   test_spec *spec;
   size_t i;
 
   spec = gpr_malloc(sizeof(test_spec));
   spec->num_iters = num_iters;
   spec->num_servers = num_servers;
-  spec->kill_at = gpr_malloc(sizeof(int*) * num_iters);
-  spec->revive_at = gpr_malloc(sizeof(int*) * num_iters);
+  spec->kill_at = gpr_malloc(sizeof(int *) * num_iters);
+  spec->revive_at = gpr_malloc(sizeof(int *) * num_iters);
   for (i = 0; i < num_iters; i++) {
     spec->kill_at[i] = gpr_malloc(sizeof(int) * num_servers);
     spec->revive_at[i] = gpr_malloc(sizeof(int) * num_servers);
@@ -130,19 +130,18 @@ static void drain_cq(grpc_completion_queue *cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void kill_server(const servers_fixture *f, int i) {
+static void kill_server(const servers_fixture *f, size_t i) {
   gpr_log(GPR_INFO, "KILLING SERVER %d", i);
   GPR_ASSERT(f->servers[i] != NULL);
   grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000),
-                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                         NULL)
+  GPR_ASSERT(grpc_completion_queue_pluck(
+                 f->cq, tag(10000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
                  .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->servers[i]);
   f->servers[i] = NULL;
 }
 
-static void revive_server(const servers_fixture *f, int i) {
+static void revive_server(const servers_fixture *f, size_t i) {
   int got_port;
   gpr_log(GPR_INFO, "RAISE AGAIN SERVER %d", i);
   GPR_ASSERT(f->servers[i] == NULL);
@@ -161,12 +160,13 @@ static servers_fixture *setup_servers(const char *server_host,
   size_t i;
 
   f->num_servers = num_servers;
-  f->server_calls = gpr_malloc(sizeof(grpc_call*) * num_servers);
-  f->request_metadata_recv = gpr_malloc(sizeof(grpc_metadata_array) * num_servers);
+  f->server_calls = gpr_malloc(sizeof(grpc_call *) * num_servers);
+  f->request_metadata_recv =
+      gpr_malloc(sizeof(grpc_metadata_array) * num_servers);
   /* Create servers. */
-  ports = gpr_malloc(sizeof(int*) * num_servers);
-  f->servers = gpr_malloc(sizeof(grpc_server*) * num_servers);
-  f->servers_hostports = gpr_malloc(sizeof(char*) * num_servers);
+  ports = gpr_malloc(sizeof(int *) * num_servers);
+  f->servers = gpr_malloc(sizeof(grpc_server *) * num_servers);
+  f->servers_hostports = gpr_malloc(sizeof(char *) * num_servers);
   f->cq = grpc_completion_queue_create(NULL);
   for (i = 0; i < num_servers; i++) {
     ports[i] = grpc_pick_unused_port_or_die();
@@ -190,9 +190,8 @@ static void teardown_servers(servers_fixture *f) {
   for (i = 0; i < f->num_servers; i++) {
     if (f->servers[i] == NULL) continue;
     grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-    GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000),
-                                           GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
-                                           NULL)
+    GPR_ASSERT(grpc_completion_queue_pluck(
+                   f->cq, tag(10000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
                    .type == GRPC_OP_COMPLETE);
     grpc_server_destroy(f->servers[i]);
   }
@@ -234,7 +233,7 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
   grpc_metadata_array trailing_metadata_recv;
 
   s_valid = gpr_malloc(sizeof(int) * f->num_servers);
-  call_details  = gpr_malloc(sizeof(grpc_call_details) * f->num_servers);
+  call_details = gpr_malloc(sizeof(grpc_call_details) * f->num_servers);
   connection_sequence = gpr_malloc(sizeof(int) * spec->num_iters);
 
   /* Send a trivial request. */
@@ -292,16 +291,17 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
     op->reserved = NULL;
     op++;
     GPR_ASSERT(GRPC_CALL_OK ==
-               grpc_call_start_batch(c, ops, op - ops, tag(1), NULL));
+               grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL));
 
     /* "listen" on all servers */
     for (i = 0; i < f->num_servers; i++) {
       grpc_metadata_array_init(&f->request_metadata_recv[i]);
       if (f->servers[i] != NULL) {
-        GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                       f->servers[i], &f->server_calls[i],
-                                       &call_details[i], &f->request_metadata_recv[i],
-                                       f->cq, f->cq, tag(1000 + i)));
+        GPR_ASSERT(GRPC_CALL_OK ==
+                   grpc_server_request_call(f->servers[i], &f->server_calls[i],
+                                            &call_details[i],
+                                            &f->request_metadata_recv[i], f->cq,
+                                            f->cq, tag(1000 + (int)i)));
       }
     }
 
@@ -341,13 +341,12 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
       op->reserved = NULL;
       op++;
       GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(f->server_calls[s_idx],
-                                                       ops, op - ops, tag(102),
-                                                       NULL));
+                                                       ops, (size_t)(op - ops),
+                                                       tag(102), NULL));
 
       cq_expect_completion(cqv, tag(102), 1);
       cq_expect_completion(cqv, tag(1), 1);
       cq_verify(cqv);
-
 
       GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
       GPR_ASSERT(0 == strcmp(details, "xyz"));
@@ -357,7 +356,7 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
     }
 
     for (i = 0; i < f->num_servers; i++) {
-      if (s_valid[i] != 0){
+      if (s_valid[i] != 0) {
         grpc_call_destroy(f->server_calls[i]);
       }
       grpc_metadata_array_destroy(&f->request_metadata_recv[i]);
@@ -404,7 +403,8 @@ static void assert_channel_connectivity(
   }
   va_end(ap);
   if (i == num_accepted_conn_states) {
-    char **accepted_strs = gpr_malloc(sizeof(char*) * num_accepted_conn_states);
+    char **accepted_strs =
+        gpr_malloc(sizeof(char *) * num_accepted_conn_states);
     char *accepted_str_joined;
     va_start(ap, accepted_conn_states);
     for (i = 0; i < num_accepted_conn_states; i++) {
@@ -476,7 +476,7 @@ static void verify_vanilla_round_robin(const servers_fixture *f,
                                        const size_t num_iters) {
   int *expected_connection_sequence;
   size_t i;
-  const int expected_seq_length = f->num_servers;
+  const size_t expected_seq_length = f->num_servers;
 
   /* verify conn. seq. expectation */
   /* get the first sequence of "num_servers" elements */
@@ -507,7 +507,7 @@ static void verify_vanishing_floor_round_robin(
     const servers_fixture *f, grpc_channel *client,
     const int *actual_connection_sequence, const size_t num_iters) {
   int *expected_connection_sequence;
-  const int expected_seq_length = 2;
+  const size_t expected_seq_length = 2;
   size_t i;
 
   /* verify conn. seq. expectation */
@@ -522,12 +522,11 @@ static void verify_vanishing_floor_round_robin(
             expected_connection_sequence[0], actual_connection_sequence[0], 0);
     print_failed_expectations(expected_connection_sequence,
                               actual_connection_sequence, expected_seq_length,
-                              1);
+                              1u);
     abort();
   }
 
   GPR_ASSERT(actual_connection_sequence[1] == -1);
-
 
   for (i = 2; i < num_iters; i++) {
     const int actual = actual_connection_sequence[i];
@@ -570,7 +569,7 @@ static void verify_partial_carnage_round_robin(
     const int *actual_connection_sequence, const size_t num_iters) {
   int *expected_connection_sequence;
   size_t i;
-  const int expected_seq_length = f->num_servers;
+  const size_t expected_seq_length = f->num_servers;
 
   /* verify conn. seq. expectation */
   /* get the first sequence of "num_servers" elements */
@@ -578,7 +577,7 @@ static void verify_partial_carnage_round_robin(
   memcpy(expected_connection_sequence, actual_connection_sequence,
          sizeof(int) * expected_seq_length);
 
-  for (i = 0; i < num_iters/2; i++) {
+  for (i = 0; i < num_iters / 2; i++) {
     const int actual = actual_connection_sequence[i];
     const int expected = expected_connection_sequence[i % expected_seq_length];
     if (actual != expected) {
@@ -609,7 +608,7 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
                                        const size_t num_iters) {
   int *expected_connection_sequence;
   size_t i;
-  const int expected_seq_length = f->num_servers;
+  const size_t expected_seq_length = f->num_servers;
 
   /* verify conn. seq. expectation */
   /* get the first sequence of "num_servers" elements */
@@ -643,7 +642,6 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   gpr_free(expected_connection_sequence);
 }
 
-
 int main(int argc, char **argv) {
   test_spec *spec;
   size_t i;
@@ -657,7 +655,7 @@ int main(int argc, char **argv) {
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);
   spec->verifier = verify_vanilla_round_robin;
   spec->description = "test_all_server_up";
-  /*run_spec(spec);*/
+  run_spec(spec);
 
   /* Kill all servers first thing in the morning */
   test_spec_reset(spec);
@@ -676,7 +674,7 @@ int main(int argc, char **argv) {
   for (i = 1; i < NUM_SERVERS - 1; i++) {
     spec->kill_at[1][i] = 1;
   }
-  /*run_spec(spec);*/
+  run_spec(spec);
 
   /* Midway, kill all servers. */
   test_spec_reset(spec);
@@ -685,7 +683,7 @@ int main(int argc, char **argv) {
   for (i = 0; i < NUM_SERVERS; i++) {
     spec->kill_at[spec->num_iters / 2][i] = 1;
   }
-  /*run_spec(spec);*/
+  run_spec(spec);
 
   /* After first iteration, kill all servers. On the third one, bring them all
    * back up. */
@@ -696,7 +694,7 @@ int main(int argc, char **argv) {
     spec->kill_at[1][i] = 1;
     spec->revive_at[3][i] = 1;
   }
-  /*run_spec(spec);*/
+  run_spec(spec);
 
   test_spec_destroy(spec);
 

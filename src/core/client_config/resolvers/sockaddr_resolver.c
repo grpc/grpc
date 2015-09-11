@@ -62,7 +62,7 @@ typedef struct {
   /** the addresses that we've 'resolved' */
   struct sockaddr_storage *addrs;
   /** the corresponding length of the addresses */
-  int *addrs_len;
+  size_t *addrs_len;
   /** how many elements in \a addrs */
   size_t num_addrs;
 
@@ -161,7 +161,8 @@ static void sockaddr_destroy(grpc_resolver *gr) {
 }
 
 #ifdef GPR_POSIX_SOCKET
-static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr, int *len) {
+static int parse_unix(grpc_uri *uri, struct sockaddr_storage *addr,
+                      size_t *len) {
   struct sockaddr_un *un = (struct sockaddr_un *)addr;
 
   un->sun_family = AF_UNIX;
@@ -193,7 +194,8 @@ static char *ipv6_get_default_authority(grpc_resolver_factory *factory,
   return ip_get_default_authority(uri);
 }
 
-static int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr, int *len) {
+static int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr,
+                      size_t *len) {
   const char *host_port = uri->path;
   char *host;
   char *port;
@@ -220,7 +222,7 @@ static int parse_ipv4(grpc_uri *uri, struct sockaddr_storage *addr, int *len) {
       gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port);
       goto done;
     }
-    in->sin_port = htons(port_num);
+    in->sin_port = htons((gpr_uint16)port_num);
   } else {
     gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
     goto done;
@@ -233,7 +235,8 @@ done:
   return result;
 }
 
-static int parse_ipv6(grpc_uri *uri, struct sockaddr_storage *addr, int *len) {
+static int parse_ipv6(grpc_uri *uri, struct sockaddr_storage *addr,
+                      size_t *len) {
   const char *host_port = uri->path;
   char *host;
   char *port;
@@ -260,7 +263,7 @@ static int parse_ipv6(grpc_uri *uri, struct sockaddr_storage *addr, int *len) {
       gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port);
       goto done;
     }
-    in6->sin6_port = htons(port_num);
+    in6->sin6_port = htons((gpr_uint16)port_num);
   } else {
     gpr_log(GPR_ERROR, "no port given for ipv6 scheme");
     goto done;
@@ -277,7 +280,7 @@ static void do_nothing(void *ignored) {}
 static grpc_resolver *sockaddr_create(
     grpc_uri *uri, const char *default_lb_policy_name,
     grpc_subchannel_factory *subchannel_factory,
-    int parse(grpc_uri *uri, struct sockaddr_storage *dst, int *len)) {
+    int parse(grpc_uri *uri, struct sockaddr_storage *dst, size_t *len)) {
   size_t i;
   int errors_found = 0; /* GPR_FALSE */
   sockaddr_resolver *r;
@@ -317,7 +320,7 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_split(path_slice, ",", &path_parts);
   r->num_addrs = path_parts.count;
   r->addrs = gpr_malloc(sizeof(struct sockaddr_storage) * r->num_addrs);
-  r->addrs_len = gpr_malloc(sizeof(int) * r->num_addrs);
+  r->addrs_len = gpr_malloc(sizeof(*r->addrs_len) * r->num_addrs);
 
   for(i = 0; i < r->num_addrs; i++) {
     grpc_uri ith_uri = *uri;

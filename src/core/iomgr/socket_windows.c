@@ -35,8 +35,12 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
+#include <winsock2.h>
+#include <mswsock.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/log_win32.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/iomgr/iocp_windows.h"
@@ -63,6 +67,24 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
    various callsites of that function, which happens to be in various
    mutex hold states, and that'd be unsafe to call them directly. */
 void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
+  /* Grab the function pointer for DisconnectEx for that specific socket.
+     It may change depending on the interface. */
+  int status;
+  GUID guid = WSAID_DISCONNECTEX;
+  LPFN_DISCONNECTEX DisconnectEx;
+  DWORD ioctl_num_bytes;
+
+  status = WSAIoctl(winsocket->socket, SIO_GET_EXTENSION_FUNCTION_POINTER,
+                    &guid, sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
+                    &ioctl_num_bytes, NULL, NULL);
+
+  if (status == 0) {
+    DisconnectEx(winsocket->socket, NULL, 0, 0);
+  } else {
+    char *utf8_message = gpr_format_message(WSAGetLastError());
+    gpr_log(GPR_ERROR, "Unable to retrieve DisconnectEx pointer : %s", utf8_message);
+    gpr_free(utf8_message);
+  }
   closesocket(winsocket->socket);
 }
 

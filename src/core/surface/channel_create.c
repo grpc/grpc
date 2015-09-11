@@ -164,7 +164,7 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   grpc_resolver *resolver;
   subchannel_factory *f;
   grpc_mdctx *mdctx = grpc_mdctx_create();
-  int n = 0;
+  size_t n = 0;
   GPR_ASSERT(!reserved);
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;

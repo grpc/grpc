@@ -168,7 +168,7 @@ typedef struct {
   grpc_iomgr_closure *pending_closures_tail;
 
   /** window available for us to send to peer */
-  gpr_uint32 outgoing_window;
+  gpr_int64 outgoing_window;
   /** window available for peer to send to us - updated after parse */
   gpr_uint32 incoming_window;
   /** how much window would we like to have for incoming_window */
@@ -280,7 +280,7 @@ struct grpc_chttp2_transport_parsing {
   gpr_uint32 goaway_last_stream_index;
   gpr_slice goaway_text;
 
-  gpr_uint64 outgoing_window_update;
+  gpr_int64 outgoing_window_update;
 
   /** pings awaiting responses */
   grpc_chttp2_outstanding_ping pings;
@@ -609,20 +609,21 @@ extern int grpc_flowctl_trace;
   else                               \
   stmt
 
-#define GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(reason, transport, context, var,      \
-                                         delta)                                \
-  if (!(grpc_flowctl_trace)) {                                                 \
-  } else {                                                                     \
-    grpc_chttp2_flowctl_trace(__FILE__, __LINE__, reason, #context, #var,      \
-                              transport->is_client, context->id, context->var, \
-                              delta);                                          \
+#define GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(reason, transport, context, var,     \
+                                         delta)                               \
+  if (!(grpc_flowctl_trace)) {                                                \
+  } else {                                                                    \
+    grpc_chttp2_flowctl_trace(__FILE__, __LINE__, reason, #context, #var,     \
+                              transport->is_client, context->id,              \
+                              (gpr_int64)(context->var), (gpr_int64)(delta)); \
   }
 
-#define GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(reason, context, var, delta)   \
-  if (!(grpc_flowctl_trace)) {                                             \
-  } else {                                                                 \
-    grpc_chttp2_flowctl_trace(__FILE__, __LINE__, reason, #context, #var,  \
-                              context->is_client, 0, context->var, delta); \
+#define GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(reason, context, var, delta)      \
+  if (!(grpc_flowctl_trace)) {                                                \
+  } else {                                                                    \
+    grpc_chttp2_flowctl_trace(__FILE__, __LINE__, reason, #context, #var,     \
+                              context->is_client, 0,                          \
+                              (gpr_int64)(context->var), (gpr_int64)(delta)); \
   }
 
 void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason,

@@ -102,7 +102,7 @@ static int is_port_available(int *port, int is_tcp) {
   /* Try binding to port */
   addr.sin_family = AF_INET;
   addr.sin_addr.s_addr = INADDR_ANY;
-  addr.sin_port = htons(*port);
+  addr.sin_port = htons((gpr_uint16)*port);
   if (bind(fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
     gpr_log(GPR_DEBUG, "bind(port=%d) failed: %s", *port, strerror(errno));
     close(fd);

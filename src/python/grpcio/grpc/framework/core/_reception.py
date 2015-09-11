@@ -51,23 +51,31 @@ _RECEPTION_FAILURE_OUTCOME = _utilities.Outcome(
     base.Outcome.Kind.RECEPTION_FAILURE, None, None)
 
 
+def _carrying_protocol_context(ticket):
+  return ticket.protocol is not None and ticket.protocol.kind in (
+      links.Protocol.Kind.INVOCATION_CONTEXT,
+      links.Protocol.Kind.SERVICER_CONTEXT,)
+
+
 class ReceptionManager(_interfaces.ReceptionManager):
   """A ReceptionManager based around a _Receiver passed to it."""
 
   def __init__(
       self, termination_manager, transmission_manager, expiration_manager,
-      ingestion_manager):
+      protocol_manager, ingestion_manager):
     """Constructor.
 
     Args:
       termination_manager: The operation's _interfaces.TerminationManager.
       transmission_manager: The operation's _interfaces.TransmissionManager.
       expiration_manager: The operation's _interfaces.ExpirationManager.
+      protocol_manager: The operation's _interfaces.ProtocolManager.
       ingestion_manager: The operation's _interfaces.IngestionManager.
     """
     self._termination_manager = termination_manager
     self._transmission_manager = transmission_manager
     self._expiration_manager = expiration_manager
+    self._protocol_manager = protocol_manager
     self._ingestion_manager = ingestion_manager
 
     self._lowest_unseen_sequence_number = 0
@@ -100,6 +108,10 @@ class ReceptionManager(_interfaces.ReceptionManager):
   def _process_one(self, ticket):
     if ticket.sequence_number == 0:
       self._ingestion_manager.set_group_and_method(ticket.group, ticket.method)
+      if _carrying_protocol_context(ticket):
+        self._protocol_manager.accept_protocol_context(ticket.protocol.value)
+      else:
+        self._protocol_manager.accept_protocol_context(None)
     if ticket.timeout is not None:
       self._expiration_manager.change_timeout(ticket.timeout)
     if ticket.termination is None:

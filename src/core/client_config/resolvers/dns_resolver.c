@@ -140,7 +140,7 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
     for (i = 0; i < addresses->naddrs; i++) {
       memset(&args, 0, sizeof(args));
       args.addr = (struct sockaddr *)(addresses->addrs[i].addr);
-      args.addr_len = addresses->addrs[i].len;
+      args.addr_len = (size_t)addresses->addrs[i].len;
       subchannels[i] = grpc_subchannel_factory_create_subchannel(
           r->subchannel_factory, &args);
     }
