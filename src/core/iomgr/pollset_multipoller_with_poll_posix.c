@@ -101,7 +101,8 @@ static void multipoll_with_poll_pollset_maybe_work(
     gpr_timespec now, int allow_synchronous_callback) {
   int timeout;
   int r;
-  size_t i, j, pfd_count, fd_count;
+  size_t i, j, fd_count;
+  nfds_t pfd_count;
   pollset_hdr *h;
   /* TODO(ctiller): inline some elements to avoid an allocation */
   grpc_fd_watcher *watchers;
