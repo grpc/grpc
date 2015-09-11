@@ -36,17 +36,17 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  s.version  = '0.11.0'
+  s.version  = '0.7.0'
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'http://www.grpc.io'
   s.license  = 'New BSD'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   # s.source = { :git => 'https://github.com/grpc/grpc.git',
-  #              :tag => 'release-0_11_0-objectivec-0.11.0' }
+  #              :tag => 'release-0_10_0-objectivec-0.6.0' }
 
-  s.ios.deployment_target = '7.1'
-  s.osx.deployment_target = '10.9'
+  s.ios.deployment_target = '6.0'
+  s.osx.deployment_target = '10.8'
   s.requires_arc = true
 
   objc_dir = 'src/objective-c'
@@ -585,6 +585,6 @@ Pod::Spec.new do |s|
 
     ss.dependency 'gRPC/GRPCClient'
     ss.dependency 'gRPC/RxLibrary'
-    ss.dependency 'Protobuf', '~> 3.0.0-alpha-4'
+    ss.dependency 'Protobuf', '~> 3.0.0-alpha-3'
   end
 end
