@@ -191,7 +191,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   grpc_arg connector_arg;
   grpc_channel_args *args_copy;
   grpc_channel_args *new_args_from_connector;
-  grpc_channel_security_connector *connector;
+  grpc_channel_security_connector *security_connector;
   grpc_mdctx *mdctx;
   grpc_resolver *resolver;
   subchannel_factory *f;
@@ -208,7 +208,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   }
 
   if (grpc_credentials_create_security_connector(
-          creds, target, args, NULL, &connector, &new_args_from_connector) !=
+          creds, target, args, NULL, &security_connector, &new_args_from_connector) !=
       GRPC_SECURITY_OK) {
     return grpc_lame_client_channel_create(
         target, GRPC_STATUS_INVALID_ARGUMENT,
@@ -216,7 +216,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   }
   mdctx = grpc_mdctx_create();
 
-  connector_arg = grpc_security_connector_to_arg(&connector->base);
+  connector_arg = grpc_security_connector_to_arg(&security_connector->base);
   args_copy = grpc_channel_args_copy_and_add(
       new_args_from_connector != NULL ? new_args_from_connector : args,
       &connector_arg, 1);
@@ -235,8 +235,8 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   gpr_ref_init(&f->refs, 1);
   grpc_mdctx_ref(mdctx);
   f->mdctx = mdctx;
-  GRPC_SECURITY_CONNECTOR_REF(&connector->base, "subchannel_factory");
-  f->security_connector = connector;
+  GRPC_SECURITY_CONNECTOR_REF(&security_connector->base, "subchannel_factory");
+  f->security_connector = security_connector;
   f->merge_args = grpc_channel_args_copy(args_copy);
   f->master = channel;
   GRPC_CHANNEL_INTERNAL_REF(channel, "subchannel_factory");
@@ -249,7 +249,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
                                    resolver);
   GRPC_RESOLVER_UNREF(resolver, "create");
   grpc_subchannel_factory_unref(&f->base);
-  GRPC_SECURITY_CONNECTOR_UNREF(&connector->base, "channel_create");
+  GRPC_SECURITY_CONNECTOR_UNREF(&security_connector->base, "channel_create");
 
   grpc_channel_args_destroy(args_copy);
   if (new_args_from_connector != NULL) {
