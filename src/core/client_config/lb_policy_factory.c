@@ -31,13 +31,17 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_PICK_FIRST_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_PICK_FIRST_H
-
 #include "src/core/client_config/lb_policy_factory.h"
 
-/** Returns a load balancing factory for the pick first policy, which picks up
- * the first subchannel from \a subchannels to succesfully connect */
-grpc_lb_policy_factory *grpc_pick_first_lb_factory_create();
+void grpc_lb_policy_factory_ref(grpc_lb_policy_factory *factory) {
+  factory->vtable->ref(factory);
+}
+void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory) {
+  factory->vtable->unref(factory);
+}
 
-#endif
+grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
+    grpc_lb_policy_factory *factory, grpc_lb_policy_args *args) {
+  if (factory == NULL) return NULL;
+  return factory->vtable->create_lb_policy(factory, args);
+}

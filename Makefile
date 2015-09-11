@@ -4051,6 +4051,8 @@ LIBGRPC_SRC = \
     src/core/client_config/connector.c \
     src/core/client_config/lb_policies/pick_first.c \
     src/core/client_config/lb_policy.c \
+    src/core/client_config/lb_policy_factory.c \
+    src/core/client_config/lb_policy_registry.c \
     src/core/client_config/resolver.c \
     src/core/client_config/resolver_factory.c \
     src/core/client_config/resolver_registry.c \
@@ -4326,6 +4328,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/client_config/connector.c \
     src/core/client_config/lb_policies/pick_first.c \
     src/core/client_config/lb_policy.c \
+    src/core/client_config/lb_policy_factory.c \
+    src/core/client_config/lb_policy_registry.c \
     src/core/client_config/resolver.c \
     src/core/client_config/resolver_factory.c \
     src/core/client_config/resolver_registry.c \
