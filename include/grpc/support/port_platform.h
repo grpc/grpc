@@ -179,6 +179,7 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
+#define GPR_MSG_IOVLEN_TYPE int
 #if TARGET_OS_IPHONE
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
