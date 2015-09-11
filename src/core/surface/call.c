@@ -533,7 +533,7 @@ static void set_encodings_accepted_by_peer(
   gpr_slice_buffer accept_encoding_parts;
 
   gpr_slice_buffer_init(&accept_encoding_parts);
-  gpr_slice_split(accept_encoding_slice, ", ", &accept_encoding_parts);
+  gpr_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
 
   /* No need to zero call->encodings_accepted_by_peer: grpc_call_create already
    * zeroes the whole grpc_call */
