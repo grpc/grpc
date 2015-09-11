@@ -61,6 +61,12 @@
 #define SENDMSG_FLAGS 0
 #endif
 
+#ifdef GPR_MSG_IOVLEN_TYPE
+typedef GPR_MSG_IOVLEN_TYPE msg_iovlen_type;
+#else
+typedef size_t msg_iovlen_type;
+#endif
+
 int grpc_tcp_trace = 0;
 
 typedef struct {
@@ -68,7 +74,7 @@ typedef struct {
   grpc_fd *em_fd;
   int fd;
   int finished_edge;
-  size_t iov_size; /* Number of slices to allocate per read attempt */
+  msg_iovlen_type iov_size; /* Number of slices to allocate per read attempt */
   size_t slice_size;
   gpr_refcount refcount;
 
@@ -265,7 +271,7 @@ static grpc_endpoint_op_status tcp_read(grpc_endpoint *ep,
 static grpc_endpoint_op_status tcp_flush(grpc_tcp *tcp) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
-  size_t iov_size;
+  msg_iovlen_type iov_size;
   ssize_t sent_length;
   size_t sending_length;
   size_t trailing;
