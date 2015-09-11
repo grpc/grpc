@@ -91,9 +91,6 @@ Which internally invokes the proto-compiler as:
 $ protoc -I ../../protos --python_out=. --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_python_plugin` ../../protos/helloworld.proto
 ```
 
-Optionally, you can just skip the code generation step as the generated python module has already
-been generated for you (helloworld_pb2.py).
-
 ### The client
 
 Client-side code can be found in [greeter_client.py](greeter_client.py).

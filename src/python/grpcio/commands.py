@@ -64,7 +64,7 @@ class SphinxDocumentation(setuptools.Command):
     import sphinx.apidoc
     metadata = self.distribution.metadata
     src_dir = os.path.join(
-        os.getcwd(), self.distribution.package_dir['grpc'])
+        os.getcwd(), self.distribution.package_dir[''], 'grpc')
     sys.path.append(src_dir)
     sphinx.apidoc.main([
         '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
