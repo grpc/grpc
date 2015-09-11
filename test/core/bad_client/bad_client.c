@@ -145,6 +145,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
       gpr_event_wait(&a.done_write, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
+    grpc_endpoint_shutdown(sfd.client);
     grpc_endpoint_destroy(sfd.client);
     sfd.client = NULL;
   }
@@ -153,6 +154,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   /* Shutdown */
   if (sfd.client) {
+    grpc_endpoint_shutdown(sfd.client);
     grpc_endpoint_destroy(sfd.client);
   }
   grpc_server_shutdown_and_notify(a.server, a.cq, NULL);

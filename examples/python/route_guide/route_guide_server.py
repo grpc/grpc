@@ -65,7 +65,7 @@ def get_distance(start, end):
   R = 6371000; # metres
   return R * c;
 
-class RouteGuideServicer(route_guide_pb2.EarlyAdopterRouteGuideServicer):
+class RouteGuideServicer(route_guide_pb2.BetaRouteGuideServicer):
   """Provides methods that implement functionality of route guide server."""
 
   def __init__(self):
@@ -121,8 +121,8 @@ class RouteGuideServicer(route_guide_pb2.EarlyAdopterRouteGuideServicer):
 
 
 def serve():
-  server = route_guide_pb2.early_adopter_create_RouteGuide_server(
-      RouteGuideServicer(), 50051, None, None)
+  server = route_guide_pb2.beta_create_RouteGuide_server(RouteGuideServicer())
+  server.add_insecure_port('[::]:50051')
   server.start()
   try:
     while True:

@@ -69,7 +69,7 @@ void gpr_slice_buffer_destroy(gpr_slice_buffer *sb) {
   }
 }
 
-gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, unsigned n) {
+gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, size_t n) {
   gpr_slice *back;
   gpr_uint8 *out;
 

@@ -244,7 +244,7 @@ static void zookeeper_dns_resolved(void *arg,
 }
 
 /** Parses JSON format address of a zookeeper node */
-static char *zookeeper_parse_address(const char *value, int value_len) {
+static char *zookeeper_parse_address(const char *value, size_t value_len) {
   grpc_json *json;
   grpc_json *cur;
   const char *host;
@@ -294,7 +294,7 @@ static void zookeeper_get_children_node_completion(int rc, const char *value,
     return;
   }
 
-  address = zookeeper_parse_address(value, value_len);
+  address = zookeeper_parse_address(value, (size_t)value_len);
   if (address != NULL) {
     /** Further resolves address by DNS */
     grpc_resolve_address(address, NULL, zookeeper_dns_resolved, r);
@@ -364,7 +364,7 @@ static void zookeeper_get_node_completion(int rc, const char *value,
 
   /** If zookeeper node of path r->name does not have address
       (i.e. service node), get its children */
-  address = zookeeper_parse_address(value, value_len);
+  address = zookeeper_parse_address(value, (size_t)value_len);
   if (address != NULL) {
     r->resolved_addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
     r->resolved_addrs->addrs = NULL;

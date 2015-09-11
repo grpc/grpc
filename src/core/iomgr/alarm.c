@@ -83,7 +83,7 @@ static gpr_timespec compute_min_deadline(shard_type *shard) {
 }
 
 void grpc_alarm_list_init(gpr_timespec now) {
-  int i;
+  gpr_uint32 i;
 
   gpr_mu_init(&g_mu);
   gpr_mu_init(&g_checker_mu);
@@ -123,13 +123,13 @@ static size_t shard_idx(const grpc_alarm *info) {
 }
 
 static double ts_to_dbl(gpr_timespec ts) {
-  return ts.tv_sec + 1e-9 * ts.tv_nsec;
+  return (double)ts.tv_sec + 1e-9 * ts.tv_nsec;
 }
 
 static gpr_timespec dbl_to_ts(double d) {
   gpr_timespec ts;
-  ts.tv_sec = d;
-  ts.tv_nsec = 1e9 * (d - ts.tv_sec);
+  ts.tv_sec = (time_t)d;
+  ts.tv_nsec = (int)(1e9 * (d - (double)ts.tv_sec));
   ts.clock_type = GPR_TIMESPAN;
   return ts;
 }
@@ -145,7 +145,7 @@ static void list_remove(grpc_alarm *alarm) {
   alarm->prev->next = alarm->next;
 }
 
-static void swap_adjacent_shards_in_queue(size_t first_shard_queue_index) {
+static void swap_adjacent_shards_in_queue(gpr_uint32 first_shard_queue_index) {
   shard_type *temp;
   temp = g_shard_queue[first_shard_queue_index];
   g_shard_queue[first_shard_queue_index] =
@@ -355,7 +355,7 @@ static int run_some_expired_alarms(gpr_mu *drop_mu, gpr_timespec now,
     gpr_mu_lock(drop_mu);
   }
 
-  return n;
+  return (int)n;
 }
 
 int grpc_alarm_check(gpr_mu *drop_mu, gpr_timespec now, gpr_timespec *next) {

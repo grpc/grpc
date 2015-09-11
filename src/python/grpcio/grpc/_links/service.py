@@ -37,6 +37,7 @@ import time
 
 from grpc._adapter import _intermediary_low
 from grpc._links import _constants
+from grpc.beta import interfaces as beta_interfaces
 from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import relay
 from grpc.framework.interfaces.links import links
@@ -89,12 +90,34 @@ class _LowWrite(enum.Enum):
   CLOSED = 'CLOSED'
 
 
+class _Context(beta_interfaces.GRPCServicerContext):
+
+  def __init__(self, call):
+    self._lock = threading.Lock()
+    self._call = call
+    self._disable_next_compression = False
+
+  def peer(self):
+    with self._lock:
+      return self._call.peer()
+
+  def disable_next_response_compression(self):
+    with self._lock:
+      self._disable_next_compression = True
+
+  def next_compression_disabled(self):
+    with self._lock:
+      disabled = self._disable_next_compression
+      self._disable_next_compression = False
+      return disabled
+
+
 class _RPCState(object):
 
   def __init__(
       self, request_deserializer, response_serializer, sequence_number, read,
       early_read, allowance, high_write, low_write, premetadataed,
-      terminal_metadata, code, message, due):
+      terminal_metadata, code, message, due, context):
     self.request_deserializer = request_deserializer
     self.response_serializer = response_serializer
     self.sequence_number = sequence_number
@@ -110,6 +133,7 @@ class _RPCState(object):
     self.code = code
     self.message = message
     self.due = due
+    self.context = context
 
 
 def _no_longer_due(kind, rpc_state, key, rpc_states):
@@ -163,14 +187,16 @@ class _Kernel(object):
         (group, method), _IDENTITY)
 
     call.read(call)
+    context = _Context(call)
     self._rpc_states[call] = _RPCState(
         request_deserializer, response_serializer, 1, _Read.READING, None, 1,
         _HighWrite.OPEN, _LowWrite.OPEN, False, None, None, None,
-        set((_READ, _FINISH,)))
+        set((_READ, _FINISH,)), context)
+    protocol = links.Protocol(links.Protocol.Kind.SERVICER_CONTEXT, context)
     ticket = links.Ticket(
         call, 0, group, method, links.Ticket.Subscription.FULL,
         service_acceptance.deadline - time.time(), None, event.metadata, None,
-        None, None, None, None, 'TODO: Service Context Object!')
+        None, None, None, None, protocol)
     self._relay.add_value(ticket)
 
   def _on_read_event(self, event):
@@ -311,7 +337,12 @@ class _Kernel(object):
           self._relay.add_value(early_read_ticket)
 
       if ticket.payload is not None:
-        call.write(rpc_state.response_serializer(ticket.payload), call)
+        disable_compression = rpc_state.context.next_compression_disabled()
+        if disable_compression:
+          flags = _intermediary_low.WriteFlags.WRITE_NO_COMPRESS
+        else:
+          flags = 0
+        call.write(rpc_state.response_serializer(ticket.payload), call, flags)
         rpc_state.due.add(_WRITE)
         rpc_state.low_write = _LowWrite.ACTIVE
 

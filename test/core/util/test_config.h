@@ -54,15 +54,17 @@ extern double g_fixture_slowdown_factor;
   (GRPC_TEST_SLOWDOWN_BUILD_FACTOR * GRPC_TEST_SLOWDOWN_MACHINE_FACTOR * \
    g_fixture_slowdown_factor)
 
-#define GRPC_TIMEOUT_SECONDS_TO_DEADLINE(x)                                \
-  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),                               \
-               gpr_time_from_millis(GRPC_TEST_SLOWDOWN_FACTOR * 1e3 * (x), \
-                                    GPR_TIMESPAN))
+#define GRPC_TIMEOUT_SECONDS_TO_DEADLINE(x)                               \
+  gpr_time_add(                                                           \
+      gpr_now(GPR_CLOCK_MONOTONIC),                                       \
+      gpr_time_from_millis((long)(GRPC_TEST_SLOWDOWN_FACTOR * 1e3 * (x)), \
+                           GPR_TIMESPAN))
 
-#define GRPC_TIMEOUT_MILLIS_TO_DEADLINE(x)                                 \
-  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),                               \
-               gpr_time_from_micros(GRPC_TEST_SLOWDOWN_FACTOR * 1e3 * (x), \
-                                    GPR_TIMESPAN))
+#define GRPC_TIMEOUT_MILLIS_TO_DEADLINE(x)                                \
+  gpr_time_add(                                                           \
+      gpr_now(GPR_CLOCK_MONOTONIC),                                       \
+      gpr_time_from_micros((long)(GRPC_TEST_SLOWDOWN_FACTOR * 1e3 * (x)), \
+                           GPR_TIMESPAN))
 
 #ifndef GRPC_TEST_CUSTOM_PICK_PORT
 #define GRPC_TEST_PICK_PORT

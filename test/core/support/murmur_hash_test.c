@@ -48,7 +48,7 @@ static void verification_test(hash_func hash, gpr_uint32 expected) {
   gpr_uint8 key[256];
   gpr_uint32 hashes[256];
   gpr_uint32 final = 0;
-  int i;
+  size_t i;
 
   memset(key, 0, sizeof(key));
   memset(hashes, 0, sizeof(hashes));
@@ -57,8 +57,8 @@ static void verification_test(hash_func hash, gpr_uint32 expected) {
      the seed */
 
   for (i = 0; i < 256; i++) {
-    key[i] = (uint8_t)i;
-    hashes[i] = hash(key, i, 256 - i);
+    key[i] = (gpr_uint8)i;
+    hashes[i] = hash(key, i, (gpr_uint32)(256u - i));
   }
 
   /* Then hash the result array */

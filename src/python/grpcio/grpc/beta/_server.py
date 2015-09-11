@@ -72,7 +72,7 @@ def _disassemble(grpc_link, end_link, pool, event, grace):
   event.set()
 
 
-class Server(object):
+class Server(interfaces.Server):
 
   def __init__(self, grpc_link, end_link, pool):
     self._grpc_link = grpc_link
@@ -82,17 +82,17 @@ class Server(object):
   def add_insecure_port(self, address):
     return self._grpc_link.add_port(address, None)
 
-  def add_secure_port(self, address, intermediary_low_server_credentials):
+  def add_secure_port(self, address, server_credentials):
     return self._grpc_link.add_port(
-        address, intermediary_low_server_credentials)
+        address, server_credentials._intermediary_low_credentials)  # pylint: disable=protected-access
 
-  def start(self):
+  def _start(self):
     self._grpc_link.join_link(self._end_link)
     self._end_link.join_link(self._grpc_link)
     self._grpc_link.start()
     self._end_link.start()
 
-  def stop(self, grace):
+  def _stop(self, grace):
     stop_event = threading.Event()
     if 0 < grace:
       disassembly_thread = threading.Thread(
@@ -104,6 +104,20 @@ class Server(object):
     else:
       _disassemble(self._grpc_link, self._end_link, self._pool, stop_event, 0)
       return stop_event
+
+  def start(self):
+    self._start()
+
+  def stop(self, grace):
+    return self._stop(grace)
+
+  def __enter__(self):
+    self._start()
+    return self
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    self._stop(0).wait()
+    return False
 
 
 def server(

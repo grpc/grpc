@@ -496,29 +496,28 @@ static void round_robin_factory_ref(grpc_lb_policy_factory *factory) {}
 static void round_robin_factory_unref(grpc_lb_policy_factory *factory) {}
 
 static grpc_lb_policy *create_round_robin(grpc_lb_policy_factory *factory,
-                                         grpc_subchannel **subchannels,
-                                         size_t num_subchannels) {
+                                          grpc_lb_policy_args *args) {
   size_t i;
   round_robin_lb_policy *p = gpr_malloc(sizeof(*p));
-  GPR_ASSERT(num_subchannels);
+  GPR_ASSERT(args->num_subchannels > 0);
   memset(p, 0, sizeof(*p));
   grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable);
-  p->subchannels = gpr_malloc(sizeof(grpc_subchannel *) * num_subchannels);
-  p->num_subchannels = num_subchannels;
+  p->subchannels = gpr_malloc(sizeof(grpc_subchannel *) * args->num_subchannels);
+  p->num_subchannels = args->num_subchannels;
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");
-  memcpy(p->subchannels, subchannels,
-         sizeof(grpc_subchannel *) * num_subchannels);
+  memcpy(p->subchannels, args->subchannels,
+         sizeof(grpc_subchannel *) * args->num_subchannels);
 
   gpr_mu_init(&p->mu);
   p->connectivity_changed_cbs =
-      gpr_malloc(sizeof(grpc_iomgr_closure) * num_subchannels);
+      gpr_malloc(sizeof(grpc_iomgr_closure) * args->num_subchannels);
   p->subchannel_connectivity =
-      gpr_malloc(sizeof(grpc_connectivity_state) * num_subchannels);
+      gpr_malloc(sizeof(grpc_connectivity_state) * args->num_subchannels);
 
   p->cb_args =
-      gpr_malloc(sizeof(connectivity_changed_cb_arg) * num_subchannels);
-  for(i = 0; i < num_subchannels; i++) {
+      gpr_malloc(sizeof(connectivity_changed_cb_arg) * args->num_subchannels);
+  for(i = 0; i < args->num_subchannels; i++) {
     p->cb_args[i].subchannel_idx = i;
     p->cb_args[i].p = p;
     grpc_iomgr_closure_init(&p->connectivity_changed_cbs[i],
@@ -532,9 +531,9 @@ static grpc_lb_policy *create_round_robin(grpc_lb_policy_factory *factory,
   p->ready_list_last_pick = &p->ready_list;
 
   p->subchannel_index_to_readylist_node =
-      gpr_malloc(sizeof(grpc_subchannel *) * num_subchannels);
+      gpr_malloc(sizeof(grpc_subchannel *) * args->num_subchannels);
   memset(p->subchannel_index_to_readylist_node, 0,
-         sizeof(grpc_subchannel *) * num_subchannels);
+         sizeof(grpc_subchannel *) * args->num_subchannels);
   return &p->base;
 }
 
