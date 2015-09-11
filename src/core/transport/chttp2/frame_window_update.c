@@ -48,14 +48,14 @@ gpr_slice grpc_chttp2_window_update_create(gpr_uint32 id,
   *p++ = 4;
   *p++ = GRPC_CHTTP2_FRAME_WINDOW_UPDATE;
   *p++ = 0;
-  *p++ = id >> 24;
-  *p++ = id >> 16;
-  *p++ = id >> 8;
-  *p++ = id;
-  *p++ = window_update >> 24;
-  *p++ = window_update >> 16;
-  *p++ = window_update >> 8;
-  *p++ = window_update;
+  *p++ = (gpr_uint8)(id >> 24);
+  *p++ = (gpr_uint8)(id >> 16);
+  *p++ = (gpr_uint8)(id >> 8);
+  *p++ = (gpr_uint8)(id);
+  *p++ = (gpr_uint8)(window_update >> 24);
+  *p++ = (gpr_uint8)(window_update >> 16);
+  *p++ = (gpr_uint8)(window_update >> 8);
+  *p++ = (gpr_uint8)(window_update);
 
   return slice;
 }

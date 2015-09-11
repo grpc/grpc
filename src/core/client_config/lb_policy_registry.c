@@ -31,58 +31,58 @@
  *
  */
 
-#include "src/core/support/murmur_hash.h"
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-#include "test/core/util/test_config.h"
+#include "src/core/client_config/lb_policy_registry.h"
 
 #include <string.h>
 
-typedef gpr_uint32 (*hash_func)(const void *key, size_t len, gpr_uint32 seed);
+#define MAX_POLICIES 10
 
-/* From smhasher:
-   This should hopefully be a thorough and uambiguous test of whether a hash
-   is correctly implemented on a given platform */
+static grpc_lb_policy_factory *g_all_of_the_lb_policies[MAX_POLICIES];
+static int g_number_of_lb_policies = 0;
 
-static void verification_test(hash_func hash, gpr_uint32 expected) {
-  gpr_uint8 key[256];
-  gpr_uint32 hashes[256];
-  gpr_uint32 final = 0;
-  size_t i;
+static grpc_lb_policy_factory *g_default_lb_policy_factory;
 
-  memset(key, 0, sizeof(key));
-  memset(hashes, 0, sizeof(hashes));
+void grpc_lb_policy_registry_init(grpc_lb_policy_factory *default_factory) {
+  g_number_of_lb_policies = 0;
+  g_default_lb_policy_factory = default_factory;
+}
 
-  /* Hash keys of the form {0}, {0,1}, {0,1,2}... up to N=255,using 256-N as
-     the seed */
-
-  for (i = 0; i < 256; i++) {
-    key[i] = (gpr_uint8)i;
-    hashes[i] = hash(key, i, (gpr_uint32)(256u - i));
-  }
-
-  /* Then hash the result array */
-
-  final = hash(hashes, sizeof(hashes), 0);
-
-  /* The first four bytes of that hash, interpreted as a little-endian integer,
-     is our
-     verification value */
-
-  if (expected != final) {
-    gpr_log(GPR_INFO, "Verification value 0x%08X : Failed! (Expected 0x%08x)",
-            final, expected);
-    abort();
-  } else {
-    gpr_log(GPR_INFO, "Verification value 0x%08X : Passed!", final);
+void grpc_lb_policy_registry_shutdown(void) {
+  int i;
+  for (i = 0; i < g_number_of_lb_policies; i++) {
+    grpc_lb_policy_factory_unref(g_all_of_the_lb_policies[i]);
   }
 }
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  /* basic tests to verify that things don't crash */
-  gpr_murmur_hash3("", 0, 0);
-  gpr_murmur_hash3("xyz", 3, 0);
-  verification_test(gpr_murmur_hash3, 0xB0F57EE3);
-  return 0;
+void grpc_register_lb_policy(grpc_lb_policy_factory *factory) {
+  int i;
+  for (i = 0; i < g_number_of_lb_policies; i++) {
+    GPR_ASSERT(0 != strcmp(factory->vtable->name,
+                           g_all_of_the_lb_policies[i]->vtable->name));
+  }
+  GPR_ASSERT(g_number_of_lb_policies != MAX_POLICIES);
+  grpc_lb_policy_factory_ref(factory);
+  g_all_of_the_lb_policies[g_number_of_lb_policies++] = factory;
+}
+
+static grpc_lb_policy_factory *lookup_factory(const char* name) {
+  int i;
+
+  if (name == NULL) return NULL;
+
+  for (i = 0; i < g_number_of_lb_policies; i++) {
+    if (0 == strcmp(name, g_all_of_the_lb_policies[i]->vtable->name)) {
+      return g_all_of_the_lb_policies[i];
+    }
+  }
+
+  return NULL;
+}
+
+grpc_lb_policy *grpc_lb_policy_create(const char *name,
+                                      grpc_lb_policy_args *args) {
+  grpc_lb_policy_factory *factory = lookup_factory(name);
+  grpc_lb_policy *lb_policy = grpc_lb_policy_factory_create_lb_policy(
+      factory, args);
+  return lb_policy;
 }

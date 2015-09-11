@@ -197,7 +197,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   subchannel_factory *f;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
-  int n = 0;
+  size_t n = 0;
 
   GPR_ASSERT(reserved == NULL);
   if (grpc_find_security_connector_in_args(args) != NULL) {

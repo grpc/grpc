@@ -177,7 +177,7 @@ typedef struct test_thread_options {
   gpr_event on_phase1_done;
   gpr_event *phase2;
   gpr_event on_finished;
-  int events_triggered;
+  size_t events_triggered;
   int id;
   grpc_completion_queue *cc;
 } test_thread_options;
@@ -251,14 +251,14 @@ static void consumer_thread(void *arg) {
   }
 }
 
-static void test_threading(int producers, int consumers) {
+static void test_threading(size_t producers, size_t consumers) {
   test_thread_options *options =
       gpr_malloc((producers + consumers) * sizeof(test_thread_options));
   gpr_event phase1 = GPR_EVENT_INIT;
   gpr_event phase2 = GPR_EVENT_INIT;
   grpc_completion_queue *cc = grpc_completion_queue_create(NULL);
-  int i;
-  int total_consumed = 0;
+  size_t i;
+  size_t total_consumed = 0;
   static int optid = 101;
 
   gpr_log(GPR_INFO, "%s: %d producers, %d consumers", "test_threading",
