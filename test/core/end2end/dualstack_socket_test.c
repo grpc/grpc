@@ -40,6 +40,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/support/string.h"
+#include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 
 #include "test/core/end2end/cq_verifier.h"
@@ -263,6 +264,15 @@ void test_connect(const char *server_host, const char *client_host, int port,
   gpr_free(details);
 }
 
+int external_dns_works(const char *host) {
+  grpc_resolved_addresses *res = grpc_blocking_resolve_address(host, "80");
+  if (res != NULL) {
+    gpr_free(res);
+    return 1;
+  }
+  return 0;
+}
+
 int main(int argc, char **argv) {
   int do_ipv6 = 1;
 
@@ -307,6 +317,25 @@ int main(int argc, char **argv) {
       test_connect("::1", "ipv6:[::1]", 0, 1);
       test_connect("::1", "ipv4:127.0.0.1", 0, 0);
       test_connect("127.0.0.1", "ipv6:[::1]", 0, 0);
+    }
+
+    if (!external_dns_works("loopback46.unittest.grpc.io")) {
+      gpr_log(GPR_INFO, "Skipping tests that depend on *.unittest.grpc.io.");
+    } else {
+      test_connect("loopback46.unittest.grpc.io",
+                   "loopback4.unittest.grpc.io", 0, 1);
+      test_connect("loopback4.unittest.grpc.io",
+                   "loopback46.unittest.grpc.io", 0, 1);
+      if (do_ipv6) {
+        test_connect("loopback46.unittest.grpc.io",
+                     "loopback6.unittest.grpc.io", 0, 1);
+        test_connect("loopback6.unittest.grpc.io",
+                     "loopback46.unittest.grpc.io", 0, 1);
+        test_connect("loopback4.unittest.grpc.io",
+                     "loopback6.unittest.grpc.io", 0, 0);
+        test_connect("loopback6.unittest.grpc.io",
+                     "loopback4.unittest.grpc.io", 0, 0);
+      }
     }
   }
 
