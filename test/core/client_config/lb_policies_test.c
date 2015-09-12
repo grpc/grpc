@@ -382,7 +382,7 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
 
 static void assert_channel_connectivity(
     grpc_channel *ch, size_t num_accepted_conn_states,
-    grpc_connectivity_state accepted_conn_states, ...) {
+    grpc_connectivity_state accepted_conn_state, ...) {
   size_t i;
   grpc_channel_stack *client_stack;
   grpc_channel_element *client_channel_filter;
@@ -394,23 +394,23 @@ static void assert_channel_connectivity(
 
   actual_conn_state = grpc_client_channel_check_connectivity_state(
       client_channel_filter, 0 /* don't try to connect */);
-  va_start(ap, accepted_conn_states);
+  va_start(ap, accepted_conn_state);
   for (i = 0; i < num_accepted_conn_states; i++) {
-    va_arg(ap, grpc_connectivity_state);
-    if (actual_conn_state == accepted_conn_states) {
+    if (actual_conn_state == accepted_conn_state) {
       break;
     }
+    accepted_conn_state = va_arg(ap, grpc_connectivity_state);
   }
   va_end(ap);
   if (i == num_accepted_conn_states) {
     char **accepted_strs =
         gpr_malloc(sizeof(char *) * num_accepted_conn_states);
     char *accepted_str_joined;
-    va_start(ap, accepted_conn_states);
+    va_start(ap, accepted_conn_state);
     for (i = 0; i < num_accepted_conn_states; i++) {
-      va_arg(ap, grpc_connectivity_state);
-      GPR_ASSERT(gpr_asprintf(&accepted_strs[i], "%d", accepted_conn_states) >
+      GPR_ASSERT(gpr_asprintf(&accepted_strs[i], "%d", accepted_conn_state) >
                  0);
+      accepted_conn_state = va_arg(ap, grpc_connectivity_state);
     }
     va_end(ap);
     accepted_str_joined = gpr_strjoin_sep((const char **)accepted_strs,
