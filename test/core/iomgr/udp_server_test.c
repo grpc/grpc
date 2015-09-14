@@ -49,7 +49,7 @@ static grpc_pollset g_pollset;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
 
-static void on_read(int fd, grpc_udp_server_cb new_transport_cb, void *cb_arg) {
+static void on_read(int fd) {
   char read_buffer[512];
   ssize_t byte_count;
 
