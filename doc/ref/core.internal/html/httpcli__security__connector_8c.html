@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -86,12 +86,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
 <div class="title">httpcli_security_connector.c File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="httpcli__security__connector_8h_source.html">src/core/httpcli/httpcli_security_connector.h</a>&quot;</code><br/>
+<div class="textblock"><code>#include &quot;<a class="el" href="httpcli_8h_source.html">src/core/httpcli/httpcli.h</a>&quot;</code><br/>
 <code>#include &lt;<a class="el" href="string_8h_source.html">string.h</a>&gt;</code><br/>
 <code>#include &quot;<a class="el" href="secure__transport__setup_8h_source.html">src/core/security/secure_transport_setup.h</a>&quot;</code><br/>
 <code>#include &lt;<a class="el" href="alloc_8h_source.html">grpc/support/alloc.h</a>&gt;</code><br/>
@@ -103,45 +103,21 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__httpcli__ssl__channel__security__connector.html">grpc_httpcli_ssl_channel_security_connector</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structon__done__closure.html">on_done_closure</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:a2738fc49f8c3103a4e43ef68cd9b15de"><td class="memItemLeft" align="right" valign="top"><a class="el" href="security__connector_8h.html#a7a71a61785f1c3b13704bb735d2645f9">grpc_security_status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="httpcli__security__connector_8c.html#a2738fc49f8c3103a4e43ef68cd9b15de">grpc_httpcli_ssl_channel_security_connector_create</a> (const unsigned char *pem_root_certs, size_t pem_root_certs_size, const char *secure_peer_name, <a class="el" href="structgrpc__channel__security__connector.html">grpc_channel_security_connector</a> **sc)</td></tr>
-<tr class="separator:a2738fc49f8c3103a4e43ef68cd9b15de"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:a7bd9903ed0a51ba35bd81d71c8fb635a"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="structgrpc__httpcli__handshaker.html">grpc_httpcli_handshaker</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="httpcli__security__connector_8c.html#a7bd9903ed0a51ba35bd81d71c8fb635a">grpc_httpcli_ssl</a> = {&quot;https&quot;, ssl_handshake}</td></tr>
+<tr class="separator:a7bd9903ed0a51ba35bd81d71c8fb635a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a2738fc49f8c3103a4e43ef68cd9b15de"></a>
+<h2 class="groupheader">Variable Documentation</h2>
+<a class="anchor" id="a7bd9903ed0a51ba35bd81d71c8fb635a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="security__connector_8h.html#a7a71a61785f1c3b13704bb735d2645f9">grpc_security_status</a> grpc_httpcli_ssl_channel_security_connector_create </td>
-          <td>(</td>
-          <td class="paramtype">const unsigned char *&#160;</td>
-          <td class="paramname"><em>pem_root_certs</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>pem_root_certs_size</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const char *&#160;</td>
-          <td class="paramname"><em>secure_peer_name</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structgrpc__channel__security__connector.html">grpc_channel_security_connector</a> **&#160;</td>
-          <td class="paramname"><em>sc</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
+          <td class="memname">const <a class="el" href="structgrpc__httpcli__handshaker.html">grpc_httpcli_handshaker</a> grpc_httpcli_ssl = {&quot;https&quot;, ssl_handshake}</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -151,7 +127,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

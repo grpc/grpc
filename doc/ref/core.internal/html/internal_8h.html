@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -139,6 +139,10 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
+<tr class="memitem:a49ad637834088fab108d15da9a324017"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="internal_8h.html#a49ad637834088fab108d15da9a324017">GRPC_CHTTP2_WRITING_DATA</a>&#160;&#160;&#160;1</td></tr>
+<tr class="separator:a49ad637834088fab108d15da9a324017"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adad37115630a9064e61f6ceb4a6e7e65"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="internal_8h.html#adad37115630a9064e61f6ceb4a6e7e65">GRPC_CHTTP2_WRITING_WINDOW</a>&#160;&#160;&#160;2</td></tr>
+<tr class="separator:adad37115630a9064e61f6ceb4a6e7e65"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4c51a6034ac0f34ecffc582732ad68a4"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="internal_8h.html#a4c51a6034ac0f34ecffc582732ad68a4">GRPC_CHTTP2_CLIENT_CONNECT_STRING</a>&#160;&#160;&#160;&quot;PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n&quot;</td></tr>
 <tr class="separator:a4c51a6034ac0f34ecffc582732ad68a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5fd119b62e9b3648496dbb7c2f2a0025"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="internal_8h.html#a5fd119b62e9b3648496dbb7c2f2a0025">GRPC_CHTTP2_CLIENT_CONNECT_STRLEN</a>&#160;&#160;&#160;(sizeof(<a class="el" href="internal_8h.html#a4c51a6034ac0f34ecffc582732ad68a4">GRPC_CHTTP2_CLIENT_CONNECT_STRING</a>) - 1)</td></tr>
@@ -254,8 +258,8 @@ Functions</h2></td></tr>
 <tr class="separator:a154399c46a1f7b901491acb4c04d19d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8fa6e3087336e9d487f3987148cc3930"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="internal_8h.html#a8fa6e3087336e9d487f3987148cc3930">grpc_chttp2_perform_writes</a> (<a class="el" href="structgrpc__chttp2__transport__writing.html">grpc_chttp2_transport_writing</a> *transport_writing, <a class="el" href="structgrpc__endpoint.html">grpc_endpoint</a> *endpoint)</td></tr>
 <tr class="separator:a8fa6e3087336e9d487f3987148cc3930"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a83baade3ee315270b6d34fc6fbecb30c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="internal_8h.html#a83baade3ee315270b6d34fc6fbecb30c">grpc_chttp2_terminate_writing</a> (<a class="el" href="structgrpc__chttp2__transport__writing.html">grpc_chttp2_transport_writing</a> *transport_writing, int success)</td></tr>
-<tr class="separator:a83baade3ee315270b6d34fc6fbecb30c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7bac079485f968780b4ead6561fc371e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="internal_8h.html#a7bac079485f968780b4ead6561fc371e">grpc_chttp2_terminate_writing</a> (void *transport_writing, int success)</td></tr>
+<tr class="separator:a7bac079485f968780b4ead6561fc371e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a309e83a79f87a133dee17a1a7dd592b9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="internal_8h.html#a309e83a79f87a133dee17a1a7dd592b9">grpc_chttp2_cleanup_writing</a> (<a class="el" href="structgrpc__chttp2__transport__global.html">grpc_chttp2_transport_global</a> *global, <a class="el" href="structgrpc__chttp2__transport__writing.html">grpc_chttp2_transport_writing</a> *writing)</td></tr>
 <tr class="separator:a309e83a79f87a133dee17a1a7dd592b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae444a83dc73e9a658e7df625a04b101a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="internal_8h.html#ae444a83dc73e9a658e7df625a04b101a">grpc_chttp2_prepare_to_read</a> (<a class="el" href="structgrpc__chttp2__transport__global.html">grpc_chttp2_transport_global</a> *global, <a class="el" href="structgrpc__chttp2__transport__parsing.html">grpc_chttp2_transport_parsing</a> *parsing)</td></tr>
@@ -412,7 +416,7 @@ Variables</h2></td></tr>
 <div class="line">                              delta);                                          \</div>
 <div class="line">  }</div>
 <div class="ttc" id="internal_8h_html_afd0f83d780e8ddeac885163c45aab0a8"><div class="ttname"><a href="internal_8h.html#afd0f83d780e8ddeac885163c45aab0a8">grpc_flowctl_trace</a></div><div class="ttdeci">int grpc_flowctl_trace</div><div class="ttdef"><b>Definition:</b> chttp2_transport.c:61</div></div>
-<div class="ttc" id="internal_8h_html_ac054ecf6e743093e5527787063f3acaa"><div class="ttname"><a href="internal_8h.html#ac054ecf6e743093e5527787063f3acaa">grpc_chttp2_flowctl_trace</a></div><div class="ttdeci">void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason, const char *context, const char *var, int is_client, gpr_uint32 stream_id, gpr_int64 current_value, gpr_int64 delta)</div><div class="ttdef"><b>Definition:</b> chttp2_transport.c:1069</div></div>
+<div class="ttc" id="internal_8h_html_ac054ecf6e743093e5527787063f3acaa"><div class="ttname"><a href="internal_8h.html#ac054ecf6e743093e5527787063f3acaa">grpc_chttp2_flowctl_trace</a></div><div class="ttdeci">void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason, const char *context, const char *var, int is_client, gpr_uint32 stream_id, gpr_int64 current_value, gpr_int64 delta)</div><div class="ttdef"><b>Definition:</b> chttp2_transport.c:1233</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -457,7 +461,7 @@ Variables</h2></td></tr>
 <div class="line">                              context-&gt;is_client, 0, context-&gt;var, delta); \</div>
 <div class="line">  }</div>
 <div class="ttc" id="internal_8h_html_afd0f83d780e8ddeac885163c45aab0a8"><div class="ttname"><a href="internal_8h.html#afd0f83d780e8ddeac885163c45aab0a8">grpc_flowctl_trace</a></div><div class="ttdeci">int grpc_flowctl_trace</div><div class="ttdef"><b>Definition:</b> chttp2_transport.c:61</div></div>
-<div class="ttc" id="internal_8h_html_ac054ecf6e743093e5527787063f3acaa"><div class="ttname"><a href="internal_8h.html#ac054ecf6e743093e5527787063f3acaa">grpc_chttp2_flowctl_trace</a></div><div class="ttdeci">void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason, const char *context, const char *var, int is_client, gpr_uint32 stream_id, gpr_int64 current_value, gpr_int64 delta)</div><div class="ttdef"><b>Definition:</b> chttp2_transport.c:1069</div></div>
+<div class="ttc" id="internal_8h_html_ac054ecf6e743093e5527787063f3acaa"><div class="ttname"><a href="internal_8h.html#ac054ecf6e743093e5527787063f3acaa">grpc_chttp2_flowctl_trace</a></div><div class="ttdeci">void grpc_chttp2_flowctl_trace(const char *file, int line, const char *reason, const char *context, const char *var, int is_client, gpr_uint32 stream_id, gpr_int64 current_value, gpr_int64 delta)</div><div class="ttdef"><b>Definition:</b> chttp2_transport.c:1233</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -480,6 +484,30 @@ Variables</h2></td></tr>
 <div class="line">  stmt</div>
 <div class="ttc" id="internal_8h_html_a6bb76c8188f883af2fb738233abdeea0"><div class="ttname"><a href="internal_8h.html#a6bb76c8188f883af2fb738233abdeea0">grpc_http_trace</a></div><div class="ttdeci">int grpc_http_trace</div><div class="ttdef"><b>Definition:</b> chttp2_transport.c:60</div></div>
 </div><!-- fragment -->
+</div>
+</div>
+<a class="anchor" id="a49ad637834088fab108d15da9a324017"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_CHTTP2_WRITING_DATA&#160;&#160;&#160;1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="adad37115630a9064e61f6ceb4a6e7e65"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_CHTTP2_WRITING_WINDOW&#160;&#160;&#160;2</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
 </div>
 </div>
 <h2 class="groupheader">Typedef Documentation</h2>
@@ -1724,14 +1752,14 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a83baade3ee315270b6d34fc6fbecb30c"></a>
+<a class="anchor" id="a7bac079485f968780b4ead6561fc371e"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void grpc_chttp2_terminate_writing </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structgrpc__chttp2__transport__writing.html">grpc_chttp2_transport_writing</a> *&#160;</td>
+          <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>transport_writing</em>, </td>
         </tr>
         <tr>
@@ -1833,7 +1861,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -3,38 +3,22 @@
 #pragma warning disable 1591, 0612, 3021
 #region Designer generated code
 
-using pb = global::Google.ProtocolBuffers;
-using pbc = global::Google.ProtocolBuffers.Collections;
-using pbd = global::Google.ProtocolBuffers.Descriptors;
+using pb = global::Google.Protobuf;
+using pbc = global::Google.Protobuf.Collections;
+using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace examples {
+namespace Examples {
 
   namespace Proto {
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     public static partial class RouteGuide {
 
-      #region Extension registration
-      public static void RegisterAllExtensions(pb::ExtensionRegistry registry) {
-      }
-      #endregion
-      #region Static variables
-      internal static pbd::MessageDescriptor internal__static_examples_Point__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::examples.Point, global::examples.Point.Builder> internal__static_examples_Point__FieldAccessorTable;
-      internal static pbd::MessageDescriptor internal__static_examples_Rectangle__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::examples.Rectangle, global::examples.Rectangle.Builder> internal__static_examples_Rectangle__FieldAccessorTable;
-      internal static pbd::MessageDescriptor internal__static_examples_Feature__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::examples.Feature, global::examples.Feature.Builder> internal__static_examples_Feature__FieldAccessorTable;
-      internal static pbd::MessageDescriptor internal__static_examples_RouteNote__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::examples.RouteNote, global::examples.RouteNote.Builder> internal__static_examples_RouteNote__FieldAccessorTable;
-      internal static pbd::MessageDescriptor internal__static_examples_RouteSummary__Descriptor;
-      internal static pb::FieldAccess.FieldAccessorTable<global::examples.RouteSummary, global::examples.RouteSummary.Builder> internal__static_examples_RouteSummary__FieldAccessorTable;
-      #endregion
       #region Descriptor
-      public static pbd::FileDescriptor Descriptor {
+      public static pbr::FileDescriptor Descriptor {
         get { return descriptor; }
       }
-      private static pbd::FileDescriptor descriptor;
+      private static pbr::FileDescriptor descriptor;
 
       static RouteGuide() {
         byte[] descriptorData = global::System.Convert.FromBase64String(
@@ -52,36 +36,17 @@ namespace examples {
               "dXJlcxITLmV4YW1wbGVzLlJlY3RhbmdsZRoRLmV4YW1wbGVzLkZlYXR1cmUi", 
               "ADABEjoKC1JlY29yZFJvdXRlEg8uZXhhbXBsZXMuUG9pbnQaFi5leGFtcGxl", 
               "cy5Sb3V0ZVN1bW1hcnkiACgBEjsKCVJvdXRlQ2hhdBITLmV4YW1wbGVzLlJv", 
-            "dXRlTm90ZRoTLmV4YW1wbGVzLlJvdXRlTm90ZSIAKAEwAQ=="));
-        pbd::FileDescriptor.InternalDescriptorAssigner assigner = delegate(pbd::FileDescriptor root) {
-          descriptor = root;
-          internal__static_examples_Point__Descriptor = Descriptor.MessageTypes[0];
-          internal__static_examples_Point__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::examples.Point, global::examples.Point.Builder>(internal__static_examples_Point__Descriptor,
-                  new string[] { "Latitude", "Longitude", });
-          internal__static_examples_Rectangle__Descriptor = Descriptor.MessageTypes[1];
-          internal__static_examples_Rectangle__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::examples.Rectangle, global::examples.Rectangle.Builder>(internal__static_examples_Rectangle__Descriptor,
-                  new string[] { "Lo", "Hi", });
-          internal__static_examples_Feature__Descriptor = Descriptor.MessageTypes[2];
-          internal__static_examples_Feature__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::examples.Feature, global::examples.Feature.Builder>(internal__static_examples_Feature__Descriptor,
-                  new string[] { "Name", "Location", });
-          internal__static_examples_RouteNote__Descriptor = Descriptor.MessageTypes[3];
-          internal__static_examples_RouteNote__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::examples.RouteNote, global::examples.RouteNote.Builder>(internal__static_examples_RouteNote__Descriptor,
-                  new string[] { "Location", "Message", });
-          internal__static_examples_RouteSummary__Descriptor = Descriptor.MessageTypes[4];
-          internal__static_examples_RouteSummary__FieldAccessorTable = 
-              new pb::FieldAccess.FieldAccessorTable<global::examples.RouteSummary, global::examples.RouteSummary.Builder>(internal__static_examples_RouteSummary__Descriptor,
-                  new string[] { "PointCount", "FeatureCount", "Distance", "ElapsedTime", });
-          pb::ExtensionRegistry registry = pb::ExtensionRegistry.CreateInstance();
-          RegisterAllExtensions(registry);
-          return registry;
-        };
-        pbd::FileDescriptor.InternalBuildGeneratedFileFrom(descriptorData,
-            new pbd::FileDescriptor[] {
-            }, assigner);
+              "dXRlTm90ZRoTLmV4YW1wbGVzLlJvdXRlTm90ZSIAKAEwAUIPCgdleC5ncnBj", 
+              "ogIDUlRHYgZwcm90bzM="));
+        descriptor = pbr::FileDescriptor.InternalBuildGeneratedFileFrom(descriptorData,
+            new pbr::FileDescriptor[] { },
+            new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
+              new pbr::GeneratedCodeInfo(typeof(global::Examples.Point), new[]{ "Latitude", "Longitude" }, null, null, null),
+              new pbr::GeneratedCodeInfo(typeof(global::Examples.Rectangle), new[]{ "Lo", "Hi" }, null, null, null),
+              new pbr::GeneratedCodeInfo(typeof(global::Examples.Feature), new[]{ "Name", "Location" }, null, null, null),
+              new pbr::GeneratedCodeInfo(typeof(global::Examples.RouteNote), new[]{ "Location", "Message" }, null, null, null),
+              new pbr::GeneratedCodeInfo(typeof(global::Examples.RouteSummary), new[]{ "PointCount", "FeatureCount", "Distance", "ElapsedTime" }, null, null, null)
+            }));
       }
       #endregion
 
@@ -89,1781 +54,719 @@ namespace examples {
   }
   #region Messages
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-  public sealed partial class Point : pb::GeneratedMessage<Point, Point.Builder> {
-    private Point() { }
-    private static readonly Point defaultInstance = new Point().MakeReadOnly();
-    private static readonly string[] _pointFieldNames = new string[] { "latitude", "longitude" };
-    private static readonly uint[] _pointFieldTags = new uint[] { 8, 16 };
-    public static Point DefaultInstance {
-      get { return defaultInstance; }
+  public sealed partial class Point : pb::IMessage<Point> {
+    private static readonly pb::MessageParser<Point> _parser = new pb::MessageParser<Point>(() => new Point());
+    public static pb::MessageParser<Point> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Examples.Proto.RouteGuide.Descriptor.MessageTypes[0]; }
     }
 
-    public override Point DefaultInstanceForType {
-      get { return DefaultInstance; }
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
     }
 
-    protected override Point ThisMessage {
-      get { return this; }
+    public Point() {
+      OnConstruction();
     }
 
-    public static pbd::MessageDescriptor Descriptor {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Point__Descriptor; }
+    partial void OnConstruction();
+
+    public Point(Point other) : this() {
+      latitude_ = other.latitude_;
+      longitude_ = other.longitude_;
     }
 
-    protected override pb::FieldAccess.FieldAccessorTable<Point, Point.Builder> InternalFieldAccessors {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Point__FieldAccessorTable; }
+    public Point Clone() {
+      return new Point(this);
     }
 
     public const int LatitudeFieldNumber = 1;
-    private bool hasLatitude;
     private int latitude_;
-    public bool HasLatitude {
-      get { return hasLatitude; }
-    }
     public int Latitude {
       get { return latitude_; }
+      set {
+        latitude_ = value;
+      }
     }
 
     public const int LongitudeFieldNumber = 2;
-    private bool hasLongitude;
     private int longitude_;
-    public bool HasLongitude {
-      get { return hasLongitude; }
-    }
     public int Longitude {
       get { return longitude_; }
+      set {
+        longitude_ = value;
+      }
     }
 
-    public override bool IsInitialized {
-      get {
+    public override bool Equals(object other) {
+      return Equals(other as Point);
+    }
+
+    public bool Equals(Point other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (Latitude != other.Latitude) return false;
+      if (Longitude != other.Longitude) return false;
+      return true;
     }
 
-    public override void WriteTo(pb::ICodedOutputStream output) {
-      CalcSerializedSize();
-      string[] field_names = _pointFieldNames;
-      if (hasLatitude) {
-        output.WriteInt32(1, field_names[0], Latitude);
-      }
-      if (hasLongitude) {
-        output.WriteInt32(2, field_names[1], Longitude);
-      }
-      UnknownFields.WriteTo(output);
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Latitude != 0) hash ^= Latitude.GetHashCode();
+      if (Longitude != 0) hash ^= Longitude.GetHashCode();
+      return hash;
     }
 
-    private int memoizedSerializedSize = -1;
-    public override int SerializedSize {
-      get {
-        int size = memoizedSerializedSize;
-        if (size != -1) return size;
-        return CalcSerializedSize();
+    public override string ToString() {
+      return pb::JsonFormatter.Default.Format(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Latitude != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(Latitude);
+      }
+      if (Longitude != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(Longitude);
       }
     }
 
-    private int CalcSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (hasLatitude) {
-        size += pb::CodedOutputStream.ComputeInt32Size(1, Latitude);
+    public int CalculateSize() {
+      int size = 0;
+      if (Latitude != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Latitude);
       }
-      if (hasLongitude) {
-        size += pb::CodedOutputStream.ComputeInt32Size(2, Longitude);
+      if (Longitude != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Longitude);
       }
-      size += UnknownFields.SerializedSize;
-      memoizedSerializedSize = size;
       return size;
     }
-    public static Point ParseFrom(pb::ByteString data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static Point ParseFrom(pb::ByteString data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static Point ParseFrom(byte[] data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static Point ParseFrom(byte[] data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static Point ParseFrom(global::System.IO.Stream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static Point ParseFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    public static Point ParseDelimitedFrom(global::System.IO.Stream input) {
-      return CreateBuilder().MergeDelimitedFrom(input).BuildParsed();
-    }
-    public static Point ParseDelimitedFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return CreateBuilder().MergeDelimitedFrom(input, extensionRegistry).BuildParsed();
-    }
-    public static Point ParseFrom(pb::ICodedInputStream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static Point ParseFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    private Point MakeReadOnly() {
-      return this;
+
+    public void MergeFrom(Point other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Latitude != 0) {
+        Latitude = other.Latitude;
+      }
+      if (other.Longitude != 0) {
+        Longitude = other.Longitude;
+      }
     }
 
-    public static Builder CreateBuilder() { return new Builder(); }
-    public override Builder ToBuilder() { return CreateBuilder(this); }
-    public override Builder CreateBuilderForType() { return new Builder(); }
-    public static Builder CreateBuilder(Point prototype) {
-      return new Builder(prototype);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    public sealed partial class Builder : pb::GeneratedBuilder<Point, Builder> {
-      protected override Builder ThisBuilder {
-        get { return this; }
-      }
-      public Builder() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-      }
-      internal Builder(Point cloneFrom) {
-        result = cloneFrom;
-        resultIsReadOnly = true;
-      }
-
-      private bool resultIsReadOnly;
-      private Point result;
-
-      private Point PrepareBuilder() {
-        if (resultIsReadOnly) {
-          Point original = result;
-          result = new Point();
-          resultIsReadOnly = false;
-          MergeFrom(original);
-        }
-        return result;
-      }
-
-      public override bool IsInitialized {
-        get { return result.IsInitialized; }
-      }
-
-      protected override Point MessageBeingBuilt {
-        get { return PrepareBuilder(); }
-      }
-
-      public override Builder Clear() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-        return this;
-      }
-
-      public override Builder Clone() {
-        if (resultIsReadOnly) {
-          return new Builder(result);
-        } else {
-          return new Builder().MergeFrom(result);
-        }
-      }
-
-      public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::examples.Point.Descriptor; }
-      }
-
-      public override Point DefaultInstanceForType {
-        get { return global::examples.Point.DefaultInstance; }
-      }
-
-      public override Point BuildPartial() {
-        if (resultIsReadOnly) {
-          return result;
-        }
-        resultIsReadOnly = true;
-        return result.MakeReadOnly();
-      }
-
-      public override Builder MergeFrom(pb::IMessage other) {
-        if (other is Point) {
-          return MergeFrom((Point) other);
-        } else {
-          base.MergeFrom(other);
-          return this;
-        }
-      }
-
-      public override Builder MergeFrom(Point other) {
-        if (other == global::examples.Point.DefaultInstance) return this;
-        PrepareBuilder();
-        if (other.HasLatitude) {
-          Latitude = other.Latitude;
-        }
-        if (other.HasLongitude) {
-          Longitude = other.Longitude;
-        }
-        this.MergeUnknownFields(other.UnknownFields);
-        return this;
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input) {
-        return MergeFrom(input, pb::ExtensionRegistry.Empty);
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-        PrepareBuilder();
-        pb::UnknownFieldSet.Builder unknownFields = null;
-        uint tag;
-        string field_name;
-        while (input.ReadTag(out tag, out field_name)) {
-          if(tag == 0 && field_name != null) {
-            int field_ordinal = global::System.Array.BinarySearch(_pointFieldNames, field_name, global::System.StringComparer.Ordinal);
-            if(field_ordinal >= 0)
-              tag = _pointFieldTags[field_ordinal];
-            else {
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              continue;
-            }
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 8: {
+            Latitude = input.ReadInt32();
+            break;
           }
-          switch (tag) {
-            case 0: {
-              throw pb::InvalidProtocolBufferException.InvalidTag();
-            }
-            default: {
-              if (pb::WireFormat.IsEndGroupTag(tag)) {
-                if (unknownFields != null) {
-                  this.UnknownFields = unknownFields.Build();
-                }
-                return this;
-              }
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              break;
-            }
-            case 8: {
-              result.hasLatitude = input.ReadInt32(ref result.latitude_);
-              break;
-            }
-            case 16: {
-              result.hasLongitude = input.ReadInt32(ref result.longitude_);
-              break;
-            }
+          case 16: {
+            Longitude = input.ReadInt32();
+            break;
           }
         }
-
-        if (unknownFields != null) {
-          this.UnknownFields = unknownFields.Build();
-        }
-        return this;
-      }
-
-
-      public bool HasLatitude {
-        get { return result.hasLatitude; }
-      }
-      public int Latitude {
-        get { return result.Latitude; }
-        set { SetLatitude(value); }
-      }
-      public Builder SetLatitude(int value) {
-        PrepareBuilder();
-        result.hasLatitude = true;
-        result.latitude_ = value;
-        return this;
-      }
-      public Builder ClearLatitude() {
-        PrepareBuilder();
-        result.hasLatitude = false;
-        result.latitude_ = 0;
-        return this;
-      }
-
-      public bool HasLongitude {
-        get { return result.hasLongitude; }
-      }
-      public int Longitude {
-        get { return result.Longitude; }
-        set { SetLongitude(value); }
-      }
-      public Builder SetLongitude(int value) {
-        PrepareBuilder();
-        result.hasLongitude = true;
-        result.longitude_ = value;
-        return this;
-      }
-      public Builder ClearLongitude() {
-        PrepareBuilder();
-        result.hasLongitude = false;
-        result.longitude_ = 0;
-        return this;
       }
     }
-    static Point() {
-      object.ReferenceEquals(global::examples.Proto.RouteGuide.Descriptor, null);
-    }
+
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-  public sealed partial class Rectangle : pb::GeneratedMessage<Rectangle, Rectangle.Builder> {
-    private Rectangle() { }
-    private static readonly Rectangle defaultInstance = new Rectangle().MakeReadOnly();
-    private static readonly string[] _rectangleFieldNames = new string[] { "hi", "lo" };
-    private static readonly uint[] _rectangleFieldTags = new uint[] { 18, 10 };
-    public static Rectangle DefaultInstance {
-      get { return defaultInstance; }
+  public sealed partial class Rectangle : pb::IMessage<Rectangle> {
+    private static readonly pb::MessageParser<Rectangle> _parser = new pb::MessageParser<Rectangle>(() => new Rectangle());
+    public static pb::MessageParser<Rectangle> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Examples.Proto.RouteGuide.Descriptor.MessageTypes[1]; }
     }
 
-    public override Rectangle DefaultInstanceForType {
-      get { return DefaultInstance; }
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
     }
 
-    protected override Rectangle ThisMessage {
-      get { return this; }
+    public Rectangle() {
+      OnConstruction();
     }
 
-    public static pbd::MessageDescriptor Descriptor {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Rectangle__Descriptor; }
+    partial void OnConstruction();
+
+    public Rectangle(Rectangle other) : this() {
+      Lo = other.lo_ != null ? other.Lo.Clone() : null;
+      Hi = other.hi_ != null ? other.Hi.Clone() : null;
     }
 
-    protected override pb::FieldAccess.FieldAccessorTable<Rectangle, Rectangle.Builder> InternalFieldAccessors {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Rectangle__FieldAccessorTable; }
+    public Rectangle Clone() {
+      return new Rectangle(this);
     }
 
     public const int LoFieldNumber = 1;
-    private bool hasLo;
-    private global::examples.Point lo_;
-    public bool HasLo {
-      get { return hasLo; }
-    }
-    public global::examples.Point Lo {
-      get { return lo_ ?? global::examples.Point.DefaultInstance; }
+    private global::Examples.Point lo_;
+    public global::Examples.Point Lo {
+      get { return lo_; }
+      set {
+        lo_ = value;
+      }
     }
 
     public const int HiFieldNumber = 2;
-    private bool hasHi;
-    private global::examples.Point hi_;
-    public bool HasHi {
-      get { return hasHi; }
-    }
-    public global::examples.Point Hi {
-      get { return hi_ ?? global::examples.Point.DefaultInstance; }
+    private global::Examples.Point hi_;
+    public global::Examples.Point Hi {
+      get { return hi_; }
+      set {
+        hi_ = value;
+      }
     }
 
-    public override bool IsInitialized {
-      get {
+    public override bool Equals(object other) {
+      return Equals(other as Rectangle);
+    }
+
+    public bool Equals(Rectangle other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (!object.Equals(Lo, other.Lo)) return false;
+      if (!object.Equals(Hi, other.Hi)) return false;
+      return true;
     }
 
-    public override void WriteTo(pb::ICodedOutputStream output) {
-      CalcSerializedSize();
-      string[] field_names = _rectangleFieldNames;
-      if (hasLo) {
-        output.WriteMessage(1, field_names[1], Lo);
-      }
-      if (hasHi) {
-        output.WriteMessage(2, field_names[0], Hi);
-      }
-      UnknownFields.WriteTo(output);
+    public override int GetHashCode() {
+      int hash = 1;
+      if (lo_ != null) hash ^= Lo.GetHashCode();
+      if (hi_ != null) hash ^= Hi.GetHashCode();
+      return hash;
     }
 
-    private int memoizedSerializedSize = -1;
-    public override int SerializedSize {
-      get {
-        int size = memoizedSerializedSize;
-        if (size != -1) return size;
-        return CalcSerializedSize();
+    public override string ToString() {
+      return pb::JsonFormatter.Default.Format(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (lo_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Lo);
+      }
+      if (hi_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Hi);
       }
     }
 
-    private int CalcSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (hasLo) {
-        size += pb::CodedOutputStream.ComputeMessageSize(1, Lo);
+    public int CalculateSize() {
+      int size = 0;
+      if (lo_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Lo);
       }
-      if (hasHi) {
-        size += pb::CodedOutputStream.ComputeMessageSize(2, Hi);
+      if (hi_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Hi);
       }
-      size += UnknownFields.SerializedSize;
-      memoizedSerializedSize = size;
       return size;
     }
-    public static Rectangle ParseFrom(pb::ByteString data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static Rectangle ParseFrom(pb::ByteString data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static Rectangle ParseFrom(byte[] data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static Rectangle ParseFrom(byte[] data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static Rectangle ParseFrom(global::System.IO.Stream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static Rectangle ParseFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    public static Rectangle ParseDelimitedFrom(global::System.IO.Stream input) {
-      return CreateBuilder().MergeDelimitedFrom(input).BuildParsed();
-    }
-    public static Rectangle ParseDelimitedFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return CreateBuilder().MergeDelimitedFrom(input, extensionRegistry).BuildParsed();
-    }
-    public static Rectangle ParseFrom(pb::ICodedInputStream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static Rectangle ParseFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    private Rectangle MakeReadOnly() {
-      return this;
-    }
 
-    public static Builder CreateBuilder() { return new Builder(); }
-    public override Builder ToBuilder() { return CreateBuilder(this); }
-    public override Builder CreateBuilderForType() { return new Builder(); }
-    public static Builder CreateBuilder(Rectangle prototype) {
-      return new Builder(prototype);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    public sealed partial class Builder : pb::GeneratedBuilder<Rectangle, Builder> {
-      protected override Builder ThisBuilder {
-        get { return this; }
+    public void MergeFrom(Rectangle other) {
+      if (other == null) {
+        return;
       }
-      public Builder() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-      }
-      internal Builder(Rectangle cloneFrom) {
-        result = cloneFrom;
-        resultIsReadOnly = true;
-      }
-
-      private bool resultIsReadOnly;
-      private Rectangle result;
-
-      private Rectangle PrepareBuilder() {
-        if (resultIsReadOnly) {
-          Rectangle original = result;
-          result = new Rectangle();
-          resultIsReadOnly = false;
-          MergeFrom(original);
+      if (other.lo_ != null) {
+        if (lo_ == null) {
+          lo_ = new global::Examples.Point();
         }
-        return result;
+        Lo.MergeFrom(other.Lo);
       }
-
-      public override bool IsInitialized {
-        get { return result.IsInitialized; }
-      }
-
-      protected override Rectangle MessageBeingBuilt {
-        get { return PrepareBuilder(); }
-      }
-
-      public override Builder Clear() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-        return this;
-      }
-
-      public override Builder Clone() {
-        if (resultIsReadOnly) {
-          return new Builder(result);
-        } else {
-          return new Builder().MergeFrom(result);
+      if (other.hi_ != null) {
+        if (hi_ == null) {
+          hi_ = new global::Examples.Point();
         }
+        Hi.MergeFrom(other.Hi);
       }
+    }
 
-      public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::examples.Rectangle.Descriptor; }
-      }
-
-      public override Rectangle DefaultInstanceForType {
-        get { return global::examples.Rectangle.DefaultInstance; }
-      }
-
-      public override Rectangle BuildPartial() {
-        if (resultIsReadOnly) {
-          return result;
-        }
-        resultIsReadOnly = true;
-        return result.MakeReadOnly();
-      }
-
-      public override Builder MergeFrom(pb::IMessage other) {
-        if (other is Rectangle) {
-          return MergeFrom((Rectangle) other);
-        } else {
-          base.MergeFrom(other);
-          return this;
-        }
-      }
-
-      public override Builder MergeFrom(Rectangle other) {
-        if (other == global::examples.Rectangle.DefaultInstance) return this;
-        PrepareBuilder();
-        if (other.HasLo) {
-          MergeLo(other.Lo);
-        }
-        if (other.HasHi) {
-          MergeHi(other.Hi);
-        }
-        this.MergeUnknownFields(other.UnknownFields);
-        return this;
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input) {
-        return MergeFrom(input, pb::ExtensionRegistry.Empty);
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-        PrepareBuilder();
-        pb::UnknownFieldSet.Builder unknownFields = null;
-        uint tag;
-        string field_name;
-        while (input.ReadTag(out tag, out field_name)) {
-          if(tag == 0 && field_name != null) {
-            int field_ordinal = global::System.Array.BinarySearch(_rectangleFieldNames, field_name, global::System.StringComparer.Ordinal);
-            if(field_ordinal >= 0)
-              tag = _rectangleFieldTags[field_ordinal];
-            else {
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              continue;
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 10: {
+            if (lo_ == null) {
+              lo_ = new global::Examples.Point();
             }
+            input.ReadMessage(lo_);
+            break;
           }
-          switch (tag) {
-            case 0: {
-              throw pb::InvalidProtocolBufferException.InvalidTag();
+          case 18: {
+            if (hi_ == null) {
+              hi_ = new global::Examples.Point();
             }
-            default: {
-              if (pb::WireFormat.IsEndGroupTag(tag)) {
-                if (unknownFields != null) {
-                  this.UnknownFields = unknownFields.Build();
-                }
-                return this;
-              }
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              break;
-            }
-            case 10: {
-              global::examples.Point.Builder subBuilder = global::examples.Point.CreateBuilder();
-              if (result.hasLo) {
-                subBuilder.MergeFrom(Lo);
-              }
-              input.ReadMessage(subBuilder, extensionRegistry);
-              Lo = subBuilder.BuildPartial();
-              break;
-            }
-            case 18: {
-              global::examples.Point.Builder subBuilder = global::examples.Point.CreateBuilder();
-              if (result.hasHi) {
-                subBuilder.MergeFrom(Hi);
-              }
-              input.ReadMessage(subBuilder, extensionRegistry);
-              Hi = subBuilder.BuildPartial();
-              break;
-            }
+            input.ReadMessage(hi_);
+            break;
           }
         }
-
-        if (unknownFields != null) {
-          this.UnknownFields = unknownFields.Build();
-        }
-        return this;
-      }
-
-
-      public bool HasLo {
-       get { return result.hasLo; }
-      }
-      public global::examples.Point Lo {
-        get { return result.Lo; }
-        set { SetLo(value); }
-      }
-      public Builder SetLo(global::examples.Point value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        result.hasLo = true;
-        result.lo_ = value;
-        return this;
-      }
-      public Builder SetLo(global::examples.Point.Builder builderForValue) {
-        pb::ThrowHelper.ThrowIfNull(builderForValue, "builderForValue");
-        PrepareBuilder();
-        result.hasLo = true;
-        result.lo_ = builderForValue.Build();
-        return this;
-      }
-      public Builder MergeLo(global::examples.Point value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        if (result.hasLo &&
-            result.lo_ != global::examples.Point.DefaultInstance) {
-            result.lo_ = global::examples.Point.CreateBuilder(result.lo_).MergeFrom(value).BuildPartial();
-        } else {
-          result.lo_ = value;
-        }
-        result.hasLo = true;
-        return this;
-      }
-      public Builder ClearLo() {
-        PrepareBuilder();
-        result.hasLo = false;
-        result.lo_ = null;
-        return this;
-      }
-
-      public bool HasHi {
-       get { return result.hasHi; }
-      }
-      public global::examples.Point Hi {
-        get { return result.Hi; }
-        set { SetHi(value); }
-      }
-      public Builder SetHi(global::examples.Point value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        result.hasHi = true;
-        result.hi_ = value;
-        return this;
-      }
-      public Builder SetHi(global::examples.Point.Builder builderForValue) {
-        pb::ThrowHelper.ThrowIfNull(builderForValue, "builderForValue");
-        PrepareBuilder();
-        result.hasHi = true;
-        result.hi_ = builderForValue.Build();
-        return this;
-      }
-      public Builder MergeHi(global::examples.Point value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        if (result.hasHi &&
-            result.hi_ != global::examples.Point.DefaultInstance) {
-            result.hi_ = global::examples.Point.CreateBuilder(result.hi_).MergeFrom(value).BuildPartial();
-        } else {
-          result.hi_ = value;
-        }
-        result.hasHi = true;
-        return this;
-      }
-      public Builder ClearHi() {
-        PrepareBuilder();
-        result.hasHi = false;
-        result.hi_ = null;
-        return this;
       }
     }
-    static Rectangle() {
-      object.ReferenceEquals(global::examples.Proto.RouteGuide.Descriptor, null);
-    }
+
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-  public sealed partial class Feature : pb::GeneratedMessage<Feature, Feature.Builder> {
-    private Feature() { }
-    private static readonly Feature defaultInstance = new Feature().MakeReadOnly();
-    private static readonly string[] _featureFieldNames = new string[] { "location", "name" };
-    private static readonly uint[] _featureFieldTags = new uint[] { 18, 10 };
-    public static Feature DefaultInstance {
-      get { return defaultInstance; }
+  public sealed partial class Feature : pb::IMessage<Feature> {
+    private static readonly pb::MessageParser<Feature> _parser = new pb::MessageParser<Feature>(() => new Feature());
+    public static pb::MessageParser<Feature> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Examples.Proto.RouteGuide.Descriptor.MessageTypes[2]; }
     }
 
-    public override Feature DefaultInstanceForType {
-      get { return DefaultInstance; }
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
     }
 
-    protected override Feature ThisMessage {
-      get { return this; }
+    public Feature() {
+      OnConstruction();
     }
 
-    public static pbd::MessageDescriptor Descriptor {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Feature__Descriptor; }
+    partial void OnConstruction();
+
+    public Feature(Feature other) : this() {
+      name_ = other.name_;
+      Location = other.location_ != null ? other.Location.Clone() : null;
     }
 
-    protected override pb::FieldAccess.FieldAccessorTable<Feature, Feature.Builder> InternalFieldAccessors {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_Feature__FieldAccessorTable; }
+    public Feature Clone() {
+      return new Feature(this);
     }
 
     public const int NameFieldNumber = 1;
-    private bool hasName;
     private string name_ = "";
-    public bool HasName {
-      get { return hasName; }
-    }
     public string Name {
       get { return name_; }
+      set {
+        name_ = pb::Preconditions.CheckNotNull(value, "value");
+      }
     }
 
     public const int LocationFieldNumber = 2;
-    private bool hasLocation;
-    private global::examples.Point location_;
-    public bool HasLocation {
-      get { return hasLocation; }
-    }
-    public global::examples.Point Location {
-      get { return location_ ?? global::examples.Point.DefaultInstance; }
+    private global::Examples.Point location_;
+    public global::Examples.Point Location {
+      get { return location_; }
+      set {
+        location_ = value;
+      }
     }
 
-    public override bool IsInitialized {
-      get {
+    public override bool Equals(object other) {
+      return Equals(other as Feature);
+    }
+
+    public bool Equals(Feature other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (Name != other.Name) return false;
+      if (!object.Equals(Location, other.Location)) return false;
+      return true;
     }
 
-    public override void WriteTo(pb::ICodedOutputStream output) {
-      CalcSerializedSize();
-      string[] field_names = _featureFieldNames;
-      if (hasName) {
-        output.WriteString(1, field_names[1], Name);
-      }
-      if (hasLocation) {
-        output.WriteMessage(2, field_names[0], Location);
-      }
-      UnknownFields.WriteTo(output);
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Name.Length != 0) hash ^= Name.GetHashCode();
+      if (location_ != null) hash ^= Location.GetHashCode();
+      return hash;
     }
 
-    private int memoizedSerializedSize = -1;
-    public override int SerializedSize {
-      get {
-        int size = memoizedSerializedSize;
-        if (size != -1) return size;
-        return CalcSerializedSize();
+    public override string ToString() {
+      return pb::JsonFormatter.Default.Format(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Name.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(Name);
+      }
+      if (location_ != null) {
+        output.WriteRawTag(18);
+        output.WriteMessage(Location);
       }
     }
 
-    private int CalcSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (hasName) {
-        size += pb::CodedOutputStream.ComputeStringSize(1, Name);
+    public int CalculateSize() {
+      int size = 0;
+      if (Name.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Name);
       }
-      if (hasLocation) {
-        size += pb::CodedOutputStream.ComputeMessageSize(2, Location);
+      if (location_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Location);
       }
-      size += UnknownFields.SerializedSize;
-      memoizedSerializedSize = size;
       return size;
     }
-    public static Feature ParseFrom(pb::ByteString data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static Feature ParseFrom(pb::ByteString data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static Feature ParseFrom(byte[] data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static Feature ParseFrom(byte[] data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static Feature ParseFrom(global::System.IO.Stream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static Feature ParseFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    public static Feature ParseDelimitedFrom(global::System.IO.Stream input) {
-      return CreateBuilder().MergeDelimitedFrom(input).BuildParsed();
-    }
-    public static Feature ParseDelimitedFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return CreateBuilder().MergeDelimitedFrom(input, extensionRegistry).BuildParsed();
-    }
-    public static Feature ParseFrom(pb::ICodedInputStream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static Feature ParseFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    private Feature MakeReadOnly() {
-      return this;
-    }
 
-    public static Builder CreateBuilder() { return new Builder(); }
-    public override Builder ToBuilder() { return CreateBuilder(this); }
-    public override Builder CreateBuilderForType() { return new Builder(); }
-    public static Builder CreateBuilder(Feature prototype) {
-      return new Builder(prototype);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    public sealed partial class Builder : pb::GeneratedBuilder<Feature, Builder> {
-      protected override Builder ThisBuilder {
-        get { return this; }
+    public void MergeFrom(Feature other) {
+      if (other == null) {
+        return;
       }
-      public Builder() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
+      if (other.Name.Length != 0) {
+        Name = other.Name;
       }
-      internal Builder(Feature cloneFrom) {
-        result = cloneFrom;
-        resultIsReadOnly = true;
-      }
-
-      private bool resultIsReadOnly;
-      private Feature result;
-
-      private Feature PrepareBuilder() {
-        if (resultIsReadOnly) {
-          Feature original = result;
-          result = new Feature();
-          resultIsReadOnly = false;
-          MergeFrom(original);
+      if (other.location_ != null) {
+        if (location_ == null) {
+          location_ = new global::Examples.Point();
         }
-        return result;
+        Location.MergeFrom(other.Location);
       }
+    }
 
-      public override bool IsInitialized {
-        get { return result.IsInitialized; }
-      }
-
-      protected override Feature MessageBeingBuilt {
-        get { return PrepareBuilder(); }
-      }
-
-      public override Builder Clear() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-        return this;
-      }
-
-      public override Builder Clone() {
-        if (resultIsReadOnly) {
-          return new Builder(result);
-        } else {
-          return new Builder().MergeFrom(result);
-        }
-      }
-
-      public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::examples.Feature.Descriptor; }
-      }
-
-      public override Feature DefaultInstanceForType {
-        get { return global::examples.Feature.DefaultInstance; }
-      }
-
-      public override Feature BuildPartial() {
-        if (resultIsReadOnly) {
-          return result;
-        }
-        resultIsReadOnly = true;
-        return result.MakeReadOnly();
-      }
-
-      public override Builder MergeFrom(pb::IMessage other) {
-        if (other is Feature) {
-          return MergeFrom((Feature) other);
-        } else {
-          base.MergeFrom(other);
-          return this;
-        }
-      }
-
-      public override Builder MergeFrom(Feature other) {
-        if (other == global::examples.Feature.DefaultInstance) return this;
-        PrepareBuilder();
-        if (other.HasName) {
-          Name = other.Name;
-        }
-        if (other.HasLocation) {
-          MergeLocation(other.Location);
-        }
-        this.MergeUnknownFields(other.UnknownFields);
-        return this;
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input) {
-        return MergeFrom(input, pb::ExtensionRegistry.Empty);
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-        PrepareBuilder();
-        pb::UnknownFieldSet.Builder unknownFields = null;
-        uint tag;
-        string field_name;
-        while (input.ReadTag(out tag, out field_name)) {
-          if(tag == 0 && field_name != null) {
-            int field_ordinal = global::System.Array.BinarySearch(_featureFieldNames, field_name, global::System.StringComparer.Ordinal);
-            if(field_ordinal >= 0)
-              tag = _featureFieldTags[field_ordinal];
-            else {
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              continue;
-            }
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 10: {
+            Name = input.ReadString();
+            break;
           }
-          switch (tag) {
-            case 0: {
-              throw pb::InvalidProtocolBufferException.InvalidTag();
+          case 18: {
+            if (location_ == null) {
+              location_ = new global::Examples.Point();
             }
-            default: {
-              if (pb::WireFormat.IsEndGroupTag(tag)) {
-                if (unknownFields != null) {
-                  this.UnknownFields = unknownFields.Build();
-                }
-                return this;
-              }
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              break;
-            }
-            case 10: {
-              result.hasName = input.ReadString(ref result.name_);
-              break;
-            }
-            case 18: {
-              global::examples.Point.Builder subBuilder = global::examples.Point.CreateBuilder();
-              if (result.hasLocation) {
-                subBuilder.MergeFrom(Location);
-              }
-              input.ReadMessage(subBuilder, extensionRegistry);
-              Location = subBuilder.BuildPartial();
-              break;
-            }
+            input.ReadMessage(location_);
+            break;
           }
         }
-
-        if (unknownFields != null) {
-          this.UnknownFields = unknownFields.Build();
-        }
-        return this;
-      }
-
-
-      public bool HasName {
-        get { return result.hasName; }
-      }
-      public string Name {
-        get { return result.Name; }
-        set { SetName(value); }
-      }
-      public Builder SetName(string value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        result.hasName = true;
-        result.name_ = value;
-        return this;
-      }
-      public Builder ClearName() {
-        PrepareBuilder();
-        result.hasName = false;
-        result.name_ = "";
-        return this;
-      }
-
-      public bool HasLocation {
-       get { return result.hasLocation; }
-      }
-      public global::examples.Point Location {
-        get { return result.Location; }
-        set { SetLocation(value); }
-      }
-      public Builder SetLocation(global::examples.Point value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        result.hasLocation = true;
-        result.location_ = value;
-        return this;
-      }
-      public Builder SetLocation(global::examples.Point.Builder builderForValue) {
-        pb::ThrowHelper.ThrowIfNull(builderForValue, "builderForValue");
-        PrepareBuilder();
-        result.hasLocation = true;
-        result.location_ = builderForValue.Build();
-        return this;
-      }
-      public Builder MergeLocation(global::examples.Point value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        if (result.hasLocation &&
-            result.location_ != global::examples.Point.DefaultInstance) {
-            result.location_ = global::examples.Point.CreateBuilder(result.location_).MergeFrom(value).BuildPartial();
-        } else {
-          result.location_ = value;
-        }
-        result.hasLocation = true;
-        return this;
-      }
-      public Builder ClearLocation() {
-        PrepareBuilder();
-        result.hasLocation = false;
-        result.location_ = null;
-        return this;
       }
     }
-    static Feature() {
-      object.ReferenceEquals(global::examples.Proto.RouteGuide.Descriptor, null);
-    }
+
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-  public sealed partial class RouteNote : pb::GeneratedMessage<RouteNote, RouteNote.Builder> {
-    private RouteNote() { }
-    private static readonly RouteNote defaultInstance = new RouteNote().MakeReadOnly();
-    private static readonly string[] _routeNoteFieldNames = new string[] { "location", "message" };
-    private static readonly uint[] _routeNoteFieldTags = new uint[] { 10, 18 };
-    public static RouteNote DefaultInstance {
-      get { return defaultInstance; }
+  public sealed partial class RouteNote : pb::IMessage<RouteNote> {
+    private static readonly pb::MessageParser<RouteNote> _parser = new pb::MessageParser<RouteNote>(() => new RouteNote());
+    public static pb::MessageParser<RouteNote> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Examples.Proto.RouteGuide.Descriptor.MessageTypes[3]; }
     }
 
-    public override RouteNote DefaultInstanceForType {
-      get { return DefaultInstance; }
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
     }
 
-    protected override RouteNote ThisMessage {
-      get { return this; }
+    public RouteNote() {
+      OnConstruction();
     }
 
-    public static pbd::MessageDescriptor Descriptor {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_RouteNote__Descriptor; }
+    partial void OnConstruction();
+
+    public RouteNote(RouteNote other) : this() {
+      Location = other.location_ != null ? other.Location.Clone() : null;
+      message_ = other.message_;
     }
 
-    protected override pb::FieldAccess.FieldAccessorTable<RouteNote, RouteNote.Builder> InternalFieldAccessors {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_RouteNote__FieldAccessorTable; }
+    public RouteNote Clone() {
+      return new RouteNote(this);
     }
 
     public const int LocationFieldNumber = 1;
-    private bool hasLocation;
-    private global::examples.Point location_;
-    public bool HasLocation {
-      get { return hasLocation; }
-    }
-    public global::examples.Point Location {
-      get { return location_ ?? global::examples.Point.DefaultInstance; }
+    private global::Examples.Point location_;
+    public global::Examples.Point Location {
+      get { return location_; }
+      set {
+        location_ = value;
+      }
     }
 
     public const int MessageFieldNumber = 2;
-    private bool hasMessage;
     private string message_ = "";
-    public bool HasMessage {
-      get { return hasMessage; }
-    }
     public string Message {
       get { return message_; }
+      set {
+        message_ = pb::Preconditions.CheckNotNull(value, "value");
+      }
     }
 
-    public override bool IsInitialized {
-      get {
+    public override bool Equals(object other) {
+      return Equals(other as RouteNote);
+    }
+
+    public bool Equals(RouteNote other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (!object.Equals(Location, other.Location)) return false;
+      if (Message != other.Message) return false;
+      return true;
     }
 
-    public override void WriteTo(pb::ICodedOutputStream output) {
-      CalcSerializedSize();
-      string[] field_names = _routeNoteFieldNames;
-      if (hasLocation) {
-        output.WriteMessage(1, field_names[0], Location);
-      }
-      if (hasMessage) {
-        output.WriteString(2, field_names[1], Message);
-      }
-      UnknownFields.WriteTo(output);
+    public override int GetHashCode() {
+      int hash = 1;
+      if (location_ != null) hash ^= Location.GetHashCode();
+      if (Message.Length != 0) hash ^= Message.GetHashCode();
+      return hash;
     }
 
-    private int memoizedSerializedSize = -1;
-    public override int SerializedSize {
-      get {
-        int size = memoizedSerializedSize;
-        if (size != -1) return size;
-        return CalcSerializedSize();
+    public override string ToString() {
+      return pb::JsonFormatter.Default.Format(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (location_ != null) {
+        output.WriteRawTag(10);
+        output.WriteMessage(Location);
+      }
+      if (Message.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(Message);
       }
     }
 
-    private int CalcSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (hasLocation) {
-        size += pb::CodedOutputStream.ComputeMessageSize(1, Location);
+    public int CalculateSize() {
+      int size = 0;
+      if (location_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(Location);
       }
-      if (hasMessage) {
-        size += pb::CodedOutputStream.ComputeStringSize(2, Message);
+      if (Message.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(Message);
       }
-      size += UnknownFields.SerializedSize;
-      memoizedSerializedSize = size;
       return size;
     }
-    public static RouteNote ParseFrom(pb::ByteString data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static RouteNote ParseFrom(pb::ByteString data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static RouteNote ParseFrom(byte[] data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static RouteNote ParseFrom(byte[] data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static RouteNote ParseFrom(global::System.IO.Stream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static RouteNote ParseFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    public static RouteNote ParseDelimitedFrom(global::System.IO.Stream input) {
-      return CreateBuilder().MergeDelimitedFrom(input).BuildParsed();
-    }
-    public static RouteNote ParseDelimitedFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return CreateBuilder().MergeDelimitedFrom(input, extensionRegistry).BuildParsed();
-    }
-    public static RouteNote ParseFrom(pb::ICodedInputStream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static RouteNote ParseFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    private RouteNote MakeReadOnly() {
-      return this;
-    }
 
-    public static Builder CreateBuilder() { return new Builder(); }
-    public override Builder ToBuilder() { return CreateBuilder(this); }
-    public override Builder CreateBuilderForType() { return new Builder(); }
-    public static Builder CreateBuilder(RouteNote prototype) {
-      return new Builder(prototype);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    public sealed partial class Builder : pb::GeneratedBuilder<RouteNote, Builder> {
-      protected override Builder ThisBuilder {
-        get { return this; }
+    public void MergeFrom(RouteNote other) {
+      if (other == null) {
+        return;
       }
-      public Builder() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-      }
-      internal Builder(RouteNote cloneFrom) {
-        result = cloneFrom;
-        resultIsReadOnly = true;
-      }
-
-      private bool resultIsReadOnly;
-      private RouteNote result;
-
-      private RouteNote PrepareBuilder() {
-        if (resultIsReadOnly) {
-          RouteNote original = result;
-          result = new RouteNote();
-          resultIsReadOnly = false;
-          MergeFrom(original);
+      if (other.location_ != null) {
+        if (location_ == null) {
+          location_ = new global::Examples.Point();
         }
-        return result;
+        Location.MergeFrom(other.Location);
       }
-
-      public override bool IsInitialized {
-        get { return result.IsInitialized; }
+      if (other.Message.Length != 0) {
+        Message = other.Message;
       }
+    }
 
-      protected override RouteNote MessageBeingBuilt {
-        get { return PrepareBuilder(); }
-      }
-
-      public override Builder Clear() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-        return this;
-      }
-
-      public override Builder Clone() {
-        if (resultIsReadOnly) {
-          return new Builder(result);
-        } else {
-          return new Builder().MergeFrom(result);
-        }
-      }
-
-      public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::examples.RouteNote.Descriptor; }
-      }
-
-      public override RouteNote DefaultInstanceForType {
-        get { return global::examples.RouteNote.DefaultInstance; }
-      }
-
-      public override RouteNote BuildPartial() {
-        if (resultIsReadOnly) {
-          return result;
-        }
-        resultIsReadOnly = true;
-        return result.MakeReadOnly();
-      }
-
-      public override Builder MergeFrom(pb::IMessage other) {
-        if (other is RouteNote) {
-          return MergeFrom((RouteNote) other);
-        } else {
-          base.MergeFrom(other);
-          return this;
-        }
-      }
-
-      public override Builder MergeFrom(RouteNote other) {
-        if (other == global::examples.RouteNote.DefaultInstance) return this;
-        PrepareBuilder();
-        if (other.HasLocation) {
-          MergeLocation(other.Location);
-        }
-        if (other.HasMessage) {
-          Message = other.Message;
-        }
-        this.MergeUnknownFields(other.UnknownFields);
-        return this;
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input) {
-        return MergeFrom(input, pb::ExtensionRegistry.Empty);
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-        PrepareBuilder();
-        pb::UnknownFieldSet.Builder unknownFields = null;
-        uint tag;
-        string field_name;
-        while (input.ReadTag(out tag, out field_name)) {
-          if(tag == 0 && field_name != null) {
-            int field_ordinal = global::System.Array.BinarySearch(_routeNoteFieldNames, field_name, global::System.StringComparer.Ordinal);
-            if(field_ordinal >= 0)
-              tag = _routeNoteFieldTags[field_ordinal];
-            else {
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              continue;
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 10: {
+            if (location_ == null) {
+              location_ = new global::Examples.Point();
             }
+            input.ReadMessage(location_);
+            break;
           }
-          switch (tag) {
-            case 0: {
-              throw pb::InvalidProtocolBufferException.InvalidTag();
-            }
-            default: {
-              if (pb::WireFormat.IsEndGroupTag(tag)) {
-                if (unknownFields != null) {
-                  this.UnknownFields = unknownFields.Build();
-                }
-                return this;
-              }
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              break;
-            }
-            case 10: {
-              global::examples.Point.Builder subBuilder = global::examples.Point.CreateBuilder();
-              if (result.hasLocation) {
-                subBuilder.MergeFrom(Location);
-              }
-              input.ReadMessage(subBuilder, extensionRegistry);
-              Location = subBuilder.BuildPartial();
-              break;
-            }
-            case 18: {
-              result.hasMessage = input.ReadString(ref result.message_);
-              break;
-            }
+          case 18: {
+            Message = input.ReadString();
+            break;
           }
         }
-
-        if (unknownFields != null) {
-          this.UnknownFields = unknownFields.Build();
-        }
-        return this;
-      }
-
-
-      public bool HasLocation {
-       get { return result.hasLocation; }
-      }
-      public global::examples.Point Location {
-        get { return result.Location; }
-        set { SetLocation(value); }
-      }
-      public Builder SetLocation(global::examples.Point value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        result.hasLocation = true;
-        result.location_ = value;
-        return this;
-      }
-      public Builder SetLocation(global::examples.Point.Builder builderForValue) {
-        pb::ThrowHelper.ThrowIfNull(builderForValue, "builderForValue");
-        PrepareBuilder();
-        result.hasLocation = true;
-        result.location_ = builderForValue.Build();
-        return this;
-      }
-      public Builder MergeLocation(global::examples.Point value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        if (result.hasLocation &&
-            result.location_ != global::examples.Point.DefaultInstance) {
-            result.location_ = global::examples.Point.CreateBuilder(result.location_).MergeFrom(value).BuildPartial();
-        } else {
-          result.location_ = value;
-        }
-        result.hasLocation = true;
-        return this;
-      }
-      public Builder ClearLocation() {
-        PrepareBuilder();
-        result.hasLocation = false;
-        result.location_ = null;
-        return this;
-      }
-
-      public bool HasMessage {
-        get { return result.hasMessage; }
-      }
-      public string Message {
-        get { return result.Message; }
-        set { SetMessage(value); }
-      }
-      public Builder SetMessage(string value) {
-        pb::ThrowHelper.ThrowIfNull(value, "value");
-        PrepareBuilder();
-        result.hasMessage = true;
-        result.message_ = value;
-        return this;
-      }
-      public Builder ClearMessage() {
-        PrepareBuilder();
-        result.hasMessage = false;
-        result.message_ = "";
-        return this;
       }
     }
-    static RouteNote() {
-      object.ReferenceEquals(global::examples.Proto.RouteGuide.Descriptor, null);
-    }
+
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-  public sealed partial class RouteSummary : pb::GeneratedMessage<RouteSummary, RouteSummary.Builder> {
-    private RouteSummary() { }
-    private static readonly RouteSummary defaultInstance = new RouteSummary().MakeReadOnly();
-    private static readonly string[] _routeSummaryFieldNames = new string[] { "distance", "elapsed_time", "feature_count", "point_count" };
-    private static readonly uint[] _routeSummaryFieldTags = new uint[] { 24, 32, 16, 8 };
-    public static RouteSummary DefaultInstance {
-      get { return defaultInstance; }
+  public sealed partial class RouteSummary : pb::IMessage<RouteSummary> {
+    private static readonly pb::MessageParser<RouteSummary> _parser = new pb::MessageParser<RouteSummary>(() => new RouteSummary());
+    public static pb::MessageParser<RouteSummary> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Examples.Proto.RouteGuide.Descriptor.MessageTypes[4]; }
     }
 
-    public override RouteSummary DefaultInstanceForType {
-      get { return DefaultInstance; }
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
     }
 
-    protected override RouteSummary ThisMessage {
-      get { return this; }
+    public RouteSummary() {
+      OnConstruction();
     }
 
-    public static pbd::MessageDescriptor Descriptor {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_RouteSummary__Descriptor; }
+    partial void OnConstruction();
+
+    public RouteSummary(RouteSummary other) : this() {
+      pointCount_ = other.pointCount_;
+      featureCount_ = other.featureCount_;
+      distance_ = other.distance_;
+      elapsedTime_ = other.elapsedTime_;
     }
 
-    protected override pb::FieldAccess.FieldAccessorTable<RouteSummary, RouteSummary.Builder> InternalFieldAccessors {
-      get { return global::examples.Proto.RouteGuide.internal__static_examples_RouteSummary__FieldAccessorTable; }
+    public RouteSummary Clone() {
+      return new RouteSummary(this);
     }
 
     public const int PointCountFieldNumber = 1;
-    private bool hasPointCount;
     private int pointCount_;
-    public bool HasPointCount {
-      get { return hasPointCount; }
-    }
     public int PointCount {
       get { return pointCount_; }
+      set {
+        pointCount_ = value;
+      }
     }
 
     public const int FeatureCountFieldNumber = 2;
-    private bool hasFeatureCount;
     private int featureCount_;
-    public bool HasFeatureCount {
-      get { return hasFeatureCount; }
-    }
     public int FeatureCount {
       get { return featureCount_; }
+      set {
+        featureCount_ = value;
+      }
     }
 
     public const int DistanceFieldNumber = 3;
-    private bool hasDistance;
     private int distance_;
-    public bool HasDistance {
-      get { return hasDistance; }
-    }
     public int Distance {
       get { return distance_; }
+      set {
+        distance_ = value;
+      }
     }
 
     public const int ElapsedTimeFieldNumber = 4;
-    private bool hasElapsedTime;
     private int elapsedTime_;
-    public bool HasElapsedTime {
-      get { return hasElapsedTime; }
-    }
     public int ElapsedTime {
       get { return elapsedTime_; }
+      set {
+        elapsedTime_ = value;
+      }
     }
 
-    public override bool IsInitialized {
-      get {
+    public override bool Equals(object other) {
+      return Equals(other as RouteSummary);
+    }
+
+    public bool Equals(RouteSummary other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
         return true;
       }
+      if (PointCount != other.PointCount) return false;
+      if (FeatureCount != other.FeatureCount) return false;
+      if (Distance != other.Distance) return false;
+      if (ElapsedTime != other.ElapsedTime) return false;
+      return true;
     }
 
-    public override void WriteTo(pb::ICodedOutputStream output) {
-      CalcSerializedSize();
-      string[] field_names = _routeSummaryFieldNames;
-      if (hasPointCount) {
-        output.WriteInt32(1, field_names[3], PointCount);
-      }
-      if (hasFeatureCount) {
-        output.WriteInt32(2, field_names[2], FeatureCount);
-      }
-      if (hasDistance) {
-        output.WriteInt32(3, field_names[0], Distance);
-      }
-      if (hasElapsedTime) {
-        output.WriteInt32(4, field_names[1], ElapsedTime);
-      }
-      UnknownFields.WriteTo(output);
+    public override int GetHashCode() {
+      int hash = 1;
+      if (PointCount != 0) hash ^= PointCount.GetHashCode();
+      if (FeatureCount != 0) hash ^= FeatureCount.GetHashCode();
+      if (Distance != 0) hash ^= Distance.GetHashCode();
+      if (ElapsedTime != 0) hash ^= ElapsedTime.GetHashCode();
+      return hash;
     }
 
-    private int memoizedSerializedSize = -1;
-    public override int SerializedSize {
-      get {
-        int size = memoizedSerializedSize;
-        if (size != -1) return size;
-        return CalcSerializedSize();
+    public override string ToString() {
+      return pb::JsonFormatter.Default.Format(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (PointCount != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(PointCount);
+      }
+      if (FeatureCount != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(FeatureCount);
+      }
+      if (Distance != 0) {
+        output.WriteRawTag(24);
+        output.WriteInt32(Distance);
+      }
+      if (ElapsedTime != 0) {
+        output.WriteRawTag(32);
+        output.WriteInt32(ElapsedTime);
       }
     }
 
-    private int CalcSerializedSize() {
-      int size = memoizedSerializedSize;
-      if (size != -1) return size;
-
-      size = 0;
-      if (hasPointCount) {
-        size += pb::CodedOutputStream.ComputeInt32Size(1, PointCount);
+    public int CalculateSize() {
+      int size = 0;
+      if (PointCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(PointCount);
       }
-      if (hasFeatureCount) {
-        size += pb::CodedOutputStream.ComputeInt32Size(2, FeatureCount);
+      if (FeatureCount != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(FeatureCount);
       }
-      if (hasDistance) {
-        size += pb::CodedOutputStream.ComputeInt32Size(3, Distance);
+      if (Distance != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Distance);
       }
-      if (hasElapsedTime) {
-        size += pb::CodedOutputStream.ComputeInt32Size(4, ElapsedTime);
+      if (ElapsedTime != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(ElapsedTime);
       }
-      size += UnknownFields.SerializedSize;
-      memoizedSerializedSize = size;
       return size;
     }
-    public static RouteSummary ParseFrom(pb::ByteString data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static RouteSummary ParseFrom(pb::ByteString data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static RouteSummary ParseFrom(byte[] data) {
-      return ((Builder) CreateBuilder().MergeFrom(data)).BuildParsed();
-    }
-    public static RouteSummary ParseFrom(byte[] data, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(data, extensionRegistry)).BuildParsed();
-    }
-    public static RouteSummary ParseFrom(global::System.IO.Stream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static RouteSummary ParseFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    public static RouteSummary ParseDelimitedFrom(global::System.IO.Stream input) {
-      return CreateBuilder().MergeDelimitedFrom(input).BuildParsed();
-    }
-    public static RouteSummary ParseDelimitedFrom(global::System.IO.Stream input, pb::ExtensionRegistry extensionRegistry) {
-      return CreateBuilder().MergeDelimitedFrom(input, extensionRegistry).BuildParsed();
-    }
-    public static RouteSummary ParseFrom(pb::ICodedInputStream input) {
-      return ((Builder) CreateBuilder().MergeFrom(input)).BuildParsed();
-    }
-    public static RouteSummary ParseFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-      return ((Builder) CreateBuilder().MergeFrom(input, extensionRegistry)).BuildParsed();
-    }
-    private RouteSummary MakeReadOnly() {
-      return this;
+
+    public void MergeFrom(RouteSummary other) {
+      if (other == null) {
+        return;
+      }
+      if (other.PointCount != 0) {
+        PointCount = other.PointCount;
+      }
+      if (other.FeatureCount != 0) {
+        FeatureCount = other.FeatureCount;
+      }
+      if (other.Distance != 0) {
+        Distance = other.Distance;
+      }
+      if (other.ElapsedTime != 0) {
+        ElapsedTime = other.ElapsedTime;
+      }
     }
 
-    public static Builder CreateBuilder() { return new Builder(); }
-    public override Builder ToBuilder() { return CreateBuilder(this); }
-    public override Builder CreateBuilderForType() { return new Builder(); }
-    public static Builder CreateBuilder(RouteSummary prototype) {
-      return new Builder(prototype);
-    }
-
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-    public sealed partial class Builder : pb::GeneratedBuilder<RouteSummary, Builder> {
-      protected override Builder ThisBuilder {
-        get { return this; }
-      }
-      public Builder() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-      }
-      internal Builder(RouteSummary cloneFrom) {
-        result = cloneFrom;
-        resultIsReadOnly = true;
-      }
-
-      private bool resultIsReadOnly;
-      private RouteSummary result;
-
-      private RouteSummary PrepareBuilder() {
-        if (resultIsReadOnly) {
-          RouteSummary original = result;
-          result = new RouteSummary();
-          resultIsReadOnly = false;
-          MergeFrom(original);
-        }
-        return result;
-      }
-
-      public override bool IsInitialized {
-        get { return result.IsInitialized; }
-      }
-
-      protected override RouteSummary MessageBeingBuilt {
-        get { return PrepareBuilder(); }
-      }
-
-      public override Builder Clear() {
-        result = DefaultInstance;
-        resultIsReadOnly = true;
-        return this;
-      }
-
-      public override Builder Clone() {
-        if (resultIsReadOnly) {
-          return new Builder(result);
-        } else {
-          return new Builder().MergeFrom(result);
-        }
-      }
-
-      public override pbd::MessageDescriptor DescriptorForType {
-        get { return global::examples.RouteSummary.Descriptor; }
-      }
-
-      public override RouteSummary DefaultInstanceForType {
-        get { return global::examples.RouteSummary.DefaultInstance; }
-      }
-
-      public override RouteSummary BuildPartial() {
-        if (resultIsReadOnly) {
-          return result;
-        }
-        resultIsReadOnly = true;
-        return result.MakeReadOnly();
-      }
-
-      public override Builder MergeFrom(pb::IMessage other) {
-        if (other is RouteSummary) {
-          return MergeFrom((RouteSummary) other);
-        } else {
-          base.MergeFrom(other);
-          return this;
-        }
-      }
-
-      public override Builder MergeFrom(RouteSummary other) {
-        if (other == global::examples.RouteSummary.DefaultInstance) return this;
-        PrepareBuilder();
-        if (other.HasPointCount) {
-          PointCount = other.PointCount;
-        }
-        if (other.HasFeatureCount) {
-          FeatureCount = other.FeatureCount;
-        }
-        if (other.HasDistance) {
-          Distance = other.Distance;
-        }
-        if (other.HasElapsedTime) {
-          ElapsedTime = other.ElapsedTime;
-        }
-        this.MergeUnknownFields(other.UnknownFields);
-        return this;
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input) {
-        return MergeFrom(input, pb::ExtensionRegistry.Empty);
-      }
-
-      public override Builder MergeFrom(pb::ICodedInputStream input, pb::ExtensionRegistry extensionRegistry) {
-        PrepareBuilder();
-        pb::UnknownFieldSet.Builder unknownFields = null;
-        uint tag;
-        string field_name;
-        while (input.ReadTag(out tag, out field_name)) {
-          if(tag == 0 && field_name != null) {
-            int field_ordinal = global::System.Array.BinarySearch(_routeSummaryFieldNames, field_name, global::System.StringComparer.Ordinal);
-            if(field_ordinal >= 0)
-              tag = _routeSummaryFieldTags[field_ordinal];
-            else {
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              continue;
-            }
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 8: {
+            PointCount = input.ReadInt32();
+            break;
           }
-          switch (tag) {
-            case 0: {
-              throw pb::InvalidProtocolBufferException.InvalidTag();
-            }
-            default: {
-              if (pb::WireFormat.IsEndGroupTag(tag)) {
-                if (unknownFields != null) {
-                  this.UnknownFields = unknownFields.Build();
-                }
-                return this;
-              }
-              if (unknownFields == null) {
-                unknownFields = pb::UnknownFieldSet.CreateBuilder(this.UnknownFields);
-              }
-              ParseUnknownField(input, unknownFields, extensionRegistry, tag, field_name);
-              break;
-            }
-            case 8: {
-              result.hasPointCount = input.ReadInt32(ref result.pointCount_);
-              break;
-            }
-            case 16: {
-              result.hasFeatureCount = input.ReadInt32(ref result.featureCount_);
-              break;
-            }
-            case 24: {
-              result.hasDistance = input.ReadInt32(ref result.distance_);
-              break;
-            }
-            case 32: {
-              result.hasElapsedTime = input.ReadInt32(ref result.elapsedTime_);
-              break;
-            }
+          case 16: {
+            FeatureCount = input.ReadInt32();
+            break;
+          }
+          case 24: {
+            Distance = input.ReadInt32();
+            break;
+          }
+          case 32: {
+            ElapsedTime = input.ReadInt32();
+            break;
           }
         }
-
-        if (unknownFields != null) {
-          this.UnknownFields = unknownFields.Build();
-        }
-        return this;
-      }
-
-
-      public bool HasPointCount {
-        get { return result.hasPointCount; }
-      }
-      public int PointCount {
-        get { return result.PointCount; }
-        set { SetPointCount(value); }
-      }
-      public Builder SetPointCount(int value) {
-        PrepareBuilder();
-        result.hasPointCount = true;
-        result.pointCount_ = value;
-        return this;
-      }
-      public Builder ClearPointCount() {
-        PrepareBuilder();
-        result.hasPointCount = false;
-        result.pointCount_ = 0;
-        return this;
-      }
-
-      public bool HasFeatureCount {
-        get { return result.hasFeatureCount; }
-      }
-      public int FeatureCount {
-        get { return result.FeatureCount; }
-        set { SetFeatureCount(value); }
-      }
-      public Builder SetFeatureCount(int value) {
-        PrepareBuilder();
-        result.hasFeatureCount = true;
-        result.featureCount_ = value;
-        return this;
-      }
-      public Builder ClearFeatureCount() {
-        PrepareBuilder();
-        result.hasFeatureCount = false;
-        result.featureCount_ = 0;
-        return this;
-      }
-
-      public bool HasDistance {
-        get { return result.hasDistance; }
-      }
-      public int Distance {
-        get { return result.Distance; }
-        set { SetDistance(value); }
-      }
-      public Builder SetDistance(int value) {
-        PrepareBuilder();
-        result.hasDistance = true;
-        result.distance_ = value;
-        return this;
-      }
-      public Builder ClearDistance() {
-        PrepareBuilder();
-        result.hasDistance = false;
-        result.distance_ = 0;
-        return this;
-      }
-
-      public bool HasElapsedTime {
-        get { return result.hasElapsedTime; }
-      }
-      public int ElapsedTime {
-        get { return result.ElapsedTime; }
-        set { SetElapsedTime(value); }
-      }
-      public Builder SetElapsedTime(int value) {
-        PrepareBuilder();
-        result.hasElapsedTime = true;
-        result.elapsedTime_ = value;
-        return this;
-      }
-      public Builder ClearElapsedTime() {
-        PrepareBuilder();
-        result.hasElapsedTime = false;
-        result.elapsedTime_ = 0;
-        return this;
       }
     }
-    static RouteSummary() {
-      object.ReferenceEquals(global::examples.Proto.RouteGuide.Descriptor, null);
-    }
+
   }
 
   #endregion

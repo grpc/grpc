@@ -78,7 +78,7 @@ typedef struct {
     struct sockaddr sockaddr;
     struct sockaddr_un un;
   } addr;
-  int addr_len;
+  size_t addr_len;
   grpc_iomgr_closure read_closure;
   grpc_iomgr_closure destroyed_closure;
   grpc_udp_server_read_cb read_cb;
@@ -216,7 +216,8 @@ void grpc_udp_server_destroy(
 }
 
 /* Prepare a recently-created socket for listening. */
-static int prepare_socket(int fd, const struct sockaddr *addr, int addr_len) {
+static int prepare_socket(int fd, const struct sockaddr *addr,
+                          size_t addr_len) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
   int get_local_ip;
@@ -236,7 +237,8 @@ static int prepare_socket(int fd, const struct sockaddr *addr, int addr_len) {
 #endif
   }
 
-  if (bind(fd, addr, addr_len) < 0) {
+  GPR_ASSERT(addr_len < ~(socklen_t)0);
+  if (bind(fd, addr, (socklen_t)addr_len) < 0) {
     char *addr_str;
     grpc_sockaddr_to_string(&addr_str, addr, 0);
     gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
@@ -282,7 +284,7 @@ static void on_read(void *arg, int success) {
 }
 
 static int add_socket_to_server(grpc_udp_server *s, int fd,
-                                const struct sockaddr *addr, int addr_len,
+                                const struct sockaddr *addr, size_t addr_len,
                                 grpc_udp_server_read_cb read_cb) {
   server_port *sp;
   int port;
@@ -313,8 +315,8 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
   return port;
 }
 
-int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr, int addr_len,
-                             grpc_udp_server_read_cb read_cb) {
+int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
+                             size_t addr_len, grpc_udp_server_read_cb read_cb) {
   int allocated_port1 = -1;
   int allocated_port2 = -1;
   unsigned i;
@@ -419,7 +421,7 @@ void grpc_udp_server_start(grpc_udp_server *s, grpc_pollset **pollsets,
 /* TODO(rjshade): Add a test for this method. */
 void grpc_udp_server_write(server_port *sp, const char *buffer, size_t buf_len,
                            const struct sockaddr *peer_address) {
-  int rc;
+  ssize_t rc;
   rc = sendto(sp->fd, buffer, buf_len, 0, peer_address, sizeof(peer_address));
   if (rc < 0) {
     gpr_log(GPR_ERROR, "Unable to send data: %s", strerror(errno));

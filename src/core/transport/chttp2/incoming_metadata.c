@@ -122,7 +122,7 @@ void grpc_incoming_metadata_buffer_move_to_referencing_sopb(
   for (i = 0; i < sopb->nops; i++) {
     if (sopb->ops[i].type != GRPC_OP_METADATA) continue;
     sopb->ops[i].data.metadata.list.tail =
-        (void *)(delta + (gpr_intptr)sopb->ops[i].data.metadata.list.tail);
+        (void *)(delta + (gpr_uintptr)sopb->ops[i].data.metadata.list.tail);
   }
   src->count = 0;
 }

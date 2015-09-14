@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -108,8 +108,35 @@ Data Fields</h2></td></tr>
 <tr class="separator:a74f306e56988bd7e20d0116829ce4128"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0cb931b8950cc5841edf1156ca861600"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__linked__mdelem.html">grpc_linked_mdelem</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a0cb931b8950cc5841edf1156ca861600">md_links</a> [4]</td></tr>
 <tr class="separator:a0cb931b8950cc5841edf1156ca861600"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab6ed893c5caa5b86338edf8b97bd77d8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#ab6ed893c5caa5b86338edf8b97bd77d8">unused</a></td></tr>
-<tr class="separator:ab6ed893c5caa5b86338edf8b97bd77d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aebe0ca1a05e0e7cd6218b75c281818b7"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#aebe0ca1a05e0e7cd6218b75c281818b7">got_client_metadata</a></td></tr>
+<tr class="separator:aebe0ca1a05e0e7cd6218b75c281818b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5a77f05f0ebe7e2fa851cb29f4175fd2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__stream__op__buffer.html">grpc_stream_op_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a5a77f05f0ebe7e2fa851cb29f4175fd2">recv_ops</a></td></tr>
+<tr class="separator:a5a77f05f0ebe7e2fa851cb29f4175fd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3c7f4d12b26ecd073c992c56fa9c098d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a3c7f4d12b26ecd073c992c56fa9c098d">on_done_recv</a></td></tr>
+<tr class="memdesc:a3c7f4d12b26ecd073c992c56fa9c098d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Closure to call when finished with the hc_on_recv hook.  <a href="#a3c7f4d12b26ecd073c992c56fa9c098d">More...</a><br/></td></tr>
+<tr class="separator:a3c7f4d12b26ecd073c992c56fa9c098d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a678c39056cc0b7ee525e1feac308be0c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a678c39056cc0b7ee525e1feac308be0c">auth_on_recv</a></td></tr>
+<tr class="separator:a678c39056cc0b7ee525e1feac308be0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8539117da2162a8d856b1e9b57552f58"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__transport__stream__op.html">grpc_transport_stream_op</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a8539117da2162a8d856b1e9b57552f58">transport_op</a></td></tr>
+<tr class="separator:a8539117da2162a8d856b1e9b57552f58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab21445276dc59204dac360f6e8348e3f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__metadata__array.html">grpc_metadata_array</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#ab21445276dc59204dac360f6e8348e3f">md</a></td></tr>
+<tr class="separator:ab21445276dc59204dac360f6e8348e3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a55ac01aa59cb00ea938904ba3e9fcbd6"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a55ac01aa59cb00ea938904ba3e9fcbd6">consumed_md</a></td></tr>
+<tr class="separator:a55ac01aa59cb00ea938904ba3e9fcbd6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6dd1a378cb38a08173d9927d9fb98a57"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a6dd1a378cb38a08173d9927d9fb98a57">num_consumed_md</a></td></tr>
+<tr class="separator:a6dd1a378cb38a08173d9927d9fb98a57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad078634c578208aeae616fad1d66ae1d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__stream__op.html">grpc_stream_op</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#ad078634c578208aeae616fad1d66ae1d">md_op</a></td></tr>
+<tr class="separator:ad078634c578208aeae616fad1d66ae1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4a8c8939c2035ae477b96a53943df07c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__auth__context.html">grpc_auth_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a4a8c8939c2035ae477b96a53943df07c">auth_context</a></td></tr>
+<tr class="separator:a4a8c8939c2035ae477b96a53943df07c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9f9d0abd4117ecf4c91cc2f19a1cc56"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcensus__op__id.html">census_op_id</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#ad9f9d0abd4117ecf4c91cc2f19a1cc56">op_id</a></td></tr>
+<tr class="separator:ad9f9d0abd4117ecf4c91cc2f19a1cc56"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae64ce754d7433f0e6485e9566a58596e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structcensus__context.html">census_context</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#ae64ce754d7433f0e6485e9566a58596e">ctxt</a></td></tr>
+<tr class="separator:ae64ce754d7433f0e6485e9566a58596e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3336f8db2ecd769eec0422d58217cad0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a3336f8db2ecd769eec0422d58217cad0">start_ts</a></td></tr>
+<tr class="separator:a3336f8db2ecd769eec0422d58217cad0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af1413eaca5d716833cb45f5fc2fc912a"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#af1413eaca5d716833cb45f5fc2fc912a">error</a></td></tr>
+<tr class="separator:af1413eaca5d716833cb45f5fc2fc912a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7042d8feb119d4fcce1258c5eddca8ff"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call__element.html">grpc_call_element</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a7042d8feb119d4fcce1258c5eddca8ff">elem</a></td></tr>
 <tr class="separator:a7042d8feb119d4fcce1258c5eddca8ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa671a127b29c32228f221a6121515a64"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__mu.html">gpr_mu</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#aa671a127b29c32228f221a6121515a64">mu_state</a></td></tr>
@@ -137,6 +164,8 @@ Data Fields</h2></td></tr>
 <tr class="separator:a765c539d2737d435cf434241edda82f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad33eb76b6d73d8a4475ff69ff4e8964c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__linked__mdelem.html">grpc_linked_mdelem</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#ad33eb76b6d73d8a4475ff69ff4e8964c">compression_algorithm_storage</a></td></tr>
 <tr class="separator:ad33eb76b6d73d8a4475ff69ff4e8964c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fff0f0041810162f27d0be82470fcda"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__linked__mdelem.html">grpc_linked_mdelem</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a3fff0f0041810162f27d0be82470fcda">accept_encoding_storage</a></td></tr>
+<tr class="separator:a3fff0f0041810162f27d0be82470fcda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a69fca2329317c8cf3d9c215334b2aa40"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a69fca2329317c8cf3d9c215334b2aa40">remaining_slice_bytes</a></td></tr>
 <tr class="memdesc:a69fca2329317c8cf3d9c215334b2aa40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Input data to be read, as per BEGIN_MESSAGE.  <a href="#a69fca2329317c8cf3d9c215334b2aa40">More...</a><br/></td></tr>
 <tr class="separator:a69fca2329317c8cf3d9c215334b2aa40"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -161,15 +190,8 @@ Data Fields</h2></td></tr>
 <tr class="separator:a4169f3d34c6e55c4bba43a86241bf1ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab58bbaa2f8f054f606d919abce3f4716"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__linked__mdelem.html">grpc_linked_mdelem</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#ab58bbaa2f8f054f606d919abce3f4716">user_agent</a></td></tr>
 <tr class="separator:ab58bbaa2f8f054f606d919abce3f4716"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aab616ade799853e16e5e35ee3a16ffbc"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#aab616ade799853e16e5e35ee3a16ffbc">sent_authority</a></td></tr>
-<tr class="separator:aab616ade799853e16e5e35ee3a16ffbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7bda5a1466231baa3df0059573579b9b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a7bda5a1466231baa3df0059573579b9b">got_initial_metadata</a></td></tr>
 <tr class="separator:a7bda5a1466231baa3df0059573579b9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a77f05f0ebe7e2fa851cb29f4175fd2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__stream__op__buffer.html">grpc_stream_op_buffer</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a5a77f05f0ebe7e2fa851cb29f4175fd2">recv_ops</a></td></tr>
-<tr class="separator:a5a77f05f0ebe7e2fa851cb29f4175fd2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3c7f4d12b26ecd073c992c56fa9c098d"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a3c7f4d12b26ecd073c992c56fa9c098d">on_done_recv</a></td></tr>
-<tr class="memdesc:a3c7f4d12b26ecd073c992c56fa9c098d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Closure to call when finished with the hc_on_recv hook.  <a href="#a3c7f4d12b26ecd073c992c56fa9c098d">More...</a><br/></td></tr>
-<tr class="separator:a3c7f4d12b26ecd073c992c56fa9c098d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab0f1ff70c9a8a72f5eb2e778fe709baf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#ab0f1ff70c9a8a72f5eb2e778fe709baf">hc_on_recv</a></td></tr>
 <tr class="memdesc:ab0f1ff70c9a8a72f5eb2e778fe709baf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Receive closures are chained: we inject this closure as the on_done_recv up-call on transport_op, and remember to call our on_done_recv member after handling it.  <a href="#ab0f1ff70c9a8a72f5eb2e778fe709baf">More...</a><br/></td></tr>
 <tr class="separator:ab0f1ff70c9a8a72f5eb2e778fe709baf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -190,6 +212,8 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a449389cf74cdadc8a00b52990c7052d5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a449389cf74cdadc8a00b52990c7052d5">hs_on_recv</a></td></tr>
 <tr class="memdesc:a449389cf74cdadc8a00b52990c7052d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Receive closures are chained: we inject this closure as the on_done_recv up-call on transport_op, and remember to call our on_done_recv member after handling it.  <a href="#a449389cf74cdadc8a00b52990c7052d5">More...</a><br/></td></tr>
 <tr class="separator:a449389cf74cdadc8a00b52990c7052d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6ed893c5caa5b86338edf8b97bd77d8"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#ab6ed893c5caa5b86338edf8b97bd77d8">unused</a></td></tr>
+<tr class="separator:ab6ed893c5caa5b86338edf8b97bd77d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5512e8a6ddade275bc9b64ef48de3036"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call.html">grpc_call</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a5512e8a6ddade275bc9b64ef48de3036">call</a></td></tr>
 <tr class="separator:a5512e8a6ddade275bc9b64ef48de3036"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6bcb3a806a24c9818f835251b97c01f8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcall__data.html#a6bcb3a806a24c9818f835251b97c01f8">path</a></td></tr>
@@ -206,12 +230,48 @@ Data Fields</h2></td></tr>
 <tr class="separator:ad76af7080f636ebaa53a1575af62094e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
+<a class="anchor" id="a3fff0f0041810162f27d0be82470fcda"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__linked__mdelem.html">grpc_linked_mdelem</a> call_data::accept_encoding_storage</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="ab21ef8aafd3c095825805e29e69670ce"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> call_data::async_setup_task</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a4a8c8939c2035ae477b96a53943df07c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__auth__context.html">grpc_auth_context</a>* call_data::auth_context</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a678c39056cc0b7ee525e1feac308be0c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> call_data::auth_on_recv</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -269,6 +329,18 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a55ac01aa59cb00ea938904ba3e9fcbd6"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a>* call_data::consumed_md</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a4169f3d34c6e55c4bba43a86241bf1ea"></a>
 <div class="memitem">
 <div class="memproto">
@@ -305,6 +377,18 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ae64ce754d7433f0e6485e9566a58596e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structcensus__context.html">census_context</a>* call_data::ctxt</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a9ca8837431c3942aa3b18092e314632c"></a>
 <div class="memitem">
 <div class="memproto">
@@ -335,6 +419,30 @@ Data Fields</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="structgrpc__call__element.html">grpc_call_element</a>* call_data::elem</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="af1413eaca5d716833cb45f5fc2fc912a"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int call_data::error</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aebe0ca1a05e0e7cd6218b75c281818b7"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a> call_data::got_client_metadata</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -431,12 +539,36 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ab21445276dc59204dac360f6e8348e3f"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__metadata__array.html">grpc_metadata_array</a> call_data::md</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a0cb931b8950cc5841edf1156ca861600"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="structgrpc__linked__mdelem.html">grpc_linked_mdelem</a> call_data::md_links[4]</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ad078634c578208aeae616fad1d66ae1d"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__stream__op.html">grpc_stream_op</a>* call_data::md_op</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -481,6 +613,18 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a6dd1a378cb38a08173d9927d9fb98a57"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">size_t call_data::num_consumed_md</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a3c7f4d12b26ecd073c992c56fa9c098d"></a>
 <div class="memitem">
 <div class="memproto">
@@ -502,6 +646,18 @@ Data Fields</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="structgrpc__transport__stream__op.html">grpc_transport_stream_op</a> call_data::op</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ad9f9d0abd4117ecf4c91cc2f19a1cc56"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structcensus__op__id.html">census_op_id</a> call_data::op_id</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -690,18 +846,6 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aab616ade799853e16e5e35ee3a16ffbc"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int call_data::sent_authority</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a class="anchor" id="aded44c7ecaa861e2a4a39380b172368a"></a>
 <div class="memitem">
 <div class="memproto">
@@ -752,6 +896,18 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a3336f8db2ecd769eec0422d58217cad0"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgpr__timespec.html">gpr_timespec</a> call_data::start_ts</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a394da9a4876df32b91b8891303695a5d"></a>
 <div class="memitem">
 <div class="memproto">
@@ -796,6 +952,18 @@ Data Fields</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="structgrpc__linked__mdelem.html">grpc_linked_mdelem</a> call_data::te_trailers</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a8539117da2162a8d856b1e9b57552f58"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__transport__stream__op.html">grpc_transport_stream_op</a> call_data::transport_op</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -855,6 +1023,7 @@ Data Fields</h2></td></tr>
 <hr/>The documentation for this struct was generated from the following files:<ul>
 <li>src/core/security/<a class="el" href="client__auth__filter_8c.html">client_auth_filter.c</a></li>
 <li>src/core/security/<a class="el" href="server__auth__filter_8c.html">server_auth_filter.c</a></li>
+<li>src/core/census/<a class="el" href="grpc__filter_8c.html">grpc_filter.c</a></li>
 <li>src/core/channel/<a class="el" href="client__channel_8c.html">client_channel.c</a></li>
 <li>src/core/channel/<a class="el" href="compress__filter_8c.html">compress_filter.c</a></li>
 <li>src/core/channel/<a class="el" href="http__client__filter_8c.html">http_client_filter.c</a></li>
@@ -866,7 +1035,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

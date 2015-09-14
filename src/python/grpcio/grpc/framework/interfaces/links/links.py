@@ -34,14 +34,13 @@ import collections
 import enum
 
 
-class Transport(collections.namedtuple('Transport', ('kind', 'value',))):
-  """A sum type for handles to an underlying transport system.
+class Protocol(collections.namedtuple('Protocol', ('kind', 'value',))):
+  """A sum type for handles to a system that transmits tickets.
 
   Attributes:
-    kind: A Kind value identifying the kind of value being passed to or from
-      the underlying transport.
-    value: The value being passed through RPC Framework between the high-level
-      application and the underlying transport.
+    kind: A Kind value identifying the kind of value being passed.
+    value: The value being passed between the high-level application and the
+      system affording ticket transport.
   """
 
   @enum.unique
@@ -56,8 +55,7 @@ class Ticket(
         'Ticket',
         ('operation_id', 'sequence_number', 'group', 'method', 'subscription',
          'timeout', 'allowance', 'initial_metadata', 'payload',
-         'terminal_metadata', 'code', 'message', 'termination',
-         'transport',))):
+         'terminal_metadata', 'code', 'message', 'termination', 'protocol',))):
   """A sum type for all values sent from a front to a back.
 
   Attributes:
@@ -99,8 +97,8 @@ class Ticket(
     termination: A Termination value describing the end of the operation, or
       None if the operation has not yet terminated. If set, no further tickets
       may be sent in the same direction.
-    transport: A Transport value or None, with further semantics being a matter
-      between high-level application and underlying transport.
+    protocol: A Protocol value or None, with further semantics being a matter
+      between high-level application and underlying ticket transport.
   """
 
   @enum.unique

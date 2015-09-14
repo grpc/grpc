@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -126,11 +126,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>scheme
 : <a class="el" href="structcall__data.html#aa63048a662dd766734726542dba0f27a">call_data</a>
 , <a class="el" href="structchannel__data.html#ac7a621172aad5d1876691fb987a670e6">channel_data</a>
+, <a class="el" href="structgrpc__resolver__factory__vtable.html#a649cbb35e1bf254193366dda2c4fb35d">grpc_resolver_factory_vtable</a>
 , <a class="el" href="structgrpc__uri.html#a6163de89ece765552254810174fdfc32">grpc_uri</a>
-, <a class="el" href="structregistered__resolver.html#a8b53ba24e4ee032d66224f3588bceaba">registered_resolver</a>
-</li>
-<li>scope
-: <a class="el" href="structgrpc__service__account__credentials.html#a12e5661a8313375683678cde3fbe765f">grpc_service_account_credentials</a>
 </li>
 <li>secure_endpoint
 : <a class="el" href="structgrpc__secure__transport__setup.html#ae7e2e65bef91a9804fe95a47c4bfb8cb">grpc_secure_transport_setup</a>
@@ -158,6 +155,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>seen_post
 : <a class="el" href="structcall__data.html#aea6244f4fd9d2e7ccb5615b9f5ea5fe0">call_data</a>
 </li>
+<li>seen_regular_header
+: <a class="el" href="structframer__state.html#ad1b793047a3fa7c774f0bacdcb6a9174">framer_state</a>
+</li>
 <li>seen_scheme
 : <a class="el" href="structcall__data.html#a502cf8ae568f38ae501877458e399796">call_data</a>
 </li>
@@ -181,7 +181,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </li>
 <li>send_initial_metadata
 : <a class="el" href="structgrpc__call.html#a96ac69dc425de5924edd871f93338112">grpc_call</a>
-, <a class="el" href="structgrpc__op.html#a8e6202e19130ecb872de211a95dcee83">grpc_op</a>
+, <a class="el" href="structgrpc__op.html#a78da22d732e2ce599173f66fe2e6fd37">grpc_op</a>
 </li>
 <li>send_initial_metadata_count
 : <a class="el" href="structgrpc__call.html#abb6adc9d5f666a056c89172f506fcc3d">grpc_call</a>
@@ -191,7 +191,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="structgrpc__op.html#a3b6c1b3456306a802f6eb0e3e8d0e434">grpc_op</a>
 </li>
 <li>send_metadata
-: <a class="el" href="uniongrpc__ioreq__data.html#a4b9337cc24e8b42caa5c1502be083952">grpc_ioreq_data</a>
+: <a class="el" href="uniongrpc__ioreq__data.html#abdafc0e2f10121ee09e88037eb8e0829">grpc_ioreq_data</a>
 </li>
 <li>send_ops
 : <a class="el" href="structgrpc__call.html#ab17467642afa4f6c1c27bb9013093592">grpc_call</a>
@@ -201,16 +201,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="structgrpc__transport__op.html#abebcf932a4fa8d14006230dee06e0286">grpc_transport_op</a>
 </li>
 <li>send_status
-: <a class="el" href="uniongrpc__ioreq__data.html#a3711b0c39c293284a4e4897f74c974ab">grpc_ioreq_data</a>
+: <a class="el" href="uniongrpc__ioreq__data.html#a0f60bdc23b3bcb3b993c085c07171dc0">grpc_ioreq_data</a>
 </li>
 <li>send_status_from_server
-: <a class="el" href="structgrpc__op.html#afe7b3ae8f4c495a187f155a5fd6956bb">grpc_op</a>
+: <a class="el" href="structgrpc__op.html#acf3e5de9ed08917992cdd9a9c6e69725">grpc_op</a>
 </li>
 <li>sending
 : <a class="el" href="structgrpc__call.html#a7d64e836e0421c8129ac75e477271ef8">grpc_call</a>
-</li>
-<li>sent_authority
-: <a class="el" href="structcall__data.html#aab616ade799853e16e5e35ee3a16ffbc">call_data</a>
 </li>
 <li>sent_goaway
 : <a class="el" href="structgrpc__chttp2__transport__global.html#ad06b0ee92495f66aa27bd606459fcaf8">grpc_chttp2_transport_global</a>
@@ -309,6 +306,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>shutdown_done_cb
 : <a class="el" href="structgrpc__pollset.html#a08b13b08670fb33a139ff1d27ea115b7">grpc_pollset</a>
 </li>
+<li>shutdown_ep_refs
+: <a class="el" href="structgrpc__chttp2__transport.html#a4f616ee5e17a18e6734f7b5de01f92ed">grpc_chttp2_transport</a>
+</li>
 <li>shutdown_flag
 : <a class="el" href="structgrpc__server.html#aac6a14f451724678ba63c9f9a153dc33">grpc_server</a>
 </li>
@@ -321,6 +321,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>shutting_down
 : <a class="el" href="structgrpc__pollset.html#a890a0c1aa2061769dcd141cf97f83c1c">grpc_pollset</a>
 </li>
+<li>sibling_next
+: <a class="el" href="structgrpc__call.html#aa8c44532eee3fc767638a5d186a27565">grpc_call</a>
+</li>
+<li>sibling_prev
+: <a class="el" href="structgrpc__call.html#aebff80f720bb770443da09f87247c84e">grpc_call</a>
+</li>
 <li>signature
 : <a class="el" href="structverifier__cb__ctx.html#a78cd1bf7eb4ac6484ceeaf778ad6e2df">verifier_cb_ctx</a>
 </li>
@@ -328,7 +334,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="structverifier__cb__ctx.html#a65de5acf17b58f8a142466750e1b558b">verifier_cb_ctx</a>
 </li>
 <li>simple
-: <a class="el" href="structgrpc__chttp2__transport__parsing.html#adc911ee0c36b417e2da7a28a8d45675f">grpc_chttp2_transport_parsing</a>
+: <a class="el" href="structgrpc__chttp2__transport__parsing.html#a92ce9ddfed62fd6b55119ce2e9682cbf">grpc_chttp2_transport_parsing</a>
 </li>
 <li>size
 : <a class="el" href="structtsi__fake__frame.html#a59d8fa5e8e076fca91b8c1fa1572d9cf">tsi_fake_frame</a>
@@ -361,6 +367,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>sopb
 : <a class="el" href="structgrpc__chttp2__stream__writing.html#a54f5afcc25f62a2e138a04c69f1be120">grpc_chttp2_stream_writing</a>
 </li>
+<li>source_buffer
+: <a class="el" href="structsecure__endpoint.html#a946a51b8d0da649c928e113ce5d27bd9">secure_endpoint</a>
+</li>
 <li>ssl
 : <a class="el" href="structtsi__ssl__frame__protector.html#a64129d003fe330c56c39496361bd9e5f">tsi_ssl_frame_protector</a>
 , <a class="el" href="structtsi__ssl__handshaker.html#a1dbdafd7f92dad04fe09c4648e5ee952">tsi_ssl_handshaker</a>
@@ -386,13 +395,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>start_transport_stream_op
 : <a class="el" href="structgrpc__channel__filter.html#a089c1e5997b329703ccaaf633722a6c5">grpc_channel_filter</a>
 </li>
+<li>start_ts
+: <a class="el" href="structcall__data.html#a3336f8db2ecd769eec0422d58217cad0">call_data</a>
+</li>
 <li>started_picking
 : <a class="el" href="structpick__first__lb__policy.html#a8eff3397ca43852b04a3be5b5e03a6ce">pick_first_lb_policy</a>
+</li>
+<li>started_resolving
+: <a class="el" href="structchannel__data.html#abb4b57baa99e7c4239b640f13a906d5d">channel_data</a>
 </li>
 <li>state
 : <a class="el" href="structcall__data.html#a394da9a4876df32b91b8891303695a5d">call_data</a>
 , <a class="el" href="structgpr__cmdline.html#acb165b9b6f98c942dd65d66f1c95a806">gpr_cmdline</a>
 , <a class="el" href="structgpr__event.html#a9eb43867719fcdf48f33df11cd138be9">gpr_event</a>
+, <a class="el" href="structgrpc__auth__metadata__processor.html#af85de1293dfd5e846339d5ef4b7b41dc">grpc_auth_metadata_processor</a>
 , <a class="el" href="structgrpc__chttp2__data__parser.html#a4f5b790cb938400757b8f1fdbf6125ab">grpc_chttp2_data_parser</a>
 , <a class="el" href="structgrpc__chttp2__goaway__parser.html#afc5c60968d8b1b68e4c0705a66129589">grpc_chttp2_goaway_parser</a>
 , <a class="el" href="structgrpc__chttp2__hpack__parser.html#a70ad6a4061f4f49362959615eb0c3ca4">grpc_chttp2_hpack_parser</a>
@@ -415,7 +431,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="structgrpc__chttp2__hptbl.html#afe1cceb7c0988d6c29df983ad3764344">grpc_chttp2_hptbl</a>
 </li>
 <li>stats
-: <a class="el" href="structshard__type.html#a700e0afbcbed737607bac82970c61601">shard_type</a>
+: <a class="el" href="structcensus__aggregated__rpc__stats.html#af13f134d5d33e389203988fd73f5f645">census_aggregated_rpc_stats</a>
+, <a class="el" href="structshard__type.html#a700e0afbcbed737607bac82970c61601">shard_type</a>
 </li>
 <li>status
 : <a class="el" href="structcall__data.html#af1e73bf35274521a98f39316fddf3deb">call_data</a>
@@ -425,7 +442,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="structgrpc__op.html#a70d62415f6768533c2190e53f1c5baf4">grpc_op</a>
 </li>
 <li>status_details
-: <a class="el" href="structgrpc__op.html#ab993dfc7b33c61f06f26a4efc0aefca6">grpc_op</a>
+: <a class="el" href="structgrpc__op.html#ae460836040d79eb2bd0a6d581b36c461">grpc_op</a>
 </li>
 <li>status_details_capacity
 : <a class="el" href="structgrpc__op.html#a6cacd1d5311683ee077931c94a9dd6e9">grpc_op</a>
@@ -525,7 +542,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

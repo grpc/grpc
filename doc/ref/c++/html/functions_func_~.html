@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -72,6 +72,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions.html"><span>All</span></a></li>
       <li class="current"><a href="functions_func.html"><span>Functions</span></a></li>
       <li><a href="functions_vars.html"><span>Variables</span></a></li>
+      <li><a href="functions_type.html"><span>Typedefs</span></a></li>
       <li><a href="functions_enum.html"><span>Enumerations</span></a></li>
       <li><a href="functions_eval.html"><span>Enumerator</span></a></li>
       <li><a href="functions_rela.html"><span>Related&#160;Functions</span></a></li>
@@ -99,6 +100,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_func_t.html#index_t"><span>t</span></a></li>
       <li><a href="functions_func_u.html#index_u"><span>u</span></a></li>
       <li><a href="functions_func_w.html#index_w"><span>w</span></a></li>
+      <li><a href="functions_func_x.html#index_x"><span>x</span></a></li>
       <li class="current"><a href="functions_func_~.html#index_~"><span>~</span></a></li>
     </ul>
   </div>
@@ -133,6 +135,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>~AuthContext()
 : <a class="el" href="classgrpc_1_1_auth_context.html#a3784c5f4eeab56a8524da29981548464">grpc::AuthContext</a>
 </li>
+<li>~AuthMetadataProcessor()
+: <a class="el" href="classgrpc_1_1_auth_metadata_processor.html#ae64e2159109378600eb17f613ec4bbeb">grpc::AuthMetadataProcessor</a>
+</li>
 <li>~AuthPropertyIterator()
 : <a class="el" href="classgrpc_1_1_auth_property_iterator.html#a91a3a2ce5085a948aac11d7371c13b49">grpc::AuthPropertyIterator</a>
 </li>
@@ -142,11 +147,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>~CallHook()
 : <a class="el" href="classgrpc_1_1_call_hook.html#a4aa1cf199f80f6475c6da0ad679c5d9d">grpc::CallHook</a>
 </li>
+<li>~Channel()
+: <a class="el" href="classgrpc_1_1_channel.html#af12754677a599351077d6f68cc0c9159">grpc::Channel</a>
+</li>
 <li>~ChannelArguments()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a8058adf243855c3a44030c23ccec05ad">grpc::ChannelArguments</a>
-</li>
-<li>~ChannelInterface()
-: <a class="el" href="classgrpc_1_1_channel_interface.html#a3f5145d4778aa952540dc9983cefe13f">grpc::ChannelInterface</a>
 </li>
 <li>~ClientAsyncResponseReaderInterface()
 : <a class="el" href="classgrpc_1_1_client_async_response_reader_interface.html#aa97dc1ab6a7160a489d2e555102bf5a0">grpc::ClientAsyncResponseReaderInterface&lt; R &gt;</a>
@@ -172,17 +177,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>~Credentials()
 : <a class="el" href="classgrpc_1_1_credentials.html#af4e8a65a6cee2b847e11134671c213f2">grpc::Credentials</a>
 </li>
-<li>~DynamicThreadPool()
-: <a class="el" href="classgrpc_1_1_dynamic_thread_pool.html#a9a81f1b15a357a8ca6cb3d7fef7a5456">grpc::DynamicThreadPool</a>
-</li>
-<li>~FixedSizeThreadPool()
-: <a class="el" href="classgrpc_1_1_fixed_size_thread_pool.html#aa31a8326a490c77e0e04b6df7ac3d7f8">grpc::FixedSizeThreadPool</a>
-</li>
 <li>~GrpcLibrary()
 : <a class="el" href="classgrpc_1_1_grpc_library.html#adadb2fbc794175c8c4578bf283b009a8">grpc::GrpcLibrary</a>
-</li>
-<li>~InternalStub()
-: <a class="el" href="classgrpc_1_1_internal_stub.html#a43127d606386366f5935c08a21da059e">grpc::InternalStub</a>
 </li>
 <li>~lock_guard()
 : <a class="el" href="classgrpc_1_1lock__guard.html#ac99f7ed1e7b1e177a20b23f230eaf1c2">grpc::lock_guard&lt; mutex &gt;</a>
@@ -217,9 +213,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>~thread()
 : <a class="el" href="classgrpc_1_1thread.html#a821416c0e9319e93ae8b8e5cdaa9f52f">grpc::thread</a>
 </li>
-<li>~ThreadPoolInterface()
-: <a class="el" href="classgrpc_1_1_thread_pool_interface.html#a74a3380787d9be6e261c2849cdc84538">grpc::ThreadPoolInterface</a>
-</li>
 <li>~WriterInterface()
 : <a class="el" href="classgrpc_1_1_writer_interface.html#a447d71736fb6e8c6bd21287ecc3a9f75">grpc::WriterInterface&lt; W &gt;</a>
 </li>
@@ -227,7 +220,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
