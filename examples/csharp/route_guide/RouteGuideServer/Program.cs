@@ -5,26 +5,28 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace examples
+namespace Examples
 {
     class Program
     {
         static void Main(string[] args)
         {
-            var features = RouteGuideUtil.ParseFeatures(RouteGuideUtil.DefaultFeaturesFile);
-            GrpcEnvironment.Initialize();
+            const int Port = 50052;
 
-            Server server = new Server();
-            server.AddServiceDefinition(RouteGuide.BindService(new RouteGuideImpl(features)));
-            int port = server.AddListeningPort("localhost", 50052);
+            var features = RouteGuideUtil.ParseFeatures(RouteGuideUtil.DefaultFeaturesFile);
+
+            Server server = new Server
+            {
+                Services = { RouteGuide.BindService(new RouteGuideImpl(features)) },
+                Ports = { new ServerPort("localhost", Port, ServerCredentials.Insecure) }
+            };
             server.Start();
 
-            Console.WriteLine("RouteGuide server listening on port " + port);
+            Console.WriteLine("RouteGuide server listening on port " + Port);
             Console.WriteLine("Press any key to stop the server...");
             Console.ReadKey();
 
             server.ShutdownAsync().Wait();
-            GrpcEnvironment.Shutdown();
         }
     }
 }

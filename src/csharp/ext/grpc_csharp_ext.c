@@ -252,7 +252,7 @@ GPR_EXPORT gpr_intptr GPR_CALLTYPE grpcsharp_batch_context_recv_message_length(
   if (!ctx->recv_message) {
     return -1;
   }
-  return grpc_byte_buffer_length(ctx->recv_message);
+  return (gpr_intptr)grpc_byte_buffer_length(ctx->recv_message);
 }
 
 /*

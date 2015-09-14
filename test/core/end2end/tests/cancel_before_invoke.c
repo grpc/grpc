@@ -99,7 +99,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 /* Cancel before invoke */
 static void test_cancel_before_invoke(grpc_end2end_test_config config,
-                                      int test_ops) {
+                                      size_t test_ops) {
   grpc_op ops[6];
   grpc_op *op;
   grpc_call *c;
@@ -189,7 +189,7 @@ static void test_cancel_before_invoke(grpc_end2end_test_config config,
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  int i;
+  size_t i;
   for (i = 1; i <= 6; i++) {
     test_cancel_before_invoke(config, i);
   }

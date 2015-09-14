@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -93,7 +93,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><code>#include &lt;<a class="el" href="port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="sync__generic_8h_source.html">grpc/support/sync_generic.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="time_8h_source.html">grpc/support/time.h</a>&gt;</code><br/>
-<code>#include &lt;<a class="el" href="cancellable__platform_8h_source.html">grpc/support/cancellable_platform.h</a>&gt;</code><br/>
 </div>
 <p><a href="sync_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -115,20 +114,10 @@ Functions</h2></td></tr>
 <tr class="separator:a652900a910676d5cae9ccba052adb6b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5d8d01509b75addc44e5a43783a826e"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#ad5d8d01509b75addc44e5a43783a826e">gpr_cv_wait</a> (<a class="el" href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *cv, <a class="el" href="structgpr__mu.html">gpr_mu</a> *mu, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> abs_deadline)</td></tr>
 <tr class="separator:ad5d8d01509b75addc44e5a43783a826e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f1df649a9885ff2354dd4ce611017d9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#a5f1df649a9885ff2354dd4ce611017d9">gpr_cv_cancellable_wait</a> (<a class="el" href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *cv, <a class="el" href="structgpr__mu.html">gpr_mu</a> *mu, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> abs_deadline, <a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *c)</td></tr>
-<tr class="separator:a5f1df649a9885ff2354dd4ce611017d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aba119d0b92b0bd50e6efa9e2abe07a5f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#aba119d0b92b0bd50e6efa9e2abe07a5f">gpr_cv_signal</a> (<a class="el" href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *cv)</td></tr>
 <tr class="separator:aba119d0b92b0bd50e6efa9e2abe07a5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5a4b4a5844668d188db89dda6ad205b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#ad5a4b4a5844668d188db89dda6ad205b">gpr_cv_broadcast</a> (<a class="el" href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *cv)</td></tr>
 <tr class="separator:ad5a4b4a5844668d188db89dda6ad205b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aec0b0e9b9f084550cdec300da1f31add"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#aec0b0e9b9f084550cdec300da1f31add">gpr_cancellable_init</a> (<a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *c)</td></tr>
-<tr class="separator:aec0b0e9b9f084550cdec300da1f31add"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa82b7172b992bd33bd6fd4b4dc89e338"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#aa82b7172b992bd33bd6fd4b4dc89e338">gpr_cancellable_destroy</a> (<a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *c)</td></tr>
-<tr class="separator:aa82b7172b992bd33bd6fd4b4dc89e338"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1e53047443e5eb1f9895be0c90bc790b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#a1e53047443e5eb1f9895be0c90bc790b">gpr_cancellable_is_cancelled</a> (<a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *c)</td></tr>
-<tr class="separator:a1e53047443e5eb1f9895be0c90bc790b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a895fb73161d2dd1fa19be10d5395001c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#a895fb73161d2dd1fa19be10d5395001c">gpr_cancellable_cancel</a> (<a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *c)</td></tr>
-<tr class="separator:a895fb73161d2dd1fa19be10d5395001c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5c88872723a129b09200b1892d2323f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#ad5c88872723a129b09200b1892d2323f">gpr_once_init</a> (<a class="el" href="sync__posix_8h.html#a28731dc17a4158343f58f453a4d5e37f">gpr_once</a> *once, void(*init_routine)(void))</td></tr>
 <tr class="separator:ad5c88872723a129b09200b1892d2323f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a93f37cd27964fda51acd4cd8e6737922"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#a93f37cd27964fda51acd4cd8e6737922">gpr_event_init</a> (<a class="el" href="structgpr__event.html">gpr_event</a> *ev)</td></tr>
@@ -139,8 +128,6 @@ Functions</h2></td></tr>
 <tr class="separator:ac0a2305d9e6575cc5a3d92bc3f12c161"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01d442a76ff77f64d9f898b22ea33db7"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#a01d442a76ff77f64d9f898b22ea33db7">gpr_event_wait</a> (<a class="el" href="structgpr__event.html">gpr_event</a> *ev, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> abs_deadline)</td></tr>
 <tr class="separator:a01d442a76ff77f64d9f898b22ea33db7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae048c7e762b723821e35a07fd0d85e22"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#ae048c7e762b723821e35a07fd0d85e22">gpr_event_cancellable_wait</a> (<a class="el" href="structgpr__event.html">gpr_event</a> *ev, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> abs_deadline, <a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *c)</td></tr>
-<tr class="separator:ae048c7e762b723821e35a07fd0d85e22"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a235584f36572b5410b042ee63cb0740b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#a235584f36572b5410b042ee63cb0740b">gpr_ref_init</a> (<a class="el" href="structgpr__refcount.html">gpr_refcount</a> *r, int n)</td></tr>
 <tr class="separator:a235584f36572b5410b042ee63cb0740b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac0e52c6bfc7a04ba8a269f3227104571"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="sync_8h.html#ac0e52c6bfc7a04ba8a269f3227104571">gpr_ref</a> (<a class="el" href="structgpr__refcount.html">gpr_refcount</a> *r)</td></tr>
@@ -157,70 +144,6 @@ Functions</h2></td></tr>
 <tr class="separator:abb2c58da7d0b785887266b3b1890764d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a895fb73161d2dd1fa19be10d5395001c"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void gpr_cancellable_cancel </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *&#160;</td>
-          <td class="paramname"><em>c</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="aa82b7172b992bd33bd6fd4b4dc89e338"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void gpr_cancellable_destroy </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *&#160;</td>
-          <td class="paramname"><em>c</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="aec0b0e9b9f084550cdec300da1f31add"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void gpr_cancellable_init </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *&#160;</td>
-          <td class="paramname"><em>c</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a1e53047443e5eb1f9895be0c90bc790b"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int gpr_cancellable_is_cancelled </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *&#160;</td>
-          <td class="paramname"><em>c</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a class="anchor" id="ad5a4b4a5844668d188db89dda6ad205b"></a>
 <div class="memitem">
 <div class="memproto">
@@ -231,44 +154,6 @@ Functions</h2></td></tr>
           <td class="paramtype"><a class="el" href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *&#160;</td>
           <td class="paramname"><em>cv</em></td><td>)</td>
           <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a5f1df649a9885ff2354dd4ce611017d9"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int gpr_cv_cancellable_wait </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> *&#160;</td>
-          <td class="paramname"><em>cv</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structgpr__mu.html">gpr_mu</a> *&#160;</td>
-          <td class="paramname"><em>mu</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
-          <td class="paramname"><em>abs_deadline</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *&#160;</td>
-          <td class="paramname"><em>c</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -344,38 +229,6 @@ Functions</h2></td></tr>
           <td></td>
           <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
           <td class="paramname"><em>abs_deadline</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="ae048c7e762b723821e35a07fd0d85e22"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void* gpr_event_cancellable_wait </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgpr__event.html">gpr_event</a> *&#160;</td>
-          <td class="paramname"><em>ev</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
-          <td class="paramname"><em>abs_deadline</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="structgpr__cancellable.html">gpr_cancellable</a> *&#160;</td>
-          <td class="paramname"><em>c</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -732,7 +585,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -41,7 +41,7 @@ static unsigned char legal_bits[256 / 8];
 static void legal(int x) {
   int byte = x / 8;
   int bit = x % 8;
-  legal_bits[byte] |= 1 << bit;
+  legal_bits[byte] |= (unsigned char)(1 << bit);
 }
 
 static void dump(void) {
@@ -66,7 +66,10 @@ int main(void) {
   dump();
 
   clear();
-  for (i = 32; i <= 126; i++) legal(i);
+  for (i = 32; i <= 126; i++) {
+    if (i == ',') continue;
+    legal(i);
+  }
   dump();
 
   return 0;

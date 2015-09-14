@@ -504,50 +504,6 @@ Client asserts:
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
 
-### service_account_creds
-
-This test is only for cloud-to-prod path.
-
-This test verifies unary calls succeed in sending messages while using JWT
-signing keys (redeemed for OAuth2 access tokens by the auth implementation)
-
-The test uses `--service_account_key_file` with the path to a json key file
-downloaded from https://console.developers.google.com, and `--oauth_scope`
-to the oauth scope. For testing against grpc-test.sandbox.google.com,
-"https://www.googleapis.com/auth/xapi.zoo" should be passed in
-as `--oauth_scope`.
-
-Server features:
-* [UnaryCall][]
-* [Compressable Payload][]
-* [Echo Authenticated Username][]
-* [Echo OAuth Scope][]
-
-Procedure:
- 1. Client configures the channel to use ServiceAccountCredentials
- 2. Client calls UnaryCall with:
-
-    ```
-    {
-      response_type: COMPRESSABLE
-      response_size: 314159
-      payload:{
-        body: 271828 bytes of zeros
-      }
-      fill_username: true
-      fill_oauth_scope: true
-    }
-    ```
-
-Client asserts:
-* call was successful
-* received SimpleResponse.username is in the json key file read from
-   `--service_account_key_file`
-* received SimpleResponse.oauth_scope is in `--oauth_scope`
-* response payload body is 314159 bytes in size
-* clients are free to assert that the response payload body contents are zero
-  and comparing the entire response message against a golden response
-
 ### jwt_token_creds
 
 This test is only for cloud-to-prod path.
@@ -557,7 +513,9 @@ token (created by the project's key file)
 
 Test caller should set flag `--service_account_key_file` with the
 path to json key file downloaded from
-https://console.developers.google.com.
+https://console.developers.google.com. Alternately, if using a
+usable auth implementation, she may specify the file location in the environment
+variable GOOGLE_APPLICATION_CREDENTIALS.
 
 Server features:
 * [UnaryCall][]
@@ -582,30 +540,33 @@ Procedure:
 
 Client asserts:
 * call was successful
-* received SimpleResponse.username is in the json key file read from
-  `--service_account_key_file`
+* received SimpleResponse.username is not empty and is in the json key file used
+by the auth library. The client can optionally check the username matches the
+email address in the key file or equals the value of `--default_service_account` flag.
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
 
 ### oauth2_auth_token
 
-Similar to the other auth tests, this test is only for cloud-to-prod path.
+This test is only for cloud-to-prod path and some implementations may run
+in GCE only.
 
 This test verifies unary calls succeed in sending messages using an OAuth2 token
 that is obtained out of band. For the purpose of the test, the OAuth2 token is
-actually obtained from the service account credentials via the
+actually obtained from a service account credentials or GCE credentials via the
 language-specific authorization library.
 
-The difference between this test and the other auth tests is that rather than
-configuring the test client with ServiceAccountCredentials directly, the test
+The difference between this test and the other auth tests is that it
 first uses the authorization library to obtain an authorization token.
 
 The test
 - uses the flag `--service_account_key_file` with the path to a json key file
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
-variable GOOGLE_APPLICATION_CREDENTIALS
+variable GOOGLE_APPLICATION_CREDENTIALS, *OR* if GCE credentials is used to
+fetch the token, `--default_service_account` can be used to pass in GCE service
+account email.
 - uses the flag `--oauth_scope` for the oauth scope.  For testing against
 grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should
 be passed as the `--oauth_scope`.
@@ -630,27 +591,27 @@ Procedure:
 
 Client asserts:
 * call was successful
-* received SimpleResponse.username is in the json key file used by the auth
-library to obtain the authorization token
+* received SimpleResponse.username is valid. Depending on whether a service
+account key file or GCE credentials was used, client should check against the
+json key file or GCE default service account email.
 * received SimpleResponse.oauth_scope is in `--oauth_scope`
 
 ### per_rpc_creds
 
 Similar to the other auth tests, this test is only for cloud-to-prod path.
 
-This test verifies unary calls succeed in sending messages using an OAuth2 token
-that is obtained out of band. For the purpose of the test, the OAuth2 token is
-actually obtained from the service account credentials via the
-language-specific authorization library.
+This test verifies unary calls succeed in sending messages using a JWT or a service account
+credentials set on the RPC.
 
 The test
 - uses the flag `--service_account_key_file` with the path to a json key file
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
-- uses the flag `--oauth_scope` for the oauth scope.  For testing against
-grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should
-be passed as the `--oauth_scope`.
+- optionally uses the flag `--oauth_scope` for the oauth scope if implementator 
+wishes to use service account credential instead of JWT credential. For testing
+against grpc-test.sandbox.google.com, oauth scope 
+"https://www.googleapis.com/auth/xapi.zoo" should be used.
 
 Server features:
 * [UnaryCall][]
@@ -659,24 +620,21 @@ Server features:
 * [Echo OAuth Scope][]
 
 Procedure:
- 1. Client uses the auth library to obtain an authorization token
- 2. Client configures the channel with just SSL credentials
- 3. Client calls UnaryCall, setting per-call credentials to
-    AccessTokenCredentials with the access token obtained in step 1. The request
-    is the following message
+ 1. Client configures the channel with just SSL credentials
+ 2. Client calls UnaryCall, setting per-call credentials to
+    JWTTokenCredentials. The request is the following message
 
     ```
     {
       fill_username: true
-      fill_oauth_scope: true
     }
     ```
 
 Client asserts:
 * call was successful
-* received SimpleResponse.username is in the json key file used by the auth
-library to obtain the authorization token
-* received SimpleResponse.oauth_scope is in `--oauth_scope`
+* received SimpleResponse.username is not empty and is in the json key file used
+by the auth library. The client can optionally check the username matches the
+email address in the key file.
 
 
 ### custom_metadata

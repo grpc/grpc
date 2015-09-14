@@ -34,6 +34,7 @@ import unittest
 from grpc._adapter import _intermediary_low
 from grpc._links import invocation
 from grpc._links import service
+from grpc.beta import interfaces as beta_interfaces
 from grpc.framework.interfaces.links import links
 from grpc_test import test_common
 from grpc_test._links import _proto_scenarios
@@ -50,11 +51,11 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
     service_link = service.service_link(
         {self.group_and_method(): self.deserialize_request},
         {self.group_and_method(): self.serialize_response})
-    port = service_link.add_port(0, None)
+    port = service_link.add_port('[::]:0', None)
     service_link.start()
     channel = _intermediary_low.Channel('localhost:%d' % port, None)
     invocation_link = invocation.invocation_link(
-        channel, 'localhost',
+        channel, 'localhost', None,
         {self.group_and_method(): self.serialize_request},
         {self.group_and_method(): self.deserialize_response})
     invocation_link.start()
@@ -62,7 +63,8 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
 
   def destroy_transmitting_links(self, invocation_side_link, service_side_link):
     invocation_side_link.stop()
-    service_side_link.stop_gracefully()
+    service_side_link.begin_stop()
+    service_side_link.end_stop()
 
   def create_invocation_initial_metadata(self):
     return (
@@ -92,7 +94,8 @@ class TransmissionTest(test_cases.TransmissionTest, unittest.TestCase):
     return None, None
 
   def create_service_completion(self):
-    return _intermediary_low.Code.OK, 'An exuberant test "details" message!'
+    return (
+        beta_interfaces.StatusCode.OK, b'An exuberant test "details" message!')
 
   def assertMetadataTransmitted(self, original_metadata, transmitted_metadata):
     self.assertTrue(
@@ -109,18 +112,18 @@ class RoundTripTest(unittest.TestCase):
     test_group = 'test package.Test Group'
     test_method = 'test method'
     identity_transformation = {(test_group, test_method): _IDENTITY}
-    test_code = _intermediary_low.Code.OK
+    test_code = beta_interfaces.StatusCode.OK
     test_message = 'a test message'
 
     service_link = service.service_link(
         identity_transformation, identity_transformation)
     service_mate = test_utilities.RecordingLink()
     service_link.join_link(service_mate)
-    port = service_link.add_port(0, None)
+    port = service_link.add_port('[::]:0', None)
     service_link.start()
     channel = _intermediary_low.Channel('localhost:%d' % port, None)
     invocation_link = invocation.invocation_link(
-        channel, 'localhost', identity_transformation, identity_transformation)
+        channel, None, None, identity_transformation, identity_transformation)
     invocation_mate = test_utilities.RecordingLink()
     invocation_link.join_link(invocation_mate)
     invocation_link.start()
@@ -140,7 +143,8 @@ class RoundTripTest(unittest.TestCase):
     invocation_mate.block_until_tickets_satisfy(test_cases.terminated)
 
     invocation_link.stop()
-    service_link.stop_gracefully()
+    service_link.begin_stop()
+    service_link.end_stop()
 
     self.assertIs(
         service_mate.tickets()[-1].termination,
@@ -148,11 +152,13 @@ class RoundTripTest(unittest.TestCase):
     self.assertIs(
         invocation_mate.tickets()[-1].termination,
         links.Ticket.Termination.COMPLETION)
+    self.assertIs(invocation_mate.tickets()[-1].code, test_code)
+    self.assertEqual(invocation_mate.tickets()[-1].message, test_message)
 
   def _perform_scenario_test(self, scenario):
     test_operation_id = object()
     test_group, test_method = scenario.group_and_method()
-    test_code = _intermediary_low.Code.OK
+    test_code = beta_interfaces.StatusCode.OK
     test_message = 'a scenario test message'
 
     service_link = service.service_link(
@@ -160,11 +166,11 @@ class RoundTripTest(unittest.TestCase):
         {(test_group, test_method): scenario.serialize_response})
     service_mate = test_utilities.RecordingLink()
     service_link.join_link(service_mate)
-    port = service_link.add_port(0, None)
+    port = service_link.add_port('[::]:0', None)
     service_link.start()
     channel = _intermediary_low.Channel('localhost:%d' % port, None)
     invocation_link = invocation.invocation_link(
-        channel, 'localhost',
+        channel, 'localhost', None,
         {(test_group, test_method): scenario.serialize_request},
         {(test_group, test_method): scenario.deserialize_response})
     invocation_mate = test_utilities.RecordingLink()
@@ -206,7 +212,8 @@ class RoundTripTest(unittest.TestCase):
     invocation_mate.block_until_tickets_satisfy(test_cases.terminated)
 
     invocation_link.stop()
-    service_link.stop_gracefully()
+    service_link.begin_stop()
+    service_link.end_stop()
 
     observed_requests = tuple(
         ticket.payload for ticket in service_mate.tickets()

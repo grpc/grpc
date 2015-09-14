@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -96,6 +96,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <code>#include &lt;stdlib.h&gt;</code><br/>
 <code>#include &lt;<a class="el" href="string_8h_source.html">string.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="alloc_8h_source.html">grpc/support/alloc.h</a>&gt;</code><br/>
+<code>#include &quot;<a class="el" href="grpc__filter_8h_source.html">src/core/census/grpc_filter.h</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="channel__args_8h_source.html">src/core/channel/channel_args.h</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="client__channel_8h_source.html">src/core/channel/client_channel.h</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="compress__filter_8h_source.html">src/core/channel/compress_filter.h</a>&quot;</code><br/>
@@ -123,8 +124,8 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a4d63d4cac74652ec3fac7782acb4a2d4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__channel.html">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="secure__channel__create_8c.html#a4d63d4cac74652ec3fac7782acb4a2d4">grpc_secure_channel_create</a> (<a class="el" href="structgrpc__credentials.html">grpc_credentials</a> *creds, const char *target, const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *args)</td></tr>
-<tr class="separator:a4d63d4cac74652ec3fac7782acb4a2d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29bf879141d7c0ca7eb86e0e26d585af"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__channel.html">grpc_channel</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="secure__channel__create_8c.html#a29bf879141d7c0ca7eb86e0e26d585af">grpc_secure_channel_create</a> (<a class="el" href="structgrpc__credentials.html">grpc_credentials</a> *creds, const char *target, const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *args, void *reserved)</td></tr>
+<tr class="separator:a29bf879141d7c0ca7eb86e0e26d585af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a class="anchor" id="a9b1446343e6c9b066f546fcb7b33fba2"></a>
@@ -140,7 +141,7 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="a4d63d4cac74652ec3fac7782acb4a2d4"></a>
+<a class="anchor" id="a29bf879141d7c0ca7eb86e0e26d585af"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -160,7 +161,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *&#160;</td>
-          <td class="paramname"><em>args</em>&#160;</td>
+          <td class="paramname"><em>args</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -175,7 +182,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

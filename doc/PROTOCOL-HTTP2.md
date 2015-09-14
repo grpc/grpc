@@ -43,8 +43,9 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **User-Agent** → “user-agent” {_structured user-agent string_}
 * **Message-Type** → “grpc-message-type” {_type name for message schema_}
 * **Custom-Metadata** → Binary-Header / ASCII-Header
-* **Binary-Header** → {lowercase ASCII header name ending in “-bin” } {_base64 encoded value_}
-* **ASCII-Header** → {lowercase ASCII header name} {_value_}
+* **Binary-Header** → {Header-Name “-bin” } {_base64 encoded value_}
+* **ASCII-Header** → Header-Name {_value_}
+* **Header-Name** → 1*( %x30-39 / %x61-7A / “_” / “-”) ; 0-9 a-z 
 
 
 HTTP2 requires that reserved headers, ones starting with “:” appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.

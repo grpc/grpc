@@ -83,7 +83,7 @@ typedef struct {
     struct sockaddr sockaddr;
     struct sockaddr_un un;
   } addr;
-  int addr_len;
+  size_t addr_len;
   grpc_iomgr_closure read_closure;
   grpc_iomgr_closure destroyed_closure;
 } server_port;
@@ -236,7 +236,7 @@ static void init_max_accept_queue_size(void) {
     char *end;
     long i = strtol(buf, &end, 10);
     if (i > 0 && i <= INT_MAX && end && *end == 0) {
-      n = i;
+      n = (int)i;
     }
   }
   fclose(fp);
@@ -256,7 +256,8 @@ static int get_max_accept_queue_size(void) {
 }
 
 /* Prepare a recently-created socket for listening. */
-static int prepare_socket(int fd, const struct sockaddr *addr, int addr_len) {
+static int prepare_socket(int fd, const struct sockaddr *addr,
+                          size_t addr_len) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
 
@@ -273,7 +274,8 @@ static int prepare_socket(int fd, const struct sockaddr *addr, int addr_len) {
     goto error;
   }
 
-  if (bind(fd, addr, addr_len) < 0) {
+  GPR_ASSERT(addr_len < ~(socklen_t)0);
+  if (bind(fd, addr, (socklen_t)addr_len) < 0) {
     char *addr_str;
     grpc_sockaddr_to_string(&addr_str, addr, 0);
     gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
@@ -365,7 +367,7 @@ error:
 }
 
 static int add_socket_to_server(grpc_tcp_server *s, int fd,
-                                const struct sockaddr *addr, int addr_len) {
+                                const struct sockaddr *addr, size_t addr_len) {
   server_port *sp;
   int port;
   char *addr_str;
@@ -398,7 +400,7 @@ static int add_socket_to_server(grpc_tcp_server *s, int fd,
 }
 
 int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
-                             int addr_len) {
+                             size_t addr_len) {
   int allocated_port1 = -1;
   int allocated_port2 = -1;
   unsigned i;

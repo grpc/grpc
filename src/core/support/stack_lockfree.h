@@ -34,11 +34,13 @@
 #ifndef GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H
 #define GRPC_INTERNAL_CORE_SUPPORT_STACK_LOCKFREE_H
 
+#include <stddef.h>
+
 typedef struct gpr_stack_lockfree gpr_stack_lockfree;
 
 /* This stack must specify the maximum number of entries to track.
    The current implementation only allows up to 65534 entries */
-gpr_stack_lockfree* gpr_stack_lockfree_create(int entries);
+gpr_stack_lockfree* gpr_stack_lockfree_create(size_t entries);
 void gpr_stack_lockfree_destroy(gpr_stack_lockfree* stack);
 
 /* Pass in a valid entry number for the next stack entry */

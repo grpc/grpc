@@ -40,7 +40,7 @@
 
 typedef struct {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
-  int len;
+  size_t len;
 } grpc_resolved_address;
 
 typedef struct {

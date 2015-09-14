@@ -33,7 +33,7 @@
 
 #include "src/core/transport/chttp2/varint.h"
 
-int grpc_chttp2_hpack_varint_length(gpr_uint32 tail_value) {
+gpr_uint32 grpc_chttp2_hpack_varint_length(gpr_uint32 tail_value) {
   if (tail_value < (1 << 7)) {
     return 2;
   } else if (tail_value < (1 << 14)) {
@@ -48,7 +48,8 @@ int grpc_chttp2_hpack_varint_length(gpr_uint32 tail_value) {
 }
 
 void grpc_chttp2_hpack_write_varint_tail(gpr_uint32 tail_value,
-                                         gpr_uint8* target, int tail_length) {
+                                         gpr_uint8* target,
+                                         gpr_uint32 tail_length) {
   switch (tail_length) {
     case 5:
       target[4] = (gpr_uint8)((tail_value >> 28) | 0x80);

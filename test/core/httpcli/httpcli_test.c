@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
 
   /* figure out where we are */
   if (lslash) {
-    memcpy(root, me, lslash - me);
+    memcpy(root, me, (size_t)(lslash - me));
     root[lslash - me] = 0;
   } else {
     strcpy(root, ".");
