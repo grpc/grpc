@@ -113,7 +113,7 @@ grpc_channel *grpc_channel_create_from_filters(
       grpc_mdstr_from_string(mdctx, "grpc-message", 0);
   for (i = 0; i < NUM_CACHED_STATUS_ELEMS; i++) {
     char buf[GPR_LTOA_MIN_BUFSIZE];
-    gpr_ltoa(i, buf);
+    gpr_ltoa((long)i, buf);
     channel->grpc_status_elem[i] = grpc_mdelem_from_metadata_strings(
         mdctx, GRPC_MDSTR_REF(channel->grpc_status_string),
         grpc_mdstr_from_string(mdctx, buf, 0));
@@ -134,7 +134,7 @@ grpc_channel *grpc_channel_create_from_filters(
           gpr_log(GPR_ERROR, "%s ignored: it must be >= 0",
                   GRPC_ARG_MAX_MESSAGE_LENGTH);
         } else {
-          channel->max_message_length = args->args[i].value.integer;
+          channel->max_message_length = (gpr_uint32)args->args[i].value.integer;
         }
       } else if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
         if (args->args[i].type != GRPC_ARG_STRING) {
@@ -193,7 +193,7 @@ static grpc_call *grpc_channel_create_call_internal(
     grpc_completion_queue *cq, grpc_mdelem *path_mdelem,
     grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
   grpc_mdelem *send_metadata[2];
-  int num_metadata = 0;
+  size_t num_metadata = 0;
 
   GPR_ASSERT(channel->is_client);
 

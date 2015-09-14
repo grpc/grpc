@@ -37,7 +37,7 @@ require dirname(__FILE__) . '/route_guide.php';
 
 define('COORD_FACTOR', 1e7);
 
-$client = new examples\RouteGuideClient(
+$client = new routeguide\RouteGuideClient(
   new Grpc\BaseStub('localhost:50051', []));
 
 function printFeature($feature) {
@@ -60,7 +60,7 @@ function runGetFeature() {
   print "Running GetFeature...\n";
   global $client;
 
-  $point = new examples\Point();
+  $point = new routeguide\Point();
   $points = array(
     array(409146138, -746188906),
     array(0, 0),
@@ -84,15 +84,15 @@ function runListFeatures() {
   print "Running ListFeatures...\n";
   global $client;
 
-  $lo_point = new examples\Point();
-  $hi_point = new examples\Point();
+  $lo_point = new routeguide\Point();
+  $hi_point = new routeguide\Point();
 
   $lo_point->setLatitude(400000000);
   $lo_point->setLongitude(-750000000);
   $hi_point->setLatitude(420000000);
   $hi_point->setLongitude(-730000000);
 
-  $rectangle = new examples\Rectangle();
+  $rectangle = new routeguide\Rectangle();
   $rectangle->setLo($lo_point);
   $rectangle->setHi($hi_point);
 
@@ -118,7 +118,7 @@ function runRecordRoute() {
     $num_points_in_db = count($db);
     $num_points = 10;
     for ($i = 0; $i < $num_points; $i++) {
-      $point = new examples\Point();
+      $point = new routeguide\Point();
       $index = rand(0, $num_points_in_db - 1);
       $lat = $db[$index]['location']['latitude'];
       $long = $db[$index]['location']['longitude'];
@@ -163,11 +163,11 @@ function runRouteChat() {
   );
 
   foreach ($notes as $n) {
-    $point = new examples\Point();
+    $point = new routeguide\Point();
     $point->setLatitude($lat = $n[0]);
     $point->setLongitude($long = $n[1]);
 
-    $route_note = new examples\RouteNote();
+    $route_note = new routeguide\RouteNote();
     $route_note->setLocation($point);
     $route_note->setMessage($message = $n[2]);
 

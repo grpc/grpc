@@ -43,7 +43,7 @@
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
+#include <grpc++/security/server_credentials.h>
 #include <grpc++/support/time.h>
 
 #include "src/core/profiling/timers.h"
@@ -252,28 +252,36 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   grpc_completion_queue* cq_;
 };
 
-static grpc_server* CreateServer(int max_message_size) {
+static grpc_server* CreateServer(
+    int max_message_size, const grpc_compression_options& compression_options) {
+  grpc_arg args[2];
+  size_t args_idx = 0;
   if (max_message_size > 0) {
-    grpc_arg arg;
-    arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
-    arg.value.integer = max_message_size;
-    grpc_channel_args args = {1, &arg};
-    return grpc_server_create(&args, nullptr);
-  } else {
-    return grpc_server_create(nullptr, nullptr);
+    args[args_idx].type = GRPC_ARG_INTEGER;
+    args[args_idx].key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
+    args[args_idx].value.integer = max_message_size;
+    args_idx++;
   }
+
+  args[args_idx].type = GRPC_ARG_INTEGER;
+  args[args_idx].key = const_cast<char*>(GRPC_COMPRESSION_ALGORITHM_STATE_ARG);
+  args[args_idx].value.integer = compression_options.enabled_algorithms_bitset;
+  args_idx++;
+
+  grpc_channel_args channel_args = {args_idx, args};
+  return grpc_server_create(&channel_args, nullptr);
 }
 
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               int max_message_size)
+               int max_message_size,
+               grpc_compression_options compression_options)
     : max_message_size_(max_message_size),
       started_(false),
       shutdown_(false),
       num_running_cb_(0),
       sync_methods_(new std::list<SyncRequest>),
       has_generic_service_(false),
-      server_(CreateServer(max_message_size)),
+      server_(CreateServer(max_message_size, compression_options)),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
   grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
@@ -354,7 +362,7 @@ bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
       unknown_method_.reset(new RpcServiceMethod(
           "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
       // Use of emplace_back with just constructor arguments is not accepted
-      // here by gcc-4.4 because it can't match the anonymous nullptr with a 
+      // here by gcc-4.4 because it can't match the anonymous nullptr with a
       // proper constructor implicitly. Construct the object and use push_back.
       sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
     }
@@ -384,7 +392,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Spin, eating requests until the completion queue is completely shutdown.
     // If the deadline expires then cancel anything that's pending and keep
     // spinning forever until the work is actually drained.
-    // Since nothing else needs to touch state guarded by mu_, holding it 
+    // Since nothing else needs to touch state guarded by mu_, holding it
     // through this loop is fine.
     SyncRequest* request;
     bool ok;

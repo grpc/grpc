@@ -19,7 +19,7 @@ With gRPC you can define your service once in a .proto file and implement client
 
 ## Example code and setup
 
-The example code for this tutorial is in [examples/python/route_guide](examples/python/route_guide). To download the example, clone this repository by running the following command:
+The example code for this tutorial is in [examples/python/route_guide](.). To download the example, clone this repository by running the following command:
 ```shell
 $ git clone https://github.com/grpc/grpc.git
 ```
@@ -29,11 +29,11 @@ Then change your current directory to `examples/python/route_guide`:
 $ cd examples/python/route_guide
 ```
 
-You also should have the relevant tools installed to generate the server and client interface code - if you don't already, follow the setup instructions in [the Python quick start guide](examples/python).
+You also should have the relevant tools installed to generate the server and client interface code - if you don't already, follow the setup instructions in [the Python quick start guide](../helloworld).
 
 ## Defining the service
 
-Your first step (as you'll know from [Getting started](https://github.com/grpc/grpc/tree/master/examples)) is to define the gRPC *service* and the method *request* and *response* types using [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file in [`examples/protos/route_guide.proto`](examples/protos/route_guide.proto).
+Your first step (as you'll know from [Getting started](https://github.com/grpc/grpc/tree/master/examples)) is to define the gRPC *service* and the method *request* and *response* types using [protocol buffers](https://developers.google.com/protocol-buffers/docs/overview). You can see the complete .proto file in [`examples/protos/route_guide.proto`](../../protos/route_guide.proto).
 
 To define a service, you specify a named `service` in your .proto file:
 
@@ -99,12 +99,11 @@ $ protoc -I ../../protos --python_out=. --grpc_out=. --plugin=protoc-gen-grpc=`w
 Note that as we've already provided a version of the generated code in the example repository, running this command regenerates the appropriate file rather than creates a new one. The generated code file is called `route_guide_pb2.py` and contains:
 - classes for the messages defined in route_guide.proto
 - abstract classes for the service defined in route_guide.proto
-   - `EarlyAdopterRouteGuideServicer`, which defines the interface for implementations of the RouteGuide service
-   - `EarlyAdopterRouteGuideServer`, which may be started and stopped
-   - `EarlyAdopterRouteGuideStub`, which can be used by clients to invoke RouteGuide RPCs
+   - `BetaRouteGuideServicer`, which defines the interface for implementations of the RouteGuide service
+   - `BetaRouteGuideStub`, which can be used by clients to invoke RouteGuide RPCs
 - functions for application use
-   - `early_adopter_create_RouteGuide_server`, which creates a gRPC server given an `EarlyAdopterRouteGuideServicer` object
-   - `early_adopter_create_RouteGuide_stub`, which can be used by clients to create a stub object
+   - `beta_create_RouteGuide_server`, which creates a gRPC server given a `BetaRouteGuideServicer` object
+   - `beta_create_RouteGuide_stub`, which can be used by clients to create a stub object
 
 <a name="server"></a>
 ## Creating the server
@@ -115,15 +114,15 @@ Creating and running a `RouteGuide` server breaks down into two work items:
 - Implementing the servicer interface generated from our service definition with functions that perform the actual "work" of the service.
 - Running a gRPC server to listen for requests from clients and transmit responses.
 
-You can find the example `RouteGuide` server in [examples/python/route_guide/route_guide_server.py](examples/python/route_guide/route_guide_server.py).
+You can find the example `RouteGuide` server in [route_guide_server.py](route_guide_server.py).
 
 ### Implementing RouteGuide
 
-`route_guide_server.py` has a `RouteGuideServicer` class that implements the generated interface `route_guide_pb2.EarlyAdopterRouteGuideServicer`:
+`route_guide_server.py` has a `RouteGuideServicer` class that implements the generated interface `route_guide_pb2.BetaRouteGuideServicer`:
 
 ```python
 # RouteGuideServicer provides an implementation of the methods of the RouteGuide service.
-class RouteGuideServicer(route_guide_pb2.EarlyAdopterRouteGuideServicer):
+class RouteGuideServicer(route_guide_pb2.BetaRouteGuideServicer):
 ```
 
 `RouteGuideServicer` implements all the `RouteGuide` service methods.
@@ -141,7 +140,7 @@ Let's look at the simplest type first, `GetFeature`, which just gets a `Point` f
       return feature
 ```
 
-The method is passed a `route_guide_pb2.Point` request for the RPC, and an `RpcContext` object that provides RPC-specific information such as timeout limits. It returns a `route_guide_pb2.Feature` response.
+The method is passed a `route_guide_pb2.Point` request for the RPC, and a `ServicerContext` object that provides RPC-specific information such as timeout limits. It returns a `route_guide_pb2.Feature` response.
 
 #### Response-streaming RPC
 
@@ -212,8 +211,8 @@ Once you have implemented all the `RouteGuide` methods, the next step is to star
 
 ```python
 def serve():
-  server = route_guide_pb2.early_adopter_create_RouteGuide_server(
-      RouteGuideServicer(), 50051, None, None)
+  server = route_guide_pb2.beta_create_RouteGuide_server(RouteGuideServicer())
+  server.add_insecure_port('[::]:50051')
   server.start()
 ```
 
@@ -222,23 +221,20 @@ Because `start()` does not block you may need to sleep-loop if there is nothing 
 <a name="client"></a>
 ## Creating the client
 
-You can see the complete example client code in [examples/python/route_guide/route_guide_client.py](examples/python/route_guide/route_guide_client.py).
+You can see the complete example client code in [route_guide_client.py](route_guide_client.py).
 
 ### Creating a stub
 
 To call service methods, we first need to create a *stub*.
 
-We use the `early_adopter_create_RouteGuide_stub` function of the `route_guide_pb2` module, generated from our .proto.
+We use the `beta_create_RouteGuide_stub` function of the `route_guide_pb2` module, generated from our .proto.
 
 ```python
-stub = RouteGuide::Stub.new('localhost', 50051)
+channel = implementations.insecure_channel('localhost', 50051)
+stub = beta_create_RouteGuide_stub(channel)
 ```
 
-The returned object implements all the methods defined by the `EarlyAdopterRouteGuideStub` interface, and is also a [context manager](https://docs.python.org/2/library/stdtypes.html#typecontextmanager). All RPCs invoked on the stub must be invoked within the stub's context, so it is common for stubs to be created and used with a [with statement](https://docs.python.org/2/reference/compound_stmts.html#the-with-statement):
-
-```python
-with route_guide_pb2.early_adopter_create_RouteGuide_stub('localhost', 50051) as stub:
-```
+The returned object implements all the methods defined by the `BetaRouteGuideStub` interface.
 
 ### Calling service methods
 
@@ -255,7 +251,7 @@ feature = stub.GetFeature(point, timeout_in_seconds)
 An asynchronous call to `GetFeature` is similar, but like calling a local method asynchronously in a thread pool:
 
 ```python
-feature_future = stub.GetFeature.async(point, timeout_in_seconds)
+feature_future = stub.GetFeature.future(point, timeout_in_seconds)
 feature = feature_future.result()
 ```
 
@@ -276,7 +272,7 @@ route_summary = stub.RecordRoute(point_sequence, timeout_in_seconds)
 ```
 
 ```python
-route_summary_future = stub.RecordRoute.async(point_sequence, timeout_in_seconds)
+route_summary_future = stub.RecordRoute.future(point_sequence, timeout_in_seconds)
 route_summary = route_summary_future.result()
 ```
 

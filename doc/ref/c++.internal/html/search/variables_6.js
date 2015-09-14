@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['ok',['OK',['../classgrpc_1_1_status.html#a52ef6235ab76c5328a50f84a058da2c3',1,'grpc::Status']]]
+  ['npos',['npos',['../classgrpc_1_1string__ref.html#af30b4be3e59841594b784c537fa68244',1,'grpc::string_ref']]]
 ];

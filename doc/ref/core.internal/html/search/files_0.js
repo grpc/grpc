@@ -2,6 +2,7 @@ var searchData=
 [
   ['add_5fchannel_5farg_2ec',['add_channel_arg.c',['../add__channel__arg_8c.html',1,'']]],
   ['add_5fchannel_5farg_2eh',['add_channel_arg.h',['../add__channel__arg_8h.html',1,'']]],
+  ['aggregation_2eh',['aggregation.h',['../aggregation_8h.html',1,'']]],
   ['alarm_2ec',['alarm.c',['../alarm_8c.html',1,'']]],
   ['alarm_2eh',['alarm.h',['../alarm_8h.html',1,'']]],
   ['alarm_5fheap_2ec',['alarm_heap.c',['../alarm__heap_8c.html',1,'']]],

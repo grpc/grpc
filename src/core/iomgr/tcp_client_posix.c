@@ -195,7 +195,7 @@ finish:
 
 void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
                              void *arg, grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, int addr_len,
+                             const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline) {
   int fd;
   grpc_dualstack_mode dsmode;
@@ -229,7 +229,8 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   }
 
   do {
-    err = connect(fd, addr, addr_len);
+    GPR_ASSERT(addr_len < ~(socklen_t)0);
+    err = connect(fd, addr, (socklen_t)addr_len);
   } while (err < 0 && errno == EINTR);
 
   addr_str = grpc_sockaddr_to_uri(addr);

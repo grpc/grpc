@@ -36,15 +36,15 @@ import helloworld_pb2
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
-class Greeter(helloworld_pb2.EarlyAdopterGreeterServicer):
+class Greeter(helloworld_pb2.BetaGreeterServicer):
 
   def SayHello(self, request, context):
     return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
 
 def serve():
-  server = helloworld_pb2.early_adopter_create_Greeter_server(
-      Greeter(), 50051, None, None)
+  server = helloworld_pb2.beta_create_Greeter_server(Greeter())
+  server.add_insecure_port('[::]:50051')
   server.start()
   try:
     while True:

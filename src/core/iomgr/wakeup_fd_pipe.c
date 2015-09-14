@@ -56,7 +56,7 @@ static void pipe_init(grpc_wakeup_fd *fd_info) {
 
 static void pipe_consume(grpc_wakeup_fd *fd_info) {
   char buf[128];
-  int r;
+  ssize_t r;
 
   for (;;) {
     r = read(fd_info->read_fd, buf, sizeof(buf));

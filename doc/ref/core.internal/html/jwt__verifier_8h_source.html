@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -223,7 +223,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;                                               <span class="keyword">const</span> <span class="keywordtype">char</span> *audience);</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_INTERNAL_CORE_SECURITY_JWT_VERIFIER_H */</span><span class="preprocessor"></span></div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;<span class="preprocessor"></span></div>
 <div class="ttc" id="jwt__verifier_8h_html_ac77af641794a3449e94d7d7cb48a50c6"><div class="ttname"><a href="jwt__verifier_8h.html#ac77af641794a3449e94d7d7cb48a50c6">grpc_jwt_claims_subject</a></div><div class="ttdeci">const char * grpc_jwt_claims_subject(const grpc_jwt_claims *claims)</div><div class="ttdef"><b>Definition:</b> jwt_verifier.c:203</div></div>
 <div class="ttc" id="jwt__verifier_8h_html_ac9960f7842a141d85b0bb38dd231900d"><div class="ttname"><a href="jwt__verifier_8h.html#ac9960f7842a141d85b0bb38dd231900d">grpc_jwt_verifier_verify</a></div><div class="ttdeci">void grpc_jwt_verifier_verify(grpc_jwt_verifier *verifier, grpc_pollset *pollset, const char *jwt, const char *audience, grpc_jwt_verification_done_cb cb, void *user_data)</div><div class="ttdef"><b>Definition:</b> jwt_verifier.c:754</div></div>
 <div class="ttc" id="time_8h_html"><div class="ttname"><a href="time_8h.html">time.h</a></div></div>
@@ -237,7 +236,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="jwt__verifier_8h_html_a58838743f413ceebbf5b4afd77d7ab7f"><div class="ttname"><a href="jwt__verifier_8h.html#a58838743f413ceebbf5b4afd77d7ab7f">grpc_jwt_claims_issued_at</a></div><div class="ttdeci">gpr_timespec grpc_jwt_claims_issued_at(const grpc_jwt_claims *claims)</div><div class="ttdef"><b>Definition:</b> jwt_verifier.c:223</div></div>
 <div class="ttc" id="jwt__verifier_8h_html_a04a38ad49ca184c3a075f927b7ed61b5a939bc13cb2d1fe1529a29dfaca361194"><div class="ttname"><a href="jwt__verifier_8h.html#a04a38ad49ca184c3a075f927b7ed61b5a939bc13cb2d1fe1529a29dfaca361194">GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR</a></div><div class="ttdef"><b>Definition:</b> jwt_verifier.h:58</div></div>
 <div class="ttc" id="jwt__verifier_8h_html_a7d033f01e4d9c4c3dfba2e2f4cf57398"><div class="ttname"><a href="jwt__verifier_8h.html#a7d033f01e4d9c4c3dfba2e2f4cf57398">grpc_jwt_verifier_destroy</a></div><div class="ttdeci">void grpc_jwt_verifier_destroy(grpc_jwt_verifier *verifier)</div><div class="ttdef"><b>Definition:</b> jwt_verifier.c:823</div></div>
-<div class="ttc" id="structgrpc__pollset_html"><div class="ttname"><a href="structgrpc__pollset.html">grpc_pollset</a></div><div class="ttdef"><b>Definition:</b> pollset_posix.h:48</div></div>
+<div class="ttc" id="structgrpc__pollset_html"><div class="ttname"><a href="structgrpc__pollset.html">grpc_pollset</a></div><div class="ttdef"><b>Definition:</b> pollset_posix.h:55</div></div>
 <div class="ttc" id="jwt__verifier_8h_html_a956a1fe237276fbed03e5caee7360c6a"><div class="ttname"><a href="jwt__verifier_8h.html#a956a1fe237276fbed03e5caee7360c6a">grpc_jwt_claims_check</a></div><div class="ttdeci">grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims *claims, const char *audience)</div><div class="ttdef"><b>Definition:</b> jwt_verifier.c:284</div></div>
 <div class="ttc" id="jwt__verifier_8h_html_a04a38ad49ca184c3a075f927b7ed61b5aa940dd7ad73e12da6ad7c2c5ef4d3298"><div class="ttname"><a href="jwt__verifier_8h.html#a04a38ad49ca184c3a075f927b7ed61b5aa940dd7ad73e12da6ad7c2c5ef4d3298">GRPC_JWT_VERIFIER_BAD_SIGNATURE</a></div><div class="ttdef"><b>Definition:</b> jwt_verifier.h:55</div></div>
 <div class="ttc" id="json_8h_html"><div class="ttname"><a href="json_8h.html">json.h</a></div></div>
@@ -254,7 +253,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="ttc" id="slice_8h_html"><div class="ttname"><a href="slice_8h.html">slice.h</a></div></div>
 <div class="ttc" id="jwt__verifier_8h_html_a1904f0f6a28c8b14a486c932e5db1499"><div class="ttname"><a href="jwt__verifier_8h.html#a1904f0f6a28c8b14a486c932e5db1499">grpc_jwt_claims_not_before</a></div><div class="ttdeci">gpr_timespec grpc_jwt_claims_not_before(const grpc_jwt_claims *claims)</div><div class="ttdef"><b>Definition:</b> jwt_verifier.c:233</div></div>
 <div class="ttc" id="jwt__verifier_8h_html_a04a38ad49ca184c3a075f927b7ed61b5ae350517932f24d7381da68eb82c32e08"><div class="ttname"><a href="jwt__verifier_8h.html#a04a38ad49ca184c3a075f927b7ed61b5ae350517932f24d7381da68eb82c32e08">GRPC_JWT_VERIFIER_BAD_AUDIENCE</a></div><div class="ttdef"><b>Definition:</b> jwt_verifier.h:57</div></div>
-<div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdef"><b>Definition:</b> time.h:60</div></div>
+<div class="ttc" id="structgpr__timespec_html"><div class="ttname"><a href="structgpr__timespec.html">gpr_timespec</a></div><div class="ttdef"><b>Definition:</b> time.h:63</div></div>
 <div class="ttc" id="jwt__verifier_8h_html_a4eb1db0055c2992691e1c3e92d65a656"><div class="ttname"><a href="jwt__verifier_8h.html#a4eb1db0055c2992691e1c3e92d65a656">grpc_jwt_claims_json</a></div><div class="ttdeci">const grpc_json * grpc_jwt_claims_json(const grpc_jwt_claims *claims)</div><div class="ttdef"><b>Definition:</b> jwt_verifier.c:198</div></div>
 <div class="ttc" id="jwt__verifier_8h_html_a61a1d74e9b150c1a7dccf259d84e8da6"><div class="ttname"><a href="jwt__verifier_8h.html#a61a1d74e9b150c1a7dccf259d84e8da6">grpc_jwt_claims_issuer</a></div><div class="ttdeci">const char * grpc_jwt_claims_issuer(const grpc_jwt_claims *claims)</div><div class="ttdef"><b>Definition:</b> jwt_verifier.c:208</div></div>
 <div class="ttc" id="structgrpc__jwt__verifier__email__domain__key__url__mapping_html"><div class="ttname"><a href="structgrpc__jwt__verifier__email__domain__key__url__mapping.html">grpc_jwt_verifier_email_domain_key_url_mapping</a></div><div class="ttdef"><b>Definition:</b> jwt_verifier.h:87</div></div>
@@ -266,7 +265,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

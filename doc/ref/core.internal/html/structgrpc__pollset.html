@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -96,29 +96,27 @@ Data Fields</h2></td></tr>
 <tr class="separator:a0a3106a5e75b7079d89b8443ac8cb887"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad0ca06526200d8e29888467458f4a924"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__mu.html">gpr_mu</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#ad0ca06526200d8e29888467458f4a924">mu</a></td></tr>
 <tr class="separator:ad0ca06526200d8e29888467458f4a924"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae7b8c9f2621b64a15b02d6beeb234a0f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__pollset__kick__state.html">grpc_pollset_kick_state</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#ae7b8c9f2621b64a15b02d6beeb234a0f">kick_state</a></td></tr>
-<tr class="separator:ae7b8c9f2621b64a15b02d6beeb234a0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a319191f59788a09fddad222cd8e1d7b1"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#a319191f59788a09fddad222cd8e1d7b1">counter</a></td></tr>
-<tr class="separator:a319191f59788a09fddad222cd8e1d7b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a658aca158a35f5b4055143c8ed41039b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#a658aca158a35f5b4055143c8ed41039b">root_worker</a></td></tr>
+<tr class="separator:a658aca158a35f5b4055143c8ed41039b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a835a6bc3ba9adc3076831877fc1e4ca2"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#a835a6bc3ba9adc3076831877fc1e4ca2">in_flight_cbs</a></td></tr>
 <tr class="separator:a835a6bc3ba9adc3076831877fc1e4ca2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a890a0c1aa2061769dcd141cf97f83c1c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#a890a0c1aa2061769dcd141cf97f83c1c">shutting_down</a></td></tr>
 <tr class="separator:a890a0c1aa2061769dcd141cf97f83c1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af0ba35d346bebf65837c9cc1980aab53"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#af0ba35d346bebf65837c9cc1980aab53">called_shutdown</a></td></tr>
 <tr class="separator:af0ba35d346bebf65837c9cc1980aab53"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad77a6f6b37e35255da61fe17dbc340ca"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#ad77a6f6b37e35255da61fe17dbc340ca">kicked_without_pollers</a></td></tr>
+<tr class="separator:ad77a6f6b37e35255da61fe17dbc340ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08b13b08670fb33a139ff1d27ea115b7"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#a08b13b08670fb33a139ff1d27ea115b7">shutdown_done_cb</a> )(void *<a class="el" href="structarg.html">arg</a>)</td></tr>
 <tr class="separator:a08b13b08670fb33a139ff1d27ea115b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a27a9797370fe938210d3943ab7c3863d"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#a27a9797370fe938210d3943ab7c3863d">shutdown_done_arg</a></td></tr>
 <tr class="separator:a27a9797370fe938210d3943ab7c3863d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1e1342a1a69d423b41d131276c782621"><td class="memItemLeft" >union {</td></tr>
-<tr class="memitem:a0442761f7efe2584de6eb4e1216067a8"><td class="memItemLeft" >&#160;&#160;&#160;int&#160;&#160;&#160;<a class="el" href="structgrpc__pollset.html#a9166a13045968cd9d384d13dfca85afc">fd</a></td></tr>
-<tr class="separator:a0442761f7efe2584de6eb4e1216067a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5c6fe95348eb8ace8c213c65ba640c06"><td class="memItemLeft" >&#160;&#160;&#160;void *&#160;&#160;&#160;<a class="el" href="structgrpc__pollset.html#a80c508a4baf0ccb6e817801b0d981009">ptr</a></td></tr>
-<tr class="separator:a5c6fe95348eb8ace8c213c65ba640c06"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1e1342a1a69d423b41d131276c782621"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#a1e1342a1a69d423b41d131276c782621">data</a></td></tr>
-<tr class="separator:a1e1342a1a69d423b41d131276c782621"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa329ffda9a09596eeb29b228b66db844"><td class="memItemLeft" align="right" valign="top"><a class="el" href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#aa329ffda9a09596eeb29b228b66db844">cv</a></td></tr>
-<tr class="separator:aa329ffda9a09596eeb29b228b66db844"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af36274fc253796e8c17f276841eeb16e"><td class="memItemLeft" >union {</td></tr>
+<tr class="memitem:aed4159d4333f45c826c17a29ab9d5d61"><td class="memItemLeft" >&#160;&#160;&#160;int&#160;&#160;&#160;<a class="el" href="structgrpc__pollset.html#a9166a13045968cd9d384d13dfca85afc">fd</a></td></tr>
+<tr class="separator:aed4159d4333f45c826c17a29ab9d5d61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a627a78951c31b718c3d65a0e3f7f907e"><td class="memItemLeft" >&#160;&#160;&#160;void *&#160;&#160;&#160;<a class="el" href="structgrpc__pollset.html#a80c508a4baf0ccb6e817801b0d981009">ptr</a></td></tr>
+<tr class="separator:a627a78951c31b718c3d65a0e3f7f907e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af36274fc253796e8c17f276841eeb16e"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html#af36274fc253796e8c17f276841eeb16e">data</a></td></tr>
+<tr class="separator:af36274fc253796e8c17f276841eeb16e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="af0ba35d346bebf65837c9cc1980aab53"></a>
@@ -133,31 +131,7 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a319191f59788a09fddad222cd8e1d7b1"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int grpc_pollset::counter</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="aa329ffda9a09596eeb29b228b66db844"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname"><a class="el" href="sync__posix_8h.html#a1ad613e07180c0459cda9f3f6d881885">gpr_cv</a> grpc_pollset::cv</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="a1e1342a1a69d423b41d131276c782621"></a>
+<a class="anchor" id="af36274fc253796e8c17f276841eeb16e"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -193,12 +167,12 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ae7b8c9f2621b64a15b02d6beeb234a0f"></a>
+<a class="anchor" id="ad77a6f6b37e35255da61fe17dbc340ca"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structgrpc__pollset__kick__state.html">grpc_pollset_kick_state</a> grpc_pollset::kick_state</td>
+          <td class="memname">int grpc_pollset::kicked_without_pollers</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -223,6 +197,18 @@ Data Fields</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">void* grpc_pollset::ptr</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a658aca158a35f5b4055143c8ed41039b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> grpc_pollset::root_worker</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -284,7 +270,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

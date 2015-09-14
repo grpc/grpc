@@ -47,7 +47,7 @@
 // instructions at https://github.com/grpc/homebrew-grpc
 
 static NSString * const kRouteGuideHost = @"http://localhost:50051";
-static NSString * const kPackage = @"examples";
+static NSString * const kPackage = @"routeguide";
 static NSString * const kService = @"RouteGuide";
 
 @interface LocalClearTextTests : XCTestCase
