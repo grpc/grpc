@@ -172,6 +172,9 @@ Handle<Value> Op::GetOpType() const {
   return NanEscapeScope(NanNew<String>(GetTypeString()));
 }
 
+Op::~Op() {
+}
+
 class SendMetadataOp : public Op {
  public:
   Handle<Value> GetNodeValue() const {
@@ -325,7 +328,7 @@ class ReadMessageOp : public Op {
   }
   ~ReadMessageOp() {
     if (recv_message != NULL) {
-      gpr_free(recv_message);
+      grpc_byte_buffer_destroy(recv_message);
     }
   }
   Handle<Value> GetNodeValue() const {
