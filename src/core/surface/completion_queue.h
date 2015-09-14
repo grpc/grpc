@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H
 #define GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H
 
-/* Internal API for completion channels */
+/* Internal API for completion queues */
 
 #include "src/core/iomgr/pollset.h"
 #include <grpc/grpc.h>

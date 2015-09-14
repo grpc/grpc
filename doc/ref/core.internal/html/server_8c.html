@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -101,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <code>#include &lt;<a class="el" href="log_8h_source.html">grpc/support/log.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="string__util_8h_source.html">grpc/support/string_util.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="useful_8h_source.html">grpc/support/useful.h</a>&gt;</code><br/>
-<code>#include &quot;<a class="el" href="census__filter_8h_source.html">src/core/channel/census_filter.h</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="grpc__filter_8h_source.html">src/core/census/grpc_filter.h</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="channel__args_8h_source.html">src/core/channel/channel_args.h</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="connected__channel_8h_source.html">src/core/channel/connected_channel.h</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="iomgr_8h_source.html">src/core/iomgr/iomgr.h</a>&quot;</code><br/>
@@ -137,8 +137,6 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__server.html">grpc_server</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structshutdown__cleanup__args.html">shutdown_cleanup_args</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structrequest__killer.html">request_killer</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
@@ -192,9 +190,9 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ac174712f87fdae4b5757a1370e2a31cb"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="server_8c.html#ac174712f87fdae4b5757a1370e2a31cb">grpc_server_register_completion_queue</a> (<a class="el" href="structgrpc__server.html">grpc_server</a> *server, <a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cq)</td></tr>
-<tr class="memdesc:ac174712f87fdae4b5757a1370e2a31cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a completion queue with the server.  <a href="#ac174712f87fdae4b5757a1370e2a31cb">More...</a><br/></td></tr>
-<tr class="separator:ac174712f87fdae4b5757a1370e2a31cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aacb47ff7ce0afa0db4c830449baff39a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="server_8c.html#aacb47ff7ce0afa0db4c830449baff39a">grpc_server_register_completion_queue</a> (<a class="el" href="structgrpc__server.html">grpc_server</a> *server, <a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cq, void *reserved)</td></tr>
+<tr class="memdesc:aacb47ff7ce0afa0db4c830449baff39a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a completion queue with the server.  <a href="#aacb47ff7ce0afa0db4c830449baff39a">More...</a><br/></td></tr>
+<tr class="separator:aacb47ff7ce0afa0db4c830449baff39a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a870e9abac807e8ba2578df7d9526f8c0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__server.html">grpc_server</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="server_8c.html#a870e9abac807e8ba2578df7d9526f8c0">grpc_server_create_from_filters</a> (const <a class="el" href="structgrpc__channel__filter.html">grpc_channel_filter</a> **filters, size_t filter_count, const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *args)</td></tr>
 <tr class="separator:a870e9abac807e8ba2578df7d9526f8c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a283062a2209f464f234b0e645c6fffb2"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="server_8c.html#a283062a2209f464f234b0e645c6fffb2">grpc_server_register_method</a> (<a class="el" href="structgrpc__server.html">grpc_server</a> *server, const char *method, const char *host)</td></tr>
@@ -205,6 +203,8 @@ Functions</h2></td></tr>
 <tr class="separator:ac5010d26419e14f5a9ab2fa86a4f7d1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a26fd88680fa7949f4af879acdc249d8d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="server_8c.html#a26fd88680fa7949f4af879acdc249d8d">grpc_server_setup_transport</a> (<a class="el" href="structgrpc__server.html">grpc_server</a> *s, <a class="el" href="structgrpc__transport.html">grpc_transport</a> *transport, <a class="el" href="structgrpc__channel__filter.html">grpc_channel_filter</a> const **extra_filters, size_t num_extra_filters, <a class="el" href="structgrpc__mdctx.html">grpc_mdctx</a> *mdctx, const <a class="el" href="structgrpc__channel__args.html">grpc_channel_args</a> *args)</td></tr>
 <tr class="separator:a26fd88680fa7949f4af879acdc249d8d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c34fdd8912206fdd61adc9f5f22eba1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="server_8c.html#a8c34fdd8912206fdd61adc9f5f22eba1">done_published_shutdown</a> (void *done_arg, <a class="el" href="structgrpc__cq__completion.html">grpc_cq_completion</a> *storage)</td></tr>
+<tr class="separator:a8c34fdd8912206fdd61adc9f5f22eba1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a56fffa23c1c4bab9a469e2ac607b6db7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="server_8c.html#a56fffa23c1c4bab9a469e2ac607b6db7">grpc_server_shutdown_and_notify</a> (<a class="el" href="structgrpc__server.html">grpc_server</a> *server, <a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *cq, void *tag)</td></tr>
 <tr class="memdesc:a56fffa23c1c4bab9a469e2ac607b6db7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Begin shutting down a server.  <a href="#a56fffa23c1c4bab9a469e2ac607b6db7">More...</a><br/></td></tr>
 <tr class="separator:a56fffa23c1c4bab9a469e2ac607b6db7"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -399,6 +399,32 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
+<a class="anchor" id="a8c34fdd8912206fdd61adc9f5f22eba1"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void done_published_shutdown </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>done_arg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__cq__completion.html">grpc_cq_completion</a> *&#160;</td>
+          <td class="paramname"><em>storage</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a777b461e0fd2a56acd35caf54f3d88e6"></a>
 <div class="memitem">
 <div class="memproto">
@@ -555,7 +581,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ac174712f87fdae4b5757a1370e2a31cb"></a>
+<a class="anchor" id="aacb47ff7ce0afa0db4c830449baff39a"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -569,7 +595,13 @@ Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="structgrpc__completion__queue.html">grpc_completion_queue</a> *&#160;</td>
-          <td class="paramname"><em>cq</em>&#160;</td>
+          <td class="paramname"><em>cq</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -674,7 +706,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Request notification of a new call. </p>
-<p>'cq_for_notification' must have been registered to the server via grpc_server_register_completion_queue. </p>
+<p>Once a call is received, a notification tagged with <em>tag_new</em> is added to <em>cq_for_notification</em>. <em>call</em>, <em>details</em> and <em>request_metadata</em> are updated with the appropriate call information. <em>cq_bound_to_call</em> is bound to <em>call</em>, and batch operation notifications for that call will be posted to <em>cq_bound_to_call</em>. Note that <em>cq_for_notification</em> must have been registered to the server via <em>grpc_server_register_completion_queue</em>. </p>
 
 </div>
 </div>
@@ -855,7 +887,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

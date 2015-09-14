@@ -1,10 +1,9 @@
 var searchData=
 [
-  ['secure_5fendpoint',['secure_endpoint',['../structsecure__endpoint.html',1,'']]],
-  ['shard_5ftype',['shard_type',['../structshard__type.html',1,'']]],
-  ['shutdown_5fcleanup_5fargs',['shutdown_cleanup_args',['../structshutdown__cleanup__args.html',1,'']]],
-  ['shutdown_5ftag',['shutdown_tag',['../structshutdown__tag.html',1,'']]],
-  ['sockaddr_5fresolver',['sockaddr_resolver',['../structsockaddr__resolver.html',1,'']]],
-  ['state_5fwatcher',['state_watcher',['../structstate__watcher.html',1,'']]],
-  ['subchannel_5ffactory',['subchannel_factory',['../structsubchannel__factory.html',1,'']]]
+  ['received_5fstatus',['received_status',['../structreceived__status.html',1,'']]],
+  ['registered_5fcall',['registered_call',['../structregistered__call.html',1,'']]],
+  ['registered_5fmethod',['registered_method',['../structregistered__method.html',1,'']]],
+  ['reqinfo_5fmaster',['reqinfo_master',['../structreqinfo__master.html',1,'']]],
+  ['request_5fmatcher',['request_matcher',['../structrequest__matcher.html',1,'']]],
+  ['requested_5fcall',['requested_call',['../structrequested__call.html',1,'']]]
 ];

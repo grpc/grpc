@@ -62,7 +62,7 @@ void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset **pollsets,
 /* TODO(ctiller): deprecate this, and make grpc_tcp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
 int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
-                             int addr_len);
+                             size_t addr_len);
 
 /* Returns the file descriptor of the Nth listening socket on this server,
    or -1 if the index is out of bounds.

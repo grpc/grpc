@@ -108,8 +108,8 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
       break;
     case GPR_CLOCK_MONOTONIC:
       now_dbl = (mach_absolute_time() - g_time_start) * g_time_scale;
-      now.tv_sec = now_dbl * 1e-9;
-      now.tv_nsec = now_dbl - now.tv_sec * 1e9;
+      now.tv_sec = (time_t)(now_dbl * 1e-9);
+      now.tv_nsec = (int)(now_dbl - ((double)now.tv_sec) * 1e9);
       break;
     case GPR_CLOCK_PRECISE:
       gpr_precise_clock_now(&now);

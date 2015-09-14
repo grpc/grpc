@@ -125,13 +125,14 @@ gpr_slice grpc_base64_decode(const char *b64, int url_safe) {
 
 static void decode_one_char(const unsigned char *codes, unsigned char *result,
                             size_t *result_offset) {
-  gpr_uint32 packed = (codes[0] << 2) | (codes[1] >> 4);
+  gpr_uint32 packed = ((gpr_uint32)codes[0] << 2) | ((gpr_uint32)codes[1] >> 4);
   result[(*result_offset)++] = (unsigned char)packed;
 }
 
 static void decode_two_chars(const unsigned char *codes, unsigned char *result,
                              size_t *result_offset) {
-  gpr_uint32 packed = (codes[0] << 10) | (codes[1] << 4) | (codes[2] >> 2);
+  gpr_uint32 packed = ((gpr_uint32)codes[0] << 10) |
+                      ((gpr_uint32)codes[1] << 4) | ((gpr_uint32)codes[2] >> 2);
   result[(*result_offset)++] = (unsigned char)(packed >> 8);
   result[(*result_offset)++] = (unsigned char)(packed);
 }
@@ -171,8 +172,9 @@ static int decode_group(const unsigned char *codes, size_t num_codes,
     decode_two_chars(codes, result, result_offset);
   } else {
     /* No padding. */
-    gpr_uint32 packed =
-        (codes[0] << 18) | (codes[1] << 12) | (codes[2] << 6) | codes[3];
+    gpr_uint32 packed = ((gpr_uint32)codes[0] << 18) |
+                        ((gpr_uint32)codes[1] << 12) |
+                        ((gpr_uint32)codes[2] << 6) | codes[3];
     result[(*result_offset)++] = (unsigned char)(packed >> 16);
     result[(*result_offset)++] = (unsigned char)(packed >> 8);
     result[(*result_offset)++] = (unsigned char)(packed);

@@ -35,7 +35,7 @@ import unittest
 
 from grpc._adapter import _low
 from grpc._adapter import _types
-from grpc.beta import beta
+from grpc.beta import implementations
 from grpc.beta import utilities
 from grpc.framework.foundation import future
 from grpc_test.framework.common import test_constants
@@ -69,7 +69,7 @@ class _Callback(object):
 class ChannelConnectivityTest(unittest.TestCase):
 
   def test_lonely_channel_connectivity(self):
-    channel = beta.create_insecure_channel('localhost', 12345)
+    channel = implementations.insecure_channel('localhost', 12345)
     callback = _Callback()
 
     ready_future = utilities.channel_ready_future(channel)
@@ -94,7 +94,7 @@ class ChannelConnectivityTest(unittest.TestCase):
     server_completion_queue_thread = threading.Thread(
         target=_drive_completion_queue, args=(server_completion_queue,))
     server_completion_queue_thread.start()
-    channel = beta.create_insecure_channel('localhost', port)
+    channel = implementations.insecure_channel('localhost', port)
     callback = _Callback()
 
     try:

@@ -7,93 +7,130 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace examples {
+namespace Examples {
   public static class RouteGuide
   {
     static readonly string __ServiceName = "examples.RouteGuide";
 
-    static readonly Marshaller<global::examples.Point> __Marshaller_Point = Marshallers.Create((arg) => arg.ToByteArray(), global::examples.Point.ParseFrom);
-    static readonly Marshaller<global::examples.Feature> __Marshaller_Feature = Marshallers.Create((arg) => arg.ToByteArray(), global::examples.Feature.ParseFrom);
-    static readonly Marshaller<global::examples.Rectangle> __Marshaller_Rectangle = Marshallers.Create((arg) => arg.ToByteArray(), global::examples.Rectangle.ParseFrom);
-    static readonly Marshaller<global::examples.RouteSummary> __Marshaller_RouteSummary = Marshallers.Create((arg) => arg.ToByteArray(), global::examples.RouteSummary.ParseFrom);
-    static readonly Marshaller<global::examples.RouteNote> __Marshaller_RouteNote = Marshallers.Create((arg) => arg.ToByteArray(), global::examples.RouteNote.ParseFrom);
+    static readonly Marshaller<global::Examples.Point> __Marshaller_Point = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Examples.Point.Parser.ParseFrom);
+    static readonly Marshaller<global::Examples.Feature> __Marshaller_Feature = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Examples.Feature.Parser.ParseFrom);
+    static readonly Marshaller<global::Examples.Rectangle> __Marshaller_Rectangle = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Examples.Rectangle.Parser.ParseFrom);
+    static readonly Marshaller<global::Examples.RouteSummary> __Marshaller_RouteSummary = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Examples.RouteSummary.Parser.ParseFrom);
+    static readonly Marshaller<global::Examples.RouteNote> __Marshaller_RouteNote = Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Examples.RouteNote.Parser.ParseFrom);
 
-    static readonly Method<global::examples.Point, global::examples.Feature> __Method_GetFeature = new Method<global::examples.Point, global::examples.Feature>(
+    static readonly Method<global::Examples.Point, global::Examples.Feature> __Method_GetFeature = new Method<global::Examples.Point, global::Examples.Feature>(
         MethodType.Unary,
+        __ServiceName,
         "GetFeature",
         __Marshaller_Point,
         __Marshaller_Feature);
 
-    static readonly Method<global::examples.Rectangle, global::examples.Feature> __Method_ListFeatures = new Method<global::examples.Rectangle, global::examples.Feature>(
+    static readonly Method<global::Examples.Rectangle, global::Examples.Feature> __Method_ListFeatures = new Method<global::Examples.Rectangle, global::Examples.Feature>(
         MethodType.ServerStreaming,
+        __ServiceName,
         "ListFeatures",
         __Marshaller_Rectangle,
         __Marshaller_Feature);
 
-    static readonly Method<global::examples.Point, global::examples.RouteSummary> __Method_RecordRoute = new Method<global::examples.Point, global::examples.RouteSummary>(
+    static readonly Method<global::Examples.Point, global::Examples.RouteSummary> __Method_RecordRoute = new Method<global::Examples.Point, global::Examples.RouteSummary>(
         MethodType.ClientStreaming,
+        __ServiceName,
         "RecordRoute",
         __Marshaller_Point,
         __Marshaller_RouteSummary);
 
-    static readonly Method<global::examples.RouteNote, global::examples.RouteNote> __Method_RouteChat = new Method<global::examples.RouteNote, global::examples.RouteNote>(
+    static readonly Method<global::Examples.RouteNote, global::Examples.RouteNote> __Method_RouteChat = new Method<global::Examples.RouteNote, global::Examples.RouteNote>(
         MethodType.DuplexStreaming,
+        __ServiceName,
         "RouteChat",
         __Marshaller_RouteNote,
         __Marshaller_RouteNote);
 
-    // client-side stub interface
+    // service descriptor
+    public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
+    {
+      get { return global::Examples.Proto.RouteGuide.Descriptor.Services[0]; }
+    }
+
+    // client interface
     public interface IRouteGuideClient
     {
-      global::examples.Feature GetFeature(global::examples.Point request, CancellationToken token = default(CancellationToken));
-      Task<global::examples.Feature> GetFeatureAsync(global::examples.Point request, CancellationToken token = default(CancellationToken));
-      AsyncServerStreamingCall<global::examples.Feature> ListFeatures(global::examples.Rectangle request, CancellationToken token = default(CancellationToken));
-      AsyncClientStreamingCall<global::examples.Point, global::examples.RouteSummary> RecordRoute(CancellationToken token = default(CancellationToken));
-      AsyncDuplexStreamingCall<global::examples.RouteNote, global::examples.RouteNote> RouteChat(CancellationToken token = default(CancellationToken));
+      global::Examples.Feature GetFeature(global::Examples.Point request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      global::Examples.Feature GetFeature(global::Examples.Point request, CallOptions options);
+      AsyncUnaryCall<global::Examples.Feature> GetFeatureAsync(global::Examples.Point request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncUnaryCall<global::Examples.Feature> GetFeatureAsync(global::Examples.Point request, CallOptions options);
+      AsyncServerStreamingCall<global::Examples.Feature> ListFeatures(global::Examples.Rectangle request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncServerStreamingCall<global::Examples.Feature> ListFeatures(global::Examples.Rectangle request, CallOptions options);
+      AsyncClientStreamingCall<global::Examples.Point, global::Examples.RouteSummary> RecordRoute(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncClientStreamingCall<global::Examples.Point, global::Examples.RouteSummary> RecordRoute(CallOptions options);
+      AsyncDuplexStreamingCall<global::Examples.RouteNote, global::Examples.RouteNote> RouteChat(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken));
+      AsyncDuplexStreamingCall<global::Examples.RouteNote, global::Examples.RouteNote> RouteChat(CallOptions options);
     }
 
     // server-side interface
     public interface IRouteGuide
     {
-      Task<global::examples.Feature> GetFeature(ServerCallContext context, global::examples.Point request);
-      Task ListFeatures(ServerCallContext context, global::examples.Rectangle request, IServerStreamWriter<global::examples.Feature> responseStream);
-      Task<global::examples.RouteSummary> RecordRoute(ServerCallContext context, IAsyncStreamReader<global::examples.Point> requestStream);
-      Task RouteChat(ServerCallContext context, IAsyncStreamReader<global::examples.RouteNote> requestStream, IServerStreamWriter<global::examples.RouteNote> responseStream);
+      Task<global::Examples.Feature> GetFeature(global::Examples.Point request, ServerCallContext context);
+      Task ListFeatures(global::Examples.Rectangle request, IServerStreamWriter<global::Examples.Feature> responseStream, ServerCallContext context);
+      Task<global::Examples.RouteSummary> RecordRoute(IAsyncStreamReader<global::Examples.Point> requestStream, ServerCallContext context);
+      Task RouteChat(IAsyncStreamReader<global::Examples.RouteNote> requestStream, IServerStreamWriter<global::Examples.RouteNote> responseStream, ServerCallContext context);
     }
 
     // client stub
-    public class RouteGuideClient : AbstractStub<RouteGuideClient, StubConfiguration>, IRouteGuideClient
+    public class RouteGuideClient : ClientBase, IRouteGuideClient
     {
-      public RouteGuideClient(Channel channel) : this(channel, StubConfiguration.Default)
+      public RouteGuideClient(Channel channel) : base(channel)
       {
       }
-      public RouteGuideClient(Channel channel, StubConfiguration config) : base(channel, config)
+      public global::Examples.Feature GetFeature(global::Examples.Point request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
+        var call = CreateCall(__Method_GetFeature, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.BlockingUnaryCall(call, request);
       }
-      public global::examples.Feature GetFeature(global::examples.Point request, CancellationToken token = default(CancellationToken))
+      public global::Examples.Feature GetFeature(global::Examples.Point request, CallOptions options)
       {
-        var call = CreateCall(__ServiceName, __Method_GetFeature);
-        return Calls.BlockingUnaryCall(call, request, token);
+        var call = CreateCall(__Method_GetFeature, options);
+        return Calls.BlockingUnaryCall(call, request);
       }
-      public Task<global::examples.Feature> GetFeatureAsync(global::examples.Point request, CancellationToken token = default(CancellationToken))
+      public AsyncUnaryCall<global::Examples.Feature> GetFeatureAsync(global::Examples.Point request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__ServiceName, __Method_GetFeature);
-        return Calls.AsyncUnaryCall(call, request, token);
+        var call = CreateCall(__Method_GetFeature, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncServerStreamingCall<global::examples.Feature> ListFeatures(global::examples.Rectangle request, CancellationToken token = default(CancellationToken))
+      public AsyncUnaryCall<global::Examples.Feature> GetFeatureAsync(global::Examples.Point request, CallOptions options)
       {
-        var call = CreateCall(__ServiceName, __Method_ListFeatures);
-        return Calls.AsyncServerStreamingCall(call, request, token);
+        var call = CreateCall(__Method_GetFeature, options);
+        return Calls.AsyncUnaryCall(call, request);
       }
-      public AsyncClientStreamingCall<global::examples.Point, global::examples.RouteSummary> RecordRoute(CancellationToken token = default(CancellationToken))
+      public AsyncServerStreamingCall<global::Examples.Feature> ListFeatures(global::Examples.Rectangle request, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
       {
-        var call = CreateCall(__ServiceName, __Method_RecordRoute);
-        return Calls.AsyncClientStreamingCall(call, token);
+        var call = CreateCall(__Method_ListFeatures, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncServerStreamingCall(call, request);
       }
-      public AsyncDuplexStreamingCall<global::examples.RouteNote, global::examples.RouteNote> RouteChat(CancellationToken token = default(CancellationToken))
+      public AsyncServerStreamingCall<global::Examples.Feature> ListFeatures(global::Examples.Rectangle request, CallOptions options)
       {
-        var call = CreateCall(__ServiceName, __Method_RouteChat);
-        return Calls.AsyncDuplexStreamingCall(call, token);
+        var call = CreateCall(__Method_ListFeatures, options);
+        return Calls.AsyncServerStreamingCall(call, request);
+      }
+      public AsyncClientStreamingCall<global::Examples.Point, global::Examples.RouteSummary> RecordRoute(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        var call = CreateCall(__Method_RecordRoute, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncClientStreamingCall(call);
+      }
+      public AsyncClientStreamingCall<global::Examples.Point, global::Examples.RouteSummary> RecordRoute(CallOptions options)
+      {
+        var call = CreateCall(__Method_RecordRoute, options);
+        return Calls.AsyncClientStreamingCall(call);
+      }
+      public AsyncDuplexStreamingCall<global::Examples.RouteNote, global::Examples.RouteNote> RouteChat(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken))
+      {
+        var call = CreateCall(__Method_RouteChat, new CallOptions(headers, deadline, cancellationToken));
+        return Calls.AsyncDuplexStreamingCall(call);
+      }
+      public AsyncDuplexStreamingCall<global::Examples.RouteNote, global::Examples.RouteNote> RouteChat(CallOptions options)
+      {
+        var call = CreateCall(__Method_RouteChat, options);
+        return Calls.AsyncDuplexStreamingCall(call);
       }
     }
 
@@ -107,17 +144,12 @@ namespace examples {
           .AddMethod(__Method_RouteChat, serviceImpl.RouteChat).Build();
     }
 
-    // creates a new client stub
-    public static IRouteGuideClient NewStub(Channel channel)
+    // creates a new client
+    public static RouteGuideClient NewClient(Channel channel)
     {
       return new RouteGuideClient(channel);
     }
 
-    // creates a new client stub
-    public static IRouteGuideClient NewStub(Channel channel, StubConfiguration config)
-    {
-      return new RouteGuideClient(channel, config);
-    }
   }
 }
 #endregion

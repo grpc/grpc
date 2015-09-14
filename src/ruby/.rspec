@@ -1,5 +1,6 @@
 -I.
 -Ipb
+--backtrace
 --require spec_helper
 --format documentation
 --color
