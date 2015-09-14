@@ -194,6 +194,9 @@ static int is_port_available(int *port, int is_tcp) {
 typedef struct portreq {
   grpc_pollset pollset;
   int port;
+  int retries;
+  char *server;
+  grpc_httpcli_context *ctx;
 } portreq;
 
 static void got_port_from_server(void *arg,
@@ -201,6 +204,19 @@ static void got_port_from_server(void *arg,
   size_t i;
   int port = 0;
   portreq *pr = arg;
+  if (!response || response->status != 200) {
+    grpc_httpcli_request req;
+    memset(&req, 0, sizeof(req));
+    GPR_ASSERT(pr->retries < 10);
+    pr->retries++;
+    req.host = pr->server;
+    req.path = "/get";
+    gpr_log(GPR_DEBUG, "failed port pick from server: retrying");
+    sleep(1);
+    grpc_httpcli_get(pr->ctx, &pr->pollset, &req, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10), 
+                     got_port_from_server, pr);
+    return;
+  }
   GPR_ASSERT(response);
   GPR_ASSERT(response->status == 200);
   for (i = 0; i < response->body_length; i++) {
@@ -225,6 +241,8 @@ static int pick_port_using_server(char *server) {
   memset(&req, 0, sizeof(req));
   grpc_pollset_init(&pr.pollset);
   pr.port = -1;
+  pr.server = server;
+  pr.ctx = &context;
 
   req.host = server;
   req.path = "/get";
