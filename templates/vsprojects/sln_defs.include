@@ -14,7 +14,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 cpp_proj_type = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 %>\
 % for project in solution_projects:
-Project("${cpp_proj_type}") = "${project.name}", "${project.name}\${project.name}.vcxproj", "${project.vs_project_guid}"
+Project("${cpp_proj_type}") = "${project.name}", "vcxproj\${project.vs_proj_dir}\${project.name}\${project.name}.vcxproj", "${project.vs_project_guid}"
 	ProjectSection(myProperties) = preProject
   % if project.is_library:
         	lib = "True"
@@ -53,7 +53,7 @@ Global
 		${project.vs_project_guid}.Debug|x64.ActiveCfg = Debug|x64
 		${project.vs_project_guid}.Release|Win32.ActiveCfg = Release|Win32
 		${project.vs_project_guid}.Release|x64.ActiveCfg = Release|x64
-    % if project.get('dll', 'no') != 'only':
+    % if project.get('dll', False) != 'only':
 		${project.vs_project_guid}.Debug|Win32.Build.0 = Debug|Win32
 		${project.vs_project_guid}.Debug|x64.Build.0 = Debug|x64
 		${project.vs_project_guid}.Release|Win32.Build.0 = Release|Win32
@@ -61,7 +61,7 @@ Global
     % endif
   % endif
   % if use_dlls == 'yes':
-    % if project.get('dll', 'no') == 'no':
+    % if project.get('dll', False) == False:
 		${project.vs_project_guid}.Debug-DLL|Win32.ActiveCfg = Debug|Win32
 		${project.vs_project_guid}.Debug-DLL|Win32.Build.0 = Debug|Win32
 		${project.vs_project_guid}.Debug-DLL|x64.ActiveCfg = Debug|x64
@@ -82,7 +82,7 @@ Global
     % endif
   % endif
   % if use_dlls == 'only':
-    % if project.get('dll', 'no') == 'yes':
+    % if project.get('dll', False) == True:
 		${project.vs_project_guid}.Debug|Win32.ActiveCfg = Debug-DLL|Win32
 		${project.vs_project_guid}.Debug|Win32.Build.0 = Debug-DLL|Win32
 		${project.vs_project_guid}.Debug|x64.ActiveCfg = Debug-DLL|x64

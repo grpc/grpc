@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -101,17 +101,31 @@ Data Fields</h2></td></tr>
 <tr class="separator:a57b63d7b7a3e4720a0cc0d20bb2ecf36"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2084add9ffe64cf337576114d189af3f"><td class="memItemLeft" align="right" valign="top">size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__metadata.html#a2084add9ffe64cf337576114d189af3f">value_length</a></td></tr>
 <tr class="separator:a2084add9ffe64cf337576114d189af3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a342799d4f78fcc6dd29ee44f56a6d553"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:ab03cc1c035aa9a08f094ac1db158348a"><td class="memItemLeft" >&#160;&#160;&#160;void *&#160;&#160;&#160;<a class="el" href="structgrpc__metadata.html#ae7478a66f65862018cd89768a578ff4f">obfuscated</a> [3]</td></tr>
-<tr class="separator:ab03cc1c035aa9a08f094ac1db158348a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a342799d4f78fcc6dd29ee44f56a6d553"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__metadata.html#a342799d4f78fcc6dd29ee44f56a6d553">internal_data</a></td></tr>
-<tr class="memdesc:a342799d4f78fcc6dd29ee44f56a6d553"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following fields are reserved for grpc internal use.  <a href="#a342799d4f78fcc6dd29ee44f56a6d553">More...</a><br/></td></tr>
-<tr class="separator:a342799d4f78fcc6dd29ee44f56a6d553"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc971ca331d3382b313cb8170df4387b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__metadata.html#abc971ca331d3382b313cb8170df4387b">flags</a></td></tr>
+<tr class="separator:abc971ca331d3382b313cb8170df4387b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2a2ac89c9edd9326dc7dc59e2f9295c"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:ab2326eed0b4545c39e277ed9909cbe27"><td class="memItemLeft" >&#160;&#160;&#160;void *&#160;&#160;&#160;<a class="el" href="structgrpc__metadata.html#a737f2161d2ccc9da44f340d923c97658">obfuscated</a> [4]</td></tr>
+<tr class="separator:ab2326eed0b4545c39e277ed9909cbe27"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2a2ac89c9edd9326dc7dc59e2f9295c"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__metadata.html#aa2a2ac89c9edd9326dc7dc59e2f9295c">internal_data</a></td></tr>
+<tr class="memdesc:aa2a2ac89c9edd9326dc7dc59e2f9295c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following fields are reserved for grpc internal use.  <a href="#aa2a2ac89c9edd9326dc7dc59e2f9295c">More...</a><br/></td></tr>
+<tr class="separator:aa2a2ac89c9edd9326dc7dc59e2f9295c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A single metadata element. </p>
 </div><h2 class="groupheader">Field Documentation</h2>
-<a class="anchor" id="a342799d4f78fcc6dd29ee44f56a6d553"></a>
+<a class="anchor" id="abc971ca331d3382b313cb8170df4387b"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="port__platform_8h.html#aa6abd4df815a5498d1a04b5e691a74a9">gpr_uint32</a> grpc_metadata::flags</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="aa2a2ac89c9edd9326dc7dc59e2f9295c"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -138,12 +152,12 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ae7478a66f65862018cd89768a578ff4f"></a>
+<a class="anchor" id="a737f2161d2ccc9da44f340d923c97658"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void* grpc_metadata::obfuscated[3]</td>
+          <td class="memname">void* grpc_metadata::obfuscated[4]</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -180,7 +194,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:05 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:11 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

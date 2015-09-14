@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -87,7 +87,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
-<a href="#namespaces">Namespaces</a>  </div>
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#typedef-members">Typedefs</a>  </div>
   <div class="headertitle">
 <div class="title">server.cc File Reference</div>  </div>
 </div><!--header-->
@@ -98,17 +99,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <code>#include &lt;grpc/support/alloc.h&gt;</code><br/>
 <code>#include &lt;grpc/support/log.h&gt;</code><br/>
 <code>#include &lt;<a class="el" href="completion__queue_8h_source.html">grpc++/completion_queue.h</a>&gt;</code><br/>
-<code>#include &lt;<a class="el" href="async__generic__service_8h_source.html">grpc++/async_generic_service.h</a>&gt;</code><br/>
+<code>#include &lt;<a class="el" href="async__generic__service_8h_source.html">grpc++/generic/async_generic_service.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="rpc__service__method_8h_source.html">grpc++/impl/rpc_service_method.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="service__type_8h_source.html">grpc++/impl/service_type.h</a>&gt;</code><br/>
 <code>#include &lt;<a class="el" href="server__context_8h_source.html">grpc++/server_context.h</a>&gt;</code><br/>
-<code>#include &lt;<a class="el" href="server__credentials_8h_source.html">grpc++/server_credentials.h</a>&gt;</code><br/>
-<code>#include &lt;<a class="el" href="thread__pool__interface_8h_source.html">grpc++/thread_pool_interface.h</a>&gt;</code><br/>
-<code>#include &lt;<a class="el" href="time_8h_source.html">grpc++/time.h</a>&gt;</code><br/>
+<code>#include &lt;<a class="el" href="server__credentials_8h_source.html">grpc++/security/server_credentials.h</a>&gt;</code><br/>
+<code>#include &lt;<a class="el" href="time_8h_source.html">grpc++/support/time.h</a>&gt;</code><br/>
 <code>#include &quot;src/core/profiling/timers.h&quot;</code><br/>
+<code>#include &quot;<a class="el" href="thread__pool__interface_8h_source.html">src/cpp/server/thread_pool_interface.h</a>&quot;</code><br/>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_unimplemented_async_request_context.html">grpc::Server::UnimplementedAsyncRequestContext</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_unimplemented_async_request.html">grpc::Server::UnimplementedAsyncRequest</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_unimplemented_async_response.html">grpc::Server::UnimplementedAsyncResponse</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_shutdown_request.html">grpc::Server::ShutdownRequest</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_1_1_sync_request.html">grpc::Server::SyncRequest</a></td></tr>
@@ -120,11 +127,18 @@ Data Structures</h2></td></tr>
 Namespaces</h2></td></tr>
 <tr class="memitem:namespacegrpc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html">grpc</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:ab9c7e26e08964faa6963d2e4dce04118"><td class="memItemLeft" align="right" valign="top">typedef SneakyCallOpSet<br class="typebreak"/>
+&lt; CallOpSendInitialMetadata, <br class="typebreak"/>
+CallOpServerSendStatus &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ab9c7e26e08964faa6963d2e4dce04118">grpc::UnimplementedAsyncResponseOp</a></td></tr>
+<tr class="separator:ab9c7e26e08964faa6963d2e4dce04118"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:08 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

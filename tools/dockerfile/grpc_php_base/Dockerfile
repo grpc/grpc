@@ -75,7 +75,7 @@ RUN mv composer.phar /usr/local/bin/composer
 
 # Download the patched PHP protobuf so that PHP gRPC clients can be generated
 # from proto3 schemas.
-RUN git clone https://github.com/murgatroid99/Protobuf-PHP.git /var/local/git/protobuf-php
+RUN git clone https://github.com/stanley-cheung/Protobuf-PHP.git /var/local/git/protobuf-php
 
 # Install ruby (via RVM) as ruby tools are dependencies for building Protobuf
 # PHP extensions.

@@ -43,7 +43,9 @@
 namespace grpc {
 
 ServerBuilder::ServerBuilder()
-    : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {}
+    : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {
+      grpc_compression_options_init(&compression_options_);
+}
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
   ServerCompletionQueue* cq = new ServerCompletionQueue();
@@ -99,8 +101,9 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     thread_pool_ = CreateDefaultThreadPool();
     thread_pool_owned = true;
   }
-  std::unique_ptr<Server> server(
-      new Server(thread_pool_, thread_pool_owned, max_message_size_));
+  std::unique_ptr<Server> server(new Server(thread_pool_, thread_pool_owned,
+                                            max_message_size_,
+                                            compression_options_));
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
     grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
                                           nullptr);
@@ -128,7 +131,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       *port->selected_port = r;
     }
   }
-  if (!server->Start(&cqs_[0], cqs_.size())) {
+  auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
+  if (!server->Start(cqs_data, cqs_.size())) {
     return nullptr;
   }
   return server;

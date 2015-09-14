@@ -45,7 +45,6 @@
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
 
 #include "test/core/util/reconnect_server.h"
 #include "test/cpp/util/test_config.h"
