@@ -80,8 +80,6 @@ static void destroy_pollset_and_shutdown(void *p) {
 static void freed_port_from_server(void *arg,
                                    const grpc_httpcli_response *response) {
   freereq *pr = arg;
-  GPR_ASSERT(response);
-  GPR_ASSERT(response->status == 200);
   gpr_mu_lock(GRPC_POLLSET_MU(&pr->pollset));
   pr->done = 1;
   grpc_pollset_kick(&pr->pollset, NULL);
