@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -103,12 +103,16 @@ Data Fields</h2></td></tr>
 <tr class="separator:a4b3d99e4664ffe3399d29f61f7063600"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afd8f60fef22e201f1e1ba3b00f285602"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__channel.html#afd8f60fef22e201f1e1ba3b00f285602">grpc_compression_algorithm_string</a></td></tr>
 <tr class="separator:afd8f60fef22e201f1e1ba3b00f285602"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae20bb3ff1df444e02943c837c6321ff9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__channel.html#ae20bb3ff1df444e02943c837c6321ff9">grpc_encodings_accepted_by_peer_string</a></td></tr>
+<tr class="separator:ae20bb3ff1df444e02943c837c6321ff9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa00f6e53c4b732654311f194aa2f3957"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__channel.html#aa00f6e53c4b732654311f194aa2f3957">grpc_message_string</a></td></tr>
 <tr class="separator:aa00f6e53c4b732654311f194aa2f3957"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad55dee766f5bae6c7bc00ad07bcb4b04"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__channel.html#ad55dee766f5bae6c7bc00ad07bcb4b04">path_string</a></td></tr>
 <tr class="separator:ad55dee766f5bae6c7bc00ad07bcb4b04"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9ad924bb3cc339c10d106f48b9a4a959"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__channel.html#a9ad924bb3cc339c10d106f48b9a4a959">authority_string</a></td></tr>
 <tr class="separator:a9ad924bb3cc339c10d106f48b9a4a959"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a13b9a3d1830073eeaedc330f32f46df5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdelem.html">grpc_mdelem</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__channel.html#a13b9a3d1830073eeaedc330f32f46df5">default_authority</a></td></tr>
+<tr class="separator:a13b9a3d1830073eeaedc330f32f46df5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad50abb90c5f7ef77e51f8387b06451f9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__mdelem.html">grpc_mdelem</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__channel.html#ad50abb90c5f7ef77e51f8387b06451f9">grpc_status_elem</a> [3]</td></tr>
 <tr class="memdesc:ad50abb90c5f7ef77e51f8387b06451f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">mdelem for grpc-status: 0 thru grpc-status: 2  <a href="#ad50abb90c5f7ef77e51f8387b06451f9">More...</a><br/></td></tr>
 <tr class="separator:ad50abb90c5f7ef77e51f8387b06451f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -134,6 +138,18 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a13b9a3d1830073eeaedc330f32f46df5"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__mdelem.html">grpc_mdelem</a>* grpc_channel::default_authority</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="ae6dda10ffe354ceefda810573f5e80e9"></a>
 <div class="memitem">
 <div class="memproto">
@@ -152,6 +168,18 @@ Data Fields</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a>* grpc_channel::grpc_compression_algorithm_string</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="ae20bb3ff1df444e02943c837c6321ff9"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__mdstr.html">grpc_mdstr</a>* grpc_channel::grpc_encodings_accepted_by_peer_string</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -300,7 +328,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

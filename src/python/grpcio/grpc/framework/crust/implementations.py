@@ -49,12 +49,12 @@ class _BaseServicer(base.Servicer):
       return adapted_method(output_operator, context)
     elif self._adapted_multi_method is not None:
       try:
-        return self._adapted_multi_method.service(
+        return self._adapted_multi_method(
             group, method, output_operator, context)
       except face.NoSuchMethodError:
-        raise base.NoSuchMethodError()
+        raise base.NoSuchMethodError(None, None)
     else:
-      raise base.NoSuchMethodError()
+      raise base.NoSuchMethodError(None, None)
 
 
 class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
@@ -66,22 +66,23 @@ class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
     self._pool = pool
 
   def __call__(
-      self, request, timeout, metadata=None, with_call=False):
+      self, request, timeout, metadata=None, with_call=False,
+      protocol_options=None):
     return _calls.blocking_unary_unary(
         self._end, self._group, self._method, timeout, with_call,
-        metadata, request)
+        protocol_options, metadata, request)
 
-  def future(self, request, timeout, metadata=None):
+  def future(self, request, timeout, metadata=None, protocol_options=None):
     return _calls.future_unary_unary(
-        self._end, self._group, self._method, timeout, metadata,
-        request)
+        self._end, self._group, self._method, timeout, protocol_options,
+        metadata, request)
 
   def event(
       self, request, receiver, abortion_callback, timeout,
-      metadata=None):
+      metadata=None, protocol_options=None):
     return _calls.event_unary_unary(
-        self._end, self._group, self._method, timeout, metadata,
-        request, receiver, abortion_callback, self._pool)
+        self._end, self._group, self._method, timeout, protocol_options,
+        metadata, request, receiver, abortion_callback, self._pool)
 
 
 class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
@@ -92,17 +93,17 @@ class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
     self._method = method
     self._pool = pool
 
-  def __call__(self, request, timeout, metadata=None):
+  def __call__(self, request, timeout, metadata=None, protocol_options=None):
     return _calls.inline_unary_stream(
-        self._end, self._group, self._method, timeout, metadata,
-        request)
+        self._end, self._group, self._method, timeout, protocol_options,
+        metadata, request)
 
   def event(
       self, request, receiver, abortion_callback, timeout,
-      metadata=None):
+      metadata=None, protocol_options=None):
     return _calls.event_unary_stream(
-        self._end, self._group, self._method, timeout, metadata,
-        request, receiver, abortion_callback, self._pool)
+        self._end, self._group, self._method, timeout, protocol_options,
+        metadata, request, receiver, abortion_callback, self._pool)
 
 
 class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
@@ -115,21 +116,23 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
 
   def __call__(
       self, request_iterator, timeout, metadata=None,
-      with_call=False):
+      with_call=False, protocol_options=None):
     return _calls.blocking_stream_unary(
         self._end, self._group, self._method, timeout, with_call,
+        protocol_options, metadata, request_iterator, self._pool)
+
+  def future(
+      self, request_iterator, timeout, metadata=None, protocol_options=None):
+    return _calls.future_stream_unary(
+        self._end, self._group, self._method, timeout, protocol_options,
         metadata, request_iterator, self._pool)
 
-  def future(self, request_iterator, timeout, metadata=None):
-    return _calls.future_stream_unary(
-        self._end, self._group, self._method, timeout, metadata,
-        request_iterator, self._pool)
-
   def event(
-      self, receiver, abortion_callback, timeout, metadata=None):
+      self, receiver, abortion_callback, timeout, metadata=None,
+      protocol_options=None):
     return _calls.event_stream_unary(
-        self._end, self._group, self._method, timeout, metadata,
-        receiver, abortion_callback, self._pool)
+        self._end, self._group, self._method, timeout, protocol_options,
+        metadata, receiver, abortion_callback, self._pool)
 
 
 class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
@@ -140,16 +143,18 @@ class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
     self._method = method
     self._pool = pool
 
-  def __call__(self, request_iterator, timeout, metadata=None):
+  def __call__(
+      self, request_iterator, timeout, metadata=None, protocol_options=None):
     return _calls.inline_stream_stream(
-        self._end, self._group, self._method, timeout, metadata,
-        request_iterator, self._pool)
+        self._end, self._group, self._method, timeout, protocol_options,
+        metadata, request_iterator, self._pool)
 
   def event(
-      self, receiver, abortion_callback, timeout, metadata=None):
+      self, receiver, abortion_callback, timeout, metadata=None,
+      protocol_options=None):
     return _calls.event_stream_stream(
-        self._end, self._group, self._method, timeout, metadata,
-        receiver, abortion_callback, self._pool)
+        self._end, self._group, self._method, timeout, protocol_options,
+        metadata, receiver, abortion_callback, self._pool)
 
 
 class _GenericStub(face.GenericStub):
@@ -161,66 +166,70 @@ class _GenericStub(face.GenericStub):
 
   def blocking_unary_unary(
       self, group, method, request, timeout, metadata=None,
-      with_call=None):
+      with_call=None, protocol_options=None):
     return _calls.blocking_unary_unary(
-        self._end, group, method, timeout, with_call, metadata,
-        request)
+        self._end, group, method, timeout, with_call, protocol_options,
+        metadata, request)
 
   def future_unary_unary(
-      self, group, method, request, timeout, metadata=None):
+      self, group, method, request, timeout, metadata=None,
+      protocol_options=None):
     return _calls.future_unary_unary(
-        self._end, group, method, timeout, metadata, request)
+        self._end, group, method, timeout, protocol_options, metadata, request)
 
   def inline_unary_stream(
-      self, group, method, request, timeout, metadata=None):
+      self, group, method, request, timeout, metadata=None,
+      protocol_options=None):
     return _calls.inline_unary_stream(
-        self._end, group, method, timeout, metadata, request)
+        self._end, group, method, timeout, protocol_options, metadata, request)
 
   def blocking_stream_unary(
       self, group, method, request_iterator, timeout, metadata=None,
-      with_call=None):
+      with_call=None, protocol_options=None):
     return _calls.blocking_stream_unary(
-        self._end, group, method, timeout, with_call, metadata,
-        request_iterator, self._pool)
+        self._end, group, method, timeout, with_call, protocol_options,
+        metadata, request_iterator, self._pool)
 
   def future_stream_unary(
-      self, group, method, request_iterator, timeout, metadata=None):
+      self, group, method, request_iterator, timeout, metadata=None,
+      protocol_options=None):
     return _calls.future_stream_unary(
-        self._end, group, method, timeout, metadata,
+        self._end, group, method, timeout, protocol_options, metadata,
         request_iterator, self._pool)
 
   def inline_stream_stream(
-      self, group, method, request_iterator, timeout, metadata=None):
+      self, group, method, request_iterator, timeout, metadata=None,
+      protocol_options=None):
     return _calls.inline_stream_stream(
-        self._end, group, method, timeout, metadata,
+        self._end, group, method, timeout, protocol_options, metadata,
         request_iterator, self._pool)
 
   def event_unary_unary(
       self, group, method, request, receiver, abortion_callback, timeout,
-      metadata=None):
+      metadata=None, protocol_options=None):
     return _calls.event_unary_unary(
-        self._end, group, method, timeout, metadata, request,
+        self._end, group, method, timeout, protocol_options, metadata, request,
         receiver, abortion_callback, self._pool)
 
   def event_unary_stream(
       self, group, method, request, receiver, abortion_callback, timeout,
-      metadata=None):
+      metadata=None, protocol_options=None):
     return _calls.event_unary_stream(
-        self._end, group, method, timeout, metadata, request,
+        self._end, group, method, timeout, protocol_options, metadata, request,
         receiver, abortion_callback, self._pool)
 
   def event_stream_unary(
       self, group, method, receiver, abortion_callback, timeout,
-      metadata=None):
+      metadata=None, protocol_options=None):
     return _calls.event_stream_unary(
-        self._end, group, method, timeout, metadata, receiver,
+        self._end, group, method, timeout, protocol_options, metadata, receiver,
         abortion_callback, self._pool)
 
   def event_stream_stream(
       self, group, method, receiver, abortion_callback, timeout,
-      metadata=None):
+      metadata=None, protocol_options=None):
     return _calls.event_stream_stream(
-        self._end, group, method, timeout, metadata, receiver,
+        self._end, group, method, timeout, protocol_options, metadata, receiver,
         abortion_callback, self._pool)
 
   def unary_unary(self, group, method):
@@ -315,8 +324,11 @@ def servicer(method_implementations, multi_method_implementation, pool):
   """
   adapted_implementations = _adapt_method_implementations(
       method_implementations, pool)
-  adapted_multi_method_implementation = _service.adapt_multi_method(
-      multi_method_implementation, pool)
+  if multi_method_implementation is None:
+    adapted_multi_method_implementation = None
+  else:
+    adapted_multi_method_implementation = _service.adapt_multi_method(
+        multi_method_implementation, pool)
   return _BaseServicer(
       adapted_implementations, adapted_multi_method_implementation)
 

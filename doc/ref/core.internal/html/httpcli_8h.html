@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -88,13 +88,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#define-members">Macros</a> &#124;
 <a href="#typedef-members">Typedefs</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
 <div class="title">httpcli.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;stddef.h&gt;</code><br/>
 <code>#include &lt;<a class="el" href="time_8h_source.html">grpc/support/time.h</a>&gt;</code><br/>
+<code>#include &quot;<a class="el" href="endpoint_8h_source.html">src/core/iomgr/endpoint.h</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="pollset__set_8h_source.html">src/core/iomgr/pollset_set.h</a>&quot;</code><br/>
 </div>
 <p><a href="httpcli_8h_source.html">Go to the source code of this file.</a></p>
@@ -104,6 +106,8 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__httpcli__header.html">grpc_httpcli_header</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__httpcli__context.html">grpc_httpcli_context</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__httpcli__handshaker.html">grpc_httpcli_handshaker</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__httpcli__request.html">grpc_httpcli_request</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -147,6 +151,13 @@ Functions</h2></td></tr>
 <tr class="separator:a96f034743193848e966d61192e406c70"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a15ab7c87e0d5e42341c9652d5045d8ce"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="httpcli_8h.html#a15ab7c87e0d5e42341c9652d5045d8ce">grpc_httpcli_set_override</a> (<a class="el" href="httpcli_8h.html#a789e91e8c276aedb1c32873c3d6fa217">grpc_httpcli_get_override</a> get, <a class="el" href="httpcli_8h.html#a0591ce896f1a3f9b1b86e4eb6e9ac225">grpc_httpcli_post_override</a> post)</td></tr>
 <tr class="separator:a15ab7c87e0d5e42341c9652d5045d8ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:ab0853017544220823e2a663a7bca9136"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="structgrpc__httpcli__handshaker.html">grpc_httpcli_handshaker</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="httpcli_8h.html#ab0853017544220823e2a663a7bca9136">grpc_httpcli_plaintext</a></td></tr>
+<tr class="separator:ab0853017544220823e2a663a7bca9136"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7bd9903ed0a51ba35bd81d71c8fb635a"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="structgrpc__httpcli__handshaker.html">grpc_httpcli_handshaker</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="httpcli_8h.html#a7bd9903ed0a51ba35bd81d71c8fb635a">grpc_httpcli_ssl</a></td></tr>
+<tr class="separator:a7bd9903ed0a51ba35bd81d71c8fb635a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a class="anchor" id="a20ed031787f50e2fbbf09a5f1ab4ccec"></a>
@@ -429,10 +440,35 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<h2 class="groupheader">Variable Documentation</h2>
+<a class="anchor" id="ab0853017544220823e2a663a7bca9136"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="structgrpc__httpcli__handshaker.html">grpc_httpcli_handshaker</a> grpc_httpcli_plaintext</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a7bd9903ed0a51ba35bd81d71c8fb635a"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const <a class="el" href="structgrpc__httpcli__handshaker.html">grpc_httpcli_handshaker</a> grpc_httpcli_ssl</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

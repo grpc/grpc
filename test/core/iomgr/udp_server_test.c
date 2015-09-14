@@ -51,13 +51,13 @@ static int g_number_of_bytes_read = 0;
 
 static void on_read(int fd, grpc_udp_server_cb new_transport_cb, void *cb_arg) {
   char read_buffer[512];
-  int byte_count;
+  ssize_t byte_count;
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   byte_count = recv(fd, read_buffer, sizeof(read_buffer), 0);
 
   g_number_of_reads++;
-  g_number_of_bytes_read += byte_count;
+  g_number_of_bytes_read += (int)byte_count;
 
   grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));

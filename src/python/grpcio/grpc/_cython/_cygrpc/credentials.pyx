@@ -106,26 +106,6 @@ def client_credentials_compute_engine():
   credentials.c_credentials = grpc.grpc_compute_engine_credentials_create()
   return credentials
 
-def client_credentials_service_account(
-    json_key, scope, records.Timespec token_lifetime not None):
-  if isinstance(json_key, bytes):
-    pass
-  elif isinstance(json_key, basestring):
-    json_key = json_key.encode()
-  else:
-    raise TypeError("expected json_key to be str or bytes")
-  if isinstance(scope, bytes):
-    pass
-  elif isinstance(scope, basestring):
-    scope = scope.encode()
-  else:
-    raise TypeError("expected scope to be str or bytes")
-  cdef ClientCredentials credentials = ClientCredentials()
-  credentials.c_credentials = grpc.grpc_service_account_credentials_create(
-      json_key, scope, token_lifetime.c_time)
-  credentials.references.extend([json_key, scope])
-  return credentials
-
 #TODO rename to something like client_credentials_service_account_jwt_access.
 def client_credentials_jwt(json_key, records.Timespec token_lifetime not None):
   if isinstance(json_key, bytes):

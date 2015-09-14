@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -96,6 +96,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
+<p>A thin wrapper around <em>grpc_completion_queue</em> (see / <em>src/core/surface/completion_queue.h</em>).  
+ <a href="classgrpc_1_1_completion_queue.html#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="completion__queue_8h_source.html">completion_queue.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
@@ -104,24 +107,32 @@ Public Types</h2></td></tr>
 <a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572a5d8344849fb99341b7edaa9da7b42c08">GOT_EVENT</a>, 
 <a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572ae88eecb45f91413b425511ee973e2e04">TIMEOUT</a>
  }</td></tr>
+<tr class="memdesc:a6227657fb2f29291f80cd092f9baf572"><td class="mdescLeft">&#160;</td><td class="mdescRight">Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.  <a href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572">More...</a><br/></td></tr>
 <tr class="separator:a6227657fb2f29291f80cd092f9baf572"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:aea987a15a475923e949934e481fe3566"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#aea987a15a475923e949934e481fe3566">CompletionQueue</a> ()</td></tr>
+<tr class="memdesc:aea987a15a475923e949934e481fe3566"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor.  <a href="#aea987a15a475923e949934e481fe3566">More...</a><br/></td></tr>
 <tr class="separator:aea987a15a475923e949934e481fe3566"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a081a954044215a7ca8554da4220fb369"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a081a954044215a7ca8554da4220fb369">CompletionQueue</a> (grpc_completion_queue *take)</td></tr>
+<tr class="memdesc:a081a954044215a7ca8554da4220fb369"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrap <em>take</em>, taking ownership of the instance.  <a href="#a081a954044215a7ca8554da4220fb369">More...</a><br/></td></tr>
 <tr class="separator:a081a954044215a7ca8554da4220fb369"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa0534391b20562e7e4cdc12daf0e36b0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#aa0534391b20562e7e4cdc12daf0e36b0">~CompletionQueue</a> () <a class="el" href="config_8h.html#a9a884d706be26697c9c892365a3402a9">GRPC_OVERRIDE</a></td></tr>
+<tr class="memdesc:aa0534391b20562e7e4cdc12daf0e36b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor. Destroys the owned wrapped completion queue / instance.  <a href="#aa0534391b20562e7e4cdc12daf0e36b0">More...</a><br/></td></tr>
 <tr class="separator:aa0534391b20562e7e4cdc12daf0e36b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a290ddf3d96e6d1d5886580e60b0602b4"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
 <tr class="memitem:a290ddf3d96e6d1d5886580e60b0602b4"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_completion_queue.html#a6227657fb2f29291f80cd092f9baf572">NextStatus</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a290ddf3d96e6d1d5886580e60b0602b4">AsyncNext</a> (void **tag, bool *ok, const T &amp;deadline)</td></tr>
+<tr class="memdesc:a290ddf3d96e6d1d5886580e60b0602b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read from the queue, blocking up to <em>deadline</em> (or the queue's shutdown).  <a href="#a290ddf3d96e6d1d5886580e60b0602b4">More...</a><br/></td></tr>
 <tr class="separator:a290ddf3d96e6d1d5886580e60b0602b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a86d9810ced694e50f7987ac90b9f8c1a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a86d9810ced694e50f7987ac90b9f8c1a">Next</a> (void **tag, bool *ok)</td></tr>
+<tr class="memdesc:a86d9810ced694e50f7987ac90b9f8c1a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read from the queue, blocking until an event is available or the queue is shutting down.  <a href="#a86d9810ced694e50f7987ac90b9f8c1a">More...</a><br/></td></tr>
 <tr class="separator:a86d9810ced694e50f7987ac90b9f8c1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a40efddadd9073386fbcb4f46e8325670"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a40efddadd9073386fbcb4f46e8325670">Shutdown</a> ()</td></tr>
+<tr class="memdesc:a40efddadd9073386fbcb4f46e8325670"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request the shutdown of the queue.  <a href="#a40efddadd9073386fbcb4f46e8325670">More...</a><br/></td></tr>
 <tr class="separator:a40efddadd9073386fbcb4f46e8325670"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a999c317e716d1e74aca2eb050912302b"><td class="memItemLeft" align="right" valign="top">grpc_completion_queue *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a999c317e716d1e74aca2eb050912302b">cq</a> ()</td></tr>
+<tr class="memdesc:a999c317e716d1e74aca2eb050912302b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a <em>raw</em> pointer to the underlying <em>grpc_completion_queue</em> instance.  <a href="#a999c317e716d1e74aca2eb050912302b">More...</a><br/></td></tr>
 <tr class="separator:a999c317e716d1e74aca2eb050912302b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_grpc_library"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_grpc_library')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_grpc_library.html">grpc::GrpcLibrary</a></td></tr>
 <tr class="memitem:af026f86430cf235d7eaf532231a44528 inherit pub_methods_classgrpc_1_1_grpc_library"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_grpc_library.html#af026f86430cf235d7eaf532231a44528">GrpcLibrary</a> ()</td></tr>
@@ -161,15 +172,19 @@ Friends</h2></td></tr>
 <tr class="memitem:a9fcf1462b4ea3c6a37e54076aafb93e1"><td class="memTemplParams" colspan="2">template&lt;class ServiceType , class RequestType , class ResponseType &gt; </td></tr>
 <tr class="memitem:a9fcf1462b4ea3c6a37e54076aafb93e1"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a9fcf1462b4ea3c6a37e54076aafb93e1">BidiStreamingHandler</a></td></tr>
 <tr class="separator:a9fcf1462b4ea3c6a37e54076aafb93e1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb2b23ecdb6db8b8d7e194a8e0ef5d6f"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#aeb2b23ecdb6db8b8d7e194a8e0ef5d6f">UnknownMethodHandler</a></td></tr>
+<tr class="separator:aeb2b23ecdb6db8b8d7e194a8e0ef5d6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c3fa4c066981aae114e41c3f9340144"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a8c3fa4c066981aae114e41c3f9340144">::grpc::Server</a></td></tr>
 <tr class="separator:a8c3fa4c066981aae114e41c3f9340144"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c5b4f4c66d254f341915982a17aac95"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a6c5b4f4c66d254f341915982a17aac95">::grpc::ServerContext</a></td></tr>
 <tr class="separator:a6c5b4f4c66d254f341915982a17aac95"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4aac0a120f3498d1151460ef89ce8446"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
-<tr class="memitem:a4aac0a120f3498d1151460ef89ce8446"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#a4aac0a120f3498d1151460ef89ce8446">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *channel, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
-<tr class="separator:a4aac0a120f3498d1151460ef89ce8446"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac574143322bf2bc6bd324ccb22d40756"><td class="memTemplParams" colspan="2">template&lt;class InputMessage , class OutputMessage &gt; </td></tr>
+<tr class="memitem:ac574143322bf2bc6bd324ccb22d40756"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html#ac574143322bf2bc6bd324ccb22d40756">BlockingUnaryCall</a> (<a class="el" href="classgrpc_1_1_channel.html">Channel</a> *channel, const <a class="el" href="classgrpc_1_1_rpc_method.html">RpcMethod</a> &amp;method, <a class="el" href="classgrpc_1_1_client_context.html">ClientContext</a> *context, const InputMessage &amp;request, OutputMessage *result)</td></tr>
+<tr class="separator:ac574143322bf2bc6bd324ccb22d40756"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Member Enumeration Documentation</h2>
+<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>A thin wrapper around <em>grpc_completion_queue</em> (see / <em>src/core/surface/completion_queue.h</em>). </p>
+</div><h2 class="groupheader">Member Enumeration Documentation</h2>
 <a class="anchor" id="a6227657fb2f29291f80cd092f9baf572"></a>
 <div class="memitem">
 <div class="memproto">
@@ -179,12 +194,17 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="a6227657fb2f29291f80cd092f9baf572a5d05c1c970154dad10e5f648890c215b"></a>SHUTDOWN</em>&#160;</td><td class="fielddoc">
+<p>The completion queue has been shutdown. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a6227657fb2f29291f80cd092f9baf572a5d8344849fb99341b7edaa9da7b42c08"></a>GOT_EVENT</em>&#160;</td><td class="fielddoc">
+<p>Got a new event; <em>tag</em> will be filled in with its associated value; <em>ok</em> indicating its success. </p>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="a6227657fb2f29291f80cd092f9baf572ae88eecb45f91413b425511ee973e2e04"></a>TIMEOUT</em>&#160;</td><td class="fielddoc">
+<p>deadline was reached. </p>
 </td></tr>
 </table>
 
@@ -203,6 +223,9 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Default constructor. </p>
+<p>Implicitly creates a <em>grpc_completion_queue</em> instance. </p>
 
 </div>
 </div>
@@ -228,6 +251,14 @@ Friends</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
+<p>Wrap <em>take</em>, taking ownership of the instance. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">take</td><td>The completion queue instance to wrap. Ownership is taken. </td></tr>
+  </table>
+  </dd>
+</dl>
+
 </div>
 </div>
 <a class="anchor" id="aa0534391b20562e7e4cdc12daf0e36b0"></a>
@@ -242,6 +273,8 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Destructor. Destroys the owned wrapped completion queue / instance. </p>
 
 </div>
 </div>
@@ -286,6 +319,18 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Read from the queue, blocking up to <em>deadline</em> (or the queue's shutdown). </p>
+<p>Both <em>tag</em> and <em>ok</em> are updated upon success (if an event is available within the <em>deadline</em>). A <em>tag</em> points to an arbitrary location usually employed to uniquely identify an event.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">tag[out]</td><td>Upon sucess, updated to point to the event's tag. </td></tr>
+    <tr><td class="paramname">ok[out]</td><td>Upon sucess, true if read a regular event, false otherwise. </td></tr>
+    <tr><td class="paramname">deadline[in]</td><td>How long to block in wait for an event.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The type of event read. </dd></dl>
+
 </div>
 </div>
 <a class="anchor" id="a999c317e716d1e74aca2eb050912302b"></a>
@@ -308,6 +353,9 @@ template&lt;typename T &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Returns a <em>raw</em> pointer to the underlying <em>grpc_completion_queue</em> instance. </p>
+<dl class="section warning"><dt>Warning</dt><dd>Remember that the returned instance is owned. No transfer of owership is performed. </dd></dl>
 
 </div>
 </div>
@@ -343,6 +391,16 @@ template&lt;typename T &gt; </div>
 </table>
 </div><div class="memdoc">
 
+<p>Read from the queue, blocking until an event is available or the queue is shutting down. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">tag[out]</td><td>Updated to point to the read event's tag. </td></tr>
+    <tr><td class="paramname">ok[out]</td><td>true if read a regular event, false otherwise.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>true if read a regular event, false if the queue is shutting down. </dd></dl>
+
 </div>
 </div>
 <a class="anchor" id="a40efddadd9073386fbcb4f46e8325670"></a>
@@ -357,6 +415,9 @@ template&lt;typename T &gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Request the shutdown of the queue. </p>
+<dl class="section warning"><dt>Warning</dt><dd>This method must be called at some point. Once invoked, <em>Next</em> will start to return false and <em>AsyncNext</em> will return <em>NextStatus::SHUTDOWN</em>. Only once either one of these methods does that (that is, once the queue has been <em>drained</em>) can an instance of this class be destroyed. </dd></dl>
 
 </div>
 </div>
@@ -555,7 +616,7 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 
 </div>
 </div>
-<a class="anchor" id="a4aac0a120f3498d1151460ef89ce8446"></a>
+<a class="anchor" id="ac574143322bf2bc6bd324ccb22d40756"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -567,7 +628,7 @@ template&lt;class InputMessage , class OutputMessage &gt; </div>
         <tr>
           <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> BlockingUnaryCall </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_channel.html">Channel</a> *&#160;</td>
           <td class="paramname"><em>channel</em>, </td>
         </tr>
         <tr>
@@ -675,13 +736,33 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 
 </div>
 </div>
+<a class="anchor" id="aeb2b23ecdb6db8b8d7e194a8e0ef5d6f"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1_unknown_method_handler.html">UnknownMethodHandler</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc++/<a class="el" href="completion__queue_8h_source.html">completion_queue.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

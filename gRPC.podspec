@@ -160,6 +160,8 @@ Pod::Spec.new do |s|
                       'src/core/client_config/connector.h',
                       'src/core/client_config/lb_policies/pick_first.h',
                       'src/core/client_config/lb_policy.h',
+                      'src/core/client_config/lb_policy_factory.h',
+                      'src/core/client_config/lb_policy_registry.h',
                       'src/core/client_config/resolver.h',
                       'src/core/client_config/resolver_factory.h',
                       'src/core/client_config/resolver_registry.h',
@@ -247,8 +249,9 @@ Pod::Spec.new do |s|
                       'src/core/transport/stream_op.h',
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
+                      'src/core/census/aggregation.h',
                       'src/core/census/context.h',
-                      'src/core/census/rpc_stat_id.h',
+                      'src/core/census/rpc_metric_id.h',
                       'grpc/grpc_security.h',
                       'grpc/byte_buffer.h',
                       'grpc/byte_buffer_reader.h',
@@ -291,6 +294,8 @@ Pod::Spec.new do |s|
                       'src/core/client_config/connector.c',
                       'src/core/client_config/lb_policies/pick_first.c',
                       'src/core/client_config/lb_policy.c',
+                      'src/core/client_config/lb_policy_factory.c',
+                      'src/core/client_config/lb_policy_registry.c',
                       'src/core/client_config/resolver.c',
                       'src/core/client_config/resolver_factory.c',
                       'src/core/client_config/resolver_registry.c',
@@ -395,7 +400,8 @@ Pod::Spec.new do |s|
                       'src/core/transport/transport_op_string.c',
                       'src/core/census/context.c',
                       'src/core/census/initialize.c',
-                      'src/core/census/record_stat.c'
+                      'src/core/census/operation.c',
+                      'src/core/census/tracing.c'
 
     ss.private_header_files = 'src/core/support/env.h',
                               'src/core/support/file.h',
@@ -432,6 +438,8 @@ Pod::Spec.new do |s|
                               'src/core/client_config/connector.h',
                               'src/core/client_config/lb_policies/pick_first.h',
                               'src/core/client_config/lb_policy.h',
+                              'src/core/client_config/lb_policy_factory.h',
+                              'src/core/client_config/lb_policy_registry.h',
                               'src/core/client_config/resolver.h',
                               'src/core/client_config/resolver_factory.h',
                               'src/core/client_config/resolver_registry.h',
@@ -519,8 +527,9 @@ Pod::Spec.new do |s|
                               'src/core/transport/stream_op.h',
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
+                              'src/core/census/aggregation.h',
                               'src/core/census/context.h',
-                              'src/core/census/rpc_stat_id.h'
+                              'src/core/census/rpc_metric_id.h'
 
     ss.header_mappings_dir = '.'
 

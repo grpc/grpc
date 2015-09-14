@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(call, ops, op - ops, tag(1), NULL);
+  error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */

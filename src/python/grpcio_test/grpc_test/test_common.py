@@ -31,6 +31,11 @@
 
 import collections
 
+INVOCATION_INITIAL_METADATA = ((b'0', b'abc'), (b'1', b'def'), (b'2', b'ghi'),)
+SERVICE_INITIAL_METADATA = ((b'3', b'jkl'), (b'4', b'mno'), (b'5', b'pqr'),)
+SERVICE_TERMINAL_METADATA = ((b'6', b'stu'), (b'7', b'vwx'), (b'8', b'yza'),)
+DETAILS = b'test details'
+
 
 def metadata_transmitted(original_metadata, transmitted_metadata):
   """Judges whether or not metadata was acceptably transmitted.
