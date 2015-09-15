@@ -227,6 +227,11 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
     goto error;
   }
 
+  if (!grpc_set_socket_nonblocking(fd, 1) || !grpc_set_socket_cloexec(fd, 1)) {
+    gpr_log(GPR_ERROR, "Unable to configure socket %d: %s", fd,
+            strerror(errno));
+  }
+
   get_local_ip = 1;
   rc = setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
                   sizeof(get_local_ip));
