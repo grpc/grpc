@@ -132,11 +132,25 @@ grpc_credentials *grpc_google_iam_credentials_create(
     void *reserved);
 
 /* Callback function to be called by the metadata credentials plugin
-   implementation when the metadata is ready. */
+   implementation when the metadata is ready.
+   - user_data is the opaque pointer that was passed in the get_metadata method
+     of the grpc_metadata_credentials_plugin (see below).
+   - creds_md is an array of credentials metadata produced by the plugin. It
+     may be set to NULL in case of an error.
+   - num_creds_md is the number of items in the creds_md array.
+   - status must be GRPC_STATUS_OK in case of success or another specific error
+     code otherwise.
+   - error_details contains details about the error if any. In case of success
+     it should be NULL and will be otherwise ignored. */
 typedef void (*grpc_credentials_plugin_metadata_cb)(
     void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
     grpc_status_code status, const char *error_details);
 
+/* grpc_metadata_credentials plugin is an API user provided structure used to
+   create grpc_credentials objects that can be set on a channel (composed) or
+   a call. See grpc_credentials_metadata_create_from_plugin below.
+   The grpc client stack will call the get_metadata method of the plugin for
+   every call in scope for the credentials created from it. */
 typedef struct {
   /* The implementation of this method has to be non-blocking.
      - service_url is the fully qualified URL that the client stack is
