@@ -1221,9 +1221,9 @@ static void plugin_md_request_metadata_ready(void *request,
     }
     r->cb(r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR);
   } else {
+    size_t i;
     grpc_credentials_md *md_array = NULL;
     if (num_md > 0) {
-      size_t i;
       md_array = gpr_malloc(num_md * sizeof(grpc_credentials_md));
       for (i = 0; i < num_md; i++) {
         md_array[i].key = gpr_slice_from_copied_string(md[i].key);
@@ -1232,7 +1232,13 @@ static void plugin_md_request_metadata_ready(void *request,
       }
     }
     r->cb(r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK);
-    if (md_array != NULL) gpr_free(md_array);
+    if (md_array != NULL) {
+      for (i = 0; i < num_md; i++) {
+        gpr_slice_unref(md_array[i].key);
+        gpr_slice_unref(md_array[i].value);
+      }
+      gpr_free(md_array);
+    }
   }
   gpr_free(r);
 }
