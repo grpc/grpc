@@ -36,6 +36,7 @@
 
 #include "src/core/client_config/lb_policy.h"
 #include "src/core/client_config/subchannel.h"
+#include "src/core/iomgr/workqueue.h"
 
 typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
 typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
@@ -49,6 +50,7 @@ struct grpc_lb_policy_factory {
 typedef struct grpc_lb_policy_args {
   grpc_subchannel **subchannels;
   size_t num_subchannels;
+  grpc_workqueue *workqueue;
 } grpc_lb_policy_args;
 
 struct grpc_lb_policy_factory_vtable {

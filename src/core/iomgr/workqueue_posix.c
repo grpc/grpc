@@ -41,21 +41,6 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/iomgr/fd_posix.h"
-
-struct grpc_workqueue {
-  gpr_refcount refs;
-
-  gpr_mu mu;
-  grpc_iomgr_closure head;
-  grpc_iomgr_closure *tail;
-
-  grpc_wakeup_fd wakeup_fd;
-  grpc_fd *wakeup_read_fd;
-
-  grpc_iomgr_closure read_closure;
-};
-
 static void on_readable(void *arg, int success);
 
 grpc_workqueue *grpc_workqueue_create(void) {

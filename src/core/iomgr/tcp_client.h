@@ -46,6 +46,7 @@
    in this connection being established (in order to continue their work) */
 void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *tcp),
                              void *arg, grpc_pollset_set *interested_parties,
+                             grpc_workqueue *workqueue,
                              const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline);
 

@@ -114,12 +114,18 @@ static grpc_resolver_factory *resolve_factory(const char *target,
   return factory;
 }
 
-grpc_resolver *grpc_resolver_create(
-    const char *target, grpc_subchannel_factory *subchannel_factory) {
+grpc_resolver *grpc_resolver_create(const char *target,
+                                    grpc_subchannel_factory *subchannel_factory,
+                                    grpc_workqueue *workqueue) {
   grpc_uri *uri = NULL;
   grpc_resolver_factory *factory = resolve_factory(target, &uri);
-  grpc_resolver *resolver =
-      grpc_resolver_factory_create_resolver(factory, uri, subchannel_factory);
+  grpc_resolver *resolver;
+  grpc_resolver_args args;
+  memset(&args, 0, sizeof(args));
+  args.uri = uri;
+  args.subchannel_factory = subchannel_factory;
+  args.workqueue = workqueue;
+  resolver = grpc_resolver_factory_create_resolver(factory, &args);
   grpc_uri_destroy(uri);
   return resolver;
 }

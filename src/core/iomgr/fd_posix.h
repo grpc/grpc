@@ -36,6 +36,7 @@
 
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/pollset.h"
+#include "src/core/iomgr/workqueue.h"
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -57,6 +58,7 @@ struct grpc_fd {
      meaning that mostly we ref by two to avoid altering the orphaned bit,
      and just unref by 1 when we're ready to flag the object as orphaned */
   gpr_atm refst;
+  grpc_workqueue *workqueue;
 
   gpr_mu set_state_mu;
   gpr_atm shutdown;
@@ -103,7 +105,7 @@ struct grpc_fd {
 /* Create a wrapped file descriptor.
    Requires fd is a non-blocking file descriptor.
    This takes ownership of closing fd. */
-grpc_fd *grpc_fd_create(int fd, const char *name);
+grpc_fd *grpc_fd_create(int fd, grpc_workqueue *workqueue, const char *name);
 
 /* Releases fd to be asynchronously destroyed.
    on_done is called when the underlying file descriptor is definitely close()d.

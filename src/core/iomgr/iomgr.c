@@ -57,7 +57,6 @@ void grpc_kick_poller(void) {
 }
 
 void grpc_iomgr_init(void) {
-  gpr_thd_id id;
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
@@ -65,8 +64,6 @@ void grpc_iomgr_init(void) {
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = "root";
   grpc_iomgr_platform_init();
-  gpr_event_init(&g_background_callback_executor_done);
-  gpr_thd_new(&id, background_callback_executor, NULL, NULL);
 }
 
 static size_t count_objects(void) {
@@ -86,58 +83,36 @@ static void dump_objects(const char *kind) {
 }
 
 void grpc_iomgr_shutdown(void) {
-  grpc_iomgr_closure *closure;
   gpr_timespec shutdown_deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
 
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;
-  while (g_cbs_head != NULL || g_root_object.next != &g_root_object) {
+  while (g_root_object.next != &g_root_object) {
     if (gpr_time_cmp(
             gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
             gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
-      if (g_cbs_head != NULL && g_root_object.next != &g_root_object) {
-        gpr_log(GPR_DEBUG,
-                "Waiting for %d iomgr objects to be destroyed and executing "
-                "final callbacks",
-                count_objects());
-      } else if (g_cbs_head != NULL) {
-        gpr_log(GPR_DEBUG, "Executing final iomgr callbacks");
-      } else {
+      if (g_root_object.next != &g_root_object) {
         gpr_log(GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed",
                 count_objects());
       }
       last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
-    }
-    if (g_cbs_head) {
-      do {
-        closure = g_cbs_head;
-        g_cbs_head = closure->next;
-        if (!g_cbs_head) g_cbs_tail = NULL;
-        gpr_mu_unlock(&g_mu);
-
-        closure->cb(closure->cb_arg, 0);
-        gpr_mu_lock(&g_mu);
-      } while (g_cbs_head);
-      continue;
     }
     if (grpc_alarm_check(&g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL)) {
       continue;
     }
     if (g_root_object.next != &g_root_object) {
       int timeout = 0;
-      while (g_cbs_head == NULL) {
-        gpr_timespec short_deadline = gpr_time_add(
+      gpr_timespec short_deadline = gpr_time_add(
           gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
-        if (gpr_cv_wait(&g_rcv, &g_mu, short_deadline) && g_cbs_head == NULL) {
-          if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) > 0) {
-            timeout = 1;
-            break;
-          }
+      if (gpr_cv_wait(&g_rcv, &g_mu, short_deadline)) {
+        if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) > 0) {
+          timeout = 1;
+          break;
         }
       }
-      if (timeout) {
+      if (timeout && g_root_object.next != &g_root_object) {
         gpr_log(GPR_DEBUG,
                 "Failed to free %d iomgr objects before shutdown deadline: "
                 "memory leaks are likely",
@@ -148,10 +123,6 @@ void grpc_iomgr_shutdown(void) {
     }
   }
   gpr_mu_unlock(&g_mu);
-
-  grpc_kick_poller();
-  gpr_event_wait(&g_background_callback_executor_done,
-                 gpr_inf_future(GPR_CLOCK_REALTIME));
 
   grpc_alarm_list_shutdown();
 
@@ -183,68 +154,4 @@ void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
   closure->cb = cb;
   closure->cb_arg = cb_arg;
   closure->next = NULL;
-}
-
-static void assert_not_scheduled_locked(grpc_iomgr_closure *closure) {
-#ifndef NDEBUG
-  grpc_iomgr_closure *c;
-
-  for (c = g_cbs_head; c; c = c->next) {
-    GPR_ASSERT(c != closure);
-  }
-#endif
-}
-
-void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *closure, int success) {
-  closure->success = success;
-  GPR_ASSERT(closure->cb);
-  gpr_mu_lock(&g_mu);
-  assert_not_scheduled_locked(closure);
-  closure->next = NULL;
-  if (!g_cbs_tail) {
-    g_cbs_head = g_cbs_tail = closure;
-  } else {
-    g_cbs_tail->next = closure;
-    g_cbs_tail = closure;
-  }
-  if (g_shutdown) {
-    gpr_cv_signal(&g_rcv);
-  }
-  gpr_mu_unlock(&g_mu);
-}
-
-void grpc_iomgr_add_callback(grpc_iomgr_closure *closure) {
-  grpc_iomgr_add_delayed_callback(closure, 1 /* GPR_TRUE */);
-}
-
-int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success) {
-  int n = 0;
-  gpr_mu *retake_mu = NULL;
-  grpc_iomgr_closure *closure;
-  for (;;) {
-    /* check for new work */
-    if (!gpr_mu_trylock(&g_mu)) {
-      break;
-    }
-    closure = g_cbs_head;
-    if (!closure) {
-      gpr_mu_unlock(&g_mu);
-      break;
-    }
-    g_cbs_head = closure->next;
-    if (!g_cbs_head) g_cbs_tail = NULL;
-    gpr_mu_unlock(&g_mu);
-    /* if we have a mutex to drop, do so before executing work */
-    if (drop_mu) {
-      gpr_mu_unlock(drop_mu);
-      retake_mu = drop_mu;
-      drop_mu = NULL;
-    }
-    closure->cb(closure->cb_arg, success && closure->success);
-    n++;
-  }
-  if (retake_mu) {
-    gpr_mu_lock(retake_mu);
-  }
-  return n;
 }
