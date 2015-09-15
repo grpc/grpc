@@ -198,6 +198,15 @@ libs:
   secure: true
   vs_packages: [grpc.dependencies.openssl, grpc.dependencies.zlib]
   vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
+- name: grpc_etcd
+  build: all
+  language: c
+  public_headers: [include/grpc/grpc_etcd.h]
+  headers: [src/core/client_config/resolvers/etcd_resolver.h]
+  src: [src/core/client_config/resolvers/etcd_resolver.c]
+  deps: [gpr, grpc]
+  platforms: [linux]
+  secure: false
 - name: grpc_test_util
   build: private
   language: c
@@ -817,6 +826,13 @@ targets:
   language: c++
   src: [test/cpp/end2end/end2end_test.cc]
   deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+- name: etcd_test
+  build: test
+  language: c++
+  src: [test/cpp/end2end/etcd_test.cc]
+  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc_etcd, grpc, gpr_test_util,
+    gpr]
+  platforms: [linux]
 - name: generic_end2end_test
   build: test
   language: c++

@@ -31,20 +31,12 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_HTTPCLI_FORMAT_REQUEST_H
-#define GRPC_INTERNAL_CORE_HTTPCLI_FORMAT_REQUEST_H
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_ETCD_RESOLVER_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_ETCD_RESOLVER_H
 
-#include "src/core/httpcli/httpcli.h"
-#include <grpc/support/slice.h>
+#include "src/core/client_config/resolver_factory.h"
 
-gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request);
-gpr_slice grpc_httpcli_format_delete_request(
-    const grpc_httpcli_request *request);
-gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
-                                           const char *body_bytes,
-                                           size_t body_size);
-gpr_slice grpc_httpcli_format_put_request(const grpc_httpcli_request *request,
-                                          const char *body_bytes,
-                                          size_t body_size);
+/** Creates an etcd resolver factory */
+grpc_resolver_factory *grpc_etcd_resolver_factory_create(void);
 
-#endif /* GRPC_INTERNAL_CORE_HTTPCLI_FORMAT_REQUEST_H */
+#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVERS_ETCD_RESOLVER_H */

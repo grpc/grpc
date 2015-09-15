@@ -117,6 +117,42 @@ void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
                       gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data);
 
+/* Asynchronously perform a HTTP DELETE.
+   'context' specifies the http context under which to do the delete
+   'pollset' indicates a grpc_pollset that is interested in the result
+     of the delete - work on this pollset may be used to progress the delete
+     operation
+   'request' contains request parameters - these are caller owned and can be
+     destroyed once the call returns
+   'deadline' contains a deadline for the request (or gpr_inf_future)
+   'on_response' is a callback to report results to (and 'user_data' is a user
+     supplied pointer to pass to said call) */
+void grpc_httpcli_delete(grpc_httpcli_context *context, grpc_pollset *pollset,
+                         const grpc_httpcli_request *request,
+                         gpr_timespec deadline,
+                         grpc_httpcli_response_cb on_response, void *user_data);
+
+/* Asynchronously perform a HTTP PUT.
+   'context' specifies the http context under which to do the put
+   'pollset' indicates a grpc_pollset that is interested in the result
+     of the put - work on this pollset may be used to progress the put
+     operation
+   'request' contains request parameters - these are caller owned and can be
+     destroyed once the call returns
+   'body_bytes' and 'body_size' specify the payload for the put.
+     When there is no body, pass in NULL as body_bytes.
+   'deadline' contains a deadline for the request (or gpr_inf_future)
+   'em' points to a caller owned event manager that must be alive for the
+     lifetime of the request
+   'on_response' is a callback to report results to (and 'user_data' is a user
+     supplied pointer to pass to said call)
+   Does not support ?var1=val1&var2=val2 in the path. */
+void grpc_httpcli_put(grpc_httpcli_context *context, grpc_pollset *pollset,
+                      const grpc_httpcli_request *request,
+                      const char *body_bytes, size_t body_size,
+                      gpr_timespec deadline,
+                      grpc_httpcli_response_cb on_response, void *user_data);
+
 /* Asynchronously perform a HTTP POST.
    'context' specifies the http context under which to do the post
    'pollset' indicates a grpc_pollset that is interested in the result

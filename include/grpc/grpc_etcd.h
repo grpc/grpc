@@ -31,20 +31,29 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_HTTPCLI_FORMAT_REQUEST_H
-#define GRPC_INTERNAL_CORE_HTTPCLI_FORMAT_REQUEST_H
+/** Support etcd as alternative name system in addition to DNS
+ *  etcd name in gRPC is represented as a URI:
+ *  etcd://host:port/path/service/instance
+ *
+ *  Where etcd is the name system scheme
+ *  host:port is the address of an etcd server
+ *  /path/service/instance is the etcd name to be resolved
+ *
+ *  Refer doc/naming.md for more details
+ */
 
-#include "src/core/httpcli/httpcli.h"
-#include <grpc/support/slice.h>
+#ifndef GRPC_GRPC_ETCD_H
+#define GRPC_GRPC_ETCD_H
 
-gpr_slice grpc_httpcli_format_get_request(const grpc_httpcli_request *request);
-gpr_slice grpc_httpcli_format_delete_request(
-    const grpc_httpcli_request *request);
-gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
-                                           const char *body_bytes,
-                                           size_t body_size);
-gpr_slice grpc_httpcli_format_put_request(const grpc_httpcli_request *request,
-                                          const char *body_bytes,
-                                          size_t body_size);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif /* GRPC_INTERNAL_CORE_HTTPCLI_FORMAT_REQUEST_H */
+/** Registers etcd name resolver in grpc */
+void grpc_etcd_register();
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* GRPC_GRPC_ETCD_H */
