@@ -37,6 +37,7 @@ import os
 import socket
 import sys
 import time
+import yaml
 
 argp = argparse.ArgumentParser(description='Server for httpcli_test')
 argp.add_argument('-p', '--port', default=12345, type=int)
@@ -51,16 +52,17 @@ with open(__file__) as f:
   _MY_VERSION = hashlib.sha1(f.read()).hexdigest()
 
 
-def refill_pool():
+def refill_pool(max_timeout):
   """Scan for ports not marked for being in use"""
-  for i in range(10000, 65000):
+  for i in range(1025, 32767):
     if len(pool) > 100: break
     if i in in_use:
       age = time.time() - in_use[i]
-      if age < 600:
+      if age < max_timeout:
         continue
       del in_use[i]
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
       s.bind(('localhost', i))
       pool.append(i)
@@ -73,8 +75,12 @@ def refill_pool():
 def allocate_port():
   global pool
   global in_use
-  if not pool:
-    refill_pool()
+  max_timeout = 600
+  while not pool:
+    refill_pool(max_timeout)
+    if not pool:
+      time.sleep(1)
+      max_timeout /= 2
   port = pool[0]
   pool = pool[1:]
   in_use[port] = time.time()
@@ -97,12 +103,26 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       p = allocate_port()
       self.log_message('allocated port %d' % p)
       self.wfile.write('%d' % p)
+    elif self.path[0:6] == '/drop/':
+      self.send_response(200)
+      self.send_header('Content-Type', 'text/plain')
+      self.end_headers()
+      p = int(self.path[6:])
+      del in_use[p]
+      pool.append(p)
+      self.log_message('drop port %d' % p)
     elif self.path == '/version':
       # fetch a version string and the current process pid
       self.send_response(200)
       self.send_header('Content-Type', 'text/plain')
       self.end_headers()
       self.wfile.write(_MY_VERSION)
+    elif self.path == '/dump':
+      self.send_response(200)
+      self.send_header('Content-Type', 'text/plain')
+      self.end_headers()
+      now = time.time()
+      self.wfile.write(yaml.dump({'pool': pool, 'in_use': dict((k, now - v) for k, v in in_use.iteritems())}))
     elif self.path == '/quit':
       self.send_response(200)
       self.end_headers()

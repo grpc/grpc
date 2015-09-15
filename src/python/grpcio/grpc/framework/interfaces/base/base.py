@@ -40,7 +40,7 @@ applications choose.
 # threading is referenced from specification in this module.
 import abc
 import enum
-import threading
+import threading  # pylint: disable=unused-import
 
 # abandonment is referenced from specification in this module.
 from grpc.framework.foundation import abandonment  # pylint: disable=unused-import
@@ -69,19 +69,30 @@ class NoSuchMethodError(Exception):
     self.details = details
 
 
-@enum.unique
-class Outcome(enum.Enum):
-  """Operation outcomes."""
+class Outcome(object):
+  """The outcome of an operation.
 
-  COMPLETED = 'completed'
-  CANCELLED = 'cancelled'
-  EXPIRED = 'expired'
-  LOCAL_SHUTDOWN = 'local shutdown'
-  REMOTE_SHUTDOWN = 'remote shutdown'
-  RECEPTION_FAILURE = 'reception failure'
-  TRANSMISSION_FAILURE = 'transmission failure'
-  LOCAL_FAILURE = 'local failure'
-  REMOTE_FAILURE = 'remote failure'
+  Attributes:
+    kind: A Kind value coarsely identifying how the operation terminated.
+    code: An application-specific code value or None if no such value was
+      provided.
+    details: An application-specific details value or None if no such value was
+      provided.
+  """
+
+  @enum.unique
+  class Kind(enum.Enum):
+    """Ways in which an operation can terminate."""
+
+    COMPLETED = 'completed'
+    CANCELLED = 'cancelled'
+    EXPIRED = 'expired'
+    LOCAL_SHUTDOWN = 'local shutdown'
+    REMOTE_SHUTDOWN = 'remote shutdown'
+    RECEPTION_FAILURE = 'reception failure'
+    TRANSMISSION_FAILURE = 'transmission failure'
+    LOCAL_FAILURE = 'local failure'
+    REMOTE_FAILURE = 'remote failure'
 
 
 class Completion(object):
@@ -173,6 +184,19 @@ class Operator(object):
     """
     raise NotImplementedError()
 
+class ProtocolReceiver(object):
+  """A means of receiving protocol values during an operation."""
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def context(self, protocol_context):
+    """Accepts the protocol context object for the operation.
+
+    Args:
+      protocol_context: The protocol context object for the operation.
+    """
+    raise NotImplementedError()
+
 
 class Subscription(object):
   """Describes customer code's interest in values from the other side.
@@ -188,7 +212,11 @@ class Subscription(object):
       otherwise.
     operator: An Operator to be passed values from the other side of the
       operation. Must be non-None if kind is Kind.FULL. Must be None otherwise.
+    protocol_receiver: A ProtocolReceiver to be passed protocol objects as they
+      become available during the operation. Must be non-None if kind is
+      Kind.FULL.
   """
+  __metaclass__ = abc.ABCMeta
 
   @enum.unique
   class Kind(enum.Enum):
@@ -263,7 +291,7 @@ class End(object):
   @abc.abstractmethod
   def operate(
       self, group, method, subscription, timeout, initial_metadata=None,
-      payload=None, completion=None):
+      payload=None, completion=None, protocol_options=None):
     """Commences an operation.
 
     Args:
@@ -279,6 +307,8 @@ class End(object):
       payload: An initial payload for the operation.
       completion: A Completion value indicating the end of transmission to the
         other side of the operation.
+      protocol_options: A value specified by the provider of a Base interface
+        implementation affording custom state and behavior.
 
     Returns:
       A pair of objects affording information about the operation and action
@@ -294,8 +324,8 @@ class End(object):
     """Reports the number of terminated operations broken down by outcome.
 
     Returns:
-      A dictionary from Outcome value to an integer identifying the number
-        of operations that terminated with that outcome.
+      A dictionary from Outcome.Kind value to an integer identifying the number
+        of operations that terminated with that outcome kind.
     """
     raise NotImplementedError()
 

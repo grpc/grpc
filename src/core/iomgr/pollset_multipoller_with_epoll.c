@@ -72,7 +72,7 @@ static void finally_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
      to this pollset whilst adding, but that should be benign. */
   GPR_ASSERT(grpc_fd_begin_poll(fd, pollset, 0, 0, &watcher) == 0);
   if (watcher.fd != NULL) {
-    ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+    ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
     ev.data.ptr = fd;
     err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD, fd->fd, &ev);
     if (err < 0) {
@@ -99,7 +99,6 @@ static void perform_delayed_add(void *arg, int iomgr_status) {
   if (da->pollset->shutting_down) {
     /* We don't care about this pollset anymore. */
     if (da->pollset->in_flight_cbs == 0 && !da->pollset->called_shutdown) {
-      GPR_ASSERT(!grpc_pollset_has_workers(da->pollset));
       da->pollset->called_shutdown = 1;
       do_shutdown_cb = 1;
     }

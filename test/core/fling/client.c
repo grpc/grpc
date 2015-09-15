@@ -92,8 +92,9 @@ static void step_ping_pong_request(void) {
   call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   "/Reflector/reflectUnary", "localhost",
                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call, ops, op - ops, (void *)1, NULL));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
+                                                   (size_t)(op - ops),
+                                                   (void *)1, NULL));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   grpc_call_destroy(call);
   grpc_byte_buffer_destroy(response_payload_recv);
@@ -129,7 +130,7 @@ static void step_ping_pong_stream(void) {
 
 static double now(void) {
   gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
-  return 1e9 * tv.tv_sec + tv.tv_nsec;
+  return 1e9 * (double)tv.tv_sec + tv.tv_nsec;
 }
 
 typedef struct {
@@ -188,7 +189,7 @@ int main(int argc, char **argv) {
 
   channel = grpc_insecure_channel_create(target, NULL, NULL);
   cq = grpc_completion_queue_create(NULL);
-  the_buffer = grpc_raw_byte_buffer_create(&slice, payload_size);
+  the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)payload_size);
   histogram = gpr_histogram_create(0.01, 60e9);
 
   sc.init();

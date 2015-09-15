@@ -85,12 +85,13 @@ static void test_set_compression_algorithm(void) {
 
 static void test_compression_algorithm_states(void) {
   grpc_channel_args *ch_args, *ch_args_wo_gzip, *ch_args_wo_gzip_deflate;
-  int states_bitset;
+  unsigned states_bitset;
   size_t i;
 
   ch_args = grpc_channel_args_copy_and_add(NULL, NULL, 0);
   /* by default, all enabled */
-  states_bitset = grpc_channel_args_compression_algorithm_get_states(ch_args);
+  states_bitset =
+      (unsigned)grpc_channel_args_compression_algorithm_get_states(ch_args);
 
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     GPR_ASSERT(GPR_BITGET(states_bitset, i));
@@ -104,7 +105,7 @@ static void test_compression_algorithm_states(void) {
       &ch_args_wo_gzip, GRPC_COMPRESS_DEFLATE, 0);
   GPR_ASSERT(ch_args_wo_gzip == ch_args_wo_gzip_deflate);
 
-  states_bitset = grpc_channel_args_compression_algorithm_get_states(
+  states_bitset = (unsigned)grpc_channel_args_compression_algorithm_get_states(
       ch_args_wo_gzip_deflate);
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     if (i == GRPC_COMPRESS_GZIP || i == GRPC_COMPRESS_DEFLATE) {
@@ -119,8 +120,8 @@ static void test_compression_algorithm_states(void) {
       &ch_args_wo_gzip_deflate, GRPC_COMPRESS_GZIP, 1);
   GPR_ASSERT(ch_args_wo_gzip == ch_args_wo_gzip_deflate);
 
-  states_bitset =
-      grpc_channel_args_compression_algorithm_get_states(ch_args_wo_gzip);
+  states_bitset = (unsigned)grpc_channel_args_compression_algorithm_get_states(
+      ch_args_wo_gzip);
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     if (i == GRPC_COMPRESS_DEFLATE) {
       GPR_ASSERT(GPR_BITGET(states_bitset, i) == 0);

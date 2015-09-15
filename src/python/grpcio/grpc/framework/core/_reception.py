@@ -30,20 +30,31 @@
 """State and behavior for ticket reception."""
 
 from grpc.framework.core import _interfaces
+from grpc.framework.core import _utilities
 from grpc.framework.interfaces.base import base
 from grpc.framework.interfaces.base import utilities
 from grpc.framework.interfaces.links import links
 
-_REMOTE_TICKET_TERMINATION_TO_LOCAL_OUTCOME = {
-    links.Ticket.Termination.CANCELLATION: base.Outcome.CANCELLED,
-    links.Ticket.Termination.EXPIRATION: base.Outcome.EXPIRED,
-    links.Ticket.Termination.SHUTDOWN: base.Outcome.REMOTE_SHUTDOWN,
-    links.Ticket.Termination.RECEPTION_FAILURE: base.Outcome.RECEPTION_FAILURE,
+_REMOTE_TICKET_TERMINATION_TO_LOCAL_OUTCOME_KIND = {
+    links.Ticket.Termination.CANCELLATION: base.Outcome.Kind.CANCELLED,
+    links.Ticket.Termination.EXPIRATION: base.Outcome.Kind.EXPIRED,
+    links.Ticket.Termination.SHUTDOWN: base.Outcome.Kind.REMOTE_SHUTDOWN,
+    links.Ticket.Termination.RECEPTION_FAILURE:
+        base.Outcome.Kind.RECEPTION_FAILURE,
     links.Ticket.Termination.TRANSMISSION_FAILURE:
-        base.Outcome.TRANSMISSION_FAILURE,
-    links.Ticket.Termination.LOCAL_FAILURE: base.Outcome.REMOTE_FAILURE,
-    links.Ticket.Termination.REMOTE_FAILURE: base.Outcome.LOCAL_FAILURE,
+        base.Outcome.Kind.TRANSMISSION_FAILURE,
+    links.Ticket.Termination.LOCAL_FAILURE: base.Outcome.Kind.REMOTE_FAILURE,
+    links.Ticket.Termination.REMOTE_FAILURE: base.Outcome.Kind.LOCAL_FAILURE,
 }
+
+_RECEPTION_FAILURE_OUTCOME = _utilities.Outcome(
+    base.Outcome.Kind.RECEPTION_FAILURE, None, None)
+
+
+def _carrying_protocol_context(ticket):
+  return ticket.protocol is not None and ticket.protocol.kind in (
+      links.Protocol.Kind.INVOCATION_CONTEXT,
+      links.Protocol.Kind.SERVICER_CONTEXT,)
 
 
 class ReceptionManager(_interfaces.ReceptionManager):
@@ -51,18 +62,20 @@ class ReceptionManager(_interfaces.ReceptionManager):
 
   def __init__(
       self, termination_manager, transmission_manager, expiration_manager,
-      ingestion_manager):
+      protocol_manager, ingestion_manager):
     """Constructor.
 
     Args:
       termination_manager: The operation's _interfaces.TerminationManager.
       transmission_manager: The operation's _interfaces.TransmissionManager.
       expiration_manager: The operation's _interfaces.ExpirationManager.
+      protocol_manager: The operation's _interfaces.ProtocolManager.
       ingestion_manager: The operation's _interfaces.IngestionManager.
     """
     self._termination_manager = termination_manager
     self._transmission_manager = transmission_manager
     self._expiration_manager = expiration_manager
+    self._protocol_manager = protocol_manager
     self._ingestion_manager = ingestion_manager
 
     self._lowest_unseen_sequence_number = 0
@@ -73,7 +86,7 @@ class ReceptionManager(_interfaces.ReceptionManager):
     self._aborted = True
     if self._termination_manager.outcome is None:
       self._termination_manager.abort(outcome)
-      self._transmission_manager.abort(None, None, None)
+      self._transmission_manager.abort(None)
       self._expiration_manager.terminate()
 
   def _sequence_failure(self, ticket):
@@ -95,6 +108,10 @@ class ReceptionManager(_interfaces.ReceptionManager):
   def _process_one(self, ticket):
     if ticket.sequence_number == 0:
       self._ingestion_manager.set_group_and_method(ticket.group, ticket.method)
+      if _carrying_protocol_context(ticket):
+        self._protocol_manager.accept_protocol_context(ticket.protocol.value)
+      else:
+        self._protocol_manager.accept_protocol_context(None)
     if ticket.timeout is not None:
       self._expiration_manager.change_timeout(ticket.timeout)
     if ticket.termination is None:
@@ -102,6 +119,7 @@ class ReceptionManager(_interfaces.ReceptionManager):
     else:
       completion = utilities.completion(
           ticket.terminal_metadata, ticket.code, ticket.message)
+      self._termination_manager.reception_complete(ticket.code, ticket.message)
     self._ingestion_manager.advance(
         ticket.initial_metadata, ticket.payload, completion, ticket.allowance)
     if ticket.allowance is not None:
@@ -129,10 +147,12 @@ class ReceptionManager(_interfaces.ReceptionManager):
     if self._aborted:
       return
     elif self._sequence_failure(ticket):
-      self._abort(base.Outcome.RECEPTION_FAILURE)
+      self._abort(_RECEPTION_FAILURE_OUTCOME)
     elif ticket.termination not in (None, links.Ticket.Termination.COMPLETION):
-      outcome = _REMOTE_TICKET_TERMINATION_TO_LOCAL_OUTCOME[ticket.termination]
-      self._abort(outcome)
+      outcome_kind = _REMOTE_TICKET_TERMINATION_TO_LOCAL_OUTCOME_KIND[
+          ticket.termination]
+      self._abort(
+          _utilities.Outcome(outcome_kind, ticket.code, ticket.message))
     elif ticket.sequence_number == self._lowest_unseen_sequence_number:
       self._process(ticket)
     else:

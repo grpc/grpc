@@ -31,7 +31,6 @@
  *
  */
 
-#include <unistd.h>
 #include <list>
 #include <thread>
 #include <deque>
@@ -154,14 +153,14 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
-    servers[i].stub = std::move(
-        Worker::NewStub(CreateChannel(workers[i], InsecureCredentials())));
+    servers[i].stub = Worker::NewStub(CreateChannel(workers[i],
+                                                    InsecureCredentials()));
     ServerArgs args;
     result_server_config = server_config;
     result_server_config.set_host(workers[i]);
     *args.mutable_setup() = server_config;
     servers[i].stream =
-        std::move(servers[i].stub->RunServer(runsc::AllocContext(&contexts)));
+        servers[i].stub->RunServer(runsc::AllocContext(&contexts));
     GPR_ASSERT(servers[i].stream->Write(args));
     ServerStatus init_status;
     GPR_ASSERT(servers[i].stream->Read(&init_status));
@@ -182,14 +181,14 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
-    clients[i].stub = std::move(Worker::NewStub(
-        CreateChannel(workers[i + num_servers], InsecureCredentials())));
+    clients[i].stub = Worker::NewStub(CreateChannel(workers[i + num_servers],
+                                                    InsecureCredentials()));
     ClientArgs args;
     result_client_config = client_config;
     result_client_config.set_host(workers[i + num_servers]);
     *args.mutable_setup() = client_config;
     clients[i].stream =
-        std::move(clients[i].stub->RunTest(runsc::AllocContext(&contexts)));
+        clients[i].stub->RunTest(runsc::AllocContext(&contexts));
     GPR_ASSERT(clients[i].stream->Write(args));
     ClientStatus init_status;
     GPR_ASSERT(clients[i].stream->Read(&init_status));

@@ -85,16 +85,14 @@ static grpc_mdelem *client_filter(void *user_data, grpc_mdelem *md) {
 static void hc_on_recv(void *user_data, int success) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  if (success) {
-    size_t i;
-    size_t nops = calld->recv_ops->nops;
-    grpc_stream_op *ops = calld->recv_ops->ops;
-    for (i = 0; i < nops; i++) {
-      grpc_stream_op *op = &ops[i];
-      if (op->type != GRPC_OP_METADATA) continue;
-      calld->got_initial_metadata = 1;
-      grpc_metadata_batch_filter(&op->data.metadata, client_filter, elem);
-    }
+  size_t i;
+  size_t nops = calld->recv_ops->nops;
+  grpc_stream_op *ops = calld->recv_ops->ops;
+  for (i = 0; i < nops; i++) {
+    grpc_stream_op *op = &ops[i];
+    if (op->type != GRPC_OP_METADATA) continue;
+    calld->got_initial_metadata = 1;
+    grpc_metadata_batch_filter(&op->data.metadata, client_filter, elem);
   }
   calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
 }

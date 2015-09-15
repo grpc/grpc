@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.10.1.0
+PROJECT_NUMBER         = 0.11.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -794,6 +794,8 @@ src/core/client_config/client_config.h \
 src/core/client_config/connector.h \
 src/core/client_config/lb_policies/pick_first.h \
 src/core/client_config/lb_policy.h \
+src/core/client_config/lb_policy_factory.h \
+src/core/client_config/lb_policy_registry.h \
 src/core/client_config/resolver.h \
 src/core/client_config/resolver_factory.h \
 src/core/client_config/resolver_registry.h \
@@ -919,6 +921,8 @@ src/core/client_config/client_config.c \
 src/core/client_config/connector.c \
 src/core/client_config/lb_policies/pick_first.c \
 src/core/client_config/lb_policy.c \
+src/core/client_config/lb_policy_factory.c \
+src/core/client_config/lb_policy_registry.c \
 src/core/client_config/resolver.c \
 src/core/client_config/resolver_factory.c \
 src/core/client_config/resolver_registry.c \

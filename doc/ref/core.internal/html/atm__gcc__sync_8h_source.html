@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -174,10 +174,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00084"></a><span class="lineno"><a class="line" href="atm__gcc__sync_8h.html#a1a90e5777158aaa53624822f1f87dd90">   84</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_atm_acq_cas(p, o, n) (__sync_bool_compare_and_swap((p), (o), (n)))</span></div>
 <div class="line"><a name="l00085"></a><span class="lineno"><a class="line" href="atm__gcc__sync_8h.html#ae7c3b215cda868ee9ee778822000c3f2">   85</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define gpr_atm_rel_cas(p, o, n) gpr_atm_acq_cas((p), (o), (n))</span></div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="preprocessor">#endif  </span><span class="comment">/* GRPC_SUPPORT_ATM_GCC_SYNC_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_ATM_GCC_SYNC_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="hpack__table_8c_html_a8556878012feffc9e0beb86cd78f424d"><div class="ttname"><a href="hpack__table_8c.html#a8556878012feffc9e0beb86cd78f424d">value</a></div><div class="ttdeci">const char * value</div><div class="ttdef"><b>Definition:</b> hpack_table.c:44</div></div>
 <div class="ttc" id="port__platform_8h_html"><div class="ttname"><a href="port__platform_8h.html">port_platform.h</a></div></div>
-<div class="ttc" id="port__platform_8h_html_a72d9d0d00bd576cfc8eab61aaea76db2"><div class="ttname"><a href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a></div><div class="ttdeci">intptr_t gpr_intptr</div><div class="ttdef"><b>Definition:</b> port_platform.h:312</div></div>
+<div class="ttc" id="port__platform_8h_html_a72d9d0d00bd576cfc8eab61aaea76db2"><div class="ttname"><a href="port__platform_8h.html#a72d9d0d00bd576cfc8eab61aaea76db2">gpr_intptr</a></div><div class="ttdeci">intptr_t gpr_intptr</div><div class="ttdef"><b>Definition:</b> port_platform.h:315</div></div>
 <div class="ttc" id="atm__gcc__sync_8h_html_a4ceb46c9b854db0ade8cfe2f37edb878"><div class="ttname"><a href="atm__gcc__sync_8h.html#a4ceb46c9b854db0ade8cfe2f37edb878">GPR_ATM_LS_BARRIER_</a></div><div class="ttdeci">#define GPR_ATM_LS_BARRIER_()</div><div class="ttdef"><b>Definition:</b> atm_gcc_sync.h:49</div></div>
 <div class="ttc" id="atm__gcc__sync_8h_html_a5a1f94112dcd03309d6716d43c8edf3f"><div class="ttname"><a href="atm__gcc__sync_8h.html#a5a1f94112dcd03309d6716d43c8edf3f">GPR_ATM_COMPILE_BARRIER_</a></div><div class="ttdeci">#define GPR_ATM_COMPILE_BARRIER_()</div><div class="ttdef"><b>Definition:</b> atm_gcc_sync.h:43</div></div>
 <div class="ttc" id="atm__gcc__atomic_8h_html_a44607f95f7ee40eba592c7fe10960a06"><div class="ttname"><a href="atm__gcc__atomic_8h.html#a44607f95f7ee40eba592c7fe10960a06">gpr_atm_acq_load</a></div><div class="ttdeci">#define gpr_atm_acq_load(p)</div><div class="ttdef"><b>Definition:</b> atm_gcc_atomic.h:45</div></div>
@@ -189,7 +189,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

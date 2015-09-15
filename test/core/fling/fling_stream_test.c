@@ -60,10 +60,10 @@ int main(int argc, char **argv) {
   pid_t svr, cli;
   /* seed rng with pid, so we don't end up with the same random numbers as a
      concurrently running test binary */
-  srand(getpid());
+  srand((unsigned)getpid());
   /* figure out where we are */
   if (lslash) {
-    memcpy(root, me, lslash - me);
+    memcpy(root, me, (size_t)(lslash - me));
     root[lslash - me] = 0;
   } else {
     strcpy(root, ".");
