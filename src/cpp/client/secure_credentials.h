@@ -39,6 +39,8 @@
 #include <grpc++/support/config.h>
 #include <grpc++/security/credentials.h>
 
+#include "src/cpp/server/thread_pool_interface.h"
+
 namespace grpc {
 
 class SecureCredentials GRPC_FINAL : public Credentials {
@@ -54,6 +56,21 @@ class SecureCredentials GRPC_FINAL : public Credentials {
 
  private:
   grpc_credentials* const c_creds_;
+};
+
+class MetadataCredentialsPluginWrapper GRPC_FINAL {
+ public:
+  static void Destroy(void* wrapper);
+  static void GetMetadata(void* wrapper, const char* service_url,
+                          void* core_context);
+
+  explicit MetadataCredentialsPluginWrapper(
+      std::unique_ptr<MetadataCredentialsPlugin> plugin);
+
+ private:
+  void InvokePlugin(const char* service_url, void* core_context);
+  std::unique_ptr<ThreadPoolInterface> thread_pool_;
+  std::unique_ptr<MetadataCredentialsPlugin> plugin_;
 };
 
 }  // namespace grpc

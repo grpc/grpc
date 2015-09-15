@@ -131,6 +131,34 @@ grpc_credentials *grpc_google_iam_credentials_create(
     const char *authorization_token, const char *authority_selector,
     void *reserved);
 
+/* Function to be called by the metadata credentials plugin implementation when
+   the metadata is ready. */
+void grpc_metadata_credentials_notify_from_plugin(
+    void *core_context, const grpc_metadata *creds_md, size_t num_creds_md,
+    grpc_status_code status, const char *error_details);
+
+typedef struct {
+  /* The implementation of this method MUST be non-blocking. The implementer of
+     this function MUST call grpc_metadata_credentials_notify_from_plugin when
+     the metadata is ready.
+     - service_url is the fully qualified URL that the client stack is
+       connecting to.
+     - core_context needs to be passed as the first parameter of
+       grpc_metadata_credentials_notify_from_plugin. */
+  void (*get_metadata)(void *state, const char *service_url,
+                       void *core_context);
+
+  /* Destroys the plugin state. */
+  void (*destroy)(void *state);
+
+  /* State that will be set as the first parameter of the methods above. */
+  void *state;
+} grpc_metadata_credentials_plugin;
+
+/* Creates a credentials object from a plugin. */
+grpc_credentials *grpc_metadata_credentials_create_from_plugin(
+    grpc_metadata_credentials_plugin plugin, void *reserved);
+
 /* --- Secure channel creation. --- */
 
 /* Creates a secure channel using the passed-in credentials. */
