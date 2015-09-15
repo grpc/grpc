@@ -195,6 +195,7 @@ finish:
 
 void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
                              void *arg, grpc_pollset_set *interested_parties,
+                             grpc_workqueue *workqueue,
                              const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline) {
   int fd;
@@ -236,7 +237,7 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   addr_str = grpc_sockaddr_to_uri(addr);
   gpr_asprintf(&name, "tcp-client:%s", addr_str);
 
-  fdobj = grpc_fd_create(fd, name);
+  fdobj = grpc_fd_create(fd, workqueue, name);
 
   if (err >= 0) {
     cb(arg, grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str));

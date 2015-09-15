@@ -40,7 +40,8 @@
 
 grpc_channel *grpc_channel_create_from_filters(
     const char *target, const grpc_channel_filter **filters, size_t count,
-    const grpc_channel_args *args, grpc_mdctx *mdctx, int is_client);
+    const grpc_channel_args *args, grpc_mdctx *mdctx, grpc_workqueue *workqueue,
+    int is_client);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);

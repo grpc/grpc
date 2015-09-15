@@ -260,6 +260,7 @@ static void subchannel_destroy(grpc_subchannel *c) {
   grpc_mdctx_unref(c->mdctx);
   grpc_connectivity_state_destroy(&c->state_tracker);
   grpc_connector_unref(c->connector);
+  grpc_workqueue_unref(c->workqueue);
   gpr_free(c);
 }
 
@@ -296,12 +297,14 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   c->args = grpc_channel_args_copy(args->args);
   c->mdctx = args->mdctx;
   c->master = args->master;
+  c->workqueue = grpc_channel_get_workqueue(c->master);
+  grpc_workqueue_ref(c->workqueue);
   c->pollset_set = grpc_client_channel_get_connecting_pollset_set(parent_elem);
   c->random = random_seed();
   grpc_mdctx_ref(c->mdctx);
   grpc_iomgr_closure_init(&c->connected, subchannel_connected, c);
-  grpc_connectivity_state_init(&c->state_tracker, GRPC_CHANNEL_IDLE,
-                               "subchannel");
+  grpc_connectivity_state_init(&c->state_tracker, c->workqueue,
+                               GRPC_CHANNEL_IDLE, "subchannel");
   gpr_mu_init(&c->mu);
   return c;
 }

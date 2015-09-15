@@ -43,11 +43,11 @@
 #include <grpc/support/useful.h>
 
 static void setup_transport(void *server, grpc_transport *transport,
-                            grpc_mdctx *mdctx) {
+                            grpc_mdctx *mdctx, grpc_workqueue *workqueue) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
   grpc_server_setup_transport(server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters), mdctx,
+                              GPR_ARRAY_SIZE(extra_filters), mdctx, workqueue,
                               grpc_server_get_channel_args(server));
 }
 
@@ -60,9 +60,10 @@ static void new_transport(void *server, grpc_endpoint *tcp) {
    * case.
    */
   grpc_mdctx *mdctx = grpc_mdctx_create();
+  grpc_workqueue *workqueue = grpc_workqueue_create();
   grpc_transport *transport = grpc_create_chttp2_transport(
-      grpc_server_get_channel_args(server), tcp, mdctx, 0);
-  setup_transport(server, transport, mdctx);
+      grpc_server_get_channel_args(server), tcp, mdctx, workqueue, 0);
+  setup_transport(server, transport, mdctx, workqueue);
   grpc_chttp2_transport_start_reading(transport, NULL, 0);
 }
 
