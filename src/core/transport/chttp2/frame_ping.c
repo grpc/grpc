@@ -89,7 +89,9 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
       for (ping = transport_parsing->pings.next;
            ping != &transport_parsing->pings; ping = ping->next) {
         if (0 == memcmp(p->opaque_8bytes, ping->id, 8)) {
-          grpc_iomgr_add_delayed_callback(ping->on_recv, 1);
+          /* we know no locks are held here, we may as well just call up
+           * directly */
+          ping->on_recv->cb(ping->on_recv->cb_arg, 1);
         }
         ping->next->prev = ping->prev;
         ping->prev->next = ping->next;

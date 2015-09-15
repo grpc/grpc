@@ -124,6 +124,9 @@ struct grpc_tcp_server {
   grpc_pollset **pollsets;
   /* number of pollsets in the pollsets array */
   size_t pollset_count;
+
+  /** workqueue for interally created async work */
+  grpc_workqueue *workqueue;
 };
 
 grpc_tcp_server *grpc_tcp_server_create(void) {
@@ -137,6 +140,7 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
   s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
   s->nports = 0;
   s->port_capacity = INIT_PORT_CAP;
+  s->workqueue = grpc_workqueue_create();
   return s;
 }
 
@@ -147,6 +151,7 @@ static void finish_shutdown(grpc_tcp_server *s) {
   gpr_mu_destroy(&s->mu);
 
   gpr_free(s->ports);
+  grpc_workqueue_unref(s->workqueue);
   gpr_free(s);
 }
 
@@ -339,7 +344,7 @@ static void on_read(void *arg, int success) {
     addr_str = grpc_sockaddr_to_uri((struct sockaddr *)&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
-    fdobj = grpc_fd_create(fd, name);
+    fdobj = grpc_fd_create(fd, sp->server->workqueue, name);
     /* TODO(ctiller): revise this when we have server-side sharding
        of channels -- we certainly should not be automatically adding every
        incoming channel to every pollset owned by the server */
@@ -387,7 +392,7 @@ static int add_socket_to_server(grpc_tcp_server *s, int fd,
     sp = &s->ports[s->nports++];
     sp->server = s;
     sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd, name);
+    sp->emfd = grpc_fd_create(fd, s->workqueue, name);
     memcpy(sp->addr.untyped, addr, addr_len);
     sp->addr_len = addr_len;
     GPR_ASSERT(sp->emfd);

@@ -261,7 +261,7 @@ static grpc_endpoint_op_status tcp_read(grpc_endpoint *ep,
     tcp->finished_edge = 0;
     grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_closure);
   } else {
-    grpc_iomgr_add_delayed_callback(&tcp->read_closure, 1);
+    grpc_workqueue_push(tcp->em_fd->workqueue, &tcp->read_closure, 1);
   }
   /* TODO(ctiller): immediate return */
   return GRPC_ENDPOINT_PENDING;

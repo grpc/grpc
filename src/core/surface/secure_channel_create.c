@@ -57,7 +57,6 @@ typedef struct {
   gpr_refcount refs;
 
   grpc_channel_security_connector *security_connector;
-  grpc_workqueue *workqueue;
 
   grpc_iomgr_closure *notify;
   grpc_connect_in_args args;
@@ -72,7 +71,6 @@ static void connector_ref(grpc_connector *con) {
 static void connector_unref(grpc_connector *con) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
-    grpc_workqueue_unref(c->workqueue);
     gpr_free(c);
   }
 }
@@ -88,7 +86,8 @@ static void on_secure_transport_setup_done(void *arg,
     memset(c->result, 0, sizeof(*c->result));
   } else {
     c->result->transport = grpc_create_chttp2_transport(
-        c->args.channel_args, secure_endpoint, c->args.metadata_context, 1);
+        c->args.channel_args, secure_endpoint, c->args.metadata_context,
+        c->args.workqueue, 1);
     grpc_chttp2_transport_start_reading(c->result->transport, NULL, 0);
     c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *) * 2);
     c->result->filters[0] = &grpc_http_client_filter;
@@ -124,8 +123,9 @@ static void connector_connect(grpc_connector *con,
   c->notify = notify;
   c->args = *args;
   c->result = result;
-  grpc_tcp_client_connect(connected, c, args->interested_parties, c->workqueue,
-                          args->addr, args->addr_len, args->deadline);
+  grpc_tcp_client_connect(connected, c, args->interested_parties,
+                          args->workqueue, args->addr, args->addr_len,
+                          args->deadline);
 }
 
 static const grpc_connector_vtable connector_vtable = {
@@ -167,8 +167,6 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   memset(c, 0, sizeof(*c));
   c->base.vtable = &connector_vtable;
   c->security_connector = f->security_connector;
-  c->workqueue = grpc_channel_get_workqueue(f->master);
-  grpc_workqueue_ref(c->workqueue);
   gpr_ref_init(&c->refs, 1);
   args->mdctx = f->mdctx;
   args->args = final_args;
@@ -197,6 +195,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   grpc_channel_args *new_args_from_connector;
   grpc_channel_security_connector *connector;
   grpc_mdctx *mdctx;
+  grpc_workqueue *workqueue;
   grpc_resolver *resolver;
   subchannel_factory *f;
 #define MAX_FILTERS 3
@@ -219,6 +218,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
         "Failed to create security connector.");
   }
   mdctx = grpc_mdctx_create();
+  workqueue = grpc_workqueue_create();
 
   connector_arg = grpc_security_connector_to_arg(&connector->base);
   args_copy = grpc_channel_args_copy_and_add(
@@ -231,8 +231,8 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 
-  channel =
-      grpc_channel_create_from_filters(target, filters, n, args_copy, mdctx, 1);
+  channel = grpc_channel_create_from_filters(target, filters, n, args_copy,
+                                             mdctx, workqueue, 1);
 
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;
@@ -244,8 +244,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   f->merge_args = grpc_channel_args_copy(args_copy);
   f->master = channel;
   GRPC_CHANNEL_INTERNAL_REF(channel, "subchannel_factory");
-  resolver = grpc_resolver_create(target, &f->base,
-                                  grpc_channel_get_workqueue(channel));
+  resolver = grpc_resolver_create(target, &f->base, workqueue);
   if (!resolver) {
     return NULL;
   }

@@ -61,6 +61,8 @@ typedef struct {
   grpc_subchannel_factory *subchannel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
+  /** work queue */
+  grpc_workqueue *workqueue;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -108,7 +110,7 @@ static void zookeeper_shutdown(grpc_resolver *resolver) {
   gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
-    grpc_iomgr_add_callback(r->next_completion);
+    grpc_workqueue_push(r->workqueue, r->next_completion, 1);
     r->next_completion = NULL;
   }
   zookeeper_close(r->zookeeper_handle);
@@ -409,7 +411,7 @@ static void zookeeper_maybe_finish_next_locked(zookeeper_resolver *r) {
     if (r->resolved_config != NULL) {
       grpc_client_config_ref(r->resolved_config);
     }
-    grpc_iomgr_add_callback(r->next_completion);
+    grpc_workqueue_push(r->workqueue, r->next_completion, 1);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }
@@ -422,19 +424,19 @@ static void zookeeper_destroy(grpc_resolver *gr) {
     grpc_client_config_unref(r->resolved_config);
   }
   grpc_subchannel_factory_unref(r->subchannel_factory);
+  grpc_workqueue_unref(r->workqueue);
   gpr_free(r->name);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
 }
 
-static grpc_resolver *zookeeper_create(
-    grpc_uri *uri, const char *lb_policy_name,
-    grpc_subchannel_factory *subchannel_factory) {
+static grpc_resolver *zookeeper_create(grpc_resolver_args *args,
+                                       const char *lb_policy_name) {
   zookeeper_resolver *r;
   size_t length;
-  char *path = uri->path;
+  char *path = args->uri->path;
 
-  if (0 == strcmp(uri->authority, "")) {
+  if (0 == strcmp(args->uri->authority, "")) {
     gpr_log(GPR_ERROR, "No authority specified in zookeeper uri");
     return NULL;
   }
@@ -452,14 +454,19 @@ static grpc_resolver *zookeeper_create(
   grpc_resolver_init(&r->base, &zookeeper_resolver_vtable);
   r->name = gpr_strdup(path);
 
-  r->subchannel_factory = subchannel_factory;
+  r->workqueue = args->workqueue;
+  grpc_workqueue_ref(r->workqueue);
+
+  r->subchannel_factory = args->subchannel_factory;
+  grpc_subchannel_factory_ref(r->subchannel_factory);
+
   r->lb_policy_name = gpr_strdup(lb_policy_name);
-  grpc_subchannel_factory_ref(subchannel_factory);
 
   /** Initializes zookeeper client */
   zoo_set_debug_level(ZOO_LOG_LEVEL_WARN);
-  r->zookeeper_handle = zookeeper_init(uri->authority, zookeeper_global_watcher,
-                                       GRPC_ZOOKEEPER_SESSION_TIMEOUT, 0, 0, 0);
+  r->zookeeper_handle =
+      zookeeper_init(args->uri->authority, zookeeper_global_watcher,
+                     GRPC_ZOOKEEPER_SESSION_TIMEOUT, 0, 0, 0);
   if (r->zookeeper_handle == NULL) {
     gpr_log(GPR_ERROR, "Unable to connect to zookeeper server");
     return NULL;
@@ -490,9 +497,8 @@ static char *zookeeper_factory_get_default_hostname(
 }
 
 static grpc_resolver *zookeeper_factory_create_resolver(
-    grpc_resolver_factory *factory, grpc_uri *uri,
-    grpc_subchannel_factory *subchannel_factory) {
-  return zookeeper_create(uri, "pick_first", subchannel_factory);
+    grpc_resolver_factory *factory, grpc_resolver_args *args) {
+  return zookeeper_create(args, "pick_first");
 }
 
 static const grpc_resolver_factory_vtable zookeeper_factory_vtable = {

@@ -166,7 +166,7 @@ static void destruct_transport(grpc_chttp2_transport *t) {
      and maybe they hold resources that need to be freed */
   while (t->global.pings.next != &t->global.pings) {
     grpc_chttp2_outstanding_ping *ping = t->global.pings.next;
-    grpc_iomgr_add_delayed_callback(ping->on_recv, 0);
+    ping->on_recv->cb(ping->on_recv->cb_arg, 0);
     ping->next->prev = ping->prev;
     ping->prev->next = ping->next;
     gpr_free(ping);
@@ -209,7 +209,7 @@ static void ref_transport(grpc_chttp2_transport *t) { gpr_ref(&t->refs); }
 static void init_transport(grpc_chttp2_transport *t,
                            const grpc_channel_args *channel_args,
                            grpc_endpoint *ep, grpc_mdctx *mdctx,
-                           gpr_uint8 is_client) {
+                           grpc_workqueue *workqueue, gpr_uint8 is_client) {
   size_t i;
   int j;
 
@@ -242,7 +242,7 @@ static void init_transport(grpc_chttp2_transport *t,
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
-  grpc_connectivity_state_init(&t->channel_callback.state_tracker,
+  grpc_connectivity_state_init(&t->channel_callback.state_tracker, workqueue,
                                GRPC_CHANNEL_READY, "transport");
 
   gpr_slice_buffer_init(&t->global.qbuf);
@@ -1280,9 +1280,9 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
 
 grpc_transport *grpc_create_chttp2_transport(
     const grpc_channel_args *channel_args, grpc_endpoint *ep, grpc_mdctx *mdctx,
-    int is_client) {
+    grpc_workqueue *workqueue, int is_client) {
   grpc_chttp2_transport *t = gpr_malloc(sizeof(grpc_chttp2_transport));
-  init_transport(t, channel_args, ep, mdctx, is_client != 0);
+  init_transport(t, channel_args, ep, mdctx, workqueue, is_client != 0);
   return &t->base;
 }
 

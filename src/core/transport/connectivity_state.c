@@ -56,6 +56,7 @@ const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
 }
 
 void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
+                                  grpc_workqueue *workqueue,
                                   grpc_connectivity_state init_state,
                                   const char *name) {
   tracker->current_state = init_state;
@@ -64,16 +65,18 @@ void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
 }
 
 void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker) {
+  int success;
   grpc_connectivity_state_watcher *w;
   while ((w = tracker->watchers)) {
     tracker->watchers = w->next;
 
     if (GRPC_CHANNEL_FATAL_FAILURE != *w->current) {
       *w->current = GRPC_CHANNEL_FATAL_FAILURE;
-      grpc_iomgr_add_callback(w->notify);
+      success = 1;
     } else {
-      grpc_iomgr_add_delayed_callback(w->notify, 0);
+      success = 0;
     }
+    grpc_workqueue_push(tracker->workqueue, w->notify, success);
     gpr_free(w);
   }
   gpr_free(tracker->name);
@@ -94,7 +97,7 @@ int grpc_connectivity_state_notify_on_state_change(
   }
   if (tracker->current_state != *current) {
     *current = tracker->current_state;
-    grpc_iomgr_add_callback(notify);
+    grpc_workqueue_push(tracker->workqueue, notify, 1);
   } else {
     grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
     w->current = current;
@@ -136,13 +139,13 @@ void grpc_connectivity_state_set_with_scheduler(
   tracker->watchers = new;
 }
 
-static void default_scheduler(void *ignored, grpc_iomgr_closure *closure) {
-  grpc_iomgr_add_callback(closure);
+static void default_scheduler(void *workqueue, grpc_iomgr_closure *closure) {
+  grpc_workqueue_push(workqueue, closure, 1);
 }
 
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state,
                                  const char *reason) {
   grpc_connectivity_state_set_with_scheduler(tracker, state, default_scheduler,
-                                             NULL, reason);
+                                             tracker->workqueue, reason);
 }

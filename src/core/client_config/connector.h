@@ -57,6 +57,8 @@ typedef struct {
   const grpc_channel_args *channel_args;
   /** metadata context */
   grpc_mdctx *metadata_context;
+  /** workqueue */
+  grpc_workqueue *workqueue;
 } grpc_connect_in_args;
 
 typedef struct {

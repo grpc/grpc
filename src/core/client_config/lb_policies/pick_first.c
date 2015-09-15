@@ -332,8 +332,8 @@ static grpc_lb_policy *create_pick_first(grpc_lb_policy_factory *factory,
   p->num_subchannels = args->num_subchannels;
   p->workqueue = args->workqueue;
   grpc_workqueue_ref(p->workqueue);
-  grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
-                               "pick_first");
+  grpc_connectivity_state_init(&p->state_tracker, args->workqueue,
+                               GRPC_CHANNEL_IDLE, "pick_first");
   memcpy(p->subchannels, args->subchannels,
          sizeof(grpc_subchannel *) * args->num_subchannels);
   grpc_iomgr_closure_init(&p->connectivity_changed, pf_connectivity_changed, p);

@@ -176,7 +176,8 @@ void grpc_channel_watch_connectivity_state(
             "grpc_channel_watch_connectivity_state called on something that is "
             "not a client channel, but '%s'",
             client_channel_elem->filter->name);
-    grpc_iomgr_add_delayed_callback(&w->on_complete, 1);
+    grpc_workqueue_push(grpc_channel_get_workqueue(channel), &w->on_complete,
+                        1);
   } else {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_connectivity");
     grpc_client_channel_add_interested_party(client_channel_elem,

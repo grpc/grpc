@@ -35,6 +35,7 @@
 
 #ifdef GPR_POSIX_SOCKET
 
+#include "src/core/iomgr/fd_posix.h"
 #include "src/core/iomgr/workqueue.h"
 
 #include <stdio.h>
@@ -52,8 +53,9 @@ grpc_workqueue *grpc_workqueue_create(void) {
   workqueue->tail = &workqueue->head;
   grpc_wakeup_fd_init(&workqueue->wakeup_fd);
   sprintf(name, "workqueue:%p", (void *)workqueue);
-  workqueue->wakeup_read_fd =
-      grpc_fd_create(GRPC_WAKEUP_FD_GET_READ_FD(&workqueue->wakeup_fd), name);
+  workqueue->wakeup_read_fd = NULL; /* inspected during grpc_fd_create below */
+  workqueue->wakeup_read_fd = grpc_fd_create(
+      GRPC_WAKEUP_FD_GET_READ_FD(&workqueue->wakeup_fd), workqueue, name);
   grpc_iomgr_closure_init(&workqueue->read_closure, on_readable, workqueue);
   grpc_fd_notify_on_read(workqueue->wakeup_read_fd, &workqueue->read_closure);
   return workqueue;
