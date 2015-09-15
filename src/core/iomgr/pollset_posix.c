@@ -293,7 +293,7 @@ static void basic_do_promote(void *args, int success) {
   /* First we need to ensure that nobody is polling concurrently */
   if (grpc_pollset_has_workers(pollset)) {
     grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
-    grpc_iomgr_add_callback(&up_args->promotion_closure);
+    grpc_workqueue_push(fd->workqueue, &up_args->promotion_closure, 1);
     gpr_mu_unlock(&pollset->mu);
     return;
   }
@@ -385,7 +385,7 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd,
   up_args->original_vtable = pollset->vtable;
   up_args->promotion_closure.cb = basic_do_promote;
   up_args->promotion_closure.cb_arg = up_args;
-  grpc_iomgr_add_callback(&up_args->promotion_closure);
+  grpc_workqueue_push(fd->workqueue, &up_args->promotion_closure, 1);
 
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
 

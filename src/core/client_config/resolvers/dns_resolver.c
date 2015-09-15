@@ -49,6 +49,8 @@ typedef struct {
   grpc_resolver base;
   /** refcount */
   gpr_refcount refs;
+  /** workqueue */
+  grpc_workqueue *workqueue;
   /** name to resolve */
   char *name;
   /** default port to use */
@@ -94,7 +96,7 @@ static void dns_shutdown(grpc_resolver *resolver) {
   gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
-    grpc_iomgr_add_callback(r->next_completion);
+    grpc_workqueue_push(r->workqueue, r->next_completion, 1);
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
@@ -180,7 +182,7 @@ static void dns_maybe_finish_next_locked(dns_resolver *r) {
     if (r->resolved_config) {
       grpc_client_config_ref(r->resolved_config);
     }
-    grpc_iomgr_add_callback(r->next_completion);
+    grpc_workqueue_push(r->workqueue, r->next_completion, 1);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }
@@ -193,21 +195,21 @@ static void dns_destroy(grpc_resolver *gr) {
     grpc_client_config_unref(r->resolved_config);
   }
   grpc_subchannel_factory_unref(r->subchannel_factory);
+  grpc_workqueue_unref(r->workqueue);
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
 }
 
-static grpc_resolver *dns_create(
-    grpc_uri *uri, const char *default_port,
-    const char* lb_policy_name,
-    grpc_subchannel_factory *subchannel_factory) {
+static grpc_resolver *dns_create(grpc_resolver_args *args,
+                                 const char *default_port,
+                                 const char *lb_policy_name) {
   dns_resolver *r;
-  const char *path = uri->path;
+  const char *path = args->uri->path;
 
-  if (0 != strcmp(uri->authority, "")) {
-    gpr_log(GPR_ERROR, "authority based uri's not supported");
+  if (0 != strcmp(args->uri->authority, "")) {
+    gpr_log(GPR_ERROR, "authority based dns uri's not supported");
     return NULL;
   }
 
@@ -220,8 +222,10 @@ static grpc_resolver *dns_create(
   grpc_resolver_init(&r->base, &dns_resolver_vtable);
   r->name = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
-  r->subchannel_factory = subchannel_factory;
-  grpc_subchannel_factory_ref(subchannel_factory);
+  r->subchannel_factory = args->subchannel_factory;
+  grpc_subchannel_factory_ref(r->subchannel_factory);
+  r->workqueue = args->workqueue;
+  grpc_workqueue_ref(r->workqueue);
   r->lb_policy_name = gpr_strdup(lb_policy_name);
   return &r->base;
 }
@@ -235,9 +239,8 @@ static void dns_factory_ref(grpc_resolver_factory *factory) {}
 static void dns_factory_unref(grpc_resolver_factory *factory) {}
 
 static grpc_resolver *dns_factory_create_resolver(
-    grpc_resolver_factory *factory, grpc_uri *uri,
-    grpc_subchannel_factory *subchannel_factory) {
-  return dns_create(uri, "https", "pick_first", subchannel_factory);
+    grpc_resolver_factory *factory, grpc_resolver_args *args) {
+  return dns_create(args, "https", "pick_first");
 }
 
 char *dns_factory_get_default_host_name(grpc_resolver_factory *factory,
