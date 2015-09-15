@@ -52,7 +52,7 @@ case $platform in
     ;;
 esac
 
-if [ "$platform" == "linux" ]
+if [ "$platform" == "linux" ] || [ "$platform" == "interop" ]
 then
   echo "building $language on Linux"
 
@@ -63,13 +63,17 @@ then
   mkdir -p /tmp/ccache
 
   # Use image name based on Dockerfile checksum
-  DOCKER_IMAGE_NAME=grpc_jenkins_slave$docker_suffix_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
+  DOCKER_IMAGE_NAME=grpc_jenkins_slave${docker_suffix}_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
+
+  # Name of the script to run inside docker
+  DOCKER_TEST_RUNNER=docker_run_tests.sh
+  if [ "$platform" == "interop" ]; then DOCKER_TEST_RUNNER=docker_run_interop_tests.sh; fi
 
   # Make sure docker image has been built. Should be instantaneous if so.
   docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave$docker_suffix
 
   # Create a local branch so the child Docker script won't complain
-  git branch jenkins-docker
+  git branch -f jenkins-docker
 
   # Make sure the CID file is gone.
   rm -f docker.cid
@@ -86,7 +90,7 @@ then
     -v /tmp/ccache:/tmp/ccache \
     --cidfile=docker.cid \
     $DOCKER_IMAGE_NAME \
-    bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_jenkins.sh || DOCKER_FAILED="true"
+    bash -l /var/local/jenkins/grpc/tools/jenkins/$DOCKER_TEST_RUNNER || DOCKER_FAILED="true"
 
   DOCKER_CID=`cat docker.cid`
   # forcefully kill the instance if it's still running, otherwise
@@ -97,9 +101,6 @@ then
   # TODO(ctiller): why?
   sleep 4
   docker rm $DOCKER_CID || true
-elif [ "$platform" == "interop" ]
-then
-  python tools/run_tests/run_interops.py --language=$language
 elif [ "$platform" == "windows" ]
 then
   echo "building $language on Windows"
