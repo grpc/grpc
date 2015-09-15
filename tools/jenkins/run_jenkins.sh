@@ -59,6 +59,7 @@ then
 elif [ "$platform" == "interop" ]
 then
   python tools/run_tests/run_interops.py --language=$language $@
+
 elif [ "$platform" == "windows" ]
 then
   echo "building $language on Windows"
