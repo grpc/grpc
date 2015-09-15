@@ -126,6 +126,7 @@ static void free_chosen_ports() {
     for (i = 0; i < num_chosen_ports; i++) {
       free_port_using_server(env, chosen_ports[i]);
     }
+    gpr_free(env);
   }
 
   gpr_free(chosen_ports); 
