@@ -419,7 +419,7 @@ class End2endTest : public ::testing::TestWithParam<bool> {
       channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials());
     }
 
-    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel_));
+    stub_ = grpc::cpp::test::util::TestService::NewStub(channel_);
   }
 
   bool is_server_started_;
@@ -1153,8 +1153,7 @@ TEST_F(End2endTest, ChannelState) {
 TEST_F(End2endTest, NonExistingService) {
   ResetChannel();
   std::unique_ptr<grpc::cpp::test::util::UnimplementedService::Stub> stub;
-  stub =
-      std::move(grpc::cpp::test::util::UnimplementedService::NewStub(channel_));
+  stub = grpc::cpp::test::util::UnimplementedService::NewStub(channel_);
 
   EchoRequest request;
   EchoResponse response;

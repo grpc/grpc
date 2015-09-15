@@ -2,21 +2,21 @@
 <package>
   <metadata>
     <id>grpc.native.csharp_ext</id>
-    <version>0.10.0</version>
+    <version>$version$</version>
     <authors>Google Inc.</authors>
     <owners>grpc-packages</owners>
     <licenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</licenseUrl>
     <projectUrl>http://github.com/grpc/grpc</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Native extension needed by gRPC C# library. This is not the package you are looking for, it is only meant to be used as a dependency.</description>
-    <releaseNotes>Release of gRPC C core 0.10.0 libraries.</releaseNotes>
+    <releaseNotes>Release of gRPC C core $version$ libraries.</releaseNotes>
     <copyright>Copyright 2015</copyright>
     <title>gRPC C# Native Extension</title>
     <summary>Native library required by gRPC C#</summary>
     <tags>gRPC native</tags>
 	<dependencies>
       <dependency id="grpc.dependencies.zlib.redist" version="1.2.8.9" />
-	  <dependency id="grpc.dependencies.openssl.redist" version="1.0.2.2" />
+	  <dependency id="grpc.dependencies.openssl.redist" version="1.0.2.3" />
     </dependencies>
   </metadata>
   <files>

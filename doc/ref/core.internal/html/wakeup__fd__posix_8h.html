@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -101,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__wakeup__fd__vtable.html">grpc_wakeup_fd_vtable</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
@@ -111,8 +111,8 @@ Macros</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a5b7e6c1bff52dd231ecb17a6716c3815"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#a5b7e6c1bff52dd231ecb17a6716c3815">grpc_wakeup_fd_info</a></td></tr>
-<tr class="separator:a5b7e6c1bff52dd231ecb17a6716c3815"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abecae3a8eb4333238177dc2d57cb3c80"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#abecae3a8eb4333238177dc2d57cb3c80">grpc_wakeup_fd</a></td></tr>
+<tr class="separator:abecae3a8eb4333238177dc2d57cb3c80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6c0de4baf5c167e5e1b153bb89b77e3e"><td class="memItemLeft" align="right" valign="top">typedef struct <br class="typebreak"/>
 <a class="el" href="structgrpc__wakeup__fd__vtable.html">grpc_wakeup_fd_vtable</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#a6c0de4baf5c167e5e1b153bb89b77e3e">grpc_wakeup_fd_vtable</a></td></tr>
 <tr class="separator:a6c0de4baf5c167e5e1b153bb89b77e3e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -125,14 +125,14 @@ Functions</h2></td></tr>
 <tr class="separator:afe49a7b08cd7a2ab7c7b79e64dffbd7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3bb107d5e350a9c0ea8f1bfaa281c55"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#af3bb107d5e350a9c0ea8f1bfaa281c55">grpc_wakeup_fd_global_init_force_fallback</a> (void)</td></tr>
 <tr class="separator:af3bb107d5e350a9c0ea8f1bfaa281c55"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1b37e7362bf286befb3c650fd305ce80"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#a1b37e7362bf286befb3c650fd305ce80">grpc_wakeup_fd_create</a> (<a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a> *fd_info)</td></tr>
-<tr class="separator:a1b37e7362bf286befb3c650fd305ce80"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeb453784dce582205f0f62ce2f812f6f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#aeb453784dce582205f0f62ce2f812f6f">grpc_wakeup_fd_consume_wakeup</a> (<a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a> *fd_info)</td></tr>
-<tr class="separator:aeb453784dce582205f0f62ce2f812f6f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aeff09cb231a31e1a4b900270a7c4cec8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#aeff09cb231a31e1a4b900270a7c4cec8">grpc_wakeup_fd_wakeup</a> (<a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a> *fd_info)</td></tr>
-<tr class="separator:aeff09cb231a31e1a4b900270a7c4cec8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae388f6f609c1c335b43f4abaa589feef"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#ae388f6f609c1c335b43f4abaa589feef">grpc_wakeup_fd_destroy</a> (<a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a> *fd_info)</td></tr>
-<tr class="separator:ae388f6f609c1c335b43f4abaa589feef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab7b746f0a78367382d17380e969bac4e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#ab7b746f0a78367382d17380e969bac4e">grpc_wakeup_fd_init</a> (<a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a> *fd_info)</td></tr>
+<tr class="separator:ab7b746f0a78367382d17380e969bac4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99f4df0b635650db8e7383e82f8caa1d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#a99f4df0b635650db8e7383e82f8caa1d">grpc_wakeup_fd_consume_wakeup</a> (<a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a> *fd_info)</td></tr>
+<tr class="separator:a99f4df0b635650db8e7383e82f8caa1d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a49eae1edbb98ad17179c6d5330c243c9"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#a49eae1edbb98ad17179c6d5330c243c9">grpc_wakeup_fd_wakeup</a> (<a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a> *fd_info)</td></tr>
+<tr class="separator:a49eae1edbb98ad17179c6d5330c243c9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3490b6f26b9cb25a6909f399e06c56b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="wakeup__fd__posix_8h.html#ae3490b6f26b9cb25a6909f399e06c56b">grpc_wakeup_fd_destroy</a> (<a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a> *fd_info)</td></tr>
+<tr class="separator:ae3490b6f26b9cb25a6909f399e06c56b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
@@ -157,12 +157,12 @@ Variables</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Typedef Documentation</h2>
-<a class="anchor" id="a5b7e6c1bff52dd231ecb17a6716c3815"></a>
+<a class="anchor" id="abecae3a8eb4333238177dc2d57cb3c80"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">typedef struct <a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a> <a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a></td>
+          <td class="memname">typedef struct <a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a> <a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -182,14 +182,14 @@ Variables</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="aeb453784dce582205f0f62ce2f812f6f"></a>
+<a class="anchor" id="a99f4df0b635650db8e7383e82f8caa1d"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void grpc_wakeup_fd_consume_wakeup </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a> *&#160;</td>
           <td class="paramname"><em>fd_info</em></td><td>)</td>
           <td></td>
         </tr>
@@ -198,30 +198,14 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a1b37e7362bf286befb3c650fd305ce80"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc_wakeup_fd_create </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a> *&#160;</td>
-          <td class="paramname"><em>fd_info</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a class="anchor" id="ae388f6f609c1c335b43f4abaa589feef"></a>
+<a class="anchor" id="ae3490b6f26b9cb25a6909f399e06c56b"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void grpc_wakeup_fd_destroy </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a> *&#160;</td>
           <td class="paramname"><em>fd_info</em></td><td>)</td>
           <td></td>
         </tr>
@@ -278,14 +262,30 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="aeff09cb231a31e1a4b900270a7c4cec8"></a>
+<a class="anchor" id="ab7b746f0a78367382d17380e969bac4e"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc_wakeup_fd_init </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a> *&#160;</td>
+          <td class="paramname"><em>fd_info</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a49eae1edbb98ad17179c6d5330c243c9"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
           <td class="memname">void grpc_wakeup_fd_wakeup </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structgrpc__wakeup__fd__info.html">grpc_wakeup_fd_info</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="structgrpc__wakeup__fd.html">grpc_wakeup_fd</a> *&#160;</td>
           <td class="paramname"><em>fd_info</em></td><td>)</td>
           <td></td>
         </tr>
@@ -310,7 +310,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
