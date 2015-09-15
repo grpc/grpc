@@ -4608,6 +4608,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/create_channel.h \
     include/grpc++/generic/async_generic_service.h \
     include/grpc++/generic/generic_stub.h \
+    include/grpc++/grpc++.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
@@ -4853,6 +4854,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/create_channel.h \
     include/grpc++/generic/async_generic_service.h \
     include/grpc++/generic/generic_stub.h \
+    include/grpc++/grpc++.h \
     include/grpc++/impl/call.h \
     include/grpc++/impl/client_unary_call.h \
     include/grpc++/impl/grpc_library.h \
