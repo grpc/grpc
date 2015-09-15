@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,18 +28,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script is invoked by build_docker_and_run_tests.py inside a docker
-# container. You should never need to call this script on your own.
+# This script can be used to run dockerized tests that normally run
+# on Jenkins on your local machine using the working copy that
+# is currently checked out locally.
 
+# IMPORTANT: The changes to be tested need to be committed locally,
+# otherwise they won't be cloned inside the docker container.
 set -e
 
-export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
+cd `dirname $0`/../..
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+#TODO(jtattermusch): provide way to tunnel run_tests cmdline options to run_tests.
+#TODO(jtattermusch): provide way to grab the docker image built by run_jenkins
 
-nvm use 0.12
-rvm use ruby-2.1
+# config: opt or dbg
+export config=opt
 
-$RUN_TESTS_COMMAND
+# platform:
+# -- use linux to run tests under docker
+# -- use interop to run dockerized interop tests
+export platform=interop
+
+# language: one of languages supported by run_tests.py
+export language=all
+
+# architecture
+export arch=`uname -m`
+
+# test run configuration is done through environment variables above
+tools/jenkins/run_jenkins.sh

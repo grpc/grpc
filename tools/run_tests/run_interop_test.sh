@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright 2015, Google Inc.
 # All rights reserved.
@@ -32,23 +32,27 @@
 language=$1
 test_case=$2
 
+# change dir gRPC repo root
+cd $(dirname $0)/../..
+
 set -e
 if [ "$language" = "c++" ]
 then
-  sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=$test_case
+  bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=$test_case
 elif [ "$language" = "node" ]
 then
-  sudo docker run grpc/node /usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true --use_test_ca=true --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
+  SSL_CERT_FILE=/usr/local/share/grpc/roots.pem node src/node/interop/interop_client.js --use_tls=true --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
 elif [ "$language" = "ruby" ]
 then
-  cmd_prefix="SSL_CERT_FILE=/cacerts/roots.pem ruby /var/local/git/grpc/src/ruby/bin/interop/interop_client.rb --use_tls --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com "
-  cmd="$cmd_prefix --test_case=$test_case"
-  sudo docker run grpc/ruby bin/bash -l -c '$cmd'
+  SSL_CERT_FILE=/usr/local/share/grpc/roots.pem ruby src/ruby/bin/interop/interop_client.rb --use_tls --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
+elif [ "$language" = "csharp" ]
+then
+  (cd src/csharp/Grpc.IntegrationTesting.Client/bin/Debug && SSL_CERT_FILE=/usr/local/share/grpc/roots.pem mono Grpc.IntegrationTesting.Client.exe --use_tls --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case)
 elif [ "$language" = "php" ]
 then
-  sudo docker run -e SSL_CERT_FILE=/cacerts/roots.pem grpc/php /var/local/git/grpc/src/php/bin/interop_client.sh --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
+  SSL_CERT_FILE=/usr/local/share/grpc/roots.pem src/php/bin/interop_client.sh --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
 else
-  echo "interop testss not added for $language"
+  echo "interop tests not added for $language"
   exit 1
 fi
 
