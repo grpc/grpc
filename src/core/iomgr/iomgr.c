@@ -34,15 +34,17 @@
 #include "src/core/iomgr/iomgr.h"
 
 #include <stdlib.h>
+#include <string.h>
 
-#include "src/core/iomgr/iomgr_internal.h"
-#include "src/core/iomgr/alarm_internal.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
+
+#include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/alarm_internal.h"
+#include "src/core/support/string.h"
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
@@ -123,6 +125,8 @@ void grpc_iomgr_shutdown(void) {
     }
   }
   gpr_mu_unlock(&g_mu);
+
+  memset(&g_root_object, 0, sizeof(g_root_object));
 
   grpc_alarm_list_shutdown();
 

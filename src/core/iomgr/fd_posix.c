@@ -222,10 +222,9 @@ void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,
                     const char *reason) {
   fd->on_done_closure = on_done;
   shutdown(fd->fd, SHUT_RDWR);
-  REF_BY(fd, 1, reason); /* remove active status, but keep referenced */
   gpr_mu_lock(&fd->watcher_mu);
+  REF_BY(fd, 1, reason); /* remove active status, but keep referenced */
   if (!has_watchers(fd)) {
-    GPR_ASSERT(!fd->closed);
     fd->closed = 1;
     close(fd->fd);
     if (fd->on_done_closure) {

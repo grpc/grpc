@@ -443,6 +443,10 @@ void grpc_subchannel_process_transport_op(grpc_subchannel *c,
   if (cancel_alarm) {
     grpc_alarm_cancel(&c->alarm);
   }
+
+  if (op->disconnect) {
+    grpc_connector_shutdown(c->connector);
+  }
 }
 
 static void on_state_changed(void *p, int iomgr_success) {

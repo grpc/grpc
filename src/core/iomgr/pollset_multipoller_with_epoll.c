@@ -72,7 +72,7 @@ static void finally_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
      to this pollset whilst adding, but that should be benign. */
   GPR_ASSERT(grpc_fd_begin_poll(fd, pollset, 0, 0, &watcher) == 0);
   if (watcher.fd != NULL) {
-    ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+    ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
     ev.data.ptr = fd;
     err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD, fd->fd, &ev);
     if (err < 0) {

@@ -89,6 +89,8 @@ static void connected(void *arg, grpc_endpoint *tcp) {
   notify->cb(notify->cb_arg, 1);
 }
 
+static void connector_shutdown(grpc_connector *con) {}
+
 static void connector_connect(grpc_connector *con,
                               const grpc_connect_in_args *args,
                               grpc_connect_out_args *result,
@@ -105,7 +107,7 @@ static void connector_connect(grpc_connector *con,
 }
 
 static const grpc_connector_vtable connector_vtable = {
-    connector_ref, connector_unref, connector_connect};
+    connector_ref, connector_unref, connector_shutdown, connector_connect};
 
 typedef struct {
   grpc_subchannel_factory base;
