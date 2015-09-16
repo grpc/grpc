@@ -85,8 +85,12 @@ int main(int argc, char** argv) {
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated
   // (use of InsecureCredentials()).
+  std::string server("localhost:50051");
+  if (argc == 2) {
+    server = std::string("localhost:") + argv[1];
+  }
   GreeterClient greeter(
-      grpc::CreateChannel("localhost:50051", grpc::InsecureCredentials()));
+      grpc::CreateChannel(server, grpc::InsecureCredentials()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;
