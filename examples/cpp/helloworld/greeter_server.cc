@@ -30,6 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+#include <signal.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <memory>
@@ -46,6 +48,9 @@ using grpc::Status;
 using helloworld::HelloRequest;
 using helloworld::HelloReply;
 using helloworld::Greeter;
+
+static bool got_sigint = false;
+static void sigint_handler(int x) { got_sigint = true; }
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
@@ -70,9 +75,9 @@ void RunServer(const std::string& server_address) {
   std::unique_ptr<Server> server(builder.BuildAndStart());
   std::cout << "Server listening on " << server_address << std::endl;
 
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
-  server->Wait();
+  while (!got_sigint) {
+    sleep(1);
+  }
 }
 
 int main(int argc, char** argv) {
@@ -80,6 +85,7 @@ int main(int argc, char** argv) {
   if (argc == 2) {
     server_address = std::string("0.0.0.0:") + argv[1];
   }
+  signal(SIGINT, sigint_handler);
   RunServer(server_address);
 
   return 0;
