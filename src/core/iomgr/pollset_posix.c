@@ -140,6 +140,9 @@ void grpc_pollset_init(grpc_pollset *pollset) {
 }
 
 void grpc_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
+  if (fd->workqueue->wakeup_read_fd != fd) {
+    grpc_pollset_add_fd(pollset, fd->workqueue->wakeup_read_fd);
+  }
   gpr_mu_lock(&pollset->mu);
   pollset->vtable->add_fd(pollset, fd, 1);
 /* the following (enabled only in debug) will reacquire and then release

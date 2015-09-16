@@ -56,7 +56,6 @@ void no_op_cb(void *arg, int success) {}
 typedef struct {
   gpr_cv cv;
   gpr_mu mu;
-  grpc_iomgr_closure *followup_closure;
   int counter;
   int done_success_ctr;
   int done_cancel_ctr;
@@ -64,10 +63,6 @@ typedef struct {
   gpr_event fcb_arg;
   int success;
 } alarm_arg;
-
-static void followup_cb(void *arg, int success) {
-  gpr_event_set((gpr_event *)arg, arg);
-}
 
 /* Called when an alarm expires. */
 static void alarm_cb(void *arg /* alarm_arg */, int success) {
@@ -83,8 +78,7 @@ static void alarm_cb(void *arg /* alarm_arg */, int success) {
   a->success = success;
   gpr_cv_signal(&a->cv);
   gpr_mu_unlock(&a->mu);
-  grpc_iomgr_closure_init(a->followup_closure, followup_cb, &a->fcb_arg);
-  grpc_iomgr_add_callback(a->followup_closure);
+  gpr_event_set((gpr_event *)arg, arg);
 }
 
 /* Test grpc_alarm add and cancel. */
@@ -110,7 +104,6 @@ static void test_grpc_alarm(void) {
   arg.done = 0;
   gpr_mu_init(&arg.mu);
   gpr_cv_init(&arg.cv);
-  arg.followup_closure = gpr_malloc(sizeof(grpc_iomgr_closure));
   gpr_event_init(&arg.fcb_arg);
 
   grpc_alarm_init(&alarm, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100), alarm_cb, &arg,
@@ -152,7 +145,6 @@ static void test_grpc_alarm(void) {
   }
   gpr_cv_destroy(&arg.cv);
   gpr_mu_destroy(&arg.mu);
-  gpr_free(arg.followup_closure);
 
   arg2.counter = 0;
   arg2.success = SUCCESS_NOT_SET;
@@ -161,7 +153,6 @@ static void test_grpc_alarm(void) {
   arg2.done = 0;
   gpr_mu_init(&arg2.mu);
   gpr_cv_init(&arg2.cv);
-  arg2.followup_closure = gpr_malloc(sizeof(grpc_iomgr_closure));
 
   gpr_event_init(&arg2.fcb_arg);
 
@@ -213,7 +204,6 @@ static void test_grpc_alarm(void) {
   }
   gpr_cv_destroy(&arg2.cv);
   gpr_mu_destroy(&arg2.mu);
-  gpr_free(arg2.followup_closure);
 
   grpc_shutdown();
 }
