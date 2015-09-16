@@ -66,7 +66,7 @@ static void eventfd_wakeup(grpc_wakeup_fd *fd_info) {
 }
 
 static void eventfd_destroy(grpc_wakeup_fd *fd_info) {
-  close(fd_info->read_fd);
+  if (fd_info->read_fd != 0) close(fd_info->read_fd);
 }
 
 static int eventfd_check_availability(void) {
