@@ -74,7 +74,8 @@ int test_client(const char* root, int port) {
   }
   /* wait for client */
   gpr_log(GPR_INFO, "Waiting for client: ");
-  /* TODO time out and kill here? */
+  sleep(1);
+  kill(cli, SIGUSR1);
   if (waitpid(cli, &status, 0) == -1) return 2;
   if (!WIFEXITED(status)) return 4;
   if (WEXITSTATUS(status)) return WEXITSTATUS(status);

@@ -31,6 +31,9 @@
  *
  */
 
+#include <signal.h>
+#include <unistd.h>
+
 #include <iostream>
 #include <memory>
 #include <string>
@@ -45,6 +48,10 @@ using grpc::Status;
 using helloworld::HelloRequest;
 using helloworld::HelloReply;
 using helloworld::Greeter;
+
+
+// For dumping core.
+static void sigusr_handler(int x) { abort(); }
 
 class GreeterClient {
  public:
@@ -89,6 +96,7 @@ int main(int argc, char** argv) {
   if (argc == 2) {
     server = std::string("localhost:") + argv[1];
   }
+  signal(SIGUSR1, sigusr_handler);
   GreeterClient greeter(
       grpc::CreateChannel(server, grpc::InsecureCredentials()));
   std::string user("world");
