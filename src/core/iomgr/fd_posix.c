@@ -72,7 +72,7 @@ static gpr_mu fd_freelist_mu;
 
 static void freelist_fd(grpc_fd *fd) {
   if (fd->workqueue->wakeup_read_fd != fd) {
-    grpc_workqueue_unref(fd->workqueue);
+    GRPC_WORKQUEUE_UNREF(fd->workqueue, "fd");
   }
   gpr_mu_lock(&fd_freelist_mu);
   fd->freelist_next = fd_freelist;
@@ -167,7 +167,7 @@ grpc_fd *grpc_fd_create(int fd, grpc_workqueue *workqueue, const char *name) {
   /* if the wakeup_read_fd is NULL, then the workqueue is under construction
      ==> this fd will be the wakeup_read_fd, and we shouldn't take a ref */
   if (workqueue->wakeup_read_fd != NULL) {
-    grpc_workqueue_ref(workqueue);
+    GRPC_WORKQUEUE_REF(workqueue, "fd");
   }
   grpc_iomgr_register_object(&r->iomgr_object, name);
   return r;

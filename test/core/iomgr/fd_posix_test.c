@@ -495,7 +495,7 @@ int main(int argc, char **argv) {
   test_grpc_fd();
   test_grpc_fd_change();
   grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
-  grpc_workqueue_unref(g_workqueue);
+  GRPC_WORKQUEUE_UNREF(g_workqueue, "destroy");
   grpc_iomgr_shutdown();
   return 0;
 }

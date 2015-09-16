@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
   grpc_pollset_init(&g_pollset);
   grpc_endpoint_tests(configs[0], &g_pollset);
   test_leftover(configs[1], 1);
-  grpc_workqueue_unref(g_workqueue);
+  GRPC_WORKQUEUE_UNREF(g_workqueue, "destroy");
   grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
   grpc_shutdown();
 

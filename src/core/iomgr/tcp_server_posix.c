@@ -151,7 +151,7 @@ static void finish_shutdown(grpc_tcp_server *s) {
   gpr_mu_destroy(&s->mu);
 
   gpr_free(s->ports);
-  grpc_workqueue_unref(s->workqueue);
+  GRPC_WORKQUEUE_UNREF(s->workqueue, "destroy");
   gpr_free(s);
 }
 

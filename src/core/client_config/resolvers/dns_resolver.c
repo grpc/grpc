@@ -197,7 +197,7 @@ static void dns_destroy(grpc_resolver *gr) {
     grpc_client_config_unref(r->resolved_config);
   }
   grpc_subchannel_factory_unref(r->subchannel_factory);
-  grpc_workqueue_unref(r->workqueue);
+  GRPC_WORKQUEUE_UNREF(r->workqueue, "dns");
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r->lb_policy_name);
@@ -227,7 +227,7 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   r->subchannel_factory = args->subchannel_factory;
   grpc_subchannel_factory_ref(r->subchannel_factory);
   r->workqueue = args->workqueue;
-  grpc_workqueue_ref(r->workqueue);
+  GRPC_WORKQUEUE_REF(r->workqueue, "dns");
   r->lb_policy_name = gpr_strdup(lb_policy_name);
   return &r->base;
 }

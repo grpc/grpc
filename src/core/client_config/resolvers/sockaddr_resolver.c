@@ -157,7 +157,7 @@ static void sockaddr_destroy(grpc_resolver *gr) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
   grpc_subchannel_factory_unref(r->subchannel_factory);
-  grpc_workqueue_unref(r->workqueue);
+  GRPC_WORKQUEUE_UNREF(r->workqueue, "sockaddr");
   gpr_free(r->addrs);
   gpr_free(r->addrs_len);
   gpr_free(r->lb_policy_name);
@@ -331,7 +331,7 @@ static grpc_resolver *sockaddr_create(
   r->subchannel_factory = args->subchannel_factory;
   grpc_subchannel_factory_ref(r->subchannel_factory);
   r->workqueue = args->workqueue;
-  grpc_workqueue_ref(r->workqueue);
+  GRPC_WORKQUEUE_REF(r->workqueue, "sockaddr");
   r->lb_policy_name = gpr_strdup(lb_policy_name);
 
   return &r->base;

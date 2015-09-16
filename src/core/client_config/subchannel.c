@@ -260,7 +260,7 @@ static void subchannel_destroy(grpc_subchannel *c) {
   grpc_mdctx_unref(c->mdctx);
   grpc_connectivity_state_destroy(&c->state_tracker);
   grpc_connector_unref(c->connector);
-  grpc_workqueue_unref(c->workqueue);
+  GRPC_WORKQUEUE_UNREF(c->workqueue, "subchannel");
   gpr_free(c);
 }
 
@@ -298,7 +298,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   c->mdctx = args->mdctx;
   c->master = args->master;
   c->workqueue = grpc_channel_get_workqueue(c->master);
-  grpc_workqueue_ref(c->workqueue);
+  GRPC_WORKQUEUE_REF(c->workqueue, "subchannel");
   c->pollset_set = grpc_client_channel_get_connecting_pollset_set(parent_elem);
   c->random = random_seed();
   grpc_mdctx_ref(c->mdctx);

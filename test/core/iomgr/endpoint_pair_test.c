@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
   g_workqueue = grpc_workqueue_create();
   grpc_endpoint_tests(configs[0], &g_pollset);
   grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
-  grpc_workqueue_unref(g_workqueue);
+  GRPC_WORKQUEUE_UNREF(g_workqueue, "destroy");
   grpc_shutdown();
 
   return 0;

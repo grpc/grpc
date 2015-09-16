@@ -106,7 +106,7 @@ static void finish(internal_request *req, int success) {
   grpc_iomgr_unregister_object(&req->iomgr_obj);
   gpr_slice_buffer_destroy(&req->incoming);
   gpr_slice_buffer_destroy(&req->outgoing);
-  grpc_workqueue_unref(req->workqueue);
+  GRPC_WORKQUEUE_UNREF(req->workqueue, "destroy");
   gpr_free(req);
 }
 

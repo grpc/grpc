@@ -52,8 +52,23 @@ typedef struct grpc_workqueue grpc_workqueue;
 /** Create a work queue */
 grpc_workqueue *grpc_workqueue_create(void);
 
+void grpc_workqueue_flush(grpc_workqueue *workqueue, int asynchronously);
+
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+#define GRPC_WORKQUEUE_REF(p, r) \
+  grpc_workqueue_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_WORKQUEUE_UNREF(p, r) \
+  grpc_workqueue_unref((p), __FILE__, __LINE__, (r))
+void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
+                        const char *reason);
+void grpc_workqueue_unref(grpc_workqueue *workqueue, const char *file, int line,
+                          const char *reason);
+#else
+#define GRPC_WORKQUEUE_REF(p, r) grpc_workqueue_ref((p))
+#define GRPC_WORKQUEUE_UNREF(p, r) grpc_workqueue_unref((p))
 void grpc_workqueue_ref(grpc_workqueue *workqueue);
 void grpc_workqueue_unref(grpc_workqueue *workqueue);
+#endif
 
 /** Bind this workqueue to a pollset */
 void grpc_workqueue_add_to_pollset(grpc_workqueue *workqueue,
