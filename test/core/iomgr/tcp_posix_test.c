@@ -49,6 +49,7 @@
 #include "test/core/iomgr/endpoint_tests.h"
 
 static grpc_pollset g_pollset;
+static grpc_workqueue *g_workqueue;
 
 /*
    General test notes:
@@ -184,7 +185,8 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), slice_size, "test");
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], g_workqueue, "read_test"),
+                       slice_size, "test");
   grpc_endpoint_add_to_pollset(ep, &g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -233,8 +235,8 @@ static void large_read_test(size_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "large_read_test"), slice_size,
-                       "test");
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], g_workqueue, "large_read_test"),
+                       slice_size, "test");
   grpc_endpoint_add_to_pollset(ep, &g_pollset);
 
   written_bytes = fill_socket(sv[0]);
@@ -383,7 +385,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 
   create_sockets(sv);
 
-  ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test"),
+  ep = grpc_tcp_create(grpc_fd_create(sv[1], g_workqueue, "write_test"),
                        GRPC_TCP_DEFAULT_READ_SLICE_SIZE, "test");
   grpc_endpoint_add_to_pollset(ep, &g_pollset);
 
@@ -454,10 +456,10 @@ static grpc_endpoint_test_fixture create_fixture_tcp_socketpair(
   grpc_endpoint_test_fixture f;
 
   create_sockets(sv);
-  f.client_ep = grpc_tcp_create(grpc_fd_create(sv[0], "fixture:client"),
-                                slice_size, "test");
-  f.server_ep = grpc_tcp_create(grpc_fd_create(sv[1], "fixture:server"),
-                                slice_size, "test");
+  f.client_ep = grpc_tcp_create(
+      grpc_fd_create(sv[0], g_workqueue, "fixture:client"), slice_size, "test");
+  f.server_ep = grpc_tcp_create(
+      grpc_fd_create(sv[1], g_workqueue, "fixture:server"), slice_size, "test");
   grpc_endpoint_add_to_pollset(f.client_ep, &g_pollset);
   grpc_endpoint_add_to_pollset(f.server_ep, &g_pollset);
 
@@ -473,9 +475,11 @@ static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
+  g_workqueue = grpc_workqueue_create();
   grpc_pollset_init(&g_pollset);
   run_tests();
   grpc_endpoint_tests(configs[0], &g_pollset);
+  grpc_workqueue_unref(g_workqueue);
   grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
   grpc_shutdown();
 

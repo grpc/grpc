@@ -46,6 +46,7 @@
 #include "src/core/tsi/fake_transport_security.h"
 
 static grpc_pollset g_pollset;
+static grpc_workqueue *g_workqueue;
 
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, gpr_slice *leftover_slices, size_t leftover_nslices) {
@@ -54,7 +55,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair tcp;
 
-  tcp = grpc_iomgr_create_endpoint_pair("fixture", slice_size);
+  tcp = grpc_iomgr_create_endpoint_pair("fixture", slice_size, g_workqueue);
   grpc_endpoint_add_to_pollset(tcp.client, &g_pollset);
   grpc_endpoint_add_to_pollset(tcp.server, &g_pollset);
 
@@ -165,9 +166,11 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   grpc_init();
+  g_workqueue = grpc_workqueue_create();
   grpc_pollset_init(&g_pollset);
   grpc_endpoint_tests(configs[0], &g_pollset);
   test_leftover(configs[1], 1);
+  grpc_workqueue_unref(g_workqueue);
   grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
   grpc_shutdown();
 

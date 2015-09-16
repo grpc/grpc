@@ -52,6 +52,7 @@
 #include "test/core/util/test_config.h"
 
 static grpc_pollset g_pollset;
+static grpc_workqueue *g_workqueue;
 
 /* buffer size used to send and receive data.
    1024 is the minimal value to set TCP send and receive buffer. */
@@ -207,7 +208,7 @@ static void listen_cb(void *arg, /*=sv_arg*/
   fcntl(fd, F_SETFL, flags | O_NONBLOCK);
   se = gpr_malloc(sizeof(*se));
   se->sv = sv;
-  se->em_fd = grpc_fd_create(fd, "listener");
+  se->em_fd = grpc_fd_create(fd, g_workqueue, "listener");
   grpc_pollset_add_fd(&g_pollset, se->em_fd);
   se->session_read_closure.cb = session_read_cb;
   se->session_read_closure.cb_arg = se;
@@ -236,7 +237,7 @@ static int server_start(server *sv) {
   port = ntohs(sin.sin_port);
   GPR_ASSERT(listen(fd, MAX_NUM_FD) == 0);
 
-  sv->em_fd = grpc_fd_create(fd, "server");
+  sv->em_fd = grpc_fd_create(fd, g_workqueue, "server");
   grpc_pollset_add_fd(&g_pollset, sv->em_fd);
   /* Register to be interested in reading from listen_fd. */
   sv->listen_closure.cb = listen_cb;
@@ -349,7 +350,7 @@ static void client_start(client *cl, int port) {
     }
   }
 
-  cl->em_fd = grpc_fd_create(fd, "client");
+  cl->em_fd = grpc_fd_create(fd, g_workqueue, "client");
   grpc_pollset_add_fd(&g_pollset, cl->em_fd);
 
   client_session_write(cl, 1);
@@ -438,7 +439,7 @@ static void test_grpc_fd_change(void) {
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
 
-  em_fd = grpc_fd_create(sv[0], "test_grpc_fd_change");
+  em_fd = grpc_fd_create(sv[0], g_workqueue, "test_grpc_fd_change");
   grpc_pollset_add_fd(&g_pollset, em_fd);
 
   /* Register the first callback, then make its FD readable */
@@ -490,9 +491,11 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
   grpc_pollset_init(&g_pollset);
+  g_workqueue = grpc_workqueue_create();
   test_grpc_fd();
   test_grpc_fd_change();
   grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
+  grpc_workqueue_unref(g_workqueue);
   grpc_iomgr_shutdown();
   return 0;
 }
