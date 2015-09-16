@@ -56,15 +56,15 @@ extern "C" {
 }
 
 
-int test_client(const char* root, const char* host, int port) {
+int test_client(const char* root, int port) {
   int status;
   pid_t cli;
   cli = fork();
   if (cli == 0) {
     char* binary_path;
     char* port_arg;
-    gpr_asprintf(&binary_path, "%s/interop_client", root);
-    gpr_asprintf(&port_arg, "--server_port=%d", port);
+    gpr_asprintf(&binary_path, "%s/../../examples/cpp/helloworld/greeter_client", root);
+    gpr_asprintf(&port_arg, "%d", port);
 
     execl(binary_path, binary_path, port_arg, NULL);
 
@@ -73,7 +73,8 @@ int test_client(const char* root, const char* host, int port) {
     return 1;
   }
   /* wait for client */
-  gpr_log(GPR_INFO, "Waiting for client: %s", host);
+  gpr_log(GPR_INFO, "Waiting for client: ");
+  /* TODO time out and kill here? */
   if (waitpid(cli, &status, 0) == -1) return 2;
   if (!WIFEXITED(status)) return 4;
   if (WEXITSTATUS(status)) return WEXITSTATUS(status);
@@ -88,14 +89,6 @@ int main(int argc, char** argv) {
   int status;
   pid_t svr;
   int ret;
-  int do_ipv6 = 1;
-  /* seed rng with pid, so we don't end up with the same random numbers as a
-     concurrently running test binary */
-  srand(getpid());
-  if (!grpc_ipv6_loopback_available()) {
-    gpr_log(GPR_INFO, "Can't bind to ::1.  Skipping IPv6 tests.");
-    do_ipv6 = 0;
-  }
   /* figure out where we are */
   if (lslash) {
     memcpy(root, me, lslash - me);
@@ -108,8 +101,8 @@ int main(int argc, char** argv) {
   if (svr == 0) {
     char* binary_path;
     char* port_arg;
-    gpr_asprintf(&binary_path, "%s/interop_server", root);
-    gpr_asprintf(&port_arg, "--port=%d", port);
+    gpr_asprintf(&binary_path, "%s/../../examples/cpp/helloworld/greeter_server", root);
+    gpr_asprintf(&port_arg, "%d", port);
 
     execl(binary_path, binary_path, port_arg, NULL);
 
@@ -120,16 +113,8 @@ int main(int argc, char** argv) {
   /* wait a little */
   sleep(2);
   /* start the clients */
-  ret = test_client(root, "127.0.0.1", port);
-  if (ret != 0) return ret;
-  ret = test_client(root, "::ffff:127.0.0.1", port);
-  if (ret != 0) return ret;
-  ret = test_client(root, "localhost", port);
-  if (ret != 0) return ret;
-  if (do_ipv6) {
-    ret = test_client(root, "::1", port);
-    if (ret != 0) return ret;
-  }
+  ret = test_client(root, port);
+  gpr_log(GPR_INFO, "test_client returned %d", ret);
   /* wait for server */
   gpr_log(GPR_INFO, "Waiting for server");
   kill(svr, SIGINT);
