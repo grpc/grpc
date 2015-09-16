@@ -49,7 +49,7 @@ export config=opt
 # -- use interop to run dockerized interop tests
 export platform=interop
 
-# language: one of languages supported by run_tests.py
+# language: one of languages supported by run_tests.py or run_interop_tests.py
 export language=all
 
 # architecture
