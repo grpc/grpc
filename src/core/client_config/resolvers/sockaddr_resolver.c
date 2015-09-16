@@ -137,8 +137,10 @@ static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r) {
       subchannels[i] = grpc_subchannel_factory_create_subchannel(
           r->subchannel_factory, &args);
     }
+    memset(&lb_policy_args, 0, sizeof(lb_policy_args));
     lb_policy_args.subchannels = subchannels;
     lb_policy_args.num_subchannels = r->num_addrs;
+    lb_policy_args.workqueue = r->workqueue;
     lb_policy =
         grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     gpr_free(subchannels);
