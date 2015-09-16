@@ -38,6 +38,7 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/census/grpc_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/compress_filter.h"
@@ -59,6 +60,9 @@ typedef struct {
   grpc_iomgr_closure *notify;
   grpc_connect_in_args args;
   grpc_connect_out_args *result;
+
+  gpr_mu mu;
+  grpc_endpoint *connecting_endpoint;
 } connector;
 
 static void connector_ref(grpc_connector *con) {
@@ -78,10 +82,20 @@ static void on_secure_handshake_done(void *arg, grpc_security_status status,
                                      grpc_endpoint *secure_endpoint) {
   connector *c = arg;
   grpc_iomgr_closure *notify;
-  if (status != GRPC_SECURITY_OK) {
+  gpr_mu_lock(&c->mu);
+  if (c->connecting_endpoint == NULL) {
+    memset(c->result, 0, sizeof(*c->result));
+    gpr_mu_unlock(&c->mu);
+  } else if (status != GRPC_SECURITY_OK) {
+    GPR_ASSERT(c->connecting_endpoint == wrapped_endpoint);
     gpr_log(GPR_ERROR, "Secure handshake failed with error %d.", status);
     memset(c->result, 0, sizeof(*c->result));
+    c->connecting_endpoint = NULL;
+    gpr_mu_unlock(&c->mu);
   } else {
+    GPR_ASSERT(c->connecting_endpoint == wrapped_endpoint);
+    c->connecting_endpoint = NULL;
+    gpr_mu_unlock(&c->mu);
     c->result->transport = grpc_create_chttp2_transport(
         c->args.channel_args, secure_endpoint, c->args.metadata_context, 1);
     grpc_chttp2_transport_start_reading(c->result->transport, NULL, 0);
@@ -99,6 +113,10 @@ static void connected(void *arg, grpc_endpoint *tcp) {
   connector *c = arg;
   grpc_iomgr_closure *notify;
   if (tcp != NULL) {
+    gpr_mu_lock(&c->mu);
+    GPR_ASSERT(c->connecting_endpoint == NULL);
+    c->connecting_endpoint = tcp;
+    gpr_mu_unlock(&c->mu);
     grpc_security_connector_do_handshake(&c->security_connector->base, tcp,
                                          on_secure_handshake_done, c);
   } else {
@@ -106,6 +124,18 @@ static void connected(void *arg, grpc_endpoint *tcp) {
     notify = c->notify;
     c->notify = NULL;
     grpc_iomgr_add_callback(notify);
+  }
+}
+
+static void connector_shutdown(grpc_connector *con) {
+  connector *c = (connector *)con;
+  grpc_endpoint *ep;
+  gpr_mu_lock(&c->mu);
+  ep = c->connecting_endpoint;
+  c->connecting_endpoint = NULL;
+  gpr_mu_unlock(&c->mu);
+  if (ep) {
+    grpc_endpoint_shutdown(ep);
   }
 }
 
@@ -119,12 +149,15 @@ static void connector_connect(grpc_connector *con,
   c->notify = notify;
   c->args = *args;
   c->result = result;
+  gpr_mu_lock(&c->mu);
+  GPR_ASSERT(c->connecting_endpoint == NULL);
+  gpr_mu_unlock(&c->mu);
   grpc_tcp_client_connect(connected, c, args->interested_parties, args->addr,
                           args->addr_len, args->deadline);
 }
 
 static const grpc_connector_vtable connector_vtable = {
-    connector_ref, connector_unref, connector_connect};
+    connector_ref, connector_unref, connector_shutdown, connector_connect};
 
 typedef struct {
   grpc_subchannel_factory base;
@@ -182,7 +215,8 @@ static const grpc_subchannel_factory_vtable subchannel_factory_vtable = {
                    - perform handshakes */
 grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
                                          const char *target,
-                                         const grpc_channel_args *args) {
+                                         const grpc_channel_args *args,
+                                         void *reserved) {
   grpc_channel *channel;
   grpc_arg connector_arg;
   grpc_channel_args *args_copy;
@@ -193,8 +227,9 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   subchannel_factory *f;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
-  int n = 0;
+  size_t n = 0;
 
+  GPR_ASSERT(reserved == NULL);
   if (grpc_find_security_connector_in_args(args) != NULL) {
     gpr_log(GPR_ERROR, "Cannot set security context in channel args.");
     return grpc_lame_client_channel_create(
@@ -215,10 +250,9 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   args_copy = grpc_channel_args_copy_and_add(
       new_args_from_connector != NULL ? new_args_from_connector : args,
       &connector_arg, 1);
-  /* TODO(census)
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
-    } */
+  }
   filters[n++] = &grpc_compress_filter;
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);

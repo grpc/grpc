@@ -38,6 +38,7 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/census/grpc_filter.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/compress_filter.h"
@@ -87,6 +88,8 @@ static void connected(void *arg, grpc_endpoint *tcp) {
   grpc_iomgr_add_callback(notify);
 }
 
+static void connector_shutdown(grpc_connector *con) {}
+
 static void connector_connect(grpc_connector *con,
                               const grpc_connect_in_args *args,
                               grpc_connect_out_args *result,
@@ -102,7 +105,7 @@ static void connector_connect(grpc_connector *con,
 }
 
 static const grpc_connector_vtable connector_vtable = {
-    connector_ref, connector_unref, connector_connect};
+    connector_ref, connector_unref, connector_shutdown, connector_connect};
 
 typedef struct {
   grpc_subchannel_factory base;
@@ -163,12 +166,11 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   grpc_resolver *resolver;
   subchannel_factory *f;
   grpc_mdctx *mdctx = grpc_mdctx_create();
-  int n = 0;
+  size_t n = 0;
   GPR_ASSERT(!reserved);
-  /* TODO(census)
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
-    } */
+  }
   filters[n++] = &grpc_compress_filter;
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);

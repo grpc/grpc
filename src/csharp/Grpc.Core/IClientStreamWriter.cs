@@ -42,7 +42,7 @@ namespace Grpc.Core
     /// <summary>
     /// Client-side writable stream of messages with Close capability.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The message type.</typeparam>
     public interface IClientStreamWriter<T> : IAsyncStreamWriter<T>
     {
         /// <summary>

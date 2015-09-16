@@ -37,13 +37,15 @@
 #include <grpc/support/log.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server.h>
-#include <grpc++/thread_pool_interface.h>
-#include <grpc++/fixed_size_thread_pool.h>
+#include "src/cpp/server/thread_pool_interface.h"
+#include "src/cpp/server/fixed_size_thread_pool.h"
 
 namespace grpc {
 
 ServerBuilder::ServerBuilder()
-    : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {}
+    : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {
+      grpc_compression_options_init(&compression_options_);
+}
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {
   ServerCompletionQueue* cq = new ServerCompletionQueue();
@@ -89,10 +91,6 @@ void ServerBuilder::AddListeningPort(const grpc::string& addr,
   ports_.push_back(port);
 }
 
-void ServerBuilder::SetThreadPool(ThreadPoolInterface* thread_pool) {
-  thread_pool_ = thread_pool;
-}
-
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   bool thread_pool_owned = false;
   if (!async_services_.empty() && !services_.empty()) {
@@ -103,14 +101,9 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     thread_pool_ = CreateDefaultThreadPool();
     thread_pool_owned = true;
   }
-  // Async services only, create a thread pool to handle requests to unknown
-  // services.
-  if (!thread_pool_ && !generic_service_ && !async_services_.empty()) {
-    thread_pool_ = new FixedSizeThreadPool(1);
-    thread_pool_owned = true;
-  }
-  std::unique_ptr<Server> server(
-      new Server(thread_pool_, thread_pool_owned, max_message_size_));
+  std::unique_ptr<Server> server(new Server(thread_pool_, thread_pool_owned,
+                                            max_message_size_,
+                                            compression_options_));
   for (auto cq = cqs_.begin(); cq != cqs_.end(); ++cq) {
     grpc_server_register_completion_queue(server->server_, (*cq)->cq(),
                                           nullptr);
@@ -138,7 +131,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       *port->selected_port = r;
     }
   }
-  if (!server->Start()) {
+  auto cqs_data = cqs_.empty() ? nullptr : &cqs_[0];
+  if (!server->Start(cqs_data, cqs_.size())) {
     return nullptr;
   }
   return server;

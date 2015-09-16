@@ -32,7 +32,7 @@
  */
 
 #include <grpc/byte_buffer_reader.h>
-#include <grpc++/byte_buffer.h>
+#include <grpc++/support/byte_buffer.h>
 
 namespace grpc {
 
@@ -43,6 +43,12 @@ ByteBuffer::ByteBuffer(const Slice* slices, size_t nslices) {
     c_slices[i] = slices[i].slice_;
   }
   buffer_ = grpc_raw_byte_buffer_create(c_slices.data(), nslices);
+}
+
+ByteBuffer::~ByteBuffer() {
+  if (buffer_) {
+    grpc_byte_buffer_destroy(buffer_);
+  }
 }
 
 void ByteBuffer::Clear() {

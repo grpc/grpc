@@ -72,6 +72,13 @@ namespace Grpc.Core
             this.writeOptionsHolder = writeOptionsHolder;
         }
 
+        /// <summary>
+        /// Asynchronously sends response headers for the current call to the client. This method may only be invoked once for each call and needs to be invoked
+        /// before any response messages are written. Writing the first response message implicitly sends empty response headers if <c>WriteResponseHeadersAsync</c> haven't
+        /// been called yet.
+        /// </summary>
+        /// <param name="responseHeaders">The response headers to send.</param>
+        /// <returns>The task that finished once response headers have been written.</returns>
         public Task WriteResponseHeadersAsync(Metadata responseHeaders)
         {
             return writeHeadersFunc(responseHeaders);
@@ -186,6 +193,9 @@ namespace Grpc.Core
     /// </summary>
     public interface IHasWriteOptions
     {
+        /// <summary>
+        /// Gets or sets the write options.
+        /// </summary>
         WriteOptions WriteOptions { get; set; }
     }
 }

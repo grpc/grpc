@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -102,6 +102,9 @@ Data Fields</h2></td></tr>
 <tr class="separator:a90319aafb59fb5c00ee8ae113e9a3d69"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a05c91e8c28afe70631f28384957044d7"><td class="memItemLeft" align="right" valign="top">char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#a05c91e8c28afe70631f28384957044d7">peer_string</a></td></tr>
 <tr class="separator:a05c91e8c28afe70631f28384957044d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4f616ee5e17a18e6734f7b5de01f92ed"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__refcount.html">gpr_refcount</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#a4f616ee5e17a18e6734f7b5de01f92ed">shutdown_ep_refs</a></td></tr>
+<tr class="memdesc:a4f616ee5e17a18e6734f7b5de01f92ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">when this drops to zero it's safe to shutdown the endpoint  <a href="#a4f616ee5e17a18e6734f7b5de01f92ed">More...</a><br/></td></tr>
+<tr class="separator:a4f616ee5e17a18e6734f7b5de01f92ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab31ca67e25cd2f326a2e72cdfb67254e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__mu.html">gpr_mu</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#ab31ca67e25cd2f326a2e72cdfb67254e">mu</a></td></tr>
 <tr class="separator:ab31ca67e25cd2f326a2e72cdfb67254e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac604ea7777d5d1c6d1ca243bd4caef0f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#ac604ea7777d5d1c6d1ca243bd4caef0f">destroying</a></td></tr>
@@ -140,24 +143,27 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a18d7c2fe14df07bc43840698aa5a3224"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#a18d7c2fe14df07bc43840698aa5a3224">writing_action</a></td></tr>
 <tr class="memdesc:a18d7c2fe14df07bc43840698aa5a3224"><td class="mdescLeft">&#160;</td><td class="mdescRight">closure to execute writing  <a href="#a18d7c2fe14df07bc43840698aa5a3224">More...</a><br/></td></tr>
 <tr class="separator:a18d7c2fe14df07bc43840698aa5a3224"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab53eb8ec23d323a389f1a5456d3f1885"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#ab53eb8ec23d323a389f1a5456d3f1885">reading_action</a></td></tr>
-<tr class="memdesc:ab53eb8ec23d323a389f1a5456d3f1885"><td class="mdescLeft">&#160;</td><td class="mdescRight">closure to start reading from the endpoint  <a href="#ab53eb8ec23d323a389f1a5456d3f1885">More...</a><br/></td></tr>
-<tr class="separator:ab53eb8ec23d323a389f1a5456d3f1885"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add7db57266bf66850857c52d8a6acc90"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#add7db57266bf66850857c52d8a6acc90">recv_data</a></td></tr>
+<tr class="memdesc:add7db57266bf66850857c52d8a6acc90"><td class="mdescLeft">&#160;</td><td class="mdescRight">closure to finish reading from the endpoint  <a href="#add7db57266bf66850857c52d8a6acc90">More...</a><br/></td></tr>
+<tr class="separator:add7db57266bf66850857c52d8a6acc90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a528c9806c905e9b3587fffda4bed5a46"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__slice__buffer.html">gpr_slice_buffer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#a528c9806c905e9b3587fffda4bed5a46">read_buffer</a></td></tr>
+<tr class="memdesc:a528c9806c905e9b3587fffda4bed5a46"><td class="mdescLeft">&#160;</td><td class="mdescRight">incoming read bytes  <a href="#a528c9806c905e9b3587fffda4bed5a46">More...</a><br/></td></tr>
+<tr class="separator:a528c9806c905e9b3587fffda4bed5a46"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a480ae47b5ab8e7f2926cb83b79952c7e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__chttp2__stream.html">grpc_chttp2_stream</a> **&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#a480ae47b5ab8e7f2926cb83b79952c7e">accepting_stream</a></td></tr>
 <tr class="memdesc:a480ae47b5ab8e7f2926cb83b79952c7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">address to place a newly accepted stream - set and unset by grpc_chttp2_parsing_accept_stream; used by init_stream to publish the accepted server stream  <a href="#a480ae47b5ab8e7f2926cb83b79952c7e">More...</a><br/></td></tr>
 <tr class="separator:a480ae47b5ab8e7f2926cb83b79952c7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8dc1af0f203166b32f22634edb3b47bb"><td class="memItemLeft" >struct {</td></tr>
-<tr class="memitem:acb9f71a10cf469cfa6272458eab082f7"><td class="memItemLeft" >&#160;&#160;&#160;void(*&#160;&#160;&#160;<a class="el" href="structgrpc__chttp2__transport.html#a563b98e58df202ea2654dcada575ff2a">accept_stream</a> )(void *user_data, <br class="typebreak"/>
+<tr class="memitem:a82c23fe2bc10b582a3cbede235e0e9f8"><td class="memItemLeft" >struct {</td></tr>
+<tr class="memitem:af6b2759fef879d5d36e2fb8bc06db4b4"><td class="memItemLeft" >&#160;&#160;&#160;void(*&#160;&#160;&#160;<a class="el" href="structgrpc__chttp2__transport.html#a563b98e58df202ea2654dcada575ff2a">accept_stream</a> )(void *user_data, <br class="typebreak"/>
 &#160;&#160;&#160;&#160;&#160;&#160;<a class="el" href="structgrpc__transport.html">grpc_transport</a> *transport, <br class="typebreak"/>
 &#160;&#160;&#160;&#160;&#160;&#160;const void *server_data)</td></tr>
-<tr class="separator:acb9f71a10cf469cfa6272458eab082f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a356cb0fb754cb53428769f8577047021"><td class="memItemLeft" >&#160;&#160;&#160;void *&#160;&#160;&#160;<a class="el" href="structgrpc__chttp2__transport.html#a039e50d9c69f5c8ea2faa685f41d4c8f">accept_stream_user_data</a></td></tr>
-<tr class="separator:a356cb0fb754cb53428769f8577047021"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa82c411fc2ed48a783afc7481f2bde49"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="structgrpc__connectivity__state__tracker.html">grpc_connectivity_state_tracker</a>&#160;&#160;&#160;<a class="el" href="structgrpc__chttp2__transport.html#a1808fd9ed1150b5397b26461d4de7857">state_tracker</a></td></tr>
-<tr class="memdesc:aa82c411fc2ed48a783afc7481f2bde49"><td class="mdescLeft">&#160;</td><td class="mdescRight">connectivity tracking  <a href="#aa82c411fc2ed48a783afc7481f2bde49">More...</a><br/></td></tr>
-<tr class="separator:aa82c411fc2ed48a783afc7481f2bde49"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8dc1af0f203166b32f22634edb3b47bb"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#a8dc1af0f203166b32f22634edb3b47bb">channel_callback</a></td></tr>
-<tr class="separator:a8dc1af0f203166b32f22634edb3b47bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="separator:af6b2759fef879d5d36e2fb8bc06db4b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04e2c83f8e65b7a9d19a184b16e30db4"><td class="memItemLeft" >&#160;&#160;&#160;void *&#160;&#160;&#160;<a class="el" href="structgrpc__chttp2__transport.html#a039e50d9c69f5c8ea2faa685f41d4c8f">accept_stream_user_data</a></td></tr>
+<tr class="separator:a04e2c83f8e65b7a9d19a184b16e30db4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad27c002e060e939c7649a8fdade73474"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="structgrpc__connectivity__state__tracker.html">grpc_connectivity_state_tracker</a>&#160;&#160;&#160;<a class="el" href="structgrpc__chttp2__transport.html#a1808fd9ed1150b5397b26461d4de7857">state_tracker</a></td></tr>
+<tr class="memdesc:ad27c002e060e939c7649a8fdade73474"><td class="mdescLeft">&#160;</td><td class="mdescRight">connectivity tracking  <a href="#ad27c002e060e939c7649a8fdade73474">More...</a><br/></td></tr>
+<tr class="separator:ad27c002e060e939c7649a8fdade73474"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82c23fe2bc10b582a3cbede235e0e9f8"><td class="memItemLeft" valign="top">}&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__chttp2__transport.html#a82c23fe2bc10b582a3cbede235e0e9f8">channel_callback</a></td></tr>
+<tr class="separator:a82c23fe2bc10b582a3cbede235e0e9f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Field Documentation</h2>
 <a class="anchor" id="a563b98e58df202ea2654dcada575ff2a"></a>
@@ -210,7 +216,7 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a8dc1af0f203166b32f22634edb3b47bb"></a>
+<a class="anchor" id="a82c23fe2bc10b582a3cbede235e0e9f8"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -396,17 +402,31 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ab53eb8ec23d323a389f1a5456d3f1885"></a>
+<a class="anchor" id="a528c9806c905e9b3587fffda4bed5a46"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> grpc_chttp2_transport::reading_action</td>
+          <td class="memname"><a class="el" href="structgpr__slice__buffer.html">gpr_slice_buffer</a> grpc_chttp2_transport::read_buffer</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>closure to start reading from the endpoint </p>
+<p>incoming read bytes </p>
+
+</div>
+</div>
+<a class="anchor" id="add7db57266bf66850857c52d8a6acc90"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgrpc__iomgr__closure.html">grpc_iomgr_closure</a> grpc_chttp2_transport::recv_data</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>closure to finish reading from the endpoint </p>
 
 </div>
 </div>
@@ -419,6 +439,20 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a4f616ee5e17a18e6734f7b5de01f92ed"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgpr__refcount.html">gpr_refcount</a> grpc_chttp2_transport::shutdown_ep_refs</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>when this drops to zero it's safe to shutdown the endpoint </p>
 
 </div>
 </div>
@@ -484,7 +518,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

@@ -42,7 +42,7 @@ class BidiStreamingCall extends AbstractCall {
    * Start the call
    * @param array $metadata Metadata to send with the call, if applicable
    */
-  public function start($metadata) {
+  public function start($metadata = array()) {
     $this->call->startBatch([OP_SEND_INITIAL_METADATA => $metadata]);
   }
 
@@ -66,9 +66,15 @@ class BidiStreamingCall extends AbstractCall {
    * Write a single message to the server. This cannot be called after
    * writesDone is called.
    * @param ByteBuffer $data The data to write
+   * @param array $options an array of options, possible keys:
+   *              'flags' => a number
    */
-  public function write($data) {
-    $this->call->startBatch([OP_SEND_MESSAGE => $data->serialize()]);
+  public function write($data, $options = array()) {
+    $message_array = ['message' => $data->serialize()];
+    if (isset($options['flags'])) {
+      $message_array['flags'] = $options['flags'];
+    }
+    $this->call->startBatch([OP_SEND_MESSAGE => $message_array]);
   }
 
   /**
@@ -86,7 +92,7 @@ class BidiStreamingCall extends AbstractCall {
   public function getStatus() {
     $status_event = $this->call->startBatch([
         OP_RECV_STATUS_ON_CLIENT => true
-                                              ]);
+    ]);
     return $status_event->status;
   }
 }

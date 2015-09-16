@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -94,13 +94,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">pollset_posix.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="sync_8h_source.html">grpc/support/sync.h</a>&gt;</code><br/>
-<code>#include &quot;<a class="el" href="pollset__kick__posix_8h_source.html">src/core/iomgr/pollset_kick_posix.h</a>&quot;</code><br/>
+<div class="textblock"><code>#include &lt;poll.h&gt;</code><br/>
+<code>#include &lt;<a class="el" href="sync_8h_source.html">grpc/support/sync.h</a>&gt;</code><br/>
+<code>#include &quot;<a class="el" href="wakeup__fd__posix_8h_source.html">src/core/iomgr/wakeup_fd_posix.h</a>&quot;</code><br/>
 </div>
 <p><a href="pollset__posix_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset.html">grpc_pollset</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__pollset__vtable.html">grpc_pollset_vtable</a></td></tr>
@@ -115,10 +118,14 @@ Macros</h2></td></tr>
 Typedefs</h2></td></tr>
 <tr class="memitem:a93b9c2aef29b7ffe733779b8d4c32db1"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__pollset__vtable.html">grpc_pollset_vtable</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#a93b9c2aef29b7ffe733779b8d4c32db1">grpc_pollset_vtable</a></td></tr>
 <tr class="separator:a93b9c2aef29b7ffe733779b8d4c32db1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4ed45598900de5aa50513ce46c290d29"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#a4ed45598900de5aa50513ce46c290d29">grpc_pollset_worker</a></td></tr>
+<tr class="separator:a4ed45598900de5aa50513ce46c290d29"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3651117ed8881e20c179f0c677c622ad"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__pollset.html">grpc_pollset</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#a3651117ed8881e20c179f0c677c622ad">grpc_pollset</a></td></tr>
 <tr class="separator:a3651117ed8881e20c179f0c677c622ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9b5fd5fc969bf6e0c45e5f49b1827bbd"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#a9b5fd5fc969bf6e0c45e5f49b1827bbd">grpc_platform_become_multipoller_type</a> )(<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset, struct <a class="el" href="structgrpc__fd.html">grpc_fd</a> **fds, size_t fd_count)</td></tr>
 <tr class="separator:a9b5fd5fc969bf6e0c45e5f49b1827bbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5735085c1f14d264f0c4eb52d41f7d4d"><td class="memItemLeft" align="right" valign="top">typedef int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#a5735085c1f14d264f0c4eb52d41f7d4d">grpc_poll_function_type</a> )(struct pollfd *, nfds_t, int)</td></tr>
+<tr class="separator:a5735085c1f14d264f0c4eb52d41f7d4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -126,8 +133,6 @@ Functions</h2></td></tr>
 <tr class="separator:add4b6bbce2371decdb574d68b15a81e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a84e9698eaa1ae735fc13d9faf7e073ea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#a84e9698eaa1ae735fc13d9faf7e073ea">grpc_pollset_del_fd</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset, struct <a class="el" href="structgrpc__fd.html">grpc_fd</a> *fd)</td></tr>
 <tr class="separator:a84e9698eaa1ae735fc13d9faf7e073ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1dcd57a12b81e4369bc4c6957ff3837e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#a1dcd57a12b81e4369bc4c6957ff3837e">grpc_pollset_force_kick</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset)</td></tr>
-<tr class="separator:a1dcd57a12b81e4369bc4c6957ff3837e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af74c66d9afaf90a2134f209dfb41f91b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#af74c66d9afaf90a2134f209dfb41f91b">grpc_kick_read_fd</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *p)</td></tr>
 <tr class="separator:af74c66d9afaf90a2134f209dfb41f91b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a36baf579c30c8dba9a6c68f1f9dd979c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#a36baf579c30c8dba9a6c68f1f9dd979c">grpc_kick_drain</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *p)</td></tr>
@@ -136,11 +141,15 @@ Functions</h2></td></tr>
 <tr class="separator:ab8e35054e04edb42c1e665ef6a896fc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae03dc91376fc7bfb279e74a955782102"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#ae03dc91376fc7bfb279e74a955782102">grpc_poll_become_multipoller</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset, struct <a class="el" href="structgrpc__fd.html">grpc_fd</a> **fds, size_t fd_count)</td></tr>
 <tr class="separator:ae03dc91376fc7bfb279e74a955782102"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4874f5128706719a2ddfcb641a87190c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#a4874f5128706719a2ddfcb641a87190c">grpc_pollset_has_workers</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset)</td></tr>
+<tr class="separator:a4874f5128706719a2ddfcb641a87190c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
 Variables</h2></td></tr>
 <tr class="memitem:aabee8316b743b1cc1673093989a7104a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="pollset__posix_8h.html#a9b5fd5fc969bf6e0c45e5f49b1827bbd">grpc_platform_become_multipoller_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#aabee8316b743b1cc1673093989a7104a">grpc_platform_become_multipoller</a></td></tr>
 <tr class="separator:aabee8316b743b1cc1673093989a7104a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2aa30b48d5c466e7e89f1cb8c1733291"><td class="memItemLeft" align="right" valign="top"><a class="el" href="pollset__posix_8h.html#a5735085c1f14d264f0c4eb52d41f7d4d">grpc_poll_function_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset__posix_8h.html#a2aa30b48d5c466e7e89f1cb8c1733291">grpc_poll_function</a></td></tr>
+<tr class="separator:a2aa30b48d5c466e7e89f1cb8c1733291"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a class="anchor" id="a717ebde9fd8a72d07e06d2255ee7b50f"></a>
@@ -172,6 +181,18 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a5735085c1f14d264f0c4eb52d41f7d4d"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef int(* grpc_poll_function_type)(struct pollfd *, nfds_t, int)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="a3651117ed8881e20c179f0c677c622ad"></a>
 <div class="memitem">
 <div class="memproto">
@@ -190,6 +211,18 @@ Variables</h2></td></tr>
       <table class="memname">
         <tr>
           <td class="memname">typedef struct <a class="el" href="structgrpc__pollset__vtable.html">grpc_pollset_vtable</a> <a class="el" href="structgrpc__pollset__vtable.html">grpc_pollset_vtable</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a class="anchor" id="a4ed45598900de5aa50513ce46c290d29"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a>  <a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -339,12 +372,12 @@ Variables</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a1dcd57a12b81e4369bc4c6957ff3837e"></a>
+<a class="anchor" id="a4874f5128706719a2ddfcb641a87190c"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc_pollset_force_kick </td>
+          <td class="memname">int grpc_pollset_has_workers </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *&#160;</td>
           <td class="paramname"><em>pollset</em></td><td>)</td>
@@ -368,10 +401,22 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="a2aa30b48d5c466e7e89f1cb8c1733291"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="pollset__posix_8h.html#a5735085c1f14d264f0c4eb52d41f7d4d">grpc_poll_function_type</a> grpc_poll_function</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

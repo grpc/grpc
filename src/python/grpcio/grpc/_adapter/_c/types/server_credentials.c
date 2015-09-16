@@ -99,11 +99,13 @@ ServerCredentials *pygrpc_ServerCredentials_ssl(
   const char *root_certs;
   PyObject *py_key_cert_pairs;
   grpc_ssl_pem_key_cert_pair *key_cert_pairs;
+  int force_client_auth;
   size_t num_key_cert_pairs;
   size_t i;
-  static char *keywords[] = {"root_certs", "key_cert_pairs", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "zO:ssl", keywords,
-        &root_certs, &py_key_cert_pairs)) {
+  static char *keywords[] = {
+      "root_certs", "key_cert_pairs", "force_client_auth", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "zOi:ssl", keywords,
+	&root_certs, &py_key_cert_pairs, &force_client_auth)) {
     return NULL;
   }
   if (!PyList_Check(py_key_cert_pairs)) {
@@ -128,11 +130,8 @@ ServerCredentials *pygrpc_ServerCredentials_ssl(
   }
 
   self = (ServerCredentials *)type->tp_alloc(type, 0);
-  /* TODO: Add a force_client_auth parameter in the python object and pass it
-     here as the last arg. */
   self->c_creds = grpc_ssl_server_credentials_create(
-      root_certs, key_cert_pairs, num_key_cert_pairs, 0);
+      root_certs, key_cert_pairs, num_key_cert_pairs, force_client_auth, NULL);
   gpr_free(key_cert_pairs);
   return self;
 }
-

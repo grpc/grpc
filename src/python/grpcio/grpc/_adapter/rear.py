@@ -78,7 +78,7 @@ class _RPCState(object):
 
 def _write(operation_id, call, outstanding, write_state, serialized_payload):
   if write_state.low is _LowWrite.OPEN:
-    call.write(serialized_payload, operation_id)
+    call.write(serialized_payload, operation_id, 0)
     outstanding.add(_low.Event.Kind.WRITE_ACCEPTED)
     write_state.low = _LowWrite.ACTIVE
   elif write_state.low is _LowWrite.ACTIVE:
@@ -144,7 +144,7 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
     if event.write_accepted:
       if rpc_state.common.write.pending:
         rpc_state.call.write(
-            rpc_state.common.write.pending.pop(0), operation_id)
+            rpc_state.common.write.pending.pop(0), operation_id, 0)
         rpc_state.outstanding.add(_low.Event.Kind.WRITE_ACCEPTED)
       elif rpc_state.common.write.high is _common.HighWrite.CLOSED:
         rpc_state.call.complete(operation_id)
@@ -263,7 +263,7 @@ class RearLink(base_interfaces.RearLink, activated.Activated):
         low_state = _LowWrite.OPEN
     else:
       serialized_payload = request_serializer(payload)
-      call.write(serialized_payload, operation_id)
+      call.write(serialized_payload, operation_id, 0)
       outstanding.add(_low.Event.Kind.WRITE_ACCEPTED)
       low_state = _LowWrite.ACTIVE
 

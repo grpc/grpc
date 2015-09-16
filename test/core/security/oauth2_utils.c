@@ -85,7 +85,7 @@ char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds) {
   gpr_mu_lock(GRPC_POLLSET_MU(&request.pollset));
   while (!request.is_done) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&request.pollset, &worker,
+    grpc_pollset_work(&request.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&request.pollset));

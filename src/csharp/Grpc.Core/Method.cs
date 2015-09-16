@@ -84,6 +84,8 @@ namespace Grpc.Core
     /// <summary>
     /// A description of a remote method.
     /// </summary>
+    /// <typeparam name="TRequest">Request message type for this method.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this method.</typeparam>
     public class Method<TRequest, TResponse> : IMethod
     {
         readonly MethodType type;

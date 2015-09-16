@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -85,6 +85,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- top -->
 <div class="header">
   <div class="summary">
+<a href="#define-members">Macros</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">pollset.h File Reference</div>  </div>
@@ -95,6 +96,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div>
 <p><a href="pollset_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
+Macros</h2></td></tr>
+<tr class="memitem:ac899c23ff0955a9154bcaa5d09260764"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset_8h.html#ac899c23ff0955a9154bcaa5d09260764">GRPC_POLLSET_KICK_BROADCAST</a>&#160;&#160;&#160;((<a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> *)1)</td></tr>
+<tr class="separator:ac899c23ff0955a9154bcaa5d09260764"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:abea9f486d280910a6e6aecbe6ca5f40b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset_8h.html#abea9f486d280910a6e6aecbe6ca5f40b">grpc_pollset_init</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset)</td></tr>
@@ -103,11 +109,24 @@ Functions</h2></td></tr>
 <tr class="separator:a85616767facacdf95dfc4fe564352e87"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a66c5028ee13b23f2d3c4db177f5c7d0f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset_8h.html#a66c5028ee13b23f2d3c4db177f5c7d0f">grpc_pollset_destroy</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset)</td></tr>
 <tr class="separator:a66c5028ee13b23f2d3c4db177f5c7d0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8e69570c350199ba682b6f673a63e8dd"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset_8h.html#a8e69570c350199ba682b6f673a63e8dd">grpc_pollset_work</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline)</td></tr>
-<tr class="separator:a8e69570c350199ba682b6f673a63e8dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a395a3872723c67d877799cdc79ae7f48"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset_8h.html#a395a3872723c67d877799cdc79ae7f48">grpc_pollset_kick</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset)</td></tr>
-<tr class="separator:a395a3872723c67d877799cdc79ae7f48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acb517fea22ab6637eff19ede002b13b0"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset_8h.html#acb517fea22ab6637eff19ede002b13b0">grpc_pollset_work</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset, <a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> *worker, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> now, <a class="el" href="structgpr__timespec.html">gpr_timespec</a> deadline)</td></tr>
+<tr class="separator:acb517fea22ab6637eff19ede002b13b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a944364dff517de15717cac25ed3d46e6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="pollset_8h.html#a944364dff517de15717cac25ed3d46e6">grpc_pollset_kick</a> (<a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset, <a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> *specific_worker)</td></tr>
+<tr class="separator:a944364dff517de15717cac25ed3d46e6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Macro Definition Documentation</h2>
+<a class="anchor" id="ac899c23ff0955a9154bcaa5d09260764"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_POLLSET_KICK_BROADCAST&#160;&#160;&#160;((<a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> *)1)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a class="anchor" id="a66c5028ee13b23f2d3c4db177f5c7d0f"></a>
 <div class="memitem">
@@ -141,7 +160,7 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a395a3872723c67d877799cdc79ae7f48"></a>
+<a class="anchor" id="a944364dff517de15717cac25ed3d46e6"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
@@ -149,8 +168,18 @@ Functions</h2></td></tr>
           <td class="memname">void grpc_pollset_kick </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *&#160;</td>
-          <td class="paramname"><em>pollset</em></td><td>)</td>
+          <td class="paramname"><em>pollset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> *&#160;</td>
+          <td class="paramname"><em>specific_worker</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -189,15 +218,27 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="a8e69570c350199ba682b6f673a63e8dd"></a>
+<a class="anchor" id="acb517fea22ab6637eff19ede002b13b0"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int grpc_pollset_work </td>
+          <td class="memname">void grpc_pollset_work </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *&#160;</td>
           <td class="paramname"><em>pollset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgrpc__pollset__worker.html">grpc_pollset_worker</a> *&#160;</td>
+          <td class="paramname"><em>worker</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="structgpr__timespec.html">gpr_timespec</a>&#160;</td>
+          <td class="paramname"><em>now</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -218,7 +259,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

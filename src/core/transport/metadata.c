@@ -186,7 +186,8 @@ grpc_mdctx *grpc_mdctx_create(void) {
   /* This seed is used to prevent remote connections from controlling hash table
    * collisions. It needs to be somewhat unpredictable to a remote connection.
    */
-  return grpc_mdctx_create_with_seed(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
+  return grpc_mdctx_create_with_seed(
+      (gpr_uint32)gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
 }
 
 static void discard_metadata(grpc_mdctx *ctx) {
@@ -333,7 +334,7 @@ grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str,
       grpc_mdstr *ret;
       for (i = 0; i < len; i++) {
         if (str[i] >= 'A' && str[i] <= 'Z') {
-          copy[i] = str[i] - 'A' + 'a';
+          copy[i] = (char)(str[i] - 'A' + 'a');
         } else {
           copy[i] = str[i];
         }
@@ -378,7 +379,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *buf,
     s->slice.refcount = NULL;
     memcpy(s->slice.data.inlined.bytes, buf, length);
     s->slice.data.inlined.bytes[length] = 0;
-    s->slice.data.inlined.length = length;
+    s->slice.data.inlined.length = (gpr_uint8)length;
   } else {
     /* string data goes after the internal_string header, and we +1 for null
        terminator */
@@ -681,14 +682,32 @@ void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx,
 
 void grpc_mdctx_unlock(grpc_mdctx *ctx) { unlock(ctx); }
 
-int grpc_mdstr_is_legal_header(grpc_mdstr *s) {
-  /* TODO(ctiller): consider caching this, or computing it on construction */
+static int conforms_to(grpc_mdstr *s, const gpr_uint8 *legal_bits) {
   const gpr_uint8 *p = GPR_SLICE_START_PTR(s->slice);
   const gpr_uint8 *e = GPR_SLICE_END_PTR(s->slice);
   for (; p != e; p++) {
-    if (*p < 32 || *p > 126) return 0;
+    int idx = *p;
+    int byte = idx / 8;
+    int bit = idx % 8;
+    if ((legal_bits[byte] & (1 << bit)) == 0) return 0;
   }
   return 1;
+}
+
+int grpc_mdstr_is_legal_header(grpc_mdstr *s) {
+  static const gpr_uint8 legal_header_bits[256 / 8] = {
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0xff, 0x03, 0x00, 0x00, 0x00,
+      0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  return conforms_to(s, legal_header_bits);
+}
+
+int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s) {
+  static const gpr_uint8 legal_header_bits[256 / 8] = {
+      0x00, 0x00, 0x00, 0x00, 0xff, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff,
+      0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  return conforms_to(s, legal_header_bits);
 }
 
 int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s) {

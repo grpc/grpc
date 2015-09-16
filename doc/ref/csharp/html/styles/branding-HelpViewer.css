@@ -1,0 +1,48 @@
+/* Style adjustments for Help Viewer */
+.pageBody {
+	padding-top: 0px 20px 0px 0px;
+}
+
+table {
+	width: 95%;
+	padding-right: 20px;
+}
+
+table.members {
+	width: 95%;
+	padding-right: 20px;
+}
+
+th p {
+	padding-bottom: 0px;
+}
+
+td p {
+	padding-bottom: 5px;
+}
+
+.codeSnippetContainerTabs {
+	top: 1px;
+}
+
+.codeSnippetToolBarText {
+	top: -13px;
+}
+
+.codeSnippetContainerTabSingle {
+	padding: 2px 15px 0px 15px;
+	height: 22px;
+}
+
+.codeSnippetContainerTab a:visited {
+	color: #000000;
+}
+
+.codeSnippetContainerTabActive a:visited {
+	color: #000000;
+}
+
+span.keyword {
+	color: #0000ff;
+	font-weight: normal;
+}

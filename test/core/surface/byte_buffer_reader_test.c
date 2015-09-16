@@ -113,14 +113,14 @@ static void test_read_none_compressed_slice(void) {
 }
 
 static void read_compressed_slice(grpc_compression_algorithm algorithm,
-                                  int input_size) {
+                                  size_t input_size) {
   gpr_slice input_slice;
   gpr_slice_buffer sliceb_in;
   gpr_slice_buffer sliceb_out;
   grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader reader;
   gpr_slice read_slice;
-  int read_count = 0;
+  size_t read_count = 0;
 
   gpr_slice_buffer_init(&sliceb_in);
   gpr_slice_buffer_init(&sliceb_out);
@@ -149,13 +149,13 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
 }
 
 static void test_read_gzip_compressed_slice(void) {
-  const int INPUT_SIZE = 2048;
+  const size_t INPUT_SIZE = 2048;
   LOG_TEST("test_read_gzip_compressed_slice");
   read_compressed_slice(GRPC_COMPRESS_GZIP, INPUT_SIZE);
 }
 
 static void test_read_deflate_compressed_slice(void) {
-  const int INPUT_SIZE = 2048;
+  const size_t INPUT_SIZE = 2048;
   LOG_TEST("test_read_deflate_compressed_slice");
   read_compressed_slice(GRPC_COMPRESS_DEFLATE, INPUT_SIZE);
 }

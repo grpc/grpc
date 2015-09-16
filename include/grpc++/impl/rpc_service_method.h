@@ -39,10 +39,10 @@
 #include <memory>
 #include <vector>
 
-#include <grpc++/config.h>
 #include <grpc++/impl/rpc_method.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
+#include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/sync_stream.h>
 
 namespace grpc {
 class ServerContext;
@@ -211,13 +211,19 @@ class BidiStreamingHandler : public MethodHandler {
 // Handle unknown method by returning UNIMPLEMENTED error.
 class UnknownMethodHandler : public MethodHandler {
  public:
-  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+  template <class T>
+  static void FillOps(ServerContext* context, T* ops) {
     Status status(StatusCode::UNIMPLEMENTED, "");
-    CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
-    if (!param.server_context->sent_initial_metadata_) {
-      ops.SendInitialMetadata(param.server_context->initial_metadata_);
+    if (!context->sent_initial_metadata_) {
+      ops->SendInitialMetadata(context->initial_metadata_);
+      context->sent_initial_metadata_ = true;
     }
-    ops.ServerSendStatus(param.server_context->trailing_metadata_, status);
+    ops->ServerSendStatus(context->trailing_metadata_, status);
+  }
+
+  void RunHandler(const HandlerParameter& param) GRPC_FINAL {
+    CallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus> ops;
+    FillOps(param.server_context, &ops);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
   }
@@ -229,7 +235,7 @@ class RpcServiceMethod : public RpcMethod {
   // Takes ownership of the handler
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,
                    MethodHandler* handler)
-      : RpcMethod(name, type, nullptr), handler_(handler) {}
+      : RpcMethod(name, type), handler_(handler) {}
 
   MethodHandler* handler() { return handler_.get(); }
 
