@@ -101,7 +101,7 @@ static void asciidump(dump_out *out, const char *buf, size_t len) {
     dump_out_append(out, '\'');
   }
   for (cur = beg; cur != end; ++cur) {
-    dump_out_append(out, isprint(*cur) ? *(char *)cur : '.');
+    dump_out_append(out, (char)(isprint(*cur) ? *(char *)cur : '.'));
   }
   if (!out_was_empty) {
     dump_out_append(out, '\'');

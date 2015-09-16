@@ -486,7 +486,7 @@ static int init_skip_frame_parser(
     transport_parsing->hpack_parser.on_header_user_data = NULL;
     transport_parsing->hpack_parser.is_boundary = is_eoh;
     transport_parsing->hpack_parser.is_eof =
-        is_eoh ? transport_parsing->header_eof : 0;
+        (gpr_uint8)(is_eoh ? transport_parsing->header_eof : 0);
   } else {
     transport_parsing->parser = skip_parser;
   }
@@ -696,7 +696,7 @@ static int init_header_frame_parser(
   transport_parsing->hpack_parser.on_header_user_data = transport_parsing;
   transport_parsing->hpack_parser.is_boundary = is_eoh;
   transport_parsing->hpack_parser.is_eof =
-      is_eoh ? transport_parsing->header_eof : 0;
+      (gpr_uint8)(is_eoh ? transport_parsing->header_eof : 0);
   if (!is_continuation && (transport_parsing->incoming_frame_flags &
                            GRPC_CHTTP2_FLAG_HAS_PRIORITY)) {
     grpc_chttp2_hpack_parser_set_has_priority(&transport_parsing->hpack_parser);
