@@ -48,9 +48,9 @@ static gpr_timespec random_deadline(void) {
   return ts;
 }
 
-static grpc_alarm *create_test_elements(int num_elements) {
+static grpc_alarm *create_test_elements(size_t num_elements) {
   grpc_alarm *elems = gpr_malloc(num_elements * sizeof(grpc_alarm));
-  int i;
+  size_t i;
   for (i = 0; i < num_elements; i++) {
     elems[i].deadline = random_deadline();
   }
@@ -63,24 +63,25 @@ static int cmp_elem(const void *a, const void *b) {
   return i - j;
 }
 
-static int *all_top(grpc_alarm_heap *pq, int *n) {
-  int *vec = NULL;
-  int *need_to_check_children;
-  int num_need_to_check_children = 0;
+static size_t *all_top(grpc_alarm_heap *pq, size_t *n) {
+  size_t *vec = NULL;
+  size_t *need_to_check_children;
+  size_t num_need_to_check_children = 0;
 
   *n = 0;
   if (pq->alarm_count == 0) return vec;
-  need_to_check_children = gpr_malloc(pq->alarm_count * sizeof(int));
+  need_to_check_children =
+      gpr_malloc(pq->alarm_count * sizeof(*need_to_check_children));
   need_to_check_children[num_need_to_check_children++] = 0;
-  vec = gpr_malloc(pq->alarm_count * sizeof(int));
+  vec = gpr_malloc(pq->alarm_count * sizeof(*vec));
   while (num_need_to_check_children > 0) {
-    int ind = need_to_check_children[0];
-    int leftchild, rightchild;
+    size_t ind = need_to_check_children[0];
+    size_t leftchild, rightchild;
     num_need_to_check_children--;
     memmove(need_to_check_children, need_to_check_children + 1,
-            num_need_to_check_children * sizeof(int));
+            num_need_to_check_children * sizeof(*need_to_check_children));
     vec[(*n)++] = ind;
-    leftchild = 1 + 2 * ind;
+    leftchild = 1u + 2u * ind;
     if (leftchild < pq->alarm_count) {
       if (gpr_time_cmp(pq->alarms[leftchild]->deadline,
                        pq->alarms[ind]->deadline) >= 0) {
@@ -101,13 +102,14 @@ static int *all_top(grpc_alarm_heap *pq, int *n) {
 }
 
 static void check_pq_top(grpc_alarm *elements, grpc_alarm_heap *pq,
-                         gpr_uint8 *inpq, int num_elements) {
+                         gpr_uint8 *inpq, size_t num_elements) {
   gpr_timespec max_deadline = gpr_inf_past(GPR_CLOCK_REALTIME);
-  int *max_deadline_indices = gpr_malloc(num_elements * sizeof(int));
-  int *top_elements;
-  int num_max_deadline_indices = 0;
-  int num_top_elements;
-  int i;
+  size_t *max_deadline_indices =
+      gpr_malloc(num_elements * sizeof(*max_deadline_indices));
+  size_t *top_elements;
+  size_t num_max_deadline_indices = 0;
+  size_t num_top_elements;
+  size_t i;
   for (i = 0; i < num_elements; ++i) {
     if (inpq[i] && gpr_time_cmp(elements[i].deadline, max_deadline) >= 0) {
       if (gpr_time_cmp(elements[i].deadline, max_deadline) > 0) {
@@ -117,7 +119,8 @@ static void check_pq_top(grpc_alarm *elements, grpc_alarm_heap *pq,
       max_deadline_indices[num_max_deadline_indices++] = elements[i].heap_index;
     }
   }
-  qsort(max_deadline_indices, num_max_deadline_indices, sizeof(int), cmp_elem);
+  qsort(max_deadline_indices, num_max_deadline_indices,
+        sizeof(*max_deadline_indices), cmp_elem);
   top_elements = all_top(pq, &num_top_elements);
   GPR_ASSERT(num_top_elements == num_max_deadline_indices);
   for (i = 0; i < num_top_elements; i++) {
@@ -128,7 +131,7 @@ static void check_pq_top(grpc_alarm *elements, grpc_alarm_heap *pq,
 }
 
 static int contains(grpc_alarm_heap *pq, grpc_alarm *el) {
-  int i;
+  size_t i;
   for (i = 0; i < pq->alarm_count; i++) {
     if (pq->alarms[i] == el) return 1;
   }
@@ -136,10 +139,10 @@ static int contains(grpc_alarm_heap *pq, grpc_alarm *el) {
 }
 
 static void check_valid(grpc_alarm_heap *pq) {
-  int i;
+  size_t i;
   for (i = 0; i < pq->alarm_count; ++i) {
-    int left_child = 1 + 2 * i;
-    int right_child = left_child + 1;
+    size_t left_child = 1u + 2u * i;
+    size_t right_child = left_child + 1u;
     if (left_child < pq->alarm_count) {
       GPR_ASSERT(gpr_time_cmp(pq->alarms[i]->deadline,
                               pq->alarms[left_child]->deadline) >= 0);
@@ -153,9 +156,9 @@ static void check_valid(grpc_alarm_heap *pq) {
 
 static void test1(void) {
   grpc_alarm_heap pq;
-  const int num_test_elements = 200;
-  const int num_test_operations = 10000;
-  int i;
+  const size_t num_test_elements = 200;
+  const size_t num_test_operations = 10000;
+  size_t i;
   grpc_alarm *test_elements = create_test_elements(num_test_elements);
   gpr_uint8 *inpq = gpr_malloc(num_test_elements);
 
@@ -182,7 +185,7 @@ static void test1(void) {
   check_pq_top(test_elements, &pq, inpq, num_test_elements);
 
   for (i = 0; i < num_test_operations; ++i) {
-    int elem_num = rand() % num_test_elements;
+    size_t elem_num = (size_t)rand() % num_test_elements;
     grpc_alarm *el = &test_elements[elem_num];
     if (!inpq[elem_num]) { /* not in pq */
       GPR_ASSERT(!contains(&pq, el));
@@ -209,11 +212,11 @@ static void test1(void) {
 
 static void shrink_test(void) {
   grpc_alarm_heap pq;
-  int i;
-  int expected_size;
+  size_t i;
+  size_t expected_size;
 
   /* A large random number to allow for multiple shrinkages, at least 512. */
-  const int num_elements = rand() % 2000 + 512;
+  const size_t num_elements = (size_t)rand() % 2000 + 512;
 
   grpc_alarm_heap_init(&pq);
 
@@ -243,7 +246,7 @@ static void shrink_test(void) {
      4 times the Size and not less than 2 times, but never goes below 16. */
   expected_size = pq.alarm_count;
   while (pq.alarm_count > 0) {
-    const int which = rand() % pq.alarm_count;
+    const size_t which = (size_t)rand() % pq.alarm_count;
     grpc_alarm *te = pq.alarms[which];
     grpc_alarm_heap_remove(&pq, te);
     gpr_free(te);

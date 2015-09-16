@@ -27,32 +27,72 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""The base interface of RPC Framework."""
+"""The base interface of RPC Framework.
 
+Implementations of this interface support the conduct of "operations":
+exchanges between two distinct ends of an arbitrary number of data payloads
+and metadata such as a name for the operation, initial and terminal metadata
+in each direction, and flow control. These operations may be used for transfers
+of data, remote procedure calls, status indication, or anything else
+applications choose.
+"""
+
+# threading is referenced from specification in this module.
 import abc
 import enum
+import threading  # pylint: disable=unused-import
 
 # abandonment is referenced from specification in this module.
 from grpc.framework.foundation import abandonment  # pylint: disable=unused-import
 
 
 class NoSuchMethodError(Exception):
-  """Indicates that an unrecognized operation has been called."""
+  """Indicates that an unrecognized operation has been called.
+
+  Attributes:
+    code: A code value to communicate to the other side of the operation along
+      with indication of operation termination. May be None.
+    details: A details value to communicate to the other side of the operation
+      along with indication of operation termination. May be None.
+  """
+
+  def __init__(self, code, details):
+    """Constructor.
+
+    Args:
+      code: A code value to communicate to the other side of the operation
+        along with indication of operation termination. May be None.
+      details: A details value to communicate to the other side of the
+        operation along with indication of operation termination. May be None.
+    """
+    self.code = code
+    self.details = details
 
 
-@enum.unique
-class Outcome(enum.Enum):
-  """Operation outcomes."""
+class Outcome(object):
+  """The outcome of an operation.
 
-  COMPLETED = 'completed'
-  CANCELLED = 'cancelled'
-  EXPIRED = 'expired'
-  LOCAL_SHUTDOWN = 'local shutdown'
-  REMOTE_SHUTDOWN = 'remote shutdown'
-  RECEPTION_FAILURE = 'reception failure'
-  TRANSMISSION_FAILURE = 'transmission failure'
-  LOCAL_FAILURE = 'local failure'
-  REMOTE_FAILURE = 'remote failure'
+  Attributes:
+    kind: A Kind value coarsely identifying how the operation terminated.
+    code: An application-specific code value or None if no such value was
+      provided.
+    details: An application-specific details value or None if no such value was
+      provided.
+  """
+
+  @enum.unique
+  class Kind(enum.Enum):
+    """Ways in which an operation can terminate."""
+
+    COMPLETED = 'completed'
+    CANCELLED = 'cancelled'
+    EXPIRED = 'expired'
+    LOCAL_SHUTDOWN = 'local shutdown'
+    REMOTE_SHUTDOWN = 'remote shutdown'
+    RECEPTION_FAILURE = 'reception failure'
+    TRANSMISSION_FAILURE = 'transmission failure'
+    LOCAL_FAILURE = 'local failure'
+    REMOTE_FAILURE = 'remote failure'
 
 
 class Completion(object):
@@ -144,6 +184,19 @@ class Operator(object):
     """
     raise NotImplementedError()
 
+class ProtocolReceiver(object):
+  """A means of receiving protocol values during an operation."""
+  __metaclass__ = abc.ABCMeta
+
+  @abc.abstractmethod
+  def context(self, protocol_context):
+    """Accepts the protocol context object for the operation.
+
+    Args:
+      protocol_context: The protocol context object for the operation.
+    """
+    raise NotImplementedError()
+
 
 class Subscription(object):
   """Describes customer code's interest in values from the other side.
@@ -159,7 +212,11 @@ class Subscription(object):
       otherwise.
     operator: An Operator to be passed values from the other side of the
       operation. Must be non-None if kind is Kind.FULL. Must be None otherwise.
+    protocol_receiver: A ProtocolReceiver to be passed protocol objects as they
+      become available during the operation. Must be non-None if kind is
+      Kind.FULL.
   """
+  __metaclass__ = abc.ABCMeta
 
   @enum.unique
   class Kind(enum.Enum):
@@ -208,26 +265,33 @@ class End(object):
     raise NotImplementedError()
 
   @abc.abstractmethod
-  def stop_gracefully(self):
-    """Gracefully stops this object's service of operations.
+  def stop(self, grace):
+    """Stops this object's service of operations.
 
-    Operations in progress will be allowed to complete, and this method blocks
-    until all of them have.
-    """
-    raise NotImplementedError()
+    This object will refuse service of new operations as soon as this method is
+    called but operations under way at the time of the call may be given a
+    grace period during which they are allowed to finish.
 
-  @abc.abstractmethod
-  def stop_immediately(self):
-    """Immediately stops this object's service of operations.
+    Args:
+      grace: A duration of time in seconds to allow ongoing operations to
+        terminate before being forcefully terminated by the stopping of this
+        End. May be zero to terminate all ongoing operations and immediately
+        stop.
 
-    Operations in progress will not be allowed to complete.
+    Returns:
+      A threading.Event that will be set to indicate all operations having
+        terminated and this End having completely stopped. The returned event
+        may not be set until after the full grace period (if some ongoing
+        operation continues for the full length of the period) or it may be set
+        much sooner (if for example this End had no operations in progress at
+        the time its stop method was called).
     """
     raise NotImplementedError()
 
   @abc.abstractmethod
   def operate(
       self, group, method, subscription, timeout, initial_metadata=None,
-      payload=None, completion=None):
+      payload=None, completion=None, protocol_options=None):
     """Commences an operation.
 
     Args:
@@ -243,6 +307,8 @@ class End(object):
       payload: An initial payload for the operation.
       completion: A Completion value indicating the end of transmission to the
         other side of the operation.
+      protocol_options: A value specified by the provider of a Base interface
+        implementation affording custom state and behavior.
 
     Returns:
       A pair of objects affording information about the operation and action
@@ -258,8 +324,8 @@ class End(object):
     """Reports the number of terminated operations broken down by outcome.
 
     Returns:
-      A dictionary from Outcome value to an integer identifying the number
-        of operations that terminated with that outcome.
+      A dictionary from Outcome.Kind value to an integer identifying the number
+        of operations that terminated with that outcome kind.
     """
     raise NotImplementedError()
 

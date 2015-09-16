@@ -123,7 +123,7 @@ static void handle_unary_method(void) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  error = grpc_call_start_batch(call, unary_ops, op - unary_ops,
+  error = grpc_call_start_batch(call, unary_ops, (size_t)(op - unary_ops),
                                 tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
   grpc_test_init(1, fake_argv);
 
   grpc_init();
-  srand(clock());
+  srand((unsigned)clock());
 
   cl = gpr_cmdline_create("fling server");
   gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
@@ -215,8 +215,8 @@ int main(int argc, char **argv) {
   if (secure) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
-    grpc_server_credentials *ssl_creds =
-        grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0);
+    grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(
+        NULL, &pem_key_cert_pair, 1, 0, NULL);
     server = grpc_server_create(NULL, NULL);
     GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
     grpc_server_credentials_release(ssl_creds);

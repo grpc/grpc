@@ -48,8 +48,6 @@ PyMethodDef pygrpc_ClientCredentials_methods[] = {
      METH_CLASS|METH_KEYWORDS, ""},
     {"compute_engine", (PyCFunction)pygrpc_ClientCredentials_compute_engine,
      METH_CLASS|METH_NOARGS, ""},
-    {"service_account", (PyCFunction)pygrpc_ClientCredentials_service_account,
-     METH_CLASS|METH_KEYWORDS, ""},
     {"jwt", (PyCFunction)pygrpc_ClientCredentials_jwt,
      METH_CLASS|METH_KEYWORDS, ""},
     {"refresh_token", (PyCFunction)pygrpc_ClientCredentials_refresh_token,
@@ -135,9 +133,10 @@ ClientCredentials *pygrpc_ClientCredentials_ssl(
   if (private_key && cert_chain) {
     key_cert_pair.private_key = private_key;
     key_cert_pair.cert_chain = cert_chain;
-    self->c_creds = grpc_ssl_credentials_create(root_certs, &key_cert_pair);
+    self->c_creds =
+        grpc_ssl_credentials_create(root_certs, &key_cert_pair, NULL);
   } else {
-    self->c_creds = grpc_ssl_credentials_create(root_certs, NULL);
+    self->c_creds = grpc_ssl_credentials_create(root_certs, NULL, NULL);
   }
   if (!self->c_creds) {
     Py_DECREF(self);
@@ -159,8 +158,8 @@ ClientCredentials *pygrpc_ClientCredentials_composite(
     return NULL;
   }
   self = (ClientCredentials *)type->tp_alloc(type, 0);
-  self->c_creds = grpc_composite_credentials_create(
-      creds1->c_creds, creds2->c_creds);
+  self->c_creds =
+      grpc_composite_credentials_create(creds1->c_creds, creds2->c_creds, NULL);
   if (!self->c_creds) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError, "couldn't create composite credentials");
@@ -172,34 +171,11 @@ ClientCredentials *pygrpc_ClientCredentials_composite(
 ClientCredentials *pygrpc_ClientCredentials_compute_engine(
     PyTypeObject *type, PyObject *ignored) {
   ClientCredentials *self = (ClientCredentials *)type->tp_alloc(type, 0);
-  self->c_creds = grpc_compute_engine_credentials_create();
+  self->c_creds = grpc_google_compute_engine_credentials_create(NULL);
   if (!self->c_creds) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
                     "couldn't create compute engine credentials");
-    return NULL;
-  }
-  return self;
-}
-
-ClientCredentials *pygrpc_ClientCredentials_service_account(
-    PyTypeObject *type, PyObject *args, PyObject *kwargs) {
-  ClientCredentials *self;
-  const char *json_key;
-  const char *scope;
-  double lifetime;
-  static char *keywords[] = {"json_key", "scope", "token_lifetime", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "ssd:service_account", keywords,
-        &json_key, &scope, &lifetime)) {
-    return NULL;
-  }
-  self = (ClientCredentials *)type->tp_alloc(type, 0);
-  self->c_creds = grpc_service_account_credentials_create(
-      json_key, scope, pygrpc_cast_double_to_gpr_timespec(lifetime));
-  if (!self->c_creds) {
-    Py_DECREF(self);
-    PyErr_SetString(PyExc_RuntimeError,
-                    "couldn't create service account credentials");
     return NULL;
   }
   return self;
@@ -218,7 +194,7 @@ ClientCredentials *pygrpc_ClientCredentials_jwt(
   }
   self = (ClientCredentials *)type->tp_alloc(type, 0);
   self->c_creds = grpc_service_account_jwt_access_credentials_create(
-      json_key, pygrpc_cast_double_to_gpr_timespec(lifetime));
+      json_key, pygrpc_cast_double_to_gpr_timespec(lifetime), NULL);
   if (!self->c_creds) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError, "couldn't create JWT credentials");
@@ -237,7 +213,8 @@ ClientCredentials *pygrpc_ClientCredentials_refresh_token(
     return NULL;
   }
   self = (ClientCredentials *)type->tp_alloc(type, 0);
-  self->c_creds = grpc_refresh_token_credentials_create(json_refresh_token);
+  self->c_creds =
+      grpc_google_refresh_token_credentials_create(json_refresh_token, NULL);
   if (!self->c_creds) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError,
@@ -258,8 +235,8 @@ ClientCredentials *pygrpc_ClientCredentials_iam(
     return NULL;
   }
   self = (ClientCredentials *)type->tp_alloc(type, 0);
-  self->c_creds = grpc_iam_credentials_create(authorization_token,
-                                              authority_selector);
+  self->c_creds = grpc_google_iam_credentials_create(authorization_token,
+                                                     authority_selector, NULL);
   if (!self->c_creds) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError, "couldn't create IAM credentials");

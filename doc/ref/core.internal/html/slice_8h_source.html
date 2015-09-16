@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -172,12 +172,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    <span class="keyword">struct </span>{</div>
 <div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="structgpr__slice.html#a16646e1a137851f2b031cf2c431b2864">   83</a></span>&#160;      <a class="code" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a> *<a class="code" href="structgpr__slice.html#a16646e1a137851f2b031cf2c431b2864">bytes</a>;</div>
 <div class="line"><a name="l00084"></a><span class="lineno"><a class="line" href="structgpr__slice.html#a8867b2d660a87061534be9c8098d4fa5">   84</a></span>&#160;      <span class="keywordtype">size_t</span> <a class="code" href="structgpr__slice.html#a8867b2d660a87061534be9c8098d4fa5">length</a>;</div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    } <a class="code" href="structgpr__slice.html#a50bbfa04c0c8f5db1190cbc86bdfd102">refcounted</a>;</div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    } <a class="code" href="structgpr__slice.html#a99e9ced91521735e88e567af24db8688">refcounted</a>;</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keyword">struct </span>{</div>
 <div class="line"><a name="l00087"></a><span class="lineno"><a class="line" href="structgpr__slice.html#acd3242f89b2999d12788e65337662cf3">   87</a></span>&#160;      <a class="code" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a> <a class="code" href="structgpr__slice.html#acd3242f89b2999d12788e65337662cf3">length</a>;</div>
 <div class="line"><a name="l00088"></a><span class="lineno"><a class="line" href="structgpr__slice.html#a39592633c4ad594a15b3a52aadff398d">   88</a></span>&#160;      <a class="code" href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a> <a class="code" href="structgpr__slice.html#a16646e1a137851f2b031cf2c431b2864">bytes</a>[<a class="code" href="slice_8h.html#a4063c3d8d4820472a4cf2655dd662a31">GPR_SLICE_INLINED_SIZE</a>];</div>
-<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    } <a class="code" href="structgpr__slice.html#a1fd4cfd75079d6f30184f0340276eb28">inlined</a>;</div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  } <a class="code" href="structgpr__slice.html#a122218a8a00205225f56ee71ade6e8da">data</a>;</div>
+<div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    } <a class="code" href="structgpr__slice.html#a84c10c84b0cbf9db1a281bb7770ff3d1">inlined</a>;</div>
+<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;  } <a class="code" href="structgpr__slice.html#ae4ab307ee3dfe725587fdfb25bfa1b9e">data</a>;</div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;} <a class="code" href="slice_8h.html#a91fe16db371db7c53d6e3adc90a6678c">gpr_slice</a>;</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;</div>
 <div class="line"><a name="l00093"></a><span class="lineno"><a class="line" href="slice_8h.html#ab8258afc3398c1426974b0b48dbf5a15">   93</a></span>&#160;<span class="preprocessor">#define GPR_SLICE_START_PTR(slice)                  \</span></div>
@@ -186,7 +186,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00096"></a><span class="lineno"><a class="line" href="slice_8h.html#ae97c2f992c1ebccaf44ceeee1f9fdabb">   96</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_SLICE_LENGTH(slice)                      \</span></div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;<span class="preprocessor">  ((slice).refcount ? (slice).data.refcounted.length \</span></div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="preprocessor">                    : (slice).data.inlined.length)</span></div>
-<div class="line"><a name="l00099"></a><span class="lineno"><a class="line" href="slice_8h.html#a1f5333a1260aef2efe086d4e2188e613">   99</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_SLICE_SET_LENGTH(slice, newlen)                       \</span></div>
+<div class="line"><a name="l00099"></a><span class="lineno"><a class="line" href="slice_8h.html#a1f5333a1260aef2efe086d4e2188e613">   99</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_SLICE_SET_LENGTH(slice, newlen)                               \</span></div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;<span class="preprocessor">  ((slice).refcount ? ((slice).data.refcounted.length = (size_t)(newlen)) \</span></div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="preprocessor">                    : ((slice).data.inlined.length = (gpr_uint8)(newlen)))</span></div>
 <div class="line"><a name="l00102"></a><span class="lineno"><a class="line" href="slice_8h.html#a9b7e9acd0eb92039a9bc897712a62a14">  102</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">#define GPR_SLICE_END_PTR(slice) \</span></div>
@@ -268,20 +268,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_SUPPORT_SLICE_H */</span><span class="preprocessor"></span></div>
 <div class="ttc" id="slice_8h_html_ac9d4e6e264e22c6c6d3748f522da91eb"><div class="ttname"><a href="slice_8h.html#ac9d4e6e264e22c6c6d3748f522da91eb">gpr_slice_sub</a></div><div class="ttdeci">gpr_slice gpr_slice_sub(gpr_slice s, size_t begin, size_t end)</div><div class="ttdef"><b>Definition:</b> slice.c:227</div></div>
-<div class="ttc" id="port__platform_8h_html_aeeb41e29e7c7a916a4e0fb6cfb9f92e0"><div class="ttname"><a href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a></div><div class="ttdeci">uint8_t gpr_uint8</div><div class="ttdef"><b>Definition:</b> port_platform.h:307</div></div>
+<div class="ttc" id="port__platform_8h_html_aeeb41e29e7c7a916a4e0fb6cfb9f92e0"><div class="ttname"><a href="port__platform_8h.html#aeeb41e29e7c7a916a4e0fb6cfb9f92e0">gpr_uint8</a></div><div class="ttdeci">uint8_t gpr_uint8</div><div class="ttdef"><b>Definition:</b> port_platform.h:310</div></div>
 <div class="ttc" id="slice_8h_html_affd1fef2ffaca67e0b2e7b60923da812"><div class="ttname"><a href="slice_8h.html#affd1fef2ffaca67e0b2e7b60923da812">gpr_slice_new_with_len</a></div><div class="ttdeci">gpr_slice gpr_slice_new_with_len(void *p, size_t len, void(*destroy)(void *, size_t))</div><div class="ttdef"><b>Definition:</b> slice.c:120</div></div>
 <div class="ttc" id="slice_8h_html_a842ea6b4a9ab4d0d3becd6fda03bbc24"><div class="ttname"><a href="slice_8h.html#a842ea6b4a9ab4d0d3becd6fda03bbc24">gpr_slice_split_head</a></div><div class="ttdeci">gpr_slice gpr_slice_split_head(gpr_slice *s, size_t split)</div><div class="ttdef"><b>Definition:</b> slice.c:278</div></div>
-<div class="ttc" id="structgpr__slice_html_a50bbfa04c0c8f5db1190cbc86bdfd102"><div class="ttname"><a href="structgpr__slice.html#a50bbfa04c0c8f5db1190cbc86bdfd102">gpr_slice::refcounted</a></div><div class="ttdeci">struct gpr_slice::@27::@28 refcounted</div></div>
 <div class="ttc" id="structgpr__slice_html_a8867b2d660a87061534be9c8098d4fa5"><div class="ttname"><a href="structgpr__slice.html#a8867b2d660a87061534be9c8098d4fa5">gpr_slice::length</a></div><div class="ttdeci">size_t length</div><div class="ttdef"><b>Definition:</b> slice.h:84</div></div>
-<div class="ttc" id="structgpr__slice_html_a122218a8a00205225f56ee71ade6e8da"><div class="ttname"><a href="structgpr__slice.html#a122218a8a00205225f56ee71ade6e8da">gpr_slice::data</a></div><div class="ttdeci">union gpr_slice::@27 data</div></div>
 <div class="ttc" id="structgpr__slice_html_a16646e1a137851f2b031cf2c431b2864"><div class="ttname"><a href="structgpr__slice.html#a16646e1a137851f2b031cf2c431b2864">gpr_slice::bytes</a></div><div class="ttdeci">gpr_uint8 * bytes</div><div class="ttdef"><b>Definition:</b> slice.h:83</div></div>
 <div class="ttc" id="slice_8h_html_adf4df32e55b1b09d3f11c39447dcc68b"><div class="ttname"><a href="slice_8h.html#adf4df32e55b1b09d3f11c39447dcc68b">gpr_slice_from_copied_string</a></div><div class="ttdeci">gpr_slice gpr_slice_from_copied_string(const char *source)</div><div class="ttdef"><b>Definition:</b> slice.c:144</div></div>
+<div class="ttc" id="structgpr__slice_html_a84c10c84b0cbf9db1a281bb7770ff3d1"><div class="ttname"><a href="structgpr__slice.html#a84c10c84b0cbf9db1a281bb7770ff3d1">gpr_slice::inlined</a></div><div class="ttdeci">struct gpr_slice::@29::@31 inlined</div></div>
 <div class="ttc" id="slice_8h_html_a1a8906400c956fb8c508326a072b0662"><div class="ttname"><a href="slice_8h.html#a1a8906400c956fb8c508326a072b0662">gpr_empty_slice</a></div><div class="ttdeci">gpr_slice gpr_empty_slice(void)</div><div class="ttdef"><b>Definition:</b> slice.c:40</div></div>
-<div class="ttc" id="slice_8h_html_aef752203db50c932010a74c6845872c2"><div class="ttname"><a href="slice_8h.html#aef752203db50c932010a74c6845872c2">gpr_slice_str_cmp</a></div><div class="ttdeci">int gpr_slice_str_cmp(gpr_slice a, const char *b)</div><div class="ttdef"><b>Definition:</b> slice.c:322</div></div>
-<div class="ttc" id="structgpr__slice_html_a1fd4cfd75079d6f30184f0340276eb28"><div class="ttname"><a href="structgpr__slice.html#a1fd4cfd75079d6f30184f0340276eb28">gpr_slice::inlined</a></div><div class="ttdeci">struct gpr_slice::@27::@29 inlined</div></div>
+<div class="ttc" id="slice_8h_html_aef752203db50c932010a74c6845872c2"><div class="ttname"><a href="slice_8h.html#aef752203db50c932010a74c6845872c2">gpr_slice_str_cmp</a></div><div class="ttdeci">int gpr_slice_str_cmp(gpr_slice a, const char *b)</div><div class="ttdef"><b>Definition:</b> slice.c:323</div></div>
+<div class="ttc" id="structgpr__slice_html_a99e9ced91521735e88e567af24db8688"><div class="ttname"><a href="structgpr__slice.html#a99e9ced91521735e88e567af24db8688">gpr_slice::refcounted</a></div><div class="ttdeci">struct gpr_slice::@29::@30 refcounted</div></div>
 <div class="ttc" id="slice_8h_html_a83e8110a7a98132963f01eb9c7f7418e"><div class="ttname"><a href="slice_8h.html#a83e8110a7a98132963f01eb9c7f7418e">gpr_slice_from_copied_buffer</a></div><div class="ttdeci">gpr_slice gpr_slice_from_copied_buffer(const char *source, size_t len)</div><div class="ttdef"><b>Definition:</b> slice.c:138</div></div>
 <div class="ttc" id="slice_8h_html_ad28a2bcca348046cbe660a44180e75ca"><div class="ttname"><a href="slice_8h.html#ad28a2bcca348046cbe660a44180e75ca">gpr_slice_ref</a></div><div class="ttdeci">gpr_slice gpr_slice_ref(gpr_slice s)</div><div class="ttdef"><b>Definition:</b> slice.c:47</div></div>
-<div class="ttc" id="slice_8h_html_add3c8736c46bea7517991f178c82ba3c"><div class="ttname"><a href="slice_8h.html#add3c8736c46bea7517991f178c82ba3c">gpr_slice_cmp</a></div><div class="ttdeci">int gpr_slice_cmp(gpr_slice a, gpr_slice b)</div><div class="ttdef"><b>Definition:</b> slice.c:315</div></div>
+<div class="ttc" id="slice_8h_html_add3c8736c46bea7517991f178c82ba3c"><div class="ttname"><a href="slice_8h.html#add3c8736c46bea7517991f178c82ba3c">gpr_slice_cmp</a></div><div class="ttdeci">int gpr_slice_cmp(gpr_slice a, gpr_slice b)</div><div class="ttdef"><b>Definition:</b> slice.c:316</div></div>
+<div class="ttc" id="structgpr__slice_html_ae4ab307ee3dfe725587fdfb25bfa1b9e"><div class="ttname"><a href="structgpr__slice.html#ae4ab307ee3dfe725587fdfb25bfa1b9e">gpr_slice::data</a></div><div class="ttdeci">union gpr_slice::@29 data</div></div>
 <div class="ttc" id="slice_8h_html_aea43587a11bfe2e06fb8532035229bb2"><div class="ttname"><a href="slice_8h.html#aea43587a11bfe2e06fb8532035229bb2">gpr_slice_new</a></div><div class="ttdeci">gpr_slice gpr_slice_new(void *p, size_t len, void(*destroy)(void *))</div><div class="ttdef"><b>Definition:</b> slice.c:82</div></div>
 <div class="ttc" id="structgpr__slice__refcount_html_ae31a3f84f0032dd388418eee26aa9c00"><div class="ttname"><a href="structgpr__slice__refcount.html#ae31a3f84f0032dd388418eee26aa9c00">gpr_slice_refcount::unref</a></div><div class="ttdeci">void(* unref)(void *)</div><div class="ttdef"><b>Definition:</b> slice.h:65</div></div>
 <div class="ttc" id="structgpr__slice__refcount_html_abf3fba35fdc6a4cd2d47e5ca19107ed7"><div class="ttname"><a href="structgpr__slice__refcount.html#abf3fba35fdc6a4cd2d47e5ca19107ed7">gpr_slice_refcount::ref</a></div><div class="ttdeci">void(* ref)(void *)</div><div class="ttdef"><b>Definition:</b> slice.h:64</div></div>
@@ -300,7 +300,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

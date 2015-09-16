@@ -55,17 +55,23 @@ _PACKAGE_DATA = {
     'grpc_protoc_plugin': [
         'test.proto',
     ],
+    'grpc_test': [
+        'credentials/ca.pem',
+        'credentials/server1.key',
+        'credentials/server1.pem',
+    ],
 }
 
 _SETUP_REQUIRES = (
     'pytest>=2.6',
     'pytest-cov>=2.0',
     'pytest-xdist>=1.11',
+    'pytest-timeout>=0.5',
 )
 
 _INSTALL_REQUIRES = (
     'oauth2client>=1.4.7',
-    'grpcio>=0.10.0a0',
+    'grpcio>=0.11.0b0',
 )
 
 _COMMAND_CLASS = {
@@ -74,7 +80,7 @@ _COMMAND_CLASS = {
 
 setuptools.setup(
     name='grpcio_test',
-    version='0.10.0a0',
+    version='0.11.0b0',
     packages=_PACKAGES,
     package_dir=_PACKAGE_DIRECTORIES,
     package_data=_PACKAGE_DATA,

@@ -78,6 +78,9 @@ class Call(_types.Call):
   def peer(self):
     return self.call.peer()
 
+  def set_credentials(self, creds):
+    return self.call.set_credentials(creds)
+
 
 class Channel(_types.Channel):
 
@@ -124,3 +127,6 @@ class Server(_types.Server):
 
   def request_call(self, completion_queue, tag):
     return self.server.request_call(completion_queue.completion_queue, tag)
+
+  def cancel_all_calls(self):
+    return self.server.cancel_all_calls()

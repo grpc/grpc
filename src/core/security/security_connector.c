@@ -604,6 +604,16 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   if (!check_request_metadata_creds(request_metadata_creds)) {
     goto error;
   }
+  if (config->pem_root_certs == NULL) {
+    pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
+    if (pem_root_certs == NULL || pem_root_certs_size == 0) {
+      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+      goto error;
+    }
+  } else {
+    pem_root_certs = config->pem_root_certs;
+    pem_root_certs_size = config->pem_root_certs_size;
+  }
 
   c = gpr_malloc(sizeof(grpc_ssl_channel_security_connector));
   memset(c, 0, sizeof(grpc_ssl_channel_security_connector));
@@ -618,16 +628,6 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   gpr_free(port);
   if (overridden_target_name != NULL) {
     c->overridden_target_name = gpr_strdup(overridden_target_name);
-  }
-  if (config->pem_root_certs == NULL) {
-    pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
-    if (pem_root_certs == NULL || pem_root_certs_size == 0) {
-      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-      goto error;
-    }
-  } else {
-    pem_root_certs = config->pem_root_certs;
-    pem_root_certs_size = config->pem_root_certs_size;
   }
   result = tsi_create_ssl_client_handshaker_factory(
       config->pem_private_key, config->pem_private_key_size,

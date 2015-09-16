@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\compiler\cpp_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\compiler\csharp_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\compiler\objective_c_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\compiler\python_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\compiler\ruby_generator.cc">
+      <Filter>src\compiler</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\grpc++\support\config.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\grpc++\support\config_protobuf.h">
+      <Filter>include\grpc++\support</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\config.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\cpp_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\cpp_generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\csharp_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\csharp_generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\objective_c_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\objective_c_generator_helpers.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\python_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\ruby_generator.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\ruby_generator_helpers-inl.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\ruby_generator_map-inl.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\compiler\ruby_generator_string-inl.h">
+      <Filter>src\compiler</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{93ed419d-4540-7fa4-814d-3392745b77ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++">
+      <UniqueIdentifier>{893c09ee-e315-e763-9d9d-37522ba2f51c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc++\support">
+      <UniqueIdentifier>{1c34d005-1ffb-8a31-881a-c6bb431cda69}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{94c9769a-a6cd-49fd-2b30-e52d2d02ed91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\compiler">
+      <UniqueIdentifier>{0e6b1e6c-7299-59ce-d757-619bcddd5441}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

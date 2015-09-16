@@ -4,7 +4,7 @@ Interoperability Test Case Descriptions
 Client and server use
 [test.proto](https://github.com/grpc/grpc/blob/master/test/proto/test.proto)
 and the [gRPC over HTTP/2 v2
-protocol](https://github.com/grpc/grpc-common/blob/master/PROTOCOL-HTTP2.md).
+protocol](doc/PROTOCOL-HTTP2.md).
 
 Client
 ------
@@ -90,6 +90,87 @@ Client asserts:
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
+
+### large_compressed_unary
+
+This test verifies compressed unary calls succeed in sending messages. It
+sends one unary request for every combination of compression algorithm and
+payload type.
+
+In all scenarios, whether compression was actually performed is determined by
+the compression bit in the response's message flags. The response's compression
+value indicates which algorithm was used if said compression bit is set.
+
+
+Server features:
+* [UnaryCall][]
+* [Compressable Payload][]
+* [Uncompressable Payload][]
+* [Random Payload][]
+
+Procedure:
+ 1. Client calls UnaryCall with:
+
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type: COMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+    Client asserts:
+    * call was successful
+    * response payload type is COMPRESSABLE
+    * response compression is consistent with the requested one.
+    * if `response_compression == NONE`, the response MUST NOT have the
+      compressed message flag set.
+    * if `response_compression != NONE`, the response MUST have the compressed
+      message flag set.
+    * response payload body is 314159 bytes in size
+    * clients are free to assert that the response payload body contents are
+      zero and comparing the entire response message against a golden response
+
+
+ 2. Client calls UnaryCall with:
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type: UNCOMPRESSABLE
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+    Client asserts:
+    * call was successful
+    * response payload type is UNCOMPRESSABLE
+    * response compression is consistent with the requested one.
+    * the response MUST NOT have the compressed message flag set.
+    * response payload body is 314159 bytes in size
+    * clients are free to assert that the response payload body contents are
+      identical to the golden uncompressable data at `test/cpp/interop/rnd.dat`.
+
+
+ 3. Client calls UnaryCall with:
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type: RANDOM
+      response_size: 314159
+      payload:{
+        body: 271828 bytes of zeros
+      }
+    }
+    ```
+    Client asserts:
+    * call was successful
+    * response payload type is either COMPRESSABLE or UNCOMPRESSABLE
+    * the behavior is consistent with the randomly chosen incoming payload type,
+      as described in their respective sections.
 
 ### client_streaming
 
@@ -183,6 +264,112 @@ Client asserts:
 * response payload bodies are sized (in order): 31415, 9, 2653, 58979
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response messages against golden responses
+
+### server_compressed_streaming
+
+This test verifies that server-only compressed streaming succeeds.
+
+Server features:
+* [StreamingOutputCall][]
+* [Compressable Payload][]
+* [Uncompressable Payload][]
+* [Random Payload][]
+
+
+Procedure:
+ 1. Client calls StreamingOutputCall with:
+
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type:COMPRESSABLE
+      response_parameters:{
+        size: 31415
+      }
+      response_parameters:{
+        size: 9
+      }
+      response_parameters:{
+        size: 2653
+      }
+      response_parameters:{
+        size: 58979
+      }
+    }
+    ```
+
+    Client asserts:
+    * call was successful
+    * exactly four responses
+    * response payloads are COMPRESSABLE
+    * response compression is consistent with the requested one.
+    * if `response_compression == NONE`, the response MUST NOT have the
+      compressed message flag set.
+    * if `response_compression != NONE`, the response MUST have the compressed
+      message flag set.
+    * response payload bodies are sized (in order): 31415, 9, 2653, 58979
+    * clients are free to assert that the response payload body contents are
+      zero and comparing the entire response messages against golden responses
+
+
+ 2. Client calls StreamingOutputCall with:
+
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type:UNCOMPRESSABLE
+      response_parameters:{
+        size: 31415
+      }
+      response_parameters:{
+        size: 9
+      }
+      response_parameters:{
+        size: 2653
+      }
+      response_parameters:{
+        size: 58979
+      }
+    }
+    ```
+
+    Client asserts:
+    * call was successful
+    * exactly four responses
+    * response payloads are UNCOMPRESSABLE
+    * response compressions are consistent with the requested one.
+    * the responses MUST NOT have the compressed message flag set.
+    * response payload bodies are sized (in order): 31415, 9, 2653, 58979
+    * clients are free to assert that the body of the responses are identical to
+      the golden uncompressable data at `test/cpp/interop/rnd.dat`.
+
+
+ 3. Client calls StreamingOutputCall with:
+
+    ```
+    {
+      response_compression: <one of {NONE, GZIP, DEFLATE}>
+      response_type:RANDOM
+      response_parameters:{
+        size: 31415
+      }
+      response_parameters:{
+        size: 9
+      }
+      response_parameters:{
+        size: 2653
+      }
+      response_parameters:{
+        size: 58979
+      }
+    }
+    ```
+
+    Client asserts:
+    * call was successful
+    * response payload type is either COMPRESSABLE or UNCOMPRESSABLE
+    * the behavior is consistent with the randomly chosen incoming payload type,
+      as described in their respective sections.
 
 ### ping_pong
 
@@ -317,50 +504,6 @@ Client asserts:
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
 
-### service_account_creds
-
-This test is only for cloud-to-prod path.
-
-This test verifies unary calls succeed in sending messages while using JWT
-signing keys (redeemed for OAuth2 access tokens by the auth implementation)
-
-The test uses `--service_account_key_file` with the path to a json key file
-downloaded from https://console.developers.google.com, and `--oauth_scope`
-to the oauth scope. For testing against grpc-test.sandbox.google.com,
-"https://www.googleapis.com/auth/xapi.zoo" should be passed in
-as `--oauth_scope`.
-
-Server features:
-* [UnaryCall][]
-* [Compressable Payload][]
-* [Echo Authenticated Username][]
-* [Echo OAuth Scope][]
-
-Procedure:
- 1. Client configures the channel to use ServiceAccountCredentials
- 2. Client calls UnaryCall with:
-
-    ```
-    {
-      response_type: COMPRESSABLE
-      response_size: 314159
-      payload:{
-        body: 271828 bytes of zeros
-      }
-      fill_username: true
-      fill_oauth_scope: true
-    }
-    ```
-
-Client asserts:
-* call was successful
-* received SimpleResponse.username is in the json key file read from
-   `--service_account_key_file`
-* received SimpleResponse.oauth_scope is in `--oauth_scope`
-* response payload body is 314159 bytes in size
-* clients are free to assert that the response payload body contents are zero
-  and comparing the entire response message against a golden response
-
 ### jwt_token_creds
 
 This test is only for cloud-to-prod path.
@@ -370,7 +513,9 @@ token (created by the project's key file)
 
 Test caller should set flag `--service_account_key_file` with the
 path to json key file downloaded from
-https://console.developers.google.com.
+https://console.developers.google.com. Alternately, if using a
+usable auth implementation, she may specify the file location in the environment
+variable GOOGLE_APPLICATION_CREDENTIALS.
 
 Server features:
 * [UnaryCall][]
@@ -395,30 +540,33 @@ Procedure:
 
 Client asserts:
 * call was successful
-* received SimpleResponse.username is in the json key file read from
-  `--service_account_key_file`
+* received SimpleResponse.username is not empty and is in the json key file used
+by the auth library. The client can optionally check the username matches the
+email address in the key file or equals the value of `--default_service_account` flag.
 * response payload body is 314159 bytes in size
 * clients are free to assert that the response payload body contents are zero
   and comparing the entire response message against a golden response
 
 ### oauth2_auth_token
 
-Similar to the other auth tests, this test is only for cloud-to-prod path.
+This test is only for cloud-to-prod path and some implementations may run
+in GCE only.
 
 This test verifies unary calls succeed in sending messages using an OAuth2 token
 that is obtained out of band. For the purpose of the test, the OAuth2 token is
-actually obtained from the service account credentials via the
+actually obtained from a service account credentials or GCE credentials via the
 language-specific authorization library.
 
-The difference between this test and the other auth tests is that rather than
-configuring the test client with ServiceAccountCredentials directly, the test
+The difference between this test and the other auth tests is that it
 first uses the authorization library to obtain an authorization token.
 
 The test
 - uses the flag `--service_account_key_file` with the path to a json key file
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
-variable GOOGLE_APPLICATION_CREDENTIALS
+variable GOOGLE_APPLICATION_CREDENTIALS, *OR* if GCE credentials is used to
+fetch the token, `--default_service_account` can be used to pass in GCE service
+account email.
 - uses the flag `--oauth_scope` for the oauth scope.  For testing against
 grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should
 be passed as the `--oauth_scope`.
@@ -443,27 +591,27 @@ Procedure:
 
 Client asserts:
 * call was successful
-* received SimpleResponse.username is in the json key file used by the auth
-library to obtain the authorization token
+* received SimpleResponse.username is valid. Depending on whether a service
+account key file or GCE credentials was used, client should check against the
+json key file or GCE default service account email.
 * received SimpleResponse.oauth_scope is in `--oauth_scope`
 
 ### per_rpc_creds
 
 Similar to the other auth tests, this test is only for cloud-to-prod path.
 
-This test verifies unary calls succeed in sending messages using an OAuth2 token
-that is obtained out of band. For the purpose of the test, the OAuth2 token is
-actually obtained from the service account credentials via the
-language-specific authorization library.
+This test verifies unary calls succeed in sending messages using a JWT or a service account
+credentials set on the RPC.
 
 The test
 - uses the flag `--service_account_key_file` with the path to a json key file
 downloaded from https://console.developers.google.com. Alternately, if using a
 usable auth implementation, it may specify the file location in the environment
 variable GOOGLE_APPLICATION_CREDENTIALS
-- uses the flag `--oauth_scope` for the oauth scope.  For testing against
-grpc-test.sandbox.google.com, "https://www.googleapis.com/auth/xapi.zoo" should
-be passed as the `--oauth_scope`.
+- optionally uses the flag `--oauth_scope` for the oauth scope if implementator 
+wishes to use service account credential instead of JWT credential. For testing
+against grpc-test.sandbox.google.com, oauth scope 
+"https://www.googleapis.com/auth/xapi.zoo" should be used.
 
 Server features:
 * [UnaryCall][]
@@ -472,24 +620,21 @@ Server features:
 * [Echo OAuth Scope][]
 
 Procedure:
- 1. Client uses the auth library to obtain an authorization token
- 2. Client configures the channel with just SSL credentials
- 3. Client calls UnaryCall, setting per-call credentials to
-    AccessTokenCredentials with the access token obtained in step 1. The request
-    is the following message
+ 1. Client configures the channel with just SSL credentials
+ 2. Client calls UnaryCall, setting per-call credentials to
+    JWTTokenCredentials. The request is the following message
 
     ```
     {
       fill_username: true
-      fill_oauth_scope: true
     }
     ```
 
 Client asserts:
 * call was successful
-* received SimpleResponse.username is in the json key file used by the auth
-library to obtain the authorization token
-* received SimpleResponse.oauth_scope is in `--oauth_scope`
+* received SimpleResponse.username is not empty and is in the json key file used
+by the auth library. The client can optionally check the username matches the
+email address in the key file.
 
 
 ### custom_metadata
@@ -824,6 +969,21 @@ responses, it closes with OK.
 When the client requests COMPRESSABLE payload, the response includes a payload
 of the size requested containing all zeros and the payload type is
 COMPRESSABLE.
+
+### Uncompressable Payload
+[Uncompressable Payload]: #uncompressable-payload
+
+When the client requests UNCOMPRESSABLE payload, the response includes a payload
+of the size requested containing uncompressable data and the payload type is
+UNCOMPRESSABLE. A 512 kB dump from /dev/urandom is the current golden data,
+stored at `test/cpp/interop/rnd.dat`
+
+### Random Payload
+[Random Payload]: #random-payload
+
+When the client requests RANDOM payload, the response includes either a randomly
+chosen COMPRESSABLE or UNCOMPRESSABLE payload. The data and the payload type
+will be consistent with this choice.
 
 ### Echo Status
 [Echo Status]: #echo-status

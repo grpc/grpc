@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -101,17 +101,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 class grpc::SerializationTraits&lt; Message, UnusedButHereForPartialTemplateSpecialization &gt;</h3>
 
 <p>Defines how to serialize and deserialize some type. </p>
-<p>Used for hooking different message serialization API's into GRPC. Each <a class="el" href="classgrpc_1_1_serialization_traits.html" title="Defines how to serialize and deserialize some type. ">SerializationTraits</a> implementation must provide the following functions: static <a class="el" href="classgrpc_1_1_status.html">Status</a> Serialize(const Message&amp; msg, grpc_byte_buffer** buffer, static <a class="el" href="classgrpc_1_1_status.html">Status</a> Deserialize(grpc_byte_buffer* buffer, Message* msg, int max_message_size);</p>
+<p>Used for hooking different message serialization API's into GRPC. Each <a class="el" href="classgrpc_1_1_serialization_traits.html" title="Defines how to serialize and deserialize some type. ">SerializationTraits</a> implementation must provide the following functions: static <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a> Serialize(const Message&amp; msg, grpc_byte_buffer** buffer, static <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a> Deserialize(grpc_byte_buffer* buffer, Message* msg, int max_message_size);</p>
 <p>Serialize is required to convert message to a grpc_byte_buffer, and to store a pointer to that byte buffer at *buffer. *own_buffer should be set to true if the caller owns said byte buffer, or false if ownership is retained elsewhere.</p>
 <p>Deserialize is required to convert buffer into the message stored at msg. max_message_size is passed in as a bound on the maximum number of message bytes Deserialize should accept.</p>
-<p>Both functions return a <a class="el" href="classgrpc_1_1_status.html">Status</a>, allowing them to explain what went wrong if required. </p>
+<p>Both functions return a <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why? ">Status</a>, allowing them to explain what went wrong if required. </p>
 </div><hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc++/impl/<a class="el" href="serialization__traits_8h_source.html">serialization_traits.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

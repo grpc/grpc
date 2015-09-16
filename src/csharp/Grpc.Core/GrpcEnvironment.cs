@@ -102,6 +102,14 @@ namespace Grpc.Core
             }
         }
 
+        internal static int GetRefCount()
+        {
+            lock (staticLock)
+            {
+                return refCount;
+            }
+        }
+
         /// <summary>
         /// Gets application-wide logger used by gRPC.
         /// </summary>
@@ -176,7 +184,6 @@ namespace Grpc.Core
             var ptr = grpcsharp_version_string();  // the pointer is not owned
             return Marshal.PtrToStringAnsi(ptr);
         }
-
 
         internal static void GrpcNativeInit()
         {

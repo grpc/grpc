@@ -39,21 +39,15 @@
 /* Forward decl of grpc_udp_server */
 typedef struct grpc_udp_server grpc_udp_server;
 
-/* New server callback: ep is the newly connected connection */
-typedef void (*grpc_udp_server_cb)(void *arg, grpc_endpoint *ep);
-
 /* Called when data is available to read from the socket. */
-typedef void (*grpc_udp_server_read_cb)(int fd,
-                                        grpc_udp_server_cb new_transport_cb,
-                                        void *cb_arg);
+typedef void (*grpc_udp_server_read_cb)(int fd);
 
 /* Create a server, initially not bound to any ports */
 grpc_udp_server *grpc_udp_server_create(void);
 
 /* Start listening to bound ports */
-void grpc_udp_server_start(grpc_udp_server *server, grpc_pollset **pollsets,
-                           size_t pollset_count, grpc_udp_server_cb cb,
-                           void *cb_arg);
+void grpc_udp_server_start(grpc_udp_server *udp_server, grpc_pollset **pollsets,
+                           size_t pollset_count);
 
 int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index);
 
@@ -67,8 +61,8 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index);
 
 /* TODO(ctiller): deprecate this, and make grpc_udp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr, int addr_len,
-                             grpc_udp_server_read_cb read_cb);
+int grpc_udp_server_add_port(grpc_udp_server *s, const void *addr,
+                             size_t addr_len, grpc_udp_server_read_cb read_cb);
 
 void grpc_udp_server_destroy(grpc_udp_server *server,
                              void (*shutdown_done)(void *shutdown_done_arg),

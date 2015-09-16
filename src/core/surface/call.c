@@ -61,18 +61,6 @@
       - status/close recv (depending on client/server) */
 #define MAX_CONCURRENT_COMPLETIONS 6
 
-typedef enum { REQ_INITIAL = 0, REQ_READY, REQ_DONE } req_state;
-
-typedef enum {
-  SEND_NOTHING,
-  SEND_INITIAL_METADATA,
-  SEND_BUFFERED_INITIAL_METADATA,
-  SEND_MESSAGE,
-  SEND_BUFFERED_MESSAGE,
-  SEND_TRAILING_METADATA_AND_FINISH,
-  SEND_FINISH
-} send_action;
-
 typedef struct {
   grpc_ioreq_completion_func on_complete;
   void *user_data;
@@ -433,7 +421,7 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
     if (call->allocated_completions & (1u << i)) {
       continue;
     }
-    call->allocated_completions |= 1u << i;
+    call->allocated_completions |= (gpr_uint8)(1u << i);
     gpr_mu_unlock(&call->completion_mu);
     return &call->completions[i];
   }
@@ -444,7 +432,8 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
 static void done_completion(void *call, grpc_cq_completion *completion) {
   grpc_call *c = call;
   gpr_mu_lock(&c->completion_mu);
-  c->allocated_completions &= ~(1u << (completion - c->completions));
+  c->allocated_completions &=
+      (gpr_uint8) ~(1u << (completion - c->completions));
   gpr_mu_unlock(&c->completion_mu);
   GRPC_CALL_INTERNAL_UNREF(c, "completion", 1);
 }
@@ -520,7 +509,7 @@ static void set_status_code(grpc_call *call, status_source source,
   if (call->status[source].is_set) return;
 
   call->status[source].is_set = 1;
-  call->status[source].code = status;
+  call->status[source].code = (grpc_status_code)status;
   call->error_status_set = status != GRPC_STATUS_OK;
 
   if (status != GRPC_STATUS_OK && !grpc_bbq_empty(&call->incoming_queue)) {
@@ -545,7 +534,7 @@ static void set_encodings_accepted_by_peer(
   gpr_slice_buffer accept_encoding_parts;
 
   gpr_slice_buffer_init(&accept_encoding_parts);
-  gpr_slice_split(accept_encoding_slice, ", ", &accept_encoding_parts);
+  gpr_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
 
   /* No need to zero call->encodings_accepted_by_peer: grpc_call_create already
    * zeroes the whole grpc_call */
@@ -616,7 +605,7 @@ static void unlock(grpc_call *call) {
   int completing_requests = 0;
   int start_op = 0;
   int i;
-  const gpr_uint32 MAX_RECV_PEEK_AHEAD = 65536;
+  const size_t MAX_RECV_PEEK_AHEAD = 65536;
   size_t buffered_bytes;
   int cancel_alarm = 0;
 
@@ -630,9 +619,6 @@ static void unlock(grpc_call *call) {
   call->cancel_alarm = 0;
 
   if (!call->receiving && need_more_data(call)) {
-    op.recv_ops = &call->recv_ops;
-    op.recv_state = &call->recv_state;
-    op.on_done_recv = &call->on_done_recv;
     if (grpc_bbq_empty(&call->incoming_queue) && call->reading_message) {
       op.max_recv_bytes = call->incoming_message_length -
                           call->incoming_message.length + MAX_RECV_PEEK_AHEAD;
@@ -644,9 +630,16 @@ static void unlock(grpc_call *call) {
         op.max_recv_bytes = MAX_RECV_PEEK_AHEAD - buffered_bytes;
       }
     }
-    call->receiving = 1;
-    GRPC_CALL_INTERNAL_REF(call, "receiving");
-    start_op = 1;
+    /* TODO(ctiller): 1024 is basically to cover a bug
+       I don't understand yet */
+    if (op.max_recv_bytes > 1024) {
+      op.recv_ops = &call->recv_ops;
+      op.recv_state = &call->recv_state;
+      op.on_done_recv = &call->on_done_recv;
+      call->receiving = 1;
+      GRPC_CALL_INTERNAL_REF(call, "receiving");
+      start_op = 1;
+    }
   }
 
   if (!call->sending) {
@@ -751,7 +744,7 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
   size_t i;
   /* ioreq is live: we need to do something */
   master = &call->masters[master_set];
-  master->complete_mask |= 1u << op;
+  master->complete_mask |= (gpr_uint16)(1u << op);
   if (!success) {
     master->success = 0;
   }
@@ -1046,10 +1039,11 @@ static int prepare_application_metadata(grpc_call *call, size_t count,
                                                (const gpr_uint8 *)md->value,
                                                md->value_length, 1);
     if (!grpc_mdstr_is_legal_header(l->md->key)) {
-      gpr_log(GPR_ERROR, "attempt to send invalid metadata key");
+      gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
+              grpc_mdstr_as_c_string(l->md->key));
       return 0;
     } else if (!grpc_mdstr_is_bin_suffixed(l->md->key) &&
-               !grpc_mdstr_is_legal_header(l->md->value)) {
+               !grpc_mdstr_is_legal_nonbin_header(l->md->value)) {
       gpr_log(GPR_ERROR, "attempt to send invalid metadata value");
       return 0;
     }
@@ -1114,10 +1108,12 @@ static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
     /* fall through intended */
     case WRITE_STATE_STARTED:
       if (is_op_live(call, GRPC_IOREQ_SEND_MESSAGE)) {
+        size_t length;
         data = call->request_data[GRPC_IOREQ_SEND_MESSAGE];
         flags = call->request_flags[GRPC_IOREQ_SEND_MESSAGE];
-        grpc_sopb_add_begin_message(
-            &call->send_ops, grpc_byte_buffer_length(data.send_message), flags);
+        length = grpc_byte_buffer_length(data.send_message);
+        GPR_ASSERT(length <= GPR_UINT32_MAX);
+        grpc_sopb_add_begin_message(&call->send_ops, (gpr_uint32)length, flags);
         copy_byte_buffer_to_stream_ops(data.send_message, &call->send_ops);
         op->send_ops = &call->send_ops;
         call->last_send_contains |= 1 << GRPC_IOREQ_SEND_MESSAGE;
@@ -1219,7 +1215,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                                    grpc_ioreq_completion_func completion,
                                    void *user_data) {
   size_t i;
-  gpr_uint32 have_ops = 0;
+  gpr_uint16 have_ops = 0;
   grpc_ioreq_op op;
   reqinfo_master *master;
   grpc_ioreq_data data;
@@ -1250,13 +1246,13 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
     }
     if (op == GRPC_IOREQ_SEND_STATUS) {
       set_status_code(call, STATUS_FROM_SERVER_STATUS,
-                      reqs[i].data.send_status.code);
+                      (gpr_uint32)reqs[i].data.send_status.code);
       if (reqs[i].data.send_status.details) {
         set_status_details(call, STATUS_FROM_SERVER_STATUS,
                            GRPC_MDSTR_REF(reqs[i].data.send_status.details));
       }
     }
-    have_ops |= 1u << op;
+    have_ops |= (gpr_uint16)(1u << op);
 
     call->request_data[op] = data;
     call->request_flags[op] = reqs[i].flags;
@@ -1340,7 +1336,7 @@ static grpc_call_error cancel_with_status(grpc_call *c, grpc_status_code status,
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
 
-  set_status_code(c, STATUS_FROM_API_OVERRIDE, status);
+  set_status_code(c, STATUS_FROM_API_OVERRIDE, (gpr_uint32)status);
   set_status_details(c, STATUS_FROM_API_OVERRIDE, details);
 
   c->cancel_with_status = status;

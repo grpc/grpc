@@ -34,12 +34,28 @@ import collections
 import enum
 
 
+class Protocol(collections.namedtuple('Protocol', ('kind', 'value',))):
+  """A sum type for handles to a system that transmits tickets.
+
+  Attributes:
+    kind: A Kind value identifying the kind of value being passed.
+    value: The value being passed between the high-level application and the
+      system affording ticket transport.
+  """
+
+  @enum.unique
+  class Kind(enum.Enum):
+    CALL_OPTION = 'call option'
+    SERVICER_CONTEXT = 'servicer context'
+    INVOCATION_CONTEXT = 'invocation context'
+
+
 class Ticket(
     collections.namedtuple(
         'Ticket',
-        ['operation_id', 'sequence_number', 'group', 'method', 'subscription',
+        ('operation_id', 'sequence_number', 'group', 'method', 'subscription',
          'timeout', 'allowance', 'initial_metadata', 'payload',
-         'terminal_metadata', 'code', 'message', 'termination'])):
+         'terminal_metadata', 'code', 'message', 'termination', 'protocol',))):
   """A sum type for all values sent from a front to a back.
 
   Attributes:
@@ -81,6 +97,8 @@ class Ticket(
     termination: A Termination value describing the end of the operation, or
       None if the operation has not yet terminated. If set, no further tickets
       may be sent in the same direction.
+    protocol: A Protocol value or None, with further semantics being a matter
+      between high-level application and underlying ticket transport.
   """
 
   @enum.unique
@@ -98,7 +116,7 @@ class Ticket(
     COMPLETION = 'completion'
     CANCELLATION = 'cancellation'
     EXPIRATION = 'expiration'
-    LOCAL_SHUTDOWN = 'local shutdown'
+    SHUTDOWN = 'shutdown'
     RECEPTION_FAILURE = 'reception failure'
     TRANSMISSION_FAILURE = 'transmission failure'
     LOCAL_FAILURE = 'local failure'

@@ -50,36 +50,13 @@ namespace Grpc.Core.Tests
     {
         public const string ServiceName = "tests.Test";
 
-        public static readonly Method<string, string> UnaryMethod = new Method<string, string>(
-            MethodType.Unary,
-            ServiceName,
-            "Unary",
-            Marshallers.StringMarshaller,
-            Marshallers.StringMarshaller);
-
-        public static readonly Method<string, string> ClientStreamingMethod = new Method<string, string>(
-            MethodType.ClientStreaming,
-            ServiceName,
-            "ClientStreaming",
-            Marshallers.StringMarshaller,
-            Marshallers.StringMarshaller);
-
-        public static readonly Method<string, string> ServerStreamingMethod = new Method<string, string>(
-            MethodType.ServerStreaming,
-            ServiceName,
-            "ServerStreaming",
-            Marshallers.StringMarshaller,
-            Marshallers.StringMarshaller);
-
-        public static readonly Method<string, string> DuplexStreamingMethod = new Method<string, string>(
-            MethodType.DuplexStreaming,
-            ServiceName,
-            "DuplexStreaming",
-            Marshallers.StringMarshaller,
-            Marshallers.StringMarshaller);
-
         readonly string host;
         readonly ServerServiceDefinition serviceDefinition;
+
+        readonly Method<string, string> unaryMethod;
+        readonly Method<string, string> clientStreamingMethod;
+        readonly Method<string, string> serverStreamingMethod;
+        readonly Method<string, string> duplexStreamingMethod;
 
         UnaryServerMethod<string, string> unaryHandler;
         ClientStreamingServerMethod<string, string> clientStreamingHandler;
@@ -89,15 +66,44 @@ namespace Grpc.Core.Tests
         Server server;
         Channel channel;
 
-        public MockServiceHelper(string host = null)
+        public MockServiceHelper(string host = null, Marshaller<string> marshaller = null)
         {
             this.host = host ?? "localhost";
+            marshaller = marshaller ?? Marshallers.StringMarshaller;
+
+            unaryMethod = new Method<string, string>(
+                MethodType.Unary,
+                ServiceName,
+                "Unary",
+                marshaller,
+                marshaller);
+
+            clientStreamingMethod = new Method<string, string>(
+                MethodType.ClientStreaming,
+                ServiceName,
+                "ClientStreaming",
+                marshaller,
+                marshaller);
+
+            serverStreamingMethod = new Method<string, string>(
+                MethodType.ServerStreaming,
+                ServiceName,
+                "ServerStreaming",
+                marshaller,
+                marshaller);
+
+            duplexStreamingMethod = new Method<string, string>(
+                MethodType.DuplexStreaming,
+                ServiceName,
+                "DuplexStreaming",
+                marshaller,
+                marshaller);
 
             serviceDefinition = ServerServiceDefinition.CreateBuilder(ServiceName)
-                .AddMethod(UnaryMethod, (request, context) => unaryHandler(request, context))
-                .AddMethod(ClientStreamingMethod, (requestStream, context) => clientStreamingHandler(requestStream, context))
-                .AddMethod(ServerStreamingMethod, (request, responseStream, context) => serverStreamingHandler(request, responseStream, context))
-                .AddMethod(DuplexStreamingMethod, (requestStream, responseStream, context) => duplexStreamingHandler(requestStream, responseStream, context))
+                .AddMethod(unaryMethod, (request, context) => unaryHandler(request, context))
+                .AddMethod(clientStreamingMethod, (requestStream, context) => clientStreamingHandler(requestStream, context))
+                .AddMethod(serverStreamingMethod, (request, responseStream, context) => serverStreamingHandler(request, responseStream, context))
+                .AddMethod(duplexStreamingMethod, (requestStream, responseStream, context) => duplexStreamingHandler(requestStream, responseStream, context))
                 .Build();
 
             var defaultStatus = new Status(StatusCode.Unknown, "Default mock implementation. Please provide your own.");
@@ -155,22 +161,22 @@ namespace Grpc.Core.Tests
 
         public CallInvocationDetails<string, string> CreateUnaryCall(CallOptions options = default(CallOptions))
         {
-            return new CallInvocationDetails<string, string>(channel, UnaryMethod, options);
+            return new CallInvocationDetails<string, string>(channel, unaryMethod, options);
         }
 
         public CallInvocationDetails<string, string> CreateClientStreamingCall(CallOptions options = default(CallOptions))
         {
-            return new CallInvocationDetails<string, string>(channel, ClientStreamingMethod, options);
+            return new CallInvocationDetails<string, string>(channel, clientStreamingMethod, options);
         }
 
         public CallInvocationDetails<string, string> CreateServerStreamingCall(CallOptions options = default(CallOptions))
         {
-            return new CallInvocationDetails<string, string>(channel, ServerStreamingMethod, options);
+            return new CallInvocationDetails<string, string>(channel, serverStreamingMethod, options);
         }
 
         public CallInvocationDetails<string, string> CreateDuplexStreamingCall(CallOptions options = default(CallOptions))
         {
-            return new CallInvocationDetails<string, string>(channel, DuplexStreamingMethod, options);
+            return new CallInvocationDetails<string, string>(channel, duplexStreamingMethod, options);
         }
 
         public string Host

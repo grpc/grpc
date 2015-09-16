@@ -32,23 +32,70 @@
  */
 
 #include <grpc++/server.h>
+
 #include <utility>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
-#include <grpc++/async_generic_service.h>
+#include <grpc++/generic/async_generic_service.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/thread_pool_interface.h>
-#include <grpc++/time.h>
+#include <grpc++/security/server_credentials.h>
+#include <grpc++/support/time.h>
 
 #include "src/core/profiling/timers.h"
+#include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
+
+class Server::UnimplementedAsyncRequestContext {
+ protected:
+  UnimplementedAsyncRequestContext() : generic_stream_(&server_context_) {}
+
+  GenericServerContext server_context_;
+  GenericServerAsyncReaderWriter generic_stream_;
+};
+
+class Server::UnimplementedAsyncRequest GRPC_FINAL
+    : public UnimplementedAsyncRequestContext,
+      public GenericAsyncRequest {
+ public:
+  UnimplementedAsyncRequest(Server* server, ServerCompletionQueue* cq)
+      : GenericAsyncRequest(server, &server_context_, &generic_stream_, cq, cq,
+                            NULL, false),
+        server_(server),
+        cq_(cq) {}
+
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE;
+
+  ServerContext* context() { return &server_context_; }
+  GenericServerAsyncReaderWriter* stream() { return &generic_stream_; }
+
+ private:
+  Server* const server_;
+  ServerCompletionQueue* const cq_;
+};
+
+typedef SneakyCallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus>
+    UnimplementedAsyncResponseOp;
+class Server::UnimplementedAsyncResponse GRPC_FINAL
+    : public UnimplementedAsyncResponseOp {
+ public:
+  UnimplementedAsyncResponse(UnimplementedAsyncRequest* request);
+  ~UnimplementedAsyncResponse() { delete request_; }
+
+  bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
+    bool r = UnimplementedAsyncResponseOp::FinalizeResult(tag, status);
+    delete this;
+    return r;
+  }
+
+ private:
+  UnimplementedAsyncRequest* const request_;
+};
 
 class Server::ShutdownRequest GRPC_FINAL : public CompletionQueueTag {
  public:
@@ -205,28 +252,36 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   grpc_completion_queue* cq_;
 };
 
-static grpc_server* CreateServer(int max_message_size) {
+static grpc_server* CreateServer(
+    int max_message_size, const grpc_compression_options& compression_options) {
+  grpc_arg args[2];
+  size_t args_idx = 0;
   if (max_message_size > 0) {
-    grpc_arg arg;
-    arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
-    arg.value.integer = max_message_size;
-    grpc_channel_args args = {1, &arg};
-    return grpc_server_create(&args, nullptr);
-  } else {
-    return grpc_server_create(nullptr, nullptr);
+    args[args_idx].type = GRPC_ARG_INTEGER;
+    args[args_idx].key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
+    args[args_idx].value.integer = max_message_size;
+    args_idx++;
   }
+
+  args[args_idx].type = GRPC_ARG_INTEGER;
+  args[args_idx].key = const_cast<char*>(GRPC_COMPRESSION_ALGORITHM_STATE_ARG);
+  args[args_idx].value.integer = compression_options.enabled_algorithms_bitset;
+  args_idx++;
+
+  grpc_channel_args channel_args = {args_idx, args};
+  return grpc_server_create(&channel_args, nullptr);
 }
 
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               int max_message_size)
+               int max_message_size,
+               grpc_compression_options compression_options)
     : max_message_size_(max_message_size),
       started_(false),
       shutdown_(false),
       num_running_cb_(0),
       sync_methods_(new std::list<SyncRequest>),
       has_generic_service_(false),
-      server_(CreateServer(max_message_size)),
+      server_(CreateServer(max_message_size, compression_options)),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
   grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
@@ -297,18 +352,23 @@ int Server::AddListeningPort(const grpc::string& addr,
   return creds->AddPortToServer(addr, server_);
 }
 
-bool Server::Start() {
+bool Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   GPR_ASSERT(!started_);
   started_ = true;
   grpc_server_start(server_);
 
   if (!has_generic_service_) {
-    unknown_method_.reset(new RpcServiceMethod(
-        "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
-    // Use of emplace_back with just constructor arguments is not accepted here
-    // by gcc-4.4 because it can't match the anonymous nullptr with a proper
-    // constructor implicitly. Construct the object and use push_back.
-    sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
+    if (!sync_methods_->empty()) {
+      unknown_method_.reset(new RpcServiceMethod(
+          "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
+      // Use of emplace_back with just constructor arguments is not accepted
+      // here by gcc-4.4 because it can't match the anonymous nullptr with a
+      // proper constructor implicitly. Construct the object and use push_back.
+      sync_methods_->push_back(SyncRequest(unknown_method_.get(), nullptr));
+    }
+    for (size_t i = 0; i < num_cqs; i++) {
+      new UnimplementedAsyncRequest(this, cqs[i]);
+    }
   }
   // Start processing rpcs.
   if (!sync_methods_->empty()) {
@@ -332,7 +392,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     // Spin, eating requests until the completion queue is completely shutdown.
     // If the deadline expires then cancel anything that's pending and keep
     // spinning forever until the work is actually drained.
-    // Since nothing else needs to touch state guarded by mu_, holding it 
+    // Since nothing else needs to touch state guarded by mu_, holding it
     // through this loop is fine.
     SyncRequest* request;
     bool ok;
@@ -370,12 +430,14 @@ void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
 
 Server::BaseAsyncRequest::BaseAsyncRequest(
     Server* server, ServerContext* context,
-    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
+    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag,
+    bool delete_on_finalize)
     : server_(server),
       context_(context),
       stream_(stream),
       call_cq_(call_cq),
       tag_(tag),
+      delete_on_finalize_(delete_on_finalize),
       call_(nullptr) {
   memset(&initial_metadata_array_, 0, sizeof(initial_metadata_array_));
 }
@@ -385,11 +447,12 @@ Server::BaseAsyncRequest::~BaseAsyncRequest() {}
 bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
   if (*status) {
     for (size_t i = 0; i < initial_metadata_array_.count; i++) {
-      context_->client_metadata_.insert(std::make_pair(
-          grpc::string(initial_metadata_array_.metadata[i].key),
-          grpc::string(initial_metadata_array_.metadata[i].value,
-                       initial_metadata_array_.metadata[i].value +
-                           initial_metadata_array_.metadata[i].value_length)));
+      context_->client_metadata_.insert(
+          std::pair<grpc::string_ref, grpc::string_ref>(
+              initial_metadata_array_.metadata[i].key,
+              grpc::string_ref(
+                  initial_metadata_array_.metadata[i].value,
+                  initial_metadata_array_.metadata[i].value_length)));
     }
   }
   grpc_metadata_array_destroy(&initial_metadata_array_);
@@ -402,14 +465,16 @@ bool Server::BaseAsyncRequest::FinalizeResult(void** tag, bool* status) {
   // just the pointers inside call are copied here
   stream_->BindCall(&call);
   *tag = tag_;
-  delete this;
+  if (delete_on_finalize_) {
+    delete this;
+  }
   return true;
 }
 
 Server::RegisteredAsyncRequest::RegisteredAsyncRequest(
     Server* server, ServerContext* context,
     ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
-    : BaseAsyncRequest(server, context, stream, call_cq, tag) {}
+    : BaseAsyncRequest(server, context, stream, call_cq, tag, true) {}
 
 void Server::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,
@@ -423,8 +488,9 @@ void Server::RegisteredAsyncRequest::IssueRequest(
 Server::GenericAsyncRequest::GenericAsyncRequest(
     Server* server, GenericServerContext* context,
     ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
-    ServerCompletionQueue* notification_cq, void* tag)
-    : BaseAsyncRequest(server, context, stream, call_cq, tag) {
+    ServerCompletionQueue* notification_cq, void* tag, bool delete_on_finalize)
+    : BaseAsyncRequest(server, context, stream, call_cq, tag,
+                       delete_on_finalize) {
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
@@ -443,6 +509,25 @@ bool Server::GenericAsyncRequest::FinalizeResult(void** tag, bool* status) {
   gpr_free(call_details_.method);
   gpr_free(call_details_.host);
   return BaseAsyncRequest::FinalizeResult(tag, status);
+}
+
+bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
+                                                       bool* status) {
+  if (GenericAsyncRequest::FinalizeResult(tag, status) && *status) {
+    new UnimplementedAsyncRequest(server_, cq_);
+    new UnimplementedAsyncResponse(this);
+  } else {
+    delete this;
+  }
+  return false;
+}
+
+Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
+    UnimplementedAsyncRequest* request)
+    : request_(request) {
+  Status status(StatusCode::UNIMPLEMENTED, "");
+  UnknownMethodHandler::FillOps(request_->context(), this);
+  request_->stream()->call_.PerformOps(this);
 }
 
 void Server::ScheduleCallback() {

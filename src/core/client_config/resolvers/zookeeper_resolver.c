@@ -41,7 +41,7 @@
 #include <grpc/grpc_zookeeper.h>
 #include <zookeeper/zookeeper.h>
 
-#include "src/core/client_config/lb_policies/pick_first.h"
+#include "src/core/client_config/lb_policy_registry.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/support/string.h"
@@ -59,9 +59,8 @@ typedef struct {
   char *name;
   /** subchannel factory */
   grpc_subchannel_factory *subchannel_factory;
-  /** load balancing policy factory */
-  grpc_lb_policy *(*lb_policy_factory)(grpc_subchannel **subchannels,
-                                       size_t num_subchannels);
+  /** load balancing policy name */
+  char *lb_policy_name;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -183,6 +182,7 @@ static void zookeeper_on_resolved(void *arg,
   grpc_lb_policy *lb_policy;
   size_t i;
   if (addresses != NULL) {
+    grpc_lb_policy_args lb_policy_args;
     config = grpc_client_config_create();
     subchannels = gpr_malloc(sizeof(grpc_subchannel *) * addresses->naddrs);
     for (i = 0; i < addresses->naddrs; i++) {
@@ -192,7 +192,10 @@ static void zookeeper_on_resolved(void *arg,
       subchannels[i] = grpc_subchannel_factory_create_subchannel(
           r->subchannel_factory, &args);
     }
-    lb_policy = r->lb_policy_factory(subchannels, addresses->naddrs);
+    lb_policy_args.subchannels = subchannels;
+    lb_policy_args.num_subchannels = addresses->naddrs;
+    lb_policy =
+        grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     grpc_client_config_set_lb_policy(config, lb_policy);
     GRPC_LB_POLICY_UNREF(lb_policy, "construction");
     grpc_resolved_addresses_destroy(addresses);
@@ -244,7 +247,7 @@ static void zookeeper_dns_resolved(void *arg,
 }
 
 /** Parses JSON format address of a zookeeper node */
-static char *zookeeper_parse_address(const char *value, int value_len) {
+static char *zookeeper_parse_address(const char *value, size_t value_len) {
   grpc_json *json;
   grpc_json *cur;
   const char *host;
@@ -294,7 +297,7 @@ static void zookeeper_get_children_node_completion(int rc, const char *value,
     return;
   }
 
-  address = zookeeper_parse_address(value, value_len);
+  address = zookeeper_parse_address(value, (size_t)value_len);
   if (address != NULL) {
     /** Further resolves address by DNS */
     grpc_resolve_address(address, NULL, zookeeper_dns_resolved, r);
@@ -364,7 +367,7 @@ static void zookeeper_get_node_completion(int rc, const char *value,
 
   /** If zookeeper node of path r->name does not have address
       (i.e. service node), get its children */
-  address = zookeeper_parse_address(value, value_len);
+  address = zookeeper_parse_address(value, (size_t)value_len);
   if (address != NULL) {
     r->resolved_addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
     r->resolved_addrs->addrs = NULL;
@@ -420,13 +423,12 @@ static void zookeeper_destroy(grpc_resolver *gr) {
   }
   grpc_subchannel_factory_unref(r->subchannel_factory);
   gpr_free(r->name);
+  gpr_free(r->lb_policy_name);
   gpr_free(r);
 }
 
 static grpc_resolver *zookeeper_create(
-    grpc_uri *uri,
-    grpc_lb_policy *(*lb_policy_factory)(grpc_subchannel **subchannels,
-                                         size_t num_subchannels),
+    grpc_uri *uri, const char *lb_policy_name,
     grpc_subchannel_factory *subchannel_factory) {
   zookeeper_resolver *r;
   size_t length;
@@ -451,7 +453,7 @@ static grpc_resolver *zookeeper_create(
   r->name = gpr_strdup(path);
 
   r->subchannel_factory = subchannel_factory;
-  r->lb_policy_factory = lb_policy_factory;
+  r->lb_policy_name = gpr_strdup(lb_policy_name);
   grpc_subchannel_factory_ref(subchannel_factory);
 
   /** Initializes zookeeper client */
@@ -467,8 +469,7 @@ static grpc_resolver *zookeeper_create(
 }
 
 static void zookeeper_plugin_init() {
-  grpc_register_resolver_type("zookeeper",
-                              grpc_zookeeper_resolver_factory_create());
+  grpc_register_resolver_type(grpc_zookeeper_resolver_factory_create());
 }
 
 void grpc_zookeeper_register() {
@@ -483,16 +484,21 @@ static void zookeeper_factory_ref(grpc_resolver_factory *factory) {}
 
 static void zookeeper_factory_unref(grpc_resolver_factory *factory) {}
 
+static char *zookeeper_factory_get_default_hostname(
+    grpc_resolver_factory *factory, grpc_uri *uri) {
+  return NULL;
+}
+
 static grpc_resolver *zookeeper_factory_create_resolver(
     grpc_resolver_factory *factory, grpc_uri *uri,
     grpc_subchannel_factory *subchannel_factory) {
-  return zookeeper_create(uri, grpc_create_pick_first_lb_policy,
-                          subchannel_factory);
+  return zookeeper_create(uri, "pick_first", subchannel_factory);
 }
 
 static const grpc_resolver_factory_vtable zookeeper_factory_vtable = {
     zookeeper_factory_ref, zookeeper_factory_unref,
-    zookeeper_factory_create_resolver};
+    zookeeper_factory_create_resolver, zookeeper_factory_get_default_hostname,
+    "zookeeper"};
 static grpc_resolver_factory zookeeper_resolver_factory = {
     &zookeeper_factory_vtable};
 

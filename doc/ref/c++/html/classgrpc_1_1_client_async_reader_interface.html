@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -92,7 +92,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 
-<p><code>#include &lt;<a class="el" href="stream_8h_source.html">stream.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="async__stream_8h_source.html">async_stream.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
@@ -100,22 +100,25 @@ Additional Inherited Members</h2></td></tr>
 <tr class="memitem:a103c33e82dbf1715749886c4249f3f28 inherit pub_methods_classgrpc_1_1_client_async_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#a103c33e82dbf1715749886c4249f3f28">~ClientAsyncStreamingInterface</a> ()</td></tr>
 <tr class="separator:a103c33e82dbf1715749886c4249f3f28 inherit pub_methods_classgrpc_1_1_client_async_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad83bfe2febf4a6296b7d2646799b8174 inherit pub_methods_classgrpc_1_1_client_async_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#ad83bfe2febf4a6296b7d2646799b8174">ReadInitialMetadata</a> (void *tag)=0</td></tr>
+<tr class="memdesc:ad83bfe2febf4a6296b7d2646799b8174 inherit pub_methods_classgrpc_1_1_client_async_streaming_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request notification of the reading of the initial metadata.  <a href="#ad83bfe2febf4a6296b7d2646799b8174">More...</a><br/></td></tr>
 <tr class="separator:ad83bfe2febf4a6296b7d2646799b8174 inherit pub_methods_classgrpc_1_1_client_async_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afc1cfbd1514fea47088bc837bb578a24 inherit pub_methods_classgrpc_1_1_client_async_streaming_interface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_async_streaming_interface.html#afc1cfbd1514fea47088bc837bb578a24">Finish</a> (<a class="el" href="classgrpc_1_1_status.html">Status</a> *status, void *tag)=0</td></tr>
+<tr class="memdesc:afc1cfbd1514fea47088bc837bb578a24 inherit pub_methods_classgrpc_1_1_client_async_streaming_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request notification completion.  <a href="#afc1cfbd1514fea47088bc837bb578a24">More...</a><br/></td></tr>
 <tr class="separator:afc1cfbd1514fea47088bc837bb578a24 inherit pub_methods_classgrpc_1_1_client_async_streaming_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_async_reader_interface"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_async_reader_interface')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_async_reader_interface.html">grpc::AsyncReaderInterface&lt; R &gt;</a></td></tr>
 <tr class="memitem:ac7845d2df90fb380008aadb7f5f2f379 inherit pub_methods_classgrpc_1_1_async_reader_interface"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_reader_interface.html#ac7845d2df90fb380008aadb7f5f2f379">~AsyncReaderInterface</a> ()</td></tr>
 <tr class="separator:ac7845d2df90fb380008aadb7f5f2f379 inherit pub_methods_classgrpc_1_1_async_reader_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa644cf63c12ae8c9d5fda16a361f8a11 inherit pub_methods_classgrpc_1_1_async_reader_interface"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_async_reader_interface.html#aa644cf63c12ae8c9d5fda16a361f8a11">Read</a> (R *msg, void *tag)=0</td></tr>
+<tr class="memdesc:aa644cf63c12ae8c9d5fda16a361f8a11 inherit pub_methods_classgrpc_1_1_async_reader_interface"><td class="mdescLeft">&#160;</td><td class="mdescRight">Read a message of type <em>R</em> into <em>msg</em>.  <a href="#aa644cf63c12ae8c9d5fda16a361f8a11">More...</a><br/></td></tr>
 <tr class="separator:aa644cf63c12ae8c9d5fda16a361f8a11 inherit pub_methods_classgrpc_1_1_async_reader_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li>include/grpc++/<a class="el" href="stream_8h_source.html">stream.h</a></li>
+<li>include/grpc++/support/<a class="el" href="async__stream_8h_source.html">async_stream.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:12 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
