@@ -126,8 +126,6 @@ void grpc_iomgr_shutdown(void) {
   }
   gpr_mu_unlock(&g_mu);
 
-  memset(&g_root_object, 0, sizeof(g_root_object));
-
   grpc_alarm_list_shutdown();
 
   grpc_iomgr_platform_shutdown();

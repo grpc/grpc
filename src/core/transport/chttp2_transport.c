@@ -242,8 +242,9 @@ static void init_transport(grpc_chttp2_transport *t,
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
-  grpc_connectivity_state_init(&t->channel_callback.state_tracker, workqueue,
-                               GRPC_CHANNEL_READY, "transport");
+  grpc_connectivity_state_init(
+      &t->channel_callback.state_tracker, workqueue, GRPC_CHANNEL_READY,
+      is_client ? "client_transport" : "server_transport");
 
   gpr_slice_buffer_init(&t->global.qbuf);
 

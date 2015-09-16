@@ -104,7 +104,7 @@ void pf_destroy(grpc_lb_policy *pol) {
   grpc_connectivity_state_destroy(&p->state_tracker);
   gpr_free(p->subchannels);
   gpr_mu_destroy(&p->mu);
-  grpc_workqueue_unref(p->workqueue);
+  GRPC_WORKQUEUE_UNREF(p->workqueue, "pick_first");
   gpr_free(p);
 }
 
@@ -331,7 +331,7 @@ static grpc_lb_policy *create_pick_first(grpc_lb_policy_factory *factory,
   p->subchannels = gpr_malloc(sizeof(grpc_subchannel *) * args->num_subchannels);
   p->num_subchannels = args->num_subchannels;
   p->workqueue = args->workqueue;
-  grpc_workqueue_ref(p->workqueue);
+  GRPC_WORKQUEUE_REF(p->workqueue, "pick_first");
   grpc_connectivity_state_init(&p->state_tracker, args->workqueue,
                                GRPC_CHANNEL_IDLE, "pick_first");
   memcpy(p->subchannels, args->subchannels,

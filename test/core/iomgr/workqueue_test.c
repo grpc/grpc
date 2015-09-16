@@ -66,7 +66,7 @@ static void test_add_closure(void) {
   GPR_ASSERT(done);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
-  grpc_workqueue_unref(wq);
+  GRPC_WORKQUEUE_UNREF(wq, "destroy");
 }
 
 static void done_shutdown(void *arg) { grpc_pollset_destroy(arg); }

@@ -168,6 +168,6 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   grpc_completion_queue_destroy(a.cq);
   gpr_slice_buffer_destroy(&outgoing);
 
-  grpc_workqueue_unref(workqueue);
+  GRPC_WORKQUEUE_UNREF(workqueue, "destroy");
   grpc_shutdown();
 }

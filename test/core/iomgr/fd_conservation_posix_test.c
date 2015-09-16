@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     grpc_endpoint_destroy(p.server);
   }
 
-  grpc_workqueue_unref(workqueue);
+  GRPC_WORKQUEUE_UNREF(workqueue, "destroy");
   grpc_iomgr_shutdown();
   return 0;
 }

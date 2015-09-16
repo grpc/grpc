@@ -61,6 +61,8 @@ void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
                                   const char *name) {
   tracker->current_state = init_state;
   tracker->watchers = NULL;
+  tracker->workqueue = workqueue;
+  GRPC_WORKQUEUE_REF(workqueue, name);
   tracker->name = gpr_strdup(name);
 }
 
@@ -79,6 +81,7 @@ void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker) {
     grpc_workqueue_push(tracker->workqueue, w->notify, success);
     gpr_free(w);
   }
+  GRPC_WORKQUEUE_UNREF(tracker->workqueue, tracker->name);
   gpr_free(tracker->name);
 }
 

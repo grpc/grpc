@@ -365,7 +365,7 @@ static void server_delete(grpc_server *server) {
   }
   request_matcher_destroy(&server->unregistered_request_matcher);
   gpr_stack_lockfree_destroy(server->request_freelist);
-  grpc_workqueue_unref(server->workqueue);
+  GRPC_WORKQUEUE_UNREF(server->workqueue, "destroy");
   gpr_free(server->cqs);
   gpr_free(server->pollsets);
   gpr_free(server->shutdown_tags);
@@ -392,6 +392,7 @@ static void orphan_channel(channel_data *chand) {
 static void finish_destroy_channel(void *cd, int success) {
   channel_data *chand = cd;
   grpc_server *server = chand->server;
+  gpr_log(GPR_DEBUG, "finish_destroy_channel: %p", chand->channel);
   GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "server");
   server_unref(server);
 }
@@ -404,6 +405,8 @@ static void destroy_channel(channel_data *chand) {
   maybe_finish_shutdown(chand->server);
   chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
   chand->finish_destroy_channel_closure.cb_arg = chand;
+  gpr_log(GPR_DEBUG, "queue finish_destroy_channel: %p on %p", chand->channel,
+          chand->server->workqueue);
   grpc_workqueue_push(chand->server->workqueue,
                       &chand->finish_destroy_channel_closure, 1);
 }
@@ -1073,6 +1076,8 @@ void grpc_server_destroy(grpc_server *server) {
   }
 
   gpr_mu_unlock(&server->mu_global);
+
+  grpc_workqueue_flush(server->workqueue, 0);
 
   server_unref(server);
 }

@@ -144,7 +144,7 @@ static void finish_shutdown(grpc_udp_server *s) {
   gpr_cv_destroy(&s->cv);
 
   gpr_free(s->ports);
-  grpc_workqueue_unref(s->workqueue);
+  GRPC_WORKQUEUE_UNREF(s->workqueue, "workqueue");
   gpr_free(s);
 }
 

@@ -35,12 +35,15 @@
 
 #ifdef GPR_POSIX_SOCKET
 
-#include "src/core/iomgr/fd_posix.h"
 #include "src/core/iomgr/workqueue.h"
 
 #include <stdio.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/thd.h>
+
+#include "src/core/iomgr/fd_posix.h"
 
 static void on_readable(void *arg, int success);
 
@@ -61,15 +64,81 @@ grpc_workqueue *grpc_workqueue_create(void) {
   return workqueue;
 }
 
+static void shutdown_thread(void *arg) {
+  grpc_iomgr_closure *todo = arg;
+
+  while (todo) {
+    grpc_iomgr_closure *next = todo->next;
+    todo->cb(todo->cb_arg, todo->success);
+    todo = next;
+  }
+}
+
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+static size_t count_waiting(grpc_workqueue *workqueue) {
+  size_t i = 0;
+  grpc_iomgr_closure *c;
+  for (c = workqueue->head.next; c; c = c->next) {
+    i++;
+  }
+  return i;
+}
+#endif
+
+void grpc_workqueue_flush(grpc_workqueue *workqueue, int asynchronously) {
+  grpc_iomgr_closure *todo;
+  gpr_thd_id thd;
+
+  gpr_mu_lock(&workqueue->mu);
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+  gpr_log(GPR_DEBUG, "WORKQUEUE:%p flush %d objects %s", workqueue,
+          count_waiting(workqueue),
+          asynchronously ? "asynchronously" : "synchronously");
+#endif
+  todo = workqueue->head.next;
+  workqueue->head.next = NULL;
+  workqueue->tail = &workqueue->head;
+  gpr_mu_unlock(&workqueue->mu);
+
+  if (todo != NULL) {
+    if (asynchronously) {
+      gpr_thd_new(&thd, shutdown_thread, todo, NULL);
+    } else {
+      while (todo) {
+        grpc_iomgr_closure *next = todo->next;
+        todo->cb(todo->cb_arg, todo->success);
+        todo = next;
+      }
+    }
+  }
+}
+
 static void workqueue_destroy(grpc_workqueue *workqueue) {
+  GPR_ASSERT(workqueue->tail == &workqueue->head);
   grpc_fd_shutdown(workqueue->wakeup_read_fd);
 }
 
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
+                        const char *reason) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "WORKQUEUE:%p   ref %d -> %d %s",
+          workqueue, (int)workqueue->refs.count, (int)workqueue->refs.count + 1,
+          reason);
+#else
 void grpc_workqueue_ref(grpc_workqueue *workqueue) {
+#endif
   gpr_ref(&workqueue->refs);
 }
 
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+void grpc_workqueue_unref(grpc_workqueue *workqueue, const char *file, int line,
+                          const char *reason) {
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "WORKQUEUE:%p unref %d -> %d %s",
+          workqueue, (int)workqueue->refs.count, (int)workqueue->refs.count - 1,
+          reason);
+#else
 void grpc_workqueue_unref(grpc_workqueue *workqueue) {
+#endif
   if (gpr_unref(&workqueue->refs)) {
     workqueue_destroy(workqueue);
   }
@@ -94,6 +163,10 @@ static void on_readable(void *arg, int success) {
     return;
   } else {
     gpr_mu_lock(&workqueue->mu);
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+    gpr_log(GPR_DEBUG, "WORKQUEUE:%p %d objects", workqueue,
+            count_waiting(workqueue));
+#endif
     todo = workqueue->head.next;
     workqueue->head.next = NULL;
     workqueue->tail = &workqueue->head;
@@ -119,6 +192,10 @@ void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_iomgr_closure *closure,
   }
   workqueue->tail->next = closure;
   workqueue->tail = closure;
+#ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
+  gpr_log(GPR_DEBUG, "WORKQUEUE:%p %d objects", workqueue,
+          count_waiting(workqueue));
+#endif
   gpr_mu_unlock(&workqueue->mu);
 }
 
