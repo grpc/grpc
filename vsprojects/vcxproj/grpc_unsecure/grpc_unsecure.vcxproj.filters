@@ -43,6 +43,9 @@
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\round_robin.c">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policy.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
@@ -429,6 +432,9 @@
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h">
