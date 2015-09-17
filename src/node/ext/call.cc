@@ -184,6 +184,9 @@ Local<Value> Op::GetOpType() const {
   return scope.Escape(Nan::New(GetTypeString()).ToLocalChecked());
 }
 
+Op::~Op() {
+}
+
 class SendMetadataOp : public Op {
  public:
   Local<Value> GetNodeValue() const {
@@ -359,7 +362,7 @@ class ReadMessageOp : public Op {
   }
   ~ReadMessageOp() {
     if (recv_message != NULL) {
-      gpr_free(recv_message);
+      grpc_byte_buffer_destroy(recv_message);
     }
   }
   Local<Value> GetNodeValue() const {

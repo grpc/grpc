@@ -78,6 +78,7 @@ class Op {
   virtual v8::Local<v8::Value> GetNodeValue() const = 0;
   virtual bool ParseOp(v8::Local<v8::Value> value, grpc_op *out,
                        shared_ptr<Resources> resources) = 0;
+  virtual ~Op();
   v8::Local<v8::Value> GetOpType() const;
 
  protected:
@@ -85,7 +86,6 @@ class Op {
 };
 
 typedef std::vector<unique_ptr<Op>> OpVec;
-
 struct tag {
   tag(Nan::Callback *callback, OpVec *ops,
       shared_ptr<Resources> resources);
