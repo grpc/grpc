@@ -54,52 +54,61 @@ using std::vector;
 namespace grpc {
 namespace node {
 
+using Nan::Callback;
+using Nan::EscapableHandleScope;
+using Nan::HandleScope;
+using Nan::Maybe;
+using Nan::MaybeLocal;
+using Nan::ObjectWrap;
+using Nan::Persistent;
+using Nan::Utf8String;
+
 using v8::Array;
 using v8::Boolean;
 using v8::Exception;
 using v8::External;
 using v8::Function;
 using v8::FunctionTemplate;
-using v8::Handle;
-using v8::HandleScope;
 using v8::Integer;
 using v8::Local;
 using v8::Number;
 using v8::Object;
 using v8::ObjectTemplate;
-using v8::Persistent;
 using v8::Uint32;
 using v8::String;
 using v8::Value;
 
-NanCallback *Call::constructor;
+Callback *Call::constructor;
 Persistent<FunctionTemplate> Call::fun_tpl;
 
 bool EndsWith(const char *str, const char *substr) {
   return strcmp(str+strlen(str)-strlen(substr), substr) == 0;
 }
 
-bool CreateMetadataArray(Handle<Object> metadata, grpc_metadata_array *array,
+bool CreateMetadataArray(Local<Object> metadata, grpc_metadata_array *array,
                          shared_ptr<Resources> resources) {
-  NanScope();
+  HandleScope scope;
   grpc_metadata_array_init(array);
-  Handle<Array> keys(metadata->GetOwnPropertyNames());
+  Local<Array> keys = Nan::GetOwnPropertyNames(metadata).ToLocalChecked();
   for (unsigned int i = 0; i < keys->Length(); i++) {
-    Handle<String> current_key(keys->Get(i)->ToString());
-    if (!metadata->Get(current_key)->IsArray()) {
+    Local<String> current_key = Nan::To<String>(
+        Nan::Get(keys, i).ToLocalChecked()).ToLocalChecked();
+    Local<Value> value_array = Nan::Get(metadata, current_key).ToLocalChecked();
+    if (!value_array->IsArray()) {
       return false;
     }
-    array->capacity += Local<Array>::Cast(metadata->Get(current_key))->Length();
+    array->capacity += Local<Array>::Cast(value_array)->Length();
   }
   array->metadata = reinterpret_cast<grpc_metadata*>(
       gpr_malloc(array->capacity * sizeof(grpc_metadata)));
   for (unsigned int i = 0; i < keys->Length(); i++) {
-    Handle<String> current_key(keys->Get(i)->ToString());
-    NanUtf8String *utf8_key = new NanUtf8String(current_key);
-    resources->strings.push_back(unique_ptr<NanUtf8String>(utf8_key));
-    Handle<Array> values = Local<Array>::Cast(metadata->Get(current_key));
+    Local<String> current_key(keys->Get(i)->ToString());
+    Utf8String *utf8_key = new Utf8String(current_key);
+    resources->strings.push_back(unique_ptr<Utf8String>(utf8_key));
+    Local<Array> values = Local<Array>::Cast(
+        Nan::Get(metadata, current_key).ToLocalChecked());
     for (unsigned int j = 0; j < values->Length(); j++) {
-      Handle<Value> value = values->Get(j);
+      Local<Value> value = Nan::Get(values, j).ToLocalChecked();
       grpc_metadata *current = &array->metadata[array->count];
       current->key = **utf8_key;
       // Only allow binary headers for "-bin" keys
@@ -107,18 +116,16 @@ bool CreateMetadataArray(Handle<Object> metadata, grpc_metadata_array *array,
         if (::node::Buffer::HasInstance(value)) {
           current->value = ::node::Buffer::Data(value);
           current->value_length = ::node::Buffer::Length(value);
-          Persistent<Value> *handle = new Persistent<Value>();
-          NanAssignPersistent(*handle, value);
-          resources->handles.push_back(unique_ptr<PersistentHolder>(
-              new PersistentHolder(handle)));
+          PersistentValue *handle = new PersistentValue(value);
+          resources->handles.push_back(unique_ptr<PersistentValue>(handle));
         } else {
           return false;
         }
       } else {
         if (value->IsString()) {
-          Handle<String> string_value = value->ToString();
-          NanUtf8String *utf8_value = new NanUtf8String(string_value);
-          resources->strings.push_back(unique_ptr<NanUtf8String>(utf8_value));
+          Local<String> string_value = Nan::To<String>(value).ToLocalChecked();
+          Utf8String *utf8_value = new Utf8String(string_value);
+          resources->strings.push_back(unique_ptr<Utf8String>(utf8_value));
           current->value = **utf8_value;
           current->value_length = string_value->Length();
         } else {
@@ -131,8 +138,8 @@ bool CreateMetadataArray(Handle<Object> metadata, grpc_metadata_array *array,
   return true;
 }
 
-Handle<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
-  NanEscapableScope();
+Local<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
+  EscapableHandleScope scope;
   grpc_metadata *metadata_elements = metadata_array->metadata;
   size_t length = metadata_array->count;
   std::map<const char*, size_t> size_map;
@@ -142,49 +149,59 @@ Handle<Value> ParseMetadata(const grpc_metadata_array *metadata_array) {
     const char *key = metadata_elements[i].key;
     if (size_map.count(key)) {
       size_map[key] += 1;
+    } else {
+      size_map[key] = 1;
     }
     index_map[key] = 0;
   }
-  Handle<Object> metadata_object = NanNew<Object>();
+  Local<Object> metadata_object = Nan::New<Object>();
   for (unsigned int i = 0; i < length; i++) {
     grpc_metadata* elem = &metadata_elements[i];
-    Handle<String> key_string = NanNew(elem->key);
-    Handle<Array> array;
-    if (metadata_object->Has(key_string)) {
-      array = Handle<Array>::Cast(metadata_object->Get(key_string));
+    Local<String> key_string = Nan::New(elem->key).ToLocalChecked();
+    Local<Array> array;
+    MaybeLocal<Value> maybe_array = Nan::Get(metadata_object, key_string);
+    if (maybe_array.IsEmpty() || !maybe_array.ToLocalChecked()->IsArray()) {
+      array = Nan::New<Array>(size_map[elem->key]);
+      Nan::Set(metadata_object, key_string, array);
     } else {
-      array = NanNew<Array>(size_map[elem->key]);
-      metadata_object->Set(key_string, array);
+      array = Local<Array>::Cast(maybe_array.ToLocalChecked());
     }
     if (EndsWith(elem->key, "-bin")) {
-      array->Set(index_map[elem->key],
-                 NanNewBufferHandle(elem->value, elem->value_length));
+      Nan::Set(array, index_map[elem->key],
+               Nan::CopyBuffer(elem->value,
+                               elem->value_length).ToLocalChecked());
     } else {
-      array->Set(index_map[elem->key], NanNew(elem->value));
+      Nan::Set(array, index_map[elem->key],
+               Nan::New(elem->value).ToLocalChecked());
     }
     index_map[elem->key] += 1;
   }
-  return NanEscapeScope(metadata_object);
+  return scope.Escape(metadata_object);
 }
 
-Handle<Value> Op::GetOpType() const {
-  NanEscapableScope();
-  return NanEscapeScope(NanNew<String>(GetTypeString()));
+Local<Value> Op::GetOpType() const {
+  EscapableHandleScope scope;
+  return scope.Escape(Nan::New(GetTypeString()).ToLocalChecked());
 }
 
 class SendMetadataOp : public Op {
  public:
-  Handle<Value> GetNodeValue() const {
-    NanEscapableScope();
-    return NanEscapeScope(NanTrue());
+  Local<Value> GetNodeValue() const {
+    EscapableHandleScope scope;
+    return scope.Escape(Nan::True());
   }
-  bool ParseOp(Handle<Value> value, grpc_op *out,
+  bool ParseOp(Local<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
     if (!value->IsObject()) {
       return false;
     }
     grpc_metadata_array array;
-    if (!CreateMetadataArray(value->ToObject(), &array, resources)) {
+    MaybeLocal<Object> maybe_metadata = Nan::To<Object>(value);
+    if (maybe_metadata.IsEmpty()) {
+      return false;
+    }
+    if (!CreateMetadataArray(maybe_metadata.ToLocalChecked(),
+                             &array, resources)) {
       return false;
     }
     out->data.send_initial_metadata.count = array.count;
@@ -199,27 +216,28 @@ class SendMetadataOp : public Op {
 
 class SendMessageOp : public Op {
  public:
-  Handle<Value> GetNodeValue() const {
-    NanEscapableScope();
-    return NanEscapeScope(NanTrue());
+  Local<Value> GetNodeValue() const {
+    EscapableHandleScope scope;
+    return scope.Escape(Nan::True());
   }
-  bool ParseOp(Handle<Value> value, grpc_op *out,
+  bool ParseOp(Local<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
     if (!::node::Buffer::HasInstance(value)) {
       return false;
     }
-    Handle<Object> object_value = value->ToObject();
-    if (object_value->HasOwnProperty(NanNew("grpcWriteFlags"))) {
-      Handle<Value> flag_value = object_value->Get(NanNew("grpcWriteFlags"));
+    Local<Object> object_value = Nan::To<Object>(value).ToLocalChecked();
+    MaybeLocal<Value> maybe_flag_value = Nan::Get(
+        object_value, Nan::New("grpcWriteFlags").ToLocalChecked());
+    if (!maybe_flag_value.IsEmpty()) {
+      Local<Value> flag_value = maybe_flag_value.ToLocalChecked();
       if (flag_value->IsUint32()) {
-        out->flags = flag_value->Uint32Value() & GRPC_WRITE_USED_MASK;
+        Maybe<uint32_t> maybe_flag = Nan::To<uint32_t>(flag_value);
+        out->flags = maybe_flag.FromMaybe(0) & GRPC_WRITE_USED_MASK;
       }
     }
     out->data.send_message = BufferToByteBuffer(value);
-    Persistent<Value> *handle = new Persistent<Value>();
-    NanAssignPersistent(*handle, value);
-    resources->handles.push_back(unique_ptr<PersistentHolder>(
-        new PersistentHolder(handle)));
+    PersistentValue *handle = new PersistentValue(value);
+    resources->handles.push_back(unique_ptr<PersistentValue>(handle));
     return true;
   }
  protected:
@@ -230,11 +248,11 @@ class SendMessageOp : public Op {
 
 class SendClientCloseOp : public Op {
  public:
-  Handle<Value> GetNodeValue() const {
-    NanEscapableScope();
-    return NanEscapeScope(NanTrue());
+  Local<Value> GetNodeValue() const {
+    EscapableHandleScope scope;
+    return scope.Escape(Nan::True());
   }
-  bool ParseOp(Handle<Value> value, grpc_op *out,
+  bool ParseOp(Local<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
     return true;
   }
@@ -246,39 +264,55 @@ class SendClientCloseOp : public Op {
 
 class SendServerStatusOp : public Op {
  public:
-  Handle<Value> GetNodeValue() const {
-    NanEscapableScope();
-    return NanEscapeScope(NanTrue());
+  Local<Value> GetNodeValue() const {
+    EscapableHandleScope scope;
+    return scope.Escape(Nan::True());
   }
-  bool ParseOp(Handle<Value> value, grpc_op *out,
+  bool ParseOp(Local<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
     if (!value->IsObject()) {
       return false;
     }
-    Handle<Object> server_status = value->ToObject();
-    if (!server_status->Get(NanNew("metadata"))->IsObject()) {
+    Local<Object> server_status = Nan::To<Object>(value).ToLocalChecked();
+    MaybeLocal<Value> maybe_metadata = Nan::Get(
+        server_status, Nan::New("metadata").ToLocalChecked());
+    if (maybe_metadata.IsEmpty()) {
       return false;
     }
-    if (!server_status->Get(NanNew("code"))->IsUint32()) {
+    if (!maybe_metadata.ToLocalChecked()->IsObject()) {
       return false;
     }
-    if (!server_status->Get(NanNew("details"))->IsString()) {
+    Local<Object> metadata = Nan::To<Object>(
+        maybe_metadata.ToLocalChecked()).ToLocalChecked();
+    MaybeLocal<Value> maybe_code = Nan::Get(server_status,
+                                            Nan::New("code").ToLocalChecked());
+    if (maybe_code.IsEmpty()) {
       return false;
     }
+    if (!maybe_code.ToLocalChecked()->IsUint32()) {
+      return false;
+    }
+    uint32_t code = Nan::To<uint32_t>(maybe_code.ToLocalChecked()).FromJust();
+    MaybeLocal<Value> maybe_details = Nan::Get(
+        server_status, Nan::New("details").ToLocalChecked());
+    if (maybe_details.IsEmpty()) {
+      return false;
+    }
+    if (!maybe_details.ToLocalChecked()->IsString()) {
+      return false;
+    }
+    Local<String> details = Nan::To<String>(
+        maybe_details.ToLocalChecked()).ToLocalChecked();
     grpc_metadata_array array;
-    if (!CreateMetadataArray(server_status->Get(NanNew("metadata"))->
-                             ToObject(),
-                             &array, resources)) {
+    if (!CreateMetadataArray(metadata, &array, resources)) {
       return false;
     }
     out->data.send_status_from_server.trailing_metadata_count = array.count;
     out->data.send_status_from_server.trailing_metadata = array.metadata;
     out->data.send_status_from_server.status =
-        static_cast<grpc_status_code>(
-            server_status->Get(NanNew("code"))->Uint32Value());
-    NanUtf8String *str = new NanUtf8String(
-        server_status->Get(NanNew("details")));
-    resources->strings.push_back(unique_ptr<NanUtf8String>(str));
+        static_cast<grpc_status_code>(code);
+    Utf8String *str = new Utf8String(details);
+    resources->strings.push_back(unique_ptr<Utf8String>(str));
     out->data.send_status_from_server.status_details = **str;
     return true;
   }
@@ -298,12 +332,12 @@ class GetMetadataOp : public Op {
     grpc_metadata_array_destroy(&recv_metadata);
   }
 
-  Handle<Value> GetNodeValue() const {
-    NanEscapableScope();
-    return NanEscapeScope(ParseMetadata(&recv_metadata));
+  Local<Value> GetNodeValue() const {
+    EscapableHandleScope scope;
+    return scope.Escape(ParseMetadata(&recv_metadata));
   }
 
-  bool ParseOp(Handle<Value> value, grpc_op *out,
+  bool ParseOp(Local<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
     out->data.recv_initial_metadata = &recv_metadata;
     return true;
@@ -328,12 +362,12 @@ class ReadMessageOp : public Op {
       gpr_free(recv_message);
     }
   }
-  Handle<Value> GetNodeValue() const {
-    NanEscapableScope();
-    return NanEscapeScope(ByteBufferToBuffer(recv_message));
+  Local<Value> GetNodeValue() const {
+    EscapableHandleScope scope;
+    return scope.Escape(ByteBufferToBuffer(recv_message));
   }
 
-  bool ParseOp(Handle<Value> value, grpc_op *out,
+  bool ParseOp(Local<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
     out->data.recv_message = &recv_message;
     return true;
@@ -361,7 +395,7 @@ class ClientStatusOp : public Op {
     gpr_free(status_details);
   }
 
-  bool ParseOp(Handle<Value> value, grpc_op *out,
+  bool ParseOp(Local<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
     out->data.recv_status_on_client.trailing_metadata = &metadata_array;
     out->data.recv_status_on_client.status = &status;
@@ -370,15 +404,18 @@ class ClientStatusOp : public Op {
     return true;
   }
 
-  Handle<Value> GetNodeValue() const {
-    NanEscapableScope();
-    Handle<Object> status_obj = NanNew<Object>();
-    status_obj->Set(NanNew("code"), NanNew<Number>(status));
+  Local<Value> GetNodeValue() const {
+    EscapableHandleScope scope;
+    Local<Object> status_obj = Nan::New<Object>();
+    Nan::Set(status_obj, Nan::New("code").ToLocalChecked(),
+                    Nan::New<Number>(status));
     if (status_details != NULL) {
-      status_obj->Set(NanNew("details"), NanNew(status_details));
+      Nan::Set(status_obj, Nan::New("details").ToLocalChecked(),
+               Nan::New(status_details).ToLocalChecked());
     }
-    status_obj->Set(NanNew("metadata"), ParseMetadata(&metadata_array));
-    return NanEscapeScope(status_obj);
+    Nan::Set(status_obj, Nan::New("metadata").ToLocalChecked(),
+             ParseMetadata(&metadata_array));
+    return scope.Escape(status_obj);
   }
  protected:
   std::string GetTypeString() const {
@@ -393,12 +430,12 @@ class ClientStatusOp : public Op {
 
 class ServerCloseResponseOp : public Op {
  public:
-  Handle<Value> GetNodeValue() const {
-    NanEscapableScope();
-    return NanEscapeScope(NanNew<Boolean>(cancelled));
+  Local<Value> GetNodeValue() const {
+    EscapableHandleScope scope;
+    return scope.Escape(Nan::New<Boolean>(cancelled));
   }
 
-  bool ParseOp(Handle<Value> value, grpc_op *out,
+  bool ParseOp(Local<Value> value, grpc_op *out,
                shared_ptr<Resources> resources) {
     out->data.recv_close_on_server.cancelled = &cancelled;
     return true;
@@ -413,7 +450,7 @@ class ServerCloseResponseOp : public Op {
   int cancelled;
 };
 
-tag::tag(NanCallback *callback, OpVec *ops,
+tag::tag(Callback *callback, OpVec *ops,
          shared_ptr<Resources> resources) :
     callback(callback), ops(ops), resources(resources){
 }
@@ -423,19 +460,19 @@ tag::~tag() {
   delete ops;
 }
 
-Handle<Value> GetTagNodeValue(void *tag) {
-  NanEscapableScope();
+Local<Value> GetTagNodeValue(void *tag) {
+  EscapableHandleScope scope;
   struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
-  Handle<Object> tag_obj = NanNew<Object>();
+  Local<Object> tag_obj = Nan::New<Object>();
   for (vector<unique_ptr<Op> >::iterator it = tag_struct->ops->begin();
        it != tag_struct->ops->end(); ++it) {
     Op *op_ptr = it->get();
-    tag_obj->Set(op_ptr->GetOpType(), op_ptr->GetNodeValue());
+    Nan::Set(tag_obj, op_ptr->GetOpType(), op_ptr->GetNodeValue());
   }
-  return NanEscapeScope(tag_obj);
+  return scope.Escape(tag_obj);
 }
 
-NanCallback *GetTagCallback(void *tag) {
+Callback *GetTagCallback(void *tag) {
   struct tag *tag_struct = reinterpret_cast<struct tag *>(tag);
   return tag_struct->callback;
 }
@@ -452,140 +489,149 @@ Call::~Call() {
   grpc_call_destroy(wrapped_call);
 }
 
-void Call::Init(Handle<Object> exports) {
-  NanScope();
-  Local<FunctionTemplate> tpl = NanNew<FunctionTemplate>(New);
-  tpl->SetClassName(NanNew("Call"));
+void Call::Init(Local<Object> exports) {
+  HandleScope scope;
+  Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
+  tpl->SetClassName(Nan::New("Call").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  NanSetPrototypeTemplate(tpl, "startBatch",
-                          NanNew<FunctionTemplate>(StartBatch)->GetFunction());
-  NanSetPrototypeTemplate(tpl, "cancel",
-                          NanNew<FunctionTemplate>(Cancel)->GetFunction());
-  NanSetPrototypeTemplate(
-      tpl, "cancelWithStatus",
-      NanNew<FunctionTemplate>(CancelWithStatus)->GetFunction());
-  NanSetPrototypeTemplate(tpl, "getPeer",
-                          NanNew<FunctionTemplate>(GetPeer)->GetFunction());
-  NanAssignPersistent(fun_tpl, tpl);
-  Handle<Function> ctr = tpl->GetFunction();
-  exports->Set(NanNew("Call"), ctr);
-  constructor = new NanCallback(ctr);
+  Nan::SetPrototypeMethod(tpl, "startBatch", StartBatch);
+  Nan::SetPrototypeMethod(tpl, "cancel", Cancel);
+  Nan::SetPrototypeMethod(tpl, "cancelWithStatus", CancelWithStatus);
+  Nan::SetPrototypeMethod(tpl, "getPeer", GetPeer);
+  fun_tpl.Reset(tpl);
+  Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
+  Nan::Set(exports, Nan::New("Call").ToLocalChecked(), ctr);
+  constructor = new Callback(ctr);
 }
 
-bool Call::HasInstance(Handle<Value> val) {
-  NanScope();
-  return NanHasInstance(fun_tpl, val);
+bool Call::HasInstance(Local<Value> val) {
+  HandleScope scope;
+  return Nan::New(fun_tpl)->HasInstance(val);
 }
 
-Handle<Value> Call::WrapStruct(grpc_call *call) {
-  NanEscapableScope();
+Local<Value> Call::WrapStruct(grpc_call *call) {
+  EscapableHandleScope scope;
   if (call == NULL) {
-    return NanEscapeScope(NanNull());
+    return scope.Escape(Nan::Null());
   }
   const int argc = 1;
-  Handle<Value> argv[argc] = {NanNew<External>(reinterpret_cast<void *>(call))};
-  return NanEscapeScope(constructor->GetFunction()->NewInstance(argc, argv));
+  Local<Value> argv[argc] = {Nan::New<External>(
+      reinterpret_cast<void *>(call))};
+  MaybeLocal<Object> maybe_instance = Nan::NewInstance(
+      constructor->GetFunction(), argc, argv);
+  if (maybe_instance.IsEmpty()) {
+    return scope.Escape(Nan::Null());
+  } else {
+    return scope.Escape(maybe_instance.ToLocalChecked());
+  }
 }
 
 NAN_METHOD(Call::New) {
-  NanScope();
-
-  if (args.IsConstructCall()) {
+  if (info.IsConstructCall()) {
     Call *call;
-    if (args[0]->IsExternal()) {
-      Handle<External> ext = args[0].As<External>();
+    if (info[0]->IsExternal()) {
+      Local<External> ext = info[0].As<External>();
       // This option is used for wrapping an existing call
       grpc_call *call_value =
           reinterpret_cast<grpc_call *>(ext->Value());
       call = new Call(call_value);
     } else {
-      if (!Channel::HasInstance(args[0])) {
-        return NanThrowTypeError("Call's first argument must be a Channel");
+      if (!Channel::HasInstance(info[0])) {
+        return Nan::ThrowTypeError("Call's first argument must be a Channel");
       }
-      if (!args[1]->IsString()) {
-        return NanThrowTypeError("Call's second argument must be a string");
+      if (!info[1]->IsString()) {
+        return Nan::ThrowTypeError("Call's second argument must be a string");
       }
-      if (!(args[2]->IsNumber() || args[2]->IsDate())) {
-        return NanThrowTypeError(
+      if (!(info[2]->IsNumber() || info[2]->IsDate())) {
+        return Nan::ThrowTypeError(
             "Call's third argument must be a date or a number");
       }
       // These arguments are at the end because they are optional
       grpc_call *parent_call = NULL;
-      if (Call::HasInstance(args[4])) {
-        Call *parent_obj = ObjectWrap::Unwrap<Call>(args[4]->ToObject());
+      if (Call::HasInstance(info[4])) {
+        Call *parent_obj = ObjectWrap::Unwrap<Call>(
+            Nan::To<Object>(info[4]).ToLocalChecked());
         parent_call = parent_obj->wrapped_call;
-      } else if (!(args[4]->IsUndefined() || args[4]->IsNull())) {
-        return NanThrowTypeError(
+      } else if (!(info[4]->IsUndefined() || info[4]->IsNull())) {
+        return Nan::ThrowTypeError(
             "Call's fifth argument must be another call, if provided");
       }
       gpr_uint32 propagate_flags = GRPC_PROPAGATE_DEFAULTS;
-      if (args[5]->IsUint32()) {
-        propagate_flags = args[5]->Uint32Value();
-      } else if (!(args[5]->IsUndefined() || args[5]->IsNull())) {
-        return NanThrowTypeError(
+      if (info[5]->IsUint32()) {
+        propagate_flags = Nan::To<uint32_t>(info[5]).FromJust();
+      } else if (!(info[5]->IsUndefined() || info[5]->IsNull())) {
+        return Nan::ThrowTypeError(
             "Call's sixth argument must be propagate flags, if provided");
       }
-      Handle<Object> channel_object = args[0]->ToObject();
+      Local<Object> channel_object = Nan::To<Object>(info[0]).ToLocalChecked();
       Channel *channel = ObjectWrap::Unwrap<Channel>(channel_object);
       if (channel->GetWrappedChannel() == NULL) {
-        return NanThrowError("Call cannot be created from a closed channel");
+        return Nan::ThrowError("Call cannot be created from a closed channel");
       }
-      NanUtf8String method(args[1]);
-      double deadline = args[2]->NumberValue();
+      Utf8String method(info[1]);
+      double deadline = Nan::To<double>(info[2]).FromJust();
       grpc_channel *wrapped_channel = channel->GetWrappedChannel();
       grpc_call *wrapped_call;
-      if (args[3]->IsString()) {
-        NanUtf8String host_override(args[3]);
+      if (info[3]->IsString()) {
+        Utf8String host_override(info[3]);
         wrapped_call = grpc_channel_create_call(
             wrapped_channel, parent_call, propagate_flags,
             CompletionQueueAsyncWorker::GetQueue(), *method,
             *host_override, MillisecondsToTimespec(deadline), NULL);
-      } else if (args[3]->IsUndefined() || args[3]->IsNull()) {
+      } else if (info[3]->IsUndefined() || info[3]->IsNull()) {
         wrapped_call = grpc_channel_create_call(
             wrapped_channel, parent_call, propagate_flags,
             CompletionQueueAsyncWorker::GetQueue(), *method,
             NULL, MillisecondsToTimespec(deadline), NULL);
       } else {
-        return NanThrowTypeError("Call's fourth argument must be a string");
+        return Nan::ThrowTypeError("Call's fourth argument must be a string");
       }
       call = new Call(wrapped_call);
-      args.This()->SetHiddenValue(NanNew("channel_"), channel_object);
+      info.This()->SetHiddenValue(Nan::New("channel_").ToLocalChecked(),
+                                  channel_object);
     }
-    call->Wrap(args.This());
-    NanReturnValue(args.This());
+    call->Wrap(info.This());
+    info.GetReturnValue().Set(info.This());
   } else {
     const int argc = 4;
-    Local<Value> argv[argc] = {args[0], args[1], args[2], args[3]};
-    NanReturnValue(constructor->GetFunction()->NewInstance(argc, argv));
+    Local<Value> argv[argc] = {info[0], info[1], info[2], info[3]};
+    MaybeLocal<Object> maybe_instance = constructor->GetFunction()->NewInstance(
+        argc, argv);
+    if (maybe_instance.IsEmpty()) {
+      // There's probably a pending exception
+      return;
+    } else {
+      info.GetReturnValue().Set(maybe_instance.ToLocalChecked());
+    }
   }
 }
 
 NAN_METHOD(Call::StartBatch) {
-  NanScope();
-  if (!HasInstance(args.This())) {
-    return NanThrowTypeError("startBatch can only be called on Call objects");
+  if (!Call::HasInstance(info.This())) {
+    return Nan::ThrowTypeError("startBatch can only be called on Call objects");
   }
-  if (!args[0]->IsObject()) {
-    return NanThrowError("startBatch's first argument must be an object");
+  if (!info[0]->IsObject()) {
+    return Nan::ThrowError("startBatch's first argument must be an object");
   }
-  if (!args[1]->IsFunction()) {
-    return NanThrowError("startBatch's second argument must be a callback");
+  if (!info[1]->IsFunction()) {
+    return Nan::ThrowError("startBatch's second argument must be a callback");
   }
-  Handle<Function> callback_func = args[1].As<Function>();
-  Call *call = ObjectWrap::Unwrap<Call>(args.This());
+  Local<Function> callback_func = info[1].As<Function>();
+  Call *call = ObjectWrap::Unwrap<Call>(info.This());
   shared_ptr<Resources> resources(new Resources);
-  Handle<Object> obj = args[0]->ToObject();
-  Handle<Array> keys = obj->GetOwnPropertyNames();
+  Local<Object> obj = Nan::To<Object>(info[0]).ToLocalChecked();
+  Local<Array> keys = Nan::GetOwnPropertyNames(obj).ToLocalChecked();
   size_t nops = keys->Length();
   vector<grpc_op> ops(nops);
   unique_ptr<OpVec> op_vector(new OpVec());
   for (unsigned int i = 0; i < nops; i++) {
     unique_ptr<Op> op;
-    if (!keys->Get(i)->IsUint32()) {
-      return NanThrowError(
+    MaybeLocal<Value> maybe_key = Nan::Get(keys, i);
+    if (maybe_key.IsEmpty() || (!maybe_key.ToLocalChecked()->IsUint32())) {
+      return Nan::ThrowError(
           "startBatch's first argument's keys must be integers");
     }
-    uint32_t type = keys->Get(i)->Uint32Value();
+    uint32_t type = Nan::To<uint32_t>(maybe_key.ToLocalChecked()).FromJust();
     ops[i].op = static_cast<grpc_op_type>(type);
     ops[i].flags = 0;
     ops[i].reserved = NULL;
@@ -615,67 +661,64 @@ NAN_METHOD(Call::StartBatch) {
         op.reset(new ServerCloseResponseOp());
         break;
       default:
-        return NanThrowError("Argument object had an unrecognized key");
+        return Nan::ThrowError("Argument object had an unrecognized key");
     }
     if (!op->ParseOp(obj->Get(type), &ops[i], resources)) {
-      return NanThrowTypeError("Incorrectly typed arguments to startBatch");
+      return Nan::ThrowTypeError("Incorrectly typed arguments to startBatch");
     }
     op_vector->push_back(std::move(op));
   }
-  NanCallback *callback = new NanCallback(callback_func);
+  Callback *callback = new Callback(callback_func);
   grpc_call_error error = grpc_call_start_batch(
       call->wrapped_call, &ops[0], nops, new struct tag(
           callback, op_vector.release(), resources), NULL);
   if (error != GRPC_CALL_OK) {
-    return NanThrowError(nanErrorWithCode("startBatch failed", error));
+    return Nan::ThrowError(nanErrorWithCode("startBatch failed", error));
   }
   CompletionQueueAsyncWorker::Next();
-  NanReturnUndefined();
 }
 
 NAN_METHOD(Call::Cancel) {
-  NanScope();
-  if (!HasInstance(args.This())) {
-    return NanThrowTypeError("cancel can only be called on Call objects");
+  if (!Call::HasInstance(info.This())) {
+    return Nan::ThrowTypeError("cancel can only be called on Call objects");
   }
-  Call *call = ObjectWrap::Unwrap<Call>(args.This());
+  Call *call = ObjectWrap::Unwrap<Call>(info.This());
   grpc_call_error error = grpc_call_cancel(call->wrapped_call, NULL);
   if (error != GRPC_CALL_OK) {
-    return NanThrowError(nanErrorWithCode("cancel failed", error));
+    return Nan::ThrowError(nanErrorWithCode("cancel failed", error));
   }
-  NanReturnUndefined();
 }
 
 NAN_METHOD(Call::CancelWithStatus) {
-  NanScope();
-  if (!HasInstance(args.This())) {
-    return NanThrowTypeError("cancel can only be called on Call objects");
+  Nan::HandleScope scope;
+  if (!HasInstance(info.This())) {
+    return Nan::ThrowTypeError("cancel can only be called on Call objects");
   }
-  if (!args[0]->IsUint32()) {
-    return NanThrowTypeError(
+  if (!info[0]->IsUint32()) {
+    return Nan::ThrowTypeError(
         "cancelWithStatus's first argument must be a status code");
   }
-  if (!args[1]->IsString()) {
-    return NanThrowTypeError(
+  if (!info[1]->IsString()) {
+    return Nan::ThrowTypeError(
         "cancelWithStatus's second argument must be a string");
   }
-  Call *call = ObjectWrap::Unwrap<Call>(args.This());
-  grpc_status_code code = static_cast<grpc_status_code>(args[0]->Uint32Value());
-  NanUtf8String details(args[0]);
+  Call *call = ObjectWrap::Unwrap<Call>(info.This());
+  grpc_status_code code = static_cast<grpc_status_code>(
+      Nan::To<uint32_t>(info[0]).FromJust());
+  Utf8String details(info[0]);
   grpc_call_cancel_with_status(call->wrapped_call, code, *details, NULL);
-  NanReturnUndefined();
 }
 
 NAN_METHOD(Call::GetPeer) {
-  NanScope();
-  if (!HasInstance(args.This())) {
-    return NanThrowTypeError("getPeer can only be called on Call objects");
+  Nan::HandleScope scope;
+  if (!HasInstance(info.This())) {
+    return Nan::ThrowTypeError("getPeer can only be called on Call objects");
   }
-  Call *call = ObjectWrap::Unwrap<Call>(args.This());
+  Call *call = ObjectWrap::Unwrap<Call>(info.This());
   char *peer = grpc_call_get_peer(call->wrapped_call);
-  Handle<Value> peer_value = NanNew(peer);
+  Local<Value> peer_value = Nan::New(peer).ToLocalChecked();
   gpr_free(peer);
-  NanReturnValue(peer_value);
+  info.GetReturnValue().Set(peer_value);
 }
 
 }  // namespace node
