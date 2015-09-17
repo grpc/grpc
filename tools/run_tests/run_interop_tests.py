@@ -98,6 +98,24 @@ class NodeLanguage:
   def __str__(self):
     return 'node'
 
+
+class PHPLanguage:
+
+  def __init__(self):
+    self.client_cmdline_base = ['src/php/bin/interop_client.sh']
+    self.client_cwd = None
+
+  def cloud_to_prod_args(self):
+    return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
+            ['--use_tls'])
+
+  def cloud_to_prod_env(self):
+    return _SSL_CERT_ENV
+
+  def __str__(self):
+    return 'php'
+
+
 class RubyLanguage:
 
   def __init__(self):
@@ -120,6 +138,7 @@ _LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
     'node' : NodeLanguage(),
+    'php' :  PHPLanguage(),
     'ruby' : RubyLanguage(),
 }
 
