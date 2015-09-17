@@ -62,21 +62,21 @@ make install_c -C /var/local/git/grpc
 # TODO(jtattermusch): add python
 
 # build PHP interop client
-# TODO(jtattermusch): make php work
-# TODO(jtattermusch): prerequisites should be installed sooner than here.
+# TODO(jtattermusch): prerequisites for PHP should be installed sooner than here.
 # Install composer
-#curl -sS https://getcomposer.org/installer | php
-#mv composer.phar /usr/local/bin/composer
+curl -sS https://getcomposer.org/installer | php
+mv composer.phar /usr/local/bin/composer
 # Download the patched PHP protobuf so that PHP gRPC clients can be generated
 # from proto3 schemas.
-#git clone https://github.com/stanley-cheung/Protobuf-PHP.git /var/local/git/protobuf-php
-#(cd src/php/ext/grpc && phpize && ./configure && make)
-#rvm all do gem install ronn rake
-#(cd /var/local/git/protobuf-php \
-#  && rvm all do rake pear:package version=1.0 \
-#  && pear install Protobuf-1.0.tgz)
-#(cd src/php && composer install)
-#(cd src/php && protoc-gen-php -i tests/interop/ -o tests/interop/ tests/interop/test.proto)
+git clone https://github.com/stanley-cheung/Protobuf-PHP.git /var/local/git/protobuf-php
+(cd src/php/ext/grpc && phpize && ./configure && make)
+rvm all do gem install ronn rake
+(cd third_party/protobuf && make install)
+(cd /var/local/git/protobuf-php \
+  && rvm all do rake pear:package version=1.0 \
+  && pear install Protobuf-1.0.tgz)
+(cd src/php && composer install)
+(cd src/php && protoc-gen-php -i tests/interop/ -o tests/interop/ tests/interop/test.proto)
 
 # run the cloud-to-prod interop tests
 tools/run_tests/run_interop_tests.py -l $language
