@@ -77,7 +77,7 @@ Handle<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
     memcpy(result + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
     offset += GPR_SLICE_LENGTH(next);
   }
-  return NanEscapeScope(MakeFastBuffer(NanNewBufferHandle(result, length)));
+  return NanEscapeScope(MakeFastBuffer(NanBufferUse(result, length)));
 }
 
 Handle<Value> MakeFastBuffer(Handle<Value> slowBuffer) {
