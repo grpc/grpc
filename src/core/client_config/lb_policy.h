@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_H
 
 #include "src/core/client_config/subchannel.h"
+#include "src/core/transport/connectivity_state.h"
 
 /** A load balancing policy: specified by a vtable and a struct (which
     is expected to be extended to contain some parameters) */
@@ -70,9 +71,10 @@ struct grpc_lb_policy_vtable {
 
   /** call notify when the connectivity state of a channel changes from *state.
       Updates *state with the new state of the policy */
-  void (*notify_on_state_change)(grpc_lb_policy *policy,
-                                 grpc_connectivity_state *state,
-                                 grpc_iomgr_closure *closure);
+  grpc_connectivity_state_notify_on_state_change_result (
+      *notify_on_state_change)(grpc_lb_policy *policy,
+                               grpc_connectivity_state *state,
+                               grpc_iomgr_closure *closure);
 };
 
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
@@ -111,9 +113,10 @@ void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op);
 
 void grpc_lb_policy_exit_idle(grpc_lb_policy *policy);
 
-void grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy,
-                                           grpc_connectivity_state *state,
-                                           grpc_iomgr_closure *closure);
+grpc_connectivity_state_notify_on_state_change_result
+grpc_lb_policy_notify_on_state_change(
+    grpc_lb_policy *policy, grpc_connectivity_state *state,
+    grpc_iomgr_closure *closure) GRPC_MUST_USE_RESULT;
 
 grpc_connectivity_state grpc_lb_policy_check_connectivity(
     grpc_lb_policy *policy);

@@ -80,7 +80,8 @@ typedef struct {
 
 static void sockaddr_destroy(grpc_resolver *r);
 
-static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r);
+static grpc_iomgr_closure *sockaddr_maybe_finish_next_locked(
+    sockaddr_resolver *r) GRPC_MUST_USE_RESULT;
 
 static void sockaddr_shutdown(grpc_resolver *r);
 static void sockaddr_channel_saw_error(grpc_resolver *r,
@@ -95,13 +96,17 @@ static const grpc_resolver_vtable sockaddr_resolver_vtable = {
 
 static void sockaddr_shutdown(grpc_resolver *resolver) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
+  grpc_iomgr_closure *call = NULL;
   gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
-    grpc_workqueue_push(r->workqueue, r->next_completion, 1);
+    call = r->next_completion;
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
+  if (call) {
+    call->cb(call->cb_arg, 1);
+  }
 }
 
 static void sockaddr_channel_saw_error(grpc_resolver *resolver,
@@ -111,20 +116,24 @@ static void sockaddr_next(grpc_resolver *resolver,
                           grpc_client_config **target_config,
                           grpc_iomgr_closure *on_complete) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
+  grpc_iomgr_closure *call = NULL;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
   r->target_config = target_config;
-  sockaddr_maybe_finish_next_locked(r);
+  call = sockaddr_maybe_finish_next_locked(r);
   gpr_mu_unlock(&r->mu);
+  if (call) call->cb(call->cb_arg, 1);
 }
 
-static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r) {
+static grpc_iomgr_closure *sockaddr_maybe_finish_next_locked(
+    sockaddr_resolver *r) {
   grpc_client_config *cfg;
   grpc_lb_policy *lb_policy;
   grpc_lb_policy_args lb_policy_args;
   grpc_subchannel **subchannels;
   grpc_subchannel_args args;
+  grpc_iomgr_closure *call = NULL;
 
   if (r->next_completion != NULL && !r->published) {
     size_t i;
@@ -148,9 +157,11 @@ static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r) {
     GRPC_LB_POLICY_UNREF(lb_policy, "unix");
     r->published = 1;
     *r->target_config = cfg;
-    grpc_workqueue_push(r->workqueue, r->next_completion, 1);
+    call = r->next_completion;
     r->next_completion = NULL;
   }
+
+  return call;
 }
 
 static void sockaddr_destroy(grpc_resolver *gr) {

@@ -437,19 +437,27 @@ static void cc_start_transport_stream_op(grpc_call_element *elem,
 static void watch_lb_policy(channel_data *chand, grpc_lb_policy *lb_policy,
                             grpc_connectivity_state current_state);
 
+static void on_lb_policy_state_changed_locked(
+    lb_policy_connectivity_watcher *w) {
+  /* check if the notification is for a stale policy */
+  if (w->lb_policy != w->chand->lb_policy) return;
+
+  grpc_connectivity_state_set(&w->chand->state_tracker, w->state, "lb_changed");
+  if (w->state != GRPC_CHANNEL_FATAL_FAILURE) {
+    watch_lb_policy(w->chand, w->lb_policy, w->state);
+  }
+}
+
 static void on_lb_policy_state_changed(void *arg, int iomgr_success) {
   lb_policy_connectivity_watcher *w = arg;
+  grpc_connectivity_state_flusher f;
 
   gpr_mu_lock(&w->chand->mu_config);
-  /* check if the notification is for a stale policy */
-  if (w->lb_policy == w->chand->lb_policy) {
-    grpc_connectivity_state_set(&w->chand->state_tracker, w->state,
-                                "lb_changed");
-    if (w->state != GRPC_CHANNEL_FATAL_FAILURE) {
-      watch_lb_policy(w->chand, w->lb_policy, w->state);
-    }
-  }
+  on_lb_policy_state_changed_locked(w);
+  grpc_connectivity_state_begin_flush(&w->chand->state_tracker, &f);
   gpr_mu_unlock(&w->chand->mu_config);
+
+  grpc_connectivity_state_end_flush(&f);
 
   GRPC_CHANNEL_INTERNAL_UNREF(w->chand->master, "watch_lb_policy");
   gpr_free(w);
@@ -464,7 +472,13 @@ static void watch_lb_policy(channel_data *chand, grpc_lb_policy *lb_policy,
   grpc_iomgr_closure_init(&w->on_changed, on_lb_policy_state_changed, w);
   w->state = current_state;
   w->lb_policy = lb_policy;
-  grpc_lb_policy_notify_on_state_change(lb_policy, &w->state, &w->on_changed);
+  if (grpc_lb_policy_notify_on_state_change(lb_policy, &w->state,
+                                            &w->on_changed)
+          .state_already_changed) {
+    on_lb_policy_state_changed_locked(w);
+    GRPC_CHANNEL_INTERNAL_UNREF(w->chand->master, "watch_lb_policy");
+    gpr_free(w);
+  }
 }
 
 static void cc_on_config_changed(void *arg, int iomgr_success) {
@@ -474,6 +488,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
   grpc_resolver *old_resolver;
   grpc_iomgr_closure *wakeup_closures = NULL;
   grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+  grpc_connectivity_state_flusher f;
   int exit_idle = 0;
 
   if (chand->incoming_configuration != NULL) {
@@ -507,20 +522,24 @@ static void cc_on_config_changed(void *arg, int iomgr_success) {
     GRPC_RESOLVER_REF(resolver, "channel-next");
     grpc_connectivity_state_set(&chand->state_tracker, state,
                                 "new_lb+resolver");
-    gpr_mu_unlock(&chand->mu_config);
-    GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
-    grpc_resolver_next(resolver, &chand->incoming_configuration,
-                       &chand->on_config_changed);
-    GRPC_RESOLVER_UNREF(resolver, "channel-next");
     if (lb_policy != NULL) {
       watch_lb_policy(chand, lb_policy, state);
     }
+    grpc_connectivity_state_begin_flush(&chand->state_tracker, &f);
+    gpr_mu_unlock(&chand->mu_config);
+    GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
+    grpc_connectivity_state_end_flush(&f);
+    grpc_resolver_next(resolver, &chand->incoming_configuration,
+                       &chand->on_config_changed);
+    GRPC_RESOLVER_UNREF(resolver, "channel-next");
   } else {
     old_resolver = chand->resolver;
     chand->resolver = NULL;
     grpc_connectivity_state_set(&chand->state_tracker,
                                 GRPC_CHANNEL_FATAL_FAILURE, "resolver_gone");
+    grpc_connectivity_state_begin_flush(&chand->state_tracker, &f);
     gpr_mu_unlock(&chand->mu_config);
+    grpc_connectivity_state_end_flush(&f);
     if (old_resolver != NULL) {
       grpc_resolver_shutdown(old_resolver);
       GRPC_RESOLVER_UNREF(old_resolver, "channel");
@@ -554,7 +573,9 @@ static void cc_start_transport_op(grpc_channel_element *elem,
   grpc_lb_policy *lb_policy = NULL;
   channel_data *chand = elem->channel_data;
   grpc_resolver *destroy_resolver = NULL;
-  grpc_iomgr_closure *on_consumed = op->on_consumed;
+  grpc_connectivity_state_flusher f;
+  grpc_iomgr_closure *call_list = op->on_consumed;
+  call_list->next = NULL;
   op->on_consumed = NULL;
 
   GPR_ASSERT(op->set_accept_stream == NULL);
@@ -562,9 +583,13 @@ static void cc_start_transport_op(grpc_channel_element *elem,
 
   gpr_mu_lock(&chand->mu_config);
   if (op->on_connectivity_state_change != NULL) {
-    grpc_connectivity_state_notify_on_state_change(
-        &chand->state_tracker, op->connectivity_state,
-        op->on_connectivity_state_change);
+    if (grpc_connectivity_state_notify_on_state_change(
+            &chand->state_tracker, op->connectivity_state,
+            op->on_connectivity_state_change)
+            .state_already_changed) {
+      op->on_connectivity_state_change->next = call_list;
+      call_list = op->on_connectivity_state_change;
+    }
     op->on_connectivity_state_change = NULL;
     op->connectivity_state = NULL;
   }
@@ -587,7 +612,9 @@ static void cc_start_transport_op(grpc_channel_element *elem,
       chand->lb_policy = NULL;
     }
   }
+  grpc_connectivity_state_begin_flush(&chand->state_tracker, &f);
   gpr_mu_unlock(&chand->mu_config);
+  grpc_connectivity_state_end_flush(&f);
 
   if (destroy_resolver) {
     grpc_resolver_shutdown(destroy_resolver);
@@ -599,9 +626,10 @@ static void cc_start_transport_op(grpc_channel_element *elem,
     GRPC_LB_POLICY_UNREF(lb_policy, "broadcast");
   }
 
-  if (on_consumed) {
-    grpc_workqueue_push(grpc_channel_get_workqueue(chand->master), on_consumed,
-                        1);
+  while (call_list != NULL) {
+    grpc_iomgr_closure *next = call_list->next;
+    call_list->cb(call_list->cb_arg, 1);
+    call_list = next;
   }
 }
 
@@ -671,7 +699,6 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                           chand);
 
   grpc_connectivity_state_init(&chand->state_tracker,
-                               grpc_channel_get_workqueue(master),
                                GRPC_CHANNEL_IDLE, "client_channel");
 }
 
@@ -750,10 +777,14 @@ void grpc_client_channel_watch_connectivity_state(
     grpc_channel_element *elem, grpc_connectivity_state *state,
     grpc_iomgr_closure *on_complete) {
   channel_data *chand = elem->channel_data;
+  grpc_connectivity_state_notify_on_state_change_result r;
   gpr_mu_lock(&chand->mu_config);
-  grpc_connectivity_state_notify_on_state_change(&chand->state_tracker, state,
-                                                 on_complete);
+  r = grpc_connectivity_state_notify_on_state_change(&chand->state_tracker,
+                                                     state, on_complete);
   gpr_mu_unlock(&chand->mu_config);
+  if (r.state_already_changed) {
+    on_complete->cb(on_complete->cb_arg, 1);
+  }
 }
 
 grpc_pollset_set *grpc_client_channel_get_connecting_pollset_set(

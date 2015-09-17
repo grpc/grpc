@@ -92,7 +92,8 @@ typedef struct {
 static void zookeeper_destroy(grpc_resolver *r);
 
 static void zookeeper_start_resolving_locked(zookeeper_resolver *r);
-static void zookeeper_maybe_finish_next_locked(zookeeper_resolver *r);
+static grpc_iomgr_closure *zookeeper_maybe_finish_next_locked(
+    zookeeper_resolver *r) GRPC_MUST_USE_RESULT;
 
 static void zookeeper_shutdown(grpc_resolver *r);
 static void zookeeper_channel_saw_error(grpc_resolver *r,
@@ -107,14 +108,18 @@ static const grpc_resolver_vtable zookeeper_resolver_vtable = {
 
 static void zookeeper_shutdown(grpc_resolver *resolver) {
   zookeeper_resolver *r = (zookeeper_resolver *)resolver;
+  grpc_iomgr_closure *call = NULL;
   gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
-    grpc_workqueue_push(r->workqueue, r->next_completion, 1);
+    call = r->next_completion;
     r->next_completion = NULL;
   }
   zookeeper_close(r->zookeeper_handle);
   gpr_mu_unlock(&r->mu);
+  if (call != NULL) {
+    call->cb(call->cb_arg, 1);
+  }
 }
 
 static void zookeeper_channel_saw_error(grpc_resolver *resolver,
@@ -131,6 +136,7 @@ static void zookeeper_next(grpc_resolver *resolver,
                            grpc_client_config **target_config,
                            grpc_iomgr_closure *on_complete) {
   zookeeper_resolver *r = (zookeeper_resolver *)resolver;
+  grpc_iomgr_closure *call;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(r->next_completion == NULL);
   r->next_completion = on_complete;
@@ -138,9 +144,10 @@ static void zookeeper_next(grpc_resolver *resolver,
   if (r->resolved_version == 0 && r->resolving == 0) {
     zookeeper_start_resolving_locked(r);
   } else {
-    zookeeper_maybe_finish_next_locked(r);
+    call = zookeeper_maybe_finish_next_locked(r);
   }
   gpr_mu_unlock(&r->mu);
+  if (call) call->cb(call->cb_arg, 1);
 }
 
 /** Zookeeper global watcher for connection management
@@ -182,6 +189,7 @@ static void zookeeper_on_resolved(void *arg,
   grpc_subchannel **subchannels;
   grpc_subchannel_args args;
   grpc_lb_policy *lb_policy;
+  grpc_iomgr_closure *call;
   size_t i;
   if (addresses != NULL) {
     grpc_lb_policy_args lb_policy_args;
@@ -211,8 +219,10 @@ static void zookeeper_on_resolved(void *arg,
   }
   r->resolved_config = config;
   r->resolved_version++;
-  zookeeper_maybe_finish_next_locked(r);
+  call = zookeeper_maybe_finish_next_locked(r);
   gpr_mu_unlock(&r->mu);
+
+  if (call) call->cb(call->cb_arg, 1);
 
   GRPC_RESOLVER_UNREF(&r->base, "zookeeper-resolving");
 }
@@ -404,17 +414,20 @@ static void zookeeper_start_resolving_locked(zookeeper_resolver *r) {
   zookeeper_resolve_address(r);
 }
 
-static void zookeeper_maybe_finish_next_locked(zookeeper_resolver *r) {
+static grpc_iomgr_closure *zookeeper_maybe_finish_next_locked(
+    zookeeper_resolver *r) {
+  grpc_iomgr_closure *call = NULL;
   if (r->next_completion != NULL &&
       r->resolved_version != r->published_version) {
     *r->target_config = r->resolved_config;
     if (r->resolved_config != NULL) {
       grpc_client_config_ref(r->resolved_config);
     }
-    grpc_workqueue_push(r->workqueue, r->next_completion, 1);
+    call = r->next_completion;
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }
+  return call;
 }
 
 static void zookeeper_destroy(grpc_resolver *gr) {

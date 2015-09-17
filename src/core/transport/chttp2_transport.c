@@ -243,7 +243,7 @@ static void init_transport(grpc_chttp2_transport *t,
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
   grpc_connectivity_state_init(
-      &t->channel_callback.state_tracker, workqueue, GRPC_CHANNEL_READY,
+      &t->channel_callback.state_tracker, GRPC_CHANNEL_READY,
       is_client ? "client_transport" : "server_transport");
 
   gpr_slice_buffer_init(&t->global.qbuf);
@@ -500,6 +500,7 @@ static void lock(grpc_chttp2_transport *t) { gpr_mu_lock(&t->mu); }
 
 static void unlock(grpc_chttp2_transport *t) {
   grpc_iomgr_closure *run_closures;
+  grpc_connectivity_state_flusher f;
 
   unlock_check_read_write_state(t);
   if (!t->writing_active && !t->closed &&
@@ -514,7 +515,10 @@ static void unlock(grpc_chttp2_transport *t) {
   t->global.pending_closures_head = NULL;
   t->global.pending_closures_tail = NULL;
 
+  grpc_connectivity_state_begin_flush(&t->channel_callback.state_tracker, &f);
   gpr_mu_unlock(&t->mu);
+
+  grpc_connectivity_state_end_flush(&f);
 
   while (run_closures) {
     grpc_iomgr_closure *next = run_closures->next;
@@ -755,9 +759,13 @@ static void perform_transport_op(grpc_transport *gt, grpc_transport_op *op) {
   }
 
   if (op->on_connectivity_state_change) {
-    grpc_connectivity_state_notify_on_state_change(
-        &t->channel_callback.state_tracker, op->connectivity_state,
-        op->on_connectivity_state_change);
+    if (grpc_connectivity_state_notify_on_state_change(
+            &t->channel_callback.state_tracker, op->connectivity_state,
+            op->on_connectivity_state_change)
+            .state_already_changed) {
+      grpc_chttp2_schedule_closure(&t->global, op->on_connectivity_state_change,
+                                   1);
+    }
   }
 
   if (op->send_goaway) {
@@ -1185,19 +1193,14 @@ static void recv_data(void *tp, int success) {
  * CALLBACK LOOP
  */
 
-static void schedule_closure_for_connectivity(void *a,
-                                              grpc_iomgr_closure *closure) {
-  grpc_chttp2_schedule_closure(a, closure, 1);
-}
-
 static void connectivity_state_set(
     grpc_chttp2_transport_global *transport_global,
     grpc_connectivity_state state, const char *reason) {
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_DEBUG, "set connectivity_state=%d", state));
-  grpc_connectivity_state_set_with_scheduler(
+  grpc_connectivity_state_set(
       &TRANSPORT_FROM_GLOBAL(transport_global)->channel_callback.state_tracker,
-      state, schedule_closure_for_connectivity, transport_global, reason);
+      state, reason);
 }
 
 void grpc_chttp2_schedule_closure(
