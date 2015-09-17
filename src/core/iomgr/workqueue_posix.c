@@ -91,9 +91,11 @@ void grpc_workqueue_flush(grpc_workqueue *workqueue, int asynchronously) {
 
   gpr_mu_lock(&workqueue->mu);
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-  gpr_log(GPR_DEBUG, "WORKQUEUE:%p flush %d objects %s", workqueue,
-          count_waiting(workqueue),
-          asynchronously ? "asynchronously" : "synchronously");
+  if (workqueue->head.next) {
+    gpr_log(GPR_DEBUG, "WORKQUEUE:%p flush %d objects %s", workqueue,
+            count_waiting(workqueue),
+            asynchronously ? "asynchronously" : "synchronously");
+  }
 #endif
   todo = workqueue->head.next;
   workqueue->head.next = NULL;
