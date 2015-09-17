@@ -40,6 +40,7 @@ RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true 
   apt-get update && \
   apt-get -y install \
       git \
+      libapr1 \
       oracle-java8-installer \
       && \
   apt-get clean && rm -r /var/cache/oracle-jdk8-installer/

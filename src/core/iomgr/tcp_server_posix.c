@@ -339,6 +339,10 @@ static void on_read(void *arg, int success) {
     addr_str = grpc_sockaddr_to_uri((struct sockaddr *)&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
+    if (grpc_tcp_trace) {
+      gpr_log(GPR_DEBUG, "SERVER_CONNECT: incoming connection: %s", addr_str);
+    }
+
     fdobj = grpc_fd_create(fd, name);
     /* TODO(ctiller): revise this when we have server-side sharding
        of channels -- we certainly should not be automatically adding every
