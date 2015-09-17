@@ -56,10 +56,6 @@ then
 
   ./tools/run_tests/run_tests.py --use_docker -t -l $language -c $config -x report.xml $@ || true
 
-elif [ "$platform" == "interop" ]
-then
-  python tools/run_tests/run_interops.py --language=$language $@
-
 elif [ "$platform" == "windows" ]
 then
   echo "building $language on Windows"
@@ -84,6 +80,12 @@ then
   echo "building $language on FreeBSD"
 
   MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || true
+
+elif [ "$platform" == "interop" ]
+then
+  echo "building interop tests for language $language"
+
+  ./tools/run_tests/run_interop_tests.py --use_docker -t -l $language --cloud_to_prod --server all $@ || true
 else
   echo "Unknown platform $platform"
   exit 1

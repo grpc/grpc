@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,32 +28,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script can be used to run dockerized tests that normally run
-# on Jenkins on your local machine using the working copy that
-# is currently checked out locally.
-
-# IMPORTANT: The changes to be tested need to be committed locally,
-# otherwise they won't be cloned inside the docker container.
+# This script is invoked by run_jekins.sh. It contains the test logic
+# that should run inside a docker container.
 set -e
 
-cd `dirname $0`/../..
+cd /var/local/git/grpc
+nvm use 0.12
+rvm use ruby-2.1
 
-#TODO(jtattermusch): provide way to tunnel run_tests cmdline options to run_tests.
-#TODO(jtattermusch): provide way to grab the docker image built by run_jenkins
+# If port env variable is set, run corresponding interop server on given port in background.
+# TODO(jtattermusch): ideally, run_interop_tests.py would generate the commands to run servers.
 
-# config: opt or dbg
-export config=opt
+[ -z "${SERVER_PORT_cxx}" ] || bins/opt/interop_server --enable_ssl --port=${SERVER_PORT_cxx} &
 
-# platform:
-# -- use linux to run tests under docker
-# -- use interop to run dockerized interop tests
-export platform=interop
+[ -z "${SERVER_PORT_node}" ] || node src/node/interop/interop_server.js --use_tls=true --port=${SERVER_PORT_node} &
 
-# language: one of languages supported by run_tests.py or run_interop_tests.py
-export language=all
+[ -z "${SERVER_PORT_ruby}" ] || ruby src/ruby/bin/interop/interop_server.rb --use_tls --port=${SERVER_PORT_ruby} &
 
-# architecture
-export arch=`uname -m`
+[ -z "${SERVER_PORT_csharp}" ] || (cd src/csharp/Grpc.IntegrationTesting.Server/bin/Debug && mono Grpc.IntegrationTesting.Server.exe --use_tls --port=${SERVER_PORT_csharp}) &
 
-# test run configuration is done through environment variables above
-tools/jenkins/run_jenkins.sh
+sleep infinity
