@@ -88,7 +88,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
       gpr_slice_from_copied_buffer(client_payload, client_payload_length);
   gpr_slice_buffer outgoing;
   grpc_iomgr_closure done_write_closure;
-  grpc_workqueue *workqueue = grpc_workqueue_create();
+  grpc_workqueue *workqueue;
 
   hex = gpr_dump(client_payload, client_payload_length,
                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -100,6 +100,8 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   /* Init grpc */
   grpc_init();
+
+  workqueue = grpc_workqueue_create();
 
   /* Create endpoints */
   sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536, workqueue);
