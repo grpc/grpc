@@ -54,6 +54,7 @@ grpc_workqueue *grpc_workqueue_create(void);
 
 void grpc_workqueue_flush(grpc_workqueue *workqueue, int asynchronously);
 
+#define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #define GRPC_WORKQUEUE_REF(p, r) \
   grpc_workqueue_ref((p), __FILE__, __LINE__, (r))

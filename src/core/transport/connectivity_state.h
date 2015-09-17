@@ -54,32 +54,52 @@ typedef struct {
   grpc_connectivity_state_watcher *watchers;
   /** a name to help debugging */
   char *name;
-  /** workqueue for async work */
-  grpc_workqueue *workqueue;
+  /** has this state been changed since the last flush? */
+  int changed;
 } grpc_connectivity_state_tracker;
+
+typedef struct { grpc_iomgr_closure *cbs; } grpc_connectivity_state_flusher;
 
 extern int grpc_connectivity_state_trace;
 
 void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
-                                  grpc_workqueue *grpc_workqueue,
                                   grpc_connectivity_state init_state,
                                   const char *name);
 void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker);
 
+/** Set connectivity state; not thread safe; access must be serialized with an
+ * external lock */
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state,
                                  const char *reason);
-void grpc_connectivity_state_set_with_scheduler(
-    grpc_connectivity_state_tracker *tracker, grpc_connectivity_state state,
-    void (*scheduler)(void *arg, grpc_iomgr_closure *closure), void *arg,
-    const char *reason);
+
+/** Begin flushing callbacks; not thread safe; access must be serialized using
+ * the same external lock as grpc_connectivity_state_set. Initializes flusher.
+ */
+void grpc_connectivity_state_begin_flush(
+    grpc_connectivity_state_tracker *tracker,
+    grpc_connectivity_state_flusher *flusher);
+
+/** Complete flushing updates: must not be called with any locks held */
+void grpc_connectivity_state_end_flush(
+    grpc_connectivity_state_flusher *flusher);
 
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker);
 
+typedef struct {
+  /** 1 if the current state is idle (a hint to begin connecting), 0 otherwise
+   */
+  int current_state_is_idle;
+  /** 1 if the state has already changed: in this case the closure passed to
+   * grpc_connectivity_state_notify_on_state_change will not be called */
+  int state_already_changed;
+} grpc_connectivity_state_notify_on_state_change_result;
+
 /** Return 1 if the channel should start connecting, 0 otherwise */
-int grpc_connectivity_state_notify_on_state_change(
+grpc_connectivity_state_notify_on_state_change_result
+grpc_connectivity_state_notify_on_state_change(
     grpc_connectivity_state_tracker *tracker, grpc_connectivity_state *current,
-    grpc_iomgr_closure *notify);
+    grpc_iomgr_closure *notify) GRPC_MUST_USE_RESULT;
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H */

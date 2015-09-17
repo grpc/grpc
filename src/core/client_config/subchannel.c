@@ -303,8 +303,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   c->random = random_seed();
   grpc_mdctx_ref(c->mdctx);
   grpc_iomgr_closure_init(&c->connected, subchannel_connected, c);
-  grpc_connectivity_state_init(&c->state_tracker, c->workqueue,
-                               GRPC_CHANNEL_IDLE, "subchannel");
+  grpc_connectivity_state_init(&c->state_tracker, GRPC_CHANNEL_IDLE,
+                               "subchannel");
   gpr_mu_init(&c->mu);
   return c;
 }
@@ -365,12 +365,15 @@ void grpc_subchannel_create_call(grpc_subchannel *c, grpc_pollset *pollset,
     c->waiting = w4c;
     grpc_subchannel_add_interested_party(c, pollset);
     if (!c->connecting) {
+      grpc_connectivity_state_flusher f;
       c->connecting = 1;
       connectivity_state_changed_locked(c, "create_call");
       /* released by connection */
       SUBCHANNEL_REF_LOCKED(c, "connecting");
       GRPC_CHANNEL_INTERNAL_REF(c->master, "connecting");
+      grpc_connectivity_state_begin_flush(&c->state_tracker, &f);
       gpr_mu_unlock(&c->mu);
+      grpc_connectivity_state_end_flush(&f);
 
       start_connect(c);
     } else {
@@ -387,24 +390,33 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(grpc_subchannel *c) {
   return state;
 }
 
-void grpc_subchannel_notify_on_state_change(grpc_subchannel *c,
-                                            grpc_connectivity_state *state,
-                                            grpc_iomgr_closure *notify) {
+grpc_connectivity_state_notify_on_state_change_result
+grpc_subchannel_notify_on_state_change(grpc_subchannel *c,
+                                       grpc_connectivity_state *state,
+                                       grpc_iomgr_closure *notify) {
   int do_connect = 0;
+  grpc_connectivity_state_notify_on_state_change_result r;
   gpr_mu_lock(&c->mu);
-  if (grpc_connectivity_state_notify_on_state_change(&c->state_tracker, state,
-                                                     notify)) {
+  r = grpc_connectivity_state_notify_on_state_change(&c->state_tracker, state,
+                                                     notify);
+  if (r.current_state_is_idle) {
+    grpc_connectivity_state_flusher f;
     do_connect = 1;
     c->connecting = 1;
     /* released by connection */
     SUBCHANNEL_REF_LOCKED(c, "connecting");
     GRPC_CHANNEL_INTERNAL_REF(c->master, "connecting");
     connectivity_state_changed_locked(c, "state_change");
-  }
+    grpc_connectivity_state_begin_flush(&c->state_tracker, &f);
+    gpr_mu_unlock(&c->mu);
+    grpc_connectivity_state_end_flush(&f);
+  } else {
   gpr_mu_unlock(&c->mu);
+  }
   if (do_connect) {
     start_connect(c);
   }
+  return r;
 }
 
 void grpc_subchannel_process_transport_op(grpc_subchannel *c,
@@ -413,18 +425,23 @@ void grpc_subchannel_process_transport_op(grpc_subchannel *c,
   grpc_subchannel *destroy;
   int cancel_alarm = 0;
   gpr_mu_lock(&c->mu);
+  if (c->active != NULL) {
+    con = c->active;
+    CONNECTION_REF_LOCKED(con, "transport-op");
+  }
   if (op->disconnect) {
+    grpc_connectivity_state_flusher f;
     c->disconnected = 1;
     connectivity_state_changed_locked(c, "disconnect");
     if (c->have_alarm) {
       cancel_alarm = 1;
     }
-  }
-  if (c->active != NULL) {
-    con = c->active;
-    CONNECTION_REF_LOCKED(con, "transport-op");
-  }
+    grpc_connectivity_state_begin_flush(&c->state_tracker, &f);
+    gpr_mu_unlock(&c->mu);
+    grpc_connectivity_state_end_flush(&f);
+  } else {
   gpr_mu_unlock(&c->mu);
+  }
 
   if (con != NULL) {
     grpc_channel_stack *channel_stack = CHANNEL_STACK_FROM_CONNECTION(con);
@@ -457,6 +474,7 @@ static void on_state_changed(void *p, int iomgr_success) {
   grpc_transport_op op;
   grpc_channel_element *elem;
   connection *destroy_connection = NULL;
+  grpc_connectivity_state_flusher f;
 
   gpr_mu_lock(mu);
 
@@ -498,7 +516,9 @@ done:
   connectivity_state_changed_locked(c, "transport_state_changed");
   destroy = SUBCHANNEL_UNREF_LOCKED(c, "state_watcher");
   gpr_free(sw);
+  grpc_connectivity_state_begin_flush(&c->state_tracker, &f);
   gpr_mu_unlock(mu);
+  grpc_connectivity_state_end_flush(&f);
   if (destroy) {
     subchannel_destroy(c);
   }
@@ -518,6 +538,7 @@ static void publish_transport(grpc_subchannel *c) {
   state_watcher *sw;
   connection *destroy_connection = NULL;
   grpc_channel_element *elem;
+  grpc_connectivity_state_flusher f;
 
   /* build final filter list */
   num_filters = c->num_filters + c->connecting_result.num_filters + 1;
@@ -581,12 +602,18 @@ static void publish_transport(grpc_subchannel *c) {
 
   /* signal completion */
   connectivity_state_changed_locked(c, "connected");
-  while ((w4c = c->waiting)) {
-    c->waiting = w4c->next;
-    grpc_workqueue_push(c->workqueue, &w4c->continuation, 1);
-  }
+  w4c = c->waiting;
+  c->waiting = NULL;
 
+  grpc_connectivity_state_begin_flush(&c->state_tracker, &f);
   gpr_mu_unlock(&c->mu);
+  grpc_connectivity_state_end_flush(&f);
+
+  while (w4c != NULL) {
+    waiting_for_connect *next = w4c;
+    w4c->continuation.cb(w4c->continuation.cb_arg, 1);
+    w4c = next;
+  }
 
   gpr_free(filters);
 
@@ -626,13 +653,16 @@ static void update_reconnect_parameters(grpc_subchannel *c) {
 
 static void on_alarm(void *arg, int iomgr_success) {
   grpc_subchannel *c = arg;
+  grpc_connectivity_state_flusher f;
   gpr_mu_lock(&c->mu);
   c->have_alarm = 0;
   if (c->disconnected) {
     iomgr_success = 0;
   }
   connectivity_state_changed_locked(c, "alarm");
+  grpc_connectivity_state_begin_flush(&c->state_tracker, &f);
   gpr_mu_unlock(&c->mu);
+  grpc_connectivity_state_end_flush(&f);
   if (iomgr_success) {
     update_reconnect_parameters(c);
     continue_connect(c);
@@ -648,12 +678,15 @@ static void subchannel_connected(void *arg, int iomgr_success) {
     publish_transport(c);
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
+    grpc_connectivity_state_flusher f;
     gpr_mu_lock(&c->mu);
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = 1;
     connectivity_state_changed_locked(c, "connect_failed");
     grpc_alarm_init(&c->alarm, c->next_attempt, on_alarm, c, now);
+    grpc_connectivity_state_begin_flush(&c->state_tracker, &f);
     gpr_mu_unlock(&c->mu);
+    grpc_connectivity_state_end_flush(&f);
   }
 }
 

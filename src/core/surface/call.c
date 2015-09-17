@@ -654,6 +654,8 @@ static void unlock(grpc_call *call) {
   if (!call->bound_pollset && call->cq && (!call->is_client || start_op)) {
     call->bound_pollset = 1;
     op.bind_pollset = grpc_cq_pollset(call->cq);
+    grpc_workqueue_add_to_pollset(grpc_channel_get_workqueue(call->channel),
+                                  op.bind_pollset);
     start_op = 1;
   }
 

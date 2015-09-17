@@ -82,10 +82,11 @@ void grpc_lb_policy_exit_idle(grpc_lb_policy *policy) {
   policy->vtable->exit_idle(policy);
 }
 
-void grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy,
-                                           grpc_connectivity_state *state,
-                                           grpc_iomgr_closure *closure) {
-  policy->vtable->notify_on_state_change(policy, state, closure);
+grpc_connectivity_state_notify_on_state_change_result
+grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy,
+                                      grpc_connectivity_state *state,
+                                      grpc_iomgr_closure *closure) {
+  return policy->vtable->notify_on_state_change(policy, state, closure);
 }
 
 grpc_connectivity_state grpc_lb_policy_check_connectivity(
