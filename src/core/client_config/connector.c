@@ -47,3 +47,7 @@ void grpc_connector_connect(grpc_connector *connector,
                             grpc_iomgr_closure *notify) {
   connector->vtable->connect(connector, in_args, out_args, notify);
 }
+
+void grpc_connector_shutdown(grpc_connector *connector) {
+  connector->vtable->shutdown(connector);
+}

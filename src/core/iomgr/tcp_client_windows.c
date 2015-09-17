@@ -77,7 +77,6 @@ static void on_alarm(void *acp, int occured) {
   async_connect *ac = acp;
   gpr_mu_lock(&ac->mu);
   /* If the alarm didn't occur, it got cancelled. */
-  gpr_log(GPR_DEBUG, "on_alarm: %p", ac->socket);
   if (ac->socket != NULL && occured) {
     grpc_winsocket_shutdown(ac->socket);
   }
@@ -95,8 +94,6 @@ static void on_connect(void *acp, int from_iocp) {
   grpc_alarm_cancel(&ac->alarm);
 
   gpr_mu_lock(&ac->mu);
-
-  gpr_log(GPR_DEBUG, "on_connect: %p", ac->socket);
 
   if (from_iocp) {
     DWORD transfered_bytes = 0;
