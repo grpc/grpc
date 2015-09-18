@@ -71,8 +71,9 @@ typedef struct server_port {
 
 /* the overall server */
 struct grpc_tcp_server {
-  grpc_tcp_server_cb cb;
-  void *cb_arg;
+  /* Called whenever accept() succeeds on a server port. */
+  grpc_tcp_server_cb on_accept_cb;
+  void *on_accept_cb_arg;
 
   gpr_mu mu;
 
@@ -95,8 +96,9 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
-  s->cb = NULL;
-  s->cb_arg = NULL;
+  s->iomgr_callbacks_pending = 0;
+  s->on_accept_cb = NULL;
+  s->on_accept_cb_arg = NULL;
   s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
   s->nports = 0;
   s->port_capacity = INIT_PORT_CAP;
@@ -344,7 +346,7 @@ static void on_accept(void *arg, int from_iocp) {
 
   /* The only time we should call our callback, is where we successfully
      managed to accept a connection, and created an endpoint. */
-  if (ep) sp->server->cb(sp->server->cb_arg, ep);
+  if (ep) sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep);
   /* As we were notified from the IOCP of one and exactly one accept,
      the former socked we created has now either been destroy or assigned
      to the new connection. We need to create a new one for the next
@@ -380,7 +382,7 @@ static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
   port = prepare_socket(sock, addr, addr_len);
   if (port >= 0) {
     gpr_mu_lock(&s->mu);
-    GPR_ASSERT(!s->cb && "must add ports before starting server");
+    GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
     /* append it to the list under a lock */
     if (s->nports == s->port_capacity) {
       s->port_capacity *= 2;
@@ -462,15 +464,16 @@ SOCKET grpc_tcp_server_get_socket(grpc_tcp_server *s, unsigned index) {
 }
 
 void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollset,
-                           size_t pollset_count, grpc_tcp_server_cb cb,
-                           void *cb_arg) {
+                           size_t pollset_count,
+                           grpc_tcp_server_cb on_accept_cb,
+                           void *on_accept_cb_arg) {
   size_t i;
-  GPR_ASSERT(cb);
+  GPR_ASSERT(on_accept_cb);
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(!s->cb);
+  GPR_ASSERT(!s->on_accept_cb);
   GPR_ASSERT(s->active_ports == 0);
-  s->cb = cb;
-  s->cb_arg = cb_arg;
+  s->on_accept_cb = on_accept_cb;
+  s->on_accept_cb_arg = on_accept_cb_arg;
   for (i = 0; i < s->nports; i++) {
     start_accept(s->ports + i);
     s->active_ports++;
