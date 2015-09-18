@@ -70,13 +70,15 @@ typedef struct channel_data {
 /* used to silence 'variable not used' warnings */
 static void ignore_unused(void *ignored) {}
 
-static grpc_mdelem *client_filter(void *user_data, grpc_mdelem *md) {
+static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
   channel_data *channeld = elem->channel_data;
   if (md == channeld->status) {
     return NULL;
   } else if (md->key == channeld->status->key) {
     grpc_call_element_send_cancel(elem);
+    return NULL;
+  } else if (md->key == channeld->content_type->key) {
     return NULL;
   }
   return md;
@@ -92,10 +94,12 @@ static void hc_on_recv(void *user_data, int success) {
     grpc_stream_op *op = &ops[i];
     if (op->type != GRPC_OP_METADATA) continue;
     calld->got_initial_metadata = 1;
-    grpc_metadata_batch_filter(&op->data.metadata, client_filter, elem);
+    grpc_metadata_batch_filter(&op->data.metadata, client_recv_filter, elem);
   }
   calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
 }
+
+
 
 static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
