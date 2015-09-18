@@ -59,7 +59,6 @@ grpc_mdstr *grpc_channel_get_compression_algorithm_string(
 grpc_mdstr *grpc_channel_get_encodings_accepted_by_peer_string(
     grpc_channel *channel);
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
-grpc_mdstr *grpc_channel_get_content_type_string(grpc_channel *channel);
 gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
 
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
