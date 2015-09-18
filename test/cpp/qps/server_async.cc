@@ -35,29 +35,23 @@
 #include <functional>
 #include <memory>
 #include <mutex>
-#include <sys/time.h>
-#include <sys/resource.h>
-#include <sys/signal.h>
 #include <thread>
 
 #include <gflags/gflags.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
-#include <grpc++/async_unary_call.h>
-#include <grpc++/config.h>
+#include <grpc/support/log.h>
+#include <grpc++/support/config.h>
 #include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
-#include <grpc++/server_credentials.h>
-#include <grpc++/status.h>
-#include <grpc++/stream.h>
+#include <grpc++/security/server_credentials.h>
 #include <gtest/gtest.h>
-#include "src/cpp/server/thread_pool.h"
+
 #include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 namespace grpc {
 namespace testing {
@@ -80,7 +74,7 @@ class AsyncQpsServerTest : public Server {
     server_ = builder.BuildAndStart();
 
     using namespace std::placeholders;
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 10000 / config.threads(); i++) {
       for (int j = 0; j < config.threads(); j++) {
         auto request_unary = std::bind(
             &TestService::AsyncService::RequestUnaryCall, &async_service_, _1,
@@ -100,25 +94,7 @@ class AsyncQpsServerTest : public Server {
       shutdown_state_.emplace_back(new PerThreadShutdownState());
     }
     for (int i = 0; i < config.threads(); i++) {
-      threads_.push_back(std::thread([=]() {
-        // Wait until work is available or we are shutting down
-        bool ok;
-        void *got_tag;
-        while (srv_cqs_[i]->Next(&got_tag, &ok)) {
-          ServerRpcContext *ctx = detag(got_tag);
-          // The tag is a pointer to an RPC context to invoke
-          bool still_going = ctx->RunNextState(ok);
-          if (!shutdown_state_[i]->shutdown()) {
-            // this RPC context is done, so refresh it
-            if (!still_going) {
-              ctx->Reset();
-            }
-          } else {
-            return;
-          }
-        }
-        return;
-      }));
+      threads_.emplace_back(&AsyncQpsServerTest::ThreadFunc, this, i);
     }
   }
   ~AsyncQpsServerTest() {
@@ -143,6 +119,26 @@ class AsyncQpsServerTest : public Server {
   }
 
  private:
+  void ThreadFunc(int rank) {
+    // Wait until work is available or we are shutting down
+    bool ok;
+    void *got_tag;
+    while (srv_cqs_[rank]->Next(&got_tag, &ok)) {
+      ServerRpcContext *ctx = detag(got_tag);
+      // The tag is a pointer to an RPC context to invoke
+      const bool still_going = ctx->RunNextState(ok);
+      if (!shutdown_state_[rank]->shutdown()) {
+        // this RPC context is done, so refresh it
+        if (!still_going) {
+          ctx->Reset();
+        }
+      } else {
+        return;
+      }
+    }
+    return;
+  }
+
   class ServerRpcContext {
    public:
     ServerRpcContext() {}

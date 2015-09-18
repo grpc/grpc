@@ -83,7 +83,7 @@ void empty_test(void) {
   result.statistic = &sum;
   census_window_stats_get_sums(stats, zero, &result);
   GPR_ASSERT(result.count == 0 && sum.value1 == 0 && sum.value2 == 0);
-  census_window_stats_get_sums(stats, gpr_now(), &result);
+  census_window_stats_get_sums(stats, gpr_now(GPR_CLOCK_REALTIME), &result);
   GPR_ASSERT(result.count == 0 && sum.value1 == 0 && sum.value2 == 0);
   census_window_stats_destroy(stats);
 }
@@ -268,7 +268,7 @@ void rolling_time_test(void) {
   struct census_window_stats* stats =
       census_window_stats_create(1, &kMinInterval, 7, &kMyStatInfo);
   GPR_ASSERT(stats != NULL);
-  srand(gpr_now().tv_nsec);
+  srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
   for (i = 0; i < 100000; i++) {
     increment.tv_nsec = rand() % 100000000; /* up to 1/10th second */
     when = gpr_time_add(when, increment);
@@ -290,9 +290,9 @@ void infinite_interval_test(void) {
   int i;
   const int count = 100000;
   gpr_timespec increment = {0, 0};
-  struct census_window_stats* stats =
-      census_window_stats_create(1, &gpr_inf_future, 10, &kMyStatInfo);
-  srand(gpr_now().tv_nsec);
+  struct census_window_stats* stats = census_window_stats_create(
+      1, &gpr_inf_future(GPR_CLOCK_REALTIME), 10, &kMyStatInfo);
+  srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
   for (i = 0; i < count; i++) {
     increment.tv_sec = rand() % 21600; /* 6 hours */
     when = gpr_time_add(when, increment);

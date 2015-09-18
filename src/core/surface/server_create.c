@@ -34,7 +34,11 @@
 #include <grpc/grpc.h>
 #include "src/core/surface/completion_queue.h"
 #include "src/core/surface/server.h"
+#include "src/core/channel/compress_filter.h"
 
-grpc_server *grpc_server_create(const grpc_channel_args *args) {
-  return grpc_server_create_from_filters(NULL, 0, args);
+grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
+  const grpc_channel_filter *filters[] = {&grpc_compress_filter};
+  (void)reserved;
+  return grpc_server_create_from_filters(filters, GPR_ARRAY_SIZE(filters),
+                                         args);
 }

@@ -123,8 +123,7 @@ void grpc_chttp2_stream_map_move_into(grpc_chttp2_stream_map *src,
     dst->values = gpr_realloc(dst->values, dst->capacity * sizeof(void *));
   }
   memcpy(dst->keys + dst->count, src->keys, src->count * sizeof(gpr_uint32));
-  memcpy(dst->values + dst->count, src->values,
-         src->count * sizeof(void*));
+  memcpy(dst->values + dst->count, src->values, src->count * sizeof(void *));
   dst->count += src->count;
   dst->free += src->free;
   src->count = 0;

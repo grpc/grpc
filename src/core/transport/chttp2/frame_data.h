@@ -56,6 +56,7 @@ typedef struct {
   gpr_uint8 frame_type;
   gpr_uint32 frame_size;
 
+  int is_frame_compressed;
   grpc_stream_op_buffer incoming_sopb;
 } grpc_chttp2_data_parser;
 

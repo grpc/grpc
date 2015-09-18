@@ -37,26 +37,40 @@
 
 cd `dirname $0`/../..
 
-./tools/buildgen/generate_projects.sh
+git add .               #because we're using "git diff" to find changes to grpc.sln and then make files based on those changes, this prevents this file or other files from possibly being found in the diff
+
+./tools/buildgen/generate_projects-old.sh
+
+line_number=0
 
 git diff |
-grep \\+Project |
-cut -d\" -f 4 |
-sort -u |
-grep _test$ |
+grep -A2 \\+Project |       #find "Project" immediately after a backslash (escaped), plus 2 additional lines to capture the "libs = ", plus 1 line of "--".  matches will come from the generated grpc.sln
 while read p ; do
-  mkdir -p templates/vsprojects/$p
-  echo '<%namespace file="../vcxproj_defs.include" import="gen_project"/>${gen_project("'$p'", targets)}' > templates/vsprojects/$p/$p.vcxproj.template
+  line_number=$((line_number + 1))
+  if [ "$line_number" -gt "4" ]; then
+    line_number=1;
+  fi
+  echo $line_number
+  echo $p
+  if [ "$line_number" -eq "1" ]; then
+    project_name=$(echo "$p" | cut -d\" -f 4)          #sed: extract line N only; cut with delimiter: ".  select only field 4
+  fi
+  if [ "$line_number" -eq "3" ]; then
+    lib_setting=$(echo "$p" | cut -d\" -f 2)          #
+    echo "project_name"
+    echo $project_name
+    echo "lib_setting"
+    echo $lib_setting
+    mkdir -p templates/vsprojects/$project_name
+    if [ "$lib_setting" = "True" ]; then
+      echo "lib: true"
+      echo '<%namespace file="../vcxproj_defs.include" import="gen_project"/>${gen_project("'$project_name'", libs)}' > templates/vsprojects/$project_name/$project_name.vcxproj.template
+    else
+      echo "lib: not true"
+      echo '<%namespace file="../vcxproj_defs.include" import="gen_project"/>${gen_project("'$project_name'", targets)}' > templates/vsprojects/$project_name/$project_name.vcxproj.template
+    fi
+  fi
+ # sleep .5     #for testing
 done
 
-git diff |
-grep \\+Project |
-cut -d\" -f 4 |
-sort -u |
-grep -v _test$ |
-while read p ; do
-  mkdir -p templates/vsprojects/$p
-  echo '<%namespace file="../vcxproj_defs.include" import="gen_project"/>${gen_project("'$p'", libs)}' > templates/vsprojects/$p/$p.vcxproj.template
-done
-
-./tools/buildgen/generate_projects.sh
+./tools/buildgen/generate_projects-old.sh

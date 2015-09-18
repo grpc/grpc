@@ -77,6 +77,7 @@ typedef struct grpc_linked_mdelem {
   grpc_mdelem *md;
   struct grpc_linked_mdelem *next;
   struct grpc_linked_mdelem *prev;
+  void *reserved;
 } grpc_linked_mdelem;
 
 typedef struct grpc_mdelem_list {
@@ -102,8 +103,13 @@ void grpc_metadata_batch_destroy(grpc_metadata_batch *batch);
 void grpc_metadata_batch_merge(grpc_metadata_batch *target,
                                grpc_metadata_batch *add);
 
+/** Moves the metadata information from \a src to \a dst. Upon return, \a src is
+ * zeroed. */
+void grpc_metadata_batch_move(grpc_metadata_batch *dst,
+                              grpc_metadata_batch *src);
+
 /** Add \a storage to the beginning of \a batch. storage->md is
-    assumed to be valid. 
+    assumed to be valid.
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call. */

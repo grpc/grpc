@@ -277,10 +277,11 @@ module GRPC
       @stop_mutex.synchronize do
         @stopped = true
       end
-      @pool.stop
       deadline = from_relative_time(@poll_period)
-
+      return if @server.close(@cq, deadline)
+      deadline = from_relative_time(@poll_period)
       @server.close(@cq, deadline)
+      @pool.stop
     end
 
     # determines if the server has been stopped
@@ -383,7 +384,6 @@ module GRPC
       @pool.start
       @server.start
       loop_handle_server_calls
-      @running = false
     end
 
     # Sends UNAVAILABLE if there are too many unprocessed jobs
@@ -398,14 +398,14 @@ module GRPC
       nil
     end
 
-    # Sends NOT_FOUND if the method can't be found
-    def found?(an_rpc)
+    # Sends UNIMPLEMENTED if the method is not implemented by this server
+    def implemented?(an_rpc)
       mth = an_rpc.method.to_sym
       return an_rpc if rpc_descs.key?(mth)
-      GRPC.logger.warn("NOT_FOUND: #{an_rpc}")
+      GRPC.logger.warn("UNIMPLEMENTED: #{an_rpc}")
       noop = proc { |x| x }
       c = ActiveCall.new(an_rpc.call, @cq, noop, noop, an_rpc.deadline)
-      c.send_status(StatusCodes::NOT_FOUND, '')
+      c.send_status(StatusCodes::UNIMPLEMENTED, '')
       nil
     end
 
@@ -414,23 +414,24 @@ module GRPC
       fail 'not running' unless @running
       loop_tag = Object.new
       until stopped?
-        deadline = from_relative_time(@poll_period)
         begin
-          an_rpc = @server.request_call(@cq, loop_tag, deadline)
+          an_rpc = @server.request_call(@cq, loop_tag, INFINITE_FUTURE)
           c = new_active_server_call(an_rpc)
+          unless c.nil?
+            mth = an_rpc.method.to_sym
+            @pool.schedule(c) do |call|
+              rpc_descs[mth].run_server_method(call, rpc_handlers[mth])
+            end
+          end
         rescue Core::CallError, RuntimeError => e
           # these might happen for various reasonse.  The correct behaviour of
-          # the server is to log them and continue.
-          GRPC.logger.warn("server call failed: #{e}")
+          # the server is to log them and continue, if it's not shutting down.
+          GRPC.logger.warn("server call failed: #{e}") unless stopped?
           next
         end
-        unless c.nil?
-          mth = an_rpc.method.to_sym
-          @pool.schedule(c) do |call|
-            rpc_descs[mth].run_server_method(call, rpc_handlers[mth])
-          end
-        end
       end
+      @running = false
+      GRPC.logger.info("stopped: #{self}")
     end
 
     def new_active_server_call(an_rpc)
@@ -446,7 +447,7 @@ module GRPC
       an_rpc.call.run_batch(@cq, handle_call_tag, INFINITE_FUTURE,
                             SEND_INITIAL_METADATA => connect_md)
       return nil unless available?(an_rpc)
-      return nil unless found?(an_rpc)
+      return nil unless implemented?(an_rpc)
 
       # Create the ActiveCall
       GRPC.logger.info("deadline is #{an_rpc.deadline}; (now=#{Time.now})")

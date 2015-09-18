@@ -85,4 +85,4 @@ void grpc_time_averaged_stats_add_sample(grpc_time_averaged_stats *stats,
    value. */
 double grpc_time_averaged_stats_update_average(grpc_time_averaged_stats *stats);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_TIME_AVERAGED_STATS_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_TIME_AVERAGED_STATS_H */

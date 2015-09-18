@@ -104,6 +104,9 @@ typedef struct {
      The filter does not need to do any chaining */
   void (*destroy_channel_elem)(grpc_channel_element *elem);
 
+  /* Implement grpc_call_get_peer() */
+  char *(*get_peer)(grpc_call_element *elem);
+
   /* The name of this filter */
   const char *name;
 } grpc_channel_filter;
@@ -173,6 +176,8 @@ void grpc_call_next_op(grpc_call_element *elem, grpc_transport_stream_op *op);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
 void grpc_channel_next_op(grpc_channel_element *elem, grpc_transport_op *op);
+/* Pass through a request to get_peer to the next child element */
+char *grpc_call_next_get_peer(grpc_call_element *elem);
 
 /* Given the top element of a channel stack, get the channel stack itself */
 grpc_channel_stack *grpc_channel_stack_from_top_element(

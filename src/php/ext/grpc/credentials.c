@@ -130,7 +130,7 @@ PHP_METHOD(Credentials, createSsl) {
   }
   grpc_credentials *creds = grpc_ssl_credentials_create(
       pem_root_certs,
-      pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair);
+      pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL);
   zval *creds_object = grpc_php_wrap_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
@@ -160,7 +160,7 @@ PHP_METHOD(Credentials, createComposite) {
       (wrapped_grpc_credentials *)zend_object_store_get_object(
           cred2_obj TSRMLS_CC);
   grpc_credentials *creds =
-      grpc_composite_credentials_create(cred1->wrapped, cred2->wrapped);
+      grpc_composite_credentials_create(cred1->wrapped, cred2->wrapped, NULL);
   zval *creds_object = grpc_php_wrap_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
@@ -170,17 +170,7 @@ PHP_METHOD(Credentials, createComposite) {
  * @return Credentials The new GCE credentials object
  */
 PHP_METHOD(Credentials, createGce) {
-  grpc_credentials *creds = grpc_compute_engine_credentials_create();
-  zval *creds_object = grpc_php_wrap_credentials(creds);
-  RETURN_DESTROY_ZVAL(creds_object);
-}
-
-/**
- * Create fake credentials. Only to be used for testing.
- * @return Credentials The new fake credentials object
- */
-PHP_METHOD(Credentials, createFake) {
-  grpc_credentials *creds = grpc_fake_transport_security_credentials_create();
+  grpc_credentials *creds = grpc_google_compute_engine_credentials_create(NULL);
   zval *creds_object = grpc_php_wrap_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
@@ -191,7 +181,6 @@ static zend_function_entry credentials_methods[] = {
     PHP_ME(Credentials, createComposite, NULL,
            ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_ME(Credentials, createGce, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
-    PHP_ME(Credentials, createFake, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
     PHP_FE_END};
 
 void grpc_init_credentials(TSRMLS_D) {

@@ -136,7 +136,7 @@ static void test_concurrency(void) {
   gpr_mu_lock(&arg.mu);
   while (arg.num_done < NUM_THREADS) {
     gpr_log(GPR_INFO, "num done %d", arg.num_done);
-    gpr_cv_wait(&arg.done, &arg.mu, gpr_inf_future);
+    gpr_cv_wait(&arg.done, &arg.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&arg.mu);
   census_tracing_shutdown();

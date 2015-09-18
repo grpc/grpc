@@ -28,15 +28,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 require 'grpc'
-require 'spec_helper'
 
 include GRPC::Core
-
-def load_test_certs
-  test_root = File.join(File.dirname(__FILE__), 'testdata')
-  files = ['ca.pem', 'server1.key', 'server1.pem']
-  files.map { |f| File.open(File.join(test_root, f)).read }
-end
 
 shared_context 'setup: tags' do
   let(:sent_message) { 'sent message' }
@@ -47,7 +40,7 @@ shared_context 'setup: tags' do
   end
 
   def deadline
-    Time.now + 2
+    Time.now + 5
   end
 
   def server_allows_client_to_proceed
@@ -61,13 +54,30 @@ shared_context 'setup: tags' do
   end
 
   def new_client_call
-    @ch.create_call(@client_queue, '/method', 'foo.test.google.fr', deadline)
+    @ch.create_call(@client_queue, nil, nil, '/method', nil, deadline)
   end
 end
 
 shared_examples 'basic GRPC message delivery is OK' do
   include GRPC::Core
   include_context 'setup: tags'
+
+  context 'the test channel' do
+    it 'should have a target' do
+      expect(@ch.target).to be_a(String)
+    end
+  end
+
+  context 'a client call' do
+    it 'should have a peer' do
+      expect(new_client_call.peer).to be_a(String)
+    end
+  end
+
+  it 'calls have peer info' do
+    call = new_client_call
+    expect(call.peer).to be_a(String)
+  end
 
   it 'servers receive requests from clients and can respond' do
     call = new_client_call
@@ -385,7 +395,7 @@ describe 'the http client/server' do
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
     @server = GRPC::Core::Server.new(@server_queue, nil)
-    server_port = @server.add_http2_port(server_host)
+    server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
     @server.start
     @ch = Channel.new("0.0.0.0:#{server_port}", nil)
   end
@@ -403,12 +413,19 @@ describe 'the http client/server' do
 end
 
 describe 'the secure http client/server' do
+  def load_test_certs
+    test_root = File.join(File.dirname(__FILE__), 'testdata')
+    files = ['ca.pem', 'server1.key', 'server1.pem']
+    files.map { |f| File.open(File.join(test_root, f)).read }
+  end
+
   before(:example) do
     certs = load_test_certs
     server_host = '0.0.0.0:0'
     @client_queue = GRPC::Core::CompletionQueue.new
     @server_queue = GRPC::Core::CompletionQueue.new
-    server_creds = GRPC::Core::ServerCredentials.new(nil, certs[1], certs[2])
+    server_creds = GRPC::Core::ServerCredentials.new(
+      nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
     @server = GRPC::Core::Server.new(@server_queue, nil)
     server_port = @server.add_http2_port(server_host, server_creds)
     @server.start

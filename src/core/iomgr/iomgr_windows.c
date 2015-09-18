@@ -68,4 +68,4 @@ void grpc_iomgr_platform_shutdown(void) {
   winsock_shutdown();
 }
 
-#endif  /* GRPC_WINSOCK_SOCKET */
+#endif /* GRPC_WINSOCK_SOCKET */

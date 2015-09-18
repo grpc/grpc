@@ -41,4 +41,4 @@ extern const grpc_channel_filter grpc_http_client_filter;
 
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 
-#endif  /* GRPC_INTERNAL_CORE_CHANNEL_HTTP_CLIENT_FILTER_H */
+#endif /* GRPC_INTERNAL_CORE_CHANNEL_HTTP_CLIENT_FILTER_H */

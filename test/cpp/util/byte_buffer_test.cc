@@ -31,13 +31,13 @@
  *
  */
 
-#include <grpc++/byte_buffer.h>
+#include <grpc++/support/byte_buffer.h>
 
 #include <cstring>
 #include <vector>
 
 #include <grpc/support/slice.h>
-#include <grpc++/slice.h>
+#include <grpc++/support/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
@@ -46,8 +46,7 @@ namespace {
 const char* kContent1 = "hello xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 const char* kContent2 = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy world";
 
-class ByteBufferTest : public ::testing::Test {
-};
+class ByteBufferTest : public ::testing::Test {};
 
 TEST_F(ByteBufferTest, CreateFromSingleSlice) {
   gpr_slice hello = gpr_slice_from_copied_string(kContent1);

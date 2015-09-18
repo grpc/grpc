@@ -80,7 +80,7 @@ static void destroy(grpc_server *server, void *tcpp) {
   grpc_tcp_server_destroy(tcp, grpc_server_listener_destroy_done, server);
 }
 
-int grpc_server_add_http2_port(grpc_server *server, const char *addr) {
+int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   grpc_resolved_addresses *resolved = NULL;
   grpc_tcp_server *tcp = NULL;
   size_t i;

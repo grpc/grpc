@@ -6,7 +6,8 @@ before_install:
   - echo "deb http://download.mono-project.com/repo/debian wheezy main" | sudo tee /etc/apt/sources.list.d/mono-xamarin.list
   - echo "deb http://download.mono-project.com/repo/debian wheezy-libtiff-compat main" | sudo tee -a /etc/apt/sources.list.d/mono-xamarin.list
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv clang-3.5
+  - sudo apt-get install -qq libgtest-dev libgflags-dev python-virtualenv python-dev python3-dev clang-3.5
+  - sudo pip install --upgrade virtualenv
   - sudo pip install cpp-coveralls mako simplejson
   - sudo apt-get install -qq mono-devel nunit
   - wget www.nuget.org/NuGet.exe -O nuget.exe

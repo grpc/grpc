@@ -42,4 +42,4 @@ gpr_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
                                            const char *body_bytes,
                                            size_t body_size);
 
-#endif  /* GRPC_INTERNAL_CORE_HTTPCLI_FORMAT_REQUEST_H */
+#endif /* GRPC_INTERNAL_CORE_HTTPCLI_FORMAT_REQUEST_H */

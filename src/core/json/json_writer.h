@@ -78,16 +78,20 @@ void grpc_json_writer_init(grpc_json_writer* writer, int indent,
                            grpc_json_writer_vtable* vtable, void* userdata);
 
 /* Signals the beginning of a container. */
-void grpc_json_writer_container_begins(grpc_json_writer* writer, grpc_json_type type);
+void grpc_json_writer_container_begins(grpc_json_writer* writer,
+                                       grpc_json_type type);
 /* Signals the end of a container. */
-void grpc_json_writer_container_ends(grpc_json_writer* writer, grpc_json_type type);
+void grpc_json_writer_container_ends(grpc_json_writer* writer,
+                                     grpc_json_type type);
 /* Writes down an object key for the next value. */
 void grpc_json_writer_object_key(grpc_json_writer* writer, const char* string);
 /* Sets a raw value. Useful for numbers. */
 void grpc_json_writer_value_raw(grpc_json_writer* writer, const char* string);
 /* Sets a raw value with its length. Useful for values like true or false. */
-void grpc_json_writer_value_raw_with_len(grpc_json_writer* writer, const char* string, size_t len);
+void grpc_json_writer_value_raw_with_len(grpc_json_writer* writer,
+                                         const char* string, size_t len);
 /* Sets a string value. It'll be escaped, and utf-8 validated. */
-void grpc_json_writer_value_string(grpc_json_writer* writer, const char* string);
+void grpc_json_writer_value_string(grpc_json_writer* writer,
+                                   const char* string);
 
-#endif  /* GRPC_INTERNAL_CORE_JSON_JSON_WRITER_H */
+#endif /* GRPC_INTERNAL_CORE_JSON_JSON_WRITER_H */

@@ -42,7 +42,7 @@ namespace Grpc.Core
     /// <summary>
     /// A writable stream of messages.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">The message type.</typeparam>
     public interface IAsyncStreamWriter<T>
     {
         /// <summary>
@@ -50,5 +50,13 @@ namespace Grpc.Core
         /// </summary>
         /// <param name="message">the message to be written. Cannot be null.</param>
         Task WriteAsync(T message);
+
+        /// <summary>
+        /// Write options that will be used for the next write.
+        /// If null, default options will be used.
+        /// Once set, this property maintains its value across subsequent
+        /// writes.
+        /// </summary>
+        WriteOptions WriteOptions { get; set; }
     }
 }

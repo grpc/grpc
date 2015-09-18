@@ -73,4 +73,4 @@ void gpr_histogram_merge_contents(gpr_histogram *histogram,
 }
 #endif
 
-#endif  /* GRPC_SUPPORT_HISTOGRAM_H */
+#endif /* GRPC_SUPPORT_HISTOGRAM_H */

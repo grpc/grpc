@@ -31,39 +31,43 @@
 
 #endregion
 
-using System;
-using System.Threading;
 using System.Threading.Tasks;
-
-using Grpc.Core.Internal;
 
 namespace Grpc.Core
 {
     /// <summary>
     /// Server-side handler for unary call.
     /// </summary>
-    public delegate Task<TResponse> UnaryServerMethod<TRequest, TResponse>(ServerCallContext context, TRequest request)
+    /// <typeparam name="TRequest">Request message type for this method.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this method.</typeparam>
+    public delegate Task<TResponse> UnaryServerMethod<TRequest, TResponse>(TRequest request, ServerCallContext context)
         where TRequest : class
         where TResponse : class;
 
     /// <summary>
     /// Server-side handler for client streaming call.
     /// </summary>
-    public delegate Task<TResponse> ClientStreamingServerMethod<TRequest, TResponse>(ServerCallContext context, IAsyncStreamReader<TRequest> requestStream)
+    /// <typeparam name="TRequest">Request message type for this method.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this method.</typeparam>
+    public delegate Task<TResponse> ClientStreamingServerMethod<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, ServerCallContext context)
         where TRequest : class
         where TResponse : class;
 
     /// <summary>
     /// Server-side handler for server streaming call.
     /// </summary>
-    public delegate Task ServerStreamingServerMethod<TRequest, TResponse>(ServerCallContext context, TRequest request, IServerStreamWriter<TResponse> responseStream)
+    /// <typeparam name="TRequest">Request message type for this method.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this method.</typeparam>
+    public delegate Task ServerStreamingServerMethod<TRequest, TResponse>(TRequest request, IServerStreamWriter<TResponse> responseStream, ServerCallContext context)
         where TRequest : class
         where TResponse : class;
 
     /// <summary>
     /// Server-side handler for bidi streaming call.
     /// </summary>
-    public delegate Task DuplexStreamingServerMethod<TRequest, TResponse>(ServerCallContext context, IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream)
+    /// <typeparam name="TRequest">Request message type for this method.</typeparam>
+    /// <typeparam name="TResponse">Response message type for this method.</typeparam>
+    public delegate Task DuplexStreamingServerMethod<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream, ServerCallContext context)
         where TRequest : class
         where TResponse : class;
 }

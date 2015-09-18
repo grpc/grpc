@@ -46,12 +46,12 @@ describe('Interop tests', function() {
   before(function(done) {
     var server_obj = interop_server.getServer(0, true);
     server = server_obj.server;
-    server.listen();
+    server.start();
     port = 'localhost:' + server_obj.port;
     done();
   });
   after(function() {
-    server.shutdown();
+    server.forceShutdown();
   });
   // This depends on not using a binary stream
   it('should pass empty_unary', function(done) {

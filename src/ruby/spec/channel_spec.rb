@@ -117,7 +117,7 @@ describe GRPC::Core::Channel do
       deadline = Time.now + 5
 
       blk = proc do
-        ch.create_call(cq, 'dummy_method', 'dummy_host', deadline)
+        ch.create_call(cq, nil, nil, 'dummy_method', nil, deadline)
       end
       expect(&blk).to_not raise_error
     end
@@ -128,7 +128,7 @@ describe GRPC::Core::Channel do
 
       deadline = Time.now + 5
       blk = proc do
-        ch.create_call(cq, 'dummy_method', 'dummy_host', deadline)
+        ch.create_call(cq, nil, nil, 'dummy_method', nil, deadline)
       end
       expect(&blk).to raise_error(RuntimeError)
     end

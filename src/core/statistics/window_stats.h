@@ -90,11 +90,11 @@
     // Record a new event, taking 15.3ms, transferring 1784 bytes.
     stat.latency = 0.153;
     stat.bytes = 1784;
-    census_window_stats_add(stats, gpr_now(), &stat);
+    census_window_stats_add(stats, gpr_now(GPR_CLOCK_REALTIME), &stat);
     // Get sums and print them out
     result[kMinInterval].statistic = &sums[kMinInterval];
     result[kHourInterval].statistic = &sums[kHourInterval];
-    census_window_stats_get_sums(stats, gpr_now(), result);
+    census_window_stats_get_sums(stats, gpr_now(GPR_CLOCK_REALTIME), result);
     printf("%d events/min, average time %gs, average bytes %g\n",
            result[kMinInterval].count,
            (my_stat*)result[kMinInterval].statistic->latency /
@@ -170,4 +170,4 @@ void census_window_stats_get_sums(const struct census_window_stats* wstats,
    assertion failure). This function is thread-compatible. */
 void census_window_stats_destroy(struct census_window_stats* wstats);
 
-#endif  /* GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H */
+#endif /* GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H */

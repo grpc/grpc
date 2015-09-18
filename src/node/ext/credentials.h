@@ -68,6 +68,7 @@ class Credentials : public ::node::ObjectWrap {
   static NAN_METHOD(CreateGce);
   static NAN_METHOD(CreateFake);
   static NAN_METHOD(CreateIam);
+  static NAN_METHOD(CreateInsecure);
   static NanCallback *constructor;
   // Used for typechecking instances of this javascript class
   static v8::Persistent<v8::FunctionTemplate> fun_tpl;

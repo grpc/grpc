@@ -36,9 +36,11 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/client_config/lb_policies/pick_first.h"
+#include "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/support/string.h"
 
@@ -217,8 +219,8 @@ static grpc_resolver *dns_create(
   r->name = gpr_strdup(path);
   r->default_port = gpr_strdup(default_port);
   r->subchannel_factory = subchannel_factory;
-  r->lb_policy_factory = lb_policy_factory;
   grpc_subchannel_factory_ref(subchannel_factory);
+  r->lb_policy_factory = lb_policy_factory;
   return &r->base;
 }
 
@@ -237,8 +239,16 @@ static grpc_resolver *dns_factory_create_resolver(
                     subchannel_factory);
 }
 
+char *dns_factory_get_default_host_name(grpc_resolver_factory *factory,
+                                        grpc_uri *uri) {
+  const char *path = uri->path;
+  if (path[0] == '/') ++path;
+  return gpr_strdup(path);
+}
+
 static const grpc_resolver_factory_vtable dns_factory_vtable = {
-    dns_factory_ref, dns_factory_unref, dns_factory_create_resolver};
+    dns_factory_ref, dns_factory_unref, dns_factory_create_resolver,
+    dns_factory_get_default_host_name, "dns"};
 static grpc_resolver_factory dns_resolver_factory = {&dns_factory_vtable};
 
 grpc_resolver_factory *grpc_dns_resolver_factory_create() {

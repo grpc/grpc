@@ -32,21 +32,46 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <grpc/compression.h>
 
-const char *grpc_compression_algorithm_name(
-    grpc_compression_algorithm algorithm) {
+int grpc_compression_algorithm_parse(const char *name, size_t name_length,
+                                     grpc_compression_algorithm *algorithm) {
+  /* we use strncmp not only because it's safer (even though in this case it
+   * doesn't matter, given that we are comparing against string literals, but
+   * because this way we needn't have "name" nil-terminated (useful for slice
+   * data, for example) */
+  if (name_length == 0) {
+    return 0;
+  }
+  if (strncmp(name, "identity", name_length) == 0) {
+    *algorithm = GRPC_COMPRESS_NONE;
+  } else if (strncmp(name, "gzip", name_length) == 0) {
+    *algorithm = GRPC_COMPRESS_GZIP;
+  } else if (strncmp(name, "deflate", name_length) == 0) {
+    *algorithm = GRPC_COMPRESS_DEFLATE;
+  } else {
+    return 0;
+  }
+  return 1;
+}
+
+int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
+                                    char **name) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
-      return "none";
+      *name = "identity";
+      break;
     case GRPC_COMPRESS_DEFLATE:
-      return "deflate";
+      *name = "deflate";
+      break;
     case GRPC_COMPRESS_GZIP:
-      return "gzip";
-    case GRPC_COMPRESS_ALGORITHMS_COUNT:
-      return "error";
+      *name = "gzip";
+      break;
+    default:
+      return 0;
   }
-  return "error";
+  return 1;
 }
 
 /* TODO(dgq): Add the ability to specify parameters to the individual
@@ -64,4 +89,16 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
       /* we shouldn't be making it here */
       abort();
   }
+}
+
+grpc_compression_level grpc_compression_level_for_algorithm(
+    grpc_compression_algorithm algorithm) {
+  grpc_compression_level clevel;
+  for (clevel = GRPC_COMPRESS_LEVEL_NONE; clevel < GRPC_COMPRESS_LEVEL_COUNT;
+       ++clevel) {
+    if (grpc_compression_algorithm_for_level(clevel) == algorithm) {
+      return clevel;
+    }
+  }
+  abort();
 }
