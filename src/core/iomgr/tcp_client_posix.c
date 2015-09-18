@@ -64,7 +64,7 @@ typedef struct {
   gpr_timespec deadline;
   grpc_alarm alarm;
   int refs;
-  grpc_iomgr_closure write_closure;
+  grpc_closure write_closure;
   grpc_pollset_set *interested_parties;
   char *addr_str;
 } async_connect;

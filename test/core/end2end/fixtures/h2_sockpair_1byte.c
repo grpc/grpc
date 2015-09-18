@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
     grpc_end2end_tests(configs[i]);
   }
 
-  grpc_workqueue_flush(g_workqueue, 1);
+  grpc_workqueue_flush(g_workqueue);
   GRPC_WORKQUEUE_UNREF(g_workqueue, "destroy");
   grpc_shutdown();
 

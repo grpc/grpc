@@ -52,7 +52,7 @@ typedef struct {
   grpc_connector base;
   gpr_refcount refs;
 
-  grpc_iomgr_closure *notify;
+  grpc_closure *notify;
   grpc_connect_in_args args;
   grpc_connect_out_args *result;
 } connector;
@@ -71,7 +71,7 @@ static void connector_unref(grpc_connector *con) {
 
 static void connected(void *arg, grpc_endpoint *tcp) {
   connector *c = arg;
-  grpc_iomgr_closure *notify;
+  grpc_closure *notify;
   if (tcp != NULL) {
     c->result->transport = grpc_create_chttp2_transport(
         c->args.channel_args, tcp, c->args.metadata_context, c->args.workqueue,
@@ -94,7 +94,7 @@ static void connector_shutdown(grpc_connector *con) {}
 static void connector_connect(grpc_connector *con,
                               const grpc_connect_in_args *args,
                               grpc_connect_out_args *result,
-                              grpc_iomgr_closure *notify) {
+                              grpc_closure *notify) {
   connector *c = (connector *)con;
   GPR_ASSERT(c->notify == NULL);
   GPR_ASSERT(notify->cb);

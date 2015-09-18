@@ -85,11 +85,11 @@ typedef struct {
   /** byte within outgoing_buffer->slices[outgoing_slice_idx] to write next */
   size_t outgoing_byte_idx;
 
-  grpc_iomgr_closure *read_cb;
-  grpc_iomgr_closure *write_cb;
+  grpc_closure *read_cb;
+  grpc_closure *write_cb;
 
-  grpc_iomgr_closure read_closure;
-  grpc_iomgr_closure write_closure;
+  grpc_closure read_closure;
+  grpc_closure write_closure;
 
   char *peer_string;
 } grpc_tcp;
@@ -145,7 +145,7 @@ static void tcp_destroy(grpc_endpoint *ep) {
 }
 
 static void call_read_cb(grpc_tcp *tcp, int success) {
-  grpc_iomgr_closure *cb = tcp->read_cb;
+  grpc_closure *cb = tcp->read_cb;
 
   if (grpc_tcp_trace) {
     size_t i;
@@ -250,7 +250,7 @@ static void tcp_handle_read(void *arg /* grpc_tcp */, int success) {
 
 static grpc_endpoint_op_status tcp_read(grpc_endpoint *ep,
                                         gpr_slice_buffer *incoming_buffer,
-                                        grpc_iomgr_closure *cb) {
+                                        grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   GPR_ASSERT(tcp->read_cb == NULL);
   tcp->read_cb = cb;
@@ -350,7 +350,7 @@ static grpc_endpoint_op_status tcp_flush(grpc_tcp *tcp) {
 static void tcp_handle_write(void *arg /* grpc_tcp */, int success) {
   grpc_tcp *tcp = (grpc_tcp *)arg;
   grpc_endpoint_op_status status;
-  grpc_iomgr_closure *cb;
+  grpc_closure *cb;
 
   if (!success) {
     cb = tcp->write_cb;
@@ -375,7 +375,7 @@ static void tcp_handle_write(void *arg /* grpc_tcp */, int success) {
 
 static grpc_endpoint_op_status tcp_write(grpc_endpoint *ep,
                                          gpr_slice_buffer *buf,
-                                         grpc_iomgr_closure *cb) {
+                                         grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_endpoint_op_status status;
 

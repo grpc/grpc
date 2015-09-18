@@ -250,15 +250,15 @@ static void init_transport(grpc_chttp2_transport *t,
 
   gpr_slice_buffer_init(&t->writing.outbuf);
   grpc_chttp2_hpack_compressor_init(&t->writing.hpack_compressor, mdctx);
-  grpc_iomgr_closure_init(&t->writing_action, writing_action, t);
+  grpc_closure_init(&t->writing_action, writing_action, t);
 
   gpr_slice_buffer_init(&t->parsing.qbuf);
   grpc_chttp2_goaway_parser_init(&t->parsing.goaway_parser);
   grpc_chttp2_hpack_parser_init(&t->parsing.hpack_parser, t->metadata_context);
 
-  grpc_iomgr_closure_init(&t->writing.done_cb, grpc_chttp2_terminate_writing,
-                          &t->writing);
-  grpc_iomgr_closure_init(&t->recv_data, recv_data, t);
+  grpc_closure_init(&t->writing.done_cb, grpc_chttp2_terminate_writing,
+                    &t->writing);
+  grpc_closure_init(&t->recv_data, recv_data, t);
   gpr_slice_buffer_init(&t->read_buffer);
 
   if (is_client) {
@@ -499,20 +499,20 @@ grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
 static void lock(grpc_chttp2_transport *t) { gpr_mu_lock(&t->mu); }
 
 static void unlock(grpc_chttp2_transport *t) {
-  grpc_iomgr_call_list run = GRPC_IOMGR_CALL_LIST_INIT;
+  grpc_call_list run = GRPC_CALL_LIST_INIT;
 
   unlock_check_read_write_state(t);
   if (!t->writing_active && !t->closed &&
       grpc_chttp2_unlocking_check_writes(&t->global, &t->writing)) {
     t->writing_active = 1;
     REF_TRANSPORT(t, "writing");
-    grpc_iomgr_call_list_add(&t->global.run_at_unlock, &t->writing_action, 1);
+    grpc_call_list_add(&t->global.run_at_unlock, &t->writing_action, 1);
     prevent_endpoint_shutdown(t);
   }
 
-  GPR_SWAP(grpc_iomgr_call_list, run, t->global.run_at_unlock);
+  GPR_SWAP(grpc_call_list, run, t->global.run_at_unlock);
   gpr_mu_unlock(&t->mu);
-  grpc_iomgr_call_list_run(run);
+  grpc_call_list_run(run);
 }
 
 /*
@@ -664,8 +664,8 @@ static void perform_stream_op_locked(
       }
     } else {
       grpc_sopb_reset(op->send_ops);
-      grpc_iomgr_call_list_add(&transport_global->run_at_unlock,
-                               stream_global->send_done_closure, 0);
+      grpc_call_list_add(&transport_global->run_at_unlock,
+                         stream_global->send_done_closure, 0);
     }
   }
 
@@ -703,8 +703,7 @@ static void perform_stream_op_locked(
                           op->bind_pollset);
   }
 
-  grpc_iomgr_call_list_add(&transport_global->run_at_unlock, op->on_consumed,
-                           1);
+  grpc_call_list_add(&transport_global->run_at_unlock, op->on_consumed, 1);
 }
 
 static void perform_stream_op(grpc_transport *gt, grpc_stream *gs,
@@ -717,8 +716,7 @@ static void perform_stream_op(grpc_transport *gt, grpc_stream *gs,
   unlock(t);
 }
 
-static void send_ping_locked(grpc_chttp2_transport *t,
-                             grpc_iomgr_closure *on_recv) {
+static void send_ping_locked(grpc_chttp2_transport *t, grpc_closure *on_recv) {
   grpc_chttp2_outstanding_ping *p = gpr_malloc(sizeof(*p));
   p->next = &t->global.pings;
   p->prev = p->next->prev;
@@ -741,7 +739,7 @@ static void perform_transport_op(grpc_transport *gt, grpc_transport_op *op) {
 
   lock(t);
 
-  grpc_iomgr_call_list_add(&t->global.run_at_unlock, op->on_consumed, 1);
+  grpc_call_list_add(&t->global.run_at_unlock, op->on_consumed, 1);
 
   if (op->on_connectivity_state_change) {
     grpc_connectivity_state_notify_on_state_change(
@@ -868,8 +866,8 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
         if (stream_global->outgoing_sopb != NULL) {
           grpc_sopb_reset(stream_global->outgoing_sopb);
           stream_global->outgoing_sopb = NULL;
-          grpc_iomgr_call_list_add(&transport_global->run_at_unlock,
-                                   stream_global->send_done_closure, 1);
+          grpc_call_list_add(&transport_global->run_at_unlock,
+                             stream_global->send_done_closure, 1);
         }
         stream_global->read_closed = 1;
         if (!stream_global->published_cancelled) {
@@ -919,8 +917,8 @@ static void unlock_check_read_write_state(grpc_chttp2_transport *t) {
         &stream_global->outstanding_metadata);
     grpc_sopb_swap(stream_global->publish_sopb, &stream_global->incoming_sopb);
     stream_global->published_state = *stream_global->publish_state = state;
-    grpc_iomgr_call_list_add(&transport_global->run_at_unlock,
-                             stream_global->recv_done_closure, 1);
+    grpc_call_list_add(&transport_global->run_at_unlock,
+                       stream_global->recv_done_closure, 1);
     stream_global->recv_done_closure = NULL;
     stream_global->publish_sopb = NULL;
     stream_global->publish_state = NULL;

@@ -64,11 +64,11 @@ typedef enum grpc_stream_state {
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
 typedef struct grpc_transport_stream_op {
-  grpc_iomgr_closure *on_consumed;
+  grpc_closure *on_consumed;
 
   grpc_stream_op_buffer *send_ops;
   int is_last_send;
-  grpc_iomgr_closure *on_done_send;
+  grpc_closure *on_done_send;
 
   grpc_stream_op_buffer *recv_ops;
   grpc_stream_state *recv_state;
@@ -76,7 +76,7 @@ typedef struct grpc_transport_stream_op {
       These bytes will be eventually used to replenish per-stream flow control
       windows. */
   size_t max_recv_bytes;
-  grpc_iomgr_closure *on_done_recv;
+  grpc_closure *on_done_recv;
 
   grpc_pollset *bind_pollset;
 
@@ -95,9 +95,9 @@ typedef struct grpc_transport_stream_op {
 /** Transport op: a set of operations to perform on a transport as a whole */
 typedef struct grpc_transport_op {
   /** called when processing of this op is done */
-  grpc_iomgr_closure *on_consumed;
+  grpc_closure *on_consumed;
   /** connectivity monitoring */
-  grpc_iomgr_closure *on_connectivity_state_change;
+  grpc_closure *on_connectivity_state_change;
   grpc_connectivity_state *connectivity_state;
   /** should the transport be disconnected */
   int disconnect;
@@ -118,7 +118,7 @@ typedef struct grpc_transport_op {
   /** add this transport to a pollset_set */
   grpc_pollset_set *bind_pollset_set;
   /** send a ping, call this back if not NULL */
-  grpc_iomgr_closure *send_ping;
+  grpc_closure *send_ping;
 } grpc_transport_op;
 
 /* Returns the amount of memory required to store a grpc_stream for this
@@ -181,7 +181,7 @@ void grpc_transport_perform_op(grpc_transport *transport,
 /* Send a ping on a transport
 
    Calls cb with user data when a response is received. */
-void grpc_transport_ping(grpc_transport *transport, grpc_iomgr_closure *cb);
+void grpc_transport_ping(grpc_transport *transport, grpc_closure *cb);
 
 /* Advise peer of pending connection termination. */
 void grpc_transport_goaway(grpc_transport *transport, grpc_status_code status,

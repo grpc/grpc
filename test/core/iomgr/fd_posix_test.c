@@ -99,7 +99,7 @@ typedef struct {
   grpc_fd *em_fd;           /* listening fd */
   ssize_t read_bytes_total; /* total number of received bytes */
   int done;                 /* set to 1 when a server finishes serving */
-  grpc_iomgr_closure listen_closure;
+  grpc_closure listen_closure;
 } server;
 
 static void server_init(server *sv) {
@@ -113,7 +113,7 @@ typedef struct {
   server *sv;              /* not owned by a single session */
   grpc_fd *em_fd;          /* fd to read upload bytes */
   char read_buf[BUF_SIZE]; /* buffer to store upload bytes */
-  grpc_iomgr_closure session_read_closure;
+  grpc_closure session_read_closure;
 } session;
 
 /* Called when an upload session can be safely shutdown.
@@ -275,7 +275,7 @@ typedef struct {
   int client_write_cnt;
 
   int done; /* set to 1 when a client finishes sending */
-  grpc_iomgr_closure write_closure;
+  grpc_closure write_closure;
 } client;
 
 static void client_init(client *cl) {
@@ -422,8 +422,8 @@ static void test_grpc_fd_change(void) {
   int sv[2];
   char data;
   ssize_t result;
-  grpc_iomgr_closure first_closure;
-  grpc_iomgr_closure second_closure;
+  grpc_closure first_closure;
+  grpc_closure second_closure;
 
   first_closure.cb = first_read_callback;
   first_closure.cb_arg = &a;

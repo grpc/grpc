@@ -69,7 +69,7 @@ typedef struct {
   /** which version of resolved_config is current? */
   int resolved_version;
   /** pending next completion, or NULL */
-  grpc_iomgr_closure *next_completion;
+  grpc_closure *next_completion;
   /** target config address for next completion */
   grpc_client_config **target_config;
   /** current (fully resolved) config */
@@ -79,7 +79,7 @@ typedef struct {
 static void dns_destroy(grpc_resolver *r);
 
 static void dns_start_resolving_locked(dns_resolver *r);
-static grpc_iomgr_closure *dns_maybe_finish_next_locked(dns_resolver *r)
+static grpc_closure *dns_maybe_finish_next_locked(dns_resolver *r)
     GRPC_MUST_USE_RESULT;
 
 static void dns_shutdown(grpc_resolver *r);
@@ -87,14 +87,14 @@ static void dns_channel_saw_error(grpc_resolver *r,
                                   struct sockaddr *failing_address,
                                   int failing_address_len);
 static void dns_next(grpc_resolver *r, grpc_client_config **target_config,
-                     grpc_iomgr_closure *on_complete);
+                     grpc_closure *on_complete);
 
 static const grpc_resolver_vtable dns_resolver_vtable = {
     dns_destroy, dns_shutdown, dns_channel_saw_error, dns_next};
 
 static void dns_shutdown(grpc_resolver *resolver) {
   dns_resolver *r = (dns_resolver *)resolver;
-  grpc_iomgr_closure *next_completion;
+  grpc_closure *next_completion;
   gpr_mu_lock(&r->mu);
   next_completion = r->next_completion;
   r->next_completion = NULL;
@@ -117,9 +117,9 @@ static void dns_channel_saw_error(grpc_resolver *resolver, struct sockaddr *sa,
 
 static void dns_next(grpc_resolver *resolver,
                      grpc_client_config **target_config,
-                     grpc_iomgr_closure *on_complete) {
+                     grpc_closure *on_complete) {
   dns_resolver *r = (dns_resolver *)resolver;
-  grpc_iomgr_closure *call = NULL;
+  grpc_closure *call = NULL;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
@@ -141,7 +141,7 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   grpc_subchannel **subchannels;
   grpc_subchannel_args args;
   grpc_lb_policy *lb_policy;
-  grpc_iomgr_closure *call;
+  grpc_closure *call;
   size_t i;
   if (addresses) {
     grpc_lb_policy_args lb_policy_args;
@@ -188,8 +188,8 @@ static void dns_start_resolving_locked(dns_resolver *r) {
   grpc_resolve_address(r->name, r->default_port, dns_on_resolved, r);
 }
 
-static grpc_iomgr_closure *dns_maybe_finish_next_locked(dns_resolver *r) {
-  grpc_iomgr_closure *ret = NULL;
+static grpc_closure *dns_maybe_finish_next_locked(dns_resolver *r) {
+  grpc_closure *ret = NULL;
   if (r->next_completion != NULL &&
       r->resolved_version != r->published_version) {
     *r->target_config = r->resolved_config;

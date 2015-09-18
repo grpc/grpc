@@ -91,7 +91,7 @@ grpc_connectivity_state grpc_connectivity_state_check(
 
 int grpc_connectivity_state_notify_on_state_change(
     grpc_connectivity_state_tracker *tracker, grpc_connectivity_state *current,
-    grpc_iomgr_closure *notify, grpc_iomgr_call_list *call_list) {
+    grpc_closure *notify, grpc_call_list *call_list) {
   if (grpc_connectivity_state_trace) {
     gpr_log(GPR_DEBUG, "CONWATCH: %s: from %s [cur=%s] notify=%p",
             tracker->name, grpc_connectivity_state_name(*current),
@@ -99,7 +99,7 @@ int grpc_connectivity_state_notify_on_state_change(
   }
   if (tracker->current_state != *current) {
     *current = tracker->current_state;
-    grpc_iomgr_call_list_add(call_list, notify, 1);
+    grpc_call_list_add(call_list, notify, 1);
   } else {
     grpc_connectivity_state_watcher *w = gpr_malloc(sizeof(*w));
     w->current = current;
@@ -113,7 +113,7 @@ int grpc_connectivity_state_notify_on_state_change(
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state,
                                  const char *reason,
-                                 grpc_iomgr_call_list *call_list) {
+                                 grpc_call_list *call_list) {
   grpc_connectivity_state_watcher *w;
   if (grpc_connectivity_state_trace) {
     gpr_log(GPR_DEBUG, "SET: %s: %s --> %s [%s]", tracker->name,
@@ -128,7 +128,7 @@ void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
   while ((w = tracker->watchers) != NULL) {
     *w->current = tracker->current_state;
     tracker->watchers = w->next;
-    grpc_iomgr_call_list_add(call_list, w->notify, 1);
+    grpc_call_list_add(call_list, w->notify, 1);
     gpr_free(w);
   }
 }

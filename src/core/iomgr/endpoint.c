@@ -35,13 +35,13 @@
 
 grpc_endpoint_op_status grpc_endpoint_read(grpc_endpoint *ep,
                                            gpr_slice_buffer *slices,
-                                           grpc_iomgr_closure *cb) {
+                                           grpc_closure *cb) {
   return ep->vtable->read(ep, slices, cb);
 }
 
 grpc_endpoint_op_status grpc_endpoint_write(grpc_endpoint *ep,
                                             gpr_slice_buffer *slices,
-                                            grpc_iomgr_closure *cb) {
+                                            grpc_closure *cb) {
   return ep->vtable->write(ep, slices, cb);
 }
 

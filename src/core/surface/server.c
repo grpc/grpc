@@ -113,8 +113,8 @@ struct channel_data {
   channel_registered_method *registered_methods;
   gpr_uint32 registered_method_slots;
   gpr_uint32 registered_method_max_probes;
-  grpc_iomgr_closure finish_destroy_channel_closure;
-  grpc_iomgr_closure channel_connectivity_changed;
+  grpc_closure finish_destroy_channel_closure;
+  grpc_closure channel_connectivity_changed;
 };
 
 typedef struct shutdown_tag {
@@ -153,10 +153,10 @@ struct call_data {
 
   grpc_stream_op_buffer *recv_ops;
   grpc_stream_state *recv_state;
-  grpc_iomgr_closure *on_done_recv;
+  grpc_closure *on_done_recv;
 
-  grpc_iomgr_closure server_on_recv;
-  grpc_iomgr_closure kill_zombie_closure;
+  grpc_closure server_on_recv;
+  grpc_closure kill_zombie_closure;
 
   call_data *pending_next;
 };
@@ -254,7 +254,7 @@ static void channel_broadcaster_init(grpc_server *s, channel_broadcaster *cb) {
 }
 
 struct shutdown_cleanup_args {
-  grpc_iomgr_closure closure;
+  grpc_closure closure;
   gpr_slice slice;
 };
 
@@ -277,7 +277,7 @@ static void send_shutdown(grpc_channel *channel, int send_goaway,
   op.goaway_message = &sc->slice;
   op.goaway_status = GRPC_STATUS_OK;
   op.disconnect = send_disconnect;
-  grpc_iomgr_closure_init(&sc->closure, shutdown_cleanup, sc);
+  grpc_closure_init(&sc->closure, shutdown_cleanup, sc);
   op.on_consumed = &sc->closure;
 
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
@@ -323,7 +323,7 @@ static void request_matcher_zombify_all_pending_calls(
     gpr_mu_lock(&calld->mu_state);
     calld->state = ZOMBIED;
     gpr_mu_unlock(&calld->mu_state);
-    grpc_iomgr_closure_init(
+    grpc_closure_init(
         &calld->kill_zombie_closure, kill_zombie,
         grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
     grpc_workqueue_push(workqueue, &calld->kill_zombie_closure, 1);
@@ -420,7 +420,7 @@ static void finish_start_new_rpc(grpc_server *server, grpc_call_element *elem,
     gpr_mu_lock(&calld->mu_state);
     calld->state = ZOMBIED;
     gpr_mu_unlock(&calld->mu_state);
-    grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+    grpc_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
     grpc_workqueue_push(server->workqueue, &calld->kill_zombie_closure, 1);
     return;
   }
@@ -603,7 +603,7 @@ static void server_on_recv(void *ptr, int success) {
       if (calld->state == NOT_STARTED) {
         calld->state = ZOMBIED;
         gpr_mu_unlock(&calld->mu_state);
-        grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+        grpc_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
         grpc_workqueue_push(chand->server->workqueue,
                             &calld->kill_zombie_closure, 1);
       } else {
@@ -615,7 +615,7 @@ static void server_on_recv(void *ptr, int success) {
       if (calld->state == NOT_STARTED) {
         calld->state = ZOMBIED;
         gpr_mu_unlock(&calld->mu_state);
-        grpc_iomgr_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
+        grpc_closure_init(&calld->kill_zombie_closure, kill_zombie, elem);
         grpc_workqueue_push(chand->server->workqueue,
                             &calld->kill_zombie_closure, 1);
       } else if (calld->state == PENDING) {
@@ -689,7 +689,7 @@ static void init_call_elem(grpc_call_element *elem,
   calld->call = grpc_call_from_top_element(elem);
   gpr_mu_init(&calld->mu_state);
 
-  grpc_iomgr_closure_init(&calld->server_on_recv, server_on_recv, elem);
+  grpc_closure_init(&calld->server_on_recv, server_on_recv, elem);
 
   server_ref(chand->server);
 
@@ -729,8 +729,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   chand->next = chand->prev = chand;
   chand->registered_methods = NULL;
   chand->connectivity_state = GRPC_CHANNEL_IDLE;
-  grpc_iomgr_closure_init(&chand->channel_connectivity_changed,
-                          channel_connectivity_changed, chand);
+  grpc_closure_init(&chand->channel_connectivity_changed,
+                    channel_connectivity_changed, chand);
 }
 
 static void destroy_channel_elem(grpc_channel_element *elem) {
@@ -1077,7 +1077,7 @@ void grpc_server_destroy(grpc_server *server) {
 
   gpr_mu_unlock(&server->mu_global);
 
-  grpc_workqueue_flush(server->workqueue, 0);
+  grpc_workqueue_flush(server->workqueue);
 
   server_unref(server);
 }
@@ -1132,7 +1132,7 @@ static grpc_call_error queue_call_request(grpc_server *server,
       gpr_mu_lock(&calld->mu_state);
       if (calld->state == ZOMBIED) {
         gpr_mu_unlock(&calld->mu_state);
-        grpc_iomgr_closure_init(
+        grpc_closure_init(
             &calld->kill_zombie_closure, kill_zombie,
             grpc_call_stack_element(grpc_call_get_call_stack(calld->call), 0));
         grpc_workqueue_push(server->workqueue, &calld->kill_zombie_closure, 1);

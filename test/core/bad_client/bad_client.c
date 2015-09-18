@@ -87,7 +87,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   gpr_slice slice =
       gpr_slice_from_copied_buffer(client_payload, client_payload_length);
   gpr_slice_buffer outgoing;
-  grpc_iomgr_closure done_write_closure;
+  grpc_closure done_write_closure;
   grpc_workqueue *workqueue;
 
   hex = gpr_dump(client_payload, client_payload_length,
@@ -131,7 +131,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   gpr_slice_buffer_init(&outgoing);
   gpr_slice_buffer_add(&outgoing, slice);
-  grpc_iomgr_closure_init(&done_write_closure, done_write, &a);
+  grpc_closure_init(&done_write_closure, done_write, &a);
 
   /* Write data */
   switch (grpc_endpoint_write(sfd.client, &outgoing, &done_write_closure)) {

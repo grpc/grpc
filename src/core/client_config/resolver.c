@@ -78,6 +78,6 @@ void grpc_resolver_channel_saw_error(grpc_resolver *resolver,
 
 void grpc_resolver_next(grpc_resolver *resolver,
                         grpc_client_config **target_config,
-                        grpc_iomgr_closure *on_complete) {
+                        grpc_closure *on_complete) {
   resolver->vtable->next(resolver, target_config, on_complete);
 }

@@ -96,8 +96,8 @@ struct grpc_fd {
 
   struct grpc_fd *freelist_next;
 
-  grpc_iomgr_closure *on_done_closure;
-  grpc_iomgr_closure *shutdown_closures[2];
+  grpc_closure *on_done_closure;
+  grpc_closure *shutdown_closures[2];
 
   grpc_iomgr_object iomgr_object;
 };
@@ -113,8 +113,7 @@ grpc_fd *grpc_fd_create(int fd, grpc_workqueue *workqueue, const char *name);
    Requires: *fd initialized; no outstanding notify_on_read or
    notify_on_write.
    MUST NOT be called with a pollset lock taken */
-void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,
-                    const char *reason);
+void grpc_fd_orphan(grpc_fd *fd, grpc_closure *on_done, const char *reason);
 
 /* Begin polling on an fd.
    Registers that the given pollset is interested in this fd - so that if read
@@ -153,10 +152,10 @@ void grpc_fd_shutdown(grpc_fd *fd);
    underlying platform. This means that users must drain fd in read_cb before
    calling notify_on_read again. Users are also expected to handle spurious
    events, i.e read_cb is called while nothing can be readable from fd  */
-void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_closure *closure);
+void grpc_fd_notify_on_read(grpc_fd *fd, grpc_closure *closure);
 
 /* Exactly the same semantics as above, except based on writable events.  */
-void grpc_fd_notify_on_write(grpc_fd *fd, grpc_iomgr_closure *closure);
+void grpc_fd_notify_on_write(grpc_fd *fd, grpc_closure *closure);
 
 /* Notification from the poller to an fd that it has become readable or
    writable.

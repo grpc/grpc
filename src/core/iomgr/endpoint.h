@@ -54,9 +54,9 @@ typedef enum grpc_endpoint_op_status {
 
 struct grpc_endpoint_vtable {
   grpc_endpoint_op_status (*read)(grpc_endpoint *ep, gpr_slice_buffer *slices,
-                                  grpc_iomgr_closure *cb);
+                                  grpc_closure *cb);
   grpc_endpoint_op_status (*write)(grpc_endpoint *ep, gpr_slice_buffer *slices,
-                                   grpc_iomgr_closure *cb);
+                                   grpc_closure *cb);
   void (*add_to_pollset)(grpc_endpoint *ep, grpc_pollset *pollset);
   void (*add_to_pollset_set)(grpc_endpoint *ep, grpc_pollset_set *pollset);
   void (*shutdown)(grpc_endpoint *ep);
@@ -70,7 +70,7 @@ struct grpc_endpoint_vtable {
    Valid slices may be placed into \a slices even on callback success == 0. */
 grpc_endpoint_op_status grpc_endpoint_read(
     grpc_endpoint *ep, gpr_slice_buffer *slices,
-    grpc_iomgr_closure *cb) GRPC_MUST_USE_RESULT;
+    grpc_closure *cb) GRPC_MUST_USE_RESULT;
 
 char *grpc_endpoint_get_peer(grpc_endpoint *ep);
 
@@ -86,7 +86,7 @@ char *grpc_endpoint_get_peer(grpc_endpoint *ep);
    */
 grpc_endpoint_op_status grpc_endpoint_write(
     grpc_endpoint *ep, gpr_slice_buffer *slices,
-    grpc_iomgr_closure *cb) GRPC_MUST_USE_RESULT;
+    grpc_closure *cb) GRPC_MUST_USE_RESULT;
 
 /* Causes any pending read/write callbacks to run immediately with
    success==0 */

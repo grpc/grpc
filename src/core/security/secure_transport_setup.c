@@ -54,8 +54,8 @@ typedef struct {
   gpr_slice_buffer outgoing;
   grpc_secure_transport_setup_done_cb cb;
   void *user_data;
-  grpc_iomgr_closure on_handshake_data_sent_to_peer;
-  grpc_iomgr_closure on_handshake_data_received_from_peer;
+  grpc_closure on_handshake_data_sent_to_peer;
+  grpc_closure on_handshake_data_received_from_peer;
 } grpc_secure_transport_setup;
 
 static void on_handshake_data_received_from_peer(void *setup, int success);
@@ -301,10 +301,10 @@ void grpc_setup_secure_transport(grpc_security_connector *connector,
   s->wrapped_endpoint = nonsecure_endpoint;
   s->user_data = user_data;
   s->cb = cb;
-  grpc_iomgr_closure_init(&s->on_handshake_data_sent_to_peer,
-                          on_handshake_data_sent_to_peer, s);
-  grpc_iomgr_closure_init(&s->on_handshake_data_received_from_peer,
-                          on_handshake_data_received_from_peer, s);
+  grpc_closure_init(&s->on_handshake_data_sent_to_peer,
+                    on_handshake_data_sent_to_peer, s);
+  grpc_closure_init(&s->on_handshake_data_received_from_peer,
+                    on_handshake_data_received_from_peer, s);
   gpr_slice_buffer_init(&s->left_overs);
   gpr_slice_buffer_init(&s->outgoing);
   gpr_slice_buffer_init(&s->incoming);

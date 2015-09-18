@@ -40,13 +40,12 @@ struct grpc_workqueue {
   gpr_refcount refs;
 
   gpr_mu mu;
-  grpc_iomgr_closure head;
-  grpc_iomgr_closure *tail;
+  grpc_call_list call_list;
 
   grpc_wakeup_fd wakeup_fd;
   struct grpc_fd *wakeup_read_fd;
 
-  grpc_iomgr_closure read_closure;
+  grpc_closure read_closure;
 };
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_WORKQUEUE_POSIX_H */

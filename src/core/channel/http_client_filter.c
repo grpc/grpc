@@ -50,11 +50,11 @@ typedef struct call_data {
   grpc_stream_op_buffer *recv_ops;
 
   /** Closure to call when finished with the hc_on_recv hook */
-  grpc_iomgr_closure *on_done_recv;
+  grpc_closure *on_done_recv;
   /** Receive closures are chained: we inject this closure as the on_done_recv
       up-call on transport_op, and remember to call our on_done_recv member
       after handling it. */
-  grpc_iomgr_closure hc_on_recv;
+  grpc_closure hc_on_recv;
 } call_data;
 
 typedef struct channel_data {
@@ -162,7 +162,7 @@ static void init_call_elem(grpc_call_element *elem,
   calld->sent_initial_metadata = 0;
   calld->got_initial_metadata = 0;
   calld->on_done_recv = NULL;
-  grpc_iomgr_closure_init(&calld->hc_on_recv, hc_on_recv, elem);
+  grpc_closure_init(&calld->hc_on_recv, hc_on_recv, elem);
   if (initial_op) hc_mutate_op(elem, initial_op);
 }
 

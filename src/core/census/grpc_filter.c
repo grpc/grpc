@@ -54,7 +54,7 @@ typedef struct call_data {
 
   /* recv callback */
   grpc_stream_op_buffer* recv_ops;
-  grpc_iomgr_closure* on_done_recv;
+  grpc_closure* on_done_recv;
 } call_data;
 
 typedef struct channel_data {
@@ -145,7 +145,7 @@ static void server_init_call_elem(grpc_call_element* elem,
   GPR_ASSERT(d != NULL);
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
   /* TODO(hongyu): call census_tracing_start_op here. */
-  grpc_iomgr_closure_init(d->on_done_recv, server_on_done_recv, elem);
+  grpc_closure_init(d->on_done_recv, server_on_done_recv, elem);
   if (initial_op) server_mutate_op(elem, initial_op);
 }
 

@@ -53,7 +53,7 @@ typedef struct wakeup_fd_hdl {
 typedef struct {
   grpc_pollset *pollset;
   grpc_fd *fd;
-  grpc_iomgr_closure closure;
+  grpc_closure closure;
 } delayed_add;
 
 typedef struct {
@@ -125,7 +125,7 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
     da->pollset = pollset;
     da->fd = fd;
     GRPC_FD_REF(fd, "delayed_add");
-    grpc_iomgr_closure_init(&da->closure, perform_delayed_add, da);
+    grpc_closure_init(&da->closure, perform_delayed_add, da);
     pollset->in_flight_cbs++;
     grpc_pollset_add_unlock_job(pollset, &da->closure);
   }

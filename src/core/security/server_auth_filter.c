@@ -44,11 +44,11 @@ typedef struct call_data {
   gpr_uint8 got_client_metadata;
   grpc_stream_op_buffer *recv_ops;
   /* Closure to call when finished with the auth_on_recv hook. */
-  grpc_iomgr_closure *on_done_recv;
+  grpc_closure *on_done_recv;
   /* Receive closures are chained: we inject this closure as the on_done_recv
      up-call on transport_op, and remember to call our on_done_recv member after
      handling it. */
-  grpc_iomgr_closure auth_on_recv;
+  grpc_closure auth_on_recv;
   grpc_transport_stream_op transport_op;
   grpc_metadata_array md;
   const grpc_metadata *consumed_md;
@@ -202,7 +202,7 @@ static void init_call_elem(grpc_call_element *elem,
 
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
-  grpc_iomgr_closure_init(&calld->auth_on_recv, auth_on_recv, elem);
+  grpc_closure_init(&calld->auth_on_recv, auth_on_recv, elem);
 
   GPR_ASSERT(initial_op && initial_op->context != NULL &&
              initial_op->context[GRPC_CONTEXT_SECURITY].value == NULL);
