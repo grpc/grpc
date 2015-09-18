@@ -296,7 +296,7 @@ static void print_histogram(gpr_histogram *histogram) {
 }
 
 static double now(void) {
-  gpr_timespec tv = gpr_now();
+  gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
   return 1e9 * tv.tv_sec + tv.tv_nsec;
 }
 

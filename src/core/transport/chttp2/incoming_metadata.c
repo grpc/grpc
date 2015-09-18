@@ -42,7 +42,7 @@
 
 void grpc_chttp2_incoming_metadata_buffer_init(
     grpc_chttp2_incoming_metadata_buffer *buffer) {
-  buffer->deadline = gpr_inf_future;
+  buffer->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_destroy(
@@ -87,7 +87,7 @@ void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
   b.list.tail = (void *)(gpr_intptr)buffer->count;
   b.garbage.head = b.garbage.tail = NULL;
   b.deadline = buffer->deadline;
-  buffer->deadline = gpr_inf_future;
+  buffer->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 
   grpc_sopb_add_metadata(sopb, b);
 }

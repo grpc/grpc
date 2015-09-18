@@ -191,6 +191,11 @@ void grpc_call_next_op(grpc_call_element *elem, grpc_transport_stream_op *op) {
   next_elem->filter->start_transport_stream_op(next_elem, op);
 }
 
+char *grpc_call_next_get_peer(grpc_call_element *elem) {
+  grpc_call_element *next_elem = elem + 1;
+  return next_elem->filter->get_peer(next_elem);
+}
+
 void grpc_channel_next_op(grpc_channel_element *elem, grpc_transport_op *op) {
   grpc_channel_element *next_elem = elem + 1;
   next_elem->filter->start_transport_op(next_elem, op);

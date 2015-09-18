@@ -46,4 +46,4 @@ grpc_endpoint *grpc_secure_endpoint_create(
     struct tsi_frame_protector *protector, grpc_endpoint *to_wrap,
     gpr_slice *leftover_slices, size_t leftover_nslices);
 
-#endif  /* GRPC_INTERNAL_CORE_SECURITY_SECURE_ENDPOINT_H */
+#endif /* GRPC_INTERNAL_CORE_SECURITY_SECURE_ENDPOINT_H */

@@ -66,6 +66,8 @@ typedef struct {
   size_t header_idx;
   /* was the last frame emitted a header? (if yes, we'll need a CONTINUATION */
   gpr_uint8 last_was_header;
+  /* have we seen a regular (non-colon-prefixed) header yet? */
+  gpr_uint8 seen_regular_header;
   /* output stream id */
   gpr_uint32 stream_id;
   gpr_slice_buffer *output;
@@ -361,6 +363,15 @@ static grpc_mdelem *hpack_enc(grpc_chttp2_hpack_compressor *c,
   gpr_uint32 indices_key;
   int should_add_elem;
 
+  GPR_ASSERT (GPR_SLICE_LENGTH(elem->key->slice) > 0);
+  if (GPR_SLICE_START_PTR(elem->key->slice)[0] != ':') { /* regular header */
+    st->seen_regular_header = 1;
+  } else if (st->seen_regular_header != 0) { /* reserved header */
+    gpr_log(GPR_ERROR,
+            "Reserved header (colon-prefixed) happening after regular ones.");
+    abort();
+  }
+
   inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum, c->filter_elems);
 
   /* is this elem currently in the decoders table? */
@@ -437,10 +448,11 @@ static void deadline_enc(grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
                          framer_state *st) {
   char timeout_str[GRPC_CHTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE];
   grpc_mdelem *mdelem;
-  grpc_chttp2_encode_timeout(gpr_time_sub(deadline, gpr_now()), timeout_str);
+  grpc_chttp2_encode_timeout(
+      gpr_time_sub(deadline, gpr_now(deadline.clock_type)), timeout_str);
   mdelem = grpc_mdelem_from_metadata_strings(
       c->mdctx, GRPC_MDSTR_REF(c->timeout_key_str),
-      grpc_mdstr_from_string(c->mdctx, timeout_str));
+      grpc_mdstr_from_string(c->mdctx, timeout_str, 0));
   mdelem = hpack_enc(c, mdelem, st);
   if (mdelem) GRPC_MDELEM_UNREF(mdelem);
 }
@@ -455,7 +467,7 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
                                        grpc_mdctx *ctx) {
   memset(c, 0, sizeof(*c));
   c->mdctx = ctx;
-  c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout");
+  c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout", 0);
 }
 
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c) {
@@ -476,6 +488,7 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
   gpr_uint32 flow_controlled_bytes_taken = 0;
   gpr_uint32 curop = 0;
   gpr_uint8 *p;
+  int compressed_flag_set = 0;
 
   while (curop < *inops_count) {
     GPR_ASSERT(flow_controlled_bytes_taken <= max_flow_controlled_bytes);
@@ -495,9 +508,12 @@ gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
       case GRPC_OP_BEGIN_MESSAGE:
         /* begin op: for now we just convert the op to a slice and fall
            through - this lets us reuse the slice framing code below */
+        compressed_flag_set =
+            (op->data.begin_message.flags & GRPC_WRITE_INTERNAL_COMPRESS) != 0;
         slice = gpr_slice_malloc(5);
+
         p = GPR_SLICE_START_PTR(slice);
-        p[0] = 0;
+        p[0] = compressed_flag_set;
         p[1] = op->data.begin_message.length >> 24;
         p[2] = op->data.begin_message.length >> 16;
         p[3] = op->data.begin_message.length >> 8;
@@ -555,11 +571,13 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
   grpc_mdctx *mdctx = compressor->mdctx;
   grpc_linked_mdelem *l;
   int need_unref = 0;
+  gpr_timespec deadline;
 
   GPR_ASSERT(stream_id != 0);
 
   st.cur_frame_type = NONE;
   st.last_was_header = 0;
+  st.seen_regular_header = 0;
   st.stream_id = stream_id;
   st.output = output;
 
@@ -584,8 +602,9 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
           l->md = hpack_enc(compressor, l->md, &st);
           need_unref |= l->md != NULL;
         }
-        if (gpr_time_cmp(op->data.metadata.deadline, gpr_inf_future) != 0) {
-          deadline_enc(compressor, op->data.metadata.deadline, &st);
+        deadline = op->data.metadata.deadline;
+        if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) != 0) {
+          deadline_enc(compressor, deadline, &st);
         }
         curop++;
         break;

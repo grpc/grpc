@@ -59,4 +59,4 @@ gpr_timespec grpc_alarm_list_next_timeout(void);
 
 void grpc_kick_poller(void);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H */

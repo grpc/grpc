@@ -9,5 +9,3 @@ using System.Runtime.CompilerServices;
 [assembly: AssemblyCopyright("Google Inc.  All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
-
-[assembly: InternalsVisibleTo("Grpc.Auth.Tests")]

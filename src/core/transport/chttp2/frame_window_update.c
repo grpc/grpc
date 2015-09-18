@@ -94,8 +94,8 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
     }
     GPR_ASSERT(is_last);
 
-    if (transport_parsing->incoming_stream_id) {
-      if (stream_parsing) {
+    if (transport_parsing->incoming_stream_id != 0) {
+      if (stream_parsing != NULL) {
         GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("update", transport_parsing,
                                          stream_parsing, outgoing_window_update,
                                          p->amount);

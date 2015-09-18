@@ -32,6 +32,8 @@
  */
 
 #include "src/core/transport/transport.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include "src/core/transport/transport_impl.h"
 
 size_t grpc_transport_stream_size(grpc_transport *transport) {
@@ -65,6 +67,10 @@ void grpc_transport_destroy_stream(grpc_transport *transport,
   transport->vtable->destroy_stream(transport, stream);
 }
 
+char *grpc_transport_get_peer(grpc_transport *transport) {
+  return transport->vtable->get_peer(transport);
+}
+
 void grpc_transport_stream_op_finish_with_failure(
     grpc_transport_stream_op *op) {
   if (op->send_ops) {
@@ -79,12 +85,54 @@ void grpc_transport_stream_op_finish_with_failure(
 }
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
-                                               grpc_status_code status,
-                                               grpc_mdstr *message) {
+                                               grpc_status_code status) {
+  GPR_ASSERT(status != GRPC_STATUS_OK);
   if (op->cancel_with_status == GRPC_STATUS_OK) {
     op->cancel_with_status = status;
   }
-  if (message) {
-    GRPC_MDSTR_UNREF(message);
+  if (op->close_with_status != GRPC_STATUS_OK) {
+    op->close_with_status = GRPC_STATUS_OK;
+    if (op->optional_close_message != NULL) {
+      gpr_slice_unref(*op->optional_close_message);
+      op->optional_close_message = NULL;
+    }
   }
+}
+
+typedef struct {
+  gpr_slice message;
+  grpc_iomgr_closure *then_call;
+  grpc_iomgr_closure closure;
+} close_message_data;
+
+static void free_message(void *p, int iomgr_success) {
+  close_message_data *cmd = p;
+  gpr_slice_unref(cmd->message);
+  if (cmd->then_call != NULL) {
+    cmd->then_call->cb(cmd->then_call->cb_arg, iomgr_success);
+  }
+  gpr_free(cmd);
+}
+
+void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
+                                        grpc_status_code status,
+                                        gpr_slice *optional_message) {
+  close_message_data *cmd;
+  GPR_ASSERT(status != GRPC_STATUS_OK);
+  if (op->cancel_with_status != GRPC_STATUS_OK ||
+      op->close_with_status != GRPC_STATUS_OK) {
+    if (optional_message) {
+      gpr_slice_unref(*optional_message);
+    }
+    return;
+  }
+  if (optional_message) {
+    cmd = gpr_malloc(sizeof(*cmd));
+    cmd->message = *optional_message;
+    cmd->then_call = op->on_consumed;
+    grpc_iomgr_closure_init(&cmd->closure, free_message, cmd);
+    op->on_consumed = &cmd->closure;
+    op->optional_close_message = &cmd->message;
+  }
+  op->close_with_status = status;
 }

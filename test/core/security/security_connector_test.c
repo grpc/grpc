@@ -77,9 +77,9 @@ static void test_unauthenticated_ssl_peer(void) {
 }
 
 static int check_identity(const grpc_auth_context *ctx,
-                         const char *expected_property_name,
-                         const char **expected_identities,
-                         size_t num_identities) {
+                          const char *expected_property_name,
+                          const char **expected_identities,
+                          size_t num_identities) {
   grpc_auth_property_iterator it;
   const grpc_auth_property *prop;
   size_t i;
@@ -166,7 +166,8 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
   ctx = tsi_ssl_peer_to_auth_context(&peer);
   GPR_ASSERT(ctx != NULL);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
-  GPR_ASSERT(check_identity(ctx, GRPC_X509_SAN_PROPERTY_NAME, &expected_san, 1));
+  GPR_ASSERT(
+      check_identity(ctx, GRPC_X509_SAN_PROPERTY_NAME, &expected_san, 1));
   GPR_ASSERT(check_transport_security_type(ctx));
   GPR_ASSERT(check_x509_cn(ctx, expected_cn));
 

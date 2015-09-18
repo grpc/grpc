@@ -77,4 +77,4 @@ void grpc_iomgr_add_callback(grpc_iomgr_closure *closure);
     argument. */
 void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *iocb, int success);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_H */

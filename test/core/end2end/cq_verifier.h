@@ -60,6 +60,7 @@ void cq_verify_empty(cq_verifier *v);
 void cq_expect_completion(cq_verifier *v, void *tag, int success);
 
 int byte_buffer_eq_string(grpc_byte_buffer *byte_buffer, const char *string);
-int contains_metadata(grpc_metadata_array *array, const char *key, const char *value);
+int contains_metadata(grpc_metadata_array *array, const char *key,
+                      const char *value);
 
-#endif  /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */
+#endif /* GRPC_TEST_CORE_END2END_CQ_VERIFIER_H */

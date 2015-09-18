@@ -39,9 +39,9 @@
 #include "src/core/transport/transport.h"
 
 /* Create a server */
-grpc_server *grpc_server_create_from_filters(grpc_channel_filter **filters,
-                                             size_t filter_count,
-                                             const grpc_channel_args *args);
+grpc_server *grpc_server_create_from_filters(
+    const grpc_channel_filter **filters, size_t filter_count,
+    const grpc_channel_args *args);
 
 /* Add a listener to the server: when the server starts, it will call start,
    and when it shuts down, it will call destroy */

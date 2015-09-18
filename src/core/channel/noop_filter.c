@@ -127,4 +127,5 @@ const grpc_channel_filter grpc_no_op_filter = {noop_start_transport_stream_op,
                                                sizeof(channel_data),
                                                init_channel_elem,
                                                destroy_channel_elem,
+                                               grpc_call_next_get_peer,
                                                "no-op"};

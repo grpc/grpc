@@ -5,6 +5,7 @@ inherit_from: .rubocop_todo.yml
 AllCops:
   Exclude:
     - 'bin/apis/**/*'
-    - 'bin/interop/test/**/*'
     - 'bin/math.rb'
     - 'bin/math_services.rb'
+    - 'pb/grpc/health/v1alpha/*'
+    - 'pb/test/**/*'

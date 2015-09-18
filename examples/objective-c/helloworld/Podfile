@@ -1,0 +1,7 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+
+target 'HelloWorld' do
+  # Depend on the generated HelloWorld library.
+  pod 'HelloWorld', :path => '.'
+end

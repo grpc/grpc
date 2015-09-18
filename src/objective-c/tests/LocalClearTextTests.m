@@ -42,12 +42,12 @@
 #import <RxLibrary/GRXWriter+Immediate.h>
 
 // These tests require a gRPC "RouteGuide" sample server to be running locally. You can compile and
-// run one by following the instructions here: https://github.com/grpc/grpc-common/blob/master/cpp/cpptutorial.md#try-it-out
+// run one by following the instructions here: https://github.com/grpc/grpc/blob/master/examples/cpp/cpptutorial.md#try-it-out
 // Be sure to have the C gRPC library installed in your system (for example, by having followed the
 // instructions at https://github.com/grpc/homebrew-grpc
 
 static NSString * const kRouteGuideHost = @"http://localhost:50051";
-static NSString * const kPackage = @"examples";
+static NSString * const kPackage = @"routeguide";
 static NSString * const kService = @"RouteGuide";
 
 @interface LocalClearTextTests : XCTestCase
@@ -64,7 +64,7 @@ static NSString * const kService = @"RouteGuide";
 //                                                         interface:kService
 //                                                            method:@"EmptyCall"];
 //
-//  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[NSData data]];
+//  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[NSData data]];
 //
 //  GRPCCall *call = [[GRPCCall alloc] initWithHost:kRouteGuideHost
 //                                           method:method
@@ -91,7 +91,7 @@ static NSString * const kService = @"RouteGuide";
                                                      service:kService
                                                       method:@"RecordRoute"];
 
-  id<GRXWriter> requestsWriter = [GRXWriter emptyWriter];
+  GRXWriter *requestsWriter = [GRXWriter emptyWriter];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kRouteGuideHost
                                              path:method.HTTPPath
@@ -122,7 +122,7 @@ static NSString * const kService = @"RouteGuide";
   RGDPoint *point = [RGDPoint message];
   point.latitude = 28E7;
   point.longitude = -15E7;
-  id<GRXWriter> requestsWriter = [GRXWriter writerWithValue:[point data]];
+  GRXWriter *requestsWriter = [GRXWriter writerWithValue:[point data]];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kRouteGuideHost
                                              path:method.HTTPPath

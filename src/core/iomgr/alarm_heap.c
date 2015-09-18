@@ -66,11 +66,11 @@ static void adjust_downwards(grpc_alarm **first, int i, int length,
     int next_i;
     if (left_child >= length) break;
     right_child = left_child + 1;
-    next_i =
-        right_child < length && gpr_time_cmp(first[left_child]->deadline,
-                                             first[right_child]->deadline) < 0
-            ? right_child
-            : left_child;
+    next_i = right_child < length &&
+                     gpr_time_cmp(first[left_child]->deadline,
+                                  first[right_child]->deadline) < 0
+                 ? right_child
+                 : left_child;
     if (gpr_time_cmp(t->deadline, first[next_i]->deadline) >= 0) break;
     first[i] = first[next_i];
     first[i]->heap_index = i;

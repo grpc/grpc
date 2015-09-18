@@ -27,17 +27,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-require 'logging'
-
 # GRPC contains the General RPC module.
 module GRPC
-  extend Logging.globally
+  # DefaultLogger is a module included in GRPC if no other logging is set up for
+  # it.  See ../spec/spec_helpers an example of where other logging is added.
+  module DefaultLogger
+    def logger
+      LOGGER
+    end
+
+    private
+
+    # NoopLogger implements the methods of Ruby's conventional logging interface
+    # that are actually used internally within gRPC with a noop implementation.
+    class NoopLogger
+      def info(_ignored)
+      end
+
+      def debug(_ignored)
+      end
+
+      def warn(_ignored)
+      end
+    end
+
+    LOGGER = NoopLogger.new
+  end
+
+  # Inject the noop #logger if no module-level logger method has been injected.
+  extend DefaultLogger unless methods.include?(:logger)
 end
-
-Logging.logger.root.appenders = Logging.appenders.stdout
-Logging.logger.root.level = :info
-
-# TODO: provide command-line configuration for logging
-Logging.logger['GRPC'].level = :info
-Logging.logger['GRPC::ActiveCall'].level = :info
-Logging.logger['GRPC::BidiCall'].level = :info

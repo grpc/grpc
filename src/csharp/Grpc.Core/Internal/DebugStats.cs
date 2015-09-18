@@ -36,12 +36,25 @@ using System.Threading;
 
 namespace Grpc.Core.Internal
 {
-    internal static class DebugStats
+    internal class DebugStats
     {
-        public static readonly AtomicCounter ActiveClientCalls = new AtomicCounter();
+        public readonly AtomicCounter PendingBatchCompletions = new AtomicCounter();
 
-        public static readonly AtomicCounter ActiveServerCalls = new AtomicCounter();
+        /// <summary>
+        /// Checks the debug stats and take action for any inconsistency found.
+        /// </summary>
+        public void CheckOK()
+        {
+            var pendingBatchCompletions = PendingBatchCompletions.Count;
+            if (pendingBatchCompletions != 0)
+            {
+                DebugWarning(string.Format("Detected {0} pending batch completions.", pendingBatchCompletions));
+            }
+        }
 
-        public static readonly AtomicCounter PendingBatchCompletions = new AtomicCounter();
+        private void DebugWarning(string message)
+        {
+            throw new Exception("Shutdown check: " + message);
+        }
     }
 }

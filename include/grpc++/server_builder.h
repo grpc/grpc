@@ -37,7 +37,7 @@
 #include <memory>
 #include <vector>
 
-#include <grpc++/config.h>
+#include <grpc++/support/config.h>
 
 namespace grpc {
 
@@ -51,62 +51,68 @@ class ServerCredentials;
 class SynchronousService;
 class ThreadPoolInterface;
 
+/// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
  public:
   ServerBuilder();
 
-  // Register a service. This call does not take ownership of the service.
-  // The service must exist for the lifetime of the Server instance returned by
-  // BuildAndStart().
-  // Matches requests with any :authority
+  /// Register a service. This call does not take ownership of the service.
+  /// The service must exist for the lifetime of the \a Server instance returned
+  /// by \a BuildAndStart().
+  /// Matches requests with any :authority
   void RegisterService(SynchronousService* service);
 
-  // Register an asynchronous service.
-  // This call does not take ownership of the service or completion queue.
-  // The service and completion queuemust exist for the lifetime of the Server
-  // instance returned by BuildAndStart().
-  // Matches requests with any :authority
+  /// Register an asynchronous service.
+  /// This call does not take ownership of the service or completion queue.
+  /// The service and completion queuemust exist for the lifetime of the \a
+  /// Server instance returned by \a BuildAndStart().
+  /// Matches requests with any :authority
   void RegisterAsyncService(AsynchronousService* service);
 
-  // Register a generic service.
-  // Matches requests with any :authority
+  /// Register a generic service.
+  /// Matches requests with any :authority
   void RegisterAsyncGenericService(AsyncGenericService* service);
 
-  // Register a service. This call does not take ownership of the service.
-  // The service must exist for the lifetime of the Server instance returned by
-  // BuildAndStart().
-  // Only matches requests with :authority \a host
-  void RegisterService(const grpc::string& host, 
-                       SynchronousService* service);
+  /// Register a service. This call does not take ownership of the service.
+  /// The service must exist for the lifetime of the \a Server instance returned
+  /// by BuildAndStart().
+  /// Only matches requests with :authority \a host
+  void RegisterService(const grpc::string& host, SynchronousService* service);
 
-  // Register an asynchronous service.
-  // This call does not take ownership of the service or completion queue.
-  // The service and completion queuemust exist for the lifetime of the Server
-  // instance returned by BuildAndStart().
-  // Only matches requests with :authority \a host
-  void RegisterAsyncService(const grpc::string& host, 
+  /// Register an asynchronous service.
+  /// This call does not take ownership of the service or completion queue.
+  /// The service and completion queuemust exist for the lifetime of the \a
+  /// Server instance returned by \a BuildAndStart().
+  /// Only matches requests with :authority equal to \a host
+  void RegisterAsyncService(const grpc::string& host,
                             AsynchronousService* service);
 
-  // Set max message size in bytes.
+  /// Set max message size in bytes.
   void SetMaxMessageSize(int max_message_size) {
     max_message_size_ = max_message_size;
   }
 
-  // Add a listening port. Can be called multiple times.
+  /// Tries to bind \a server to the given \a addr.
+  ///
+  /// It can be invoked multiple times.
+  ///
+  /// \param addr The address to try to bind to the server (eg, localhost:1234,
+  /// 192.168.1.1:31416, [::1]:27182, etc.).
+  /// \params creds The credentials associated with the server.
+  /// \param selected_port[out] Upon success, updated to contain the port
+  /// number. \a nullptr otherwise.
+  ///
+  // TODO(dgq): the "port" part seems to be a misnomer.
   void AddListeningPort(const grpc::string& addr,
                         std::shared_ptr<ServerCredentials> creds,
                         int* selected_port = nullptr);
 
-  // Set the thread pool used for running appliation rpc handlers.
-  // Does not take ownership.
-  void SetThreadPool(ThreadPoolInterface* thread_pool);
-
-  // Add a completion queue for handling asynchronous services
-  // Caller is required to keep this completion queue live until calling
-  // BuildAndStart()
+  /// Add a completion queue for handling asynchronous services
+  /// Caller is required to keep this completion queue live until
+  /// the server is destroyed.
   std::unique_ptr<ServerCompletionQueue> AddCompletionQueue();
 
-  // Return a running server which is ready for processing rpcs.
+  /// Return a running server which is ready for processing calls.
   std::unique_ptr<Server> BuildAndStart();
 
  private:
@@ -117,9 +123,10 @@ class ServerBuilder {
   };
 
   typedef std::unique_ptr<grpc::string> HostString;
-  template <class T> struct NamedService {
+  template <class T>
+  struct NamedService {
     explicit NamedService(T* s) : service(s) {}
-    NamedService(const grpc::string& h, T *s)
+    NamedService(const grpc::string& h, T* s)
         : host(new grpc::string(h)), service(s) {}
     HostString host;
     T* service;
@@ -127,7 +134,8 @@ class ServerBuilder {
 
   int max_message_size_;
   std::vector<std::unique_ptr<NamedService<RpcService>>> services_;
-  std::vector<std::unique_ptr<NamedService<AsynchronousService>>> async_services_;
+  std::vector<std::unique_ptr<NamedService<AsynchronousService>>>
+      async_services_;
   std::vector<Port> ports_;
   std::vector<ServerCompletionQueue*> cqs_;
   std::shared_ptr<ServerCredentials> creds_;

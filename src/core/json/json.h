@@ -85,4 +85,4 @@ char* grpc_json_dump_to_string(grpc_json* json, int indent);
 grpc_json* grpc_json_create(grpc_json_type type);
 void grpc_json_destroy(grpc_json* json);
 
-#endif  /* GRPC_INTERNAL_CORE_JSON_JSON_H */
+#endif /* GRPC_INTERNAL_CORE_JSON_JSON_H */

@@ -1,11 +1,17 @@
-buildgen: contains the template renderer for our build system.
+buildgen: template renderer for our build system.
 
-distpackages: contains script to generate debian packages.
+distpackages: script to generate debian packages.
 
-dockerfile: contains all of the docker files to test gRPC.
+distrib: scripts to distribute language-specific packages.
 
-gce_setup: contains boilerplate for running the docker files under GCE.
+dockerfile: Docker files to test gRPC.
 
-jenkins: support for running tests on Jenkins
+doxygen: gRPC C/C++ documentation generation via Doxygen.
 
-run_tests: contains python scripts to properly run the tests in parallel.
+gce_setup: boilerplate to run the Docker files under GCE.
+
+jenkins: support for running tests on Jenkins.
+
+profile_analyzer: pretty printer for gRPC profiling data.
+
+run_tests: scripts to run gRPC tests in parallel.

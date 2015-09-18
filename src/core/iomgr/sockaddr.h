@@ -44,4 +44,4 @@
 #include "src/core/iomgr/sockaddr_posix.h"
 #endif
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_SOCKADDR_H */

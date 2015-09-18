@@ -28,7 +28,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-syntax = "proto2";
+syntax = "proto3";
 
 import "test/cpp/util/messages.proto";
 
@@ -39,5 +39,9 @@ service TestService {
   rpc RequestStream(stream EchoRequest) returns (EchoResponse);
   rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
   rpc BidiStream(stream EchoRequest) returns (stream EchoResponse);
+  rpc Unimplemented(EchoRequest) returns (EchoResponse);
+}
+
+service UnimplementedService {
   rpc Unimplemented(EchoRequest) returns (EchoResponse);
 }

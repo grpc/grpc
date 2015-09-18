@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/httpcli/httpcli_security_connector.h"
+#include "src/core/httpcli/httpcli.h"
 
 #include <string.h>
 
@@ -96,7 +96,7 @@ static grpc_security_status httpcli_ssl_check_peer(grpc_security_connector *sc,
 static grpc_security_connector_vtable httpcli_ssl_vtable = {
     httpcli_ssl_destroy, httpcli_ssl_create_handshaker, httpcli_ssl_check_peer};
 
-grpc_security_status grpc_httpcli_ssl_channel_security_connector_create(
+static grpc_security_status httpcli_ssl_channel_security_connector_create(
     const unsigned char *pem_root_certs, size_t pem_root_certs_size,
     const char *secure_peer_name, grpc_channel_security_connector **sc) {
   tsi_result result = TSI_OK;
@@ -130,3 +130,48 @@ grpc_security_status grpc_httpcli_ssl_channel_security_connector_create(
   *sc = &c->base;
   return GRPC_SECURITY_OK;
 }
+
+/* handshaker */
+
+typedef struct {
+  void (*func)(void *arg, grpc_endpoint *endpoint);
+  void *arg;
+} on_done_closure;
+
+static void on_secure_transport_setup_done(void *rp,
+                                           grpc_security_status status,
+                                           grpc_endpoint *wrapped_endpoint,
+                                           grpc_endpoint *secure_endpoint) {
+  on_done_closure *c = rp;
+  if (status != GRPC_SECURITY_OK) {
+    gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
+    c->func(c->arg, NULL);
+  } else {
+    c->func(c->arg, secure_endpoint);
+  }
+  gpr_free(c);
+}
+
+static void ssl_handshake(void *arg, grpc_endpoint *tcp, const char *host,
+                          void (*on_done)(void *arg, grpc_endpoint *endpoint)) {
+  grpc_channel_security_connector *sc = NULL;
+  const unsigned char *pem_root_certs = NULL;
+  on_done_closure *c = gpr_malloc(sizeof(*c));
+  size_t pem_root_certs_size = grpc_get_default_ssl_roots(&pem_root_certs);
+  if (pem_root_certs == NULL || pem_root_certs_size == 0) {
+    gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+    on_done(arg, NULL);
+    gpr_free(c);
+    return;
+  }
+  c->func = on_done;
+  c->arg = arg;
+  GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
+                 pem_root_certs, pem_root_certs_size, host, &sc) ==
+             GRPC_SECURITY_OK);
+  grpc_setup_secure_transport(&sc->base, tcp, on_secure_transport_setup_done,
+                              c);
+  GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "httpcli");
+}
+
+const grpc_httpcli_handshaker grpc_httpcli_ssl = {"https", ssl_handshake};

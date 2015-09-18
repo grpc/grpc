@@ -43,7 +43,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/useful.h>
 
-static void fill_common_header(const grpc_httpcli_request *request, gpr_strvec *buf) {
+static void fill_common_header(const grpc_httpcli_request *request,
+                               gpr_strvec *buf) {
   size_t i;
   gpr_strvec_add(buf, gpr_strdup(request->path));
   gpr_strvec_add(buf, gpr_strdup(" HTTP/1.0\r\n"));
@@ -52,7 +53,8 @@ static void fill_common_header(const grpc_httpcli_request *request, gpr_strvec *
   gpr_strvec_add(buf, gpr_strdup(request->host));
   gpr_strvec_add(buf, gpr_strdup("\r\n"));
   gpr_strvec_add(buf, gpr_strdup("Connection: close\r\n"));
-  gpr_strvec_add(buf, gpr_strdup("User-Agent: "GRPC_HTTPCLI_USER_AGENT"\r\n"));
+  gpr_strvec_add(buf,
+                 gpr_strdup("User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"));
   /* user supplied headers */
   for (i = 0; i < request->hdr_count; i++) {
     gpr_strvec_add(buf, gpr_strdup(request->hdrs[i].key));

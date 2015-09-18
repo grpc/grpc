@@ -52,4 +52,4 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object *obj);
 void grpc_iomgr_platform_init(void);
 void grpc_iomgr_platform_shutdown(void);
 
-#endif  /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H */

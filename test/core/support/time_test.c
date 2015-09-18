@@ -91,10 +91,10 @@ static void ts_to_s(gpr_timespec t,
 static void test_values(void) {
   int i;
 
-  gpr_timespec x = gpr_time_0;
+  gpr_timespec x = gpr_time_0(GPR_CLOCK_REALTIME);
   GPR_ASSERT(x.tv_sec == 0 && x.tv_nsec == 0);
 
-  x = gpr_inf_future;
+  x = gpr_inf_future(GPR_CLOCK_REALTIME);
   fprintf(stderr, "far future ");
   u_to_s(x.tv_sec, 16, 16, &to_fp, stderr);
   fprintf(stderr, "\n");
@@ -103,7 +103,7 @@ static void test_values(void) {
   ts_to_s(x, &to_fp, stderr);
   fprintf(stderr, "\n");
 
-  x = gpr_inf_past;
+  x = gpr_inf_past(GPR_CLOCK_REALTIME);
   fprintf(stderr, "far past   ");
   u_to_s(x.tv_sec, 16, 16, &to_fp, stderr);
   fprintf(stderr, "\n");
@@ -113,37 +113,37 @@ static void test_values(void) {
   fprintf(stderr, "\n");
 
   for (i = 1; i != 1000 * 1000 * 1000; i *= 10) {
-    x = gpr_time_from_micros(i);
+    x = gpr_time_from_micros(i, GPR_TIMESPAN);
     GPR_ASSERT(x.tv_sec == i / GPR_US_PER_SEC &&
                x.tv_nsec == (i % GPR_US_PER_SEC) * GPR_NS_PER_US);
-    x = gpr_time_from_nanos(i);
+    x = gpr_time_from_nanos(i, GPR_TIMESPAN);
     GPR_ASSERT(x.tv_sec == i / GPR_NS_PER_SEC &&
                x.tv_nsec == (i % GPR_NS_PER_SEC));
-    x = gpr_time_from_millis(i);
+    x = gpr_time_from_millis(i, GPR_TIMESPAN);
     GPR_ASSERT(x.tv_sec == i / GPR_MS_PER_SEC &&
                x.tv_nsec == (i % GPR_MS_PER_SEC) * GPR_NS_PER_MS);
   }
 
   /* Test possible overflow in conversion of -ve values. */
-  x = gpr_time_from_micros(-(LONG_MAX - 999997));
+  x = gpr_time_from_micros(-(LONG_MAX - 999997), GPR_TIMESPAN);
   GPR_ASSERT(x.tv_sec < 0);
   GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
-  x = gpr_time_from_nanos(-(LONG_MAX - 999999997));
+  x = gpr_time_from_nanos(-(LONG_MAX - 999999997), GPR_TIMESPAN);
   GPR_ASSERT(x.tv_sec < 0);
   GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
-  x = gpr_time_from_millis(-(LONG_MAX - 997));
+  x = gpr_time_from_millis(-(LONG_MAX - 997), GPR_TIMESPAN);
   GPR_ASSERT(x.tv_sec < 0);
   GPR_ASSERT(x.tv_nsec >= 0 && x.tv_nsec < GPR_NS_PER_SEC);
 
   /* Test general -ve values. */
   for (i = -1; i > -1000 * 1000 * 1000; i *= 7) {
-    x = gpr_time_from_micros(i);
+    x = gpr_time_from_micros(i, GPR_TIMESPAN);
     GPR_ASSERT(x.tv_sec * GPR_US_PER_SEC + x.tv_nsec / GPR_NS_PER_US == i);
-    x = gpr_time_from_nanos(i);
+    x = gpr_time_from_nanos(i, GPR_TIMESPAN);
     GPR_ASSERT(x.tv_sec * GPR_NS_PER_SEC + x.tv_nsec == i);
-    x = gpr_time_from_millis(i);
+    x = gpr_time_from_millis(i, GPR_TIMESPAN);
     GPR_ASSERT(x.tv_sec * GPR_MS_PER_SEC + x.tv_nsec / GPR_NS_PER_MS == i);
   }
 }
@@ -158,17 +158,19 @@ static void test_add_sub(void) {
       for (k = 1; k <= 10000000; k *= 10) {
         int sum = i + j;
         int diff = i - j;
-        gpr_timespec it = gpr_time_from_micros(i * k);
-        gpr_timespec jt = gpr_time_from_micros(j * k);
+        gpr_timespec it = gpr_time_from_micros(i * k, GPR_TIMESPAN);
+        gpr_timespec jt = gpr_time_from_micros(j * k, GPR_TIMESPAN);
         gpr_timespec sumt = gpr_time_add(it, jt);
         gpr_timespec difft = gpr_time_sub(it, jt);
-        if (gpr_time_cmp(gpr_time_from_micros(sum * k), sumt) != 0) {
+        if (gpr_time_cmp(gpr_time_from_micros(sum * k, GPR_TIMESPAN), sumt) !=
+            0) {
           fprintf(stderr, "i %d  j %d  sum %d    sumt ", i, j, sum);
           ts_to_s(sumt, &to_fp, stderr);
           fprintf(stderr, "\n");
           GPR_ASSERT(0);
         }
-        if (gpr_time_cmp(gpr_time_from_micros(diff * k), difft) != 0) {
+        if (gpr_time_cmp(gpr_time_from_micros(diff * k, GPR_TIMESPAN), difft) !=
+            0) {
           fprintf(stderr, "i %d  j %d  diff %d    diff ", i, j, diff);
           ts_to_s(sumt, &to_fp, stderr);
           fprintf(stderr, "\n");
@@ -181,66 +183,76 @@ static void test_add_sub(void) {
 
 static void test_overflow(void) {
   /* overflow */
-  gpr_timespec x = gpr_time_from_micros(1);
+  gpr_timespec x = gpr_time_from_micros(1, GPR_TIMESPAN);
   do {
     x = gpr_time_add(x, x);
-  } while (gpr_time_cmp(x, gpr_inf_future) < 0);
-  GPR_ASSERT(gpr_time_cmp(x, gpr_inf_future) == 0);
-  x = gpr_time_from_micros(-1);
+  } while (gpr_time_cmp(x, gpr_inf_future(GPR_TIMESPAN)) < 0);
+  GPR_ASSERT(gpr_time_cmp(x, gpr_inf_future(GPR_TIMESPAN)) == 0);
+  x = gpr_time_from_micros(-1, GPR_TIMESPAN);
   do {
     x = gpr_time_add(x, x);
-  } while (gpr_time_cmp(x, gpr_inf_past) > 0);
-  GPR_ASSERT(gpr_time_cmp(x, gpr_inf_past) == 0);
+  } while (gpr_time_cmp(x, gpr_inf_past(GPR_TIMESPAN)) > 0);
+  GPR_ASSERT(gpr_time_cmp(x, gpr_inf_past(GPR_TIMESPAN)) == 0);
 }
 
 static void test_sticky_infinities(void) {
   int i;
   int j;
   int k;
-  static const gpr_timespec *infinity[] = {&gpr_inf_future, &gpr_inf_past};
-  static const gpr_timespec *addend[] = {&gpr_inf_future, &gpr_inf_past,
-                                         &gpr_time_0, NULL};
+  gpr_timespec infinity[2];
+  gpr_timespec addend[3];
+  infinity[0] = gpr_inf_future(GPR_TIMESPAN);
+  infinity[1] = gpr_inf_past(GPR_TIMESPAN);
+  addend[0] = gpr_inf_future(GPR_TIMESPAN);
+  addend[1] = gpr_inf_past(GPR_TIMESPAN);
+  addend[2] = gpr_time_0(GPR_TIMESPAN);
 
   /* Infinities are sticky */
   for (i = 0; i != sizeof(infinity) / sizeof(infinity[0]); i++) {
     for (j = 0; j != sizeof(addend) / sizeof(addend[0]); j++) {
-      if (addend[j] == NULL) {
-        for (k = -200; k <= 200; k++) {
-          gpr_timespec y = gpr_time_from_micros(k * 100000);
-          gpr_timespec x = gpr_time_add(*infinity[i], y);
-          GPR_ASSERT(gpr_time_cmp(x, *infinity[i]) == 0);
-          x = gpr_time_sub(*infinity[i], y);
-          GPR_ASSERT(gpr_time_cmp(x, *infinity[i]) == 0);
-        }
-      } else {
-        gpr_timespec x = gpr_time_add(*infinity[i], *addend[j]);
-        GPR_ASSERT(gpr_time_cmp(x, *infinity[i]) == 0);
-        x = gpr_time_sub(*infinity[i], *addend[j]);
-        GPR_ASSERT(gpr_time_cmp(x, *infinity[i]) == 0);
-      }
+      gpr_timespec x = gpr_time_add(infinity[i], addend[j]);
+      GPR_ASSERT(gpr_time_cmp(x, infinity[i]) == 0);
+      x = gpr_time_sub(infinity[i], addend[j]);
+      GPR_ASSERT(gpr_time_cmp(x, infinity[i]) == 0);
+    }
+    for (k = -200; k <= 200; k++) {
+      gpr_timespec y = gpr_time_from_micros(k * 100000, GPR_TIMESPAN);
+      gpr_timespec x = gpr_time_add(infinity[i], y);
+      GPR_ASSERT(gpr_time_cmp(x, infinity[i]) == 0);
+      x = gpr_time_sub(infinity[i], y);
+      GPR_ASSERT(gpr_time_cmp(x, infinity[i]) == 0);
     }
   }
 }
 
 static void test_similar(void) {
-  GPR_ASSERT(1 == gpr_time_similar(gpr_inf_future, gpr_inf_future, gpr_time_0));
-  GPR_ASSERT(1 == gpr_time_similar(gpr_inf_past, gpr_inf_past, gpr_time_0));
-  GPR_ASSERT(0 == gpr_time_similar(gpr_inf_past, gpr_inf_future, gpr_time_0));
-  GPR_ASSERT(0 == gpr_time_similar(gpr_inf_future, gpr_inf_past, gpr_time_0));
-  GPR_ASSERT(1 == gpr_time_similar(gpr_time_from_micros(10),
-                                   gpr_time_from_micros(10), gpr_time_0));
-  GPR_ASSERT(1 == gpr_time_similar(gpr_time_from_micros(10),
-                                   gpr_time_from_micros(15),
-                                   gpr_time_from_micros(10)));
-  GPR_ASSERT(1 == gpr_time_similar(gpr_time_from_micros(15),
-                                   gpr_time_from_micros(10),
-                                   gpr_time_from_micros(10)));
-  GPR_ASSERT(0 == gpr_time_similar(gpr_time_from_micros(10),
-                                   gpr_time_from_micros(25),
-                                   gpr_time_from_micros(10)));
-  GPR_ASSERT(0 == gpr_time_similar(gpr_time_from_micros(25),
-                                   gpr_time_from_micros(10),
-                                   gpr_time_from_micros(10)));
+  GPR_ASSERT(1 == gpr_time_similar(gpr_inf_future(GPR_TIMESPAN),
+                                   gpr_inf_future(GPR_TIMESPAN),
+                                   gpr_time_0(GPR_TIMESPAN)));
+  GPR_ASSERT(1 == gpr_time_similar(gpr_inf_past(GPR_TIMESPAN),
+                                   gpr_inf_past(GPR_TIMESPAN),
+                                   gpr_time_0(GPR_TIMESPAN)));
+  GPR_ASSERT(0 == gpr_time_similar(gpr_inf_past(GPR_TIMESPAN),
+                                   gpr_inf_future(GPR_TIMESPAN),
+                                   gpr_time_0(GPR_TIMESPAN)));
+  GPR_ASSERT(0 == gpr_time_similar(gpr_inf_future(GPR_TIMESPAN),
+                                   gpr_inf_past(GPR_TIMESPAN),
+                                   gpr_time_0(GPR_TIMESPAN)));
+  GPR_ASSERT(1 == gpr_time_similar(gpr_time_from_micros(10, GPR_TIMESPAN),
+                                   gpr_time_from_micros(10, GPR_TIMESPAN),
+                                   gpr_time_0(GPR_TIMESPAN)));
+  GPR_ASSERT(1 == gpr_time_similar(gpr_time_from_micros(10, GPR_TIMESPAN),
+                                   gpr_time_from_micros(15, GPR_TIMESPAN),
+                                   gpr_time_from_micros(10, GPR_TIMESPAN)));
+  GPR_ASSERT(1 == gpr_time_similar(gpr_time_from_micros(15, GPR_TIMESPAN),
+                                   gpr_time_from_micros(10, GPR_TIMESPAN),
+                                   gpr_time_from_micros(10, GPR_TIMESPAN)));
+  GPR_ASSERT(0 == gpr_time_similar(gpr_time_from_micros(10, GPR_TIMESPAN),
+                                   gpr_time_from_micros(25, GPR_TIMESPAN),
+                                   gpr_time_from_micros(10, GPR_TIMESPAN)));
+  GPR_ASSERT(0 == gpr_time_similar(gpr_time_from_micros(25, GPR_TIMESPAN),
+                                   gpr_time_from_micros(10, GPR_TIMESPAN),
+                                   gpr_time_from_micros(10, GPR_TIMESPAN)));
 }
 
 int main(int argc, char *argv[]) {
