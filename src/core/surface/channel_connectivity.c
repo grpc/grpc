@@ -45,6 +45,8 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   /* forward through to the underlying client channel */
   grpc_channel_element *client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+  grpc_iomgr_call_list call_list = GRPC_IOMGR_CALL_LIST_INIT;
+  grpc_connectivity_state state;
   if (client_channel_elem->filter != &grpc_client_channel_filter) {
     gpr_log(GPR_ERROR,
             "grpc_channel_check_connectivity_state called on something that is "
@@ -52,8 +54,10 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
             client_channel_elem->filter->name);
     return GRPC_CHANNEL_FATAL_FAILURE;
   }
-  return grpc_client_channel_check_connectivity_state(client_channel_elem,
-                                                      try_to_connect);
+  state = grpc_client_channel_check_connectivity_state(
+      client_channel_elem, try_to_connect, &call_list);
+  grpc_iomgr_call_list_run(call_list);
+  return state;
 }
 
 typedef enum {
@@ -154,6 +158,7 @@ void grpc_channel_watch_connectivity_state(
     gpr_timespec deadline, grpc_completion_queue *cq, void *tag) {
   grpc_channel_element *client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+  grpc_iomgr_call_list call_list = GRPC_IOMGR_CALL_LIST_INIT;
   state_watcher *w = gpr_malloc(sizeof(*w));
 
   grpc_cq_begin_op(cq);
@@ -176,13 +181,14 @@ void grpc_channel_watch_connectivity_state(
             "grpc_channel_watch_connectivity_state called on something that is "
             "not a client channel, but '%s'",
             client_channel_elem->filter->name);
-    grpc_workqueue_push(grpc_channel_get_workqueue(channel), &w->on_complete,
-                        1);
+    grpc_iomgr_call_list_add(&call_list, &w->on_complete, 1);
   } else {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_connectivity");
     grpc_client_channel_add_interested_party(client_channel_elem,
                                              grpc_cq_pollset(cq));
     grpc_client_channel_watch_connectivity_state(client_channel_elem, &w->state,
-                                                 &w->on_complete);
+                                                 &w->on_complete, &call_list);
   }
+
+  grpc_iomgr_call_list_run(call_list);
 }

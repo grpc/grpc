@@ -164,8 +164,7 @@ typedef struct {
   /** data to write next write */
   gpr_slice_buffer qbuf;
   /** queued callbacks */
-  grpc_iomgr_closure *pending_closures_head;
-  grpc_iomgr_closure *pending_closures_tail;
+  grpc_iomgr_call_list run_at_unlock;
 
   /** window available for us to send to peer */
   gpr_int64 outgoing_window;
@@ -567,11 +566,6 @@ void grpc_chttp2_list_add_read_write_state_changed(
 int grpc_chttp2_list_pop_read_write_state_changed(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global **stream_global);
-
-/** schedule a closure to run without the transport lock taken */
-void grpc_chttp2_schedule_closure(
-    grpc_chttp2_transport_global *transport_global, grpc_iomgr_closure *closure,
-    int success);
 
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream(
     grpc_chttp2_transport_parsing *transport_parsing, gpr_uint32 id);

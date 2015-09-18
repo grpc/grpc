@@ -37,6 +37,7 @@
 #include <poll.h>
 
 #include <grpc/support/sync.h>
+#include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
@@ -66,6 +67,8 @@ typedef struct grpc_pollset {
   int kicked_without_pollers;
   void (*shutdown_done_cb)(void *arg);
   void *shutdown_done_arg;
+  grpc_iomgr_closure *unlock_jobs;
+  grpc_iomgr_closure *idle_jobs;
   union {
     int fd;
     void *ptr;
@@ -123,5 +126,12 @@ int grpc_pollset_has_workers(grpc_pollset *pollset);
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
+
+/** schedule a closure to be run next time there are no active workers */
+void grpc_pollset_add_idle_job(grpc_pollset *pollset,
+                               grpc_iomgr_closure *closure);
+/** schedule a closure to be run next time the pollset is unlocked */
+void grpc_pollset_add_unlock_job(grpc_pollset *pollset,
+                                 grpc_iomgr_closure *closure);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */

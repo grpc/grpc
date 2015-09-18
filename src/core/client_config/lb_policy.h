@@ -53,28 +53,31 @@ struct grpc_lb_policy {
 struct grpc_lb_policy_vtable {
   void (*destroy)(grpc_lb_policy *policy);
 
-  void (*shutdown)(grpc_lb_policy *policy);
+  void (*shutdown)(grpc_lb_policy *policy, grpc_iomgr_call_list *call_list);
 
   /** implement grpc_lb_policy_pick */
   void (*pick)(grpc_lb_policy *policy, grpc_pollset *pollset,
                grpc_metadata_batch *initial_metadata, grpc_subchannel **target,
-               grpc_iomgr_closure *on_complete);
+               grpc_iomgr_closure *on_complete,
+               grpc_iomgr_call_list *call_list);
 
   /** try to enter a READY connectivity state */
-  void (*exit_idle)(grpc_lb_policy *policy);
+  void (*exit_idle)(grpc_lb_policy *policy, grpc_iomgr_call_list *call_list);
 
   /** broadcast a transport op to all subchannels */
-  void (*broadcast)(grpc_lb_policy *policy, grpc_transport_op *op);
+  void (*broadcast)(grpc_lb_policy *policy, grpc_transport_op *op,
+                    grpc_iomgr_call_list *call_list);
 
   /** check the current connectivity of the lb_policy */
-  grpc_connectivity_state (*check_connectivity)(grpc_lb_policy *policy);
+  grpc_connectivity_state (*check_connectivity)(
+      grpc_lb_policy *policy, grpc_iomgr_call_list *call_list);
 
   /** call notify when the connectivity state of a channel changes from *state.
       Updates *state with the new state of the policy */
-  grpc_connectivity_state_notify_on_state_change_result (
-      *notify_on_state_change)(grpc_lb_policy *policy,
-                               grpc_connectivity_state *state,
-                               grpc_iomgr_closure *closure);
+  void (*notify_on_state_change)(grpc_lb_policy *policy,
+                                 grpc_connectivity_state *state,
+                                 grpc_iomgr_closure *closure,
+                                 grpc_iomgr_call_list *call_list);
 };
 
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
@@ -98,7 +101,8 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable);
 
 /** Start shutting down (fail any pending picks) */
-void grpc_lb_policy_shutdown(grpc_lb_policy *policy);
+void grpc_lb_policy_shutdown(grpc_lb_policy *policy,
+                             grpc_iomgr_call_list *call_list);
 
 /** Given initial metadata in \a initial_metadata, find an appropriate
     target for this rpc, and 'return' it by calling \a on_complete after setting
@@ -107,18 +111,21 @@ void grpc_lb_policy_shutdown(grpc_lb_policy *policy);
 void grpc_lb_policy_pick(grpc_lb_policy *policy, grpc_pollset *pollset,
                          grpc_metadata_batch *initial_metadata,
                          grpc_subchannel **target,
-                         grpc_iomgr_closure *on_complete);
+                         grpc_iomgr_closure *on_complete,
+                         grpc_iomgr_call_list *call_list);
 
-void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op);
+void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op,
+                              grpc_iomgr_call_list *call_list);
 
-void grpc_lb_policy_exit_idle(grpc_lb_policy *policy);
+void grpc_lb_policy_exit_idle(grpc_lb_policy *policy,
+                              grpc_iomgr_call_list *call_list);
 
-grpc_connectivity_state_notify_on_state_change_result
-grpc_lb_policy_notify_on_state_change(
-    grpc_lb_policy *policy, grpc_connectivity_state *state,
-    grpc_iomgr_closure *closure) GRPC_MUST_USE_RESULT;
+void grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy,
+                                           grpc_connectivity_state *state,
+                                           grpc_iomgr_closure *closure,
+                                           grpc_iomgr_call_list *call_list);
 
 grpc_connectivity_state grpc_lb_policy_check_connectivity(
-    grpc_lb_policy *policy);
+    grpc_lb_policy *policy, grpc_iomgr_call_list *call_list);
 
 #endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_H */
