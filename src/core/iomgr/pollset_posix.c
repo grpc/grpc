@@ -136,6 +136,8 @@ void grpc_pollset_init(grpc_pollset *pollset) {
   pollset->in_flight_cbs = 0;
   pollset->shutting_down = 0;
   pollset->called_shutdown = 0;
+  pollset->idle_jobs = NULL;
+  pollset->unlock_jobs = NULL;
   become_basic_pollset(pollset, NULL);
 }
 
@@ -145,7 +147,6 @@ void grpc_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd) {
   }
   gpr_mu_lock(&pollset->mu);
   pollset->vtable->add_fd(pollset, fd, 1);
-  grpc_workqueue_flush(fd->workqueue, 0);
 /* the following (enabled only in debug) will reacquire and then release
    our lock - meaning that if the unlocking flag passed to del_fd above is
    not respected, the code will deadlock (in a way that we have a chance of
@@ -174,6 +175,33 @@ static void finish_shutdown(grpc_pollset *pollset) {
   pollset->shutdown_done_cb(pollset->shutdown_done_arg);
 }
 
+static void run_jobs(grpc_pollset *pollset, grpc_iomgr_closure **root) {
+  grpc_iomgr_closure *exec = *root;
+  *root = NULL;
+  gpr_mu_unlock(&pollset->mu);
+  while (exec != NULL) {
+    grpc_iomgr_closure *next = exec->next;
+    exec->cb(exec->cb_arg, 1);
+    exec = next;
+  }
+  gpr_mu_lock(&pollset->mu);
+}
+
+static void add_job(grpc_iomgr_closure **root, grpc_iomgr_closure *closure) {
+  closure->next = *root;
+  *root = closure;
+}
+
+void grpc_pollset_add_idle_job(grpc_pollset *pollset,
+                               grpc_iomgr_closure *closure) {
+  add_job(&pollset->idle_jobs, closure);
+}
+
+void grpc_pollset_add_unlock_job(grpc_pollset *pollset,
+                                 grpc_iomgr_closure *closure) {
+  add_job(&pollset->unlock_jobs, closure);
+}
+
 void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
                        gpr_timespec now, gpr_timespec deadline) {
   /* pollset->mu already held */
@@ -182,6 +210,14 @@ void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
   worker->next = worker->prev = NULL;
   /* TODO(ctiller): pool these */
   grpc_wakeup_fd_init(&worker->wakeup_fd);
+  if (!grpc_pollset_has_workers(pollset) && pollset->idle_jobs != NULL) {
+    run_jobs(pollset, &pollset->idle_jobs);
+    goto done;
+  }
+  if (pollset->unlock_jobs != NULL) {
+    run_jobs(pollset, &pollset->unlock_jobs);
+    goto done;
+  }
   if (grpc_alarm_check(&pollset->mu, now, &deadline)) {
     goto done;
   }
@@ -301,12 +337,7 @@ static void basic_do_promote(void *args, int success) {
 
   gpr_mu_lock(&pollset->mu);
   /* First we need to ensure that nobody is polling concurrently */
-  if (grpc_pollset_has_workers(pollset)) {
-    grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
-    grpc_workqueue_push(fd->workqueue, &up_args->promotion_closure, 1);
-    gpr_mu_unlock(&pollset->mu);
-    return;
-  }
+  GPR_ASSERT(!grpc_pollset_has_workers(pollset));
 
   gpr_free(up_args);
   /* At this point the pollset may no longer be a unary poller. In that case
@@ -390,13 +421,12 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd,
   GRPC_FD_REF(fd, "basicpoll_add");
   pollset->in_flight_cbs++;
   up_args = gpr_malloc(sizeof(*up_args));
-  up_args->pollset = pollset;
   up_args->fd = fd;
   up_args->original_vtable = pollset->vtable;
   up_args->promotion_closure.cb = basic_do_promote;
   up_args->promotion_closure.cb_arg = up_args;
-  grpc_workqueue_push(fd->workqueue, &up_args->promotion_closure, 1);
 
+  grpc_pollset_add_idle_job(pollset, &up_args->promotion_closure);
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
 
 exit:

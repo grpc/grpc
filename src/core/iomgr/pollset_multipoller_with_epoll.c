@@ -127,7 +127,7 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_pollset *pollset,
     GRPC_FD_REF(fd, "delayed_add");
     grpc_iomgr_closure_init(&da->closure, perform_delayed_add, da);
     pollset->in_flight_cbs++;
-    grpc_workqueue_push(fd->workqueue, &da->closure, 1);
+    grpc_pollset_add_unlock_job(pollset, &da->closure);
   }
 }
 

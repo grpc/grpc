@@ -58,9 +58,24 @@ typedef struct grpc_iomgr_closure {
   struct grpc_iomgr_closure *next;
 } grpc_iomgr_closure;
 
+typedef struct grpc_iomgr_call_list {
+  grpc_iomgr_closure *head;
+  grpc_iomgr_closure *tail;
+} grpc_iomgr_call_list;
+
 /** Initializes \a closure with \a cb and \a cb_arg. */
 void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
                              void *cb_arg);
+
+#define GRPC_IOMGR_CALL_LIST_INIT \
+  { NULL, NULL }
+
+void grpc_iomgr_call_list_add(grpc_iomgr_call_list *list,
+                              grpc_iomgr_closure *closure, int success);
+void grpc_iomgr_call_list_run(grpc_iomgr_call_list list);
+void grpc_iomgr_call_list_move(grpc_iomgr_call_list *src,
+                               grpc_iomgr_call_list *dst);
+int grpc_iomgr_call_list_empty(grpc_iomgr_call_list list);
 
 /** Initializes the iomgr. */
 void grpc_iomgr_init(void);

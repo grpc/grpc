@@ -63,33 +63,38 @@ void grpc_lb_policy_unref(grpc_lb_policy *policy) {
   }
 }
 
-void grpc_lb_policy_shutdown(grpc_lb_policy *policy) {
-  policy->vtable->shutdown(policy);
+void grpc_lb_policy_shutdown(grpc_lb_policy *policy,
+                             grpc_iomgr_call_list *call_list) {
+  policy->vtable->shutdown(policy, call_list);
 }
 
 void grpc_lb_policy_pick(grpc_lb_policy *policy, grpc_pollset *pollset,
                          grpc_metadata_batch *initial_metadata,
                          grpc_subchannel **target,
-                         grpc_iomgr_closure *on_complete) {
-  policy->vtable->pick(policy, pollset, initial_metadata, target, on_complete);
+                         grpc_iomgr_closure *on_complete,
+                         grpc_iomgr_call_list *call_list) {
+  policy->vtable->pick(policy, pollset, initial_metadata, target, on_complete,
+                       call_list);
 }
 
-void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op) {
-  policy->vtable->broadcast(policy, op);
+void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op,
+                              grpc_iomgr_call_list *call_list) {
+  policy->vtable->broadcast(policy, op, call_list);
 }
 
-void grpc_lb_policy_exit_idle(grpc_lb_policy *policy) {
-  policy->vtable->exit_idle(policy);
+void grpc_lb_policy_exit_idle(grpc_lb_policy *policy,
+                              grpc_iomgr_call_list *call_list) {
+  policy->vtable->exit_idle(policy, call_list);
 }
 
-grpc_connectivity_state_notify_on_state_change_result
-grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy,
-                                      grpc_connectivity_state *state,
-                                      grpc_iomgr_closure *closure) {
-  return policy->vtable->notify_on_state_change(policy, state, closure);
+void grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy,
+                                           grpc_connectivity_state *state,
+                                           grpc_iomgr_closure *closure,
+                                           grpc_iomgr_call_list *call_list) {
+  policy->vtable->notify_on_state_change(policy, state, closure, call_list);
 }
 
 grpc_connectivity_state grpc_lb_policy_check_connectivity(
-    grpc_lb_policy *policy) {
-  return policy->vtable->check_connectivity(policy);
+    grpc_lb_policy *policy, grpc_iomgr_call_list *call_list) {
+  return policy->vtable->check_connectivity(policy, call_list);
 }

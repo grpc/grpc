@@ -77,7 +77,6 @@ struct grpc_channel {
 
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
-  grpc_iomgr_closure destroy_closure;
   char *target;
   grpc_workqueue *workqueue;
 };
@@ -273,8 +272,7 @@ void grpc_channel_internal_ref(grpc_channel *c) {
   gpr_ref(&c->refs);
 }
 
-static void destroy_channel(void *p, int ok) {
-  grpc_channel *channel = p;
+static void destroy_channel(grpc_channel *channel) {
   size_t i;
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
   for (i = 0; i < NUM_CACHED_STATUS_ELEMS; i++) {
@@ -312,9 +310,7 @@ void grpc_channel_internal_unref(grpc_channel *channel, const char *reason) {
 void grpc_channel_internal_unref(grpc_channel *channel) {
 #endif
   if (gpr_unref(&channel->refs)) {
-    channel->destroy_closure.cb = destroy_channel;
-    channel->destroy_closure.cb_arg = channel;
-    grpc_workqueue_push(channel->workqueue, &channel->destroy_closure, 1);
+    destroy_channel(channel);
   }
 }
 
