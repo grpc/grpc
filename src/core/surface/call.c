@@ -1485,6 +1485,8 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
     } else if (key == grpc_channel_get_encodings_accepted_by_peer_string(
                           call->channel)) {
       set_encodings_accepted_by_peer(call, md->value->slice);
+    } else if (key == grpc_channel_get_content_type_string(call->channel)) {
+      continue; /* swallow "content-type" header */
     } else {
       dest = &call->buffered_metadata[is_trailing];
       if (dest->count == dest->capacity) {
