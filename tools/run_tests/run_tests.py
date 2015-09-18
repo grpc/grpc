@@ -462,13 +462,14 @@ argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
 args = argp.parse_args()
 
-if args.use_docker and not args.travis:
-  print 'Seen --use_docker flag, will run tests under docker.'
-  print
-  print 'IMPORTANT: The changes you are testing need to be locally committed'
-  print 'because only the committed changes in the current branch will be'
-  print 'copied to the docker environment.'
-  time.sleep(5)
+if args.use_docker:
+  if not args.travis:
+    print 'Seen --use_docker flag, will run tests under docker.'
+    print
+    print 'IMPORTANT: The changes you are testing need to be locally committed'
+    print 'because only the committed changes in the current branch will be'
+    print 'copied to the docker environment.'
+    time.sleep(5)
 
   child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
   run_tests_cmd = 'tools/run_tests/run_tests.py %s' % " ".join(child_argv[1:])
