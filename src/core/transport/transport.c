@@ -101,8 +101,8 @@ void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
 
 typedef struct {
   gpr_slice message;
-  grpc_iomgr_closure *then_call;
-  grpc_iomgr_closure closure;
+  grpc_closure *then_call;
+  grpc_closure closure;
 } close_message_data;
 
 static void free_message(void *p, int iomgr_success) {
@@ -130,7 +130,7 @@ void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
     cmd = gpr_malloc(sizeof(*cmd));
     cmd->message = *optional_message;
     cmd->then_call = op->on_consumed;
-    grpc_iomgr_closure_init(&cmd->closure, free_message, cmd);
+    grpc_closure_init(&cmd->closure, free_message, cmd);
     op->on_consumed = &cmd->closure;
     op->optional_close_message = &cmd->message;
   }

@@ -49,9 +49,9 @@ typedef struct {
   struct tsi_frame_protector *protector;
   gpr_mu protector_mu;
   /* saved upper level callbacks and user_data. */
-  grpc_iomgr_closure *read_cb;
-  grpc_iomgr_closure *write_cb;
-  grpc_iomgr_closure on_read;
+  grpc_closure *read_cb;
+  grpc_closure *write_cb;
+  grpc_closure on_read;
   gpr_slice_buffer *read_buffer;
   gpr_slice_buffer source_buffer;
   /* saved handshaker leftover data to unprotect. */
@@ -214,7 +214,7 @@ static void on_read_cb(void *user_data, int success) {
 
 static grpc_endpoint_op_status endpoint_read(grpc_endpoint *secure_ep,
                                              gpr_slice_buffer *slices,
-                                             grpc_iomgr_closure *cb) {
+                                             grpc_closure *cb) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   int immediate_read_success = -1;
   ep->read_cb = cb;
@@ -257,7 +257,7 @@ static void flush_write_staging_buffer(secure_endpoint *ep, gpr_uint8 **cur,
 
 static grpc_endpoint_op_status endpoint_write(grpc_endpoint *secure_ep,
                                               gpr_slice_buffer *slices,
-                                              grpc_iomgr_closure *cb) {
+                                              grpc_closure *cb) {
   unsigned i;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
@@ -386,7 +386,7 @@ grpc_endpoint *grpc_secure_endpoint_create(
   gpr_slice_buffer_init(&ep->output_buffer);
   gpr_slice_buffer_init(&ep->source_buffer);
   ep->read_buffer = NULL;
-  grpc_iomgr_closure_init(&ep->on_read, on_read_cb, ep);
+  grpc_closure_init(&ep->on_read, on_read_cb, ep);
   gpr_mu_init(&ep->protector_mu);
   gpr_ref_init(&ep->ref, 1);
   return &ep->base;

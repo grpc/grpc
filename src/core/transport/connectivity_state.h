@@ -42,7 +42,7 @@ typedef struct grpc_connectivity_state_watcher {
   /** we keep watchers in a linked list */
   struct grpc_connectivity_state_watcher *next;
   /** closure to notify on change */
-  grpc_iomgr_closure *notify;
+  grpc_closure *notify;
   /** the current state as believed by the watcher */
   grpc_connectivity_state *current;
 } grpc_connectivity_state_watcher;
@@ -67,8 +67,7 @@ void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker);
  * external lock */
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state,
-                                 const char *reason,
-                                 grpc_iomgr_call_list *call_list);
+                                 const char *reason, grpc_call_list *call_list);
 
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker);
@@ -76,6 +75,6 @@ grpc_connectivity_state grpc_connectivity_state_check(
 /** Return 1 if the channel should start connecting, 0 otherwise */
 int grpc_connectivity_state_notify_on_state_change(
     grpc_connectivity_state_tracker *tracker, grpc_connectivity_state *current,
-    grpc_iomgr_closure *notify, grpc_iomgr_call_list *call_list);
+    grpc_closure *notify, grpc_call_list *call_list);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H */

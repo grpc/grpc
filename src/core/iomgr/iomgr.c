@@ -151,15 +151,15 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
   gpr_free(obj->name);
 }
 
-void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
-                             void *cb_arg) {
+void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
+                       void *cb_arg) {
   closure->cb = cb;
   closure->cb_arg = cb_arg;
   closure->next = NULL;
 }
 
-void grpc_iomgr_call_list_add(grpc_iomgr_call_list *call_list,
-                              grpc_iomgr_closure *closure, int success) {
+void grpc_call_list_add(grpc_call_list *call_list, grpc_closure *closure,
+                        int success) {
   if (!closure) return;
   closure->next = NULL;
   closure->success = success;
@@ -171,21 +171,20 @@ void grpc_iomgr_call_list_add(grpc_iomgr_call_list *call_list,
   call_list->tail = closure;
 }
 
-void grpc_iomgr_call_list_run(grpc_iomgr_call_list call_list) {
-  grpc_iomgr_closure *c = call_list.head;
+void grpc_call_list_run(grpc_call_list call_list) {
+  grpc_closure *c = call_list.head;
   while (c) {
-    grpc_iomgr_closure *next = c->next;
+    grpc_closure *next = c->next;
     c->cb(c->cb_arg, c->success);
     c = next;
   }
 }
 
-int grpc_iomgr_call_list_empty(grpc_iomgr_call_list call_list) {
+int grpc_call_list_empty(grpc_call_list call_list) {
   return call_list.head == NULL;
 }
 
-void grpc_iomgr_call_list_move(grpc_iomgr_call_list *src,
-                               grpc_iomgr_call_list *dst) {
+void grpc_call_list_move(grpc_call_list *src, grpc_call_list *dst) {
   if (dst->head == NULL) {
     *dst = *src;
     return;

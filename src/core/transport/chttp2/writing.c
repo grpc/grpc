@@ -238,8 +238,8 @@ void grpc_chttp2_cleanup_writing(
           stream_global->outgoing_sopb->nops == 0) {
         GPR_ASSERT(stream_global->write_state != GRPC_WRITE_STATE_QUEUED_CLOSE);
         stream_global->outgoing_sopb = NULL;
-        grpc_iomgr_call_list_add(&transport_global->run_at_unlock,
-                                 stream_global->send_done_closure, 1);
+        grpc_call_list_add(&transport_global->run_at_unlock,
+                           stream_global->send_done_closure, 1);
       }
     }
     stream_global->writing_now = 0;

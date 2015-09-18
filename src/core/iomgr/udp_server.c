@@ -79,8 +79,8 @@ typedef struct {
     struct sockaddr_un un;
   } addr;
   size_t addr_len;
-  grpc_iomgr_closure read_closure;
-  grpc_iomgr_closure destroyed_closure;
+  grpc_closure read_closure;
+  grpc_closure destroyed_closure;
   grpc_udp_server_read_cb read_cb;
 } server_port;
 

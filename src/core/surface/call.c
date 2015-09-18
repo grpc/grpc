@@ -256,10 +256,10 @@ struct grpc_call {
   gpr_slice_buffer incoming_message;
   gpr_uint32 incoming_message_length;
   gpr_uint32 incoming_message_flags;
-  grpc_iomgr_closure destroy_closure;
-  grpc_iomgr_closure on_done_recv;
-  grpc_iomgr_closure on_done_send;
-  grpc_iomgr_closure on_done_bind;
+  grpc_closure destroy_closure;
+  grpc_closure on_done_recv;
+  grpc_closure on_done_send;
+  grpc_closure on_done_bind;
 
   /** completion events - for completion queue use */
   grpc_cq_completion completions[MAX_CONCURRENT_COMPLETIONS];
@@ -333,9 +333,9 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
   grpc_sopb_init(&call->send_ops);
   grpc_sopb_init(&call->recv_ops);
   gpr_slice_buffer_init(&call->incoming_message);
-  grpc_iomgr_closure_init(&call->on_done_recv, call_on_done_recv, call);
-  grpc_iomgr_closure_init(&call->on_done_send, call_on_done_send, call);
-  grpc_iomgr_closure_init(&call->on_done_bind, finished_loose_op, call);
+  grpc_closure_init(&call->on_done_recv, call_on_done_recv, call);
+  grpc_closure_init(&call->on_done_send, call_on_done_send, call);
+  grpc_closure_init(&call->on_done_bind, finished_loose_op, call);
   /* dropped in destroy and when READ_STATE_STREAM_CLOSED received */
   gpr_ref_init(&call->internal_refcount, 2);
   /* server hack: start reads immediately so we can get initial metadata.
@@ -1353,7 +1353,7 @@ static void finished_loose_op(void *call, int success_ignored) {
 
 typedef struct {
   grpc_call *call;
-  grpc_iomgr_closure closure;
+  grpc_closure closure;
 } finished_loose_op_allocated_args;
 
 static void finished_loose_op_allocated(void *alloc, int success) {
@@ -1373,8 +1373,7 @@ static void execute_op(grpc_call *call, grpc_transport_stream_op *op) {
     } else {
       finished_loose_op_allocated_args *args = gpr_malloc(sizeof(*args));
       args->call = call;
-      grpc_iomgr_closure_init(&args->closure, finished_loose_op_allocated,
-                              args);
+      grpc_closure_init(&args->closure, finished_loose_op_allocated, args);
       op->on_consumed = &args->closure;
     }
   }

@@ -63,8 +63,8 @@ typedef struct {
   grpc_iomgr_object iomgr_obj;
   gpr_slice_buffer incoming;
   gpr_slice_buffer outgoing;
-  grpc_iomgr_closure on_read;
-  grpc_iomgr_closure done_write;
+  grpc_closure on_read;
+  grpc_closure done_write;
   grpc_workqueue *workqueue;
 } internal_request;
 
@@ -237,8 +237,8 @@ static void internal_request_begin(grpc_httpcli_context *context,
       request->handshaker ? request->handshaker : &grpc_httpcli_plaintext;
   req->context = context;
   req->pollset = pollset;
-  grpc_iomgr_closure_init(&req->on_read, on_read, req);
-  grpc_iomgr_closure_init(&req->done_write, done_write, req);
+  grpc_closure_init(&req->on_read, on_read, req);
+  grpc_closure_init(&req->done_write, done_write, req);
   gpr_slice_buffer_init(&req->incoming);
   gpr_slice_buffer_init(&req->outgoing);
   grpc_iomgr_register_object(&req->iomgr_obj, name);

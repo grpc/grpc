@@ -122,8 +122,8 @@ struct read_and_write_test_state {
   int write_done;
   gpr_slice_buffer incoming;
   gpr_slice_buffer outgoing;
-  grpc_iomgr_closure done_read;
-  grpc_iomgr_closure done_write;
+  grpc_closure done_read;
+  grpc_closure done_write;
 };
 
 static void read_and_write_test_read_handler(void *data, int success) {
@@ -227,10 +227,9 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   state.write_done = 0;
   state.current_read_data = 0;
   state.current_write_data = 0;
-  grpc_iomgr_closure_init(&state.done_read, read_and_write_test_read_handler,
-                          &state);
-  grpc_iomgr_closure_init(&state.done_write, read_and_write_test_write_handler,
-                          &state);
+  grpc_closure_init(&state.done_read, read_and_write_test_read_handler, &state);
+  grpc_closure_init(&state.done_write, read_and_write_test_write_handler,
+                    &state);
   gpr_slice_buffer_init(&state.outgoing);
   gpr_slice_buffer_init(&state.incoming);
 

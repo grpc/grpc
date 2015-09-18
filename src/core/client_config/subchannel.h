@@ -76,8 +76,8 @@ void grpc_subchannel_call_unref(
 void grpc_subchannel_create_call(grpc_subchannel *subchannel,
                                  grpc_pollset *pollset,
                                  grpc_subchannel_call **target,
-                                 grpc_iomgr_closure *notify,
-                                 grpc_iomgr_call_list *call_list);
+                                 grpc_closure *notify,
+                                 grpc_call_list *call_list);
 
 /** process a transport level op */
 void grpc_subchannel_process_transport_op(grpc_subchannel *subchannel,
@@ -91,8 +91,8 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(
     Updates *state with the new state of the channel */
 void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
                                             grpc_connectivity_state *state,
-                                            grpc_iomgr_closure *notify,
-                                            grpc_iomgr_call_list *call_list);
+                                            grpc_closure *notify,
+                                            grpc_call_list *call_list);
 
 /** express interest in \a channel's activities through \a pollset. */
 void grpc_subchannel_add_interested_party(grpc_subchannel *channel,

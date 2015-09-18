@@ -49,12 +49,12 @@ static void must_succeed(void *p, int success) {
 }
 
 static void test_add_closure(void) {
-  grpc_iomgr_closure c;
+  grpc_closure c;
   int done = 0;
   grpc_workqueue *wq = grpc_workqueue_create();
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
   grpc_pollset_worker worker;
-  grpc_iomgr_closure_init(&c, must_succeed, &done);
+  grpc_closure_init(&c, must_succeed, &done);
 
   grpc_workqueue_push(wq, &c, 1);
   grpc_workqueue_add_to_pollset(wq, &g_pollset);

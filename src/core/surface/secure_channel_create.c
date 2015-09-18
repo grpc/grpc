@@ -58,7 +58,7 @@ typedef struct {
 
   grpc_channel_security_connector *security_connector;
 
-  grpc_iomgr_closure *notify;
+  grpc_closure *notify;
   grpc_connect_in_args args;
   grpc_connect_out_args *result;
 
@@ -83,7 +83,7 @@ static void on_secure_transport_setup_done(void *arg,
                                            grpc_endpoint *wrapped_endpoint,
                                            grpc_endpoint *secure_endpoint) {
   connector *c = arg;
-  grpc_iomgr_closure *notify;
+  grpc_closure *notify;
   gpr_mu_lock(&c->mu);
   if (c->connecting_endpoint == NULL) {
     memset(c->result, 0, sizeof(*c->result));
@@ -114,7 +114,7 @@ static void on_secure_transport_setup_done(void *arg,
 
 static void connected(void *arg, grpc_endpoint *tcp) {
   connector *c = arg;
-  grpc_iomgr_closure *notify;
+  grpc_closure *notify;
   if (tcp != NULL) {
     gpr_mu_lock(&c->mu);
     GPR_ASSERT(c->connecting_endpoint == NULL);
@@ -145,7 +145,7 @@ static void connector_shutdown(grpc_connector *con) {
 static void connector_connect(grpc_connector *con,
                               const grpc_connect_in_args *args,
                               grpc_connect_out_args *result,
-                              grpc_iomgr_closure *notify) {
+                              grpc_closure *notify) {
   connector *c = (connector *)con;
   GPR_ASSERT(c->notify == NULL);
   GPR_ASSERT(notify->cb);

@@ -55,7 +55,7 @@ struct grpc_resolver_vtable {
                             struct sockaddr *failing_address,
                             int failing_address_len);
   void (*next)(grpc_resolver *resolver, grpc_client_config **target_config,
-               grpc_iomgr_closure *on_complete);
+               grpc_closure *on_complete);
 };
 
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
@@ -92,6 +92,6 @@ void grpc_resolver_channel_saw_error(grpc_resolver *resolver,
     schedule on_complete. */
 void grpc_resolver_next(grpc_resolver *resolver,
                         grpc_client_config **target_config,
-                        grpc_iomgr_closure *on_complete);
+                        grpc_closure *on_complete);
 
 #endif /* GRPC_INTERNAL_CORE_CONFIG_RESOLVER_H */

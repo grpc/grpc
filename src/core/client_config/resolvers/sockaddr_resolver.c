@@ -73,22 +73,22 @@ typedef struct {
   /** have we published? */
   int published;
   /** pending next completion, or NULL */
-  grpc_iomgr_closure *next_completion;
+  grpc_closure *next_completion;
   /** target config address for next completion */
   grpc_client_config **target_config;
 } sockaddr_resolver;
 
 static void sockaddr_destroy(grpc_resolver *r);
 
-static grpc_iomgr_closure *sockaddr_maybe_finish_next_locked(
-    sockaddr_resolver *r) GRPC_MUST_USE_RESULT;
+static grpc_closure *sockaddr_maybe_finish_next_locked(sockaddr_resolver *r)
+    GRPC_MUST_USE_RESULT;
 
 static void sockaddr_shutdown(grpc_resolver *r);
 static void sockaddr_channel_saw_error(grpc_resolver *r,
                                        struct sockaddr *failing_address,
                                        int failing_address_len);
 static void sockaddr_next(grpc_resolver *r, grpc_client_config **target_config,
-                          grpc_iomgr_closure *on_complete);
+                          grpc_closure *on_complete);
 
 static const grpc_resolver_vtable sockaddr_resolver_vtable = {
     sockaddr_destroy, sockaddr_shutdown, sockaddr_channel_saw_error,
@@ -96,7 +96,7 @@ static const grpc_resolver_vtable sockaddr_resolver_vtable = {
 
 static void sockaddr_shutdown(grpc_resolver *resolver) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
-  grpc_iomgr_closure *call = NULL;
+  grpc_closure *call = NULL;
   gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
@@ -114,9 +114,9 @@ static void sockaddr_channel_saw_error(grpc_resolver *resolver,
 
 static void sockaddr_next(grpc_resolver *resolver,
                           grpc_client_config **target_config,
-                          grpc_iomgr_closure *on_complete) {
+                          grpc_closure *on_complete) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
-  grpc_iomgr_closure *call = NULL;
+  grpc_closure *call = NULL;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
@@ -126,14 +126,13 @@ static void sockaddr_next(grpc_resolver *resolver,
   if (call) call->cb(call->cb_arg, 1);
 }
 
-static grpc_iomgr_closure *sockaddr_maybe_finish_next_locked(
-    sockaddr_resolver *r) {
+static grpc_closure *sockaddr_maybe_finish_next_locked(sockaddr_resolver *r) {
   grpc_client_config *cfg;
   grpc_lb_policy *lb_policy;
   grpc_lb_policy_args lb_policy_args;
   grpc_subchannel **subchannels;
   grpc_subchannel_args args;
-  grpc_iomgr_closure *call = NULL;
+  grpc_closure *call = NULL;
 
   if (r->next_completion != NULL && !r->published) {
     size_t i;

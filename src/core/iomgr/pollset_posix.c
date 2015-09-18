@@ -175,30 +175,28 @@ static void finish_shutdown(grpc_pollset *pollset) {
   pollset->shutdown_done_cb(pollset->shutdown_done_arg);
 }
 
-static void run_jobs(grpc_pollset *pollset, grpc_iomgr_closure **root) {
-  grpc_iomgr_closure *exec = *root;
+static void run_jobs(grpc_pollset *pollset, grpc_closure **root) {
+  grpc_closure *exec = *root;
   *root = NULL;
   gpr_mu_unlock(&pollset->mu);
   while (exec != NULL) {
-    grpc_iomgr_closure *next = exec->next;
+    grpc_closure *next = exec->next;
     exec->cb(exec->cb_arg, 1);
     exec = next;
   }
   gpr_mu_lock(&pollset->mu);
 }
 
-static void add_job(grpc_iomgr_closure **root, grpc_iomgr_closure *closure) {
+static void add_job(grpc_closure **root, grpc_closure *closure) {
   closure->next = *root;
   *root = closure;
 }
 
-void grpc_pollset_add_idle_job(grpc_pollset *pollset,
-                               grpc_iomgr_closure *closure) {
+void grpc_pollset_add_idle_job(grpc_pollset *pollset, grpc_closure *closure) {
   add_job(&pollset->idle_jobs, closure);
 }
 
-void grpc_pollset_add_unlock_job(grpc_pollset *pollset,
-                                 grpc_iomgr_closure *closure) {
+void grpc_pollset_add_unlock_job(grpc_pollset *pollset, grpc_closure *closure) {
   add_job(&pollset->unlock_jobs, closure);
 }
 
@@ -316,7 +314,7 @@ typedef struct grpc_unary_promote_args {
   const grpc_pollset_vtable *original_vtable;
   grpc_pollset *pollset;
   grpc_fd *fd;
-  grpc_iomgr_closure promotion_closure;
+  grpc_closure promotion_closure;
 } grpc_unary_promote_args;
 
 static void basic_do_promote(void *args, int success) {

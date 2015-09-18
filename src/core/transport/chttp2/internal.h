@@ -155,7 +155,7 @@ typedef enum {
 /* Outstanding ping request data */
 typedef struct grpc_chttp2_outstanding_ping {
   gpr_uint8 id[8];
-  grpc_iomgr_closure *on_recv;
+  grpc_closure *on_recv;
   struct grpc_chttp2_outstanding_ping *next;
   struct grpc_chttp2_outstanding_ping *prev;
 } grpc_chttp2_outstanding_ping;
@@ -164,7 +164,7 @@ typedef struct {
   /** data to write next write */
   gpr_slice_buffer qbuf;
   /** queued callbacks */
-  grpc_iomgr_call_list run_at_unlock;
+  grpc_call_list run_at_unlock;
 
   /** window available for us to send to peer */
   gpr_int64 outgoing_window;
@@ -214,7 +214,7 @@ typedef struct {
   /** is this a client? */
   gpr_uint8 is_client;
   /** callback for when writing is done */
-  grpc_iomgr_closure done_cb;
+  grpc_closure done_cb;
 } grpc_chttp2_transport_writing;
 
 struct grpc_chttp2_transport_parsing {
@@ -332,9 +332,9 @@ struct grpc_chttp2_transport {
   grpc_chttp2_stream_map new_stream_map;
 
   /** closure to execute writing */
-  grpc_iomgr_closure writing_action;
+  grpc_closure writing_action;
   /** closure to finish reading from the endpoint */
-  grpc_iomgr_closure recv_data;
+  grpc_closure recv_data;
 
   /** incoming read bytes */
   gpr_slice_buffer read_buffer;
@@ -359,8 +359,8 @@ typedef struct {
   /** HTTP2 stream id for this stream, or zero if one has not been assigned */
   gpr_uint32 id;
 
-  grpc_iomgr_closure *send_done_closure;
-  grpc_iomgr_closure *recv_done_closure;
+  grpc_closure *send_done_closure;
+  grpc_closure *recv_done_closure;
 
   /** window available for us to send to peer */
   gpr_int64 outgoing_window;

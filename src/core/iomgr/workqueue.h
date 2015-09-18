@@ -52,7 +52,7 @@ typedef struct grpc_workqueue grpc_workqueue;
 /** Create a work queue */
 grpc_workqueue *grpc_workqueue_create(void);
 
-void grpc_workqueue_flush(grpc_workqueue *workqueue, int asynchronously);
+void grpc_workqueue_flush(grpc_workqueue *workqueue);
 
 #define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -76,7 +76,7 @@ void grpc_workqueue_add_to_pollset(grpc_workqueue *workqueue,
                                    grpc_pollset *pollset);
 
 /** Add a work item to a workqueue */
-void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_iomgr_closure *closure,
+void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,
                          int success);
 
 #endif

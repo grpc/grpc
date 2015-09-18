@@ -120,7 +120,7 @@ struct read_socket_state {
   size_t read_bytes;
   size_t target_read_bytes;
   gpr_slice_buffer incoming;
-  grpc_iomgr_closure read_cb;
+  grpc_closure read_cb;
 };
 
 static size_t count_slices(gpr_slice *slices, size_t nslices,
@@ -196,7 +196,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   state.read_bytes = 0;
   state.target_read_bytes = written_bytes;
   gpr_slice_buffer_init(&state.incoming);
-  grpc_iomgr_closure_init(&state.read_cb, read_cb, &state);
+  grpc_closure_init(&state.read_cb, read_cb, &state);
 
   switch (grpc_endpoint_read(ep, &state.incoming, &state.read_cb)) {
     case GRPC_ENDPOINT_DONE:
@@ -246,7 +246,7 @@ static void large_read_test(size_t slice_size) {
   state.read_bytes = 0;
   state.target_read_bytes = (size_t)written_bytes;
   gpr_slice_buffer_init(&state.incoming);
-  grpc_iomgr_closure_init(&state.read_cb, read_cb, &state);
+  grpc_closure_init(&state.read_cb, read_cb, &state);
 
   switch (grpc_endpoint_read(ep, &state.incoming, &state.read_cb)) {
     case GRPC_ENDPOINT_DONE:
@@ -377,7 +377,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   gpr_slice *slices;
   gpr_uint8 current_data = 0;
   gpr_slice_buffer outgoing;
-  grpc_iomgr_closure write_done_closure;
+  grpc_closure write_done_closure;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
 
   gpr_log(GPR_INFO, "Start write test with %d bytes, slice size %d", num_bytes,
@@ -396,7 +396,7 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 
   gpr_slice_buffer_init(&outgoing);
   gpr_slice_buffer_addn(&outgoing, slices, num_blocks);
-  grpc_iomgr_closure_init(&write_done_closure, write_done, &state);
+  grpc_closure_init(&write_done_closure, write_done, &state);
 
   switch (grpc_endpoint_write(ep, &outgoing, &write_done_closure)) {
     case GRPC_ENDPOINT_DONE:

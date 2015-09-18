@@ -44,7 +44,7 @@ void grpc_connector_unref(grpc_connector *connector) {
 void grpc_connector_connect(grpc_connector *connector,
                             const grpc_connect_in_args *in_args,
                             grpc_connect_out_args *out_args,
-                            grpc_iomgr_closure *notify) {
+                            grpc_closure *notify) {
   connector->vtable->connect(connector, in_args, out_args, notify);
 }
 
