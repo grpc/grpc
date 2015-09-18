@@ -41,13 +41,13 @@
 #include "src/core/surface/call.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
-DECLARE_bool(enable_ssl);
+DECLARE_bool(use_tls);
 
 namespace grpc {
 namespace testing {
 
 std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
-  if (FLAGS_enable_ssl) {
+  if (FLAGS_use_tls) {
     SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
                                                         test_server1_cert};
     SslServerCredentialsOptions ssl_opts;
