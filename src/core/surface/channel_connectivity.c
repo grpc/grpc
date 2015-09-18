@@ -78,6 +78,7 @@ typedef struct {
 } state_watcher;
 
 static void delete_state_watcher(state_watcher *w) {
+  GRPC_CHANNEL_INTERNAL_UNREF(w->channel, "watch_connectivity");
   gpr_mu_destroy(&w->mu);
   gpr_free(w);
 }
@@ -117,7 +118,6 @@ static void partly_done(state_watcher *w, int due_to_completion) {
         grpc_channel_get_channel_stack(w->channel));
     grpc_client_channel_del_interested_party(client_channel_elem,
                                              grpc_cq_pollset(w->cq));
-    GRPC_CHANNEL_INTERNAL_UNREF(w->channel, "watch_connectivity");
   }
   gpr_mu_unlock(&w->mu);
   if (due_to_completion) {
