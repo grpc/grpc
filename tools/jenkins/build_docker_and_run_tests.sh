@@ -57,7 +57,7 @@ docker run \
   -e "config=$config" \
   -e "arch=$arch" \
   -e CCACHE_DIR=/tmp/ccache \
-  -it \
+  -i $TTY_FLAG \
   -v "$git_root:/var/local/jenkins/grpc" \
   -v /tmp/ccache:/tmp/ccache \
   -w /var/local/git/grpc \

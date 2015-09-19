@@ -484,6 +484,8 @@ if args.use_docker:
   env['RUN_TESTS_COMMAND'] = run_tests_cmd
   if args.xml_report:
     env['XML_REPORT'] = args.xml_report
+  if not args.travis:
+    env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
 
   subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
                         shell=True,
