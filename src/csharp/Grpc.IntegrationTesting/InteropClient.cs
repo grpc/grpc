@@ -131,7 +131,7 @@ namespace Grpc.IntegrationTesting
             var channel = new Channel(options.ServerHost, options.ServerPort, credentials, channelOptions);
             TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
             await RunTestCaseAsync(client, options);
-            channel.ShutdownAsync().Wait();
+            await channel.ShutdownAsync();
         }
 
         private async Task RunTestCaseAsync(TestService.TestServiceClient client, ClientOptions options)
