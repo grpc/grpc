@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,19 +28,31 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by run_jekins.sh when piggy-backing into docker.
+
+language=$1
+test_case=$2
+
+# change dir gRPC repo root
+cd $(dirname $0)/../..
+
 set -e
+if [ "$language" = "c++" ]
+then
+  bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=$test_case
+elif [ "$language" = "node" ]
+then
+  SSL_CERT_FILE=/usr/local/share/grpc/roots.pem node src/node/interop/interop_client.js --use_tls=true --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
+elif [ "$language" = "ruby" ]
+then
+  SSL_CERT_FILE=/usr/local/share/grpc/roots.pem ruby src/ruby/bin/interop/interop_client.rb --use_tls --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
+elif [ "$language" = "csharp" ]
+then
+  (cd src/csharp/Grpc.IntegrationTesting.Client/bin/Debug && SSL_CERT_FILE=/usr/local/share/grpc/roots.pem mono Grpc.IntegrationTesting.Client.exe --use_tls --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case)
+elif [ "$language" = "php" ]
+then
+  SSL_CERT_FILE=/usr/local/share/grpc/roots.pem src/php/bin/interop_client.sh --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
+else
+  echo "interop tests not added for $language"
+  exit 1
+fi
 
-export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
-export CPPFLAGS=-I/tmp/prebuilt/include
-
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
-
-cd /var/local/git/grpc
-nvm use 0.12
-rvm use ruby-2.1
-
-setarch $arch tools/run_tests/run_tests.py -t -c $config -l $language -x report.xml
