@@ -67,22 +67,26 @@ typedef struct channel_data {
   grpc_mdelem *user_agent;
 } channel_data;
 
-/* used to silence 'variable not used' warnings */
-static void ignore_unused(void *ignored) {}
+typedef struct {
+  grpc_call_element *elem;
+  grpc_call_list *call_list;
+} client_filter_args;
 
 static grpc_mdelem *client_filter(void *user_data, grpc_mdelem *md) {
-  grpc_call_element *elem = user_data;
+  client_filter_args *a = user_data;
+  grpc_call_element *elem = a->elem;
   channel_data *channeld = elem->channel_data;
   if (md == channeld->status) {
     return NULL;
   } else if (md->key == channeld->status->key) {
-    grpc_call_element_send_cancel(elem);
+    grpc_call_element_send_cancel(elem, a->call_list);
     return NULL;
   }
   return md;
 }
 
-static void hc_on_recv(void *user_data, int success) {
+static void hc_on_recv(void *user_data, int success,
+                       grpc_call_list *call_list) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   size_t i;
@@ -90,11 +94,14 @@ static void hc_on_recv(void *user_data, int success) {
   grpc_stream_op *ops = calld->recv_ops->ops;
   for (i = 0; i < nops; i++) {
     grpc_stream_op *op = &ops[i];
+    client_filter_args a;
     if (op->type != GRPC_OP_METADATA) continue;
     calld->got_initial_metadata = 1;
-    grpc_metadata_batch_filter(&op->data.metadata, client_filter, elem);
+    a.elem = elem;
+    a.call_list = call_list;
+    grpc_metadata_batch_filter(&op->data.metadata, client_filter, &a);
   }
-  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
+  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success, call_list);
 }
 
 static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
@@ -148,10 +155,11 @@ static void hc_mutate_op(grpc_call_element *elem,
 }
 
 static void hc_start_transport_op(grpc_call_element *elem,
-                                  grpc_transport_stream_op *op) {
+                                  grpc_transport_stream_op *op,
+                                  grpc_call_list *call_list) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   hc_mutate_op(elem, op);
-  grpc_call_next_op(elem, op);
+  grpc_call_next_op(elem, op, call_list);
 }
 
 /* Constructor for call_data */
@@ -167,14 +175,8 @@ static void init_call_elem(grpc_call_element *elem,
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem) {
-  /* grab pointers to our data from the call element */
-  call_data *calld = elem->call_data;
-  channel_data *channeld = elem->channel_data;
-
-  ignore_unused(calld);
-  ignore_unused(channeld);
-}
+static void destroy_call_elem(grpc_call_element *elem,
+                              grpc_call_list *call_list) {}
 
 static const char *scheme_from_args(const grpc_channel_args *args) {
   unsigned i;
@@ -241,7 +243,8 @@ static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *channel_args,
-                              grpc_mdctx *mdctx, int is_first, int is_last) {
+                              grpc_mdctx *mdctx, int is_first, int is_last,
+                              grpc_call_list *call_list) {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
@@ -264,7 +267,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element *elem) {
+static void destroy_channel_elem(grpc_channel_element *elem,
+                                 grpc_call_list *call_list) {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 

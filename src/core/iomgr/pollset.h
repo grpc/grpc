@@ -55,9 +55,8 @@
 #endif
 
 void grpc_pollset_init(grpc_pollset *pollset);
-void grpc_pollset_shutdown(grpc_pollset *pollset,
-                           void (*shutdown_done)(void *arg),
-                           void *shutdown_done_arg);
+void grpc_pollset_shutdown(grpc_pollset *pollset, grpc_closure *closure,
+                           grpc_call_list *call_list);
 void grpc_pollset_destroy(grpc_pollset *pollset);
 
 /* Do some work on a pollset.

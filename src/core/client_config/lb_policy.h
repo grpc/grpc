@@ -51,7 +51,7 @@ struct grpc_lb_policy {
 };
 
 struct grpc_lb_policy_vtable {
-  void (*destroy)(grpc_lb_policy *policy);
+  void (*destroy)(grpc_lb_policy *policy, grpc_call_list *call_list);
 
   void (*shutdown)(grpc_lb_policy *policy, grpc_call_list *call_list);
 
@@ -82,17 +82,17 @@ struct grpc_lb_policy_vtable {
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
 #define GRPC_LB_POLICY_REF(p, r) \
   grpc_lb_policy_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_LB_POLICY_UNREF(p, r) \
-  grpc_lb_policy_unref((p), __FILE__, __LINE__, (r))
+#define GRPC_LB_POLICY_UNREF(p, r, cl) \
+  grpc_lb_policy_unref((p), (cl), __FILE__, __LINE__, (r))
 void grpc_lb_policy_ref(grpc_lb_policy *policy, const char *file, int line,
                         const char *reason);
-void grpc_lb_policy_unref(grpc_lb_policy *policy, const char *file, int line,
-                          const char *reason);
+void grpc_lb_policy_unref(grpc_lb_policy *policy, grpc_call_list *call_list,
+                          const char *file, int line, const char *reason);
 #else
 #define GRPC_LB_POLICY_REF(p, r) grpc_lb_policy_ref((p))
-#define GRPC_LB_POLICY_UNREF(p, r) grpc_lb_policy_unref((p))
+#define GRPC_LB_POLICY_UNREF(p, r, cl) grpc_lb_policy_unref((p), (cl))
 void grpc_lb_policy_ref(grpc_lb_policy *policy);
-void grpc_lb_policy_unref(grpc_lb_policy *policy);
+void grpc_lb_policy_unref(grpc_lb_policy *policy, grpc_call_list *call_list);
 #endif
 
 /** called by concrete implementations to initialize the base struct */

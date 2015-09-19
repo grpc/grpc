@@ -119,9 +119,9 @@ grpc_security_status grpc_security_connector_check_peer(
 
 grpc_security_status grpc_channel_security_connector_check_call_host(
     grpc_channel_security_connector *sc, const char *host,
-    grpc_security_check_cb cb, void *user_data) {
+    grpc_security_check_cb cb, void *user_data, grpc_call_list *call_list) {
   if (sc == NULL || sc->check_call_host == NULL) return GRPC_SECURITY_ERROR;
-  return sc->check_call_host(sc, host, cb, user_data);
+  return sc->check_call_host(sc, host, cb, user_data, call_list);
 }
 
 #ifdef GRPC_SECURITY_CONNECTOR_REFCOUNT_DEBUG
@@ -275,11 +275,11 @@ end:
 
 static grpc_security_status fake_channel_check_call_host(
     grpc_channel_security_connector *sc, const char *host,
-    grpc_security_check_cb cb, void *user_data) {
+    grpc_security_check_cb cb, void *user_data, grpc_call_list *call_list) {
   grpc_fake_channel_security_connector *c =
       (grpc_fake_channel_security_connector *)sc;
   if (c->call_host_check_is_async) {
-    cb(user_data, GRPC_SECURITY_OK);
+    cb(user_data, GRPC_SECURITY_OK, call_list);
     return GRPC_SECURITY_PENDING;
   } else {
     return GRPC_SECURITY_OK;
@@ -495,7 +495,7 @@ static grpc_security_status ssl_server_check_peer(grpc_security_connector *sc,
 
 static grpc_security_status ssl_channel_check_call_host(
     grpc_channel_security_connector *sc, const char *host,
-    grpc_security_check_cb cb, void *user_data) {
+    grpc_security_check_cb cb, void *user_data, grpc_call_list *call_list) {
   grpc_ssl_channel_security_connector *c =
       (grpc_ssl_channel_security_connector *)sc;
 

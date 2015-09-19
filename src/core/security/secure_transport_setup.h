@@ -42,12 +42,13 @@
 /* Ownership of the secure_endpoint is transfered. */
 typedef void (*grpc_secure_transport_setup_done_cb)(
     void *user_data, grpc_security_status status,
-    grpc_endpoint *wrapped_endpoint, grpc_endpoint *secure_endpoint);
+    grpc_endpoint *wrapped_endpoint, grpc_endpoint *secure_endpoint,
+    grpc_call_list *call_list);
 
 /* Calls the callback upon completion. */
 void grpc_setup_secure_transport(grpc_security_connector *connector,
                                  grpc_endpoint *nonsecure_endpoint,
                                  grpc_secure_transport_setup_done_cb cb,
-                                 void *user_data);
+                                 void *user_data, grpc_call_list *call_list);
 
 #endif /* GRPC_INTERNAL_CORE_SECURITY_SECURE_TRANSPORT_SETUP_H */

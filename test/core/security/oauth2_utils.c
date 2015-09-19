@@ -51,7 +51,8 @@ typedef struct {
 } oauth2_request;
 
 static void on_oauth2_response(void *user_data, grpc_credentials_md *md_elems,
-                               size_t num_md, grpc_credentials_status status) {
+                               size_t num_md, grpc_credentials_status status,
+                               grpc_call_list *call_list) {
   oauth2_request *request = user_data;
   char *token = NULL;
   gpr_slice token_slice;
@@ -72,15 +73,21 @@ static void on_oauth2_response(void *user_data, grpc_credentials_md *md_elems,
   gpr_mu_unlock(GRPC_POLLSET_MU(&request->pollset));
 }
 
-static void do_nothing(void *unused) {}
+static void do_nothing(void *unused, int success, grpc_call_list *call_list) {}
 
 char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds) {
   oauth2_request request;
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure do_nothing_closure;
   grpc_pollset_init(&request.pollset);
   request.is_done = 0;
 
-  grpc_credentials_get_request_metadata(creds, &request.pollset, "",
-                                        on_oauth2_response, &request);
+  grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
+
+  grpc_credentials_get_request_metadata(
+      creds, &request.pollset, "", on_oauth2_response, &request, &call_list);
+
+  grpc_call_list_run(&call_list);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&request.pollset));
   while (!request.is_done) {
@@ -90,7 +97,8 @@ char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds) {
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&request.pollset));
 
-  grpc_pollset_shutdown(&request.pollset, do_nothing, NULL);
+  grpc_pollset_shutdown(&request.pollset, &do_nothing_closure, &call_list);
+  grpc_call_list_run(&call_list);
   grpc_pollset_destroy(&request.pollset);
   return request.token;
 }
