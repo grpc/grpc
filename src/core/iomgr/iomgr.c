@@ -88,6 +88,7 @@ void grpc_iomgr_shutdown(void) {
   gpr_timespec shutdown_deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
 
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;
@@ -101,7 +102,11 @@ void grpc_iomgr_shutdown(void) {
       }
       last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
     }
-    if (grpc_alarm_check(&g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL)) {
+    if (grpc_alarm_check(gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL,
+                         &call_list)) {
+      gpr_mu_unlock(&g_mu);
+      grpc_call_list_run(&call_list);
+      gpr_mu_lock(&g_mu);
       continue;
     }
     if (g_root_object.next != &g_root_object) {
@@ -126,7 +131,8 @@ void grpc_iomgr_shutdown(void) {
   }
   gpr_mu_unlock(&g_mu);
 
-  grpc_alarm_list_shutdown();
+  grpc_alarm_list_shutdown(&call_list);
+  grpc_call_list_run(&call_list);
 
   grpc_iomgr_platform_shutdown();
   gpr_mu_destroy(&g_mu);
@@ -171,12 +177,15 @@ void grpc_call_list_add(grpc_call_list *call_list, grpc_closure *closure,
   call_list->tail = closure;
 }
 
-void grpc_call_list_run(grpc_call_list call_list) {
-  grpc_closure *c = call_list.head;
-  while (c) {
-    grpc_closure *next = c->next;
-    c->cb(c->cb_arg, c->success);
-    c = next;
+void grpc_call_list_run(grpc_call_list *call_list) {
+  while (!grpc_call_list_empty(*call_list)) {
+    grpc_closure *c = call_list->head;
+    call_list->head = call_list->tail = NULL;
+    while (c) {
+      grpc_closure *next = c->next;
+      c->cb(c->cb_arg, c->success, call_list);
+      c = next;
+    }
   }
 }
 

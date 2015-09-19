@@ -61,8 +61,6 @@ typedef struct {
   grpc_subchannel_factory *subchannel_factory;
   /** load balancing policy name */
   char *lb_policy_name;
-  /** work queue */
-  grpc_workqueue *workqueue;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -436,7 +434,6 @@ static void zookeeper_destroy(grpc_resolver *gr) {
     grpc_client_config_unref(r->resolved_config);
   }
   grpc_subchannel_factory_unref(r->subchannel_factory);
-  grpc_workqueue_unref(r->workqueue);
   gpr_free(r->name);
   gpr_free(r->lb_policy_name);
   gpr_free(r);
@@ -465,9 +462,6 @@ static grpc_resolver *zookeeper_create(grpc_resolver_args *args,
   gpr_mu_init(&r->mu);
   grpc_resolver_init(&r->base, &zookeeper_resolver_vtable);
   r->name = gpr_strdup(path);
-
-  r->workqueue = args->workqueue;
-  grpc_workqueue_ref(r->workqueue);
 
   r->subchannel_factory = args->subchannel_factory;
   grpc_subchannel_factory_ref(r->subchannel_factory);

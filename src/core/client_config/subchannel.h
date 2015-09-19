@@ -47,30 +47,33 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 #ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
   grpc_subchannel_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_UNREF(p, r) \
-  grpc_subchannel_unref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_UNREF(p, r, cl) \
+  grpc_subchannel_unref((p), (cl), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) \
   grpc_subchannel_call_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_CALL_UNREF(p, r) \
-  grpc_subchannel_call_unref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_CALL_UNREF(p, r, cl) \
+  grpc_subchannel_call_unref((p), (cl), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS \
   , const char *file, int line, const char *reason
 #else
 #define GRPC_SUBCHANNEL_REF(p, r) grpc_subchannel_ref((p))
-#define GRPC_SUBCHANNEL_UNREF(p, r) grpc_subchannel_unref((p))
+#define GRPC_SUBCHANNEL_UNREF(p, r, cl) grpc_subchannel_unref((p), (cl))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) grpc_subchannel_call_ref((p))
-#define GRPC_SUBCHANNEL_CALL_UNREF(p, r) grpc_subchannel_call_unref((p))
+#define GRPC_SUBCHANNEL_CALL_UNREF(p, r, cl) \
+  grpc_subchannel_call_unref((p), (cl))
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
 #endif
 
 void grpc_subchannel_ref(
     grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_unref(
-    grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_unref(grpc_subchannel *channel,
+                           grpc_call_list *call_list
+                               GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_ref(
     grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_call_unref(
-    grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_call_unref(grpc_subchannel_call *call,
+                                grpc_call_list *call_list
+                                    GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
 /** construct a call (possibly asynchronously) */
 void grpc_subchannel_create_call(grpc_subchannel *subchannel,
@@ -81,7 +84,8 @@ void grpc_subchannel_create_call(grpc_subchannel *subchannel,
 
 /** process a transport level op */
 void grpc_subchannel_process_transport_op(grpc_subchannel *subchannel,
-                                          grpc_transport_op *op);
+                                          grpc_transport_op *op,
+                                          grpc_call_list *call_list);
 
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
@@ -96,17 +100,21 @@ void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
 
 /** express interest in \a channel's activities through \a pollset. */
 void grpc_subchannel_add_interested_party(grpc_subchannel *channel,
-                                          grpc_pollset *pollset);
+                                          grpc_pollset *pollset,
+                                          grpc_call_list *call_list);
 /** stop following \a channel's activity through \a pollset. */
 void grpc_subchannel_del_interested_party(grpc_subchannel *channel,
-                                          grpc_pollset *pollset);
+                                          grpc_pollset *pollset,
+                                          grpc_call_list *call_list);
 
 /** continue processing a transport op */
 void grpc_subchannel_call_process_op(grpc_subchannel_call *subchannel_call,
-                                     grpc_transport_stream_op *op);
+                                     grpc_transport_stream_op *op,
+                                     grpc_call_list *call_list);
 
 /** continue querying for peer */
-char *grpc_subchannel_call_get_peer(grpc_subchannel_call *subchannel_call);
+char *grpc_subchannel_call_get_peer(grpc_subchannel_call *subchannel_call,
+                                    grpc_call_list *call_list);
 
 struct grpc_subchannel_args {
   /** Channel filters for this channel - wrapped factories will likely

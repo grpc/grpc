@@ -44,10 +44,11 @@ void grpc_connector_unref(grpc_connector *connector) {
 void grpc_connector_connect(grpc_connector *connector,
                             const grpc_connect_in_args *in_args,
                             grpc_connect_out_args *out_args,
-                            grpc_closure *notify) {
-  connector->vtable->connect(connector, in_args, out_args, notify);
+                            grpc_closure *notify, grpc_call_list *call_list) {
+  connector->vtable->connect(connector, in_args, out_args, notify, call_list);
 }
 
-void grpc_connector_shutdown(grpc_connector *connector) {
-  connector->vtable->shutdown(connector);
+void grpc_connector_shutdown(grpc_connector *connector,
+                             grpc_call_list *call_list) {
+  connector->vtable->shutdown(connector, call_list);
 }

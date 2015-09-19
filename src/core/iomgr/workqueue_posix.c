@@ -45,9 +45,9 @@
 
 #include "src/core/iomgr/fd_posix.h"
 
-static void on_readable(void *arg, int success);
+static void on_readable(void *arg, int success, grpc_call_list *call_list);
 
-grpc_workqueue *grpc_workqueue_create(void) {
+grpc_workqueue *grpc_workqueue_create(grpc_call_list *call_list) {
   char name[32];
   grpc_workqueue *workqueue = gpr_malloc(sizeof(grpc_workqueue));
   gpr_ref_init(&workqueue->refs, 1);
@@ -55,17 +55,18 @@ grpc_workqueue *grpc_workqueue_create(void) {
   workqueue->call_list.head = workqueue->call_list.tail = NULL;
   grpc_wakeup_fd_init(&workqueue->wakeup_fd);
   sprintf(name, "workqueue:%p", (void *)workqueue);
-  workqueue->wakeup_read_fd = NULL; /* inspected during grpc_fd_create below */
-  workqueue->wakeup_read_fd = grpc_fd_create(
-      GRPC_WAKEUP_FD_GET_READ_FD(&workqueue->wakeup_fd), workqueue, name);
+  workqueue->wakeup_read_fd =
+      grpc_fd_create(GRPC_WAKEUP_FD_GET_READ_FD(&workqueue->wakeup_fd), name);
   grpc_closure_init(&workqueue->read_closure, on_readable, workqueue);
-  grpc_fd_notify_on_read(workqueue->wakeup_read_fd, &workqueue->read_closure);
+  grpc_fd_notify_on_read(workqueue->wakeup_read_fd, &workqueue->read_closure,
+                         call_list);
   return workqueue;
 }
 
-static void workqueue_destroy(grpc_workqueue *workqueue) {
+static void workqueue_destroy(grpc_workqueue *workqueue,
+                              grpc_call_list *call_list) {
   GPR_ASSERT(grpc_call_list_empty(workqueue->call_list));
-  grpc_fd_shutdown(workqueue->wakeup_read_fd);
+  grpc_fd_shutdown(workqueue->wakeup_read_fd, call_list);
 }
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -81,33 +82,34 @@ void grpc_workqueue_ref(grpc_workqueue *workqueue) {
 }
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-void grpc_workqueue_unref(grpc_workqueue *workqueue, const char *file, int line,
-                          const char *reason) {
+void grpc_workqueue_unref(grpc_workqueue *workqueue, grpc_call_list *call_list,
+                          const char *file, int line, const char *reason) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "WORKQUEUE:%p unref %d -> %d %s",
           workqueue, (int)workqueue->refs.count, (int)workqueue->refs.count - 1,
           reason);
 #else
-void grpc_workqueue_unref(grpc_workqueue *workqueue) {
+void grpc_workqueue_unref(grpc_workqueue *workqueue,
+                          grpc_call_list *call_list) {
 #endif
   if (gpr_unref(&workqueue->refs)) {
-    workqueue_destroy(workqueue);
+    workqueue_destroy(workqueue, call_list);
   }
 }
 
 void grpc_workqueue_add_to_pollset(grpc_workqueue *workqueue,
-                                   grpc_pollset *pollset) {
-  grpc_pollset_add_fd(pollset, workqueue->wakeup_read_fd);
+                                   grpc_pollset *pollset,
+                                   grpc_call_list *call_list) {
+  grpc_pollset_add_fd(pollset, workqueue->wakeup_read_fd, call_list);
 }
 
-void grpc_workqueue_flush(grpc_workqueue *workqueue) {
-  grpc_call_list todo = GRPC_CALL_LIST_INIT;
+void grpc_workqueue_flush(grpc_workqueue *workqueue,
+                          grpc_call_list *call_list) {
   gpr_mu_lock(&workqueue->mu);
-  GPR_SWAP(grpc_call_list, todo, workqueue->call_list);
+  grpc_call_list_move(&workqueue->call_list, call_list);
   gpr_mu_unlock(&workqueue->mu);
-  grpc_call_list_run(todo);
 }
 
-static void on_readable(void *arg, int success) {
+static void on_readable(void *arg, int success, grpc_call_list *call_list) {
   grpc_workqueue *workqueue = arg;
 
   if (!success) {
@@ -115,16 +117,15 @@ static void on_readable(void *arg, int success) {
     /* HACK: let wakeup_fd code know that we stole the fd */
     workqueue->wakeup_fd.read_fd = 0;
     grpc_wakeup_fd_destroy(&workqueue->wakeup_fd);
-    grpc_fd_orphan(workqueue->wakeup_read_fd, NULL, "destroy");
+    grpc_fd_orphan(workqueue->wakeup_read_fd, NULL, "destroy", call_list);
     gpr_free(workqueue);
   } else {
-    grpc_call_list todo = GRPC_CALL_LIST_INIT;
     gpr_mu_lock(&workqueue->mu);
-    GPR_SWAP(grpc_call_list, todo, workqueue->call_list);
+    grpc_call_list_move(&workqueue->call_list, call_list);
     grpc_wakeup_fd_consume_wakeup(&workqueue->wakeup_fd);
     gpr_mu_unlock(&workqueue->mu);
-    grpc_fd_notify_on_read(workqueue->wakeup_read_fd, &workqueue->read_closure);
-    grpc_call_list_run(todo);
+    grpc_fd_notify_on_read(workqueue->wakeup_read_fd, &workqueue->read_closure,
+                           call_list);
   }
 }
 

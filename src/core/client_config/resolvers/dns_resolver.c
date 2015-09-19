@@ -49,8 +49,6 @@ typedef struct {
   grpc_resolver base;
   /** refcount */
   gpr_refcount refs;
-  /** workqueue */
-  grpc_workqueue *workqueue;
   /** name to resolve */
   char *name;
   /** default port to use */
@@ -76,37 +74,36 @@ typedef struct {
   grpc_client_config *resolved_config;
 } dns_resolver;
 
-static void dns_destroy(grpc_resolver *r);
+static void dns_destroy(grpc_resolver *r, grpc_call_list *call_list);
 
 static void dns_start_resolving_locked(dns_resolver *r);
-static grpc_closure *dns_maybe_finish_next_locked(dns_resolver *r)
-    GRPC_MUST_USE_RESULT;
+static void dns_maybe_finish_next_locked(dns_resolver *r,
+                                         grpc_call_list *call_list);
 
-static void dns_shutdown(grpc_resolver *r);
+static void dns_shutdown(grpc_resolver *r, grpc_call_list *call_list);
 static void dns_channel_saw_error(grpc_resolver *r,
                                   struct sockaddr *failing_address,
-                                  int failing_address_len);
+                                  int failing_address_len,
+                                  grpc_call_list *call_list);
 static void dns_next(grpc_resolver *r, grpc_client_config **target_config,
-                     grpc_closure *on_complete);
+                     grpc_closure *on_complete, grpc_call_list *call_list);
 
 static const grpc_resolver_vtable dns_resolver_vtable = {
     dns_destroy, dns_shutdown, dns_channel_saw_error, dns_next};
 
-static void dns_shutdown(grpc_resolver *resolver) {
+static void dns_shutdown(grpc_resolver *resolver, grpc_call_list *call_list) {
   dns_resolver *r = (dns_resolver *)resolver;
-  grpc_closure *next_completion;
   gpr_mu_lock(&r->mu);
-  next_completion = r->next_completion;
-  r->next_completion = NULL;
-  gpr_mu_unlock(&r->mu);
-  if (next_completion != NULL) {
+  if (r->next_completion != NULL) {
     *r->target_config = NULL;
-    next_completion->cb(next_completion->cb_arg, 1);
+    grpc_call_list_add(call_list, r->next_completion, 1);
+    r->next_completion = NULL;
   }
+  gpr_mu_unlock(&r->mu);
 }
 
 static void dns_channel_saw_error(grpc_resolver *resolver, struct sockaddr *sa,
-                                  int len) {
+                                  int len, grpc_call_list *call_list) {
   dns_resolver *r = (dns_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   if (!r->resolving) {
@@ -117,9 +114,8 @@ static void dns_channel_saw_error(grpc_resolver *resolver, struct sockaddr *sa,
 
 static void dns_next(grpc_resolver *resolver,
                      grpc_client_config **target_config,
-                     grpc_closure *on_complete) {
+                     grpc_closure *on_complete, grpc_call_list *call_list) {
   dns_resolver *r = (dns_resolver *)resolver;
-  grpc_closure *call = NULL;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
@@ -127,21 +123,18 @@ static void dns_next(grpc_resolver *resolver,
   if (r->resolved_version == 0 && !r->resolving) {
     dns_start_resolving_locked(r);
   } else {
-    call = dns_maybe_finish_next_locked(r);
+    dns_maybe_finish_next_locked(r, call_list);
   }
   gpr_mu_unlock(&r->mu);
-  if (call) {
-    call->cb(call->cb_arg, 1);
-  }
 }
 
-static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
+static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses,
+                            grpc_call_list *call_list) {
   dns_resolver *r = arg;
   grpc_client_config *config = NULL;
   grpc_subchannel **subchannels;
   grpc_subchannel_args args;
   grpc_lb_policy *lb_policy;
-  grpc_closure *call;
   size_t i;
   if (addresses) {
     grpc_lb_policy_args lb_policy_args;
@@ -157,10 +150,9 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
     lb_policy_args.subchannels = subchannels;
     lb_policy_args.num_subchannels = addresses->naddrs;
-    lb_policy_args.workqueue = r->workqueue;
     lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     grpc_client_config_set_lb_policy(config, lb_policy);
-    GRPC_LB_POLICY_UNREF(lb_policy, "construction");
+    GRPC_LB_POLICY_UNREF(lb_policy, "construction", call_list);
     grpc_resolved_addresses_destroy(addresses);
     gpr_free(subchannels);
   }
@@ -168,17 +160,14 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   GPR_ASSERT(r->resolving);
   r->resolving = 0;
   if (r->resolved_config) {
-    grpc_client_config_unref(r->resolved_config);
+    grpc_client_config_unref(r->resolved_config, call_list);
   }
   r->resolved_config = config;
   r->resolved_version++;
-  call = dns_maybe_finish_next_locked(r);
+  dns_maybe_finish_next_locked(r, call_list);
   gpr_mu_unlock(&r->mu);
-  if (call) {
-    call->cb(call->cb_arg, 1);
-  }
 
-  GRPC_RESOLVER_UNREF(&r->base, "dns-resolving");
+  GRPC_RESOLVER_UNREF(&r->base, "dns-resolving", call_list);
 }
 
 static void dns_start_resolving_locked(dns_resolver *r) {
@@ -188,29 +177,27 @@ static void dns_start_resolving_locked(dns_resolver *r) {
   grpc_resolve_address(r->name, r->default_port, dns_on_resolved, r);
 }
 
-static grpc_closure *dns_maybe_finish_next_locked(dns_resolver *r) {
-  grpc_closure *ret = NULL;
+static void dns_maybe_finish_next_locked(dns_resolver *r,
+                                         grpc_call_list *call_list) {
   if (r->next_completion != NULL &&
       r->resolved_version != r->published_version) {
     *r->target_config = r->resolved_config;
     if (r->resolved_config) {
       grpc_client_config_ref(r->resolved_config);
     }
-    ret = r->next_completion;
+    grpc_call_list_add(call_list, r->next_completion, 1);
     r->next_completion = NULL;
     r->published_version = r->resolved_version;
   }
-  return ret;
 }
 
-static void dns_destroy(grpc_resolver *gr) {
+static void dns_destroy(grpc_resolver *gr, grpc_call_list *call_list) {
   dns_resolver *r = (dns_resolver *)gr;
   gpr_mu_destroy(&r->mu);
   if (r->resolved_config) {
-    grpc_client_config_unref(r->resolved_config);
+    grpc_client_config_unref(r->resolved_config, call_list);
   }
   grpc_subchannel_factory_unref(r->subchannel_factory);
-  GRPC_WORKQUEUE_UNREF(r->workqueue, "dns");
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r->lb_policy_name);
@@ -239,8 +226,6 @@ static grpc_resolver *dns_create(grpc_resolver_args *args,
   r->default_port = gpr_strdup(default_port);
   r->subchannel_factory = args->subchannel_factory;
   grpc_subchannel_factory_ref(r->subchannel_factory);
-  r->workqueue = args->workqueue;
-  GRPC_WORKQUEUE_REF(r->workqueue, "dns");
   r->lb_policy_name = gpr_strdup(lb_policy_name);
   return &r->base;
 }

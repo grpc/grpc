@@ -100,7 +100,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
   f.fixture_data = sfd;
   f.cq = grpc_completion_queue_create(NULL);
 
-  *sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536, g_workqueue);
+  *sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
 
   return f;
 }
@@ -113,8 +113,7 @@ static void chttp2_init_client_socketpair(grpc_end2end_test_fixture *f,
   sp_client_setup cs;
   cs.client_args = client_args;
   cs.f = f;
-  transport = grpc_create_chttp2_transport(client_args, sfd->client, mdctx,
-                                           g_workqueue, 1);
+  transport = grpc_create_chttp2_transport(client_args, sfd->client, mdctx, 1);
   client_setup_transport(&cs, transport, mdctx);
   GPR_ASSERT(f->client);
   grpc_chttp2_transport_start_reading(transport, NULL, 0);
@@ -129,8 +128,7 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
   f->server = grpc_server_create_from_filters(NULL, 0, server_args);
   grpc_server_register_completion_queue(f->server, f->cq, NULL);
   grpc_server_start(f->server);
-  transport = grpc_create_chttp2_transport(server_args, sfd->server, mdctx,
-                                           g_workqueue, 0);
+  transport = grpc_create_chttp2_transport(server_args, sfd->server, mdctx, 0);
   server_setup_transport(f, transport, mdctx);
   grpc_chttp2_transport_start_reading(transport, NULL, 0);
 }
@@ -148,17 +146,20 @@ static grpc_end2end_test_config configs[] = {
 
 int main(int argc, char **argv) {
   size_t i;
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
 
   grpc_test_init(argc, argv);
   grpc_init();
-  g_workqueue = grpc_workqueue_create();
+  g_workqueue = grpc_workqueue_create(&call_list);
+  grpc_call_list_run(&call_list);
 
   for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
     grpc_end2end_tests(configs[i]);
   }
 
-  grpc_workqueue_flush(g_workqueue);
-  GRPC_WORKQUEUE_UNREF(g_workqueue, "destroy");
+  grpc_workqueue_flush(g_workqueue, &call_list);
+  GRPC_WORKQUEUE_UNREF(g_workqueue, "destroy", &call_list);
+  grpc_call_list_run(&call_list);
   grpc_shutdown();
 
   return 0;
