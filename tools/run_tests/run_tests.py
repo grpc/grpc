@@ -162,6 +162,9 @@ class CLanguage(object):
       return ['buildtests_%s' % self.make_target]
     return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
+  def pre_build_steps(self):
+    return []
+
   def build_steps(self):
     return []
 
@@ -188,6 +191,9 @@ class GYPCLanguage(object):
     return [config.job_spec([binary], [binary])
             for binary in gyp_test_paths(travis, config)]
 
+  def pre_build_steps(self):
+    return [['gyp', '--depth=.', 'grpc.gyp']]
+
   def make_targets(self):
     return gyp_test_paths(False)
 
@@ -205,6 +211,9 @@ class NodeLanguage(object):
   def test_specs(self, config, travis):
     return [config.job_spec(['tools/run_tests/run_node.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def pre_build_steps(self):
+    return []
 
   def make_targets(self):
     return ['static_c', 'shared_c']
@@ -224,6 +233,9 @@ class PhpLanguage(object):
   def test_specs(self, config, travis):
     return [config.job_spec(['src/php/bin/run_tests.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def pre_build_steps(self):
+    return []
 
   def make_targets(self):
     return ['static_c', 'shared_c']
@@ -254,6 +266,9 @@ class PythonLanguage(object):
         shortname='py.test',
     )]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
 
@@ -283,6 +298,9 @@ class RubyLanguage(object):
   def test_specs(self, config, travis):
     return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+
+  def pre_build_steps(self):
+    return []
 
   def make_targets(self):
     return ['static_c']
@@ -315,6 +333,9 @@ class CSharpLanguage(object):
             environ=_FORCE_ENVIRON_FOR_WRAPPERS)
             for assembly in assemblies]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     # For Windows, this target doesn't really build anything,
     # everything is build by buildall script later.
@@ -342,6 +363,9 @@ class ObjCLanguage(object):
     return [config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     return ['grpc_objective_c_plugin', 'interop_server']
 
@@ -361,6 +385,9 @@ class Sanity(object):
     return [config.job_spec('tools/run_tests/run_sanity.sh', None),
             config.job_spec('tools/run_tests/check_sources_and_headers.py', None)]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     return ['run_dep_checks']
 
@@ -377,6 +404,9 @@ class Sanity(object):
 class Build(object):
 
   def test_specs(self, config, travis):
+    return []
+
+  def pre_build_steps(self):
     return []
 
   def make_targets(self):
@@ -535,6 +565,11 @@ else:
 make_targets = list(set(itertools.chain.from_iterable(
                                          l.make_targets() for l in languages)))
 build_steps = []
+build_steps.extend(set(
+                   jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
+                   for cfg in build_configs
+                   for l in languages
+                   for cmdline in l.pre_build_steps()))
 if make_targets:
   make_commands = itertools.chain.from_iterable(make_jobspec(cfg, make_targets) for cfg in build_configs)
   build_steps.extend(set(make_commands))
