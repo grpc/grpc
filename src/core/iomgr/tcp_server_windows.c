@@ -96,7 +96,6 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
   grpc_tcp_server *s = gpr_malloc(sizeof(grpc_tcp_server));
   gpr_mu_init(&s->mu);
   s->active_ports = 0;
-  s->iomgr_callbacks_pending = 0;
   s->on_accept_cb = NULL;
   s->on_accept_cb_arg = NULL;
   s->ports = gpr_malloc(sizeof(server_port) * INIT_PORT_CAP);
