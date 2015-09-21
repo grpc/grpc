@@ -554,6 +554,22 @@ void InteropClient::DoTimeoutOnSleepingServer() {
   gpr_log(GPR_INFO, "Pingpong streaming timeout done.");
 }
 
+void InteropClient::DoEmptyStream() {
+  gpr_log(GPR_INFO, "Starting empty_stream.");
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream(stub->FullDuplexCall(&context));
+  stream->WritesDone();
+  StreamingOutputCallResponse response;
+  GPR_ASSERT(stream->Read(&response) == false);
+  Status s = stream->Finish();
+  AssertOkOrPrintErrorStatus(s);
+  gpr_log(GPR_INFO, "empty_stream done.");
+}
+
 void InteropClient::DoStatusWithMessage() {
   gpr_log(GPR_INFO, "Sending RPC with a request for status code 2 and message");
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
