@@ -1309,7 +1309,7 @@ static void publish_registered_or_batch(grpc_call *call, int success,
   server_ref(chand->server);
   grpc_cq_end_op(calld->cq_new, rc->tag, success, done_request_event, rc,
                  &rc->completion);
-  GRPC_CALL_INTERNAL_UNREF(call, "server", 0);
+  GRPC_CALL_INTERNAL_UNREF(call, "server", call_list);
 }
 
 const grpc_channel_args *grpc_server_get_channel_args(grpc_server *server) {

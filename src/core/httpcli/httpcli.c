@@ -66,7 +66,6 @@ typedef struct {
   grpc_closure on_read;
   grpc_closure done_write;
   grpc_closure connected;
-  grpc_workqueue *workqueue;
 } internal_request;
 
 static grpc_httpcli_get_override g_get_override = NULL;
@@ -111,7 +110,6 @@ static void finish(internal_request *req, int success,
   grpc_iomgr_unregister_object(&req->iomgr_obj);
   gpr_slice_buffer_destroy(&req->incoming);
   gpr_slice_buffer_destroy(&req->outgoing);
-  GRPC_WORKQUEUE_UNREF(req->workqueue, "destroy");
   gpr_free(req);
 }
 
@@ -196,8 +194,8 @@ static void next_address(internal_request *req, grpc_call_list *call_list) {
   addr = &req->addresses->addrs[req->next_address++];
   grpc_closure_init(&req->connected, on_connected, req);
   grpc_tcp_client_connect(&req->connected, &req->ep, &req->context->pollset_set,
-                          req->workqueue, (struct sockaddr *)&addr->addr,
-                          addr->len, req->deadline, call_list);
+                          (struct sockaddr *)&addr->addr, addr->len,
+                          req->deadline, call_list);
 }
 
 static void on_resolved(void *arg, grpc_resolved_addresses *addresses,
@@ -234,8 +232,6 @@ static void internal_request_begin(
   gpr_slice_buffer_init(&req->outgoing);
   grpc_iomgr_register_object(&req->iomgr_obj, name);
   req->host = gpr_strdup(request->host);
-  req->workqueue = grpc_workqueue_create(call_list);
-  grpc_workqueue_add_to_pollset(req->workqueue, pollset);
 
   grpc_pollset_set_add_pollset(&req->context->pollset_set, req->pollset,
                                call_list);

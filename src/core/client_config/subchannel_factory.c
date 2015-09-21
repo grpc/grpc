@@ -41,6 +41,7 @@ void grpc_subchannel_factory_unref(grpc_subchannel_factory *factory) {
 }
 
 grpc_subchannel *grpc_subchannel_factory_create_subchannel(
-    grpc_subchannel_factory *factory, grpc_subchannel_args *args) {
-  return factory->vtable->create_subchannel(factory, args);
+    grpc_subchannel_factory *factory, grpc_subchannel_args *args,
+    grpc_call_list *call_list) {
+  return factory->vtable->create_subchannel(factory, args, call_list);
 }

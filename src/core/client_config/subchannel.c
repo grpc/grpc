@@ -263,7 +263,7 @@ static void subchannel_destroy(grpc_subchannel *c, grpc_call_list *call_list) {
   gpr_free(c->addr);
   grpc_mdctx_unref(c->mdctx);
   grpc_connectivity_state_destroy(&c->state_tracker);
-  grpc_connector_unref(c->connector);
+  grpc_connector_unref(c->connector, call_list);
   gpr_free(c);
 }
 
@@ -320,7 +320,6 @@ static void continue_connect(grpc_subchannel *c, grpc_call_list *call_list) {
   args.addr_len = c->addr_len;
   args.deadline = compute_connect_deadline(c);
   args.channel_args = c->args;
-  args.metadata_context = c->mdctx;
 
   grpc_connector_connect(c->connector, &args, &c->connecting_result,
                          &c->connected, call_list);

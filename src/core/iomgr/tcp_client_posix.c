@@ -205,7 +205,6 @@ finish:
 
 void grpc_tcp_client_connect(grpc_closure *closure, grpc_endpoint **ep,
                              grpc_pollset_set *interested_parties,
-                             grpc_workqueue *workqueue,
                              const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline, grpc_call_list *call_list) {
   int fd;

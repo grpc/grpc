@@ -291,7 +291,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   f->merge_args = grpc_channel_args_copy(args_copy);
   f->master = channel;
   GRPC_CHANNEL_INTERNAL_REF(channel, "subchannel_factory");
-  resolver = grpc_resolver_create(target, &f->base, workqueue);
+  resolver = grpc_resolver_create(target, &f->base);
   if (!resolver) {
     return NULL;
   }

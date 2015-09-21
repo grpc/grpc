@@ -73,7 +73,8 @@ void grpc_workqueue_unref(grpc_workqueue *workqueue, grpc_call_list *call_list);
 
 /** Bind this workqueue to a pollset */
 void grpc_workqueue_add_to_pollset(grpc_workqueue *workqueue,
-                                   grpc_pollset *pollset);
+                                   grpc_pollset *pollset,
+                                   grpc_call_list *call_list);
 
 /** Add a work item to a workqueue */
 void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,

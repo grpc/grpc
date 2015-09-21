@@ -37,8 +37,9 @@ void grpc_connector_ref(grpc_connector *connector) {
   connector->vtable->ref(connector);
 }
 
-void grpc_connector_unref(grpc_connector *connector) {
-  connector->vtable->unref(connector);
+void grpc_connector_unref(grpc_connector *connector,
+                          grpc_call_list *call_list) {
+  connector->vtable->unref(connector, call_list);
 }
 
 void grpc_connector_connect(grpc_connector *connector,
