@@ -62,6 +62,7 @@ class InteropClient {
   void DoCancelAfterBegin();
   void DoCancelAfterFirstResponse();
   void DoTimeoutOnSleepingServer();
+  void DoEmptyStream();
   void DoStatusWithMessage();
   // Auth tests.
   // username is a string containing the user email
