@@ -139,7 +139,7 @@ static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r,
       args.addr = (struct sockaddr *)&r->addrs[i];
       args.addr_len = r->addrs_len[i];
       subchannels[i] = grpc_subchannel_factory_create_subchannel(
-          r->subchannel_factory, &args);
+          r->subchannel_factory, &args, call_list);
     }
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
     lb_policy_args.subchannels = subchannels;

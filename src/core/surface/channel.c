@@ -93,7 +93,7 @@ struct grpc_channel {
 grpc_channel *grpc_channel_create_from_filters(
     const char *target, const grpc_channel_filter **filters, size_t num_filters,
     const grpc_channel_args *args, grpc_mdctx *mdctx, grpc_workqueue *workqueue,
-    int is_client) {
+    int is_client, grpc_call_list *call_list) {
   size_t i;
   size_t size =
       sizeof(grpc_channel) + grpc_channel_stack_size(filters, num_filters);
@@ -181,7 +181,7 @@ grpc_channel *grpc_channel_create_from_filters(
 
   grpc_channel_stack_init(filters, num_filters, channel, args,
                           channel->metadata_context,
-                          CHANNEL_STACK_FROM_CHANNEL(channel));
+                          CHANNEL_STACK_FROM_CHANNEL(channel), call_list);
 
   return channel;
 }
