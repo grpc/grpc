@@ -40,7 +40,7 @@
 
 static grpc_pollset g_pollset;
 
-static void must_succeed(void *p, int success) {
+static void must_succeed(void *p, int success, grpc_call_list *call_list) {
   GPR_ASSERT(success == 1);
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   *(int *)p = 1;
@@ -51,34 +51,43 @@ static void must_succeed(void *p, int success) {
 static void test_add_closure(void) {
   grpc_closure c;
   int done = 0;
-  grpc_workqueue *wq = grpc_workqueue_create();
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_workqueue *wq = grpc_workqueue_create(&call_list);
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
   grpc_pollset_worker worker;
   grpc_closure_init(&c, must_succeed, &done);
 
   grpc_workqueue_push(wq, &c, 1);
-  grpc_workqueue_add_to_pollset(wq, &g_pollset);
+  grpc_workqueue_add_to_pollset(wq, &g_pollset, &call_list);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   GPR_ASSERT(!done);
-  grpc_pollset_work(&g_pollset, &worker, gpr_now(deadline.clock_type),
-                    deadline);
-  GPR_ASSERT(done);
+  grpc_pollset_work(&g_pollset, &worker, gpr_now(deadline.clock_type), deadline,
+                    &call_list);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  grpc_call_list_run(&call_list);
+  GPR_ASSERT(done);
 
-  GRPC_WORKQUEUE_UNREF(wq, "destroy");
+  GRPC_WORKQUEUE_UNREF(wq, "destroy", &call_list);
+  grpc_call_list_run(&call_list);
 }
 
-static void done_shutdown(void *arg) { grpc_pollset_destroy(arg); }
+static void destroy_pollset(void *p, int success, grpc_call_list *call_list) {
+  grpc_pollset_destroy(p);
+}
 
 int main(int argc, char **argv) {
+  grpc_closure destroyed;
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
   grpc_test_init(argc, argv);
   grpc_init();
   grpc_pollset_init(&g_pollset);
 
   test_add_closure();
 
-  grpc_pollset_shutdown(&g_pollset, done_shutdown, &g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
+  grpc_pollset_shutdown(&g_pollset, &destroyed, &call_list);
+  grpc_call_list_run(&call_list);
   grpc_shutdown();
   return 0;
 }
