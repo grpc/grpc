@@ -1,5 +1,5 @@
 # GRPC gyp file
-# This currently builds C and C++ code.
+# This currently builds C code.
 # This file has been automatically generated from a template file.
 # Please look at the templates directory instead.
 # This file can be regenerated from the template by running
@@ -62,7 +62,11 @@
         'GenerateDebugInformation': 'true',
       },
     },
+    'defines': [
+      'TSI_OPENSSL_ALPN_SUPPORT=0'
+    ],
     'include_dirs': [
+      '.',
       'include'
     ],
     'libraries': [
@@ -70,8 +74,7 @@
       '-lssl',
       '-ldl',
       '-lpthread',
-      '-lz',
-      '-lprotobuf'
+      '-lz'
     ]
   },
   'targets': [
@@ -82,44 +85,44 @@
       'dependencies': [
       ],
       'sources': [
-        'src/core/support/alloc.c'
-        'src/core/support/cmdline.c'
-        'src/core/support/cpu_iphone.c'
-        'src/core/support/cpu_linux.c'
-        'src/core/support/cpu_posix.c'
-        'src/core/support/cpu_windows.c'
-        'src/core/support/env_linux.c'
-        'src/core/support/env_posix.c'
-        'src/core/support/env_win32.c'
-        'src/core/support/file.c'
-        'src/core/support/file_posix.c'
-        'src/core/support/file_win32.c'
-        'src/core/support/histogram.c'
-        'src/core/support/host_port.c'
-        'src/core/support/log.c'
-        'src/core/support/log_android.c'
-        'src/core/support/log_linux.c'
-        'src/core/support/log_posix.c'
-        'src/core/support/log_win32.c'
-        'src/core/support/murmur_hash.c'
-        'src/core/support/slice.c'
-        'src/core/support/slice_buffer.c'
-        'src/core/support/stack_lockfree.c'
-        'src/core/support/string.c'
-        'src/core/support/string_posix.c'
-        'src/core/support/string_win32.c'
-        'src/core/support/subprocess_posix.c'
-        'src/core/support/sync.c'
-        'src/core/support/sync_posix.c'
-        'src/core/support/sync_win32.c'
-        'src/core/support/thd.c'
-        'src/core/support/thd_posix.c'
-        'src/core/support/thd_win32.c'
-        'src/core/support/time.c'
-        'src/core/support/time_posix.c'
-        'src/core/support/time_win32.c'
-        'src/core/support/tls_pthread.c'
-      ]
+        'src/core/support/alloc.c',
+        'src/core/support/cmdline.c',
+        'src/core/support/cpu_iphone.c',
+        'src/core/support/cpu_linux.c',
+        'src/core/support/cpu_posix.c',
+        'src/core/support/cpu_windows.c',
+        'src/core/support/env_linux.c',
+        'src/core/support/env_posix.c',
+        'src/core/support/env_win32.c',
+        'src/core/support/file.c',
+        'src/core/support/file_posix.c',
+        'src/core/support/file_win32.c',
+        'src/core/support/histogram.c',
+        'src/core/support/host_port.c',
+        'src/core/support/log.c',
+        'src/core/support/log_android.c',
+        'src/core/support/log_linux.c',
+        'src/core/support/log_posix.c',
+        'src/core/support/log_win32.c',
+        'src/core/support/murmur_hash.c',
+        'src/core/support/slice.c',
+        'src/core/support/slice_buffer.c',
+        'src/core/support/stack_lockfree.c',
+        'src/core/support/string.c',
+        'src/core/support/string_posix.c',
+        'src/core/support/string_win32.c',
+        'src/core/support/subprocess_posix.c',
+        'src/core/support/sync.c',
+        'src/core/support/sync_posix.c',
+        'src/core/support/sync_win32.c',
+        'src/core/support/thd.c',
+        'src/core/support/thd_posix.c',
+        'src/core/support/thd_win32.c',
+        'src/core/support/time.c',
+        'src/core/support/time_posix.c',
+        'src/core/support/time_win32.c',
+        'src/core/support/tls_pthread.c',
+      ],
     },
     {
       'target_name': 'gpr_test_util',
@@ -129,8 +132,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/util/test_config.c'
-      ]
+        'test/core/util/test_config.c',
+      ],
     },
     {
       'target_name': 'grpc',
@@ -140,151 +143,151 @@
         'gpr',
       ],
       'sources': [
-        'src/core/httpcli/httpcli_security_connector.c'
-        'src/core/security/base64.c'
-        'src/core/security/client_auth_filter.c'
-        'src/core/security/credentials.c'
-        'src/core/security/credentials_metadata.c'
-        'src/core/security/credentials_posix.c'
-        'src/core/security/credentials_win32.c'
-        'src/core/security/google_default_credentials.c'
-        'src/core/security/json_token.c'
-        'src/core/security/jwt_verifier.c'
-        'src/core/security/secure_endpoint.c'
-        'src/core/security/secure_transport_setup.c'
-        'src/core/security/security_connector.c'
-        'src/core/security/security_context.c'
-        'src/core/security/server_auth_filter.c'
-        'src/core/security/server_secure_chttp2.c'
-        'src/core/surface/init_secure.c'
-        'src/core/surface/secure_channel_create.c'
-        'src/core/tsi/fake_transport_security.c'
-        'src/core/tsi/ssl_transport_security.c'
-        'src/core/tsi/transport_security.c'
-        'src/core/census/grpc_context.c'
-        'src/core/census/grpc_filter.c'
-        'src/core/channel/channel_args.c'
-        'src/core/channel/channel_stack.c'
-        'src/core/channel/client_channel.c'
-        'src/core/channel/compress_filter.c'
-        'src/core/channel/connected_channel.c'
-        'src/core/channel/http_client_filter.c'
-        'src/core/channel/http_server_filter.c'
-        'src/core/channel/noop_filter.c'
-        'src/core/client_config/client_config.c'
-        'src/core/client_config/connector.c'
-        'src/core/client_config/lb_policies/pick_first.c'
-        'src/core/client_config/lb_policies/round_robin.c'
-        'src/core/client_config/lb_policy.c'
-        'src/core/client_config/lb_policy_factory.c'
-        'src/core/client_config/lb_policy_registry.c'
-        'src/core/client_config/resolver.c'
-        'src/core/client_config/resolver_factory.c'
-        'src/core/client_config/resolver_registry.c'
-        'src/core/client_config/resolvers/dns_resolver.c'
-        'src/core/client_config/resolvers/sockaddr_resolver.c'
-        'src/core/client_config/subchannel.c'
-        'src/core/client_config/subchannel_factory.c'
-        'src/core/client_config/subchannel_factory_decorators/add_channel_arg.c'
-        'src/core/client_config/subchannel_factory_decorators/merge_channel_args.c'
-        'src/core/client_config/uri_parser.c'
-        'src/core/compression/algorithm.c'
-        'src/core/compression/message_compress.c'
-        'src/core/debug/trace.c'
-        'src/core/httpcli/format_request.c'
-        'src/core/httpcli/httpcli.c'
-        'src/core/httpcli/parser.c'
-        'src/core/iomgr/alarm.c'
-        'src/core/iomgr/alarm_heap.c'
-        'src/core/iomgr/endpoint.c'
-        'src/core/iomgr/endpoint_pair_posix.c'
-        'src/core/iomgr/endpoint_pair_windows.c'
-        'src/core/iomgr/fd_posix.c'
-        'src/core/iomgr/iocp_windows.c'
-        'src/core/iomgr/iomgr.c'
-        'src/core/iomgr/iomgr_posix.c'
-        'src/core/iomgr/iomgr_windows.c'
-        'src/core/iomgr/pollset_multipoller_with_epoll.c'
-        'src/core/iomgr/pollset_multipoller_with_poll_posix.c'
-        'src/core/iomgr/pollset_posix.c'
-        'src/core/iomgr/pollset_set_posix.c'
-        'src/core/iomgr/pollset_set_windows.c'
-        'src/core/iomgr/pollset_windows.c'
-        'src/core/iomgr/resolve_address_posix.c'
-        'src/core/iomgr/resolve_address_windows.c'
-        'src/core/iomgr/sockaddr_utils.c'
-        'src/core/iomgr/socket_utils_common_posix.c'
-        'src/core/iomgr/socket_utils_linux.c'
-        'src/core/iomgr/socket_utils_posix.c'
-        'src/core/iomgr/socket_windows.c'
-        'src/core/iomgr/tcp_client_posix.c'
-        'src/core/iomgr/tcp_client_windows.c'
-        'src/core/iomgr/tcp_posix.c'
-        'src/core/iomgr/tcp_server_posix.c'
-        'src/core/iomgr/tcp_server_windows.c'
-        'src/core/iomgr/tcp_windows.c'
-        'src/core/iomgr/time_averaged_stats.c'
-        'src/core/iomgr/udp_server.c'
-        'src/core/iomgr/wakeup_fd_eventfd.c'
-        'src/core/iomgr/wakeup_fd_nospecial.c'
-        'src/core/iomgr/wakeup_fd_pipe.c'
-        'src/core/iomgr/wakeup_fd_posix.c'
-        'src/core/json/json.c'
-        'src/core/json/json_reader.c'
-        'src/core/json/json_string.c'
-        'src/core/json/json_writer.c'
-        'src/core/profiling/basic_timers.c'
-        'src/core/profiling/stap_timers.c'
-        'src/core/surface/byte_buffer.c'
-        'src/core/surface/byte_buffer_queue.c'
-        'src/core/surface/byte_buffer_reader.c'
-        'src/core/surface/call.c'
-        'src/core/surface/call_details.c'
-        'src/core/surface/call_log_batch.c'
-        'src/core/surface/channel.c'
-        'src/core/surface/channel_connectivity.c'
-        'src/core/surface/channel_create.c'
-        'src/core/surface/completion_queue.c'
-        'src/core/surface/event_string.c'
-        'src/core/surface/init.c'
-        'src/core/surface/lame_client.c'
-        'src/core/surface/metadata_array.c'
-        'src/core/surface/server.c'
-        'src/core/surface/server_chttp2.c'
-        'src/core/surface/server_create.c'
-        'src/core/surface/surface_trace.c'
-        'src/core/surface/version.c'
-        'src/core/transport/chttp2/alpn.c'
-        'src/core/transport/chttp2/bin_encoder.c'
-        'src/core/transport/chttp2/frame_data.c'
-        'src/core/transport/chttp2/frame_goaway.c'
-        'src/core/transport/chttp2/frame_ping.c'
-        'src/core/transport/chttp2/frame_rst_stream.c'
-        'src/core/transport/chttp2/frame_settings.c'
-        'src/core/transport/chttp2/frame_window_update.c'
-        'src/core/transport/chttp2/hpack_parser.c'
-        'src/core/transport/chttp2/hpack_table.c'
-        'src/core/transport/chttp2/huffsyms.c'
-        'src/core/transport/chttp2/incoming_metadata.c'
-        'src/core/transport/chttp2/parsing.c'
-        'src/core/transport/chttp2/status_conversion.c'
-        'src/core/transport/chttp2/stream_encoder.c'
-        'src/core/transport/chttp2/stream_lists.c'
-        'src/core/transport/chttp2/stream_map.c'
-        'src/core/transport/chttp2/timeout_encoding.c'
-        'src/core/transport/chttp2/varint.c'
-        'src/core/transport/chttp2/writing.c'
-        'src/core/transport/chttp2_transport.c'
-        'src/core/transport/connectivity_state.c'
-        'src/core/transport/metadata.c'
-        'src/core/transport/stream_op.c'
-        'src/core/transport/transport.c'
-        'src/core/transport/transport_op_string.c'
-        'src/core/census/context.c'
-        'src/core/census/initialize.c'
-        'src/core/census/operation.c'
-        'src/core/census/tracing.c'
-      ]
+        'src/core/httpcli/httpcli_security_connector.c',
+        'src/core/security/base64.c',
+        'src/core/security/client_auth_filter.c',
+        'src/core/security/credentials.c',
+        'src/core/security/credentials_metadata.c',
+        'src/core/security/credentials_posix.c',
+        'src/core/security/credentials_win32.c',
+        'src/core/security/google_default_credentials.c',
+        'src/core/security/json_token.c',
+        'src/core/security/jwt_verifier.c',
+        'src/core/security/secure_endpoint.c',
+        'src/core/security/secure_transport_setup.c',
+        'src/core/security/security_connector.c',
+        'src/core/security/security_context.c',
+        'src/core/security/server_auth_filter.c',
+        'src/core/security/server_secure_chttp2.c',
+        'src/core/surface/init_secure.c',
+        'src/core/surface/secure_channel_create.c',
+        'src/core/tsi/fake_transport_security.c',
+        'src/core/tsi/ssl_transport_security.c',
+        'src/core/tsi/transport_security.c',
+        'src/core/census/grpc_context.c',
+        'src/core/census/grpc_filter.c',
+        'src/core/channel/channel_args.c',
+        'src/core/channel/channel_stack.c',
+        'src/core/channel/client_channel.c',
+        'src/core/channel/compress_filter.c',
+        'src/core/channel/connected_channel.c',
+        'src/core/channel/http_client_filter.c',
+        'src/core/channel/http_server_filter.c',
+        'src/core/channel/noop_filter.c',
+        'src/core/client_config/client_config.c',
+        'src/core/client_config/connector.c',
+        'src/core/client_config/lb_policies/pick_first.c',
+        'src/core/client_config/lb_policies/round_robin.c',
+        'src/core/client_config/lb_policy.c',
+        'src/core/client_config/lb_policy_factory.c',
+        'src/core/client_config/lb_policy_registry.c',
+        'src/core/client_config/resolver.c',
+        'src/core/client_config/resolver_factory.c',
+        'src/core/client_config/resolver_registry.c',
+        'src/core/client_config/resolvers/dns_resolver.c',
+        'src/core/client_config/resolvers/sockaddr_resolver.c',
+        'src/core/client_config/subchannel.c',
+        'src/core/client_config/subchannel_factory.c',
+        'src/core/client_config/subchannel_factory_decorators/add_channel_arg.c',
+        'src/core/client_config/subchannel_factory_decorators/merge_channel_args.c',
+        'src/core/client_config/uri_parser.c',
+        'src/core/compression/algorithm.c',
+        'src/core/compression/message_compress.c',
+        'src/core/debug/trace.c',
+        'src/core/httpcli/format_request.c',
+        'src/core/httpcli/httpcli.c',
+        'src/core/httpcli/parser.c',
+        'src/core/iomgr/alarm.c',
+        'src/core/iomgr/alarm_heap.c',
+        'src/core/iomgr/endpoint.c',
+        'src/core/iomgr/endpoint_pair_posix.c',
+        'src/core/iomgr/endpoint_pair_windows.c',
+        'src/core/iomgr/fd_posix.c',
+        'src/core/iomgr/iocp_windows.c',
+        'src/core/iomgr/iomgr.c',
+        'src/core/iomgr/iomgr_posix.c',
+        'src/core/iomgr/iomgr_windows.c',
+        'src/core/iomgr/pollset_multipoller_with_epoll.c',
+        'src/core/iomgr/pollset_multipoller_with_poll_posix.c',
+        'src/core/iomgr/pollset_posix.c',
+        'src/core/iomgr/pollset_set_posix.c',
+        'src/core/iomgr/pollset_set_windows.c',
+        'src/core/iomgr/pollset_windows.c',
+        'src/core/iomgr/resolve_address_posix.c',
+        'src/core/iomgr/resolve_address_windows.c',
+        'src/core/iomgr/sockaddr_utils.c',
+        'src/core/iomgr/socket_utils_common_posix.c',
+        'src/core/iomgr/socket_utils_linux.c',
+        'src/core/iomgr/socket_utils_posix.c',
+        'src/core/iomgr/socket_windows.c',
+        'src/core/iomgr/tcp_client_posix.c',
+        'src/core/iomgr/tcp_client_windows.c',
+        'src/core/iomgr/tcp_posix.c',
+        'src/core/iomgr/tcp_server_posix.c',
+        'src/core/iomgr/tcp_server_windows.c',
+        'src/core/iomgr/tcp_windows.c',
+        'src/core/iomgr/time_averaged_stats.c',
+        'src/core/iomgr/udp_server.c',
+        'src/core/iomgr/wakeup_fd_eventfd.c',
+        'src/core/iomgr/wakeup_fd_nospecial.c',
+        'src/core/iomgr/wakeup_fd_pipe.c',
+        'src/core/iomgr/wakeup_fd_posix.c',
+        'src/core/json/json.c',
+        'src/core/json/json_reader.c',
+        'src/core/json/json_string.c',
+        'src/core/json/json_writer.c',
+        'src/core/profiling/basic_timers.c',
+        'src/core/profiling/stap_timers.c',
+        'src/core/surface/byte_buffer.c',
+        'src/core/surface/byte_buffer_queue.c',
+        'src/core/surface/byte_buffer_reader.c',
+        'src/core/surface/call.c',
+        'src/core/surface/call_details.c',
+        'src/core/surface/call_log_batch.c',
+        'src/core/surface/channel.c',
+        'src/core/surface/channel_connectivity.c',
+        'src/core/surface/channel_create.c',
+        'src/core/surface/completion_queue.c',
+        'src/core/surface/event_string.c',
+        'src/core/surface/init.c',
+        'src/core/surface/lame_client.c',
+        'src/core/surface/metadata_array.c',
+        'src/core/surface/server.c',
+        'src/core/surface/server_chttp2.c',
+        'src/core/surface/server_create.c',
+        'src/core/surface/surface_trace.c',
+        'src/core/surface/version.c',
+        'src/core/transport/chttp2/alpn.c',
+        'src/core/transport/chttp2/bin_encoder.c',
+        'src/core/transport/chttp2/frame_data.c',
+        'src/core/transport/chttp2/frame_goaway.c',
+        'src/core/transport/chttp2/frame_ping.c',
+        'src/core/transport/chttp2/frame_rst_stream.c',
+        'src/core/transport/chttp2/frame_settings.c',
+        'src/core/transport/chttp2/frame_window_update.c',
+        'src/core/transport/chttp2/hpack_parser.c',
+        'src/core/transport/chttp2/hpack_table.c',
+        'src/core/transport/chttp2/huffsyms.c',
+        'src/core/transport/chttp2/incoming_metadata.c',
+        'src/core/transport/chttp2/parsing.c',
+        'src/core/transport/chttp2/status_conversion.c',
+        'src/core/transport/chttp2/stream_encoder.c',
+        'src/core/transport/chttp2/stream_lists.c',
+        'src/core/transport/chttp2/stream_map.c',
+        'src/core/transport/chttp2/timeout_encoding.c',
+        'src/core/transport/chttp2/varint.c',
+        'src/core/transport/chttp2/writing.c',
+        'src/core/transport/chttp2_transport.c',
+        'src/core/transport/connectivity_state.c',
+        'src/core/transport/metadata.c',
+        'src/core/transport/stream_op.c',
+        'src/core/transport/transport.c',
+        'src/core/transport/transport_op_string.c',
+        'src/core/census/context.c',
+        'src/core/census/initialize.c',
+        'src/core/census/operation.c',
+        'src/core/census/tracing.c',
+      ],
     },
     {
       'target_name': 'grpc_test_util',
@@ -296,19 +299,19 @@
         'grpc',
       ],
       'sources': [
-        'test/core/end2end/data/server1_cert.c'
-        'test/core/end2end/data/server1_key.c'
-        'test/core/end2end/data/test_root_cert.c'
-        'test/core/end2end/cq_verifier.c'
-        'test/core/end2end/fixtures/proxy.c'
-        'test/core/iomgr/endpoint_tests.c'
-        'test/core/security/oauth2_utils.c'
-        'test/core/util/grpc_profiler.c'
-        'test/core/util/parse_hexstring.c'
-        'test/core/util/port_posix.c'
-        'test/core/util/port_windows.c'
-        'test/core/util/slice_splitter.c'
-      ]
+        'test/core/end2end/data/server1_cert.c',
+        'test/core/end2end/data/server1_key.c',
+        'test/core/end2end/data/test_root_cert.c',
+        'test/core/end2end/cq_verifier.c',
+        'test/core/end2end/fixtures/proxy.c',
+        'test/core/iomgr/endpoint_tests.c',
+        'test/core/security/oauth2_utils.c',
+        'test/core/util/grpc_profiler.c',
+        'test/core/util/parse_hexstring.c',
+        'test/core/util/port_posix.c',
+        'test/core/util/port_windows.c',
+        'test/core/util/slice_splitter.c',
+      ],
     },
     {
       'target_name': 'grpc_test_util_unsecure',
@@ -320,16 +323,16 @@
         'grpc',
       ],
       'sources': [
-        'test/core/end2end/cq_verifier.c'
-        'test/core/end2end/fixtures/proxy.c'
-        'test/core/iomgr/endpoint_tests.c'
-        'test/core/security/oauth2_utils.c'
-        'test/core/util/grpc_profiler.c'
-        'test/core/util/parse_hexstring.c'
-        'test/core/util/port_posix.c'
-        'test/core/util/port_windows.c'
-        'test/core/util/slice_splitter.c'
-      ]
+        'test/core/end2end/cq_verifier.c',
+        'test/core/end2end/fixtures/proxy.c',
+        'test/core/iomgr/endpoint_tests.c',
+        'test/core/security/oauth2_utils.c',
+        'test/core/util/grpc_profiler.c',
+        'test/core/util/parse_hexstring.c',
+        'test/core/util/port_posix.c',
+        'test/core/util/port_windows.c',
+        'test/core/util/slice_splitter.c',
+      ],
     },
     {
       'target_name': 'grpc_unsecure',
@@ -339,131 +342,131 @@
         'gpr',
       ],
       'sources': [
-        'src/core/surface/init_unsecure.c'
-        'src/core/census/grpc_context.c'
-        'src/core/census/grpc_filter.c'
-        'src/core/channel/channel_args.c'
-        'src/core/channel/channel_stack.c'
-        'src/core/channel/client_channel.c'
-        'src/core/channel/compress_filter.c'
-        'src/core/channel/connected_channel.c'
-        'src/core/channel/http_client_filter.c'
-        'src/core/channel/http_server_filter.c'
-        'src/core/channel/noop_filter.c'
-        'src/core/client_config/client_config.c'
-        'src/core/client_config/connector.c'
-        'src/core/client_config/lb_policies/pick_first.c'
-        'src/core/client_config/lb_policies/round_robin.c'
-        'src/core/client_config/lb_policy.c'
-        'src/core/client_config/lb_policy_factory.c'
-        'src/core/client_config/lb_policy_registry.c'
-        'src/core/client_config/resolver.c'
-        'src/core/client_config/resolver_factory.c'
-        'src/core/client_config/resolver_registry.c'
-        'src/core/client_config/resolvers/dns_resolver.c'
-        'src/core/client_config/resolvers/sockaddr_resolver.c'
-        'src/core/client_config/subchannel.c'
-        'src/core/client_config/subchannel_factory.c'
-        'src/core/client_config/subchannel_factory_decorators/add_channel_arg.c'
-        'src/core/client_config/subchannel_factory_decorators/merge_channel_args.c'
-        'src/core/client_config/uri_parser.c'
-        'src/core/compression/algorithm.c'
-        'src/core/compression/message_compress.c'
-        'src/core/debug/trace.c'
-        'src/core/httpcli/format_request.c'
-        'src/core/httpcli/httpcli.c'
-        'src/core/httpcli/parser.c'
-        'src/core/iomgr/alarm.c'
-        'src/core/iomgr/alarm_heap.c'
-        'src/core/iomgr/endpoint.c'
-        'src/core/iomgr/endpoint_pair_posix.c'
-        'src/core/iomgr/endpoint_pair_windows.c'
-        'src/core/iomgr/fd_posix.c'
-        'src/core/iomgr/iocp_windows.c'
-        'src/core/iomgr/iomgr.c'
-        'src/core/iomgr/iomgr_posix.c'
-        'src/core/iomgr/iomgr_windows.c'
-        'src/core/iomgr/pollset_multipoller_with_epoll.c'
-        'src/core/iomgr/pollset_multipoller_with_poll_posix.c'
-        'src/core/iomgr/pollset_posix.c'
-        'src/core/iomgr/pollset_set_posix.c'
-        'src/core/iomgr/pollset_set_windows.c'
-        'src/core/iomgr/pollset_windows.c'
-        'src/core/iomgr/resolve_address_posix.c'
-        'src/core/iomgr/resolve_address_windows.c'
-        'src/core/iomgr/sockaddr_utils.c'
-        'src/core/iomgr/socket_utils_common_posix.c'
-        'src/core/iomgr/socket_utils_linux.c'
-        'src/core/iomgr/socket_utils_posix.c'
-        'src/core/iomgr/socket_windows.c'
-        'src/core/iomgr/tcp_client_posix.c'
-        'src/core/iomgr/tcp_client_windows.c'
-        'src/core/iomgr/tcp_posix.c'
-        'src/core/iomgr/tcp_server_posix.c'
-        'src/core/iomgr/tcp_server_windows.c'
-        'src/core/iomgr/tcp_windows.c'
-        'src/core/iomgr/time_averaged_stats.c'
-        'src/core/iomgr/udp_server.c'
-        'src/core/iomgr/wakeup_fd_eventfd.c'
-        'src/core/iomgr/wakeup_fd_nospecial.c'
-        'src/core/iomgr/wakeup_fd_pipe.c'
-        'src/core/iomgr/wakeup_fd_posix.c'
-        'src/core/json/json.c'
-        'src/core/json/json_reader.c'
-        'src/core/json/json_string.c'
-        'src/core/json/json_writer.c'
-        'src/core/profiling/basic_timers.c'
-        'src/core/profiling/stap_timers.c'
-        'src/core/surface/byte_buffer.c'
-        'src/core/surface/byte_buffer_queue.c'
-        'src/core/surface/byte_buffer_reader.c'
-        'src/core/surface/call.c'
-        'src/core/surface/call_details.c'
-        'src/core/surface/call_log_batch.c'
-        'src/core/surface/channel.c'
-        'src/core/surface/channel_connectivity.c'
-        'src/core/surface/channel_create.c'
-        'src/core/surface/completion_queue.c'
-        'src/core/surface/event_string.c'
-        'src/core/surface/init.c'
-        'src/core/surface/lame_client.c'
-        'src/core/surface/metadata_array.c'
-        'src/core/surface/server.c'
-        'src/core/surface/server_chttp2.c'
-        'src/core/surface/server_create.c'
-        'src/core/surface/surface_trace.c'
-        'src/core/surface/version.c'
-        'src/core/transport/chttp2/alpn.c'
-        'src/core/transport/chttp2/bin_encoder.c'
-        'src/core/transport/chttp2/frame_data.c'
-        'src/core/transport/chttp2/frame_goaway.c'
-        'src/core/transport/chttp2/frame_ping.c'
-        'src/core/transport/chttp2/frame_rst_stream.c'
-        'src/core/transport/chttp2/frame_settings.c'
-        'src/core/transport/chttp2/frame_window_update.c'
-        'src/core/transport/chttp2/hpack_parser.c'
-        'src/core/transport/chttp2/hpack_table.c'
-        'src/core/transport/chttp2/huffsyms.c'
-        'src/core/transport/chttp2/incoming_metadata.c'
-        'src/core/transport/chttp2/parsing.c'
-        'src/core/transport/chttp2/status_conversion.c'
-        'src/core/transport/chttp2/stream_encoder.c'
-        'src/core/transport/chttp2/stream_lists.c'
-        'src/core/transport/chttp2/stream_map.c'
-        'src/core/transport/chttp2/timeout_encoding.c'
-        'src/core/transport/chttp2/varint.c'
-        'src/core/transport/chttp2/writing.c'
-        'src/core/transport/chttp2_transport.c'
-        'src/core/transport/connectivity_state.c'
-        'src/core/transport/metadata.c'
-        'src/core/transport/stream_op.c'
-        'src/core/transport/transport.c'
-        'src/core/transport/transport_op_string.c'
-        'src/core/census/context.c'
-        'src/core/census/initialize.c'
-        'src/core/census/operation.c'
-        'src/core/census/tracing.c'
-      ]
+        'src/core/surface/init_unsecure.c',
+        'src/core/census/grpc_context.c',
+        'src/core/census/grpc_filter.c',
+        'src/core/channel/channel_args.c',
+        'src/core/channel/channel_stack.c',
+        'src/core/channel/client_channel.c',
+        'src/core/channel/compress_filter.c',
+        'src/core/channel/connected_channel.c',
+        'src/core/channel/http_client_filter.c',
+        'src/core/channel/http_server_filter.c',
+        'src/core/channel/noop_filter.c',
+        'src/core/client_config/client_config.c',
+        'src/core/client_config/connector.c',
+        'src/core/client_config/lb_policies/pick_first.c',
+        'src/core/client_config/lb_policies/round_robin.c',
+        'src/core/client_config/lb_policy.c',
+        'src/core/client_config/lb_policy_factory.c',
+        'src/core/client_config/lb_policy_registry.c',
+        'src/core/client_config/resolver.c',
+        'src/core/client_config/resolver_factory.c',
+        'src/core/client_config/resolver_registry.c',
+        'src/core/client_config/resolvers/dns_resolver.c',
+        'src/core/client_config/resolvers/sockaddr_resolver.c',
+        'src/core/client_config/subchannel.c',
+        'src/core/client_config/subchannel_factory.c',
+        'src/core/client_config/subchannel_factory_decorators/add_channel_arg.c',
+        'src/core/client_config/subchannel_factory_decorators/merge_channel_args.c',
+        'src/core/client_config/uri_parser.c',
+        'src/core/compression/algorithm.c',
+        'src/core/compression/message_compress.c',
+        'src/core/debug/trace.c',
+        'src/core/httpcli/format_request.c',
+        'src/core/httpcli/httpcli.c',
+        'src/core/httpcli/parser.c',
+        'src/core/iomgr/alarm.c',
+        'src/core/iomgr/alarm_heap.c',
+        'src/core/iomgr/endpoint.c',
+        'src/core/iomgr/endpoint_pair_posix.c',
+        'src/core/iomgr/endpoint_pair_windows.c',
+        'src/core/iomgr/fd_posix.c',
+        'src/core/iomgr/iocp_windows.c',
+        'src/core/iomgr/iomgr.c',
+        'src/core/iomgr/iomgr_posix.c',
+        'src/core/iomgr/iomgr_windows.c',
+        'src/core/iomgr/pollset_multipoller_with_epoll.c',
+        'src/core/iomgr/pollset_multipoller_with_poll_posix.c',
+        'src/core/iomgr/pollset_posix.c',
+        'src/core/iomgr/pollset_set_posix.c',
+        'src/core/iomgr/pollset_set_windows.c',
+        'src/core/iomgr/pollset_windows.c',
+        'src/core/iomgr/resolve_address_posix.c',
+        'src/core/iomgr/resolve_address_windows.c',
+        'src/core/iomgr/sockaddr_utils.c',
+        'src/core/iomgr/socket_utils_common_posix.c',
+        'src/core/iomgr/socket_utils_linux.c',
+        'src/core/iomgr/socket_utils_posix.c',
+        'src/core/iomgr/socket_windows.c',
+        'src/core/iomgr/tcp_client_posix.c',
+        'src/core/iomgr/tcp_client_windows.c',
+        'src/core/iomgr/tcp_posix.c',
+        'src/core/iomgr/tcp_server_posix.c',
+        'src/core/iomgr/tcp_server_windows.c',
+        'src/core/iomgr/tcp_windows.c',
+        'src/core/iomgr/time_averaged_stats.c',
+        'src/core/iomgr/udp_server.c',
+        'src/core/iomgr/wakeup_fd_eventfd.c',
+        'src/core/iomgr/wakeup_fd_nospecial.c',
+        'src/core/iomgr/wakeup_fd_pipe.c',
+        'src/core/iomgr/wakeup_fd_posix.c',
+        'src/core/json/json.c',
+        'src/core/json/json_reader.c',
+        'src/core/json/json_string.c',
+        'src/core/json/json_writer.c',
+        'src/core/profiling/basic_timers.c',
+        'src/core/profiling/stap_timers.c',
+        'src/core/surface/byte_buffer.c',
+        'src/core/surface/byte_buffer_queue.c',
+        'src/core/surface/byte_buffer_reader.c',
+        'src/core/surface/call.c',
+        'src/core/surface/call_details.c',
+        'src/core/surface/call_log_batch.c',
+        'src/core/surface/channel.c',
+        'src/core/surface/channel_connectivity.c',
+        'src/core/surface/channel_create.c',
+        'src/core/surface/completion_queue.c',
+        'src/core/surface/event_string.c',
+        'src/core/surface/init.c',
+        'src/core/surface/lame_client.c',
+        'src/core/surface/metadata_array.c',
+        'src/core/surface/server.c',
+        'src/core/surface/server_chttp2.c',
+        'src/core/surface/server_create.c',
+        'src/core/surface/surface_trace.c',
+        'src/core/surface/version.c',
+        'src/core/transport/chttp2/alpn.c',
+        'src/core/transport/chttp2/bin_encoder.c',
+        'src/core/transport/chttp2/frame_data.c',
+        'src/core/transport/chttp2/frame_goaway.c',
+        'src/core/transport/chttp2/frame_ping.c',
+        'src/core/transport/chttp2/frame_rst_stream.c',
+        'src/core/transport/chttp2/frame_settings.c',
+        'src/core/transport/chttp2/frame_window_update.c',
+        'src/core/transport/chttp2/hpack_parser.c',
+        'src/core/transport/chttp2/hpack_table.c',
+        'src/core/transport/chttp2/huffsyms.c',
+        'src/core/transport/chttp2/incoming_metadata.c',
+        'src/core/transport/chttp2/parsing.c',
+        'src/core/transport/chttp2/status_conversion.c',
+        'src/core/transport/chttp2/stream_encoder.c',
+        'src/core/transport/chttp2/stream_lists.c',
+        'src/core/transport/chttp2/stream_map.c',
+        'src/core/transport/chttp2/timeout_encoding.c',
+        'src/core/transport/chttp2/varint.c',
+        'src/core/transport/chttp2/writing.c',
+        'src/core/transport/chttp2_transport.c',
+        'src/core/transport/connectivity_state.c',
+        'src/core/transport/metadata.c',
+        'src/core/transport/stream_op.c',
+        'src/core/transport/transport.c',
+        'src/core/transport/transport_op_string.c',
+        'src/core/census/context.c',
+        'src/core/census/initialize.c',
+        'src/core/census/operation.c',
+        'src/core/census/tracing.c',
+      ],
     },
     {
       'target_name': 'grpc_zookeeper',
@@ -474,8 +477,8 @@
         'grpc',
       ],
       'sources': [
-        'src/core/client_config/resolvers/zookeeper_resolver.c'
-      ]
+        'src/core/client_config/resolvers/zookeeper_resolver.c',
+      ],
     },
     {
       'target_name': 'reconnect_server',
@@ -488,240 +491,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/util/reconnect_server.c'
-      ]
-    },
-    {
-      'target_name': 'grpc++',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-        'gpr',
-        'grpc',
+        'test/core/util/reconnect_server.c',
       ],
-      'sources': [
-        'src/cpp/client/secure_channel_arguments.cc'
-        'src/cpp/client/secure_credentials.cc'
-        'src/cpp/common/auth_property_iterator.cc'
-        'src/cpp/common/secure_auth_context.cc'
-        'src/cpp/common/secure_create_auth_context.cc'
-        'src/cpp/server/secure_server_credentials.cc'
-        'src/cpp/client/channel.cc'
-        'src/cpp/client/channel_arguments.cc'
-        'src/cpp/client/client_context.cc'
-        'src/cpp/client/create_channel.cc'
-        'src/cpp/client/create_channel_internal.cc'
-        'src/cpp/client/credentials.cc'
-        'src/cpp/client/generic_stub.cc'
-        'src/cpp/client/insecure_credentials.cc'
-        'src/cpp/common/call.cc'
-        'src/cpp/common/completion_queue.cc'
-        'src/cpp/common/rpc_method.cc'
-        'src/cpp/proto/proto_utils.cc'
-        'src/cpp/server/async_generic_service.cc'
-        'src/cpp/server/create_default_thread_pool.cc'
-        'src/cpp/server/dynamic_thread_pool.cc'
-        'src/cpp/server/fixed_size_thread_pool.cc'
-        'src/cpp/server/insecure_server_credentials.cc'
-        'src/cpp/server/server.cc'
-        'src/cpp/server/server_builder.cc'
-        'src/cpp/server/server_context.cc'
-        'src/cpp/server/server_credentials.cc'
-        'src/cpp/util/byte_buffer.cc'
-        'src/cpp/util/slice.cc'
-        'src/cpp/util/status.cc'
-        'src/cpp/util/string_ref.cc'
-        'src/cpp/util/time.cc'
-      ]
-    },
-    {
-      'target_name': 'grpc++_test_config',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-      ],
-      'sources': [
-        'test/cpp/util/test_config.cc'
-      ]
-    },
-    {
-      'target_name': 'grpc++_test_util',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-        'grpc++',
-        'grpc_test_util',
-      ],
-      'sources': [
-        'test/cpp/util/messages.proto'
-        'test/cpp/util/echo.proto'
-        'test/cpp/util/echo_duplicate.proto'
-        'test/cpp/util/cli_call.cc'
-        'test/cpp/util/create_test_channel.cc'
-        'test/cpp/util/string_ref_helper.cc'
-        'test/cpp/util/subprocess.cc'
-      ]
-    },
-    {
-      'target_name': 'grpc++_unsecure',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-        'gpr',
-        'grpc_unsecure',
-      ],
-      'sources': [
-        'src/cpp/common/insecure_create_auth_context.cc'
-        'src/cpp/client/channel.cc'
-        'src/cpp/client/channel_arguments.cc'
-        'src/cpp/client/client_context.cc'
-        'src/cpp/client/create_channel.cc'
-        'src/cpp/client/create_channel_internal.cc'
-        'src/cpp/client/credentials.cc'
-        'src/cpp/client/generic_stub.cc'
-        'src/cpp/client/insecure_credentials.cc'
-        'src/cpp/common/call.cc'
-        'src/cpp/common/completion_queue.cc'
-        'src/cpp/common/rpc_method.cc'
-        'src/cpp/proto/proto_utils.cc'
-        'src/cpp/server/async_generic_service.cc'
-        'src/cpp/server/create_default_thread_pool.cc'
-        'src/cpp/server/dynamic_thread_pool.cc'
-        'src/cpp/server/fixed_size_thread_pool.cc'
-        'src/cpp/server/insecure_server_credentials.cc'
-        'src/cpp/server/server.cc'
-        'src/cpp/server/server_builder.cc'
-        'src/cpp/server/server_context.cc'
-        'src/cpp/server/server_credentials.cc'
-        'src/cpp/util/byte_buffer.cc'
-        'src/cpp/util/slice.cc'
-        'src/cpp/util/status.cc'
-        'src/cpp/util/string_ref.cc'
-        'src/cpp/util/time.cc'
-      ]
-    },
-    {
-      'target_name': 'grpc_plugin_support',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-      ],
-      'sources': [
-        'src/compiler/cpp_generator.cc'
-        'src/compiler/csharp_generator.cc'
-        'src/compiler/objective_c_generator.cc'
-        'src/compiler/python_generator.cc'
-        'src/compiler/ruby_generator.cc'
-      ]
-    },
-    {
-      'target_name': 'interop_client_helper',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr',
-      ],
-      'sources': [
-        'test/proto/messages.proto'
-        'test/cpp/interop/client_helper.cc'
-      ]
-    },
-    {
-      'target_name': 'interop_client_main',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-        'interop_client_helper',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-        'test/proto/empty.proto'
-        'test/proto/messages.proto'
-        'test/proto/test.proto'
-        'test/cpp/interop/client.cc'
-        'test/cpp/interop/interop_client.cc'
-      ]
-    },
-    {
-      'target_name': 'interop_server_helper',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/interop/server_helper.cc'
-      ]
-    },
-    {
-      'target_name': 'interop_server_main',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-        'interop_server_helper',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-        'test/proto/empty.proto'
-        'test/proto/messages.proto'
-        'test/proto/test.proto'
-        'test/cpp/interop/server.cc'
-      ]
-    },
-    {
-      'target_name': 'qps',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-        'grpc_test_util',
-        'grpc++_test_util',
-        'grpc++',
-      ],
-      'sources': [
-        'test/cpp/qps/qpstest.proto'
-        'test/cpp/qps/perf_db.proto'
-        'test/cpp/qps/client_async.cc'
-        'test/cpp/qps/client_sync.cc'
-        'test/cpp/qps/driver.cc'
-        'test/cpp/qps/perf_db_client.cc'
-        'test/cpp/qps/qps_worker.cc'
-        'test/cpp/qps/report.cc'
-        'test/cpp/qps/server_async.cc'
-        'test/cpp/qps/server_sync.cc'
-        'test/cpp/qps/timer.cc'
-        'test/cpp/util/benchmark_config.cc'
-      ]
-    },
-    {
-      'target_name': 'grpc_csharp_ext',
-      'product_prefix': 'lib',
-      'type': 'static_library',
-      'dependencies': [
-        'gpr',
-        'grpc',
-      ],
-      'sources': [
-        'src/csharp/ext/grpc_csharp_ext.c'
-      ]
     },
     {
       'target_name': 'end2end_fixture_h2_compress',
@@ -734,8 +505,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_compress.c'
-      ]
+        'test/core/end2end/fixtures/h2_compress.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_fakesec',
@@ -749,8 +520,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_fakesec.c'
-      ]
+        'test/core/end2end/fixtures/h2_fakesec.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_full',
@@ -763,8 +534,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_full.c'
-      ]
+        'test/core/end2end/fixtures/h2_full.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_full+poll',
@@ -777,8 +548,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_full+poll.c'
-      ]
+        'test/core/end2end/fixtures/h2_full+poll.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_oauth2',
@@ -792,8 +563,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_oauth2.c'
-      ]
+        'test/core/end2end/fixtures/h2_oauth2.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_proxy',
@@ -806,8 +577,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_proxy.c'
-      ]
+        'test/core/end2end/fixtures/h2_proxy.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_sockpair',
@@ -820,8 +591,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_sockpair.c'
-      ]
+        'test/core/end2end/fixtures/h2_sockpair.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_sockpair+trace',
@@ -834,8 +605,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_sockpair+trace.c'
-      ]
+        'test/core/end2end/fixtures/h2_sockpair+trace.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_sockpair_1byte',
@@ -848,8 +619,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_sockpair_1byte.c'
-      ]
+        'test/core/end2end/fixtures/h2_sockpair_1byte.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_ssl',
@@ -863,8 +634,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_ssl.c'
-      ]
+        'test/core/end2end/fixtures/h2_ssl.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_ssl+poll',
@@ -878,8 +649,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_ssl+poll.c'
-      ]
+        'test/core/end2end/fixtures/h2_ssl+poll.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_ssl_proxy',
@@ -893,8 +664,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_ssl_proxy.c'
-      ]
+        'test/core/end2end/fixtures/h2_ssl_proxy.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_uds',
@@ -907,8 +678,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_uds.c'
-      ]
+        'test/core/end2end/fixtures/h2_uds.c',
+      ],
     },
     {
       'target_name': 'end2end_fixture_h2_uds+poll',
@@ -921,8 +692,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/fixtures/h2_uds+poll.c'
-      ]
+        'test/core/end2end/fixtures/h2_uds+poll.c',
+      ],
     },
     {
       'target_name': 'end2end_test_bad_hostname',
@@ -935,8 +706,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/bad_hostname.c'
-      ]
+        'test/core/end2end/tests/bad_hostname.c',
+      ],
     },
     {
       'target_name': 'end2end_test_binary_metadata',
@@ -949,8 +720,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/binary_metadata.c'
-      ]
+        'test/core/end2end/tests/binary_metadata.c',
+      ],
     },
     {
       'target_name': 'end2end_test_call_creds',
@@ -964,8 +735,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/call_creds.c'
-      ]
+        'test/core/end2end/tests/call_creds.c',
+      ],
     },
     {
       'target_name': 'end2end_test_cancel_after_accept',
@@ -978,8 +749,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/cancel_after_accept.c'
-      ]
+        'test/core/end2end/tests/cancel_after_accept.c',
+      ],
     },
     {
       'target_name': 'end2end_test_cancel_after_client_done',
@@ -992,8 +763,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/cancel_after_client_done.c'
-      ]
+        'test/core/end2end/tests/cancel_after_client_done.c',
+      ],
     },
     {
       'target_name': 'end2end_test_cancel_after_invoke',
@@ -1006,8 +777,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/cancel_after_invoke.c'
-      ]
+        'test/core/end2end/tests/cancel_after_invoke.c',
+      ],
     },
     {
       'target_name': 'end2end_test_cancel_before_invoke',
@@ -1020,8 +791,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/cancel_before_invoke.c'
-      ]
+        'test/core/end2end/tests/cancel_before_invoke.c',
+      ],
     },
     {
       'target_name': 'end2end_test_cancel_in_a_vacuum',
@@ -1034,8 +805,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/cancel_in_a_vacuum.c'
-      ]
+        'test/core/end2end/tests/cancel_in_a_vacuum.c',
+      ],
     },
     {
       'target_name': 'end2end_test_census_simple_request',
@@ -1048,8 +819,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/census_simple_request.c'
-      ]
+        'test/core/end2end/tests/census_simple_request.c',
+      ],
     },
     {
       'target_name': 'end2end_test_channel_connectivity',
@@ -1062,8 +833,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/channel_connectivity.c'
-      ]
+        'test/core/end2end/tests/channel_connectivity.c',
+      ],
     },
     {
       'target_name': 'end2end_test_compressed_payload',
@@ -1076,8 +847,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/compressed_payload.c'
-      ]
+        'test/core/end2end/tests/compressed_payload.c',
+      ],
     },
     {
       'target_name': 'end2end_test_default_host',
@@ -1090,8 +861,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/default_host.c'
-      ]
+        'test/core/end2end/tests/default_host.c',
+      ],
     },
     {
       'target_name': 'end2end_test_disappearing_server',
@@ -1104,8 +875,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/disappearing_server.c'
-      ]
+        'test/core/end2end/tests/disappearing_server.c',
+      ],
     },
     {
       'target_name': 'end2end_test_empty_batch',
@@ -1118,8 +889,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/empty_batch.c'
-      ]
+        'test/core/end2end/tests/empty_batch.c',
+      ],
     },
     {
       'target_name': 'end2end_test_graceful_server_shutdown',
@@ -1132,8 +903,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/graceful_server_shutdown.c'
-      ]
+        'test/core/end2end/tests/graceful_server_shutdown.c',
+      ],
     },
     {
       'target_name': 'end2end_test_high_initial_seqno',
@@ -1146,8 +917,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/high_initial_seqno.c'
-      ]
+        'test/core/end2end/tests/high_initial_seqno.c',
+      ],
     },
     {
       'target_name': 'end2end_test_invoke_large_request',
@@ -1160,8 +931,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/invoke_large_request.c'
-      ]
+        'test/core/end2end/tests/invoke_large_request.c',
+      ],
     },
     {
       'target_name': 'end2end_test_large_metadata',
@@ -1174,8 +945,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/large_metadata.c'
-      ]
+        'test/core/end2end/tests/large_metadata.c',
+      ],
     },
     {
       'target_name': 'end2end_test_max_concurrent_streams',
@@ -1188,8 +959,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/max_concurrent_streams.c'
-      ]
+        'test/core/end2end/tests/max_concurrent_streams.c',
+      ],
     },
     {
       'target_name': 'end2end_test_max_message_length',
@@ -1202,8 +973,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/max_message_length.c'
-      ]
+        'test/core/end2end/tests/max_message_length.c',
+      ],
     },
     {
       'target_name': 'end2end_test_metadata',
@@ -1216,8 +987,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/metadata.c'
-      ]
+        'test/core/end2end/tests/metadata.c',
+      ],
     },
     {
       'target_name': 'end2end_test_no_op',
@@ -1230,8 +1001,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/no_op.c'
-      ]
+        'test/core/end2end/tests/no_op.c',
+      ],
     },
     {
       'target_name': 'end2end_test_payload',
@@ -1244,8 +1015,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/payload.c'
-      ]
+        'test/core/end2end/tests/payload.c',
+      ],
     },
     {
       'target_name': 'end2end_test_ping_pong_streaming',
@@ -1258,8 +1029,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/ping_pong_streaming.c'
-      ]
+        'test/core/end2end/tests/ping_pong_streaming.c',
+      ],
     },
     {
       'target_name': 'end2end_test_registered_call',
@@ -1272,8 +1043,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/registered_call.c'
-      ]
+        'test/core/end2end/tests/registered_call.c',
+      ],
     },
     {
       'target_name': 'end2end_test_request_with_flags',
@@ -1286,8 +1057,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/request_with_flags.c'
-      ]
+        'test/core/end2end/tests/request_with_flags.c',
+      ],
     },
     {
       'target_name': 'end2end_test_request_with_payload',
@@ -1300,8 +1071,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/request_with_payload.c'
-      ]
+        'test/core/end2end/tests/request_with_payload.c',
+      ],
     },
     {
       'target_name': 'end2end_test_server_finishes_request',
@@ -1314,8 +1085,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/server_finishes_request.c'
-      ]
+        'test/core/end2end/tests/server_finishes_request.c',
+      ],
     },
     {
       'target_name': 'end2end_test_shutdown_finishes_calls',
@@ -1328,8 +1099,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/shutdown_finishes_calls.c'
-      ]
+        'test/core/end2end/tests/shutdown_finishes_calls.c',
+      ],
     },
     {
       'target_name': 'end2end_test_shutdown_finishes_tags',
@@ -1342,8 +1113,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/shutdown_finishes_tags.c'
-      ]
+        'test/core/end2end/tests/shutdown_finishes_tags.c',
+      ],
     },
     {
       'target_name': 'end2end_test_simple_delayed_request',
@@ -1356,8 +1127,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/simple_delayed_request.c'
-      ]
+        'test/core/end2end/tests/simple_delayed_request.c',
+      ],
     },
     {
       'target_name': 'end2end_test_simple_request',
@@ -1370,8 +1141,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/simple_request.c'
-      ]
+        'test/core/end2end/tests/simple_request.c',
+      ],
     },
     {
       'target_name': 'end2end_test_trailing_metadata',
@@ -1384,8 +1155,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/end2end/tests/trailing_metadata.c'
-      ]
+        'test/core/end2end/tests/trailing_metadata.c',
+      ],
     },
     {
       'target_name': 'end2end_certs',
@@ -1394,10 +1165,10 @@
       'dependencies': [
       ],
       'sources': [
-        'test/core/end2end/data/test_root_cert.c'
-        'test/core/end2end/data/server1_cert.c'
-        'test/core/end2end/data/server1_key.c'
-      ]
+        'test/core/end2end/data/test_root_cert.c',
+        'test/core/end2end/data/server1_cert.c',
+        'test/core/end2end/data/server1_key.c',
+      ],
     },
     {
       'target_name': 'bad_client_test',
@@ -1410,8 +1181,8 @@
         'gpr',
       ],
       'sources': [
-        'test/core/bad_client/bad_client.c'
-      ]
+        'test/core/bad_client/bad_client.c',
+      ],
     },
     {
       'target_name': 'alarm_heap_test',
@@ -2385,622 +2156,6 @@
       ],
       'sources': [
         'test/core/client_config/uri_parser_test.c',
-      ]
-    },
-    {
-      'target_name': 'async_end2end_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/async_end2end_test.cc',
-      ]
-    },
-    {
-      'target_name': 'async_streaming_ping_pong_test',
-      'type': 'executable',
-      'dependencies': [
-        'qps',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/qps/async_streaming_ping_pong_test.cc',
-      ]
-    },
-    {
-      'target_name': 'async_unary_ping_pong_test',
-      'type': 'executable',
-      'dependencies': [
-        'qps',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/qps/async_unary_ping_pong_test.cc',
-      ]
-    },
-    {
-      'target_name': 'auth_property_iterator_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/common/auth_property_iterator_test.cc',
-      ]
-    },
-    {
-      'target_name': 'channel_arguments_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++',
-        'grpc',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/client/channel_arguments_test.cc',
-      ]
-    },
-    {
-      'target_name': 'cli_call_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/util/cli_call_test.cc',
-      ]
-    },
-    {
-      'target_name': 'client_crash_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/client_crash_test.cc',
-      ]
-    },
-    {
-      'target_name': 'client_crash_test_server',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/client_crash_test_server.cc',
-      ]
-    },
-    {
-      'target_name': 'credentials_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++',
-        'grpc',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/client/credentials_test.cc',
-      ]
-    },
-    {
-      'target_name': 'cxx_byte_buffer_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/util/byte_buffer_test.cc',
-      ]
-    },
-    {
-      'target_name': 'cxx_slice_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/util/slice_test.cc',
-      ]
-    },
-    {
-      'target_name': 'cxx_string_ref_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++',
-      ],
-      'sources': [
-        'test/cpp/util/string_ref_test.cc',
-      ]
-    },
-    {
-      'target_name': 'cxx_time_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/util/time_test.cc',
-      ]
-    },
-    {
-      'target_name': 'end2end_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/end2end_test.cc',
-      ]
-    },
-    {
-      'target_name': 'generic_end2end_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/generic_end2end_test.cc',
-      ]
-    },
-    {
-      'target_name': 'grpc_cli',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-        'test/cpp/util/grpc_cli.cc',
-      ]
-    },
-    {
-      'target_name': 'grpc_cpp_plugin',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_plugin_support',
-      ],
-      'sources': [
-        'src/compiler/cpp_plugin.cc',
-      ]
-    },
-    {
-      'target_name': 'grpc_csharp_plugin',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_plugin_support',
-      ],
-      'sources': [
-        'src/compiler/csharp_plugin.cc',
-      ]
-    },
-    {
-      'target_name': 'grpc_objective_c_plugin',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_plugin_support',
-      ],
-      'sources': [
-        'src/compiler/objective_c_plugin.cc',
-      ]
-    },
-    {
-      'target_name': 'grpc_python_plugin',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_plugin_support',
-      ],
-      'sources': [
-        'src/compiler/python_plugin.cc',
-      ]
-    },
-    {
-      'target_name': 'grpc_ruby_plugin',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_plugin_support',
-      ],
-      'sources': [
-        'src/compiler/ruby_plugin.cc',
-      ]
-    },
-    {
-      'target_name': 'interop_client',
-      'type': 'executable',
-      'dependencies': [
-        'interop_client_main',
-        'interop_client_helper',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-      ]
-    },
-    {
-      'target_name': 'interop_server',
-      'type': 'executable',
-      'dependencies': [
-        'interop_server_main',
-        'interop_server_helper',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-      ]
-    },
-    {
-      'target_name': 'interop_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_test_util',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/interop/interop_test.cc',
-      ]
-    },
-    {
-      'target_name': 'mock_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/mock_test.cc',
-      ]
-    },
-    {
-      'target_name': 'qps_driver',
-      'type': 'executable',
-      'dependencies': [
-        'qps',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-        'test/cpp/qps/qps_driver.cc',
-      ]
-    },
-    {
-      'target_name': 'qps_interarrival_test',
-      'type': 'executable',
-      'dependencies': [
-        'qps',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/qps/qps_interarrival_test.cc',
-      ]
-    },
-    {
-      'target_name': 'qps_openloop_test',
-      'type': 'executable',
-      'dependencies': [
-        'qps',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-        'test/cpp/qps/qps_openloop_test.cc',
-      ]
-    },
-    {
-      'target_name': 'qps_test',
-      'type': 'executable',
-      'dependencies': [
-        'qps',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-        'test/cpp/qps/qps_test.cc',
-      ]
-    },
-    {
-      'target_name': 'qps_worker',
-      'type': 'executable',
-      'dependencies': [
-        'qps',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-        'test/cpp/qps/worker.cc',
-      ]
-    },
-    {
-      'target_name': 'reconnect_interop_client',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-        'test/proto/empty.proto',
-        'test/proto/messages.proto',
-        'test/proto/test.proto',
-        'test/cpp/interop/reconnect_interop_client.cc',
-      ]
-    },
-    {
-      'target_name': 'reconnect_interop_server',
-      'type': 'executable',
-      'dependencies': [
-        'reconnect_server',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-        'grpc++_test_config',
-      ],
-      'sources': [
-        'test/proto/empty.proto',
-        'test/proto/messages.proto',
-        'test/proto/test.proto',
-        'test/cpp/interop/reconnect_interop_server.cc',
-      ]
-    },
-    {
-      'target_name': 'secure_auth_context_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/common/secure_auth_context_test.cc',
-      ]
-    },
-    {
-      'target_name': 'server_crash_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/server_crash_test.cc',
-      ]
-    },
-    {
-      'target_name': 'server_crash_test_client',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/server_crash_test_client.cc',
-      ]
-    },
-    {
-      'target_name': 'shutdown_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/shutdown_test.cc',
-      ]
-    },
-    {
-      'target_name': 'status_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/util/status_test.cc',
-      ]
-    },
-    {
-      'target_name': 'streaming_throughput_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/streaming_throughput_test.cc',
-      ]
-    },
-    {
-      'target_name': 'sync_streaming_ping_pong_test',
-      'type': 'executable',
-      'dependencies': [
-        'qps',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/qps/sync_streaming_ping_pong_test.cc',
-      ]
-    },
-    {
-      'target_name': 'sync_unary_ping_pong_test',
-      'type': 'executable',
-      'dependencies': [
-        'qps',
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/qps/sync_unary_ping_pong_test.cc',
-      ]
-    },
-    {
-      'target_name': 'thread_stress_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/thread_stress_test.cc',
-      ]
-    },
-    {
-      'target_name': 'zookeeper_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc++_test_util',
-        'grpc_test_util',
-        'grpc++',
-        'grpc_zookeeper',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/cpp/end2end/zookeeper_test.cc',
       ]
     },
     {

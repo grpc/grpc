@@ -1,7 +1,7 @@
 %YAML 1.2
 --- |
   # GRPC gyp file
-  # This currently builds C and C++ code.
+  # This currently builds C code.
   # This file has been automatically generated from a template file.
   # Please look at the templates directory instead.
   # This file can be regenerated from the template by running
@@ -64,7 +64,12 @@
           'GenerateDebugInformation': 'true',
         },
       },
+      'defines': [
+        # TODO: Properly check for ALPN support
+        'TSI_OPENSSL_ALPN_SUPPORT=0'
+      ],
       'include_dirs': [
+        '.',
         'include'
       ],
       'libraries': [
@@ -72,12 +77,12 @@
         '-lssl',
         '-ldl',
         '-lpthread',
-        '-lz',
-        '-lprotobuf'
+        '-lz'
       ]
     },
     'targets': [
       % for lib in libs:
+      % if lib.language == 'c':
       {
         'target_name': '${lib.name}',
         'product_prefix': 'lib',
@@ -89,12 +94,14 @@
         ],
         'sources': [
           % for source in lib.src:
-          '${source}'
+          '${source}',
           % endfor
-        ]
+        ],
       },
+      % endif
       % endfor
       % for tgt in targets:
+      % if tgt.language == 'c':
       {
         'target_name': '${tgt.name}',
         'type': 'executable',
@@ -109,6 +116,7 @@
           % endfor
         ]
       },
+      % endif
       % endfor
     ]
   }
