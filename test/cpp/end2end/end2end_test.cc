@@ -108,6 +108,39 @@ bool CheckIsLocalhost(const grpc::string& addr) {
          addr.substr(0, kIpv6.size()) == kIpv6;
 }
 
+class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
+ public:
+  static const char kMetadataKey[];
+
+  TestMetadataCredentialsPlugin(grpc::string_ref metadata_value,
+                                bool is_blocking, bool is_successful)
+      : metadata_value_(metadata_value.data(), metadata_value.length()),
+        is_blocking_(is_blocking),
+        is_successful_(is_successful) {}
+
+  bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
+
+  Status GetMetadata(grpc::string_ref service_url,
+                     std::multimap<grpc::string, grpc::string_ref>* metadata)
+      GRPC_OVERRIDE {
+    EXPECT_GT(service_url.length(), 0UL);
+    EXPECT_TRUE(metadata != nullptr);
+    if (is_successful_) {
+      metadata->insert(std::make_pair(kMetadataKey, metadata_value_));
+      return Status::OK;
+    } else {
+      return Status(StatusCode::NOT_FOUND, "Could not find plugin metadata.");
+    }
+  }
+
+ private:
+  grpc::string metadata_value_;
+  bool is_blocking_;
+  bool is_successful_;
+};
+
+const char TestMetadataCredentialsPlugin::kMetadataKey[] = "TestPluginMetadata";
+
 class TestAuthMetadataProcessor : public AuthMetadataProcessor {
  public:
   static const char kGoodGuy[];
@@ -115,10 +148,15 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
   TestAuthMetadataProcessor(bool is_blocking) : is_blocking_(is_blocking) {}
 
   std::shared_ptr<Credentials> GetCompatibleClientCreds() {
-    return AccessTokenCredentials(kGoodGuy);
+    return MetadataCredentialsFromPlugin(
+        std::unique_ptr<MetadataCredentialsPlugin>(
+            new TestMetadataCredentialsPlugin(kGoodGuy, is_blocking_, true)));
   }
+
   std::shared_ptr<Credentials> GetIncompatibleClientCreds() {
-    return AccessTokenCredentials("Mr Hyde");
+    return MetadataCredentialsFromPlugin(
+        std::unique_ptr<MetadataCredentialsPlugin>(
+            new TestMetadataCredentialsPlugin("Mr Hyde", is_blocking_, true)));
   }
 
   // Interface implementation
@@ -130,10 +168,11 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
     EXPECT_TRUE(consumed_auth_metadata != nullptr);
     EXPECT_TRUE(context != nullptr);
     EXPECT_TRUE(response_metadata != nullptr);
-    auto auth_md = auth_metadata.find(GRPC_AUTHORIZATION_METADATA_KEY);
+    auto auth_md =
+        auth_metadata.find(TestMetadataCredentialsPlugin::kMetadataKey);
     EXPECT_NE(auth_md, auth_metadata.end());
     string_ref auth_md_value = auth_md->second;
-    if (auth_md_value.ends_with(kGoodGuy)) {
+    if (auth_md_value == kGoodGuy) {
       context->AddProperty(kIdentityPropName, kGoodGuy);
       context->SetPeerIdentityPropertyName(kIdentityPropName);
       consumed_auth_metadata->insert(
@@ -147,7 +186,7 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
     }
   }
 
- protected:
+ private:
   static const char kIdentityPropName[];
   bool is_blocking_;
 };
@@ -876,7 +915,24 @@ TEST_F(End2endTest, OverridePerCallCredentials) {
   EXPECT_TRUE(s.ok());
 }
 
-TEST_F(End2endTest, NonBlockingAuthMetadataProcessorSuccess) {
+TEST_F(End2endTest, NonBlockingAuthMetadataPluginFailure) {
+  ResetStub(false);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(
+              "Does not matter, will fail anyway (see 3rd param)", false,
+              false))));
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+
+TEST_F(End2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
   auto* processor = new TestAuthMetadataProcessor(false);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub(false);
@@ -899,7 +955,7 @@ TEST_F(End2endTest, NonBlockingAuthMetadataProcessorSuccess) {
       grpc::string("Bearer ") + TestAuthMetadataProcessor::kGoodGuy));
 }
 
-TEST_F(End2endTest, NonBlockingAuthMetadataProcessorFailure) {
+TEST_F(End2endTest, NonBlockingAuthMetadataPluginAndProcessorFailure) {
   auto* processor = new TestAuthMetadataProcessor(false);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub(false);
@@ -914,7 +970,24 @@ TEST_F(End2endTest, NonBlockingAuthMetadataProcessorFailure) {
   EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
 }
 
-TEST_F(End2endTest, BlockingAuthMetadataProcessorSuccess) {
+TEST_F(End2endTest, BlockingAuthMetadataPluginFailure) {
+  ResetStub(false);
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  context.set_credentials(
+      MetadataCredentialsFromPlugin(std::unique_ptr<MetadataCredentialsPlugin>(
+          new TestMetadataCredentialsPlugin(
+              "Does not matter, will fail anyway (see 3rd param)", true,
+              false))));
+  request.set_message("Hello");
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_FALSE(s.ok());
+  EXPECT_EQ(s.error_code(), StatusCode::UNAUTHENTICATED);
+}
+
+TEST_F(End2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
   auto* processor = new TestAuthMetadataProcessor(true);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub(false);
@@ -937,7 +1010,7 @@ TEST_F(End2endTest, BlockingAuthMetadataProcessorSuccess) {
       grpc::string("Bearer ") + TestAuthMetadataProcessor::kGoodGuy));
 }
 
-TEST_F(End2endTest, BlockingAuthMetadataProcessorFailure) {
+TEST_F(End2endTest, BlockingAuthMetadataPluginAndProcessorFailure) {
   auto* processor = new TestAuthMetadataProcessor(true);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub(false);
