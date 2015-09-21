@@ -280,7 +280,8 @@ static void auth_start_transport_op(grpc_call_element *elem,
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_stream_op *initial_op) {
+                           grpc_transport_stream_op *initial_op,
+                           grpc_call_list *call_list) {
   call_data *calld = elem->call_data;
   calld->creds = NULL;
   calld->host = NULL;

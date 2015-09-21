@@ -116,7 +116,7 @@ static void free_port_using_server(char *server, int port) {
   while (!pr.done) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&pr.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
+                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), &call_list);
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&pr.pollset));
 
@@ -272,7 +272,7 @@ static int pick_port_using_server(char *server) {
   while (pr.port == -1) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&pr.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
+                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), &call_list);
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&pr.pollset));
 

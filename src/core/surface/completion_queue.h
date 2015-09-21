@@ -44,7 +44,8 @@ typedef struct grpc_cq_completion {
   void *tag;
   /** done callback - called when this queue element is no longer
       needed by the completion queue */
-  void (*done)(void *done_arg, struct grpc_cq_completion *c);
+  void (*done)(void *done_arg, struct grpc_cq_completion *c,
+               grpc_call_list *call_list);
   void *done_arg;
   /** next pointer; low bit is used to indicate success or not */
   gpr_uintptr next;
@@ -74,7 +75,8 @@ void grpc_cq_begin_op(grpc_completion_queue *cc);
 void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, int success,
                     void (*done)(void *done_arg, grpc_cq_completion *storage,
                                  grpc_call_list *call_list),
-                    void *done_arg, grpc_cq_completion *storage);
+                    void *done_arg, grpc_cq_completion *storage,
+                    grpc_call_list *call_list);
 
 grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 

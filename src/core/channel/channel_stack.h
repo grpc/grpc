@@ -85,7 +85,8 @@ typedef struct {
      argument.*/
   void (*init_call_elem)(grpc_call_element *elem,
                          const void *server_transport_data,
-                         grpc_transport_stream_op *initial_op);
+                         grpc_transport_stream_op *initial_op,
+                         grpc_call_list *call_list);
   /* Destroy per call data.
      The filter does not need to do any chaining */
   void (*destroy_call_elem)(grpc_call_element *elem, grpc_call_list *call_list);
@@ -172,7 +173,8 @@ void grpc_channel_stack_destroy(grpc_channel_stack *stack,
 void grpc_call_stack_init(grpc_channel_stack *channel_stack,
                           const void *transport_server_data,
                           grpc_transport_stream_op *initial_op,
-                          grpc_call_stack *call_stack);
+                          grpc_call_stack *call_stack,
+                          grpc_call_list *call_list);
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_call_stack *stack, grpc_call_list *call_list);
 

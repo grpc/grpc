@@ -34,6 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H
 #define GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H
 
+#include <stddef.h>
 #include "src/core/iomgr/iomgr.h"
 
 #define GRPC_MAX_SOCKADDR_SIZE 128

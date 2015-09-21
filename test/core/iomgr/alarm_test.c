@@ -65,7 +65,8 @@ typedef struct {
 } alarm_arg;
 
 /* Called when an alarm expires. */
-static void alarm_cb(void *arg /* alarm_arg */, int success) {
+static void alarm_cb(void *arg /* alarm_arg */, int success,
+                     grpc_call_list *call_list) {
   alarm_arg *a = arg;
   gpr_mu_lock(&a->mu);
   if (success) {
@@ -90,6 +91,7 @@ static void test_grpc_alarm(void) {
    */
   gpr_timespec alarm_deadline;
   gpr_timespec followup_deadline;
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
 
   alarm_arg arg;
   alarm_arg arg2;
@@ -107,7 +109,7 @@ static void test_grpc_alarm(void) {
   gpr_event_init(&arg.fcb_arg);
 
   grpc_alarm_init(&alarm, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100), alarm_cb, &arg,
-                  gpr_now(GPR_CLOCK_MONOTONIC));
+                  gpr_now(GPR_CLOCK_MONOTONIC), &call_list);
 
   alarm_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
   gpr_mu_lock(&arg.mu);
@@ -157,8 +159,8 @@ static void test_grpc_alarm(void) {
   gpr_event_init(&arg2.fcb_arg);
 
   grpc_alarm_init(&alarm_to_cancel, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100),
-                  alarm_cb, &arg2, gpr_now(GPR_CLOCK_MONOTONIC));
-  grpc_alarm_cancel(&alarm_to_cancel);
+                  alarm_cb, &arg2, gpr_now(GPR_CLOCK_MONOTONIC), &call_list);
+  grpc_alarm_cancel(&alarm_to_cancel, &call_list);
 
   alarm_deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
   gpr_mu_lock(&arg2.mu);

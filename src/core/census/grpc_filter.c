@@ -128,7 +128,8 @@ static void server_start_transport_op(grpc_call_element* elem,
 
 static void client_init_call_elem(grpc_call_element* elem,
                                   const void* server_transport_data,
-                                  grpc_transport_stream_op* initial_op) {
+                                  grpc_transport_stream_op* initial_op,
+                                  grpc_call_list* call_list) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
@@ -144,7 +145,8 @@ static void client_destroy_call_elem(grpc_call_element* elem,
 
 static void server_init_call_elem(grpc_call_element* elem,
                                   const void* server_transport_data,
-                                  grpc_transport_stream_op* initial_op) {
+                                  grpc_transport_stream_op* initial_op,
+                                  grpc_call_list* call_list) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);

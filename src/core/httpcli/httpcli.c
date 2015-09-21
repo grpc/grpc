@@ -246,7 +246,7 @@ void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
                       grpc_call_list *call_list) {
   char *name;
   if (g_get_override &&
-      g_get_override(request, deadline, on_response, user_data)) {
+      g_get_override(request, deadline, on_response, user_data, call_list)) {
     return;
   }
   gpr_asprintf(&name, "HTTP:GET:%s:%s", request->host, request->path);
@@ -263,8 +263,9 @@ void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
                        grpc_httpcli_response_cb on_response, void *user_data,
                        grpc_call_list *call_list) {
   char *name;
-  if (g_post_override && g_post_override(request, body_bytes, body_size,
-                                         deadline, on_response, user_data)) {
+  if (g_post_override &&
+      g_post_override(request, body_bytes, body_size, deadline, on_response,
+                      user_data, call_list)) {
     return;
   }
   gpr_asprintf(&name, "HTTP:POST:%s:%s", request->host, request->path);

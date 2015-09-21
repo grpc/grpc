@@ -174,21 +174,21 @@ static void finish_shutdown(grpc_pollset *pollset, grpc_call_list *call_list) {
 }
 
 void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
-                       gpr_timespec now, gpr_timespec deadline) {
+                       gpr_timespec now, gpr_timespec deadline,
+                       grpc_call_list *call_list) {
   /* pollset->mu already held */
   int added_worker = 0;
   int locked = 1;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
   /* this must happen before we (potentially) drop pollset->mu */
   worker->next = worker->prev = NULL;
   /* TODO(ctiller): pool these */
   grpc_wakeup_fd_init(&worker->wakeup_fd);
   if (!grpc_pollset_has_workers(pollset) &&
       !grpc_call_list_empty(pollset->idle_jobs)) {
-    grpc_call_list_move(&pollset->idle_jobs, &call_list);
+    grpc_call_list_move(&pollset->idle_jobs, call_list);
     goto done;
   }
-  if (grpc_alarm_check(now, &deadline, &call_list)) {
+  if (grpc_alarm_check(now, &deadline, call_list)) {
     goto done;
   }
   if (pollset->shutting_down) {
@@ -212,14 +212,8 @@ void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
     pollset->kicked_without_pollers = 0;
   }
 done:
-  if (!grpc_call_list_empty(call_list)) {
-    if (locked) {
-      gpr_mu_unlock(&pollset->mu);
-      locked = 0;
-    }
-    grpc_call_list_run(&call_list);
-  }
   if (!locked) {
+    grpc_call_list_run(call_list);
     gpr_mu_lock(&pollset->mu);
     locked = 1;
   }
@@ -233,8 +227,8 @@ done:
     } else if (!pollset->called_shutdown && pollset->in_flight_cbs == 0) {
       pollset->called_shutdown = 1;
       gpr_mu_unlock(&pollset->mu);
-      finish_shutdown(pollset, &call_list);
-      grpc_call_list_run(&call_list);
+      finish_shutdown(pollset, call_list);
+      grpc_call_list_run(call_list);
       /* Continuing to access pollset here is safe -- it is the caller's
        * responsibility to not destroy when it has outstanding calls to
        * grpc_pollset_work.

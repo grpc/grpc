@@ -44,23 +44,27 @@ typedef struct grpc_transport_vtable {
   /* implementation of grpc_transport_init_stream */
   int (*init_stream)(grpc_transport *self, grpc_stream *stream,
                      const void *server_data,
-                     grpc_transport_stream_op *initial_op);
+                     grpc_transport_stream_op *initial_op,
+                     grpc_call_list *call_list);
 
   /* implementation of grpc_transport_perform_stream_op */
   void (*perform_stream_op)(grpc_transport *self, grpc_stream *stream,
-                            grpc_transport_stream_op *op);
+                            grpc_transport_stream_op *op,
+                            grpc_call_list *call_list);
 
   /* implementation of grpc_transport_perform_op */
-  void (*perform_op)(grpc_transport *self, grpc_transport_op *op);
+  void (*perform_op)(grpc_transport *self, grpc_transport_op *op,
+                     grpc_call_list *call_list);
 
   /* implementation of grpc_transport_destroy_stream */
-  void (*destroy_stream)(grpc_transport *self, grpc_stream *stream);
+  void (*destroy_stream)(grpc_transport *self, grpc_stream *stream,
+                         grpc_call_list *call_list);
 
   /* implementation of grpc_transport_destroy */
-  void (*destroy)(grpc_transport *self);
+  void (*destroy)(grpc_transport *self, grpc_call_list *call_list);
 
   /* implementation of grpc_transport_get_peer */
-  char *(*get_peer)(grpc_transport *self);
+  char *(*get_peer)(grpc_transport *self, grpc_call_list *call_list);
 } grpc_transport_vtable;
 
 /* an instance of a grpc transport */

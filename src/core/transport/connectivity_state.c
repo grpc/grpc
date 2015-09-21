@@ -66,7 +66,8 @@ void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
   tracker->name = gpr_strdup(name);
 }
 
-void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker) {
+void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker,
+                                     grpc_call_list *call_list) {
   int success;
   grpc_connectivity_state_watcher *w;
   while ((w = tracker->watchers)) {
@@ -78,7 +79,7 @@ void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker) {
     } else {
       success = 0;
     }
-    w->notify->cb(w->notify->cb_arg, success);
+    grpc_call_list_add(call_list, w->notify, success);
     gpr_free(w);
   }
   gpr_free(tracker->name);

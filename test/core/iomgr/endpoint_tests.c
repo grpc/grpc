@@ -243,9 +243,10 @@ static void read_and_write_test(grpc_endpoint_test_config config,
     grpc_pollset_worker worker;
     GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
     grpc_pollset_work(g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      deadline);
+                      deadline, &call_list);
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
+  grpc_call_list_run(&call_list);
 
   end_test(config);
   gpr_slice_buffer_destroy(&state.outgoing);

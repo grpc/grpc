@@ -56,7 +56,7 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   }
   state = grpc_client_channel_check_connectivity_state(
       client_channel_elem, try_to_connect, &call_list);
-  grpc_call_list_run(call_list);
+  grpc_call_list_run(&call_list);
   return state;
 }
 
@@ -80,17 +80,18 @@ typedef struct {
   void *tag;
 } state_watcher;
 
-static void delete_state_watcher(state_watcher *w) {
+static void delete_state_watcher(state_watcher *w, grpc_call_list *call_list) {
   grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
       grpc_channel_get_channel_stack(w->channel));
   grpc_client_channel_del_interested_party(client_channel_elem,
-                                           grpc_cq_pollset(w->cq));
-  GRPC_CHANNEL_INTERNAL_UNREF(w->channel, "watch_connectivity");
+                                           grpc_cq_pollset(w->cq), call_list);
+  GRPC_CHANNEL_INTERNAL_UNREF(w->channel, "watch_connectivity", call_list);
   gpr_mu_destroy(&w->mu);
   gpr_free(w);
 }
 
-static void finished_completion(void *pw, grpc_cq_completion *ignored) {
+static void finished_completion(void *pw, grpc_cq_completion *ignored,
+                                grpc_call_list *call_list) {
   int delete = 0;
   state_watcher *w = pw;
   gpr_mu_lock(&w->mu);
@@ -110,18 +111,19 @@ static void finished_completion(void *pw, grpc_cq_completion *ignored) {
   gpr_mu_unlock(&w->mu);
 
   if (delete) {
-    delete_state_watcher(w);
+    delete_state_watcher(w, call_list);
   }
 }
 
-static void partly_done(state_watcher *w, int due_to_completion) {
+static void partly_done(state_watcher *w, int due_to_completion,
+                        grpc_call_list *call_list) {
   int delete = 0;
 
   if (due_to_completion) {
     gpr_mu_lock(&w->mu);
     w->success = 1;
     gpr_mu_unlock(&w->mu);
-    grpc_alarm_cancel(&w->alarm);
+    grpc_alarm_cancel(&w->alarm, call_list);
   }
 
   gpr_mu_lock(&w->mu);
@@ -129,7 +131,7 @@ static void partly_done(state_watcher *w, int due_to_completion) {
     case WAITING:
       w->phase = CALLING_BACK;
       grpc_cq_end_op(w->cq, w->tag, w->success, finished_completion, w,
-                     &w->completion_storage);
+                     &w->completion_storage, call_list);
       break;
     case CALLING_BACK:
       w->phase = CALLING_BACK_AND_FINISHED;
@@ -145,13 +147,17 @@ static void partly_done(state_watcher *w, int due_to_completion) {
   gpr_mu_unlock(&w->mu);
 
   if (delete) {
-    delete_state_watcher(w);
+    delete_state_watcher(w, call_list);
   }
 }
 
-static void watch_complete(void *pw, int success) { partly_done(pw, 1); }
+static void watch_complete(void *pw, int success, grpc_call_list *call_list) {
+  partly_done(pw, 1, call_list);
+}
 
-static void timeout_complete(void *pw, int success) { partly_done(pw, 0); }
+static void timeout_complete(void *pw, int success, grpc_call_list *call_list) {
+  partly_done(pw, 0, call_list);
+}
 
 void grpc_channel_watch_connectivity_state(
     grpc_channel *channel, grpc_connectivity_state last_observed_state,
@@ -172,9 +178,9 @@ void grpc_channel_watch_connectivity_state(
   w->tag = tag;
   w->channel = channel;
 
-  grpc_alarm_init(&w->alarm,
-                  gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_alarm_init(
+      &w->alarm, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
+      timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC), &call_list);
 
   if (client_channel_elem->filter != &grpc_client_channel_filter) {
     gpr_log(GPR_ERROR,
@@ -185,10 +191,10 @@ void grpc_channel_watch_connectivity_state(
   } else {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_connectivity");
     grpc_client_channel_add_interested_party(client_channel_elem,
-                                             grpc_cq_pollset(cq));
+                                             grpc_cq_pollset(cq), &call_list);
     grpc_client_channel_watch_connectivity_state(client_channel_elem, &w->state,
                                                  &w->on_complete, &call_list);
   }
 
-  grpc_call_list_run(call_list);
+  grpc_call_list_run(&call_list);
 }

@@ -67,6 +67,7 @@ typedef struct grpc_server_secure_state {
   gpr_mu mu;
   gpr_refcount refcount;
   grpc_closure destroy_closure;
+  grpc_closure *destroy_callback;
 } grpc_server_secure_state;
 
 static void state_ref(grpc_server_secure_state *state) {
@@ -86,7 +87,8 @@ static void state_unref(grpc_server_secure_state *state) {
 }
 
 static void setup_transport(void *statep, grpc_transport *transport,
-                            grpc_mdctx *mdctx, grpc_workqueue *workqueue) {
+                            grpc_mdctx *mdctx, grpc_workqueue *workqueue,
+                            grpc_call_list *call_list) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_server_auth_filter, &grpc_http_server_filter};
   grpc_server_secure_state *state = statep;
@@ -100,7 +102,7 @@ static void setup_transport(void *statep, grpc_transport *transport,
       GPR_ARRAY_SIZE(args_to_add));
   grpc_server_setup_transport(state->server, transport, extra_filters,
                               GPR_ARRAY_SIZE(extra_filters), mdctx, workqueue,
-                              args_copy);
+                              args_copy, call_list);
   grpc_channel_args_destroy(args_copy);
 }
 
@@ -142,9 +144,9 @@ static void on_secure_transport_setup_done(void *statep,
       workqueue = grpc_workqueue_create(call_list);
       transport = grpc_create_chttp2_transport(
           grpc_server_get_channel_args(state->server), secure_endpoint, mdctx,
-          0);
-      setup_transport(state, transport, mdctx, workqueue);
-      grpc_chttp2_transport_start_reading(transport, NULL, 0);
+          0, call_list);
+      setup_transport(state, transport, mdctx, workqueue, call_list);
+      grpc_chttp2_transport_start_reading(transport, NULL, 0, call_list);
     } else {
       /* We need to consume this here, because the server may already have gone
        * away. */
@@ -185,7 +187,8 @@ static void start(grpc_server *server, void *statep, grpc_pollset **pollsets,
 
 static void destroy_done(void *statep, int success, grpc_call_list *call_list) {
   grpc_server_secure_state *state = statep;
-  grpc_server_listener_destroy_done(state->server);
+  state->destroy_callback->cb(state->destroy_callback->cb_arg, success,
+                              call_list);
   gpr_mu_lock(&state->mu);
   while (state->handshaking_tcp_endpoints != NULL) {
     grpc_endpoint_shutdown(state->handshaking_tcp_endpoints->tcp_endpoint,
@@ -199,12 +202,13 @@ static void destroy_done(void *statep, int success, grpc_call_list *call_list) {
 
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
-static void destroy(grpc_server *server, void *statep,
+static void destroy(grpc_server *server, void *statep, grpc_closure *callback,
                     grpc_call_list *call_list) {
   grpc_server_secure_state *state = statep;
   grpc_tcp_server *tcp;
   gpr_mu_lock(&state->mu);
   state->is_shutdown = 1;
+  state->destroy_callback = callback;
   tcp = state->tcp;
   gpr_mu_unlock(&state->mu);
   grpc_closure_init(&state->destroy_closure, destroy_done, state);
@@ -283,7 +287,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   gpr_ref_init(&state->refcount, 1);
 
   /* Register with the server only upon success */
-  grpc_server_add_listener(server, state, start, destroy);
+  grpc_server_add_listener(server, state, start, destroy, &call_list);
 
   grpc_call_list_run(&call_list);
   return port_num;

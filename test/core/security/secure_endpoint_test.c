@@ -46,18 +46,18 @@
 #include "src/core/tsi/fake_transport_security.h"
 
 static grpc_pollset g_pollset;
-static grpc_workqueue *g_workqueue;
 
 static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t slice_size, gpr_slice *leftover_slices, size_t leftover_nslices) {
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
   tsi_frame_protector *fake_read_protector = tsi_create_fake_protector(NULL);
   tsi_frame_protector *fake_write_protector = tsi_create_fake_protector(NULL);
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair tcp;
 
-  tcp = grpc_iomgr_create_endpoint_pair("fixture", slice_size, g_workqueue);
-  grpc_endpoint_add_to_pollset(tcp.client, &g_pollset);
-  grpc_endpoint_add_to_pollset(tcp.server, &g_pollset);
+  tcp = grpc_iomgr_create_endpoint_pair("fixture", slice_size);
+  grpc_endpoint_add_to_pollset(tcp.client, &g_pollset, &call_list);
+  grpc_endpoint_add_to_pollset(tcp.server, &g_pollset, &call_list);
 
   if (leftover_nslices == 0) {
     f.client_ep =
@@ -110,6 +110,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
 
   f.server_ep =
       grpc_secure_endpoint_create(fake_write_protector, tcp.server, NULL, 0);
+  grpc_call_list_run(&call_list);
   return f;
 }
 
@@ -137,41 +138,56 @@ static grpc_endpoint_test_config configs[] = {
      secure_endpoint_create_fixture_tcp_socketpair_leftover, clean_up},
 };
 
+static void inc_call_ctr(void *arg, int success, grpc_call_list *call_list) {
+  ++*(int *)arg;
+  ;
+}
+
 static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_endpoint_test_fixture f = config.create_fixture(slice_size);
   gpr_slice_buffer incoming;
   gpr_slice s =
       gpr_slice_from_copied_string("hello world 12345678900987654321");
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  int n = 0;
+  grpc_closure done_closure;
   gpr_log(GPR_INFO, "Start test left over");
 
   gpr_slice_buffer_init(&incoming);
-  GPR_ASSERT(grpc_endpoint_read(f.client_ep, &incoming, NULL) ==
-             GRPC_ENDPOINT_DONE);
+  grpc_closure_init(&done_closure, inc_call_ctr, &n);
+  grpc_endpoint_read(f.client_ep, &incoming, NULL, &call_list);
+  grpc_call_list_run(&call_list);
+  GPR_ASSERT(n == 1);
   GPR_ASSERT(incoming.count == 1);
   GPR_ASSERT(0 == gpr_slice_cmp(s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown(f.client_ep);
-  grpc_endpoint_shutdown(f.server_ep);
-  grpc_endpoint_destroy(f.client_ep);
-  grpc_endpoint_destroy(f.server_ep);
+  grpc_endpoint_shutdown(f.client_ep, &call_list);
+  grpc_endpoint_shutdown(f.server_ep, &call_list);
+  grpc_endpoint_destroy(f.client_ep, &call_list);
+  grpc_endpoint_destroy(f.server_ep, &call_list);
+  grpc_call_list_run(&call_list);
   gpr_slice_unref(s);
   gpr_slice_buffer_destroy(&incoming);
 
   clean_up();
 }
 
-static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
+static void destroy_pollset(void *p, int success, grpc_call_list *call_list) {
+  grpc_pollset_destroy(p);
+}
 
 int main(int argc, char **argv) {
+  grpc_closure destroyed;
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
   grpc_test_init(argc, argv);
 
   grpc_init();
-  g_workqueue = grpc_workqueue_create();
   grpc_pollset_init(&g_pollset);
   grpc_endpoint_tests(configs[0], &g_pollset);
   test_leftover(configs[1], 1);
-  GRPC_WORKQUEUE_UNREF(g_workqueue, "destroy");
-  grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
+  grpc_pollset_shutdown(&g_pollset, &destroyed, &call_list);
+  grpc_call_list_run(&call_list);
   grpc_shutdown();
 
   return 0;

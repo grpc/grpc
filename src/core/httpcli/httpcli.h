@@ -147,13 +147,15 @@ void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
 typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request *request,
                                          gpr_timespec deadline,
                                          grpc_httpcli_response_cb on_response,
-                                         void *user_data);
+                                         void *user_data,
+                                         grpc_call_list *call_list);
 typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request *request,
                                           const char *body_bytes,
                                           size_t body_size,
                                           gpr_timespec deadline,
                                           grpc_httpcli_response_cb on_response,
-                                          void *user_data);
+                                          void *user_data,
+                                          grpc_call_list *call_list);
 
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);

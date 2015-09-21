@@ -197,7 +197,7 @@ static void dns_destroy(grpc_resolver *gr, grpc_call_list *call_list) {
   if (r->resolved_config) {
     grpc_client_config_unref(r->resolved_config, call_list);
   }
-  grpc_subchannel_factory_unref(r->subchannel_factory);
+  grpc_subchannel_factory_unref(r->subchannel_factory, call_list);
   gpr_free(r->name);
   gpr_free(r->default_port);
   gpr_free(r->lb_policy_name);

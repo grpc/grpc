@@ -40,48 +40,47 @@ size_t grpc_transport_stream_size(grpc_transport *transport) {
   return transport->vtable->sizeof_stream;
 }
 
-void grpc_transport_destroy(grpc_transport *transport) {
-  transport->vtable->destroy(transport);
+void grpc_transport_destroy(grpc_transport *transport,
+                            grpc_call_list *call_list) {
+  transport->vtable->destroy(transport, call_list);
 }
 
 int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
                                const void *server_data,
-                               grpc_transport_stream_op *initial_op) {
+                               grpc_transport_stream_op *initial_op,
+                               grpc_call_list *call_list) {
   return transport->vtable->init_stream(transport, stream, server_data,
-                                        initial_op);
+                                        initial_op, call_list);
 }
 
 void grpc_transport_perform_stream_op(grpc_transport *transport,
                                       grpc_stream *stream,
-                                      grpc_transport_stream_op *op) {
-  transport->vtable->perform_stream_op(transport, stream, op);
+                                      grpc_transport_stream_op *op,
+                                      grpc_call_list *call_list) {
+  transport->vtable->perform_stream_op(transport, stream, op, call_list);
 }
 
-void grpc_transport_perform_op(grpc_transport *transport,
-                               grpc_transport_op *op) {
-  transport->vtable->perform_op(transport, op);
+void grpc_transport_perform_op(grpc_transport *transport, grpc_transport_op *op,
+                               grpc_call_list *call_list) {
+  transport->vtable->perform_op(transport, op, call_list);
 }
 
 void grpc_transport_destroy_stream(grpc_transport *transport,
-                                   grpc_stream *stream) {
-  transport->vtable->destroy_stream(transport, stream);
+                                   grpc_stream *stream,
+                                   grpc_call_list *call_list) {
+  transport->vtable->destroy_stream(transport, stream, call_list);
 }
 
-char *grpc_transport_get_peer(grpc_transport *transport) {
-  return transport->vtable->get_peer(transport);
+char *grpc_transport_get_peer(grpc_transport *transport,
+                              grpc_call_list *call_list) {
+  return transport->vtable->get_peer(transport, call_list);
 }
 
-void grpc_transport_stream_op_finish_with_failure(
-    grpc_transport_stream_op *op) {
-  if (op->send_ops) {
-    op->on_done_send->cb(op->on_done_send->cb_arg, 0);
-  }
-  if (op->recv_ops) {
-    op->on_done_recv->cb(op->on_done_recv->cb_arg, 0);
-  }
-  if (op->on_consumed) {
-    op->on_consumed->cb(op->on_consumed->cb_arg, 0);
-  }
+void grpc_transport_stream_op_finish_with_failure(grpc_transport_stream_op *op,
+                                                  grpc_call_list *call_list) {
+  grpc_call_list_add(call_list, op->on_done_recv, 0);
+  grpc_call_list_add(call_list, op->on_done_send, 0);
+  grpc_call_list_add(call_list, op->on_consumed, 0);
 }
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
@@ -105,11 +104,12 @@ typedef struct {
   grpc_closure closure;
 } close_message_data;
 
-static void free_message(void *p, int iomgr_success) {
+static void free_message(void *p, int iomgr_success,
+                         grpc_call_list *call_list) {
   close_message_data *cmd = p;
   gpr_slice_unref(cmd->message);
   if (cmd->then_call != NULL) {
-    cmd->then_call->cb(cmd->then_call->cb_arg, iomgr_success);
+    cmd->then_call->cb(cmd->then_call->cb_arg, iomgr_success, call_list);
   }
   gpr_free(cmd);
 }

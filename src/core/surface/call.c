@@ -356,7 +356,7 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
     initial_op_ptr = &initial_op;
   }
   grpc_call_stack_init(channel_stack, server_transport_data, initial_op_ptr,
-                       CALL_STACK_FROM_CALL(call));
+                       CALL_STACK_FROM_CALL(call), &call_list);
   if (parent_call != NULL) {
     GRPC_CALL_INTERNAL_REF(parent_call, "child");
     GPR_ASSERT(call->is_client);
@@ -459,7 +459,7 @@ static void destroy_call(grpc_call *call, grpc_call_list *call_list) {
   size_t i;
   grpc_call *c = call;
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c), call_list);
-  GRPC_CHANNEL_INTERNAL_UNREF(c->channel, "call");
+  GRPC_CHANNEL_INTERNAL_UNREF(c->channel, "call", call_list);
   gpr_mu_destroy(&c->mu);
   gpr_mu_destroy(&c->completion_mu);
   for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
@@ -673,7 +673,8 @@ static void unlock(grpc_call *call, grpc_call_list *call_list) {
   if (completing_requests > 0) {
     for (i = 0; i < completing_requests; i++) {
       completed_requests[i].on_complete(call, completed_requests[i].success,
-                                        completed_requests[i].user_data);
+                                        completed_requests[i].user_data,
+                                        call_list);
     }
     lock(call);
     call->completing = 0;
@@ -1556,14 +1557,16 @@ static void set_cancelled_value(grpc_status_code status, void *dest) {
   *(grpc_status_code *)dest = (status != GRPC_STATUS_OK);
 }
 
-static void finish_batch(grpc_call *call, int success, void *tag) {
+static void finish_batch(grpc_call *call, int success, void *tag,
+                         grpc_call_list *call_list) {
   grpc_cq_end_op(call->cq, tag, success, done_completion, call,
-                 allocate_completion(call));
+                 allocate_completion(call), call_list);
 }
 
-static void finish_batch_with_close(grpc_call *call, int success, void *tag) {
+static void finish_batch_with_close(grpc_call *call, int success, void *tag,
+                                    grpc_call_list *call_list) {
   grpc_cq_end_op(call->cq, tag, 1, done_completion, call,
-                 allocate_completion(call));
+                 allocate_completion(call), call_list);
 }
 
 static int are_write_flags_valid(gpr_uint32 flags) {
@@ -1581,7 +1584,8 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   size_t out;
   const grpc_op *op;
   grpc_ioreq *req;
-  void (*finish_func)(grpc_call *, int, void *) = finish_batch;
+  void (*finish_func)(grpc_call *, int, void *, grpc_call_list *) =
+      finish_batch;
   grpc_call_error error;
   grpc_call_list call_list = GRPC_CALL_LIST_INIT;
 
@@ -1596,7 +1600,7 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
     grpc_cq_begin_op(call->cq);
     GRPC_CALL_INTERNAL_REF(call, "completion");
     grpc_cq_end_op(call->cq, tag, 1, done_completion, call,
-                   allocate_completion(call));
+                   allocate_completion(call), &call_list);
     error = GRPC_CALL_OK;
     goto done;
   }

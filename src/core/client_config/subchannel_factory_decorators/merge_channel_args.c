@@ -47,10 +47,11 @@ static void merge_args_factory_ref(grpc_subchannel_factory *scf) {
   gpr_ref(&f->refs);
 }
 
-static void merge_args_factory_unref(grpc_subchannel_factory *scf) {
+static void merge_args_factory_unref(grpc_subchannel_factory *scf,
+                                     grpc_call_list *call_list) {
   merge_args_factory *f = (merge_args_factory *)scf;
   if (gpr_unref(&f->refs)) {
-    grpc_subchannel_factory_unref(f->wrapped);
+    grpc_subchannel_factory_unref(f->wrapped, call_list);
     grpc_channel_args_destroy(f->merge_args);
     gpr_free(f);
   }

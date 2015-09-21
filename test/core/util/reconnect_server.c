@@ -138,10 +138,12 @@ void reconnect_server_poll(reconnect_server *server, int seconds) {
   gpr_timespec deadline =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_seconds(seconds, GPR_TIMESPAN));
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
   gpr_mu_lock(GRPC_POLLSET_MU(&server->pollset));
   grpc_pollset_work(&server->pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                    deadline);
+                    deadline, &call_list);
   gpr_mu_unlock(GRPC_POLLSET_MU(&server->pollset));
+  grpc_call_list_run(&call_list);
 }
 
 void reconnect_server_clear_timestamps(reconnect_server *server) {
