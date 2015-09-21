@@ -37,6 +37,7 @@
 # Some of this file is built with the help of
 # https://n8.io/converting-a-c-library-to-gyp/
 {
+  # TODO: Finish windows support
   'target_defaults': {
     'default_configuration': 'Debug',
     'configurations': {
@@ -62,13 +63,15 @@
         'GenerateDebugInformation': 'true',
       },
     },
+    # Add fallback for Windows, and if pkg-config is not available
     'defines': [
-      'TSI_OPENSSL_ALPN_SUPPORT=0'
+      'TSI_OPENSSL_ALPN_SUPPORT=<!(pkg-config --atleast-version=1.0.2 openssl >/dev/null 2>&1 && echo 1 || echo 0)'
     ],
     'include_dirs': [
       '.',
       'include'
     ],
+    # TODO: Check for libraries with pkg-config
     'libraries': [
       '-lcrypto',
       '-lssl',
@@ -78,6 +81,7 @@
     ]
   },
   'targets': [
+    # TODO: Add C++ targets
     {
       'target_name': 'gpr',
       'product_prefix': 'lib',
@@ -124,6 +128,7 @@
         'src/core/support/tls_pthread.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'gpr_test_util',
       'product_prefix': 'lib',
@@ -135,6 +140,7 @@
         'test/core/util/test_config.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'grpc',
       'product_prefix': 'lib',
@@ -289,6 +295,7 @@
         'src/core/census/tracing.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'grpc_test_util',
       'product_prefix': 'lib',
@@ -313,6 +320,7 @@
         'test/core/util/slice_splitter.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'grpc_test_util_unsecure',
       'product_prefix': 'lib',
@@ -334,6 +342,7 @@
         'test/core/util/slice_splitter.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'grpc_unsecure',
       'product_prefix': 'lib',
@@ -468,6 +477,7 @@
         'src/core/census/tracing.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'grpc_zookeeper',
       'product_prefix': 'lib',
@@ -480,6 +490,7 @@
         'src/core/client_config/resolvers/zookeeper_resolver.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'reconnect_server',
       'product_prefix': 'lib',
@@ -494,6 +505,18 @@
         'test/core/util/reconnect_server.c',
       ],
     },
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_compress',
       'product_prefix': 'lib',
@@ -508,6 +531,7 @@
         'test/core/end2end/fixtures/h2_compress.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_fakesec',
       'product_prefix': 'lib',
@@ -523,6 +547,7 @@
         'test/core/end2end/fixtures/h2_fakesec.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_full',
       'product_prefix': 'lib',
@@ -537,6 +562,7 @@
         'test/core/end2end/fixtures/h2_full.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_full+poll',
       'product_prefix': 'lib',
@@ -551,6 +577,7 @@
         'test/core/end2end/fixtures/h2_full+poll.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_oauth2',
       'product_prefix': 'lib',
@@ -566,6 +593,7 @@
         'test/core/end2end/fixtures/h2_oauth2.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_proxy',
       'product_prefix': 'lib',
@@ -580,6 +608,7 @@
         'test/core/end2end/fixtures/h2_proxy.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_sockpair',
       'product_prefix': 'lib',
@@ -594,6 +623,7 @@
         'test/core/end2end/fixtures/h2_sockpair.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_sockpair+trace',
       'product_prefix': 'lib',
@@ -608,6 +638,7 @@
         'test/core/end2end/fixtures/h2_sockpair+trace.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_sockpair_1byte',
       'product_prefix': 'lib',
@@ -622,6 +653,7 @@
         'test/core/end2end/fixtures/h2_sockpair_1byte.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_ssl',
       'product_prefix': 'lib',
@@ -637,6 +669,7 @@
         'test/core/end2end/fixtures/h2_ssl.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_ssl+poll',
       'product_prefix': 'lib',
@@ -652,6 +685,7 @@
         'test/core/end2end/fixtures/h2_ssl+poll.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_ssl_proxy',
       'product_prefix': 'lib',
@@ -667,6 +701,7 @@
         'test/core/end2end/fixtures/h2_ssl_proxy.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_uds',
       'product_prefix': 'lib',
@@ -681,6 +716,7 @@
         'test/core/end2end/fixtures/h2_uds.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_fixture_h2_uds+poll',
       'product_prefix': 'lib',
@@ -695,6 +731,7 @@
         'test/core/end2end/fixtures/h2_uds+poll.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_bad_hostname',
       'product_prefix': 'lib',
@@ -709,6 +746,7 @@
         'test/core/end2end/tests/bad_hostname.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_binary_metadata',
       'product_prefix': 'lib',
@@ -723,6 +761,7 @@
         'test/core/end2end/tests/binary_metadata.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_call_creds',
       'product_prefix': 'lib',
@@ -738,6 +777,7 @@
         'test/core/end2end/tests/call_creds.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_cancel_after_accept',
       'product_prefix': 'lib',
@@ -752,6 +792,7 @@
         'test/core/end2end/tests/cancel_after_accept.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_cancel_after_client_done',
       'product_prefix': 'lib',
@@ -766,6 +807,7 @@
         'test/core/end2end/tests/cancel_after_client_done.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_cancel_after_invoke',
       'product_prefix': 'lib',
@@ -780,6 +822,7 @@
         'test/core/end2end/tests/cancel_after_invoke.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_cancel_before_invoke',
       'product_prefix': 'lib',
@@ -794,6 +837,7 @@
         'test/core/end2end/tests/cancel_before_invoke.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_cancel_in_a_vacuum',
       'product_prefix': 'lib',
@@ -808,6 +852,7 @@
         'test/core/end2end/tests/cancel_in_a_vacuum.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_census_simple_request',
       'product_prefix': 'lib',
@@ -822,6 +867,7 @@
         'test/core/end2end/tests/census_simple_request.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_channel_connectivity',
       'product_prefix': 'lib',
@@ -836,6 +882,7 @@
         'test/core/end2end/tests/channel_connectivity.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_compressed_payload',
       'product_prefix': 'lib',
@@ -850,6 +897,7 @@
         'test/core/end2end/tests/compressed_payload.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_default_host',
       'product_prefix': 'lib',
@@ -864,6 +912,7 @@
         'test/core/end2end/tests/default_host.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_disappearing_server',
       'product_prefix': 'lib',
@@ -878,6 +927,7 @@
         'test/core/end2end/tests/disappearing_server.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_empty_batch',
       'product_prefix': 'lib',
@@ -892,6 +942,7 @@
         'test/core/end2end/tests/empty_batch.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_graceful_server_shutdown',
       'product_prefix': 'lib',
@@ -906,6 +957,7 @@
         'test/core/end2end/tests/graceful_server_shutdown.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_high_initial_seqno',
       'product_prefix': 'lib',
@@ -920,6 +972,7 @@
         'test/core/end2end/tests/high_initial_seqno.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_invoke_large_request',
       'product_prefix': 'lib',
@@ -934,6 +987,7 @@
         'test/core/end2end/tests/invoke_large_request.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_large_metadata',
       'product_prefix': 'lib',
@@ -948,6 +1002,7 @@
         'test/core/end2end/tests/large_metadata.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_max_concurrent_streams',
       'product_prefix': 'lib',
@@ -962,6 +1017,7 @@
         'test/core/end2end/tests/max_concurrent_streams.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_max_message_length',
       'product_prefix': 'lib',
@@ -976,6 +1032,7 @@
         'test/core/end2end/tests/max_message_length.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_metadata',
       'product_prefix': 'lib',
@@ -990,6 +1047,7 @@
         'test/core/end2end/tests/metadata.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_no_op',
       'product_prefix': 'lib',
@@ -1004,6 +1062,7 @@
         'test/core/end2end/tests/no_op.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_payload',
       'product_prefix': 'lib',
@@ -1018,6 +1077,7 @@
         'test/core/end2end/tests/payload.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_ping_pong_streaming',
       'product_prefix': 'lib',
@@ -1032,6 +1092,7 @@
         'test/core/end2end/tests/ping_pong_streaming.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_registered_call',
       'product_prefix': 'lib',
@@ -1046,6 +1107,7 @@
         'test/core/end2end/tests/registered_call.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_request_with_flags',
       'product_prefix': 'lib',
@@ -1060,6 +1122,7 @@
         'test/core/end2end/tests/request_with_flags.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_request_with_payload',
       'product_prefix': 'lib',
@@ -1074,6 +1137,7 @@
         'test/core/end2end/tests/request_with_payload.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_server_finishes_request',
       'product_prefix': 'lib',
@@ -1088,6 +1152,7 @@
         'test/core/end2end/tests/server_finishes_request.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_shutdown_finishes_calls',
       'product_prefix': 'lib',
@@ -1102,6 +1167,7 @@
         'test/core/end2end/tests/shutdown_finishes_calls.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_shutdown_finishes_tags',
       'product_prefix': 'lib',
@@ -1116,6 +1182,7 @@
         'test/core/end2end/tests/shutdown_finishes_tags.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_simple_delayed_request',
       'product_prefix': 'lib',
@@ -1130,6 +1197,7 @@
         'test/core/end2end/tests/simple_delayed_request.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_simple_request',
       'product_prefix': 'lib',
@@ -1144,6 +1212,7 @@
         'test/core/end2end/tests/simple_request.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_test_trailing_metadata',
       'product_prefix': 'lib',
@@ -1158,6 +1227,7 @@
         'test/core/end2end/tests/trailing_metadata.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'end2end_certs',
       'product_prefix': 'lib',
@@ -1170,6 +1240,7 @@
         'test/core/end2end/data/server1_key.c',
       ],
     },
+    # TODO: Add C++ targets
     {
       'target_name': 'bad_client_test',
       'product_prefix': 'lib',

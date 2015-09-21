@@ -39,6 +39,7 @@
   # Some of this file is built with the help of
   # https://n8.io/converting-a-c-library-to-gyp/
   {
+    # TODO: Finish windows support
     'target_defaults': {
       'default_configuration': 'Debug',
       'configurations': {
@@ -64,14 +65,15 @@
           'GenerateDebugInformation': 'true',
         },
       },
+      # Add fallback for Windows, and if pkg-config is not available
       'defines': [
-        # TODO: Properly check for ALPN support
-        'TSI_OPENSSL_ALPN_SUPPORT=0'
+        'TSI_OPENSSL_ALPN_SUPPORT=<!(pkg-config --atleast-version=1.0.2 openssl >/dev/null 2>&1 && echo 1 || echo 0)'
       ],
       'include_dirs': [
         '.',
         'include'
       ],
+      # TODO: Check for libraries with pkg-config
       'libraries': [
         '-lcrypto',
         '-lssl',
@@ -82,6 +84,7 @@
     },
     'targets': [
       % for lib in libs:
+      # TODO: Add C++ targets
       % if lib.language == 'c':
       {
         'target_name': '${lib.name}',
