@@ -120,6 +120,18 @@ class ValgrindConfig(object):
                           hash_targets=None)
 
 
+def get_c_tests(travis, test_lang) :
+  out = []
+  platforms_str = 'ci_platforms' if travis else 'platforms'
+  with open('tools/run_tests/tests.json') as f:
+    js = json.load(f);
+    binaries = [tgt
+                for tgt in js
+                if tgt['language'] == test_lang and
+                    platform_string() in tgt[platforms_str] and
+                    not (travis and tgt['flaky'])]
+  return binaries
+
 class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
@@ -129,17 +141,10 @@ class CLanguage(object):
 
   def test_specs(self, config, travis):
     out = []
-    with open('tools/run_tests/tests.json') as f:
-      js = json.load(f)
-      platforms_str = 'ci_platforms' if travis else 'platforms'
-      binaries = [tgt
-                  for tgt in js
-                  if tgt['language'] == self.test_lang and
-                      config.build_config not in tgt['exclude_configs'] and
-                      platform_string() in tgt[platforms_str]]
+    binaries = get_c_tests(travis, self.test_lang)
     for target in binaries:
-      if travis and target['flaky']:
-        continue
+      if config.build_config in tgt['exclude_configs']:
+        continue;
       if self.platform == 'windows':
         binary = 'vsprojects/%s/%s.exe' % (
             _WINDOWS_CONFIG[config.build_config], target['name'])
@@ -166,6 +171,34 @@ class CLanguage(object):
   def __str__(self):
     return self.make_target
 
+def gyp_test_paths(travis, config=None):
+  binaries = get_c_tests(travis, 'c')
+  out = []
+  for target in binaries:
+    if config is not None:
+      if config.build_config in target['exclude_configs']:
+        continue
+    binary = 'out/Debug/%s' % target['name']
+    out.append(binary)
+  return sorted(out)
+
+class GYPCLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec([binary], [binary])
+            for binary in gyp_test_paths(travis, config)]
+
+  def make_targets(self):
+    return gyp_test_paths(False)
+
+  def build_steps(self):
+    return []
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'gyp'
 
 class NodeLanguage(object):
 
@@ -382,6 +415,7 @@ _DEFAULT = ['opt']
 _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
+    'gyp': GYPCLanguage(),
     'node': NodeLanguage(),
     'php': PhpLanguage(),
     'python': PythonLanguage(),
@@ -483,8 +517,8 @@ if platform.system() == 'Windows':
     # disable PDB generation: it's broken, and we don't need it during CI
     extra_args.extend(["/p:GenerateDebugInformation=false", "/p:DebugInformationFormat=None"])
     return [
-      jobset.JobSpec(['vsprojects\\build.bat', 
-                      'vsprojects\\%s.sln' % target, 
+      jobset.JobSpec(['vsprojects\\build.bat',
+                      'vsprojects\\%s.sln' % target,
                       '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
                       extra_args,
                       shell=True, timeout_seconds=90*60)
