@@ -101,7 +101,7 @@ void pf_destroy(grpc_lb_policy *pol, grpc_call_list *call_list) {
   for (i = 0; i < p->num_subchannels; i++) {
     GRPC_SUBCHANNEL_UNREF(p->subchannels[i], "pick_first", call_list);
   }
-  grpc_connectivity_state_destroy(&p->state_tracker);
+  grpc_connectivity_state_destroy(&p->state_tracker, call_list);
   gpr_free(p->subchannels);
   gpr_mu_destroy(&p->mu);
   gpr_free(p);

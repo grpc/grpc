@@ -153,7 +153,8 @@ void grpc_channel_stack_destroy(grpc_channel_stack *stack,
 void grpc_call_stack_init(grpc_channel_stack *channel_stack,
                           const void *transport_server_data,
                           grpc_transport_stream_op *initial_op,
-                          grpc_call_stack *call_stack) {
+                          grpc_call_stack *call_stack,
+                          grpc_call_list *call_list) {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   size_t count = channel_stack->count;
   grpc_call_element *call_elems;
@@ -171,7 +172,7 @@ void grpc_call_stack_init(grpc_channel_stack *channel_stack,
     call_elems[i].channel_data = channel_elems[i].channel_data;
     call_elems[i].call_data = user_data;
     call_elems[i].filter->init_call_elem(&call_elems[i], transport_server_data,
-                                         initial_op);
+                                         initial_op, call_list);
     user_data +=
         ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }

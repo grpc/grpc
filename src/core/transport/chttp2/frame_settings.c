@@ -139,7 +139,8 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_begin_frame(
 
 grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
     void *p, grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last,
+    grpc_call_list *call_list) {
   grpc_chttp2_settings_parser *parser = p;
   const gpr_uint8 *cur = GPR_SLICE_START_PTR(slice);
   const gpr_uint8 *end = GPR_SLICE_END_PTR(slice);

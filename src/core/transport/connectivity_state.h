@@ -61,7 +61,8 @@ extern int grpc_connectivity_state_trace;
 void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
                                   grpc_connectivity_state init_state,
                                   const char *name);
-void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker);
+void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker,
+                                     grpc_call_list *call_list);
 
 /** Set connectivity state; not thread safe; access must be serialized with an
  * external lock */

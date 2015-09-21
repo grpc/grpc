@@ -123,7 +123,7 @@ static int is_stack_running_on_compute_engine(void) {
   while (!detector.is_done) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&detector.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC), &call_list);
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 

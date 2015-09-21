@@ -159,7 +159,7 @@ static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r,
 static void sockaddr_destroy(grpc_resolver *gr, grpc_call_list *call_list) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  grpc_subchannel_factory_unref(r->subchannel_factory);
+  grpc_subchannel_factory_unref(r->subchannel_factory, call_list);
   gpr_free(r->addrs);
   gpr_free(r->addrs_len);
   gpr_free(r->lb_policy_name);

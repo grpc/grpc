@@ -70,9 +70,11 @@ static void server_setup_transport(void *ts, grpc_transport *transport,
   thd_args *a = ts;
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
-  grpc_server_setup_transport(a->server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters), mdctx, workqueue,
-                              grpc_server_get_channel_args(a->server));
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_server_setup_transport(
+      a->server, transport, extra_filters, GPR_ARRAY_SIZE(extra_filters), mdctx,
+      workqueue, grpc_server_get_channel_args(a->server), &call_list);
+  grpc_call_list_run(&call_list);
 }
 
 void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
@@ -116,9 +118,11 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   a.validator = validator;
   grpc_server_register_completion_queue(a.server, a.cq, NULL);
   grpc_server_start(a.server);
-  transport = grpc_create_chttp2_transport(NULL, sfd.server, mdctx, 0);
+  transport =
+      grpc_create_chttp2_transport(NULL, sfd.server, mdctx, 0, &call_list);
   server_setup_transport(&a, transport, mdctx, workqueue);
-  grpc_chttp2_transport_start_reading(transport, NULL, 0);
+  grpc_chttp2_transport_start_reading(transport, NULL, 0, &call_list);
+  grpc_call_list_run(&call_list);
 
   /* Bind everything into the same pollset */
   grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(a.cq), &call_list);

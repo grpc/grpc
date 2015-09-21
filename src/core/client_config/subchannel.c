@@ -143,7 +143,8 @@ struct grpc_subchannel_call {
 #define SUBCHANNEL_CALL_TO_CALL_STACK(call) ((grpc_call_stack *)((call) + 1))
 #define CHANNEL_STACK_FROM_CONNECTION(con) ((grpc_channel_stack *)((con) + 1))
 
-static grpc_subchannel_call *create_call(connection *con);
+static grpc_subchannel_call *create_call(connection *con,
+                                         grpc_call_list *call_list);
 static void connectivity_state_changed_locked(grpc_subchannel *c,
                                               const char *reason,
                                               grpc_call_list *call_list);
@@ -262,7 +263,7 @@ static void subchannel_destroy(grpc_subchannel *c, grpc_call_list *call_list) {
   grpc_channel_args_destroy(c->args);
   gpr_free(c->addr);
   grpc_mdctx_unref(c->mdctx);
-  grpc_connectivity_state_destroy(&c->state_tracker);
+  grpc_connectivity_state_destroy(&c->state_tracker, call_list);
   grpc_connector_unref(c->connector, call_list);
   gpr_free(c);
 }
@@ -355,7 +356,7 @@ void grpc_subchannel_create_call(grpc_subchannel *c, grpc_pollset *pollset,
     CONNECTION_REF_LOCKED(con, "call");
     gpr_mu_unlock(&c->mu);
 
-    *target = create_call(con);
+    *target = create_call(con, call_list);
     notify->cb(notify->cb_arg, 1, call_list);
   } else {
     waiting_for_connect *w4c = gpr_malloc(sizeof(*w4c));
@@ -561,7 +562,7 @@ static void publish_transport(grpc_subchannel *c, grpc_call_list *call_list) {
     gpr_free(sw);
     gpr_free(filters);
     grpc_channel_stack_destroy(stk, call_list);
-    GRPC_CHANNEL_INTERNAL_UNREF(c->master, "connecting");
+    GRPC_CHANNEL_INTERNAL_UNREF(c->master, "connecting", call_list);
     GRPC_SUBCHANNEL_UNREF(c, "connecting", call_list);
     return;
   }
@@ -582,7 +583,7 @@ static void publish_transport(grpc_subchannel *c, grpc_call_list *call_list) {
   op.on_connectivity_state_change = &sw->closure;
   op.bind_pollset_set = c->pollset_set;
   SUBCHANNEL_REF_LOCKED(c, "state_watcher");
-  GRPC_CHANNEL_INTERNAL_UNREF(c->master, "connecting");
+  GRPC_CHANNEL_INTERNAL_UNREF(c->master, "connecting", call_list);
   GPR_ASSERT(!SUBCHANNEL_UNREF_LOCKED(c, "connecting"));
   elem =
       grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(c->active), 0);
@@ -650,7 +651,7 @@ static void on_alarm(void *arg, int iomgr_success, grpc_call_list *call_list) {
     update_reconnect_parameters(c);
     continue_connect(c, call_list);
   } else {
-    GRPC_CHANNEL_INTERNAL_UNREF(c->master, "connecting");
+    GRPC_CHANNEL_INTERNAL_UNREF(c->master, "connecting", call_list);
     GRPC_SUBCHANNEL_UNREF(c, "connecting", call_list);
   }
 }
@@ -746,13 +747,14 @@ void grpc_subchannel_call_process_op(grpc_subchannel_call *call,
   top_elem->filter->start_transport_stream_op(top_elem, op, call_list);
 }
 
-grpc_subchannel_call *create_call(connection *con) {
+static grpc_subchannel_call *create_call(connection *con,
+                                         grpc_call_list *call_list) {
   grpc_channel_stack *chanstk = CHANNEL_STACK_FROM_CONNECTION(con);
   grpc_subchannel_call *call =
       gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(call);
   call->connection = con;
   gpr_ref_init(&call->refs, 1);
-  grpc_call_stack_init(chanstk, NULL, NULL, callstk);
+  grpc_call_stack_init(chanstk, NULL, NULL, callstk, call_list);
   return call;
 }

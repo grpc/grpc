@@ -108,8 +108,9 @@ static void on_secure_transport_setup_done(void *arg,
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
     c->result->transport = grpc_create_chttp2_transport(
-        c->args.channel_args, secure_endpoint, c->mdctx, 1);
-    grpc_chttp2_transport_start_reading(c->result->transport, NULL, 0);
+        c->args.channel_args, secure_endpoint, c->mdctx, 1, call_list);
+    grpc_chttp2_transport_start_reading(c->result->transport, NULL, 0,
+                                        call_list);
     c->result->filters = gpr_malloc(sizeof(grpc_channel_filter *) * 2);
     c->result->filters[0] = &grpc_http_client_filter;
     c->result->filters[1] = &grpc_client_auth_filter;
@@ -187,12 +188,13 @@ static void subchannel_factory_ref(grpc_subchannel_factory *scf) {
   gpr_ref(&f->refs);
 }
 
-static void subchannel_factory_unref(grpc_subchannel_factory *scf) {
+static void subchannel_factory_unref(grpc_subchannel_factory *scf,
+                                     grpc_call_list *call_list) {
   subchannel_factory *f = (subchannel_factory *)scf;
   if (gpr_unref(&f->refs)) {
     GRPC_SECURITY_CONNECTOR_UNREF(&f->security_connector->base,
                                   "subchannel_factory");
-    GRPC_CHANNEL_INTERNAL_UNREF(f->master, "subchannel_factory");
+    GRPC_CHANNEL_INTERNAL_UNREF(f->master, "subchannel_factory", call_list);
     grpc_channel_args_destroy(f->merge_args);
     grpc_mdctx_unref(f->mdctx);
     gpr_free(f);
@@ -279,7 +281,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   GPR_ASSERT(n <= MAX_FILTERS);
 
   channel = grpc_channel_create_from_filters(target, filters, n, args_copy,
-                                             mdctx, workqueue, 1);
+                                             mdctx, workqueue, 1, &call_list);
 
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;
@@ -299,7 +301,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   grpc_client_channel_set_resolver(grpc_channel_get_channel_stack(channel),
                                    resolver, &call_list);
   GRPC_RESOLVER_UNREF(resolver, "create", &call_list);
-  grpc_subchannel_factory_unref(&f->base);
+  grpc_subchannel_factory_unref(&f->base, &call_list);
   GRPC_SECURITY_CONNECTOR_UNREF(&connector->base, "channel_create");
 
   grpc_channel_args_destroy(args_copy);

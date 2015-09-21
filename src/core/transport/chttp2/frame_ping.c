@@ -70,7 +70,8 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_begin_frame(
 
 grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
     void *parser, grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last,
+    grpc_call_list *call_list) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
   gpr_uint8 *cur = beg;
@@ -89,9 +90,7 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
       for (ping = transport_parsing->pings.next;
            ping != &transport_parsing->pings; ping = ping->next) {
         if (0 == memcmp(p->opaque_8bytes, ping->id, 8)) {
-          /* we know no locks are held here, we may as well just call up
-           * directly */
-          ping->on_recv->cb(ping->on_recv->cb_arg, 1);
+          grpc_call_list_add(call_list, ping->on_recv, 1);
         }
         ping->next->prev = ping->prev;
         ping->prev->next = ping->next;

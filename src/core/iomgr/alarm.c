@@ -291,6 +291,7 @@ static size_t pop_alarms(shard_type *shard, gpr_timespec now,
   gpr_mu_lock(&shard->mu);
   while ((alarm = pop_one(shard, now))) {
     grpc_call_list_add(call_list, &alarm->closure, success);
+    n++;
   }
   *new_min_deadline = compute_min_deadline(shard);
   gpr_mu_unlock(&shard->mu);
@@ -332,7 +333,7 @@ static int run_some_expired_alarms(gpr_timespec now, gpr_timespec *next,
     gpr_mu_unlock(&g_checker_mu);
   }
 
-  return n > 0;
+  return (int)n;
 }
 
 int grpc_alarm_check(gpr_timespec now, gpr_timespec *next,

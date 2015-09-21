@@ -459,7 +459,7 @@ static void on_lb_policy_state_changed(void *arg, int iomgr_success,
   on_lb_policy_state_changed_locked(w, call_list);
   gpr_mu_unlock(&w->chand->mu_config);
 
-  GRPC_CHANNEL_INTERNAL_UNREF(w->chand->master, "watch_lb_policy");
+  GRPC_CHANNEL_INTERNAL_UNREF(w->chand->master, "watch_lb_policy", call_list);
   gpr_free(w);
 }
 
@@ -551,7 +551,7 @@ static void cc_on_config_changed(void *arg, int iomgr_success,
     GRPC_LB_POLICY_UNREF(lb_policy, "config_change", call_list);
   }
 
-  GRPC_CHANNEL_INTERNAL_UNREF(chand->master, "resolver");
+  GRPC_CHANNEL_INTERNAL_UNREF(chand->master, "resolver", call_list);
 }
 
 static void cc_start_transport_op(grpc_channel_element *elem,
@@ -610,7 +610,8 @@ static void cc_start_transport_op(grpc_channel_element *elem,
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
-                           grpc_transport_stream_op *initial_op) {
+                           grpc_transport_stream_op *initial_op,
+                           grpc_call_list *call_list) {
   call_data *calld = elem->call_data;
 
   /* TODO(ctiller): is there something useful we can do here? */
@@ -688,7 +689,7 @@ static void destroy_channel_elem(grpc_channel_element *elem,
   if (chand->lb_policy != NULL) {
     GRPC_LB_POLICY_UNREF(chand->lb_policy, "channel", call_list);
   }
-  grpc_connectivity_state_destroy(&chand->state_tracker);
+  grpc_connectivity_state_destroy(&chand->state_tracker, call_list);
   grpc_pollset_set_destroy(&chand->pollset_set);
   gpr_mu_destroy(&chand->mu_config);
 }
