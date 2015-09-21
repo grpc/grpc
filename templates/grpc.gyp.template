@@ -65,7 +65,7 @@
           'GenerateDebugInformation': 'true',
         },
       },
-      # Add fallback for Windows, and if pkg-config is not available
+      # TODO: Add fallback for Windows, and if pkg-config is not available
       'defines': [
         'TSI_OPENSSL_ALPN_SUPPORT=<!(pkg-config --atleast-version=1.0.2 openssl >/dev/null 2>&1 && echo 1 || echo 0)'
       ],
