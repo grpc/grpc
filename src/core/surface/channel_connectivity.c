@@ -45,7 +45,7 @@ grpc_channel_check_connectivity_state (grpc_channel * channel, int try_to_connec
 {
   /* forward through to the underlying client channel */
   grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element (grpc_channel_get_channel_stack (channel));
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_connectivity_state state;
   if (client_channel_elem->filter != &grpc_client_channel_filter)
     {
@@ -180,7 +180,7 @@ void
 grpc_channel_watch_connectivity_state (grpc_channel * channel, grpc_connectivity_state last_observed_state, gpr_timespec deadline, grpc_completion_queue * cq, void *tag)
 {
   grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element (grpc_channel_get_channel_stack (channel));
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   state_watcher *w = gpr_malloc (sizeof (*w));
 
   grpc_cq_begin_op (cq);

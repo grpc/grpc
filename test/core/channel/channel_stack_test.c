@@ -108,7 +108,7 @@ test_create_channel_stack (void)
   grpc_mdctx *metadata_context;
   int *channel_data;
   int *call_data;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   metadata_context = grpc_mdctx_create ();
 

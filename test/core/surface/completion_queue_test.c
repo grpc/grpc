@@ -94,7 +94,7 @@ test_cq_end_op (void)
   grpc_event ev;
   grpc_completion_queue *cc;
   grpc_cq_completion completion;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   void *tag = create_test_tag ();
 
   LOG_TEST ("test_cq_end_op");
@@ -148,7 +148,7 @@ test_pluck (void)
   grpc_completion_queue *cc;
   void *tags[128];
   grpc_cq_completion completions[GPR_ARRAY_SIZE (tags)];
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   unsigned i, j;
 
   LOG_TEST ("test_pluck");
@@ -223,7 +223,7 @@ producer_thread (void *arg)
 {
   test_thread_options *opt = arg;
   int i;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log (GPR_INFO, "producer %d started", opt->id);
   gpr_event_set (&opt->on_started, (void *) (gpr_intptr) 1);

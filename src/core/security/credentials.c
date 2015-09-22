@@ -809,7 +809,7 @@ on_simulated_token_fetch_done (void *user_data)
 {
   grpc_credentials_metadata_request *r = (grpc_credentials_metadata_request *) user_data;
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *) r->creds;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   r->cb (r->user_data, c->md_store->entries, c->md_store->num_entries, GRPC_CREDENTIALS_OK, &closure_list);
   grpc_credentials_metadata_request_destroy (r);
   grpc_exec_ctx_finish (&exec_ctx);
@@ -1322,7 +1322,7 @@ static void
 plugin_md_request_metadata_ready (void *request, const grpc_metadata * md, size_t num_md, grpc_status_code status, const char *error_details)
 {
   /* called from application code */
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_metadata_plugin_request *r = (grpc_metadata_plugin_request *) request;
   if (status != GRPC_STATUS_OK)
     {

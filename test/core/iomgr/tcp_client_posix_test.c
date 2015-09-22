@@ -95,7 +95,7 @@ test_succeeds (void)
   int r;
   int connections_complete_before;
   grpc_closure done;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log (GPR_DEBUG, "test_succeeds");
 
@@ -148,7 +148,7 @@ test_fails (void)
   socklen_t addr_len = sizeof (addr);
   int connections_complete_before;
   grpc_closure done;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log (GPR_DEBUG, "test_fails");
 
@@ -191,7 +191,7 @@ test_times_out (void)
   int connections_complete_before;
   gpr_timespec connect_deadline;
   grpc_closure done;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log (GPR_DEBUG, "test_times_out");
 
@@ -279,7 +279,7 @@ int
 main (int argc, char **argv)
 {
   grpc_closure destroyed;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init (argc, argv);
   grpc_init ();
   grpc_pollset_set_init (&g_pollset_set);

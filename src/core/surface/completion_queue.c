@@ -192,7 +192,7 @@ grpc_completion_queue_next (grpc_completion_queue * cc, gpr_timespec deadline, v
   grpc_pollset_worker worker;
   int first_loop = 1;
   gpr_timespec now;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   GPR_ASSERT (!reserved);
 
@@ -280,7 +280,7 @@ grpc_completion_queue_pluck (grpc_completion_queue * cc, void *tag, gpr_timespec
   grpc_pollset_worker worker;
   gpr_timespec now;
   int first_loop = 1;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   GPR_ASSERT (!reserved);
 
@@ -350,7 +350,7 @@ done:
 void
 grpc_completion_queue_shutdown (grpc_completion_queue * cc)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock (GRPC_POLLSET_MU (&cc->pollset));
   if (cc->shutdown_called)
     {

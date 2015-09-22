@@ -120,7 +120,7 @@ on_md_processing_done (void *user_data, const grpc_metadata * consumed_md, size_
 {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != NULL && num_response_md > 0)

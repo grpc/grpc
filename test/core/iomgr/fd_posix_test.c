@@ -281,7 +281,7 @@ server_wait_and_shutdown (server * sv)
   gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
   while (!sv->done)
     {
-      grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       grpc_pollset_worker worker;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
@@ -422,7 +422,7 @@ client_wait_and_shutdown (client * cl)
   while (!cl->done)
     {
       grpc_pollset_worker worker;
-      grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
       grpc_exec_ctx_finish (&exec_ctx);
@@ -440,7 +440,7 @@ test_grpc_fd (void)
   server sv;
   client cl;
   int port;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   server_init (&sv);
   port = server_start (&sv, &closure_list);
@@ -508,7 +508,7 @@ test_grpc_fd_change (void)
   ssize_t result;
   grpc_closure first_closure;
   grpc_closure second_closure;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   first_closure.cb = first_read_callback;
   first_closure.cb_arg = &a;
@@ -587,7 +587,7 @@ int
 main (int argc, char **argv)
 {
   grpc_closure destroyed;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init (argc, argv);
   grpc_iomgr_init ();
   grpc_pollset_init (&g_pollset);

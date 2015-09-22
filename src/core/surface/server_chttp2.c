@@ -93,7 +93,7 @@ grpc_server_add_insecure_http2_port (grpc_server * server, const char *addr)
   unsigned count = 0;
   int port_num = -1;
   int port_temp;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   resolved = grpc_blocking_resolve_address (addr, "http");
   if (!resolved)

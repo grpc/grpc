@@ -303,7 +303,7 @@ grpc_call_create (grpc_channel * channel, grpc_call * parent_call, gpr_uint32 pr
   grpc_transport_stream_op initial_op;
   grpc_transport_stream_op *initial_op_ptr = NULL;
   grpc_channel_stack *channel_stack = grpc_channel_get_channel_stack (channel);
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_call *call = gpr_malloc (sizeof (grpc_call) + channel_stack->call_stack_size);
   memset (call, 0, sizeof (grpc_call));
   gpr_mu_init (&call->mu);
@@ -1395,7 +1395,7 @@ grpc_call_destroy (grpc_call * c)
 {
   int cancel;
   grpc_call *parent = c->parent;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   if (parent)
     {
@@ -1440,7 +1440,7 @@ grpc_call_error
 grpc_call_cancel_with_status (grpc_call * c, grpc_status_code status, const char *description, void *reserved)
 {
   grpc_call_error r;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GPR_ASSERT (reserved == NULL);
   lock (c);
   r = cancel_with_status (c, status, description);
@@ -1515,7 +1515,7 @@ char *
 grpc_call_get_peer (grpc_call * call)
 {
   grpc_call_element *elem = CALL_ELEM_FROM_CALL (call, 0);
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   char *result = elem->filter->get_peer (elem, &closure_list);
   grpc_exec_ctx_finish (&exec_ctx);
   return result;
@@ -1742,7 +1742,7 @@ grpc_call_start_batch (grpc_call * call, const grpc_op * ops, size_t nops, void 
   grpc_ioreq *req;
   void (*finish_func) (grpc_call *, int, void *, grpc_closure_list *) = finish_batch;
   grpc_call_error error;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   if (reserved != NULL)
     {

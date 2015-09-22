@@ -104,7 +104,7 @@ is_stack_running_on_compute_engine (void)
   compute_engine_detector detector;
   grpc_httpcli_request request;
   grpc_httpcli_context context;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure destroy_closure;
 
   /* The http call is local. If it takes more than one sec, it is for sure not

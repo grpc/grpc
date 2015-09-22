@@ -981,7 +981,7 @@ grpc_server_start (grpc_server * server)
 {
   listener *l;
   size_t i;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   server->pollsets = gpr_malloc (sizeof (grpc_pollset *) * server->cq_count);
   for (i = 0; i < server->cq_count; i++)
@@ -1115,7 +1115,7 @@ grpc_server_shutdown_and_notify (grpc_server * server, grpc_completion_queue * c
   listener *l;
   shutdown_tag *sdt;
   channel_broadcaster broadcaster;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   GRPC_SERVER_LOG_SHUTDOWN (GPR_INFO, server, cq, tag);
 
@@ -1168,7 +1168,7 @@ void
 grpc_server_cancel_all_calls (grpc_server * server)
 {
   channel_broadcaster broadcaster;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_mu_lock (&server->mu_global);
   channel_broadcaster_init (server, &broadcaster);
@@ -1182,7 +1182,7 @@ void
 grpc_server_destroy (grpc_server * server)
 {
   listener *l;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_mu_lock (&server->mu_global);
   GPR_ASSERT (gpr_atm_acq_load (&server->shutdown_flag) || !server->listeners);
@@ -1278,7 +1278,7 @@ grpc_call_error
 grpc_server_request_call (grpc_server * server, grpc_call ** call, grpc_call_details * details, grpc_metadata_array * initial_metadata, grpc_completion_queue * cq_bound_to_call, grpc_completion_queue * cq_for_notification, void *tag)
 {
   grpc_call_error error;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   requested_call *rc = gpr_malloc (sizeof (*rc));
   GRPC_SERVER_LOG_REQUEST_CALL (GPR_INFO, server, call, details, initial_metadata, cq_bound_to_call, cq_for_notification, tag);
   if (!grpc_cq_is_server_cq (cq_for_notification))
@@ -1307,7 +1307,7 @@ grpc_call_error
 grpc_server_request_registered_call (grpc_server * server, void *rm, grpc_call ** call, gpr_timespec * deadline, grpc_metadata_array * initial_metadata, grpc_byte_buffer ** optional_payload, grpc_completion_queue * cq_bound_to_call, grpc_completion_queue * cq_for_notification, void *tag)
 {
   grpc_call_error error;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   requested_call *rc = gpr_malloc (sizeof (*rc));
   registered_method *registered_method = rm;
   if (!grpc_cq_is_server_cq (cq_for_notification))

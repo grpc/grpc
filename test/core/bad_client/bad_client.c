@@ -76,7 +76,7 @@ server_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx
   static grpc_channel_filter const *extra_filters[] = {
     &grpc_http_server_filter
   };
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_server_setup_transport (a->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (a->server), &closure_list);
   grpc_exec_ctx_finish (&exec_ctx);
 }
@@ -93,7 +93,7 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
   gpr_slice slice = gpr_slice_from_copied_buffer (client_payload, client_payload_length);
   gpr_slice_buffer outgoing;
   grpc_closure done_write_closure;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   hex = gpr_dump (client_payload, client_payload_length, GPR_DUMP_HEX | GPR_DUMP_ASCII);
 

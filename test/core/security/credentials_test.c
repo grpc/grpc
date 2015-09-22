@@ -303,7 +303,7 @@ check_google_iam_metadata (grpc_exec_ctx * exec_ctx, void *user_data, grpc_crede
 static void
 test_google_iam_creds (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials *creds = grpc_google_iam_credentials_create (test_google_iam_authorization_token, test_google_iam_authority_selector,
 								NULL);
   GPR_ASSERT (grpc_credentials_has_request_metadata (creds));
@@ -326,7 +326,7 @@ check_access_token_metadata (grpc_exec_ctx * exec_ctx, void *user_data, grpc_cre
 static void
 test_access_token_creds (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials *creds = grpc_access_token_credentials_create ("blah", NULL);
   GPR_ASSERT (grpc_credentials_has_request_metadata (creds));
   GPR_ASSERT (grpc_credentials_has_request_metadata_only (creds));
@@ -351,7 +351,7 @@ check_ssl_oauth2_composite_metadata (grpc_exec_ctx * exec_ctx, void *user_data, 
 static void
 test_ssl_oauth2_composite_creds (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials *ssl_creds = grpc_ssl_credentials_create (test_root_cert, NULL, NULL);
   const grpc_credentials_array *creds_array;
   grpc_credentials *oauth2_creds = grpc_md_only_test_credentials_create ("Authorization", test_oauth2_bearer_token, 0);
@@ -401,7 +401,7 @@ check_ssl_oauth2_google_iam_composite_metadata (grpc_exec_ctx * exec_ctx, void *
 static void
 test_ssl_oauth2_google_iam_composite_creds (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials *ssl_creds = grpc_ssl_credentials_create (test_root_cert, NULL, NULL);
   const grpc_credentials_array *creds_array;
   grpc_credentials *oauth2_creds = grpc_md_only_test_credentials_create ("Authorization", test_oauth2_bearer_token, 0);
@@ -491,7 +491,7 @@ httpcli_get_should_not_be_called (grpc_exec_ctx * exec_ctx, const grpc_httpcli_r
 static void
 test_compute_engine_creds_success (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials *compute_engine_creds = grpc_google_compute_engine_credentials_create (NULL);
   GPR_ASSERT (grpc_credentials_has_request_metadata (compute_engine_creds));
   GPR_ASSERT (grpc_credentials_has_request_metadata_only (compute_engine_creds));
@@ -513,7 +513,7 @@ test_compute_engine_creds_success (void)
 static void
 test_compute_engine_creds_failure (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials *compute_engine_creds = grpc_google_compute_engine_credentials_create (NULL);
   grpc_httpcli_set_override (compute_engine_httpcli_get_failure_override, httpcli_post_should_not_be_called);
   GPR_ASSERT (grpc_credentials_has_request_metadata (compute_engine_creds));
@@ -564,7 +564,7 @@ refresh_token_httpcli_post_failure (grpc_exec_ctx * exec_ctx, const grpc_httpcli
 static void
 test_refresh_token_creds_success (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials *refresh_token_creds = grpc_google_refresh_token_credentials_create (test_refresh_token_str,
 											NULL);
   GPR_ASSERT (grpc_credentials_has_request_metadata (refresh_token_creds));
@@ -588,7 +588,7 @@ test_refresh_token_creds_success (void)
 static void
 test_refresh_token_creds_failure (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials *refresh_token_creds = grpc_google_refresh_token_credentials_create (test_refresh_token_str,
 											NULL);
   grpc_httpcli_set_override (httpcli_get_should_not_be_called, refresh_token_httpcli_post_failure);
@@ -662,7 +662,7 @@ static void
 test_jwt_creds_success (void)
 {
   char *json_key_string = test_json_key_str ();
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials *jwt_creds = grpc_service_account_jwt_access_credentials_create (json_key_string, grpc_max_auth_token_lifetime, NULL);
   GPR_ASSERT (grpc_credentials_has_request_metadata (jwt_creds));
   GPR_ASSERT (grpc_credentials_has_request_metadata_only (jwt_creds));
@@ -692,7 +692,7 @@ static void
 test_jwt_creds_signing_failure (void)
 {
   char *json_key_string = test_json_key_str ();
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_credentials *jwt_creds = grpc_service_account_jwt_access_credentials_create (json_key_string, grpc_max_auth_token_lifetime, NULL);
   GPR_ASSERT (grpc_credentials_has_request_metadata (jwt_creds));
   GPR_ASSERT (grpc_credentials_has_request_metadata_only (jwt_creds));
@@ -846,7 +846,7 @@ test_metadata_plugin_success (void)
   grpc_credentials *creds;
   plugin_state state = PLUGIN_INITIAL_STATE;
   grpc_metadata_credentials_plugin plugin;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   plugin.state = &state;
   plugin.get_metadata = plugin_get_metadata_success;
@@ -867,7 +867,7 @@ test_metadata_plugin_failure (void)
   grpc_credentials *creds;
   plugin_state state = PLUGIN_INITIAL_STATE;
   grpc_metadata_credentials_plugin plugin;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   plugin.state = &state;
   plugin.get_metadata = plugin_get_metadata_failure;

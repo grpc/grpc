@@ -190,7 +190,7 @@ read_test (size_t num_bytes, size_t slice_size)
   struct read_socket_state state;
   size_t written_bytes;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE (20);
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log (GPR_INFO, "Read test of size %d, slice size %d", num_bytes, slice_size);
 
@@ -237,7 +237,7 @@ large_read_test (size_t slice_size)
   struct read_socket_state state;
   ssize_t written_bytes;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE (20);
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log (GPR_INFO, "Start large read test, slice size %d", slice_size);
 
@@ -327,7 +327,7 @@ drain_socket_blocking (int fd, size_t num_bytes, size_t read_size)
   int flags;
   int current = 0;
   int i;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   flags = fcntl (fd, F_GETFL, 0);
   GPR_ASSERT (fcntl (fd, F_SETFL, flags & ~O_NONBLOCK) == 0);
@@ -375,7 +375,7 @@ write_test (size_t num_bytes, size_t slice_size)
   gpr_slice_buffer outgoing;
   grpc_closure write_done_closure;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE (20);
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_log (GPR_INFO, "Start write test with %d bytes, slice size %d", num_bytes, slice_size);
 
@@ -450,7 +450,7 @@ create_fixture_tcp_socketpair (size_t slice_size)
 {
   int sv[2];
   grpc_endpoint_test_fixture f;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   create_sockets (sv);
   f.client_ep = grpc_tcp_create (grpc_fd_create (sv[0], "fixture:client"), slice_size, "test");
@@ -477,7 +477,7 @@ int
 main (int argc, char **argv)
 {
   grpc_closure destroyed;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init (argc, argv);
   grpc_init ();
   grpc_pollset_init (&g_pollset);
