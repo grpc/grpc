@@ -256,8 +256,10 @@
     <ClInclude Include="..\..\..\src\core\iomgr\alarm.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\alarm_heap.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\alarm_internal.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\closure.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint_pair.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\exec_ctx.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\fd_posix.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\iocp_windows.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\iomgr.h" />
@@ -404,6 +406,8 @@
     <ClCompile Include="..\..\..\src\core\iomgr\alarm.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\alarm_heap.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\closure.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint.c">
     </ClCompile>

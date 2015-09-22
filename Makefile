@@ -4075,6 +4075,7 @@ LIBGRPC_SRC = \
     src/core/httpcli/parser.c \
     src/core/iomgr/alarm.c \
     src/core/iomgr/alarm_heap.c \
+    src/core/iomgr/closure.c \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
     src/core/iomgr/endpoint_pair_windows.c \
@@ -4355,6 +4356,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/httpcli/parser.c \
     src/core/iomgr/alarm.c \
     src/core/iomgr/alarm_heap.c \
+    src/core/iomgr/closure.c \
     src/core/iomgr/endpoint.c \
     src/core/iomgr/endpoint_pair_posix.c \
     src/core/iomgr/endpoint_pair_windows.c \

@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_GOAWAY_H
 #define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_GOAWAY_H
 
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/exec_ctx.h"
 #include "src/core/transport/chttp2/frame.h"
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>

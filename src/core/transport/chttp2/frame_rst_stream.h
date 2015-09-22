@@ -36,7 +36,7 @@
 
 #include <grpc/support/slice.h>
 #include "src/core/transport/chttp2/frame.h"
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/exec_ctx.h"
 
 typedef struct {
   gpr_uint8 byte;

@@ -37,7 +37,7 @@
 #include <stddef.h>
 
 #include <grpc/support/port_platform.h>
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/exec_ctx.h"
 #include "src/core/transport/chttp2/frame.h"
 #include "src/core/transport/chttp2/hpack_table.h"
 #include "src/core/transport/metadata.h"

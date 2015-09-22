@@ -31,26 +31,53 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_PING_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_PING_H
+#include "src/core/iomgr/closure.h"
 
-#include "src/core/iomgr/exec_ctx.h"
-#include <grpc/support/slice.h>
-#include "src/core/transport/chttp2/frame.h"
+void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
+                       void *cb_arg) {
+  closure->cb = cb;
+  closure->cb_arg = cb_arg;
+  closure->next = NULL;
+}
 
-typedef struct {
-  gpr_uint8 byte;
-  gpr_uint8 is_ack;
-  gpr_uint8 opaque_8bytes[8];
-} grpc_chttp2_ping_parser;
+void grpc_closure_list_add(grpc_closure_list *closure_list,
+                           grpc_closure *closure, int success) {
+  if (closure == NULL) return;
+  closure->next = NULL;
+  closure->success = success;
+  if (closure_list->head == NULL) {
+    closure_list->head = closure;
+  } else {
+    closure_list->tail->next = closure;
+  }
+  closure_list->tail = closure;
+}
 
-gpr_slice grpc_chttp2_ping_create(gpr_uint8 ack, gpr_uint8 *opaque_8bytes);
+void grpc_closure_list_run(grpc_closure_list *closure_list) {
+  while (!grpc_closure_list_empty(*closure_list)) {
+    grpc_closure *c = closure_list->head;
+    closure_list->head = closure_list->tail = NULL;
+    while (c != NULL) {
+      grpc_closure *next = c->next;
+      c->cb(c->cb_arg, c->success, closure_list);
+      c = next;
+    }
+  }
+}
 
-grpc_chttp2_parse_error grpc_chttp2_ping_parser_begin_frame(
-    grpc_chttp2_ping_parser *parser, gpr_uint32 length, gpr_uint8 flags);
-grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last,
-    grpc_closure_list *closure_list);
+int grpc_closure_list_empty(grpc_closure_list closure_list) {
+  return closure_list.head == NULL;
+}
 
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_PING_H */
+void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst) {
+  if (src->head == NULL) {
+    return;
+  }
+  if (dst->head == NULL) {
+    *dst = *src;
+  } else {
+    dst->tail->next = src->head;
+    dst->tail = src->tail;
+  }
+  src->head = src->tail = NULL;
+}

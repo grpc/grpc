@@ -34,52 +34,6 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_IOMGR_H
 #define GRPC_INTERNAL_CORE_IOMGR_IOMGR_H
 
-struct grpc_closure;
-typedef struct grpc_closure grpc_closure;
-
-typedef struct grpc_closure_list {
-  grpc_closure *head;
-  grpc_closure *tail;
-} grpc_closure_list;
-
-/** gRPC Callback definition.
- *
- * \param arg Arbitrary input.
- * \param success An indication on the state of the iomgr. On false, cleanup
- * actions should be taken (eg, shutdown). */
-typedef void (*grpc_iomgr_cb_func)(void *arg, int success,
-                                   grpc_closure_list *closure_list);
-
-/** A closure over a grpc_iomgr_cb_func. */
-struct grpc_closure {
-  /** Bound callback. */
-  grpc_iomgr_cb_func cb;
-
-  /** Arguments to be passed to "cb". */
-  void *cb_arg;
-
-  /** Internal. A boolean indication to "cb" on the state of the iomgr.
-   * For instance, closures created during a shutdown would have this field set
-   * to false. */
-  int success;
-
-  /**< Internal. Do not touch */
-  struct grpc_closure *next;
-};
-
-/** Initializes \a closure with \a cb and \a cb_arg. */
-void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
-                       void *cb_arg);
-
-#define GRPC_CLOSURE_LIST_INIT \
-  { NULL, NULL }
-
-void grpc_closure_list_add(grpc_closure_list *list, grpc_closure *closure,
-                           int success);
-void grpc_closure_list_run(grpc_closure_list *list);
-void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst);
-int grpc_closure_list_empty(grpc_closure_list list);
-
 /** Initializes the iomgr. */
 void grpc_iomgr_init(void);
 

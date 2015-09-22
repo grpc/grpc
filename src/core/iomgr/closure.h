@@ -31,42 +31,55 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H
-#define GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H
+#ifndef GRPC_INTERNAL_CORE_IOMGR_CLOSURE_H
+#define GRPC_INTERNAL_CORE_IOMGR_CLOSURE_H
 
 #include <stddef.h>
-#include "src/core/iomgr/exec_ctx.h"
-#include "src/core/iomgr/iomgr.h"
 
-#define GRPC_MAX_SOCKADDR_SIZE 128
+struct grpc_closure;
+typedef struct grpc_closure grpc_closure;
 
-typedef struct {
-  char addr[GRPC_MAX_SOCKADDR_SIZE];
-  size_t len;
-} grpc_resolved_address;
+typedef struct grpc_closure_list {
+  grpc_closure *head;
+  grpc_closure *tail;
+} grpc_closure_list;
 
-typedef struct {
-  size_t naddrs;
-  grpc_resolved_address *addrs;
-} grpc_resolved_addresses;
+/** gRPC Callback definition.
+ *
+ * \param arg Arbitrary input.
+ * \param success An indication on the state of the iomgr. On false, cleanup
+ * actions should be taken (eg, shutdown). */
+typedef void (*grpc_iomgr_cb_func)(void *arg, int success,
+                                   grpc_closure_list *closure_list);
 
-/* Async result callback:
-   On success: addresses is the result, and the callee must call
-   grpc_resolved_addresses_destroy when it's done with them
-   On failure: addresses is NULL */
-typedef void (*grpc_resolve_cb)(void *arg, grpc_resolved_addresses *addresses,
-                                grpc_closure_list *closure_list);
-/* Asynchronously resolve addr. Use default_port if a port isn't designated
-   in addr, otherwise use the port in addr. */
-/* TODO(ctiller): add a timeout here */
-void grpc_resolve_address(const char *addr, const char *default_port,
-                          grpc_resolve_cb cb, void *arg);
-/* Destroy resolved addresses */
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addresses);
+/** A closure over a grpc_iomgr_cb_func. */
+struct grpc_closure {
+  /** Bound callback. */
+  grpc_iomgr_cb_func cb;
 
-/* Resolve addr in a blocking fashion. Returns NULL on failure. On success,
-   result must be freed with grpc_resolved_addresses_destroy. */
-grpc_resolved_addresses *grpc_blocking_resolve_address(
-    const char *addr, const char *default_port);
+  /** Arguments to be passed to "cb". */
+  void *cb_arg;
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_RESOLVE_ADDRESS_H */
+  /** Internal. A boolean indication to "cb" on the state of the iomgr.
+   * For instance, closures created during a shutdown would have this field set
+   * to false. */
+  int success;
+
+  /**< Internal. Do not touch */
+  struct grpc_closure *next;
+};
+
+/** Initializes \a closure with \a cb and \a cb_arg. */
+void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
+                       void *cb_arg);
+
+#define GRPC_CLOSURE_LIST_INIT \
+  { NULL, NULL }
+
+void grpc_closure_list_add(grpc_closure_list *list, grpc_closure *closure,
+                           int success);
+void grpc_closure_list_run(grpc_closure_list *list);
+void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst);
+int grpc_closure_list_empty(grpc_closure_list list);
+
+#endif /* GRPC_INTERNAL_CORE_IOMGR_CLOSURE_H */

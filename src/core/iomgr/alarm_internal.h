@@ -34,6 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H
 #define GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H
 
+#include "src/core/iomgr/exec_ctx.h"
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
