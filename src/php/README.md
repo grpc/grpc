@@ -5,7 +5,7 @@ This directory contains source code for PHP implementation of gRPC layered on sh
 
 #Status
 
-Alpha : Ready for early adopters
+Beta
 
 ## Environment
 
@@ -49,7 +49,7 @@ sudo apt-get install libgrpc-dev
 Install the gRPC PHP extension
 
 ```sh
-sudo pecl install grpc-alpha
+sudo pecl install grpc-beta
 ```
 
 **Mac OS X:**
@@ -96,7 +96,7 @@ $ sudo make install   # 'make' should have been run by core grpc
 Install the gRPC PHP extension
 
 ```sh
-$ sudo pecl install grpc-alpha
+$ sudo pecl install grpc-beta
 ```
 
 OR
