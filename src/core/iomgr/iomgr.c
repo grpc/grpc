@@ -134,6 +134,10 @@ void grpc_iomgr_shutdown(void) {
   grpc_alarm_list_shutdown(&call_list);
   grpc_call_list_run(&call_list);
 
+  /* ensure all threads have left g_mu */
+  gpr_mu_lock(&g_mu);
+  gpr_mu_unlock(&g_mu);
+
   grpc_iomgr_platform_shutdown();
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_rcv);
@@ -166,10 +170,10 @@ void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
 
 void grpc_call_list_add(grpc_call_list *call_list, grpc_closure *closure,
                         int success) {
-  if (!closure) return;
+  if (closure == NULL) return;
   closure->next = NULL;
   closure->success = success;
-  if (!call_list->head) {
+  if (call_list->head == NULL) {
     call_list->head = closure;
   } else {
     call_list->tail->next = closure;
@@ -181,7 +185,7 @@ void grpc_call_list_run(grpc_call_list *call_list) {
   while (!grpc_call_list_empty(*call_list)) {
     grpc_closure *c = call_list->head;
     call_list->head = call_list->tail = NULL;
-    while (c) {
+    while (c != NULL) {
       grpc_closure *next = c->next;
       c->cb(c->cb_arg, c->success, call_list);
       c = next;

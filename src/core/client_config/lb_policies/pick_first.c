@@ -232,7 +232,7 @@ static void pf_connectivity_changed(void *arg, int iomgr_success,
         break;
       case GRPC_CHANNEL_CONNECTING:
       case GRPC_CHANNEL_IDLE:
-        grpc_connectivity_state_set(&p->state_tracker, p->checking_connectivity,
+        grpc_connectivity_state_set(&p->state_tracker, GRPC_CHANNEL_CONNECTING,
                                     "connecting_changed", call_list);
         grpc_subchannel_notify_on_state_change(
             p->subchannels[p->checking_subchannel], &p->checking_connectivity,

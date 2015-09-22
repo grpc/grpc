@@ -150,6 +150,8 @@ static void unref_by(grpc_fd *fd, int n) {
 void grpc_fd_global_init(void) { gpr_mu_init(&fd_freelist_mu); }
 
 void grpc_fd_global_shutdown(void) {
+  gpr_mu_lock(&fd_freelist_mu);
+  gpr_mu_unlock(&fd_freelist_mu);
   while (fd_freelist != NULL) {
     grpc_fd *fd = fd_freelist;
     fd_freelist = fd_freelist->freelist_next;
