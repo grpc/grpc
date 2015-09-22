@@ -202,7 +202,7 @@ static void
 finish_shutdown (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset)
 {
   pollset->vtable->finish_shutdown (pollset);
-  grpc_closure_list_add (closure_list, pollset->shutdown_done, 1);
+  grpc_exec_ctx_enqueue (exec_ctx, pollset->shutdown_done, 1);
 }
 
 void
@@ -378,7 +378,7 @@ basic_do_promote (grpc_exec_ctx * exec_ctx, void *args, int success)
 	{
 	  GPR_ASSERT (!grpc_pollset_has_workers (pollset));
 	  pollset->called_shutdown = 1;
-	  grpc_closure_list_add (closure_list, pollset->shutdown_done, 1);
+	  grpc_exec_ctx_enqueue (exec_ctx, pollset->shutdown_done, 1);
 	}
     }
   else if (grpc_fd_is_orphaned (fd))

@@ -111,7 +111,7 @@ perform_delayed_add (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_status)
       if (da->pollset->in_flight_cbs == 0 && !da->pollset->called_shutdown)
 	{
 	  da->pollset->called_shutdown = 1;
-	  grpc_closure_list_add (closure_list, da->pollset->shutdown_done, 1);
+	  grpc_exec_ctx_enqueue (exec_ctx, da->pollset->shutdown_done, 1);
 	}
     }
   gpr_mu_unlock (&da->pollset->mu);
@@ -137,7 +137,7 @@ multipoll_with_epoll_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * po
       GRPC_FD_REF (fd, "delayed_add");
       grpc_closure_init (&da->closure, perform_delayed_add, da);
       pollset->in_flight_cbs++;
-      grpc_closure_list_add (closure_list, &da->closure, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, &da->closure, 1);
     }
 }
 

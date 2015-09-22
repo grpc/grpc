@@ -97,7 +97,7 @@ grpc_chttp2_ping_parser_parse (grpc_exec_ctx * exec_ctx, void *parser, grpc_chtt
 	    {
 	      if (0 == memcmp (p->opaque_8bytes, ping->id, 8))
 		{
-		  grpc_closure_list_add (closure_list, ping->on_recv, 1);
+		  grpc_exec_ctx_enqueue (exec_ctx, ping->on_recv, 1);
 		}
 	      ping->next->prev = ping->prev;
 	      ping->prev->next = ping->next;

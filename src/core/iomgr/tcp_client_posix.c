@@ -225,7 +225,7 @@ finish:
       gpr_free (ac->addr_str);
       gpr_free (ac);
     }
-  grpc_closure_list_add (closure_list, closure, *ep != NULL);
+  grpc_exec_ctx_enqueue (exec_ctx, closure, *ep != NULL);
 }
 
 void
@@ -264,7 +264,7 @@ grpc_tcp_client_connect (grpc_exec_ctx * exec_ctx, grpc_closure * closure, grpc_
     }
   if (!prepare_socket (addr, fd))
     {
-      grpc_closure_list_add (closure_list, closure, 0);
+      grpc_exec_ctx_enqueue (exec_ctx, closure, 0);
       return;
     }
 
@@ -283,7 +283,7 @@ grpc_tcp_client_connect (grpc_exec_ctx * exec_ctx, grpc_closure * closure, grpc_
   if (err >= 0)
     {
       *ep = grpc_tcp_create (fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
-      grpc_closure_list_add (closure_list, closure, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, closure, 1);
       goto done;
     }
 
@@ -291,7 +291,7 @@ grpc_tcp_client_connect (grpc_exec_ctx * exec_ctx, grpc_closure * closure, grpc_
     {
       gpr_log (GPR_ERROR, "connect error to '%s': %s", addr_str, strerror (errno));
       grpc_fd_orphan (exec_ctx, fdobj, NULL, "tcp_client_connect_error");
-      grpc_closure_list_add (closure_list, closure, 0);
+      grpc_exec_ctx_enqueue (exec_ctx, closure, 0);
       goto done;
     }
 

@@ -202,7 +202,7 @@ grpc_chttp2_cleanup_writing (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_glo
 	    {
 	      GPR_ASSERT (stream_global->write_state != GRPC_WRITE_STATE_QUEUED_CLOSE);
 	      stream_global->outgoing_sopb = NULL;
-	      grpc_closure_list_add (closure_list, stream_global->send_done_closure, 1);
+	      grpc_exec_ctx_enqueue (exec_ctx, stream_global->send_done_closure, 1);
 	    }
 	}
       stream_global->writing_now = 0;

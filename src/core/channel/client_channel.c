@@ -366,7 +366,7 @@ perform_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem,
       break;
     case CALL_WAITING_FOR_SEND:
       GPR_ASSERT (!continuation);
-      grpc_closure_list_add (closure_list, merge_into_waiting_op (elem, op), 1);
+      grpc_exec_ctx_enqueue (exec_ctx, merge_into_waiting_op (elem, op), 1);
       if (!calld->waiting_op.send_ops && calld->waiting_op.cancel_with_status == GRPC_STATUS_OK)
 	{
 	  gpr_mu_unlock (&calld->mu_state);
@@ -402,7 +402,7 @@ perform_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem,
 	    }
 	  else
 	    {
-	      grpc_closure_list_add (closure_list, merge_into_waiting_op (elem, op), 1);
+	      grpc_exec_ctx_enqueue (exec_ctx, merge_into_waiting_op (elem, op), 1);
 	      gpr_mu_unlock (&calld->mu_state);
 	    }
 	  break;
@@ -617,7 +617,7 @@ cc_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, gr
   channel_data *chand = elem->channel_data;
   grpc_resolver *destroy_resolver = NULL;
 
-  grpc_closure_list_add (closure_list, op->on_consumed, 1);
+  grpc_exec_ctx_enqueue (exec_ctx, op->on_consumed, 1);
 
   GPR_ASSERT (op->set_accept_stream == NULL);
   GPR_ASSERT (op->bind_pollset == NULL);
