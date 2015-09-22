@@ -73,7 +73,8 @@ static shard_type g_shards[NUM_SHARDS];
 static shard_type *g_shard_queue[NUM_SHARDS];
 
 static int run_some_expired_alarms(gpr_timespec now, gpr_timespec *next,
-                                   int success, grpc_call_list *call_list);
+                                   int success,
+                                   grpc_closure_list *closure_list);
 
 static gpr_timespec compute_min_deadline(shard_type *shard) {
   return grpc_alarm_heap_is_empty(&shard->heap)
@@ -102,9 +103,9 @@ void grpc_alarm_list_init(gpr_timespec now) {
   }
 }
 
-void grpc_alarm_list_shutdown(grpc_call_list *call_list) {
+void grpc_alarm_list_shutdown(grpc_closure_list *closure_list) {
   int i;
-  run_some_expired_alarms(gpr_inf_future(g_clock_type), NULL, 0, call_list);
+  run_some_expired_alarms(gpr_inf_future(g_clock_type), NULL, 0, closure_list);
   for (i = 0; i < NUM_SHARDS; i++) {
     shard_type *shard = &g_shards[i];
     gpr_mu_destroy(&shard->mu);
@@ -172,7 +173,7 @@ static void note_deadline_change(shard_type *shard) {
 
 void grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
                      grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg,
-                     gpr_timespec now, grpc_call_list *call_list) {
+                     gpr_timespec now, grpc_closure_list *closure_list) {
   int is_first_alarm = 0;
   shard_type *shard = &g_shards[shard_idx(alarm)];
   GPR_ASSERT(deadline.clock_type == g_clock_type);
@@ -220,11 +221,11 @@ void grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
   }
 }
 
-void grpc_alarm_cancel(grpc_alarm *alarm, grpc_call_list *call_list) {
+void grpc_alarm_cancel(grpc_alarm *alarm, grpc_closure_list *closure_list) {
   shard_type *shard = &g_shards[shard_idx(alarm)];
   gpr_mu_lock(&shard->mu);
   if (!alarm->triggered) {
-    grpc_call_list_add(call_list, &alarm->closure, 0);
+    grpc_closure_list_add(closure_list, &alarm->closure, 0);
     alarm->triggered = 1;
     if (alarm->heap_index == INVALID_HEAP_INDEX) {
       list_remove(alarm);
@@ -285,12 +286,12 @@ static grpc_alarm *pop_one(shard_type *shard, gpr_timespec now) {
 /* REQUIRES: shard->mu unlocked */
 static size_t pop_alarms(shard_type *shard, gpr_timespec now,
                          gpr_timespec *new_min_deadline, int success,
-                         grpc_call_list *call_list) {
+                         grpc_closure_list *closure_list) {
   size_t n = 0;
   grpc_alarm *alarm;
   gpr_mu_lock(&shard->mu);
   while ((alarm = pop_one(shard, now))) {
-    grpc_call_list_add(call_list, &alarm->closure, success);
+    grpc_closure_list_add(closure_list, &alarm->closure, success);
     n++;
   }
   *new_min_deadline = compute_min_deadline(shard);
@@ -299,7 +300,8 @@ static size_t pop_alarms(shard_type *shard, gpr_timespec now,
 }
 
 static int run_some_expired_alarms(gpr_timespec now, gpr_timespec *next,
-                                   int success, grpc_call_list *call_list) {
+                                   int success,
+                                   grpc_closure_list *closure_list) {
   size_t n = 0;
 
   /* TODO(ctiller): verify that there are any alarms (atomically) here */
@@ -314,7 +316,7 @@ static int run_some_expired_alarms(gpr_timespec now, gpr_timespec *next,
          shard.  This may violate perfect alarm deadline ordering, but that
          shouldn't be a big deal because we don't make ordering guarantees. */
       n += pop_alarms(g_shard_queue[0], now, &new_min_deadline, success,
-                      call_list);
+                      closure_list);
 
       /* An grpc_alarm_init() on the shard could intervene here, adding a new
          alarm that is earlier than new_min_deadline.  However,
@@ -337,11 +339,11 @@ static int run_some_expired_alarms(gpr_timespec now, gpr_timespec *next,
 }
 
 int grpc_alarm_check(gpr_timespec now, gpr_timespec *next,
-                     grpc_call_list *call_list) {
+                     grpc_closure_list *closure_list) {
   GPR_ASSERT(now.clock_type == g_clock_type);
   return run_some_expired_alarms(
       now, next, gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0,
-      call_list);
+      closure_list);
 }
 
 gpr_timespec grpc_alarm_list_next_timeout(void) {

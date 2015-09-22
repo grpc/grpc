@@ -40,7 +40,7 @@ struct grpc_workqueue {
   gpr_refcount refs;
 
   gpr_mu mu;
-  grpc_call_list call_list;
+  grpc_closure_list closure_list;
 
   grpc_wakeup_fd wakeup_fd;
   struct grpc_fd *wakeup_read_fd;

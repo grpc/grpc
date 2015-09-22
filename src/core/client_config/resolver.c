@@ -40,7 +40,7 @@ void grpc_resolver_init(grpc_resolver *resolver,
 }
 
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
-void grpc_resolver_ref(grpc_resolver *resolver, grpc_call_list *call_list,
+void grpc_resolver_ref(grpc_resolver *resolver, grpc_closure_list *closure_list,
                        const char *file, int line, const char *reason) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "RESOLVER:%p   ref %d -> %d %s",
           resolver, (int)resolver->refs.count, (int)resolver->refs.count + 1,
@@ -52,34 +52,37 @@ void grpc_resolver_ref(grpc_resolver *resolver) {
 }
 
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
-void grpc_resolver_unref(grpc_resolver *resolver, grpc_call_list *call_list,
-                         const char *file, int line, const char *reason) {
+void grpc_resolver_unref(grpc_resolver *resolver,
+                         grpc_closure_list *closure_list, const char *file,
+                         int line, const char *reason) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "RESOLVER:%p unref %d -> %d %s",
           resolver, (int)resolver->refs.count, (int)resolver->refs.count - 1,
           reason);
 #else
-void grpc_resolver_unref(grpc_resolver *resolver, grpc_call_list *call_list) {
+void grpc_resolver_unref(grpc_resolver *resolver,
+                         grpc_closure_list *closure_list) {
 #endif
   if (gpr_unref(&resolver->refs)) {
-    resolver->vtable->destroy(resolver, call_list);
+    resolver->vtable->destroy(resolver, closure_list);
   }
 }
 
 void grpc_resolver_shutdown(grpc_resolver *resolver,
-                            grpc_call_list *call_list) {
-  resolver->vtable->shutdown(resolver, call_list);
+                            grpc_closure_list *closure_list) {
+  resolver->vtable->shutdown(resolver, closure_list);
 }
 
 void grpc_resolver_channel_saw_error(grpc_resolver *resolver,
                                      struct sockaddr *failing_address,
                                      int failing_address_len,
-                                     grpc_call_list *call_list) {
+                                     grpc_closure_list *closure_list) {
   resolver->vtable->channel_saw_error(resolver, failing_address,
-                                      failing_address_len, call_list);
+                                      failing_address_len, closure_list);
 }
 
 void grpc_resolver_next(grpc_resolver *resolver,
                         grpc_client_config **target_config,
-                        grpc_closure *on_complete, grpc_call_list *call_list) {
-  resolver->vtable->next(resolver, target_config, on_complete, call_list);
+                        grpc_closure *on_complete,
+                        grpc_closure_list *closure_list) {
+  resolver->vtable->next(resolver, target_config, on_complete, closure_list);
 }

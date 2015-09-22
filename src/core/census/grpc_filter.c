@@ -90,20 +90,20 @@ static void client_mutate_op(grpc_call_element* elem,
 
 static void client_start_transport_op(grpc_call_element* elem,
                                       grpc_transport_stream_op* op,
-                                      grpc_call_list* call_list) {
+                                      grpc_closure_list* closure_list) {
   client_mutate_op(elem, op);
-  grpc_call_next_op(elem, op, call_list);
+  grpc_call_next_op(elem, op, closure_list);
 }
 
 static void server_on_done_recv(void* ptr, int success,
-                                grpc_call_list* call_list) {
+                                grpc_closure_list* closure_list) {
   grpc_call_element* elem = ptr;
   call_data* calld = elem->call_data;
   channel_data* chand = elem->channel_data;
   if (success) {
     extract_and_annotate_method_tag(calld->recv_ops, calld, chand);
   }
-  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success, call_list);
+  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success, closure_list);
 }
 
 static void server_mutate_op(grpc_call_element* elem,
@@ -119,17 +119,17 @@ static void server_mutate_op(grpc_call_element* elem,
 
 static void server_start_transport_op(grpc_call_element* elem,
                                       grpc_transport_stream_op* op,
-                                      grpc_call_list* call_list) {
+                                      grpc_closure_list* closure_list) {
   call_data* calld = elem->call_data;
   GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
   server_mutate_op(elem, op);
-  grpc_call_next_op(elem, op, call_list);
+  grpc_call_next_op(elem, op, closure_list);
 }
 
 static void client_init_call_elem(grpc_call_element* elem,
                                   const void* server_transport_data,
                                   grpc_transport_stream_op* initial_op,
-                                  grpc_call_list* call_list) {
+                                  grpc_closure_list* closure_list) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
@@ -137,7 +137,7 @@ static void client_init_call_elem(grpc_call_element* elem,
 }
 
 static void client_destroy_call_elem(grpc_call_element* elem,
-                                     grpc_call_list* call_list) {
+                                     grpc_closure_list* closure_list) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
   /* TODO(hongyu): record rpc client stats and census_rpc_end_op here */
@@ -146,7 +146,7 @@ static void client_destroy_call_elem(grpc_call_element* elem,
 static void server_init_call_elem(grpc_call_element* elem,
                                   const void* server_transport_data,
                                   grpc_transport_stream_op* initial_op,
-                                  grpc_call_list* call_list) {
+                                  grpc_closure_list* closure_list) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
@@ -156,7 +156,7 @@ static void server_init_call_elem(grpc_call_element* elem,
 }
 
 static void server_destroy_call_elem(grpc_call_element* elem,
-                                     grpc_call_list* call_list) {
+                                     grpc_closure_list* closure_list) {
   call_data* d = elem->call_data;
   GPR_ASSERT(d != NULL);
   /* TODO(hongyu): record rpc server stats and census_tracing_end_op here */
@@ -165,14 +165,14 @@ static void server_destroy_call_elem(grpc_call_element* elem,
 static void init_channel_elem(grpc_channel_element* elem, grpc_channel* master,
                               const grpc_channel_args* args, grpc_mdctx* mdctx,
                               int is_first, int is_last,
-                              grpc_call_list* call_list) {
+                              grpc_closure_list* closure_list) {
   channel_data* chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
   chand->path_str = grpc_mdstr_from_string(mdctx, ":path", 0);
 }
 
 static void destroy_channel_elem(grpc_channel_element* elem,
-                                 grpc_call_list* call_list) {
+                                 grpc_closure_list* closure_list) {
   channel_data* chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
   if (chand->path_str != NULL) {

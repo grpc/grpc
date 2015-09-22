@@ -51,49 +51,51 @@ void grpc_lb_policy_ref(grpc_lb_policy *policy) {
 }
 
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
-void grpc_lb_policy_unref(grpc_lb_policy *policy, grpc_call_list *call_list,
-                          const char *file, int line, const char *reason) {
+void grpc_lb_policy_unref(grpc_lb_policy *policy,
+                          grpc_closure_list *closure_list, const char *file,
+                          int line, const char *reason) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "LB_POLICY:%p unref %d -> %d %s",
           policy, (int)policy->refs.count, (int)policy->refs.count - 1, reason);
 #else
-void grpc_lb_policy_unref(grpc_lb_policy *policy, grpc_call_list *call_list) {
+void grpc_lb_policy_unref(grpc_lb_policy *policy,
+                          grpc_closure_list *closure_list) {
 #endif
   if (gpr_unref(&policy->refs)) {
-    policy->vtable->destroy(policy, call_list);
+    policy->vtable->destroy(policy, closure_list);
   }
 }
 
 void grpc_lb_policy_shutdown(grpc_lb_policy *policy,
-                             grpc_call_list *call_list) {
-  policy->vtable->shutdown(policy, call_list);
+                             grpc_closure_list *closure_list) {
+  policy->vtable->shutdown(policy, closure_list);
 }
 
 void grpc_lb_policy_pick(grpc_lb_policy *policy, grpc_pollset *pollset,
                          grpc_metadata_batch *initial_metadata,
                          grpc_subchannel **target, grpc_closure *on_complete,
-                         grpc_call_list *call_list) {
+                         grpc_closure_list *closure_list) {
   policy->vtable->pick(policy, pollset, initial_metadata, target, on_complete,
-                       call_list);
+                       closure_list);
 }
 
 void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op,
-                              grpc_call_list *call_list) {
-  policy->vtable->broadcast(policy, op, call_list);
+                              grpc_closure_list *closure_list) {
+  policy->vtable->broadcast(policy, op, closure_list);
 }
 
 void grpc_lb_policy_exit_idle(grpc_lb_policy *policy,
-                              grpc_call_list *call_list) {
-  policy->vtable->exit_idle(policy, call_list);
+                              grpc_closure_list *closure_list) {
+  policy->vtable->exit_idle(policy, closure_list);
 }
 
 void grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy,
                                            grpc_connectivity_state *state,
                                            grpc_closure *closure,
-                                           grpc_call_list *call_list) {
-  policy->vtable->notify_on_state_change(policy, state, closure, call_list);
+                                           grpc_closure_list *closure_list) {
+  policy->vtable->notify_on_state_change(policy, state, closure, closure_list);
 }
 
 grpc_connectivity_state grpc_lb_policy_check_connectivity(
-    grpc_lb_policy *policy, grpc_call_list *call_list) {
-  return policy->vtable->check_connectivity(policy, call_list);
+    grpc_lb_policy *policy, grpc_closure_list *closure_list) {
+  return policy->vtable->check_connectivity(policy, closure_list);
 }

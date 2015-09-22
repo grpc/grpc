@@ -48,10 +48,10 @@ static void merge_args_factory_ref(grpc_subchannel_factory *scf) {
 }
 
 static void merge_args_factory_unref(grpc_subchannel_factory *scf,
-                                     grpc_call_list *call_list) {
+                                     grpc_closure_list *closure_list) {
   merge_args_factory *f = (merge_args_factory *)scf;
   if (gpr_unref(&f->refs)) {
-    grpc_subchannel_factory_unref(f->wrapped, call_list);
+    grpc_subchannel_factory_unref(f->wrapped, closure_list);
     grpc_channel_args_destroy(f->merge_args);
     gpr_free(f);
   }
@@ -59,13 +59,13 @@ static void merge_args_factory_unref(grpc_subchannel_factory *scf,
 
 static grpc_subchannel *merge_args_factory_create_subchannel(
     grpc_subchannel_factory *scf, grpc_subchannel_args *args,
-    grpc_call_list *call_list) {
+    grpc_closure_list *closure_list) {
   merge_args_factory *f = (merge_args_factory *)scf;
   grpc_channel_args *final_args =
       grpc_channel_args_merge(args->args, f->merge_args);
   grpc_subchannel *s;
   args->args = final_args;
-  s = grpc_subchannel_factory_create_subchannel(f->wrapped, args, call_list);
+  s = grpc_subchannel_factory_create_subchannel(f->wrapped, args, closure_list);
   grpc_channel_args_destroy(final_args);
   return s;
 }

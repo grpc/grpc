@@ -43,7 +43,7 @@ static gpr_timespec test_deadline(void) {
 }
 
 static void must_succeed(void* evp, grpc_resolved_addresses* p,
-                         grpc_call_list* call_list) {
+                         grpc_closure_list* closure_list) {
   GPR_ASSERT(p);
   GPR_ASSERT(p->naddrs >= 1);
   grpc_resolved_addresses_destroy(p);
@@ -51,7 +51,7 @@ static void must_succeed(void* evp, grpc_resolved_addresses* p,
 }
 
 static void must_fail(void* evp, grpc_resolved_addresses* p,
-                      grpc_call_list* call_list) {
+                      grpc_closure_list* closure_list) {
   GPR_ASSERT(!p);
   gpr_event_set(evp, (void*)1);
 }

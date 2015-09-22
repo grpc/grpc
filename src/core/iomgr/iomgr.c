@@ -88,7 +88,7 @@ void grpc_iomgr_shutdown(void) {
   gpr_timespec shutdown_deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;
@@ -103,9 +103,9 @@ void grpc_iomgr_shutdown(void) {
       last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
     }
     if (grpc_alarm_check(gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL,
-                         &call_list)) {
+                         &closure_list)) {
       gpr_mu_unlock(&g_mu);
-      grpc_call_list_run(&call_list);
+      grpc_closure_list_run(&closure_list);
       gpr_mu_lock(&g_mu);
       continue;
     }
@@ -131,8 +131,8 @@ void grpc_iomgr_shutdown(void) {
   }
   gpr_mu_unlock(&g_mu);
 
-  grpc_alarm_list_shutdown(&call_list);
-  grpc_call_list_run(&call_list);
+  grpc_alarm_list_shutdown(&closure_list);
+  grpc_closure_list_run(&closure_list);
 
   /* ensure all threads have left g_mu */
   gpr_mu_lock(&g_mu);
@@ -168,36 +168,36 @@ void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
   closure->next = NULL;
 }
 
-void grpc_call_list_add(grpc_call_list *call_list, grpc_closure *closure,
-                        int success) {
+void grpc_closure_list_add(grpc_closure_list *closure_list,
+                           grpc_closure *closure, int success) {
   if (closure == NULL) return;
   closure->next = NULL;
   closure->success = success;
-  if (call_list->head == NULL) {
-    call_list->head = closure;
+  if (closure_list->head == NULL) {
+    closure_list->head = closure;
   } else {
-    call_list->tail->next = closure;
+    closure_list->tail->next = closure;
   }
-  call_list->tail = closure;
+  closure_list->tail = closure;
 }
 
-void grpc_call_list_run(grpc_call_list *call_list) {
-  while (!grpc_call_list_empty(*call_list)) {
-    grpc_closure *c = call_list->head;
-    call_list->head = call_list->tail = NULL;
+void grpc_closure_list_run(grpc_closure_list *closure_list) {
+  while (!grpc_closure_list_empty(*closure_list)) {
+    grpc_closure *c = closure_list->head;
+    closure_list->head = closure_list->tail = NULL;
     while (c != NULL) {
       grpc_closure *next = c->next;
-      c->cb(c->cb_arg, c->success, call_list);
+      c->cb(c->cb_arg, c->success, closure_list);
       c = next;
     }
   }
 }
 
-int grpc_call_list_empty(grpc_call_list call_list) {
-  return call_list.head == NULL;
+int grpc_closure_list_empty(grpc_closure_list closure_list) {
+  return closure_list.head == NULL;
 }
 
-void grpc_call_list_move(grpc_call_list *src, grpc_call_list *dst) {
+void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst) {
   if (src->head == NULL) {
     return;
   }

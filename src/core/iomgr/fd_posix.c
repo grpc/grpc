@@ -212,7 +212,7 @@ static int has_watchers(grpc_fd *fd) {
 }
 
 void grpc_fd_orphan(grpc_fd *fd, grpc_closure *on_done, const char *reason,
-                    grpc_call_list *call_list) {
+                    grpc_closure_list *closure_list) {
   fd->on_done_closure = on_done;
   shutdown(fd->fd, SHUT_RDWR);
   gpr_mu_lock(&fd->watcher_mu);
@@ -220,7 +220,7 @@ void grpc_fd_orphan(grpc_fd *fd, grpc_closure *on_done, const char *reason,
   if (!has_watchers(fd)) {
     fd->closed = 1;
     close(fd->fd);
-    grpc_call_list_add(call_list, fd->on_done_closure, 1);
+    grpc_closure_list_add(closure_list, fd->on_done_closure, 1);
   } else {
     wake_all_watchers_locked(fd);
   }
@@ -245,7 +245,7 @@ void grpc_fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 #endif
 
 static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_closure *closure,
-                      grpc_call_list *call_list) {
+                      grpc_closure_list *closure_list) {
   switch (gpr_atm_acq_load(st)) {
     case NOT_READY:
       /* There is no race if the descriptor is already ready, so we skip
@@ -267,7 +267,8 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_closure *closure,
     case READY:
       GPR_ASSERT(gpr_atm_no_barrier_load(st) == READY);
       gpr_atm_rel_store(st, NOT_READY);
-      grpc_call_list_add(call_list, closure, !gpr_atm_acq_load(&fd->shutdown));
+      grpc_closure_list_add(closure_list, closure,
+                            !gpr_atm_acq_load(&fd->shutdown));
       return;
     default: /* WAITING */
       /* upcallptr was set to a different closure.  This is an error! */
@@ -281,7 +282,7 @@ static void notify_on(grpc_fd *fd, gpr_atm *st, grpc_closure *closure,
 }
 
 static void set_ready_locked(grpc_fd *fd, gpr_atm *st,
-                             grpc_call_list *call_list) {
+                             grpc_closure_list *closure_list) {
   gpr_intptr state = gpr_atm_acq_load(st);
 
   switch (state) {
@@ -300,38 +301,39 @@ static void set_ready_locked(grpc_fd *fd, gpr_atm *st,
     default: /* waiting */
       GPR_ASSERT(gpr_atm_no_barrier_load(st) != READY &&
                  gpr_atm_no_barrier_load(st) != NOT_READY);
-      grpc_call_list_add(call_list, (grpc_closure *)state,
-                         !gpr_atm_acq_load(&fd->shutdown));
+      grpc_closure_list_add(closure_list, (grpc_closure *)state,
+                            !gpr_atm_acq_load(&fd->shutdown));
       gpr_atm_rel_store(st, NOT_READY);
       return;
   }
 }
 
-static void set_ready(grpc_fd *fd, gpr_atm *st, grpc_call_list *call_list) {
+static void set_ready(grpc_fd *fd, gpr_atm *st,
+                      grpc_closure_list *closure_list) {
   /* only one set_ready can be active at once (but there may be a racing
      notify_on) */
   gpr_mu_lock(&fd->set_state_mu);
-  set_ready_locked(fd, st, call_list);
+  set_ready_locked(fd, st, closure_list);
   gpr_mu_unlock(&fd->set_state_mu);
 }
 
-void grpc_fd_shutdown(grpc_fd *fd, grpc_call_list *call_list) {
+void grpc_fd_shutdown(grpc_fd *fd, grpc_closure_list *closure_list) {
   gpr_mu_lock(&fd->set_state_mu);
   GPR_ASSERT(!gpr_atm_no_barrier_load(&fd->shutdown));
   gpr_atm_rel_store(&fd->shutdown, 1);
-  set_ready_locked(fd, &fd->readst, call_list);
-  set_ready_locked(fd, &fd->writest, call_list);
+  set_ready_locked(fd, &fd->readst, closure_list);
+  set_ready_locked(fd, &fd->writest, closure_list);
   gpr_mu_unlock(&fd->set_state_mu);
 }
 
 void grpc_fd_notify_on_read(grpc_fd *fd, grpc_closure *closure,
-                            grpc_call_list *call_list) {
-  notify_on(fd, &fd->readst, closure, call_list);
+                            grpc_closure_list *closure_list) {
+  notify_on(fd, &fd->readst, closure, closure_list);
 }
 
 void grpc_fd_notify_on_write(grpc_fd *fd, grpc_closure *closure,
-                             grpc_call_list *call_list) {
-  notify_on(fd, &fd->writest, closure, call_list);
+                             grpc_closure_list *closure_list) {
+  notify_on(fd, &fd->writest, closure, closure_list);
 }
 
 gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
@@ -378,7 +380,7 @@ gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
 }
 
 void grpc_fd_end_poll(grpc_fd_watcher *watcher, int got_read, int got_write,
-                      grpc_call_list *call_list) {
+                      grpc_closure_list *closure_list) {
   int was_polling = 0;
   int kick = 0;
   grpc_fd *fd = watcher->fd;
@@ -411,19 +413,19 @@ void grpc_fd_end_poll(grpc_fd_watcher *watcher, int got_read, int got_write,
   if (grpc_fd_is_orphaned(fd) && !has_watchers(fd) && !fd->closed) {
     fd->closed = 1;
     close(fd->fd);
-    grpc_call_list_add(call_list, fd->on_done_closure, 1);
+    grpc_closure_list_add(closure_list, fd->on_done_closure, 1);
   }
   gpr_mu_unlock(&fd->watcher_mu);
 
   GRPC_FD_UNREF(fd, "poll");
 }
 
-void grpc_fd_become_readable(grpc_fd *fd, grpc_call_list *call_list) {
-  set_ready(fd, &fd->readst, call_list);
+void grpc_fd_become_readable(grpc_fd *fd, grpc_closure_list *closure_list) {
+  set_ready(fd, &fd->readst, closure_list);
 }
 
-void grpc_fd_become_writable(grpc_fd *fd, grpc_call_list *call_list) {
-  set_ready(fd, &fd->writest, call_list);
+void grpc_fd_become_writable(grpc_fd *fd, grpc_closure_list *closure_list) {
+  set_ready(fd, &fd->writest, closure_list);
 }
 
 #endif

@@ -69,7 +69,7 @@ typedef struct channel_data {
 
 typedef struct {
   grpc_call_element *elem;
-  grpc_call_list *call_list;
+  grpc_closure_list *closure_list;
 } client_recv_filter_args;
 
 static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
@@ -79,7 +79,7 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   if (md == channeld->status) {
     return NULL;
   } else if (md->key == channeld->status->key) {
-    grpc_call_element_send_cancel(elem, a->call_list);
+    grpc_call_element_send_cancel(elem, a->closure_list);
     return NULL;
   } else if (md->key == channeld->content_type->key) {
     return NULL;
@@ -88,7 +88,7 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
 }
 
 static void hc_on_recv(void *user_data, int success,
-                       grpc_call_list *call_list) {
+                       grpc_closure_list *closure_list) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   size_t i;
@@ -100,10 +100,10 @@ static void hc_on_recv(void *user_data, int success,
     if (op->type != GRPC_OP_METADATA) continue;
     calld->got_initial_metadata = 1;
     a.elem = elem;
-    a.call_list = call_list;
+    a.closure_list = closure_list;
     grpc_metadata_batch_filter(&op->data.metadata, client_recv_filter, &a);
   }
-  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success, call_list);
+  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success, closure_list);
 }
 
 static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
@@ -158,17 +158,17 @@ static void hc_mutate_op(grpc_call_element *elem,
 
 static void hc_start_transport_op(grpc_call_element *elem,
                                   grpc_transport_stream_op *op,
-                                  grpc_call_list *call_list) {
+                                  grpc_closure_list *closure_list) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   hc_mutate_op(elem, op);
-  grpc_call_next_op(elem, op, call_list);
+  grpc_call_next_op(elem, op, closure_list);
 }
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_call_element *elem,
                            const void *server_transport_data,
                            grpc_transport_stream_op *initial_op,
-                           grpc_call_list *call_list) {
+                           grpc_closure_list *closure_list) {
   call_data *calld = elem->call_data;
   calld->sent_initial_metadata = 0;
   calld->got_initial_metadata = 0;
@@ -179,7 +179,7 @@ static void init_call_elem(grpc_call_element *elem,
 
 /* Destructor for call_data */
 static void destroy_call_elem(grpc_call_element *elem,
-                              grpc_call_list *call_list) {}
+                              grpc_closure_list *closure_list) {}
 
 static const char *scheme_from_args(const grpc_channel_args *args) {
   unsigned i;
@@ -247,7 +247,7 @@ static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
 static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *channel_args,
                               grpc_mdctx *mdctx, int is_first, int is_last,
-                              grpc_call_list *call_list) {
+                              grpc_closure_list *closure_list) {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
@@ -271,7 +271,7 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element *elem,
-                                 grpc_call_list *call_list) {
+                                 grpc_closure_list *closure_list) {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 

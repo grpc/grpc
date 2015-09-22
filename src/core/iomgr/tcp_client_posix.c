@@ -91,7 +91,8 @@ error:
   return 0;
 }
 
-static void tc_on_alarm(void *acp, int success, grpc_call_list *call_list) {
+static void tc_on_alarm(void *acp, int success,
+                        grpc_closure_list *closure_list) {
   int done;
   async_connect *ac = acp;
   if (grpc_tcp_trace) {
@@ -100,7 +101,7 @@ static void tc_on_alarm(void *acp, int success, grpc_call_list *call_list) {
   }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
-    grpc_fd_shutdown(ac->fd, call_list);
+    grpc_fd_shutdown(ac->fd, closure_list);
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -111,7 +112,8 @@ static void tc_on_alarm(void *acp, int success, grpc_call_list *call_list) {
   }
 }
 
-static void on_writable(void *acp, int success, grpc_call_list *call_list) {
+static void on_writable(void *acp, int success,
+                        grpc_closure_list *closure_list) {
   async_connect *ac = acp;
   int so_error = 0;
   socklen_t so_error_size;
@@ -132,7 +134,7 @@ static void on_writable(void *acp, int success, grpc_call_list *call_list) {
   ac->fd = NULL;
   gpr_mu_unlock(&ac->mu);
 
-  grpc_alarm_cancel(&ac->alarm, call_list);
+  grpc_alarm_cancel(&ac->alarm, closure_list);
 
   gpr_mu_lock(&ac->mu);
   if (success) {
@@ -161,7 +163,7 @@ static void on_writable(void *acp, int success, grpc_call_list *call_list) {
            don't do that! */
         gpr_log(GPR_ERROR, "kernel out of buffers");
         gpr_mu_unlock(&ac->mu);
-        grpc_fd_notify_on_write(fd, &ac->write_closure, call_list);
+        grpc_fd_notify_on_write(fd, &ac->write_closure, closure_list);
         return;
       } else {
         switch (so_error) {
@@ -175,7 +177,7 @@ static void on_writable(void *acp, int success, grpc_call_list *call_list) {
         goto finish;
       }
     } else {
-      grpc_pollset_set_del_fd(ac->interested_parties, fd, call_list);
+      grpc_pollset_set_del_fd(ac->interested_parties, fd, closure_list);
       *ep = grpc_tcp_create(fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, ac->addr_str);
       fd = NULL;
       goto finish;
@@ -189,8 +191,8 @@ static void on_writable(void *acp, int success, grpc_call_list *call_list) {
 
 finish:
   if (fd != NULL) {
-    grpc_pollset_set_del_fd(ac->interested_parties, fd, call_list);
-    grpc_fd_orphan(fd, NULL, "tcp_client_orphan", call_list);
+    grpc_pollset_set_del_fd(ac->interested_parties, fd, closure_list);
+    grpc_fd_orphan(fd, NULL, "tcp_client_orphan", closure_list);
     fd = NULL;
   }
   done = (--ac->refs == 0);
@@ -200,13 +202,14 @@ finish:
     gpr_free(ac->addr_str);
     gpr_free(ac);
   }
-  grpc_call_list_add(call_list, closure, *ep != NULL);
+  grpc_closure_list_add(closure_list, closure, *ep != NULL);
 }
 
 void grpc_tcp_client_connect(grpc_closure *closure, grpc_endpoint **ep,
                              grpc_pollset_set *interested_parties,
                              const struct sockaddr *addr, size_t addr_len,
-                             gpr_timespec deadline, grpc_call_list *call_list) {
+                             gpr_timespec deadline,
+                             grpc_closure_list *closure_list) {
   int fd;
   grpc_dualstack_mode dsmode;
   int err;
@@ -236,7 +239,7 @@ void grpc_tcp_client_connect(grpc_closure *closure, grpc_endpoint **ep,
     addr_len = sizeof(addr4_copy);
   }
   if (!prepare_socket(addr, fd)) {
-    grpc_call_list_add(call_list, closure, 0);
+    grpc_closure_list_add(closure_list, closure, 0);
     return;
   }
 
@@ -252,18 +255,18 @@ void grpc_tcp_client_connect(grpc_closure *closure, grpc_endpoint **ep,
 
   if (err >= 0) {
     *ep = grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
-    grpc_call_list_add(call_list, closure, 1);
+    grpc_closure_list_add(closure_list, closure, 1);
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     gpr_log(GPR_ERROR, "connect error to '%s': %s", addr_str, strerror(errno));
-    grpc_fd_orphan(fdobj, NULL, "tcp_client_connect_error", call_list);
-    grpc_call_list_add(call_list, closure, 0);
+    grpc_fd_orphan(fdobj, NULL, "tcp_client_connect_error", closure_list);
+    grpc_closure_list_add(closure_list, closure, 0);
     goto done;
   }
 
-  grpc_pollset_set_add_fd(interested_parties, fdobj, call_list);
+  grpc_pollset_set_add_fd(interested_parties, fdobj, closure_list);
 
   ac = gpr_malloc(sizeof(async_connect));
   ac->closure = closure;
@@ -285,8 +288,8 @@ void grpc_tcp_client_connect(grpc_closure *closure, grpc_endpoint **ep,
   gpr_mu_lock(&ac->mu);
   grpc_alarm_init(&ac->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-                  tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC), call_list);
-  grpc_fd_notify_on_write(ac->fd, &ac->write_closure, call_list);
+                  tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC), closure_list);
+  grpc_fd_notify_on_write(ac->fd, &ac->write_closure, closure_list);
   gpr_mu_unlock(&ac->mu);
 
 done:

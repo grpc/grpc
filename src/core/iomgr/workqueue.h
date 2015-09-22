@@ -50,9 +50,10 @@ struct grpc_workqueue;
 typedef struct grpc_workqueue grpc_workqueue;
 
 /** Create a work queue */
-grpc_workqueue *grpc_workqueue_create(grpc_call_list *call_list);
+grpc_workqueue *grpc_workqueue_create(grpc_closure_list *closure_list);
 
-void grpc_workqueue_flush(grpc_workqueue *workqueue, grpc_call_list *call_list);
+void grpc_workqueue_flush(grpc_workqueue *workqueue,
+                          grpc_closure_list *closure_list);
 
 #define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -62,19 +63,21 @@ void grpc_workqueue_flush(grpc_workqueue *workqueue, grpc_call_list *call_list);
   grpc_workqueue_unref((p), (cl), __FILE__, __LINE__, (r))
 void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
                         const char *reason);
-void grpc_workqueue_unref(grpc_workqueue *workqueue, grpc_call_list *call_list,
-                          const char *file, int line, const char *reason);
+void grpc_workqueue_unref(grpc_workqueue *workqueue,
+                          grpc_closure_list *closure_list, const char *file,
+                          int line, const char *reason);
 #else
 #define GRPC_WORKQUEUE_REF(p, r) grpc_workqueue_ref((p))
 #define GRPC_WORKQUEUE_UNREF(p, r, cl) grpc_workqueue_unref((p), (cl))
 void grpc_workqueue_ref(grpc_workqueue *workqueue);
-void grpc_workqueue_unref(grpc_workqueue *workqueue, grpc_call_list *call_list);
+void grpc_workqueue_unref(grpc_workqueue *workqueue,
+                          grpc_closure_list *closure_list);
 #endif
 
 /** Bind this workqueue to a pollset */
 void grpc_workqueue_add_to_pollset(grpc_workqueue *workqueue,
                                    grpc_pollset *pollset,
-                                   grpc_call_list *call_list);
+                                   grpc_closure_list *closure_list);
 
 /** Add a work item to a workqueue */
 void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,

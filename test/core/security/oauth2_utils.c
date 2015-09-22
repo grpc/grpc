@@ -52,7 +52,7 @@ typedef struct {
 
 static void on_oauth2_response(void *user_data, grpc_credentials_md *md_elems,
                                size_t num_md, grpc_credentials_status status,
-                               grpc_call_list *call_list) {
+                               grpc_closure_list *closure_list) {
   oauth2_request *request = user_data;
   char *token = NULL;
   gpr_slice token_slice;
@@ -73,11 +73,12 @@ static void on_oauth2_response(void *user_data, grpc_credentials_md *md_elems,
   gpr_mu_unlock(GRPC_POLLSET_MU(&request->pollset));
 }
 
-static void do_nothing(void *unused, int success, grpc_call_list *call_list) {}
+static void do_nothing(void *unused, int success,
+                       grpc_closure_list *closure_list) {}
 
 char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds) {
   oauth2_request request;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_closure do_nothing_closure;
   grpc_pollset_init(&request.pollset);
   request.is_done = 0;
@@ -85,20 +86,20 @@ char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds) {
   grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
 
   grpc_credentials_get_request_metadata(
-      creds, &request.pollset, "", on_oauth2_response, &request, &call_list);
+      creds, &request.pollset, "", on_oauth2_response, &request, &closure_list);
 
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&request.pollset));
   while (!request.is_done) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&request.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC), &call_list);
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC), &closure_list);
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&request.pollset));
 
-  grpc_pollset_shutdown(&request.pollset, &do_nothing_closure, &call_list);
-  grpc_call_list_run(&call_list);
+  grpc_pollset_shutdown(&request.pollset, &do_nothing_closure, &closure_list);
+  grpc_closure_list_run(&closure_list);
   grpc_pollset_destroy(&request.pollset);
   return request.token;
 }

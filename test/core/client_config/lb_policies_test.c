@@ -387,15 +387,15 @@ static void assert_channel_connectivity(
   grpc_channel_stack *client_stack;
   grpc_channel_element *client_channel_filter;
   grpc_connectivity_state actual_conn_state;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   va_list ap;
 
   client_stack = grpc_channel_get_channel_stack(ch);
   client_channel_filter = grpc_channel_stack_last_element(client_stack);
 
   actual_conn_state = grpc_client_channel_check_connectivity_state(
-      client_channel_filter, 0 /* don't try to connect */, &call_list);
-  grpc_call_list_run(&call_list);
+      client_channel_filter, 0 /* don't try to connect */, &closure_list);
+  grpc_closure_list_run(&closure_list);
   va_start(ap, accepted_conn_state);
   for (i = 0; i < num_accepted_conn_states; i++) {
     if (actual_conn_state == accepted_conn_state) {

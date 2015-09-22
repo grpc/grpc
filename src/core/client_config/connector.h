@@ -67,25 +67,27 @@ typedef struct {
 
 struct grpc_connector_vtable {
   void (*ref)(grpc_connector *connector);
-  void (*unref)(grpc_connector *connector, grpc_call_list *call_list);
+  void (*unref)(grpc_connector *connector, grpc_closure_list *closure_list);
   /** Implementation of grpc_connector_shutdown */
-  void (*shutdown)(grpc_connector *connector, grpc_call_list *call_list);
+  void (*shutdown)(grpc_connector *connector, grpc_closure_list *closure_list);
   /** Implementation of grpc_connector_connect */
   void (*connect)(grpc_connector *connector,
                   const grpc_connect_in_args *in_args,
                   grpc_connect_out_args *out_args, grpc_closure *notify,
-                  grpc_call_list *call_list);
+                  grpc_closure_list *closure_list);
 };
 
 void grpc_connector_ref(grpc_connector *connector);
-void grpc_connector_unref(grpc_connector *connector, grpc_call_list *call_list);
+void grpc_connector_unref(grpc_connector *connector,
+                          grpc_closure_list *closure_list);
 /** Connect using the connector: max one outstanding call at a time */
 void grpc_connector_connect(grpc_connector *connector,
                             const grpc_connect_in_args *in_args,
                             grpc_connect_out_args *out_args,
-                            grpc_closure *notify, grpc_call_list *call_list);
+                            grpc_closure *notify,
+                            grpc_closure_list *closure_list);
 /** Cancel any pending connection */
 void grpc_connector_shutdown(grpc_connector *connector,
-                             grpc_call_list *call_list);
+                             grpc_closure_list *closure_list);
 
 #endif

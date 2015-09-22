@@ -54,7 +54,7 @@ static gpr_timespec n_seconds_time(int seconds) {
 }
 
 static void on_finish(void *arg, const grpc_httpcli_response *response,
-                      grpc_call_list *call_list) {
+                      grpc_closure_list *closure_list) {
   const char *expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
@@ -72,7 +72,7 @@ static void on_finish(void *arg, const grpc_httpcli_response *response,
 static void test_get(int use_ssl, int port) {
   grpc_httpcli_request req;
   char *host;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
   g_done = 0;
   gpr_log(GPR_INFO, "running %s with use_ssl=%d.", "test_get", use_ssl);
@@ -86,14 +86,14 @@ static void test_get(int use_ssl, int port) {
   req.handshaker = use_ssl ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
 
   grpc_httpcli_get(&g_context, &g_pollset, &req, n_seconds_time(15), on_finish,
-                   (void *)42, &call_list);
+                   (void *)42, &closure_list);
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!g_done) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      n_seconds_time(20), &call_list);
+                      n_seconds_time(20), &closure_list);
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
-    grpc_call_list_run(&call_list);
+    grpc_closure_list_run(&closure_list);
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
@@ -103,7 +103,7 @@ static void test_get(int use_ssl, int port) {
 static void test_post(int use_ssl, int port) {
   grpc_httpcli_request req;
   char *host;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
   g_done = 0;
   gpr_log(GPR_INFO, "running %s with use_ssl=%d.", "test_post", (int)use_ssl);
@@ -117,27 +117,28 @@ static void test_post(int use_ssl, int port) {
   req.handshaker = use_ssl ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
 
   grpc_httpcli_post(&g_context, &g_pollset, &req, "hello", 5,
-                    n_seconds_time(15), on_finish, (void *)42, &call_list);
+                    n_seconds_time(15), on_finish, (void *)42, &closure_list);
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!g_done) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      n_seconds_time(20), &call_list);
+                      n_seconds_time(20), &closure_list);
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
-    grpc_call_list_run(&call_list);
+    grpc_closure_list_run(&closure_list);
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
   gpr_free(host);
 }
 
-static void destroy_pollset(void *p, int success, grpc_call_list *call_list) {
+static void destroy_pollset(void *p, int success,
+                            grpc_closure_list *closure_list) {
   grpc_pollset_destroy(p);
 }
 
 int main(int argc, char **argv) {
   grpc_closure destroyed;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   gpr_subprocess *server;
   char *me = argv[0];
   char *lslash = strrchr(me, '/');
@@ -175,8 +176,8 @@ int main(int argc, char **argv) {
 
   grpc_httpcli_context_destroy(&g_context);
   grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&g_pollset, &destroyed, &call_list);
-  grpc_call_list_run(&call_list);
+  grpc_pollset_shutdown(&g_pollset, &destroyed, &closure_list);
+  grpc_closure_list_run(&closure_list);
   grpc_shutdown();
 
   gpr_subprocess_destroy(server);

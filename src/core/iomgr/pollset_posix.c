@@ -141,9 +141,9 @@ void grpc_pollset_init(grpc_pollset *pollset) {
 }
 
 void grpc_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd,
-                         grpc_call_list *call_list) {
+                         grpc_closure_list *closure_list) {
   gpr_mu_lock(&pollset->mu);
-  pollset->vtable->add_fd(pollset, fd, 1, call_list);
+  pollset->vtable->add_fd(pollset, fd, 1, closure_list);
 /* the following (enabled only in debug) will reacquire and then release
    our lock - meaning that if the unlocking flag passed to del_fd above is
    not respected, the code will deadlock (in a way that we have a chance of
@@ -155,9 +155,9 @@ void grpc_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd,
 }
 
 void grpc_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd,
-                         grpc_call_list *call_list) {
+                         grpc_closure_list *closure_list) {
   gpr_mu_lock(&pollset->mu);
-  pollset->vtable->del_fd(pollset, fd, 1, call_list);
+  pollset->vtable->del_fd(pollset, fd, 1, closure_list);
 /* the following (enabled only in debug) will reacquire and then release
    our lock - meaning that if the unlocking flag passed to del_fd above is
    not respected, the code will deadlock (in a way that we have a chance of
@@ -168,14 +168,15 @@ void grpc_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd,
 #endif
 }
 
-static void finish_shutdown(grpc_pollset *pollset, grpc_call_list *call_list) {
+static void finish_shutdown(grpc_pollset *pollset,
+                            grpc_closure_list *closure_list) {
   pollset->vtable->finish_shutdown(pollset);
-  grpc_call_list_add(call_list, pollset->shutdown_done, 1);
+  grpc_closure_list_add(closure_list, pollset->shutdown_done, 1);
 }
 
 void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
                        gpr_timespec now, gpr_timespec deadline,
-                       grpc_call_list *call_list) {
+                       grpc_closure_list *closure_list) {
   /* pollset->mu already held */
   int added_worker = 0;
   int locked = 1;
@@ -184,11 +185,11 @@ void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
   /* TODO(ctiller): pool these */
   grpc_wakeup_fd_init(&worker->wakeup_fd);
   if (!grpc_pollset_has_workers(pollset) &&
-      !grpc_call_list_empty(pollset->idle_jobs)) {
-    grpc_call_list_move(&pollset->idle_jobs, call_list);
+      !grpc_closure_list_empty(pollset->idle_jobs)) {
+    grpc_closure_list_move(&pollset->idle_jobs, closure_list);
     goto done;
   }
-  if (grpc_alarm_check(now, &deadline, call_list)) {
+  if (grpc_alarm_check(now, &deadline, closure_list)) {
     goto done;
   }
   if (pollset->shutting_down) {
@@ -205,7 +206,7 @@ void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
     added_worker = 1;
     gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
     pollset->vtable->maybe_work_and_unlock(pollset, worker, deadline, now,
-                                           call_list);
+                                           closure_list);
     locked = 0;
     gpr_tls_set(&g_current_thread_poller, 0);
   } else {
@@ -213,7 +214,7 @@ void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
   }
 done:
   if (!locked) {
-    grpc_call_list_run(call_list);
+    grpc_closure_list_run(closure_list);
     gpr_mu_lock(&pollset->mu);
     locked = 1;
   }
@@ -227,8 +228,8 @@ done:
     } else if (!pollset->called_shutdown && pollset->in_flight_cbs == 0) {
       pollset->called_shutdown = 1;
       gpr_mu_unlock(&pollset->mu);
-      finish_shutdown(pollset, call_list);
-      grpc_call_list_run(call_list);
+      finish_shutdown(pollset, closure_list);
+      grpc_closure_list_run(closure_list);
       /* Continuing to access pollset here is safe -- it is the caller's
        * responsibility to not destroy when it has outstanding calls to
        * grpc_pollset_work.
@@ -239,7 +240,7 @@ done:
 }
 
 void grpc_pollset_shutdown(grpc_pollset *pollset, grpc_closure *closure,
-                           grpc_call_list *call_list) {
+                           grpc_closure_list *closure_list) {
   int call_shutdown = 0;
   gpr_mu_lock(&pollset->mu);
   GPR_ASSERT(!pollset->shutting_down);
@@ -254,7 +255,7 @@ void grpc_pollset_shutdown(grpc_pollset *pollset, grpc_closure *closure,
   gpr_mu_unlock(&pollset->mu);
 
   if (call_shutdown) {
-    finish_shutdown(pollset, call_list);
+    finish_shutdown(pollset, closure_list);
   }
 }
 
@@ -296,7 +297,7 @@ typedef struct grpc_unary_promote_args {
 } grpc_unary_promote_args;
 
 static void basic_do_promote(void *args, int success,
-                             grpc_call_list *call_list) {
+                             grpc_closure_list *closure_list) {
   grpc_unary_promote_args *up_args = args;
   const grpc_pollset_vtable *original_vtable = up_args->original_vtable;
   grpc_pollset *pollset = up_args->pollset;
@@ -327,12 +328,12 @@ static void basic_do_promote(void *args, int success,
     if (pollset->in_flight_cbs == 0 && !pollset->called_shutdown) {
       GPR_ASSERT(!grpc_pollset_has_workers(pollset));
       pollset->called_shutdown = 1;
-      grpc_call_list_add(call_list, pollset->shutdown_done, 1);
+      grpc_closure_list_add(closure_list, pollset->shutdown_done, 1);
     }
   } else if (grpc_fd_is_orphaned(fd)) {
     /* Don't try to add it to anything, we'll drop our ref on it below */
   } else if (pollset->vtable != original_vtable) {
-    pollset->vtable->add_fd(pollset, fd, 0, call_list);
+    pollset->vtable->add_fd(pollset, fd, 0, closure_list);
   } else if (fd != pollset->data.ptr) {
     grpc_fd *fds[2];
     fds[0] = pollset->data.ptr;
@@ -340,7 +341,7 @@ static void basic_do_promote(void *args, int success,
 
     if (fds[0] && !grpc_fd_is_orphaned(fds[0])) {
       grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds),
-                                       call_list);
+                                       closure_list);
       GRPC_FD_UNREF(fds[0], "basicpoll");
     } else {
       /* old fd is orphaned and we haven't cleaned it up until now, so remain a
@@ -358,12 +359,12 @@ static void basic_do_promote(void *args, int success,
   /* Matching ref in basic_pollset_add_fd */
   GRPC_FD_UNREF(fd, "basicpoll_add");
 
-  grpc_call_list_run(call_list);
+  grpc_closure_list_run(closure_list);
 }
 
 static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd,
                                  int and_unlock_pollset,
-                                 grpc_call_list *call_list) {
+                                 grpc_closure_list *closure_list) {
   grpc_unary_promote_args *up_args;
   GPR_ASSERT(fd);
   if (fd == pollset->data.ptr) goto exit;
@@ -381,7 +382,7 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd,
       GRPC_FD_REF(fd, "basicpoll");
     } else if (!grpc_fd_is_orphaned(fds[0])) {
       grpc_platform_become_multipoller(pollset, fds, GPR_ARRAY_SIZE(fds),
-                                       call_list);
+                                       closure_list);
       GRPC_FD_UNREF(fds[0], "basicpoll");
     } else {
       /* old fd is orphaned and we haven't cleaned it up until now, so remain a
@@ -404,7 +405,7 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd,
   up_args->promotion_closure.cb = basic_do_promote;
   up_args->promotion_closure.cb_arg = up_args;
 
-  grpc_call_list_add(&pollset->idle_jobs, &up_args->promotion_closure, 1);
+  grpc_closure_list_add(&pollset->idle_jobs, &up_args->promotion_closure, 1);
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
 
 exit:
@@ -415,7 +416,7 @@ exit:
 
 static void basic_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd,
                                  int and_unlock_pollset,
-                                 grpc_call_list *call_list) {
+                                 grpc_closure_list *closure_list) {
   GPR_ASSERT(fd);
   if (fd == pollset->data.ptr) {
     GRPC_FD_UNREF(pollset->data.ptr, "basicpoll");
@@ -427,11 +428,9 @@ static void basic_pollset_del_fd(grpc_pollset *pollset, grpc_fd *fd,
   }
 }
 
-static void basic_pollset_maybe_work_and_unlock(grpc_pollset *pollset,
-                                                grpc_pollset_worker *worker,
-                                                gpr_timespec deadline,
-                                                gpr_timespec now,
-                                                grpc_call_list *call_list) {
+static void basic_pollset_maybe_work_and_unlock(
+    grpc_pollset *pollset, grpc_pollset_worker *worker, gpr_timespec deadline,
+    gpr_timespec now, grpc_closure_list *closure_list) {
   struct pollfd pfd[2];
   grpc_fd *fd;
   grpc_fd_watcher fd_watcher;
@@ -469,7 +468,7 @@ static void basic_pollset_maybe_work_and_unlock(grpc_pollset *pollset,
 
   if (fd) {
     grpc_fd_end_poll(&fd_watcher, pfd[1].revents & POLLIN,
-                     pfd[1].revents & POLLOUT, call_list);
+                     pfd[1].revents & POLLOUT, closure_list);
   }
 
   if (r < 0) {
@@ -484,10 +483,10 @@ static void basic_pollset_maybe_work_and_unlock(grpc_pollset *pollset,
     }
     if (nfds > 1) {
       if (pfd[1].revents & (POLLIN | POLLHUP | POLLERR)) {
-        grpc_fd_become_readable(fd, call_list);
+        grpc_fd_become_readable(fd, closure_list);
       }
       if (pfd[1].revents & (POLLOUT | POLLHUP | POLLERR)) {
-        grpc_fd_become_writable(fd, call_list);
+        grpc_fd_become_writable(fd, closure_list);
       }
     }
   }

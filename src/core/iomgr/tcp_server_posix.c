@@ -140,8 +140,9 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
   return s;
 }
 
-static void finish_shutdown(grpc_tcp_server *s, grpc_call_list *call_list) {
-  grpc_call_list_add(call_list, s->shutdown_complete, 1);
+static void finish_shutdown(grpc_tcp_server *s,
+                            grpc_closure_list *closure_list) {
+  grpc_closure_list_add(closure_list, s->shutdown_complete, 1);
 
   gpr_mu_destroy(&s->mu);
 
@@ -150,13 +151,13 @@ static void finish_shutdown(grpc_tcp_server *s, grpc_call_list *call_list) {
 }
 
 static void destroyed_port(void *server, int success,
-                           grpc_call_list *call_list) {
+                           grpc_closure_list *closure_list) {
   grpc_tcp_server *s = server;
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
   if (s->destroyed_ports == s->nports) {
     gpr_mu_unlock(&s->mu);
-    finish_shutdown(s, call_list);
+    finish_shutdown(s, closure_list);
   } else {
     GPR_ASSERT(s->destroyed_ports < s->nports);
     gpr_mu_unlock(&s->mu);
@@ -167,7 +168,7 @@ static void destroyed_port(void *server, int success,
    events will be received on them - at this point it's safe to destroy
    things */
 static void deactivated_all_ports(grpc_tcp_server *s,
-                                  grpc_call_list *call_list) {
+                                  grpc_closure_list *closure_list) {
   size_t i;
 
   /* delete ALL the things */
@@ -187,17 +188,17 @@ static void deactivated_all_ports(grpc_tcp_server *s,
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
       grpc_fd_orphan(sp->emfd, &sp->destroyed_closure, "tcp_listener_shutdown",
-                     call_list);
+                     closure_list);
     }
     gpr_mu_unlock(&s->mu);
   } else {
     gpr_mu_unlock(&s->mu);
-    finish_shutdown(s, call_list);
+    finish_shutdown(s, closure_list);
   }
 }
 
 void grpc_tcp_server_destroy(grpc_tcp_server *s, grpc_closure *closure,
-                             grpc_call_list *call_list) {
+                             grpc_closure_list *closure_list) {
   size_t i;
   gpr_mu_lock(&s->mu);
 
@@ -209,12 +210,12 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s, grpc_closure *closure,
   /* shutdown all fd's */
   if (s->active_ports) {
     for (i = 0; i < s->nports; i++) {
-      grpc_fd_shutdown(s->ports[i].emfd, call_list);
+      grpc_fd_shutdown(s->ports[i].emfd, closure_list);
     }
     gpr_mu_unlock(&s->mu);
   } else {
     gpr_mu_unlock(&s->mu);
-    deactivated_all_ports(s, call_list);
+    deactivated_all_ports(s, closure_list);
   }
 }
 
@@ -299,7 +300,7 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(void *arg, int success, grpc_call_list *call_list) {
+static void on_read(void *arg, int success, grpc_closure_list *closure_list) {
   server_port *sp = arg;
   grpc_fd *fdobj;
   size_t i;
@@ -322,7 +323,7 @@ static void on_read(void *arg, int success, grpc_call_list *call_list) {
         case EINTR:
           continue;
         case EAGAIN:
-          grpc_fd_notify_on_read(sp->emfd, &sp->read_closure, call_list);
+          grpc_fd_notify_on_read(sp->emfd, &sp->read_closure, closure_list);
           return;
         default:
           gpr_log(GPR_ERROR, "Failed accept4: %s", strerror(errno));
@@ -344,12 +345,12 @@ static void on_read(void *arg, int success, grpc_call_list *call_list) {
        of channels -- we certainly should not be automatically adding every
        incoming channel to every pollset owned by the server */
     for (i = 0; i < sp->server->pollset_count; i++) {
-      grpc_pollset_add_fd(sp->server->pollsets[i], fdobj, call_list);
+      grpc_pollset_add_fd(sp->server->pollsets[i], fdobj, closure_list);
     }
     sp->server->on_accept_cb(
         sp->server->on_accept_cb_arg,
         grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str),
-        call_list);
+        closure_list);
 
     gpr_free(name);
     gpr_free(addr_str);
@@ -361,7 +362,7 @@ error:
   gpr_mu_lock(&sp->server->mu);
   if (0 == --sp->server->active_ports) {
     gpr_mu_unlock(&sp->server->mu);
-    deactivated_all_ports(sp->server, call_list);
+    deactivated_all_ports(sp->server, closure_list);
   } else {
     gpr_mu_unlock(&sp->server->mu);
   }
@@ -488,7 +489,8 @@ int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned index) {
 void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollsets,
                            size_t pollset_count,
                            grpc_tcp_server_cb on_accept_cb,
-                           void *on_accept_cb_arg, grpc_call_list *call_list) {
+                           void *on_accept_cb_arg,
+                           grpc_closure_list *closure_list) {
   size_t i, j;
   GPR_ASSERT(on_accept_cb);
   gpr_mu_lock(&s->mu);
@@ -500,12 +502,12 @@ void grpc_tcp_server_start(grpc_tcp_server *s, grpc_pollset **pollsets,
   s->pollset_count = pollset_count;
   for (i = 0; i < s->nports; i++) {
     for (j = 0; j < pollset_count; j++) {
-      grpc_pollset_add_fd(pollsets[j], s->ports[i].emfd, call_list);
+      grpc_pollset_add_fd(pollsets[j], s->ports[i].emfd, closure_list);
     }
     s->ports[i].read_closure.cb = on_read;
     s->ports[i].read_closure.cb_arg = &s->ports[i];
     grpc_fd_notify_on_read(s->ports[i].emfd, &s->ports[i].read_closure,
-                           call_list);
+                           closure_list);
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);

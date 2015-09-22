@@ -67,9 +67,10 @@ typedef struct {
 
 int grpc_trace_secure_endpoint = 0;
 
-static void destroy(secure_endpoint *secure_ep, grpc_call_list *call_list) {
+static void destroy(secure_endpoint *secure_ep,
+                    grpc_closure_list *closure_list) {
   secure_endpoint *ep = secure_ep;
-  grpc_endpoint_destroy(ep->wrapped_ep, call_list);
+  grpc_endpoint_destroy(ep->wrapped_ep, closure_list);
   tsi_frame_protector_destroy(ep->protector);
   gpr_slice_buffer_destroy(&ep->leftover_bytes);
   gpr_slice_unref(ep->read_staging_buffer);
@@ -87,12 +88,13 @@ static void destroy(secure_endpoint *secure_ep, grpc_call_list *call_list) {
 #define SECURE_ENDPOINT_REF(ep, reason) \
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
 static void secure_endpoint_unref(secure_endpoint *ep,
-                                  grpc_call_list *call_list, const char *reason,
-                                  const char *file, int line) {
+                                  grpc_closure_list *closure_list,
+                                  const char *reason, const char *file,
+                                  int line) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SECENDP unref %p : %s %d -> %d",
           ep, reason, ep->ref.count, ep->ref.count - 1);
   if (gpr_unref(&ep->ref)) {
-    destroy(ep, call_list);
+    destroy(ep, closure_list);
   }
 }
 
@@ -106,9 +108,9 @@ static void secure_endpoint_ref(secure_endpoint *ep, const char *reason,
 #define SECURE_ENDPOINT_UNREF(ep, reason, cl) secure_endpoint_unref((ep), (cl))
 #define SECURE_ENDPOINT_REF(ep, reason) secure_endpoint_ref((ep))
 static void secure_endpoint_unref(secure_endpoint *ep,
-                                  grpc_call_list *call_list) {
+                                  grpc_closure_list *closure_list) {
   if (gpr_unref(&ep->ref)) {
-    destroy(ep, call_list);
+    destroy(ep, closure_list);
   }
 }
 
@@ -124,7 +126,7 @@ static void flush_read_staging_buffer(secure_endpoint *ep, gpr_uint8 **cur,
 }
 
 static void call_read_cb(secure_endpoint *ep, int success,
-                         grpc_call_list *call_list) {
+                         grpc_closure_list *closure_list) {
   if (grpc_trace_secure_endpoint) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
@@ -135,11 +137,12 @@ static void call_read_cb(secure_endpoint *ep, int success,
     }
   }
   ep->read_buffer = NULL;
-  grpc_call_list_add(call_list, ep->read_cb, success);
-  SECURE_ENDPOINT_UNREF(ep, "read", call_list);
+  grpc_closure_list_add(closure_list, ep->read_cb, success);
+  SECURE_ENDPOINT_UNREF(ep, "read", closure_list);
 }
 
-static void on_read(void *user_data, int success, grpc_call_list *call_list) {
+static void on_read(void *user_data, int success,
+                    grpc_closure_list *closure_list) {
   unsigned i;
   gpr_uint8 keep_looping = 0;
   tsi_result result = TSI_OK;
@@ -149,7 +152,7 @@ static void on_read(void *user_data, int success, grpc_call_list *call_list) {
 
   if (!success) {
     gpr_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(ep, 0, call_list);
+    call_read_cb(ep, 0, closure_list);
     return;
   }
 
@@ -206,15 +209,15 @@ static void on_read(void *user_data, int success, grpc_call_list *call_list) {
 
   if (result != TSI_OK) {
     gpr_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(ep, 0, call_list);
+    call_read_cb(ep, 0, closure_list);
     return;
   }
 
-  call_read_cb(ep, 1, call_list);
+  call_read_cb(ep, 1, closure_list);
 }
 
 static void endpoint_read(grpc_endpoint *secure_ep, gpr_slice_buffer *slices,
-                          grpc_closure *cb, grpc_call_list *call_list) {
+                          grpc_closure *cb, grpc_closure_list *closure_list) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
   ep->read_cb = cb;
   ep->read_buffer = slices;
@@ -224,12 +227,12 @@ static void endpoint_read(grpc_endpoint *secure_ep, gpr_slice_buffer *slices,
   if (ep->leftover_bytes.count) {
     gpr_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
     GPR_ASSERT(ep->leftover_bytes.count == 0);
-    on_read(ep, 1, call_list);
+    on_read(ep, 1, closure_list);
     return;
   }
 
   grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read,
-                     call_list);
+                     closure_list);
 }
 
 static void flush_write_staging_buffer(secure_endpoint *ep, gpr_uint8 **cur,
@@ -241,7 +244,7 @@ static void flush_write_staging_buffer(secure_endpoint *ep, gpr_uint8 **cur,
 }
 
 static void endpoint_write(grpc_endpoint *secure_ep, gpr_slice_buffer *slices,
-                           grpc_closure *cb, grpc_call_list *call_list) {
+                           grpc_closure *cb, grpc_closure_list *closure_list) {
   unsigned i;
   tsi_result result = TSI_OK;
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
@@ -313,37 +316,37 @@ static void endpoint_write(grpc_endpoint *secure_ep, gpr_slice_buffer *slices,
   if (result != TSI_OK) {
     /* TODO(yangg) do different things according to the error type? */
     gpr_slice_buffer_reset_and_unref(&ep->output_buffer);
-    grpc_call_list_add(call_list, cb, 0);
+    grpc_closure_list_add(closure_list, cb, 0);
     return;
   }
 
-  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, call_list);
+  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, cb, closure_list);
 }
 
 static void endpoint_shutdown(grpc_endpoint *secure_ep,
-                              grpc_call_list *call_list) {
+                              grpc_closure_list *closure_list) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  grpc_endpoint_shutdown(ep->wrapped_ep, call_list);
+  grpc_endpoint_shutdown(ep->wrapped_ep, closure_list);
 }
 
 static void endpoint_destroy(grpc_endpoint *secure_ep,
-                             grpc_call_list *call_list) {
+                             grpc_closure_list *closure_list) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  SECURE_ENDPOINT_UNREF(ep, "destroy", call_list);
+  SECURE_ENDPOINT_UNREF(ep, "destroy", closure_list);
 }
 
 static void endpoint_add_to_pollset(grpc_endpoint *secure_ep,
                                     grpc_pollset *pollset,
-                                    grpc_call_list *call_list) {
+                                    grpc_closure_list *closure_list) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  grpc_endpoint_add_to_pollset(ep->wrapped_ep, pollset, call_list);
+  grpc_endpoint_add_to_pollset(ep->wrapped_ep, pollset, closure_list);
 }
 
 static void endpoint_add_to_pollset_set(grpc_endpoint *secure_ep,
                                         grpc_pollset_set *pollset_set,
-                                        grpc_call_list *call_list) {
+                                        grpc_closure_list *closure_list) {
   secure_endpoint *ep = (secure_endpoint *)secure_ep;
-  grpc_endpoint_add_to_pollset_set(ep->wrapped_ep, pollset_set, call_list);
+  grpc_endpoint_add_to_pollset_set(ep->wrapped_ep, pollset_set, closure_list);
 }
 
 static char *endpoint_get_peer(grpc_endpoint *secure_ep) {

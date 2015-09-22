@@ -45,28 +45,29 @@
 
 #include "src/core/iomgr/fd_posix.h"
 
-static void on_readable(void *arg, int success, grpc_call_list *call_list);
+static void on_readable(void *arg, int success,
+                        grpc_closure_list *closure_list);
 
-grpc_workqueue *grpc_workqueue_create(grpc_call_list *call_list) {
+grpc_workqueue *grpc_workqueue_create(grpc_closure_list *closure_list) {
   char name[32];
   grpc_workqueue *workqueue = gpr_malloc(sizeof(grpc_workqueue));
   gpr_ref_init(&workqueue->refs, 1);
   gpr_mu_init(&workqueue->mu);
-  workqueue->call_list.head = workqueue->call_list.tail = NULL;
+  workqueue->closure_list.head = workqueue->closure_list.tail = NULL;
   grpc_wakeup_fd_init(&workqueue->wakeup_fd);
   sprintf(name, "workqueue:%p", (void *)workqueue);
   workqueue->wakeup_read_fd =
       grpc_fd_create(GRPC_WAKEUP_FD_GET_READ_FD(&workqueue->wakeup_fd), name);
   grpc_closure_init(&workqueue->read_closure, on_readable, workqueue);
   grpc_fd_notify_on_read(workqueue->wakeup_read_fd, &workqueue->read_closure,
-                         call_list);
+                         closure_list);
   return workqueue;
 }
 
 static void workqueue_destroy(grpc_workqueue *workqueue,
-                              grpc_call_list *call_list) {
-  GPR_ASSERT(grpc_call_list_empty(workqueue->call_list));
-  grpc_fd_shutdown(workqueue->wakeup_read_fd, call_list);
+                              grpc_closure_list *closure_list) {
+  GPR_ASSERT(grpc_closure_list_empty(workqueue->closure_list));
+  grpc_fd_shutdown(workqueue->wakeup_read_fd, closure_list);
 }
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -82,34 +83,36 @@ void grpc_workqueue_ref(grpc_workqueue *workqueue) {
 }
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
-void grpc_workqueue_unref(grpc_workqueue *workqueue, grpc_call_list *call_list,
-                          const char *file, int line, const char *reason) {
+void grpc_workqueue_unref(grpc_workqueue *workqueue,
+                          grpc_closure_list *closure_list, const char *file,
+                          int line, const char *reason) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "WORKQUEUE:%p unref %d -> %d %s",
           workqueue, (int)workqueue->refs.count, (int)workqueue->refs.count - 1,
           reason);
 #else
 void grpc_workqueue_unref(grpc_workqueue *workqueue,
-                          grpc_call_list *call_list) {
+                          grpc_closure_list *closure_list) {
 #endif
   if (gpr_unref(&workqueue->refs)) {
-    workqueue_destroy(workqueue, call_list);
+    workqueue_destroy(workqueue, closure_list);
   }
 }
 
 void grpc_workqueue_add_to_pollset(grpc_workqueue *workqueue,
                                    grpc_pollset *pollset,
-                                   grpc_call_list *call_list) {
-  grpc_pollset_add_fd(pollset, workqueue->wakeup_read_fd, call_list);
+                                   grpc_closure_list *closure_list) {
+  grpc_pollset_add_fd(pollset, workqueue->wakeup_read_fd, closure_list);
 }
 
 void grpc_workqueue_flush(grpc_workqueue *workqueue,
-                          grpc_call_list *call_list) {
+                          grpc_closure_list *closure_list) {
   gpr_mu_lock(&workqueue->mu);
-  grpc_call_list_move(&workqueue->call_list, call_list);
+  grpc_closure_list_move(&workqueue->closure_list, closure_list);
   gpr_mu_unlock(&workqueue->mu);
 }
 
-static void on_readable(void *arg, int success, grpc_call_list *call_list) {
+static void on_readable(void *arg, int success,
+                        grpc_closure_list *closure_list) {
   grpc_workqueue *workqueue = arg;
 
   if (!success) {
@@ -117,15 +120,15 @@ static void on_readable(void *arg, int success, grpc_call_list *call_list) {
     /* HACK: let wakeup_fd code know that we stole the fd */
     workqueue->wakeup_fd.read_fd = 0;
     grpc_wakeup_fd_destroy(&workqueue->wakeup_fd);
-    grpc_fd_orphan(workqueue->wakeup_read_fd, NULL, "destroy", call_list);
+    grpc_fd_orphan(workqueue->wakeup_read_fd, NULL, "destroy", closure_list);
     gpr_free(workqueue);
   } else {
     gpr_mu_lock(&workqueue->mu);
-    grpc_call_list_move(&workqueue->call_list, call_list);
+    grpc_closure_list_move(&workqueue->closure_list, closure_list);
     grpc_wakeup_fd_consume_wakeup(&workqueue->wakeup_fd);
     gpr_mu_unlock(&workqueue->mu);
     grpc_fd_notify_on_read(workqueue->wakeup_read_fd, &workqueue->read_closure,
-                           call_list);
+                           closure_list);
   }
 }
 
@@ -134,10 +137,10 @@ void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,
   closure->success = success;
   closure->next = NULL;
   gpr_mu_lock(&workqueue->mu);
-  if (grpc_call_list_empty(workqueue->call_list)) {
+  if (grpc_closure_list_empty(workqueue->closure_list)) {
     grpc_wakeup_fd_wakeup(&workqueue->wakeup_fd);
   }
-  grpc_call_list_add(&workqueue->call_list, closure, success);
+  grpc_closure_list_add(&workqueue->closure_list, closure, success);
   gpr_mu_unlock(&workqueue->mu);
 }
 

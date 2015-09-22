@@ -146,17 +146,17 @@ done:
 /* Thread function to asynch-ify grpc_blocking_resolve_address */
 static void do_request_thread(void *rp) {
   request *r = rp;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_resolved_addresses *resolved =
       grpc_blocking_resolve_address(r->name, r->default_port);
   void *arg = r->arg;
   grpc_resolve_cb cb = r->cb;
   gpr_free(r->name);
   gpr_free(r->default_port);
-  cb(arg, resolved, &call_list);
+  cb(arg, resolved, &closure_list);
   grpc_iomgr_unregister_object(&r->iomgr_object);
   gpr_free(r);
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {

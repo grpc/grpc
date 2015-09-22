@@ -55,7 +55,7 @@ typedef struct grpc_alarm {
    information about when to free up any user-level state. */
 void grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
                      grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg,
-                     gpr_timespec now, grpc_call_list *call_list);
+                     gpr_timespec now, grpc_closure_list *closure_list);
 
 /* Note that there is no alarm destroy function. This is because the
    alarm is a one-time occurrence with a guarantee that the callback will
@@ -83,6 +83,6 @@ void grpc_alarm_init(grpc_alarm *alarm, gpr_timespec deadline,
    matches this aim.
 
    Requires:  cancel() must happen after add() on a given alarm */
-void grpc_alarm_cancel(grpc_alarm *alarm, grpc_call_list *call_list);
+void grpc_alarm_cancel(grpc_alarm *alarm, grpc_closure_list *closure_list);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_ALARM_H */

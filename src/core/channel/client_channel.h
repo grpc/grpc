@@ -51,23 +51,24 @@ extern const grpc_channel_filter grpc_client_channel_filter;
    a connection */
 void grpc_client_channel_set_resolver(grpc_channel_stack *channel_stack,
                                       grpc_resolver *resolver,
-                                      grpc_call_list *call_list);
+                                      grpc_closure_list *closure_list);
 
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
-    grpc_channel_element *elem, int try_to_connect, grpc_call_list *call_list);
+    grpc_channel_element *elem, int try_to_connect,
+    grpc_closure_list *closure_list);
 
 void grpc_client_channel_watch_connectivity_state(
     grpc_channel_element *elem, grpc_connectivity_state *state,
-    grpc_closure *on_complete, grpc_call_list *call_list);
+    grpc_closure *on_complete, grpc_closure_list *closure_list);
 
 grpc_pollset_set *grpc_client_channel_get_connecting_pollset_set(
     grpc_channel_element *elem);
 
 void grpc_client_channel_add_interested_party(grpc_channel_element *channel,
                                               grpc_pollset *pollset,
-                                              grpc_call_list *call_list);
+                                              grpc_closure_list *closure_list);
 void grpc_client_channel_del_interested_party(grpc_channel_element *channel,
                                               grpc_pollset *pollset,
-                                              grpc_call_list *call_list);
+                                              grpc_closure_list *closure_list);
 
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_CHANNEL_H */

@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
   gpr_cmdline *cl;
   char *jwt = NULL;
   char *aud = NULL;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
   cl = gpr_cmdline_create("JWT verifier tool");
   gpr_cmdline_add_string(cl, "jwt", "JSON web token to verify", &jwt);
@@ -107,15 +107,15 @@ int main(int argc, char **argv) {
   sync.is_done = 0;
 
   grpc_jwt_verifier_verify(verifier, &sync.pollset, jwt, aud,
-                           on_jwt_verification_done, &sync, &call_list);
+                           on_jwt_verification_done, &sync, &closure_list);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   while (!sync.is_done) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&sync.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC), &call_list);
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC), &closure_list);
     gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
-    grpc_call_list_run(&call_list);
+    grpc_closure_list_run(&closure_list);
     gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));

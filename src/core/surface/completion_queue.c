@@ -71,7 +71,7 @@ struct grpc_completion_queue {
 };
 
 static void on_pollset_destroy_done(void *cc, int success,
-                                    grpc_call_list *call_list);
+                                    grpc_closure_list *closure_list);
 
 grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
   grpc_completion_queue *cc = gpr_malloc(sizeof(grpc_completion_queue));
@@ -100,7 +100,7 @@ void grpc_cq_internal_ref(grpc_completion_queue *cc) {
 }
 
 static void on_pollset_destroy_done(void *arg, int success,
-                                    grpc_call_list *call_list) {
+                                    grpc_closure_list *closure_list) {
   grpc_completion_queue *cc = arg;
   GRPC_CQ_INTERNAL_UNREF(cc, "pollset_destroy");
 }
@@ -134,9 +134,9 @@ void grpc_cq_begin_op(grpc_completion_queue *cc) {
 /* Queue a GRPC_OP_COMPLETED operation */
 void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, int success,
                     void (*done)(void *done_arg, grpc_cq_completion *storage,
-                                 grpc_call_list *call_list),
+                                 grpc_closure_list *closure_list),
                     void *done_arg, grpc_cq_completion *storage,
-                    grpc_call_list *call_list) {
+                    grpc_closure_list *closure_list) {
   int shutdown;
   int i;
   grpc_pollset_worker *pluck_worker;
@@ -170,7 +170,8 @@ void grpc_cq_end_op(grpc_completion_queue *cc, void *tag, int success,
     GPR_ASSERT(cc->shutdown_called);
     cc->shutdown = 1;
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-    grpc_pollset_shutdown(&cc->pollset, &cc->pollset_destroy_done, call_list);
+    grpc_pollset_shutdown(&cc->pollset, &cc->pollset_destroy_done,
+                          closure_list);
   }
 }
 
@@ -180,7 +181,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   grpc_pollset_worker worker;
   int first_loop = 1;
   gpr_timespec now;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
   GPR_ASSERT(!reserved);
 
@@ -199,7 +200,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       ret.type = GRPC_OP_COMPLETE;
       ret.success = c->next & 1u;
       ret.tag = c->tag;
-      c->done(c->done_arg, c, &call_list);
+      c->done(c->done_arg, c, &closure_list);
       break;
     }
     if (cc->shutdown) {
@@ -216,11 +217,11 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       break;
     }
     first_loop = 0;
-    grpc_pollset_work(&cc->pollset, &worker, now, deadline, &call_list);
+    grpc_pollset_work(&cc->pollset, &worker, now, deadline, &closure_list);
   }
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
   GRPC_CQ_INTERNAL_UNREF(cc, "next");
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
   return ret;
 }
 
@@ -257,7 +258,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   grpc_pollset_worker worker;
   gpr_timespec now;
   int first_loop = 1;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
   GPR_ASSERT(!reserved);
 
@@ -279,7 +280,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
         ret.type = GRPC_OP_COMPLETE;
         ret.success = c->next & 1u;
         ret.tag = c->tag;
-        c->done(c->done_arg, c, &call_list);
+        c->done(c->done_arg, c, &closure_list);
         goto done;
       }
       prev = c;
@@ -310,20 +311,20 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
       break;
     }
     first_loop = 0;
-    grpc_pollset_work(&cc->pollset, &worker, now, deadline, &call_list);
+    grpc_pollset_work(&cc->pollset, &worker, now, deadline, &closure_list);
     del_plucker(cc, tag, &worker);
   }
 done:
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cc, &ret);
   GRPC_CQ_INTERNAL_UNREF(cc, "pluck");
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
   return ret;
 }
 
 /* Shutdown simply drops a ref that we reserved at creation time; if we drop
    to zero here, then enter shutdown mode and wake up any waiters */
 void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   if (cc->shutdown_called) {
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
@@ -337,9 +338,10 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
     GPR_ASSERT(!cc->shutdown);
     cc->shutdown = 1;
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-    grpc_pollset_shutdown(&cc->pollset, &cc->pollset_destroy_done, &call_list);
+    grpc_pollset_shutdown(&cc->pollset, &cc->pollset_destroy_done,
+                          &closure_list);
   }
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 void grpc_completion_queue_destroy(grpc_completion_queue *cc) {

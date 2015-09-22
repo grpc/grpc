@@ -37,10 +37,10 @@
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
 
-typedef struct grpc_call_list {
+typedef struct grpc_closure_list {
   grpc_closure *head;
   grpc_closure *tail;
-} grpc_call_list;
+} grpc_closure_list;
 
 /** gRPC Callback definition.
  *
@@ -48,7 +48,7 @@ typedef struct grpc_call_list {
  * \param success An indication on the state of the iomgr. On false, cleanup
  * actions should be taken (eg, shutdown). */
 typedef void (*grpc_iomgr_cb_func)(void *arg, int success,
-                                   grpc_call_list *call_list);
+                                   grpc_closure_list *closure_list);
 
 /** A closure over a grpc_iomgr_cb_func. */
 struct grpc_closure {
@@ -71,14 +71,14 @@ struct grpc_closure {
 void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
                        void *cb_arg);
 
-#define GRPC_CALL_LIST_INIT \
+#define GRPC_CLOSURE_LIST_INIT \
   { NULL, NULL }
 
-void grpc_call_list_add(grpc_call_list *list, grpc_closure *closure,
-                        int success);
-void grpc_call_list_run(grpc_call_list *list);
-void grpc_call_list_move(grpc_call_list *src, grpc_call_list *dst);
-int grpc_call_list_empty(grpc_call_list list);
+void grpc_closure_list_add(grpc_closure_list *list, grpc_closure *closure,
+                           int success);
+void grpc_closure_list_run(grpc_closure_list *list);
+void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst);
+int grpc_closure_list_empty(grpc_closure_list list);
 
 /** Initializes the iomgr. */
 void grpc_iomgr_init(void);

@@ -63,8 +63,8 @@ typedef struct {
   const char *default_port;
   void (*handshake)(void *arg, grpc_endpoint *endpoint, const char *host,
                     void (*on_done)(void *arg, grpc_endpoint *endpoint,
-                                    grpc_call_list *call_list),
-                    grpc_call_list *call_list);
+                                    grpc_closure_list *closure_list),
+                    grpc_closure_list *closure_list);
 } grpc_httpcli_handshaker;
 
 extern const grpc_httpcli_handshaker grpc_httpcli_plaintext;
@@ -100,7 +100,7 @@ typedef struct grpc_httpcli_response {
 /* Callback for grpc_httpcli_get and grpc_httpcli_post. */
 typedef void (*grpc_httpcli_response_cb)(void *user_data,
                                          const grpc_httpcli_response *response,
-                                         grpc_call_list *call_list);
+                                         grpc_closure_list *closure_list);
 
 void grpc_httpcli_context_init(grpc_httpcli_context *context);
 void grpc_httpcli_context_destroy(grpc_httpcli_context *context);
@@ -119,7 +119,7 @@ void grpc_httpcli_get(grpc_httpcli_context *context, grpc_pollset *pollset,
                       const grpc_httpcli_request *request,
                       gpr_timespec deadline,
                       grpc_httpcli_response_cb on_response, void *user_data,
-                      grpc_call_list *call_list);
+                      grpc_closure_list *closure_list);
 
 /* Asynchronously perform a HTTP POST.
    'context' specifies the http context under which to do the post
@@ -141,21 +141,21 @@ void grpc_httpcli_post(grpc_httpcli_context *context, grpc_pollset *pollset,
                        const char *body_bytes, size_t body_size,
                        gpr_timespec deadline,
                        grpc_httpcli_response_cb on_response, void *user_data,
-                       grpc_call_list *call_list);
+                       grpc_closure_list *closure_list);
 
 /* override functions return 1 if they handled the request, 0 otherwise */
 typedef int (*grpc_httpcli_get_override)(const grpc_httpcli_request *request,
                                          gpr_timespec deadline,
                                          grpc_httpcli_response_cb on_response,
                                          void *user_data,
-                                         grpc_call_list *call_list);
+                                         grpc_closure_list *closure_list);
 typedef int (*grpc_httpcli_post_override)(const grpc_httpcli_request *request,
                                           const char *body_bytes,
                                           size_t body_size,
                                           gpr_timespec deadline,
                                           grpc_httpcli_response_cb on_response,
                                           void *user_data,
-                                          grpc_call_list *call_list);
+                                          grpc_closure_list *closure_list);
 
 void grpc_httpcli_set_override(grpc_httpcli_get_override get,
                                grpc_httpcli_post_override post);

@@ -73,14 +73,14 @@ typedef struct freereq {
 } freereq;
 
 static void destroy_pollset_and_shutdown(void *p, int success,
-                                         grpc_call_list *call_list) {
+                                         grpc_closure_list *closure_list) {
   grpc_pollset_destroy(p);
   grpc_shutdown();
 }
 
 static void freed_port_from_server(void *arg,
                                    const grpc_httpcli_response *response,
-                                   grpc_call_list *call_list) {
+                                   grpc_closure_list *closure_list) {
   freereq *pr = arg;
   gpr_mu_lock(GRPC_POLLSET_MU(&pr->pollset));
   pr->done = 1;
@@ -93,7 +93,7 @@ static void free_port_using_server(char *server, int port) {
   grpc_httpcli_request req;
   freereq pr;
   char *path;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_closure shutdown_closure;
 
   grpc_init();
@@ -111,19 +111,19 @@ static void free_port_using_server(char *server, int port) {
   grpc_httpcli_context_init(&context);
   grpc_httpcli_get(&context, &pr.pollset, &req,
                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10), freed_port_from_server,
-                   &pr, &call_list);
+                   &pr, &closure_list);
   gpr_mu_lock(GRPC_POLLSET_MU(&pr.pollset));
   while (!pr.done) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&pr.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), &call_list);
+                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), &closure_list);
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&pr.pollset));
 
   grpc_httpcli_context_destroy(&context);
-  grpc_call_list_run(&call_list);
-  grpc_pollset_shutdown(&pr.pollset, &shutdown_closure, &call_list);
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
+  grpc_pollset_shutdown(&pr.pollset, &shutdown_closure, &closure_list);
+  grpc_closure_list_run(&closure_list);
   gpr_free(path);
 }
 
@@ -210,7 +210,7 @@ typedef struct portreq {
 
 static void got_port_from_server(void *arg,
                                  const grpc_httpcli_response *response,
-                                 grpc_call_list *call_list) {
+                                 grpc_closure_list *closure_list) {
   size_t i;
   int port = 0;
   portreq *pr = arg;
@@ -226,7 +226,7 @@ static void got_port_from_server(void *arg,
     sleep(1);
     grpc_httpcli_get(pr->ctx, &pr->pollset, &req,
                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10), got_port_from_server,
-                     pr, call_list);
+                     pr, closure_list);
     return;
   }
   GPR_ASSERT(response);
@@ -246,7 +246,7 @@ static int pick_port_using_server(char *server) {
   grpc_httpcli_context context;
   grpc_httpcli_request req;
   portreq pr;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_closure shutdown_closure;
 
   grpc_init();
@@ -266,19 +266,19 @@ static int pick_port_using_server(char *server) {
   grpc_httpcli_context_init(&context);
   grpc_httpcli_get(&context, &pr.pollset, &req,
                    GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10), got_port_from_server,
-                   &pr, &call_list);
-  grpc_call_list_run(&call_list);
+                   &pr, &closure_list);
+  grpc_closure_list_run(&closure_list);
   gpr_mu_lock(GRPC_POLLSET_MU(&pr.pollset));
   while (pr.port == -1) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&pr.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), &call_list);
+                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), &closure_list);
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&pr.pollset));
 
   grpc_httpcli_context_destroy(&context);
-  grpc_pollset_shutdown(&pr.pollset, &shutdown_closure, &call_list);
-  grpc_call_list_run(&call_list);
+  grpc_pollset_shutdown(&pr.pollset, &shutdown_closure, &closure_list);
+  grpc_closure_list_run(&closure_list);
 
   return pr.port;
 }
