@@ -169,7 +169,7 @@ grpc_pollset_init (grpc_pollset * pollset)
 }
 
 void
-grpc_pollset_add_fd (grpc_pollset * pollset, grpc_fd * fd, grpc_closure_list * closure_list)
+grpc_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd)
 {
   gpr_mu_lock (&pollset->mu);
   pollset->vtable->add_fd (pollset, fd, 1, closure_list);
@@ -184,7 +184,7 @@ grpc_pollset_add_fd (grpc_pollset * pollset, grpc_fd * fd, grpc_closure_list * c
 }
 
 void
-grpc_pollset_del_fd (grpc_pollset * pollset, grpc_fd * fd, grpc_closure_list * closure_list)
+grpc_pollset_del_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd)
 {
   gpr_mu_lock (&pollset->mu);
   pollset->vtable->del_fd (pollset, fd, 1, closure_list);
@@ -199,14 +199,14 @@ grpc_pollset_del_fd (grpc_pollset * pollset, grpc_fd * fd, grpc_closure_list * c
 }
 
 static void
-finish_shutdown (grpc_pollset * pollset, grpc_closure_list * closure_list)
+finish_shutdown (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset)
 {
   pollset->vtable->finish_shutdown (pollset);
   grpc_closure_list_add (closure_list, pollset->shutdown_done, 1);
 }
 
 void
-grpc_pollset_work (grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec now, gpr_timespec deadline, grpc_closure_list * closure_list)
+grpc_pollset_work (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec now, gpr_timespec deadline)
 {
   /* pollset->mu already held */
   int added_worker = 0;
@@ -282,7 +282,7 @@ done:
 }
 
 void
-grpc_pollset_shutdown (grpc_pollset * pollset, grpc_closure * closure, grpc_closure_list * closure_list)
+grpc_pollset_shutdown (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_closure * closure)
 {
   int call_shutdown = 0;
   gpr_mu_lock (&pollset->mu);
@@ -344,7 +344,7 @@ typedef struct grpc_unary_promote_args
 } grpc_unary_promote_args;
 
 static void
-basic_do_promote (void *args, int success, grpc_closure_list * closure_list)
+basic_do_promote (grpc_exec_ctx * exec_ctx, void *args, int success)
 {
   grpc_unary_promote_args *up_args = args;
   const grpc_pollset_vtable *original_vtable = up_args->original_vtable;
@@ -422,7 +422,7 @@ basic_do_promote (void *args, int success, grpc_closure_list * closure_list)
 }
 
 static void
-basic_pollset_add_fd (grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset, grpc_closure_list * closure_list)
+basic_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset)
 {
   grpc_unary_promote_args *up_args;
   GPR_ASSERT (fd);
@@ -481,7 +481,7 @@ exit:
 }
 
 static void
-basic_pollset_del_fd (grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset, grpc_closure_list * closure_list)
+basic_pollset_del_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset)
 {
   GPR_ASSERT (fd);
   if (fd == pollset->data.ptr)
@@ -497,7 +497,7 @@ basic_pollset_del_fd (grpc_pollset * pollset, grpc_fd * fd, int and_unlock_polls
 }
 
 static void
-basic_pollset_maybe_work_and_unlock (grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec deadline, gpr_timespec now, grpc_closure_list * closure_list)
+basic_pollset_maybe_work_and_unlock (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec deadline, gpr_timespec now)
 {
   struct pollfd pfd[2];
   grpc_fd *fd;

@@ -57,7 +57,7 @@ typedef struct
 } channel_data;
 
 static void
-lame_start_transport_stream_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+lame_start_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -92,14 +92,14 @@ lame_start_transport_stream_op (grpc_call_element * elem, grpc_transport_stream_
 }
 
 static char *
-lame_get_peer (grpc_call_element * elem, grpc_closure_list * closure_list)
+lame_get_peer (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   channel_data *chand = elem->channel_data;
   return grpc_channel_get_target (chand->master);
 }
 
 static void
-lame_start_transport_op (grpc_channel_element * elem, grpc_transport_op * op, grpc_closure_list * closure_list)
+lame_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_transport_op * op)
 {
   if (op->on_connectivity_state_change)
     {
@@ -114,7 +114,7 @@ lame_start_transport_op (grpc_channel_element * elem, grpc_transport_op * op, gr
 }
 
 static void
-init_call_elem (grpc_call_element * elem, const void *transport_server_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+init_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *transport_server_data, grpc_transport_stream_op * initial_op)
 {
   if (initial_op)
     {
@@ -123,12 +123,12 @@ init_call_elem (grpc_call_element * elem, const void *transport_server_data, grp
 }
 
 static void
-destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+destroy_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
 }
 
 static void
-init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_first, int is_last, grpc_closure_list * closure_list)
+init_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_first, int is_last)
 {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT (is_first);
@@ -138,7 +138,7 @@ init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grp
 }
 
 static void
-destroy_channel_elem (grpc_channel_element * elem, grpc_closure_list * closure_list)
+destroy_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem)
 {
 }
 

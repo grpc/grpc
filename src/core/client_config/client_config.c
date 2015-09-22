@@ -59,7 +59,7 @@ grpc_client_config_ref (grpc_client_config * c)
 }
 
 void
-grpc_client_config_unref (grpc_client_config * c, grpc_closure_list * closure_list)
+grpc_client_config_unref (grpc_exec_ctx * exec_ctx, grpc_client_config * c)
 {
   if (gpr_unref (&c->refs))
     {

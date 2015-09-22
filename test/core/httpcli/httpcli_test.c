@@ -56,7 +56,7 @@ n_seconds_time (int seconds)
 }
 
 static void
-on_finish (void *arg, const grpc_httpcli_response * response, grpc_closure_list * closure_list)
+on_finish (grpc_exec_ctx * exec_ctx, void *arg, const grpc_httpcli_response * response)
 {
   const char *expect = "<html><head><title>Hello world!</title></head>" "<body><p>This is a test</p></body></html>";
   GPR_ASSERT (arg == (void *) 42);
@@ -135,7 +135,7 @@ test_post (int use_ssl, int port)
 }
 
 static void
-destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+destroy_pollset (grpc_exec_ctx * exec_ctx, void *p, int success)
 {
   grpc_pollset_destroy (p);
 }

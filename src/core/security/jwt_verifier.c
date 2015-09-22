@@ -692,7 +692,7 @@ end:
 }
 
 static void
-on_keys_retrieved (void *user_data, const grpc_httpcli_response * response, grpc_closure_list * closure_list)
+on_keys_retrieved (grpc_exec_ctx * exec_ctx, void *user_data, const grpc_httpcli_response * response)
 {
   grpc_json *json = json_from_http (response);
   verifier_cb_ctx *ctx = (verifier_cb_ctx *) user_data;
@@ -737,7 +737,7 @@ end:
 }
 
 static void
-on_openid_config_retrieved (void *user_data, const grpc_httpcli_response * response, grpc_closure_list * closure_list)
+on_openid_config_retrieved (grpc_exec_ctx * exec_ctx, void *user_data, const grpc_httpcli_response * response)
 {
   const grpc_json *cur;
   grpc_json *json = json_from_http (response);
@@ -821,7 +821,7 @@ verifier_put_mapping (grpc_jwt_verifier * v, const char *email_domain, const cha
 
 /* Takes ownership of ctx. */
 static void
-retrieve_key_and_verify (verifier_cb_ctx * ctx, grpc_closure_list * closure_list)
+retrieve_key_and_verify (grpc_exec_ctx * exec_ctx, verifier_cb_ctx * ctx)
 {
   const char *at_sign;
   grpc_httpcli_response_cb http_cb;
@@ -904,7 +904,7 @@ error:
 }
 
 void
-grpc_jwt_verifier_verify (grpc_jwt_verifier * verifier, grpc_pollset * pollset, const char *jwt, const char *audience, grpc_jwt_verification_done_cb cb, void *user_data, grpc_closure_list * closure_list)
+grpc_jwt_verifier_verify (grpc_exec_ctx * exec_ctx, grpc_jwt_verifier * verifier, grpc_pollset * pollset, const char *jwt, const char *audience, grpc_jwt_verification_done_cb cb, void *user_data)
 {
   const char *dot = NULL;
   grpc_json *json;

@@ -89,7 +89,7 @@ reset_service_url (call_data * calld)
 }
 
 static void
-bubble_up_error (grpc_call_element * elem, grpc_status_code status, const char *error_msg, grpc_closure_list * closure_list)
+bubble_up_error (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_status_code status, const char *error_msg)
 {
   call_data *calld = elem->call_data;
   gpr_log (GPR_ERROR, "Client side authentication failure: %s", error_msg);
@@ -98,7 +98,7 @@ bubble_up_error (grpc_call_element * elem, grpc_status_code status, const char *
 }
 
 static void
-on_credentials_metadata (void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status, grpc_closure_list * closure_list)
+on_credentials_metadata (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status)
 {
   grpc_call_element *elem = (grpc_call_element *) user_data;
   call_data *calld = elem->call_data;
@@ -149,7 +149,7 @@ build_service_url (const char *url_scheme, call_data * calld)
 }
 
 static void
-send_security_metadata (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+send_security_metadata (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -186,7 +186,7 @@ send_security_metadata (grpc_call_element * elem, grpc_transport_stream_op * op,
 }
 
 static void
-on_host_checked (void *user_data, grpc_security_status status, grpc_closure_list * closure_list)
+on_host_checked (grpc_exec_ctx * exec_ctx, void *user_data, grpc_security_status status)
 {
   grpc_call_element *elem = (grpc_call_element *) user_data;
   call_data *calld = elem->call_data;
@@ -210,7 +210,7 @@ on_host_checked (void *user_data, grpc_security_status status, grpc_closure_list
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
 static void
-auth_start_transport_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+auth_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
@@ -296,7 +296,7 @@ auth_start_transport_op (grpc_call_element * elem, grpc_transport_stream_op * op
 
 /* Constructor for call_data */
 static void
-init_call_elem (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+init_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op)
 {
   call_data *calld = elem->call_data;
   memset (calld, 0, sizeof (*calld));
@@ -305,7 +305,7 @@ init_call_elem (grpc_call_element * elem, const void *server_transport_data, grp
 
 /* Destructor for call_data */
 static void
-destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+destroy_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   call_data *calld = elem->call_data;
   grpc_credentials_unref (calld->creds);
@@ -322,7 +322,7 @@ destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
 
 /* Constructor for channel_data */
 static void
-init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, int is_first, int is_last, grpc_closure_list * closure_list)
+init_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, int is_first, int is_last)
 {
   grpc_security_connector *sc = grpc_find_security_connector_in_args (args);
   /* grab pointers to our data from the channel element */
@@ -346,7 +346,7 @@ init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grp
 
 /* Destructor for channel data */
 static void
-destroy_channel_elem (grpc_channel_element * elem, grpc_closure_list * closure_list)
+destroy_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem)
 {
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;

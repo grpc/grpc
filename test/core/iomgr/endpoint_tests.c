@@ -138,7 +138,7 @@ struct read_and_write_test_state
 };
 
 static void
-read_and_write_test_read_handler (void *data, int success, grpc_closure_list * closure_list)
+read_and_write_test_read_handler (grpc_exec_ctx * exec_ctx, void *data, int success)
 {
   struct read_and_write_test_state *state = data;
 
@@ -158,7 +158,7 @@ read_and_write_test_read_handler (void *data, int success, grpc_closure_list * c
 }
 
 static void
-read_and_write_test_write_handler (void *data, int success, grpc_closure_list * closure_list)
+read_and_write_test_write_handler (grpc_exec_ctx * exec_ctx, void *data, int success)
 {
   struct read_and_write_test_state *state = data;
   gpr_slice *slices = NULL;

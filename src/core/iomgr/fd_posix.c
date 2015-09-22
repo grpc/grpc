@@ -252,7 +252,7 @@ has_watchers (grpc_fd * fd)
 }
 
 void
-grpc_fd_orphan (grpc_fd * fd, grpc_closure * on_done, const char *reason, grpc_closure_list * closure_list)
+grpc_fd_orphan (grpc_exec_ctx * exec_ctx, grpc_fd * fd, grpc_closure * on_done, const char *reason)
 {
   fd->on_done_closure = on_done;
   shutdown (fd->fd, SHUT_RDWR);
@@ -300,7 +300,7 @@ grpc_fd_unref (grpc_fd * fd)
 #endif
 
 static void
-notify_on (grpc_fd * fd, gpr_atm * st, grpc_closure * closure, grpc_closure_list * closure_list)
+notify_on (grpc_exec_ctx * exec_ctx, grpc_fd * fd, gpr_atm * st, grpc_closure * closure)
 {
   switch (gpr_atm_acq_load (st))
     {
@@ -337,7 +337,7 @@ notify_on (grpc_fd * fd, gpr_atm * st, grpc_closure * closure, grpc_closure_list
 }
 
 static void
-set_ready_locked (grpc_fd * fd, gpr_atm * st, grpc_closure_list * closure_list)
+set_ready_locked (grpc_exec_ctx * exec_ctx, grpc_fd * fd, gpr_atm * st)
 {
   gpr_intptr state = gpr_atm_acq_load (st);
 
@@ -365,7 +365,7 @@ set_ready_locked (grpc_fd * fd, gpr_atm * st, grpc_closure_list * closure_list)
 }
 
 static void
-set_ready (grpc_fd * fd, gpr_atm * st, grpc_closure_list * closure_list)
+set_ready (grpc_exec_ctx * exec_ctx, grpc_fd * fd, gpr_atm * st)
 {
   /* only one set_ready can be active at once (but there may be a racing
      notify_on) */
@@ -375,7 +375,7 @@ set_ready (grpc_fd * fd, gpr_atm * st, grpc_closure_list * closure_list)
 }
 
 void
-grpc_fd_shutdown (grpc_fd * fd, grpc_closure_list * closure_list)
+grpc_fd_shutdown (grpc_exec_ctx * exec_ctx, grpc_fd * fd)
 {
   gpr_mu_lock (&fd->set_state_mu);
   GPR_ASSERT (!gpr_atm_no_barrier_load (&fd->shutdown));
@@ -386,13 +386,13 @@ grpc_fd_shutdown (grpc_fd * fd, grpc_closure_list * closure_list)
 }
 
 void
-grpc_fd_notify_on_read (grpc_fd * fd, grpc_closure * closure, grpc_closure_list * closure_list)
+grpc_fd_notify_on_read (grpc_exec_ctx * exec_ctx, grpc_fd * fd, grpc_closure * closure)
 {
   notify_on (fd, &fd->readst, closure, closure_list);
 }
 
 void
-grpc_fd_notify_on_write (grpc_fd * fd, grpc_closure * closure, grpc_closure_list * closure_list)
+grpc_fd_notify_on_write (grpc_exec_ctx * exec_ctx, grpc_fd * fd, grpc_closure * closure)
 {
   notify_on (fd, &fd->writest, closure, closure_list);
 }
@@ -443,7 +443,7 @@ grpc_fd_begin_poll (grpc_fd * fd, grpc_pollset * pollset, gpr_uint32 read_mask, 
 }
 
 void
-grpc_fd_end_poll (grpc_fd_watcher * watcher, int got_read, int got_write, grpc_closure_list * closure_list)
+grpc_fd_end_poll (grpc_exec_ctx * exec_ctx, grpc_fd_watcher * watcher, int got_read, int got_write)
 {
   int was_polling = 0;
   int kick = 0;
@@ -491,13 +491,13 @@ grpc_fd_end_poll (grpc_fd_watcher * watcher, int got_read, int got_write, grpc_c
 }
 
 void
-grpc_fd_become_readable (grpc_fd * fd, grpc_closure_list * closure_list)
+grpc_fd_become_readable (grpc_exec_ctx * exec_ctx, grpc_fd * fd)
 {
   set_ready (fd, &fd->readst, closure_list);
 }
 
 void
-grpc_fd_become_writable (grpc_fd * fd, grpc_closure_list * closure_list)
+grpc_fd_become_writable (grpc_exec_ctx * exec_ctx, grpc_fd * fd)
 {
   set_ready (fd, &fd->writest, closure_list);
 }

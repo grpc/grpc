@@ -65,7 +65,7 @@ typedef struct
 } pollset_hdr;
 
 static void
-finally_add_fd (grpc_pollset * pollset, grpc_fd * fd, grpc_closure_list * closure_list)
+finally_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd)
 {
   pollset_hdr *h = pollset->data.ptr;
   struct epoll_event ev;
@@ -94,7 +94,7 @@ finally_add_fd (grpc_pollset * pollset, grpc_fd * fd, grpc_closure_list * closur
 }
 
 static void
-perform_delayed_add (void *arg, int iomgr_status, grpc_closure_list * closure_list)
+perform_delayed_add (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_status)
 {
   delayed_add *da = arg;
 
@@ -122,7 +122,7 @@ perform_delayed_add (void *arg, int iomgr_status, grpc_closure_list * closure_li
 }
 
 static void
-multipoll_with_epoll_pollset_add_fd (grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset, grpc_closure_list * closure_list)
+multipoll_with_epoll_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset)
 {
   if (and_unlock_pollset)
     {
@@ -142,7 +142,7 @@ multipoll_with_epoll_pollset_add_fd (grpc_pollset * pollset, grpc_fd * fd, int a
 }
 
 static void
-multipoll_with_epoll_pollset_del_fd (grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset, grpc_closure_list * closure_list)
+multipoll_with_epoll_pollset_del_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset)
 {
   pollset_hdr *h = pollset->data.ptr;
   int err;
@@ -165,7 +165,7 @@ multipoll_with_epoll_pollset_del_fd (grpc_pollset * pollset, grpc_fd * fd, int a
 #define GRPC_EPOLL_MAX_EVENTS 1000
 
 static void
-multipoll_with_epoll_pollset_maybe_work_and_unlock (grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec deadline, gpr_timespec now, grpc_closure_list * closure_list)
+multipoll_with_epoll_pollset_maybe_work_and_unlock (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec deadline, gpr_timespec now)
 {
   struct epoll_event ep_ev[GRPC_EPOLL_MAX_EVENTS];
   int ep_rv;
@@ -270,7 +270,7 @@ static const grpc_pollset_vtable multipoll_with_epoll_pollset = {
 };
 
 static void
-epoll_become_multipoller (grpc_pollset * pollset, grpc_fd ** fds, size_t nfds, grpc_closure_list * closure_list)
+epoll_become_multipoller (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd ** fds, size_t nfds)
 {
   size_t i;
   pollset_hdr *h = gpr_malloc (sizeof (pollset_hdr));

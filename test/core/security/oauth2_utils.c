@@ -52,7 +52,7 @@ typedef struct
 } oauth2_request;
 
 static void
-on_oauth2_response (void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status, grpc_closure_list * closure_list)
+on_oauth2_response (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status)
 {
   oauth2_request *request = user_data;
   char *token = NULL;
@@ -77,7 +77,7 @@ on_oauth2_response (void *user_data, grpc_credentials_md * md_elems, size_t num_
 }
 
 static void
-do_nothing (void *unused, int success, grpc_closure_list * closure_list)
+do_nothing (grpc_exec_ctx * exec_ctx, void *unused, int success)
 {
 }
 

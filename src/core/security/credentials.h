@@ -122,14 +122,14 @@ grpc_server_credentials *grpc_fake_transport_security_server_credentials_create 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */
 char *grpc_get_well_known_google_credentials_file_path (void);
 
-typedef void (*grpc_credentials_metadata_cb) (void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status, grpc_closure_list * closure_list);
+typedef void (*grpc_credentials_metadata_cb) (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status);
 
 typedef struct
 {
   void (*destruct) (grpc_credentials * c);
   int (*has_request_metadata) (const grpc_credentials * c);
   int (*has_request_metadata_only) (const grpc_credentials * c);
-  void (*get_request_metadata) (grpc_credentials * c, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data, grpc_closure_list * closure_list);
+  void (*get_request_metadata) (grpc_exec_ctx * exec_ctx, grpc_credentials * c, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data);
     grpc_security_status (*create_security_connector) (grpc_credentials * c, const char *target, const grpc_channel_args * args, grpc_credentials * request_metadata_creds, grpc_channel_security_connector ** sc, grpc_channel_args ** new_args);
 } grpc_credentials_vtable;
 
@@ -144,7 +144,7 @@ grpc_credentials *grpc_credentials_ref (grpc_credentials * creds);
 void grpc_credentials_unref (grpc_credentials * creds);
 int grpc_credentials_has_request_metadata (grpc_credentials * creds);
 int grpc_credentials_has_request_metadata_only (grpc_credentials * creds);
-void grpc_credentials_get_request_metadata (grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data, grpc_closure_list * closure_list);
+void grpc_credentials_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data);
 
 /* Creates a security connector for the channel. May also create new channel
    args for the channel to be used in place of the passed in const args if
@@ -246,7 +246,7 @@ typedef struct
 
 typedef struct grpc_credentials_metadata_request grpc_credentials_metadata_request;
 
-typedef void (*grpc_fetch_oauth2_func) (grpc_credentials_metadata_request * req, grpc_httpcli_context * http_context, grpc_pollset * pollset, grpc_httpcli_response_cb response_cb, gpr_timespec deadline, grpc_closure_list * closure_list);
+typedef void (*grpc_fetch_oauth2_func) (grpc_exec_ctx * exec_ctx, grpc_credentials_metadata_request * req, grpc_httpcli_context * http_context, grpc_pollset * pollset, grpc_httpcli_response_cb response_cb, gpr_timespec deadline);
 
 typedef struct
 {

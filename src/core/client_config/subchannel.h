@@ -70,28 +70,28 @@ void grpc_subchannel_call_ref (grpc_subchannel_call * call GRPC_SUBCHANNEL_REF_E
 void grpc_subchannel_call_unref (grpc_subchannel_call * call, grpc_closure_list * closure_list GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
 /** construct a call (possibly asynchronously) */
-void grpc_subchannel_create_call (grpc_subchannel * subchannel, grpc_pollset * pollset, grpc_subchannel_call ** target, grpc_closure * notify, grpc_closure_list * closure_list);
+void grpc_subchannel_create_call (grpc_exec_ctx * exec_ctx, grpc_subchannel * subchannel, grpc_pollset * pollset, grpc_subchannel_call ** target, grpc_closure * notify);
 
 /** process a transport level op */
-void grpc_subchannel_process_transport_op (grpc_subchannel * subchannel, grpc_transport_op * op, grpc_closure_list * closure_list);
+void grpc_subchannel_process_transport_op (grpc_exec_ctx * exec_ctx, grpc_subchannel * subchannel, grpc_transport_op * op);
 
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity (grpc_subchannel * channel);
 
 /** call notify when the connectivity state of a channel changes from *state.
     Updates *state with the new state of the channel */
-void grpc_subchannel_notify_on_state_change (grpc_subchannel * channel, grpc_connectivity_state * state, grpc_closure * notify, grpc_closure_list * closure_list);
+void grpc_subchannel_notify_on_state_change (grpc_exec_ctx * exec_ctx, grpc_subchannel * channel, grpc_connectivity_state * state, grpc_closure * notify);
 
 /** express interest in \a channel's activities through \a pollset. */
-void grpc_subchannel_add_interested_party (grpc_subchannel * channel, grpc_pollset * pollset, grpc_closure_list * closure_list);
+void grpc_subchannel_add_interested_party (grpc_exec_ctx * exec_ctx, grpc_subchannel * channel, grpc_pollset * pollset);
 /** stop following \a channel's activity through \a pollset. */
-void grpc_subchannel_del_interested_party (grpc_subchannel * channel, grpc_pollset * pollset, grpc_closure_list * closure_list);
+void grpc_subchannel_del_interested_party (grpc_exec_ctx * exec_ctx, grpc_subchannel * channel, grpc_pollset * pollset);
 
 /** continue processing a transport op */
-void grpc_subchannel_call_process_op (grpc_subchannel_call * subchannel_call, grpc_transport_stream_op * op, grpc_closure_list * closure_list);
+void grpc_subchannel_call_process_op (grpc_exec_ctx * exec_ctx, grpc_subchannel_call * subchannel_call, grpc_transport_stream_op * op);
 
 /** continue querying for peer */
-char *grpc_subchannel_call_get_peer (grpc_subchannel_call * subchannel_call, grpc_closure_list * closure_list);
+char *grpc_subchannel_call_get_peer (grpc_exec_ctx * exec_ctx, grpc_subchannel_call * subchannel_call);
 
 struct grpc_subchannel_args
 {

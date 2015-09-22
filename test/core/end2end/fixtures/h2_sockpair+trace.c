@@ -76,7 +76,7 @@ typedef struct
 } sp_client_setup;
 
 static void
-client_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx, grpc_closure_list * closure_list)
+client_setup_transport (grpc_exec_ctx * exec_ctx, void *ts, grpc_transport * transport, grpc_mdctx * mdctx)
 {
   sp_client_setup *cs = ts;
 

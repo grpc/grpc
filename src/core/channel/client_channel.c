@@ -131,7 +131,7 @@ static grpc_closure *
 merge_into_waiting_op (grpc_call_element * elem, grpc_transport_stream_op * new_op)
   GRPC_MUST_USE_RESULT;
 
-     static void handle_op_after_cancellation (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+     static void handle_op_after_cancellation (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -170,10 +170,10 @@ typedef struct
   grpc_call_element *elem;
 } waiting_call;
 
-static void perform_transport_stream_op (grpc_call_element * elem, grpc_transport_stream_op * op, int continuation, grpc_closure_list * closure_list);
+static void perform_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op, int continuation);
 
 static void
-continue_with_pick (void *arg, int iomgr_success, grpc_closure_list * closure_list)
+continue_with_pick (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
 {
   waiting_call *wc = arg;
   call_data *calld = wc->elem->call_data;
@@ -205,7 +205,7 @@ is_empty (void *p, int len)
 }
 
 static void
-started_call (void *arg, int iomgr_success, grpc_closure_list * closure_list)
+started_call (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
 {
   call_data *calld = arg;
   grpc_transport_stream_op op;
@@ -249,7 +249,7 @@ started_call (void *arg, int iomgr_success, grpc_closure_list * closure_list)
 }
 
 static void
-picked_target (void *arg, int iomgr_success, grpc_closure_list * closure_list)
+picked_target (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
 {
   call_data *calld = arg;
   grpc_pollset *pollset;
@@ -316,7 +316,7 @@ merge_into_waiting_op (grpc_call_element * elem, grpc_transport_stream_op * new_
 }
 
 static char *
-cc_get_peer (grpc_call_element * elem, grpc_closure_list * closure_list)
+cc_get_peer (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -341,7 +341,7 @@ cc_get_peer (grpc_call_element * elem, grpc_closure_list * closure_list)
 }
 
 static void
-perform_transport_stream_op (grpc_call_element * elem, grpc_transport_stream_op * op, int continuation, grpc_closure_list * closure_list)
+perform_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op, int continuation)
 {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -477,7 +477,7 @@ perform_transport_stream_op (grpc_call_element * elem, grpc_transport_stream_op 
 }
 
 static void
-cc_start_transport_stream_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+cc_start_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   perform_transport_stream_op (elem, op, 0, closure_list);
 }
@@ -499,7 +499,7 @@ on_lb_policy_state_changed_locked (lb_policy_connectivity_watcher * w, grpc_clos
 }
 
 static void
-on_lb_policy_state_changed (void *arg, int iomgr_success, grpc_closure_list * closure_list)
+on_lb_policy_state_changed (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
 {
   lb_policy_connectivity_watcher *w = arg;
 
@@ -512,7 +512,7 @@ on_lb_policy_state_changed (void *arg, int iomgr_success, grpc_closure_list * cl
 }
 
 static void
-watch_lb_policy (channel_data * chand, grpc_lb_policy * lb_policy, grpc_connectivity_state current_state, grpc_closure_list * closure_list)
+watch_lb_policy (grpc_exec_ctx * exec_ctx, channel_data * chand, grpc_lb_policy * lb_policy, grpc_connectivity_state current_state)
 {
   lb_policy_connectivity_watcher *w = gpr_malloc (sizeof (*w));
   GRPC_CHANNEL_INTERNAL_REF (chand->master, "watch_lb_policy");
@@ -525,7 +525,7 @@ watch_lb_policy (channel_data * chand, grpc_lb_policy * lb_policy, grpc_connecti
 }
 
 static void
-cc_on_config_changed (void *arg, int iomgr_success, grpc_closure_list * closure_list)
+cc_on_config_changed (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
 {
   channel_data *chand = arg;
   grpc_lb_policy *lb_policy = NULL;
@@ -611,7 +611,7 @@ cc_on_config_changed (void *arg, int iomgr_success, grpc_closure_list * closure_
 }
 
 static void
-cc_start_transport_op (grpc_channel_element * elem, grpc_transport_op * op, grpc_closure_list * closure_list)
+cc_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_transport_op * op)
 {
   grpc_lb_policy *lb_policy = NULL;
   channel_data *chand = elem->channel_data;
@@ -668,7 +668,7 @@ cc_start_transport_op (grpc_channel_element * elem, grpc_transport_op * op, grpc
 
 /* Constructor for call_data */
 static void
-init_call_elem (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+init_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op)
 {
   call_data *calld = elem->call_data;
 
@@ -685,7 +685,7 @@ init_call_elem (grpc_call_element * elem, const void *server_transport_data, grp
 
 /* Destructor for call_data */
 static void
-destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+destroy_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   call_data *calld = elem->call_data;
   grpc_subchannel_call *subchannel_call;
@@ -717,7 +717,7 @@ destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
 
 /* Constructor for channel_data */
 static void
-init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, int is_first, int is_last, grpc_closure_list * closure_list)
+init_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, int is_first, int is_last)
 {
   channel_data *chand = elem->channel_data;
 
@@ -737,7 +737,7 @@ init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grp
 
 /* Destructor for channel_data */
 static void
-destroy_channel_elem (grpc_channel_element * elem, grpc_closure_list * closure_list)
+destroy_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem)
 {
   channel_data *chand = elem->channel_data;
 
@@ -769,7 +769,7 @@ const grpc_channel_filter grpc_client_channel_filter = {
 };
 
 void
-grpc_client_channel_set_resolver (grpc_channel_stack * channel_stack, grpc_resolver * resolver, grpc_closure_list * closure_list)
+grpc_client_channel_set_resolver (grpc_exec_ctx * exec_ctx, grpc_channel_stack * channel_stack, grpc_resolver * resolver)
 {
   /* post construction initialization: set the transport setup pointer */
   grpc_channel_element *elem = grpc_channel_stack_last_element (channel_stack);
@@ -788,7 +788,7 @@ grpc_client_channel_set_resolver (grpc_channel_stack * channel_stack, grpc_resol
 }
 
 grpc_connectivity_state
-grpc_client_channel_check_connectivity_state (grpc_channel_element * elem, int try_to_connect, grpc_closure_list * closure_list)
+grpc_client_channel_check_connectivity_state (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, int try_to_connect)
 {
   channel_data *chand = elem->channel_data;
   grpc_connectivity_state out;
@@ -816,7 +816,7 @@ grpc_client_channel_check_connectivity_state (grpc_channel_element * elem, int t
 }
 
 void
-grpc_client_channel_watch_connectivity_state (grpc_channel_element * elem, grpc_connectivity_state * state, grpc_closure * on_complete, grpc_closure_list * closure_list)
+grpc_client_channel_watch_connectivity_state (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_connectivity_state * state, grpc_closure * on_complete)
 {
   channel_data *chand = elem->channel_data;
   gpr_mu_lock (&chand->mu_config);
@@ -832,14 +832,14 @@ grpc_client_channel_get_connecting_pollset_set (grpc_channel_element * elem)
 }
 
 void
-grpc_client_channel_add_interested_party (grpc_channel_element * elem, grpc_pollset * pollset, grpc_closure_list * closure_list)
+grpc_client_channel_add_interested_party (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_pollset * pollset)
 {
   channel_data *chand = elem->channel_data;
   grpc_pollset_set_add_pollset (&chand->pollset_set, pollset, closure_list);
 }
 
 void
-grpc_client_channel_del_interested_party (grpc_channel_element * elem, grpc_pollset * pollset, grpc_closure_list * closure_list)
+grpc_client_channel_del_interested_party (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_pollset * pollset)
 {
   channel_data *chand = elem->channel_data;
   grpc_pollset_set_del_pollset (&chand->pollset_set, pollset, closure_list);

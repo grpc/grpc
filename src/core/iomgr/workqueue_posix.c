@@ -45,7 +45,7 @@
 
 #include "src/core/iomgr/fd_posix.h"
 
-static void on_readable (void *arg, int success, grpc_closure_list * closure_list);
+static void on_readable (grpc_exec_ctx * exec_ctx, void *arg, int success);
 
 grpc_workqueue *
 grpc_workqueue_create (grpc_closure_list * closure_list)
@@ -64,7 +64,7 @@ grpc_workqueue_create (grpc_closure_list * closure_list)
 }
 
 static void
-workqueue_destroy (grpc_workqueue * workqueue, grpc_closure_list * closure_list)
+workqueue_destroy (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue)
 {
   GPR_ASSERT (grpc_closure_list_empty (workqueue->closure_list));
   grpc_fd_shutdown (workqueue->wakeup_read_fd, closure_list);
@@ -90,7 +90,7 @@ grpc_workqueue_unref (grpc_workqueue * workqueue, grpc_closure_list * closure_li
   gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "WORKQUEUE:%p unref %d -> %d %s", workqueue, (int) workqueue->refs.count, (int) workqueue->refs.count - 1, reason);
 #else
 void
-grpc_workqueue_unref (grpc_workqueue * workqueue, grpc_closure_list * closure_list)
+grpc_workqueue_unref (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue)
 {
 #endif
   if (gpr_unref (&workqueue->refs))
@@ -100,13 +100,13 @@ grpc_workqueue_unref (grpc_workqueue * workqueue, grpc_closure_list * closure_li
 }
 
 void
-grpc_workqueue_add_to_pollset (grpc_workqueue * workqueue, grpc_pollset * pollset, grpc_closure_list * closure_list)
+grpc_workqueue_add_to_pollset (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue, grpc_pollset * pollset)
 {
   grpc_pollset_add_fd (pollset, workqueue->wakeup_read_fd, closure_list);
 }
 
 void
-grpc_workqueue_flush (grpc_workqueue * workqueue, grpc_closure_list * closure_list)
+grpc_workqueue_flush (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue)
 {
   gpr_mu_lock (&workqueue->mu);
   grpc_closure_list_move (&workqueue->closure_list, closure_list);
@@ -114,7 +114,7 @@ grpc_workqueue_flush (grpc_workqueue * workqueue, grpc_closure_list * closure_li
 }
 
 static void
-on_readable (void *arg, int success, grpc_closure_list * closure_list)
+on_readable (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   grpc_workqueue *workqueue = arg;
 

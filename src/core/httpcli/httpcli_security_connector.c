@@ -63,7 +63,7 @@ httpcli_ssl_destroy (grpc_security_connector * sc)
 }
 
 static void
-httpcli_ssl_do_handshake (grpc_security_connector * sc, grpc_endpoint * nonsecure_endpoint, grpc_security_handshake_done_cb cb, void *user_data, grpc_closure_list * closure_list)
+httpcli_ssl_do_handshake (grpc_exec_ctx * exec_ctx, grpc_security_connector * sc, grpc_endpoint * nonsecure_endpoint, grpc_security_handshake_done_cb cb, void *user_data)
 {
   grpc_httpcli_ssl_channel_security_connector *c = (grpc_httpcli_ssl_channel_security_connector *) sc;
   tsi_result result = TSI_OK;
@@ -143,12 +143,12 @@ httpcli_ssl_channel_security_connector_create (const unsigned char *pem_root_cer
 
 typedef struct
 {
-  void (*func) (void *arg, grpc_endpoint * endpoint, grpc_closure_list * closure_list);
+  void (*func) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint);
   void *arg;
 } on_done_closure;
 
 static void
-on_secure_transport_setup_done (void *rp, grpc_security_status status, grpc_endpoint * wrapped_endpoint, grpc_endpoint * secure_endpoint, grpc_closure_list * closure_list)
+on_secure_transport_setup_done (grpc_exec_ctx * exec_ctx, void *rp, grpc_security_status status, grpc_endpoint * wrapped_endpoint, grpc_endpoint * secure_endpoint)
 {
   on_done_closure *c = rp;
   if (status != GRPC_SECURITY_OK)
@@ -164,7 +164,7 @@ on_secure_transport_setup_done (void *rp, grpc_security_status status, grpc_endp
 }
 
 static void
-ssl_handshake (void *arg, grpc_endpoint * tcp, const char *host, void (*on_done) (void *arg, grpc_endpoint * endpoint, grpc_closure_list * closure_list), grpc_closure_list * closure_list)
+ssl_handshake (void *arg, grpc_endpoint * tcp, const char *host, void (*on_done) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint, grpc_closure_list * closure_list))
 {
   grpc_channel_security_connector *sc = NULL;
   const unsigned char *pem_root_certs = NULL;

@@ -78,14 +78,14 @@ typedef struct freereq
 } freereq;
 
 static void
-destroy_pollset_and_shutdown (void *p, int success, grpc_closure_list * closure_list)
+destroy_pollset_and_shutdown (grpc_exec_ctx * exec_ctx, void *p, int success)
 {
   grpc_pollset_destroy (p);
   grpc_shutdown ();
 }
 
 static void
-freed_port_from_server (void *arg, const grpc_httpcli_response * response, grpc_closure_list * closure_list)
+freed_port_from_server (grpc_exec_ctx * exec_ctx, void *arg, const grpc_httpcli_response * response)
 {
   freereq *pr = arg;
   gpr_mu_lock (GRPC_POLLSET_MU (&pr->pollset));
@@ -231,7 +231,7 @@ typedef struct portreq
 } portreq;
 
 static void
-got_port_from_server (void *arg, const grpc_httpcli_response * response, grpc_closure_list * closure_list)
+got_port_from_server (grpc_exec_ctx * exec_ctx, void *arg, const grpc_httpcli_response * response)
 {
   size_t i;
   int port = 0;

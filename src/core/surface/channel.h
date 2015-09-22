@@ -37,7 +37,7 @@
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/subchannel_factory.h"
 
-grpc_channel *grpc_channel_create_from_filters (const char *target, const grpc_channel_filter ** filters, size_t count, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_client, grpc_closure_list * closure_list);
+grpc_channel *grpc_channel_create_from_filters (grpc_exec_ctx * exec_ctx, const char *target, const grpc_channel_filter ** filters, size_t count, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_client);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack *grpc_channel_get_channel_stack (grpc_channel * channel);
@@ -58,14 +58,14 @@ gpr_uint32 grpc_channel_get_max_message_length (grpc_channel * channel);
 
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
 void grpc_channel_internal_ref (grpc_channel * channel, const char *reason);
-void grpc_channel_internal_unref (grpc_channel * channel, const char *reason, grpc_closure_list * closure_list);
+void grpc_channel_internal_unref (grpc_exec_ctx * exec_ctx, grpc_channel * channel, const char *reason);
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
   grpc_channel_internal_ref(channel, reason)
 #define GRPC_CHANNEL_INTERNAL_UNREF(channel, reason, closure_list) \
   grpc_channel_internal_unref(channel, reason, closure_list)
 #else
 void grpc_channel_internal_ref (grpc_channel * channel);
-void grpc_channel_internal_unref (grpc_channel * channel, grpc_closure_list * closure_list);
+void grpc_channel_internal_unref (grpc_exec_ctx * exec_ctx, grpc_channel * channel);
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
   grpc_channel_internal_ref(channel)
 #define GRPC_CHANNEL_INTERNAL_UNREF(channel, reason, closure_list) \

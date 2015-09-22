@@ -79,9 +79,9 @@ typedef struct grpc_pollset
 
 struct grpc_pollset_vtable
 {
-  void (*add_fd) (grpc_pollset * pollset, struct grpc_fd * fd, int and_unlock_pollset, grpc_closure_list * closure_list);
-  void (*del_fd) (grpc_pollset * pollset, struct grpc_fd * fd, int and_unlock_pollset, grpc_closure_list * closure_list);
-  void (*maybe_work_and_unlock) (grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec deadline, gpr_timespec now, grpc_closure_list * closure_list);
+  void (*add_fd) (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, struct grpc_fd * fd, int and_unlock_pollset);
+  void (*del_fd) (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, struct grpc_fd * fd, int and_unlock_pollset);
+  void (*maybe_work_and_unlock) (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec deadline, gpr_timespec now);
   void (*finish_shutdown) (grpc_pollset * pollset);
   void (*destroy) (grpc_pollset * pollset);
 };
@@ -89,10 +89,10 @@ struct grpc_pollset_vtable
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
 
 /* Add an fd to a pollset */
-void grpc_pollset_add_fd (grpc_pollset * pollset, struct grpc_fd *fd, grpc_closure_list * closure_list);
+void grpc_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, struct grpc_fd *fd);
 /* Force remove an fd from a pollset (normally they are removed on the next
    poll after an fd is orphaned) */
-void grpc_pollset_del_fd (grpc_pollset * pollset, struct grpc_fd *fd, grpc_closure_list * closure_list);
+void grpc_pollset_del_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, struct grpc_fd *fd);
 
 /* Returns the fd to listen on for kicks */
 int grpc_kick_read_fd (grpc_pollset * p);
@@ -109,10 +109,10 @@ void grpc_kick_drain (grpc_pollset * p);
 int grpc_poll_deadline_to_millis_timeout (gpr_timespec deadline, gpr_timespec now);
 
 /* turn a pollset into a multipoller: platform specific */
-typedef void (*grpc_platform_become_multipoller_type) (grpc_pollset * pollset, struct grpc_fd ** fds, size_t fd_count, grpc_closure_list * closure_list);
+typedef void (*grpc_platform_become_multipoller_type) (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, struct grpc_fd ** fds, size_t fd_count);
 extern grpc_platform_become_multipoller_type grpc_platform_become_multipoller;
 
-void grpc_poll_become_multipoller (grpc_pollset * pollset, struct grpc_fd **fds, size_t fd_count, grpc_closure_list * closure_list);
+void grpc_poll_become_multipoller (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, struct grpc_fd **fds, size_t fd_count);
 
 /* Return 1 if the pollset has active threads in grpc_pollset_work (pollset must
  * be locked) */

@@ -73,7 +73,7 @@ static shard_type g_shards[NUM_SHARDS];
 /* Protected by g_mu */
 static shard_type *g_shard_queue[NUM_SHARDS];
 
-static int run_some_expired_alarms (gpr_timespec now, gpr_timespec * next, int success, grpc_closure_list * closure_list);
+static int run_some_expired_alarms (grpc_exec_ctx * exec_ctx, gpr_timespec now, gpr_timespec * next, int success);
 
 static gpr_timespec
 compute_min_deadline (shard_type * shard)
@@ -183,7 +183,7 @@ note_deadline_change (shard_type * shard)
 }
 
 void
-grpc_alarm_init (grpc_alarm * alarm, gpr_timespec deadline, grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg, gpr_timespec now, grpc_closure_list * closure_list)
+grpc_alarm_init (grpc_exec_ctx * exec_ctx, grpc_alarm * alarm, gpr_timespec deadline, grpc_iomgr_cb_func alarm_cb, void *alarm_cb_arg, gpr_timespec now)
 {
   int is_first_alarm = 0;
   shard_type *shard = &g_shards[shard_idx (alarm)];
@@ -237,7 +237,7 @@ grpc_alarm_init (grpc_alarm * alarm, gpr_timespec deadline, grpc_iomgr_cb_func a
 }
 
 void
-grpc_alarm_cancel (grpc_alarm * alarm, grpc_closure_list * closure_list)
+grpc_alarm_cancel (grpc_exec_ctx * exec_ctx, grpc_alarm * alarm)
 {
   shard_type *shard = &g_shards[shard_idx (alarm)];
   gpr_mu_lock (&shard->mu);
@@ -313,7 +313,7 @@ pop_one (shard_type * shard, gpr_timespec now)
 
 /* REQUIRES: shard->mu unlocked */
 static size_t
-pop_alarms (shard_type * shard, gpr_timespec now, gpr_timespec * new_min_deadline, int success, grpc_closure_list * closure_list)
+pop_alarms (grpc_exec_ctx * exec_ctx, shard_type * shard, gpr_timespec now, gpr_timespec * new_min_deadline, int success)
 {
   size_t n = 0;
   grpc_alarm *alarm;
@@ -329,7 +329,7 @@ pop_alarms (shard_type * shard, gpr_timespec now, gpr_timespec * new_min_deadlin
 }
 
 static int
-run_some_expired_alarms (gpr_timespec now, gpr_timespec * next, int success, grpc_closure_list * closure_list)
+run_some_expired_alarms (grpc_exec_ctx * exec_ctx, gpr_timespec now, gpr_timespec * next, int success)
 {
   size_t n = 0;
 
@@ -370,7 +370,7 @@ run_some_expired_alarms (gpr_timespec now, gpr_timespec * next, int success, grp
 }
 
 int
-grpc_alarm_check (gpr_timespec now, gpr_timespec * next, grpc_closure_list * closure_list)
+grpc_alarm_check (grpc_exec_ctx * exec_ctx, gpr_timespec now, gpr_timespec * next)
 {
   GPR_ASSERT (now.clock_type == g_clock_type);
   return run_some_expired_alarms (now, next, gpr_time_cmp (now, gpr_inf_future (now.clock_type)) != 0, closure_list);

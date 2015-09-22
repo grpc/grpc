@@ -141,7 +141,7 @@ grpc_chttp2_unlocking_check_writes (grpc_chttp2_transport_global * transport_glo
 }
 
 void
-grpc_chttp2_perform_writes (grpc_chttp2_transport_writing * transport_writing, grpc_endpoint * endpoint, grpc_closure_list * closure_list)
+grpc_chttp2_perform_writes (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_writing * transport_writing, grpc_endpoint * endpoint)
 {
   GPR_ASSERT (transport_writing->outbuf.count > 0 || grpc_chttp2_list_have_writing_streams (transport_writing));
 
@@ -180,7 +180,7 @@ finalize_outbuf (grpc_chttp2_transport_writing * transport_writing)
 }
 
 void
-grpc_chttp2_cleanup_writing (grpc_chttp2_transport_global * transport_global, grpc_chttp2_transport_writing * transport_writing, grpc_closure_list * closure_list)
+grpc_chttp2_cleanup_writing (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global, grpc_chttp2_transport_writing * transport_writing)
 {
   grpc_chttp2_stream_writing *stream_writing;
   grpc_chttp2_stream_global *stream_global;

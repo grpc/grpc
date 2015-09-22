@@ -143,7 +143,7 @@ static grpc_endpoint_test_config configs[] = {
 };
 
 static void
-inc_call_ctr (void *arg, int success, grpc_closure_list * closure_list)
+inc_call_ctr (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   ++*(int *) arg;
 }
@@ -179,7 +179,7 @@ test_leftover (grpc_endpoint_test_config config, size_t slice_size)
 }
 
 static void
-destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+destroy_pollset (grpc_exec_ctx * exec_ctx, void *p, int success)
 {
   grpc_pollset_destroy (p);
 }

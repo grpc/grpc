@@ -40,19 +40,19 @@ grpc_connector_ref (grpc_connector * connector)
 }
 
 void
-grpc_connector_unref (grpc_connector * connector, grpc_closure_list * closure_list)
+grpc_connector_unref (grpc_exec_ctx * exec_ctx, grpc_connector * connector)
 {
   connector->vtable->unref (connector, closure_list);
 }
 
 void
-grpc_connector_connect (grpc_connector * connector, const grpc_connect_in_args * in_args, grpc_connect_out_args * out_args, grpc_closure * notify, grpc_closure_list * closure_list)
+grpc_connector_connect (grpc_exec_ctx * exec_ctx, grpc_connector * connector, const grpc_connect_in_args * in_args, grpc_connect_out_args * out_args, grpc_closure * notify)
 {
   connector->vtable->connect (connector, in_args, out_args, notify, closure_list);
 }
 
 void
-grpc_connector_shutdown (grpc_connector * connector, grpc_closure_list * closure_list)
+grpc_connector_shutdown (grpc_exec_ctx * exec_ctx, grpc_connector * connector)
 {
   connector->vtable->shutdown (connector, closure_list);
 }

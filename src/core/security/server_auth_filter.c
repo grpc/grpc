@@ -151,7 +151,7 @@ on_md_processing_done (void *user_data, const grpc_metadata * consumed_md, size_
 }
 
 static void
-auth_on_recv (void *user_data, int success, grpc_closure_list * closure_list)
+auth_on_recv (grpc_exec_ctx * exec_ctx, void *user_data, int success)
 {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
@@ -199,7 +199,7 @@ set_recv_ops_md_callbacks (grpc_call_element * elem, grpc_transport_stream_op * 
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
 static void
-auth_start_transport_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+auth_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   set_recv_ops_md_callbacks (elem, op);
   grpc_call_next_op (elem, op, closure_list);
@@ -207,7 +207,7 @@ auth_start_transport_op (grpc_call_element * elem, grpc_transport_stream_op * op
 
 /* Constructor for call_data */
 static void
-init_call_elem (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+init_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op)
 {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
@@ -239,13 +239,13 @@ init_call_elem (grpc_call_element * elem, const void *server_transport_data, grp
 
 /* Destructor for call_data */
 static void
-destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+destroy_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
 }
 
 /* Constructor for channel_data */
 static void
-init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_first, int is_last, grpc_closure_list * closure_list)
+init_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_first, int is_last)
 {
   grpc_security_connector *sc = grpc_find_security_connector_in_args (args);
   grpc_auth_metadata_processor *processor = grpc_find_auth_metadata_processor_in_args (args);
@@ -269,7 +269,7 @@ init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grp
 
 /* Destructor for channel data */
 static void
-destroy_channel_elem (grpc_channel_element * elem, grpc_closure_list * closure_list)
+destroy_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem)
 {
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;

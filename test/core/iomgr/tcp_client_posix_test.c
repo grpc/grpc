@@ -68,7 +68,7 @@ finish_connection ()
 }
 
 static void
-must_succeed (void *arg, int success, grpc_closure_list * closure_list)
+must_succeed (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   GPR_ASSERT (g_connecting != NULL);
   GPR_ASSERT (success);
@@ -79,7 +79,7 @@ must_succeed (void *arg, int success, grpc_closure_list * closure_list)
 }
 
 static void
-must_fail (void *arg, int success, grpc_closure_list * closure_list)
+must_fail (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   GPR_ASSERT (g_connecting == NULL);
   GPR_ASSERT (!success);
@@ -270,7 +270,7 @@ test_times_out (void)
 }
 
 static void
-destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+destroy_pollset (grpc_exec_ctx * exec_ctx, void *p, int success)
 {
   grpc_pollset_destroy (p);
 }

@@ -45,7 +45,7 @@ test_deadline (void)
 }
 
 static void
-must_succeed (void *evp, grpc_resolved_addresses * p, grpc_closure_list * closure_list)
+must_succeed (grpc_exec_ctx * exec_ctx, void *evp, grpc_resolved_addresses * p)
 {
   GPR_ASSERT (p);
   GPR_ASSERT (p->naddrs >= 1);
@@ -54,7 +54,7 @@ must_succeed (void *evp, grpc_resolved_addresses * p, grpc_closure_list * closur
 }
 
 static void
-must_fail (void *evp, grpc_resolved_addresses * p, grpc_closure_list * closure_list)
+must_fail (grpc_exec_ctx * exec_ctx, void *evp, grpc_resolved_addresses * p)
 {
   GPR_ASSERT (!p);
   gpr_event_set (evp, (void *) 1);

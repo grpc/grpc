@@ -75,21 +75,21 @@ typedef struct
   grpc_client_config *resolved_config;
 } dns_resolver;
 
-static void dns_destroy (grpc_resolver * r, grpc_closure_list * closure_list);
+static void dns_destroy (grpc_exec_ctx * exec_ctx, grpc_resolver * r);
 
 static void dns_start_resolving_locked (dns_resolver * r);
-static void dns_maybe_finish_next_locked (dns_resolver * r, grpc_closure_list * closure_list);
+static void dns_maybe_finish_next_locked (grpc_exec_ctx * exec_ctx, dns_resolver * r);
 
-static void dns_shutdown (grpc_resolver * r, grpc_closure_list * closure_list);
-static void dns_channel_saw_error (grpc_resolver * r, struct sockaddr *failing_address, int failing_address_len, grpc_closure_list * closure_list);
-static void dns_next (grpc_resolver * r, grpc_client_config ** target_config, grpc_closure * on_complete, grpc_closure_list * closure_list);
+static void dns_shutdown (grpc_exec_ctx * exec_ctx, grpc_resolver * r);
+static void dns_channel_saw_error (grpc_exec_ctx * exec_ctx, grpc_resolver * r, struct sockaddr *failing_address, int failing_address_len);
+static void dns_next (grpc_exec_ctx * exec_ctx, grpc_resolver * r, grpc_client_config ** target_config, grpc_closure * on_complete);
 
 static const grpc_resolver_vtable dns_resolver_vtable = {
   dns_destroy, dns_shutdown, dns_channel_saw_error, dns_next
 };
 
 static void
-dns_shutdown (grpc_resolver * resolver, grpc_closure_list * closure_list)
+dns_shutdown (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver)
 {
   dns_resolver *r = (dns_resolver *) resolver;
   gpr_mu_lock (&r->mu);
@@ -103,7 +103,7 @@ dns_shutdown (grpc_resolver * resolver, grpc_closure_list * closure_list)
 }
 
 static void
-dns_channel_saw_error (grpc_resolver * resolver, struct sockaddr *sa, int len, grpc_closure_list * closure_list)
+dns_channel_saw_error (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver, struct sockaddr *sa, int len)
 {
   dns_resolver *r = (dns_resolver *) resolver;
   gpr_mu_lock (&r->mu);
@@ -115,7 +115,7 @@ dns_channel_saw_error (grpc_resolver * resolver, struct sockaddr *sa, int len, g
 }
 
 static void
-dns_next (grpc_resolver * resolver, grpc_client_config ** target_config, grpc_closure * on_complete, grpc_closure_list * closure_list)
+dns_next (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver, grpc_client_config ** target_config, grpc_closure * on_complete)
 {
   dns_resolver *r = (dns_resolver *) resolver;
   gpr_mu_lock (&r->mu);
@@ -134,7 +134,7 @@ dns_next (grpc_resolver * resolver, grpc_client_config ** target_config, grpc_cl
 }
 
 static void
-dns_on_resolved (void *arg, grpc_resolved_addresses * addresses, grpc_closure_list * closure_list)
+dns_on_resolved (grpc_exec_ctx * exec_ctx, void *arg, grpc_resolved_addresses * addresses)
 {
   dns_resolver *r = arg;
   grpc_client_config *config = NULL;
@@ -188,7 +188,7 @@ dns_start_resolving_locked (dns_resolver * r)
 }
 
 static void
-dns_maybe_finish_next_locked (dns_resolver * r, grpc_closure_list * closure_list)
+dns_maybe_finish_next_locked (grpc_exec_ctx * exec_ctx, dns_resolver * r)
 {
   if (r->next_completion != NULL && r->resolved_version != r->published_version)
     {
@@ -204,7 +204,7 @@ dns_maybe_finish_next_locked (dns_resolver * r, grpc_closure_list * closure_list
 }
 
 static void
-dns_destroy (grpc_resolver * gr, grpc_closure_list * closure_list)
+dns_destroy (grpc_exec_ctx * exec_ctx, grpc_resolver * gr)
 {
   dns_resolver *r = (dns_resolver *) gr;
   gpr_mu_destroy (&r->mu);

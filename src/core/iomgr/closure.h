@@ -50,7 +50,7 @@ typedef struct grpc_closure_list
  * \param arg Arbitrary input.
  * \param success An indication on the state of the iomgr. On false, cleanup
  * actions should be taken (eg, shutdown). */
-typedef void (*grpc_iomgr_cb_func) (void *arg, int success, grpc_closure_list * closure_list);
+typedef void (*grpc_iomgr_cb_func) (grpc_exec_ctx * exec_ctx, void *arg, int success);
 
 /** A closure over a grpc_iomgr_cb_func. */
 struct grpc_closure

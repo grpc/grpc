@@ -49,7 +49,7 @@
    with high probability at least one thread in the system will see an update
    at any time slice. */
 
-int grpc_alarm_check (gpr_timespec now, gpr_timespec * next, grpc_closure_list * closure_list);
+int grpc_alarm_check (grpc_exec_ctx * exec_ctx, gpr_timespec now, gpr_timespec * next);
 void grpc_alarm_list_init (gpr_timespec now);
 void grpc_alarm_list_shutdown (grpc_closure_list * closure_list);
 

@@ -41,7 +41,7 @@
 static grpc_pollset g_pollset;
 
 static void
-must_succeed (void *p, int success, grpc_closure_list * closure_list)
+must_succeed (grpc_exec_ctx * exec_ctx, void *p, int success)
 {
   GPR_ASSERT (success == 1);
   gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
@@ -76,7 +76,7 @@ test_add_closure (void)
 }
 
 static void
-destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+destroy_pollset (grpc_exec_ctx * exec_ctx, void *p, int success)
 {
   grpc_pollset_destroy (p);
 }

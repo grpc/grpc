@@ -175,7 +175,7 @@ test_receive (int number_of_clients)
 }
 
 static void
-destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+destroy_pollset (grpc_exec_ctx * exec_ctx, void *p, int success)
 {
   grpc_pollset_destroy (p);
 }

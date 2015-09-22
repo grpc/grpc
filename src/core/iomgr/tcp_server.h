@@ -40,13 +40,13 @@
 typedef struct grpc_tcp_server grpc_tcp_server;
 
 /* Called for newly connected TCP connections. */
-typedef void (*grpc_tcp_server_cb) (void *arg, grpc_endpoint * ep, grpc_closure_list * closure_list);
+typedef void (*grpc_tcp_server_cb) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * ep);
 
 /* Create a server, initially not bound to any ports */
 grpc_tcp_server *grpc_tcp_server_create (void);
 
 /* Start listening to bound ports */
-void grpc_tcp_server_start (grpc_tcp_server * server, grpc_pollset ** pollsets, size_t pollset_count, grpc_tcp_server_cb on_accept_cb, void *cb_arg, grpc_closure_list * closure_list);
+void grpc_tcp_server_start (grpc_exec_ctx * exec_ctx, grpc_tcp_server * server, grpc_pollset ** pollsets, size_t pollset_count, grpc_tcp_server_cb on_accept_cb, void *cb_arg);
 
 /* Add a port to the server, returning port number on success, or negative
    on failure.
@@ -68,6 +68,6 @@ int grpc_tcp_server_add_port (grpc_tcp_server * s, const void *addr, size_t addr
    up when grpc_tcp_server_destroy is called. */
 int grpc_tcp_server_get_fd (grpc_tcp_server * s, unsigned index);
 
-void grpc_tcp_server_destroy (grpc_tcp_server * server, grpc_closure * closure, grpc_closure_list * closure_list);
+void grpc_tcp_server_destroy (grpc_exec_ctx * exec_ctx, grpc_tcp_server * server, grpc_closure * closure);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H */

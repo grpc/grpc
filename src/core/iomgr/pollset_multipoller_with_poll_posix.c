@@ -61,7 +61,7 @@ typedef struct
 } pollset_hdr;
 
 static void
-multipoll_with_poll_pollset_add_fd (grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset, grpc_closure_list * closure_list)
+multipoll_with_poll_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset)
 {
   size_t i;
   pollset_hdr *h = pollset->data.ptr;
@@ -86,7 +86,7 @@ exit:
 }
 
 static void
-multipoll_with_poll_pollset_del_fd (grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset, grpc_closure_list * closure_list)
+multipoll_with_poll_pollset_del_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset)
 {
   /* will get removed next poll cycle */
   pollset_hdr *h = pollset->data.ptr;
@@ -104,7 +104,7 @@ multipoll_with_poll_pollset_del_fd (grpc_pollset * pollset, grpc_fd * fd, int an
 }
 
 static void
-multipoll_with_poll_pollset_maybe_work_and_unlock (grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec deadline, gpr_timespec now, grpc_closure_list * closure_list)
+multipoll_with_poll_pollset_maybe_work_and_unlock (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec deadline, gpr_timespec now)
 {
   int timeout;
   int r;
@@ -239,7 +239,7 @@ static const grpc_pollset_vtable multipoll_with_poll_pollset = {
 };
 
 void
-grpc_poll_become_multipoller (grpc_pollset * pollset, grpc_fd ** fds, size_t nfds, grpc_closure_list * closure_list)
+grpc_poll_become_multipoller (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd ** fds, size_t nfds)
 {
   size_t i;
   pollset_hdr *h = gpr_malloc (sizeof (pollset_hdr));

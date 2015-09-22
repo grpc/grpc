@@ -142,7 +142,7 @@ grpc_udp_server_create (void)
 }
 
 static void
-finish_shutdown (grpc_udp_server * s, grpc_closure_list * closure_list)
+finish_shutdown (grpc_exec_ctx * exec_ctx, grpc_udp_server * s)
 {
   grpc_closure_list_add (closure_list, s->shutdown_complete, 1);
 
@@ -154,7 +154,7 @@ finish_shutdown (grpc_udp_server * s, grpc_closure_list * closure_list)
 }
 
 static void
-destroyed_port (void *server, int success, grpc_closure_list * closure_list)
+destroyed_port (grpc_exec_ctx * exec_ctx, void *server, int success)
 {
   grpc_udp_server *s = server;
   gpr_mu_lock (&s->mu);
@@ -174,7 +174,7 @@ destroyed_port (void *server, int success, grpc_closure_list * closure_list)
    events will be received on them - at this point it's safe to destroy
    things */
 static void
-deactivated_all_ports (grpc_udp_server * s, grpc_closure_list * closure_list)
+deactivated_all_ports (grpc_exec_ctx * exec_ctx, grpc_udp_server * s)
 {
   size_t i;
 
@@ -210,7 +210,7 @@ deactivated_all_ports (grpc_udp_server * s, grpc_closure_list * closure_list)
 }
 
 void
-grpc_udp_server_destroy (grpc_udp_server * s, grpc_closure * on_done, grpc_closure_list * closure_list)
+grpc_udp_server_destroy (grpc_exec_ctx * exec_ctx, grpc_udp_server * s, grpc_closure * on_done)
 {
   size_t i;
   gpr_mu_lock (&s->mu);
@@ -292,7 +292,7 @@ error:
 
 /* event manager callback when reads are ready */
 static void
-on_read (void *arg, int success, grpc_closure_list * closure_list)
+on_read (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   server_port *sp = arg;
 
@@ -451,7 +451,7 @@ grpc_udp_server_get_fd (grpc_udp_server * s, unsigned index)
 }
 
 void
-grpc_udp_server_start (grpc_udp_server * s, grpc_pollset ** pollsets, size_t pollset_count, grpc_closure_list * closure_list)
+grpc_udp_server_start (grpc_exec_ctx * exec_ctx, grpc_udp_server * s, grpc_pollset ** pollsets, size_t pollset_count)
 {
   size_t i, j;
   gpr_mu_lock (&s->mu);

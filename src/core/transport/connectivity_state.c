@@ -70,7 +70,7 @@ grpc_connectivity_state_init (grpc_connectivity_state_tracker * tracker, grpc_co
 }
 
 void
-grpc_connectivity_state_destroy (grpc_connectivity_state_tracker * tracker, grpc_closure_list * closure_list)
+grpc_connectivity_state_destroy (grpc_exec_ctx * exec_ctx, grpc_connectivity_state_tracker * tracker)
 {
   int success;
   grpc_connectivity_state_watcher *w;
@@ -104,7 +104,7 @@ grpc_connectivity_state_check (grpc_connectivity_state_tracker * tracker)
 }
 
 int
-grpc_connectivity_state_notify_on_state_change (grpc_connectivity_state_tracker * tracker, grpc_connectivity_state * current, grpc_closure * notify, grpc_closure_list * closure_list)
+grpc_connectivity_state_notify_on_state_change (grpc_exec_ctx * exec_ctx, grpc_connectivity_state_tracker * tracker, grpc_connectivity_state * current, grpc_closure * notify)
 {
   if (grpc_connectivity_state_trace)
     {
@@ -127,7 +127,7 @@ grpc_connectivity_state_notify_on_state_change (grpc_connectivity_state_tracker 
 }
 
 void
-grpc_connectivity_state_set (grpc_connectivity_state_tracker * tracker, grpc_connectivity_state state, const char *reason, grpc_closure_list * closure_list)
+grpc_connectivity_state_set (grpc_exec_ctx * exec_ctx, grpc_connectivity_state_tracker * tracker, grpc_connectivity_state state, const char *reason)
 {
   grpc_connectivity_state_watcher *w;
   if (grpc_connectivity_state_trace)

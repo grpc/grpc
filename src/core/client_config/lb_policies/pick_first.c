@@ -79,7 +79,7 @@ typedef struct
 } pick_first_lb_policy;
 
 static void
-del_interested_parties_locked (pick_first_lb_policy * p, grpc_closure_list * closure_list)
+del_interested_parties_locked (grpc_exec_ctx * exec_ctx, pick_first_lb_policy * p)
 {
   pending_pick *pp;
   for (pp = p->pending_picks; pp; pp = pp->next)
@@ -89,7 +89,7 @@ del_interested_parties_locked (pick_first_lb_policy * p, grpc_closure_list * clo
 }
 
 static void
-add_interested_parties_locked (pick_first_lb_policy * p, grpc_closure_list * closure_list)
+add_interested_parties_locked (grpc_exec_ctx * exec_ctx, pick_first_lb_policy * p)
 {
   pending_pick *pp;
   for (pp = p->pending_picks; pp; pp = pp->next)
@@ -99,7 +99,7 @@ add_interested_parties_locked (pick_first_lb_policy * p, grpc_closure_list * clo
 }
 
 void
-pf_destroy (grpc_lb_policy * pol, grpc_closure_list * closure_list)
+pf_destroy (grpc_exec_ctx * exec_ctx, grpc_lb_policy * pol)
 {
   pick_first_lb_policy *p = (pick_first_lb_policy *) pol;
   size_t i;
@@ -115,7 +115,7 @@ pf_destroy (grpc_lb_policy * pol, grpc_closure_list * closure_list)
 }
 
 void
-pf_shutdown (grpc_lb_policy * pol, grpc_closure_list * closure_list)
+pf_shutdown (grpc_exec_ctx * exec_ctx, grpc_lb_policy * pol)
 {
   pick_first_lb_policy *p = (pick_first_lb_policy *) pol;
   pending_pick *pp;
@@ -137,7 +137,7 @@ pf_shutdown (grpc_lb_policy * pol, grpc_closure_list * closure_list)
 }
 
 static void
-start_picking (pick_first_lb_policy * p, grpc_closure_list * closure_list)
+start_picking (grpc_exec_ctx * exec_ctx, pick_first_lb_policy * p)
 {
   p->started_picking = 1;
   p->checking_subchannel = 0;
@@ -147,7 +147,7 @@ start_picking (pick_first_lb_policy * p, grpc_closure_list * closure_list)
 }
 
 void
-pf_exit_idle (grpc_lb_policy * pol, grpc_closure_list * closure_list)
+pf_exit_idle (grpc_exec_ctx * exec_ctx, grpc_lb_policy * pol)
 {
   pick_first_lb_policy *p = (pick_first_lb_policy *) pol;
   gpr_mu_lock (&p->mu);
@@ -159,7 +159,7 @@ pf_exit_idle (grpc_lb_policy * pol, grpc_closure_list * closure_list)
 }
 
 void
-pf_pick (grpc_lb_policy * pol, grpc_pollset * pollset, grpc_metadata_batch * initial_metadata, grpc_subchannel ** target, grpc_closure * on_complete, grpc_closure_list * closure_list)
+pf_pick (grpc_exec_ctx * exec_ctx, grpc_lb_policy * pol, grpc_pollset * pollset, grpc_metadata_batch * initial_metadata, grpc_subchannel ** target, grpc_closure * on_complete)
 {
   pick_first_lb_policy *p = (pick_first_lb_policy *) pol;
   pending_pick *pp;
@@ -188,7 +188,7 @@ pf_pick (grpc_lb_policy * pol, grpc_pollset * pollset, grpc_metadata_batch * ini
 }
 
 static void
-pf_connectivity_changed (void *arg, int iomgr_success, grpc_closure_list * closure_list)
+pf_connectivity_changed (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
 {
   pick_first_lb_policy *p = arg;
   pending_pick *pp;
@@ -283,7 +283,7 @@ pf_connectivity_changed (void *arg, int iomgr_success, grpc_closure_list * closu
 }
 
 static void
-pf_broadcast (grpc_lb_policy * pol, grpc_transport_op * op, grpc_closure_list * closure_list)
+pf_broadcast (grpc_exec_ctx * exec_ctx, grpc_lb_policy * pol, grpc_transport_op * op)
 {
   pick_first_lb_policy *p = (pick_first_lb_policy *) pol;
   size_t i;
@@ -309,7 +309,7 @@ pf_broadcast (grpc_lb_policy * pol, grpc_transport_op * op, grpc_closure_list * 
 }
 
 static grpc_connectivity_state
-pf_check_connectivity (grpc_lb_policy * pol, grpc_closure_list * closure_list)
+pf_check_connectivity (grpc_exec_ctx * exec_ctx, grpc_lb_policy * pol)
 {
   pick_first_lb_policy *p = (pick_first_lb_policy *) pol;
   grpc_connectivity_state st;
@@ -320,7 +320,7 @@ pf_check_connectivity (grpc_lb_policy * pol, grpc_closure_list * closure_list)
 }
 
 void
-pf_notify_on_state_change (grpc_lb_policy * pol, grpc_connectivity_state * current, grpc_closure * notify, grpc_closure_list * closure_list)
+pf_notify_on_state_change (grpc_exec_ctx * exec_ctx, grpc_lb_policy * pol, grpc_connectivity_state * current, grpc_closure * notify)
 {
   pick_first_lb_policy *p = (pick_first_lb_policy *) pol;
   gpr_mu_lock (&p->mu);

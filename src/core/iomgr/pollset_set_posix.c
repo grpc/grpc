@@ -64,7 +64,7 @@ grpc_pollset_set_destroy (grpc_pollset_set * pollset_set)
 }
 
 void
-grpc_pollset_set_add_pollset (grpc_pollset_set * pollset_set, grpc_pollset * pollset, grpc_closure_list * closure_list)
+grpc_pollset_set_add_pollset (grpc_exec_ctx * exec_ctx, grpc_pollset_set * pollset_set, grpc_pollset * pollset)
 {
   size_t i, j;
   gpr_mu_lock (&pollset_set->mu);
@@ -91,7 +91,7 @@ grpc_pollset_set_add_pollset (grpc_pollset_set * pollset_set, grpc_pollset * pol
 }
 
 void
-grpc_pollset_set_del_pollset (grpc_pollset_set * pollset_set, grpc_pollset * pollset, grpc_closure_list * closure_list)
+grpc_pollset_set_del_pollset (grpc_exec_ctx * exec_ctx, grpc_pollset_set * pollset_set, grpc_pollset * pollset)
 {
   size_t i;
   gpr_mu_lock (&pollset_set->mu);
@@ -108,7 +108,7 @@ grpc_pollset_set_del_pollset (grpc_pollset_set * pollset_set, grpc_pollset * pol
 }
 
 void
-grpc_pollset_set_add_fd (grpc_pollset_set * pollset_set, grpc_fd * fd, grpc_closure_list * closure_list)
+grpc_pollset_set_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset_set * pollset_set, grpc_fd * fd)
 {
   size_t i;
   gpr_mu_lock (&pollset_set->mu);
@@ -127,7 +127,7 @@ grpc_pollset_set_add_fd (grpc_pollset_set * pollset_set, grpc_fd * fd, grpc_clos
 }
 
 void
-grpc_pollset_set_del_fd (grpc_pollset_set * pollset_set, grpc_fd * fd, grpc_closure_list * closure_list)
+grpc_pollset_set_del_fd (grpc_exec_ctx * exec_ctx, grpc_pollset_set * pollset_set, grpc_fd * fd)
 {
   size_t i;
   gpr_mu_lock (&pollset_set->mu);

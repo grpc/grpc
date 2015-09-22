@@ -277,7 +277,7 @@ struct grpc_chttp2_transport_parsing
   /* active parser */
   void *parser_data;
   grpc_chttp2_stream_parsing *incoming_stream;
-    grpc_chttp2_parse_error (*parser) (void *parser_user_data, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last, grpc_closure_list * closure_list);
+    grpc_chttp2_parse_error (*parser) (grpc_exec_ctx * exec_ctx, void *parser_user_data, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last);
 
   /* received settings */
   gpr_uint32 settings[GRPC_CHTTP2_NUM_SETTINGS];
@@ -480,15 +480,15 @@ struct grpc_chttp2_stream
 /** Someone is unlocking the transport mutex: check to see if writes
     are required, and schedule them if so */
 int grpc_chttp2_unlocking_check_writes (grpc_chttp2_transport_global * global, grpc_chttp2_transport_writing * writing);
-void grpc_chttp2_perform_writes (grpc_chttp2_transport_writing * transport_writing, grpc_endpoint * endpoint, grpc_closure_list * closure_list);
-void grpc_chttp2_terminate_writing (void *transport_writing, int success, grpc_closure_list * closure_list);
-void grpc_chttp2_cleanup_writing (grpc_chttp2_transport_global * global, grpc_chttp2_transport_writing * writing, grpc_closure_list * closure_list);
+void grpc_chttp2_perform_writes (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_writing * transport_writing, grpc_endpoint * endpoint);
+void grpc_chttp2_terminate_writing (grpc_exec_ctx * exec_ctx, void *transport_writing, int success);
+void grpc_chttp2_cleanup_writing (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * global, grpc_chttp2_transport_writing * writing);
 
 void grpc_chttp2_prepare_to_read (grpc_chttp2_transport_global * global, grpc_chttp2_transport_parsing * parsing);
 /** Process one slice of incoming data; return 1 if the connection is still
     viable after reading, or 0 if the connection should be torn down */
-int grpc_chttp2_perform_read (grpc_chttp2_transport_parsing * transport_parsing, gpr_slice slice, grpc_closure_list * closure_list);
-void grpc_chttp2_publish_reads (grpc_chttp2_transport_global * global, grpc_chttp2_transport_parsing * parsing, grpc_closure_list * closure_list);
+int grpc_chttp2_perform_read (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_parsing * transport_parsing, gpr_slice slice);
+void grpc_chttp2_publish_reads (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * global, grpc_chttp2_transport_parsing * parsing);
 
 /** Get a writable stream
     returns non-zero if there was a stream available */
@@ -526,7 +526,7 @@ int grpc_chttp2_list_pop_read_write_state_changed (grpc_chttp2_transport_global 
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_lookup_stream (grpc_chttp2_transport_parsing * transport_parsing, gpr_uint32 id);
 grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream (grpc_chttp2_transport_parsing * transport_parsing, gpr_uint32 id);
 
-void grpc_chttp2_add_incoming_goaway (grpc_chttp2_transport_global * transport_global, gpr_uint32 goaway_error, gpr_slice goaway_text, grpc_closure_list * closure_list);
+void grpc_chttp2_add_incoming_goaway (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global, gpr_uint32 goaway_error, gpr_slice goaway_text);
 
 void grpc_chttp2_register_stream (grpc_chttp2_transport * t, grpc_chttp2_stream * s);
 /* returns 1 if this is the last stream, 0 otherwise */

@@ -73,7 +73,7 @@ static grpc_httpcli_get_override g_get_override = NULL;
 static grpc_httpcli_post_override g_post_override = NULL;
 
 static void
-plaintext_handshake (void *arg, grpc_endpoint * endpoint, const char *host, void (*on_done) (void *arg, grpc_endpoint * endpoint, grpc_closure_list * closure_list), grpc_closure_list * closure_list)
+plaintext_handshake (void *arg, grpc_endpoint * endpoint, const char *host, void (*on_done) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint, grpc_closure_list * closure_list))
 {
   on_done (arg, endpoint, closure_list);
 }
@@ -94,10 +94,10 @@ grpc_httpcli_context_destroy (grpc_httpcli_context * context)
   grpc_pollset_set_destroy (&context->pollset_set);
 }
 
-static void next_address (internal_request * req, grpc_closure_list * closure_list);
+static void next_address (grpc_exec_ctx * exec_ctx, internal_request * req);
 
 static void
-finish (internal_request * req, int success, grpc_closure_list * closure_list)
+finish (grpc_exec_ctx * exec_ctx, internal_request * req, int success)
 {
   grpc_pollset_set_del_pollset (&req->context->pollset_set, req->pollset, closure_list);
   req->on_response (req->user_data, success ? &req->parser.r : NULL, closure_list);
@@ -118,16 +118,16 @@ finish (internal_request * req, int success, grpc_closure_list * closure_list)
   gpr_free (req);
 }
 
-static void on_read (void *user_data, int success, grpc_closure_list * closure_list);
+static void on_read (grpc_exec_ctx * exec_ctx, void *user_data, int success);
 
 static void
-do_read (internal_request * req, grpc_closure_list * closure_list)
+do_read (grpc_exec_ctx * exec_ctx, internal_request * req)
 {
   grpc_endpoint_read (req->ep, &req->incoming, &req->on_read, closure_list);
 }
 
 static void
-on_read (void *user_data, int success, grpc_closure_list * closure_list)
+on_read (grpc_exec_ctx * exec_ctx, void *user_data, int success)
 {
   internal_request *req = user_data;
   size_t i;
@@ -160,13 +160,13 @@ on_read (void *user_data, int success, grpc_closure_list * closure_list)
 }
 
 static void
-on_written (internal_request * req, grpc_closure_list * closure_list)
+on_written (grpc_exec_ctx * exec_ctx, internal_request * req)
 {
   do_read (req, closure_list);
 }
 
 static void
-done_write (void *arg, int success, grpc_closure_list * closure_list)
+done_write (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   internal_request *req = arg;
   if (success)
@@ -180,7 +180,7 @@ done_write (void *arg, int success, grpc_closure_list * closure_list)
 }
 
 static void
-start_write (internal_request * req, grpc_closure_list * closure_list)
+start_write (grpc_exec_ctx * exec_ctx, internal_request * req)
 {
   gpr_slice_ref (req->request_text);
   gpr_slice_buffer_add (&req->outgoing, req->request_text);
@@ -188,7 +188,7 @@ start_write (internal_request * req, grpc_closure_list * closure_list)
 }
 
 static void
-on_handshake_done (void *arg, grpc_endpoint * ep, grpc_closure_list * closure_list)
+on_handshake_done (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * ep)
 {
   internal_request *req = arg;
 
@@ -203,7 +203,7 @@ on_handshake_done (void *arg, grpc_endpoint * ep, grpc_closure_list * closure_li
 }
 
 static void
-on_connected (void *arg, int success, grpc_closure_list * closure_list)
+on_connected (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   internal_request *req = arg;
 
@@ -216,7 +216,7 @@ on_connected (void *arg, int success, grpc_closure_list * closure_list)
 }
 
 static void
-next_address (internal_request * req, grpc_closure_list * closure_list)
+next_address (grpc_exec_ctx * exec_ctx, internal_request * req)
 {
   grpc_resolved_address *addr;
   if (req->next_address == req->addresses->naddrs)
@@ -230,7 +230,7 @@ next_address (internal_request * req, grpc_closure_list * closure_list)
 }
 
 static void
-on_resolved (void *arg, grpc_resolved_addresses * addresses, grpc_closure_list * closure_list)
+on_resolved (grpc_exec_ctx * exec_ctx, void *arg, grpc_resolved_addresses * addresses)
 {
   internal_request *req = arg;
   if (!addresses)
@@ -244,7 +244,7 @@ on_resolved (void *arg, grpc_resolved_addresses * addresses, grpc_closure_list *
 }
 
 static void
-internal_request_begin (grpc_httpcli_context * context, grpc_pollset * pollset, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, const char *name, gpr_slice request_text, grpc_closure_list * closure_list)
+internal_request_begin (grpc_exec_ctx * exec_ctx, grpc_httpcli_context * context, grpc_pollset * pollset, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, const char *name, gpr_slice request_text)
 {
   internal_request *req = gpr_malloc (sizeof (internal_request));
   memset (req, 0, sizeof (*req));
@@ -268,7 +268,7 @@ internal_request_begin (grpc_httpcli_context * context, grpc_pollset * pollset, 
 }
 
 void
-grpc_httpcli_get (grpc_httpcli_context * context, grpc_pollset * pollset, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, grpc_closure_list * closure_list)
+grpc_httpcli_get (grpc_exec_ctx * exec_ctx, grpc_httpcli_context * context, grpc_pollset * pollset, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   char *name;
   if (g_get_override && g_get_override (request, deadline, on_response, user_data, closure_list))
@@ -281,7 +281,7 @@ grpc_httpcli_get (grpc_httpcli_context * context, grpc_pollset * pollset, const 
 }
 
 void
-grpc_httpcli_post (grpc_httpcli_context * context, grpc_pollset * pollset, const grpc_httpcli_request * request, const char *body_bytes, size_t body_size, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, grpc_closure_list * closure_list)
+grpc_httpcli_post (grpc_exec_ctx * exec_ctx, grpc_httpcli_context * context, grpc_pollset * pollset, const grpc_httpcli_request * request, const char *body_bytes, size_t body_size, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   char *name;
   if (g_post_override && g_post_override (request, body_bytes, body_size, deadline, on_response, user_data, closure_list))
