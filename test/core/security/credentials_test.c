@@ -554,16 +554,16 @@ static void test_compute_engine_creds_success(void) {
   grpc_httpcli_set_override(compute_engine_httpcli_get_success_override,
                             httpcli_post_should_not_be_called);
   grpc_credentials_get_request_metadata(
-      compute_engine_creds, NULL, test_service_url,
-      on_oauth2_creds_get_metadata_success, (&exec_ctx, void *)test_user_data);
-  grpc_exec_ctx_finish(&exec_ctx);
+      &exec_ctx, compute_engine_creds, NULL, test_service_url,
+      on_oauth2_creds_get_metadata_success, (void *)test_user_data);
+  grpc_exec_ctx_flush(&exec_ctx);
 
   /* Second request: the cached token should be served directly. */
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   grpc_credentials_get_request_metadata(
-      compute_engine_creds, NULL, test_service_url,
-      on_oauth2_creds_get_metadata_success, (&exec_ctx, void *)test_user_data);
+      &exec_ctx, compute_engine_creds, NULL, test_service_url,
+      on_oauth2_creds_get_metadata_success, (void *)test_user_data);
   grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_credentials_unref(compute_engine_creds);
@@ -579,8 +579,8 @@ static void test_compute_engine_creds_failure(void) {
   GPR_ASSERT(grpc_credentials_has_request_metadata(compute_engine_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(compute_engine_creds));
   grpc_credentials_get_request_metadata(
-      compute_engine_creds, NULL, test_service_url,
-      on_oauth2_creds_get_metadata_failure, (&exec_ctx, void *)test_user_data);
+      &exec_ctx, compute_engine_creds, NULL, test_service_url,
+      on_oauth2_creds_get_metadata_failure, (void *)test_user_data);
   grpc_credentials_unref(compute_engine_creds);
   grpc_httpcli_set_override(NULL, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -641,17 +641,17 @@ static void test_refresh_token_creds_success(void) {
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             refresh_token_httpcli_post_success);
   grpc_credentials_get_request_metadata(
-      refresh_token_creds, NULL, test_service_url,
-      on_oauth2_creds_get_metadata_success, (&exec_ctx, void *)test_user_data);
-  grpc_exec_ctx_finish(&exec_ctx);
+      &exec_ctx, refresh_token_creds, NULL, test_service_url,
+      on_oauth2_creds_get_metadata_success, (void *)test_user_data);
+  grpc_exec_ctx_flush(&exec_ctx);
 
   /* Second request: the cached token should be served directly. */
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   grpc_credentials_get_request_metadata(
-      refresh_token_creds, NULL, test_service_url,
-      on_oauth2_creds_get_metadata_success, (&exec_ctx, void *)test_user_data);
-  grpc_exec_ctx_finish(&exec_ctx);
+      &exec_ctx, refresh_token_creds, NULL, test_service_url,
+      on_oauth2_creds_get_metadata_success, (void *)test_user_data);
+  grpc_exec_ctx_flush(&exec_ctx);
 
   grpc_credentials_unref(refresh_token_creds);
   grpc_httpcli_set_override(NULL, NULL);
@@ -668,8 +668,8 @@ static void test_refresh_token_creds_failure(void) {
   GPR_ASSERT(grpc_credentials_has_request_metadata(refresh_token_creds));
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(refresh_token_creds));
   grpc_credentials_get_request_metadata(
-      refresh_token_creds, NULL, test_service_url,
-      on_oauth2_creds_get_metadata_failure, (&exec_ctx, void *)test_user_data);
+      &exec_ctx, refresh_token_creds, NULL, test_service_url,
+      on_oauth2_creds_get_metadata_failure, (void *)test_user_data);
   grpc_credentials_unref(refresh_token_creds);
   grpc_httpcli_set_override(NULL, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -758,26 +758,26 @@ static void test_jwt_creds_success(void) {
 
   /* First request: jwt_encode_and_sign should be called. */
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
-  grpc_credentials_get_request_metadata(jwt_creds, NULL, test_service_url,
-                                        on_jwt_creds_get_metadata_success,
-                                        (&exec_ctx, void *)test_user_data);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_credentials_get_request_metadata(
+      &exec_ctx, jwt_creds, NULL, test_service_url,
+      on_jwt_creds_get_metadata_success, (void *)test_user_data);
+  grpc_exec_ctx_flush(&exec_ctx);
 
   /* Second request: the cached token should be served directly. */
   grpc_jwt_encode_and_sign_set_override(
       encode_and_sign_jwt_should_not_be_called);
-  grpc_credentials_get_request_metadata(jwt_creds, NULL, test_service_url,
-                                        on_jwt_creds_get_metadata_success,
-                                        (&exec_ctx, void *)test_user_data);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_credentials_get_request_metadata(
+      &exec_ctx, jwt_creds, NULL, test_service_url,
+      on_jwt_creds_get_metadata_success, (void *)test_user_data);
+  grpc_exec_ctx_flush(&exec_ctx);
 
   /* Third request: Different service url so jwt_encode_and_sign should be
      called again (no caching). */
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_success);
-  grpc_credentials_get_request_metadata(jwt_creds, NULL, other_test_service_url,
-                                        on_jwt_creds_get_metadata_success,
-                                        (&exec_ctx, void *)test_user_data);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_credentials_get_request_metadata(
+      &exec_ctx, jwt_creds, NULL, other_test_service_url,
+      on_jwt_creds_get_metadata_success, (void *)test_user_data);
+  grpc_exec_ctx_flush(&exec_ctx);
 
   gpr_free(json_key_string);
   grpc_credentials_unref(jwt_creds);
@@ -794,9 +794,9 @@ static void test_jwt_creds_signing_failure(void) {
   GPR_ASSERT(grpc_credentials_has_request_metadata_only(jwt_creds));
 
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_failure);
-  grpc_credentials_get_request_metadata(jwt_creds, NULL, test_service_url,
-                                        on_jwt_creds_get_metadata_failure,
-                                        (&exec_ctx, void *)test_user_data);
+  grpc_credentials_get_request_metadata(
+      &exec_ctx, jwt_creds, NULL, test_service_url,
+      on_jwt_creds_get_metadata_failure, (void *)test_user_data);
 
   gpr_free(json_key_string);
   grpc_credentials_unref(jwt_creds);

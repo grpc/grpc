@@ -105,9 +105,9 @@ void test_succeeds(void) {
   /* connect to it */
   GPR_ASSERT(getsockname(svr_fd, (struct sockaddr *)&addr, &addr_len) == 0);
   grpc_closure_init(&done, must_succeed, NULL);
-  grpc_tcp_client_connect(&done, &g_connecting, &g_pollset_set,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, &g_pollset_set,
                           (struct sockaddr *)&addr, addr_len,
-                          gpr_inf_future(&exec_ctx, GPR_CLOCK_REALTIME));
+                          gpr_inf_future(GPR_CLOCK_REALTIME));
 
   /* await the connection */
   do {
@@ -121,8 +121,9 @@ void test_succeeds(void) {
 
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(&exec_ctx, 5));
+    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
+                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5));
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -149,17 +150,17 @@ void test_fails(void) {
 
   /* connect to a broken address */
   grpc_closure_init(&done, must_fail, NULL);
-  grpc_tcp_client_connect(&done, &g_connecting, &g_pollset_set,
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, &g_pollset_set,
                           (struct sockaddr *)&addr, addr_len,
-                          gpr_inf_future(&exec_ctx, GPR_CLOCK_REALTIME));
+                          gpr_inf_future(GPR_CLOCK_REALTIME));
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
 
   /* wait for the connection callback to finish */
   while (g_connections_complete == connections_complete_before) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      test_deadline(&exec_ctx, ));
+    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC), test_deadline());
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -214,9 +215,8 @@ void test_times_out(void) {
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
   grpc_closure_init(&done, must_fail, NULL);
-  grpc_tcp_client_connect(&done, &g_connecting, &g_pollset_set,
-                          (&exec_ctx, struct sockaddr *)&addr, addr_len,
-                          connect_deadline);
+  grpc_tcp_client_connect(&exec_ctx, &done, &g_connecting, &g_pollset_set,
+                          (struct sockaddr *)&addr, addr_len, connect_deadline);
 
   /* Make sure the event doesn't trigger early */
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -242,8 +242,9 @@ void test_times_out(void) {
       GPR_ASSERT(g_connections_complete ==
                  connections_complete_before + is_after_deadline);
     }
-    grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      GRPC_TIMEOUT_MILLIS_TO_DEADLINE(&exec_ctx, 10));
+    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
+                      GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10));
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));

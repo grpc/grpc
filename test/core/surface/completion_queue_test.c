@@ -99,7 +99,7 @@ static void test_cq_end_op(void) {
   GPR_ASSERT(ev.success);
 
   shutdown_and_destroy(cc);
-  GPR_ASSERT(grpc_closure_list_empty(closure_list));
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_shutdown_then_next_polling(void) {
@@ -172,7 +172,7 @@ static void test_pluck(void) {
   }
 
   shutdown_and_destroy(cc);
-  GPR_ASSERT(grpc_closure_list_empty(closure_list));
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 #define TEST_THREAD_EVENTS 10000
@@ -217,15 +217,16 @@ static void producer_thread(void *arg) {
 
   gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_cq_end_op(opt->cc, (void *)(gpr_intptr)1, 1, free_completion, NULL,
-                   gpr_malloc(sizeof(&exec_ctx, grpc_cq_completion)));
+    grpc_cq_end_op(&exec_ctx, opt->cc, (void *)(gpr_intptr)1, 1,
+                   free_completion, NULL,
+                   gpr_malloc(sizeof(grpc_cq_completion)));
     opt->events_triggered++;
     grpc_exec_ctx_finish(&exec_ctx);
   }
 
   gpr_log(GPR_INFO, "producer %d phase 2 done", opt->id);
   gpr_event_set(&opt->on_finished, (void *)(gpr_intptr)1);
-  GPR_ASSERT(grpc_closure_list_empty(closure_list));
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void consumer_thread(void *arg) {

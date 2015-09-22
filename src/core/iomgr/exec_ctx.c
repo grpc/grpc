@@ -35,8 +35,8 @@
 
 void grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   while (!grpc_closure_list_empty(exec_ctx->closure_list)) {
-    grpc_closure *c = closure_list->head;
-    closure_list->head = closure_list->tail = NULL;
+    grpc_closure *c = exec_ctx->closure_list.head;
+    exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
     while (c != NULL) {
       grpc_closure *next = c->next;
       c->cb(exec_ctx, c->cb_arg, c->success);
