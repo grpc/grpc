@@ -157,8 +157,7 @@ grpc_channel *grpc_lame_client_channel_create(const char *target,
   grpc_call_list call_list = GRPC_CALL_LIST_INIT;
   static const grpc_channel_filter *filters[] = {&lame_filter};
   channel = grpc_channel_create_from_filters(
-      target, filters, 1, NULL, grpc_mdctx_create(),
-      grpc_workqueue_create(&call_list), 1, &call_list);
+      target, filters, 1, NULL, grpc_mdctx_create(), 1, &call_list);
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   GPR_ASSERT(elem->filter == &lame_filter);
   chand = (channel_data *)elem->channel_data;

@@ -97,7 +97,7 @@ static void add_interested_parties_locked(pick_first_lb_policy *p,
 void pf_destroy(grpc_lb_policy *pol, grpc_call_list *call_list) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   size_t i;
-  GPR_ASSERT(p->shutdown);
+  GPR_ASSERT(p->pending_picks == NULL);
   for (i = 0; i < p->num_subchannels; i++) {
     GRPC_SUBCHANNEL_UNREF(p->subchannels[i], "pick_first", call_list);
   }
@@ -180,7 +180,9 @@ static void pf_connectivity_changed(void *arg, int iomgr_success,
   gpr_mu_lock(&p->mu);
 
   if (p->shutdown) {
+    gpr_mu_unlock(&p->mu);
     GRPC_LB_POLICY_UNREF(&p->base, "pick_first_connectivity", call_list);
+    return;
   } else if (p->selected != NULL) {
     grpc_connectivity_state_set(&p->state_tracker, p->checking_connectivity,
                                 "selected_changed", call_list);

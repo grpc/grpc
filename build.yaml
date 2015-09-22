@@ -354,11 +354,6 @@ targets:
   language: c
   src: [test/core/iomgr/alarm_list_test.c]
   deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-- name: alarm_test
-  build: test
-  language: c
-  src: [test/core/iomgr/alarm_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
 - name: alpn_test
   build: test
   language: c

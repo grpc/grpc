@@ -82,16 +82,17 @@ static void destroy(secure_endpoint *secure_ep, grpc_call_list *call_list) {
 
 /*#define GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG*/
 #ifdef GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG
-#define SECURE_ENDPOINT_UNREF(ep, reason) \
-  secure_endpoint_unref((ep), (reason), __FILE__, __LINE__)
+#define SECURE_ENDPOINT_UNREF(ep, reason, cl) \
+  secure_endpoint_unref((ep), (cl), (reason), __FILE__, __LINE__)
 #define SECURE_ENDPOINT_REF(ep, reason) \
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
-static void secure_endpoint_unref(secure_endpoint *ep, const char *reason,
+static void secure_endpoint_unref(secure_endpoint *ep,
+                                  grpc_call_list *call_list, const char *reason,
                                   const char *file, int line) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SECENDP unref %p : %s %d -> %d",
           ep, reason, ep->ref.count, ep->ref.count - 1);
   if (gpr_unref(&ep->ref)) {
-    destroy(ep);
+    destroy(ep, call_list);
   }
 }
 
@@ -219,6 +220,7 @@ static void endpoint_read(grpc_endpoint *secure_ep, gpr_slice_buffer *slices,
   ep->read_buffer = slices;
   gpr_slice_buffer_reset_and_unref(ep->read_buffer);
 
+  SECURE_ENDPOINT_REF(ep, "read");
   if (ep->leftover_bytes.count) {
     gpr_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
     GPR_ASSERT(ep->leftover_bytes.count == 0);
@@ -226,7 +228,6 @@ static void endpoint_read(grpc_endpoint *secure_ep, gpr_slice_buffer *slices,
     return;
   }
 
-  SECURE_ENDPOINT_REF(ep, "read");
   grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read,
                      call_list);
 }

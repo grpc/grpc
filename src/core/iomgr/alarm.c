@@ -224,7 +224,7 @@ void grpc_alarm_cancel(grpc_alarm *alarm, grpc_call_list *call_list) {
   shard_type *shard = &g_shards[shard_idx(alarm)];
   gpr_mu_lock(&shard->mu);
   if (!alarm->triggered) {
-    grpc_call_list_add(call_list, &alarm->closure, 1);
+    grpc_call_list_add(call_list, &alarm->closure, 0);
     alarm->triggered = 1;
     if (alarm->heap_index == INVALID_HEAP_INDEX) {
       list_remove(alarm);

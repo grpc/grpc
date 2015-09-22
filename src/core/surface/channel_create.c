@@ -59,7 +59,6 @@ typedef struct {
   grpc_endpoint *tcp;
 
   grpc_mdctx *mdctx;
-  grpc_workqueue *workqueue;
 
   grpc_closure connected;
 } connector;
@@ -73,7 +72,6 @@ static void connector_unref(grpc_connector *con, grpc_call_list *call_list) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
     grpc_mdctx_unref(c->mdctx);
-    GRPC_WORKQUEUE_UNREF(c->workqueue, "connector", call_list);
     gpr_free(c);
   }
 }
@@ -156,6 +154,8 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   grpc_subchannel *s;
   memset(c, 0, sizeof(*c));
   c->base.vtable = &connector_vtable;
+  c->mdctx = f->mdctx;
+  grpc_mdctx_ref(c->mdctx);
   gpr_ref_init(&c->refs, 1);
   args->mdctx = f->mdctx;
   args->args = final_args;
@@ -184,7 +184,6 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   subchannel_factory *f;
   grpc_mdctx *mdctx = grpc_mdctx_create();
   grpc_call_list call_list = GRPC_CALL_LIST_INIT;
-  grpc_workqueue *workqueue = grpc_workqueue_create(&call_list);
   size_t n = 0;
   GPR_ASSERT(!reserved);
   if (grpc_channel_args_is_census_enabled(args)) {
@@ -194,8 +193,8 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 
-  channel = grpc_channel_create_from_filters(target, filters, n, args, mdctx,
-                                             workqueue, 1, &call_list);
+  channel = grpc_channel_create_from_filters(target, filters, n, args, mdctx, 1,
+                                             &call_list);
 
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;

@@ -38,20 +38,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "alarm_test", 
-    "src": [
-      "test/core/iomgr/alarm_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "alpn_test", 
     "src": [
       "test/core/transport/chttp2/alpn_test.c"

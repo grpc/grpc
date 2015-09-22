@@ -58,7 +58,6 @@ void grpc_server_add_listener(
 void grpc_server_setup_transport(grpc_server *server, grpc_transport *transport,
                                  grpc_channel_filter const **extra_filters,
                                  size_t num_extra_filters, grpc_mdctx *mdctx,
-                                 grpc_workqueue *workqueue,
                                  const grpc_channel_args *args,
                                  grpc_call_list *call_list);
 
