@@ -397,12 +397,6 @@ _WINDOWS_CONFIG = {
     'opt': 'Release',
     }
 
-# parse command line
-argp = argparse.ArgumentParser(description='Run grpc tests.')
-argp.add_argument('-c', '--config',
-                  choices=['all'] + sorted(_CONFIGS.keys()),
-                  nargs='+',
-                  default=_DEFAULT)
 
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
@@ -423,6 +417,13 @@ def runs_per_test_type(arg_str):
     except:
         msg = "'{}' isn't a positive integer or 'inf'".format(arg_str)
         raise argparse.ArgumentTypeError(msg)
+
+# parse command line
+argp = argparse.ArgumentParser(description='Run grpc tests.')
+argp.add_argument('-c', '--config',
+                  choices=['all'] + sorted(_CONFIGS.keys()),
+                  nargs='+',
+                  default=_DEFAULT)
 argp.add_argument('-n', '--runs_per_test', default=1, type=runs_per_test_type,
         help='A positive integer or "inf". If "inf", all tests will run in an '
              'infinite loop. Especially useful in combination with "-f"')
@@ -449,10 +450,47 @@ argp.add_argument('-S', '--stop_on_failure',
                   default=False,
                   action='store_const',
                   const=True)
+argp.add_argument('--use_docker',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help="Run all the tests under docker. That provides " +
+                  "additional isolation and prevents the need to installs " +
+                  "language specific prerequisites. Only available on Linux.")
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
 args = argp.parse_args()
+
+if args.use_docker:
+  if not args.travis:
+    print 'Seen --use_docker flag, will run tests under docker.'
+    print
+    print 'IMPORTANT: The changes you are testing need to be locally committed'
+    print 'because only the committed changes in the current branch will be'
+    print 'copied to the docker environment.'
+    time.sleep(5)
+
+  child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
+  run_tests_cmd = 'tools/run_tests/run_tests.py %s' % " ".join(child_argv[1:])
+
+  # TODO(jtattermusch): revisit if we need special handling for arch here
+  # set arch command prefix in case we are working with different arch.
+  arch_env = os.getenv('arch')
+  if arch_env:
+    run_test_cmd = 'arch %s %s' % (arch_env, run_test_cmd)
+
+  env = os.environ.copy()
+  env['RUN_TESTS_COMMAND'] = run_tests_cmd
+  if args.xml_report:
+    env['XML_REPORT'] = args.xml_report
+  if not args.travis:
+    env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
+
+  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
+                        shell=True,
+                        env=env)
+  sys.exit(0)
 
 # grab config
 run_configs = set(_CONFIGS[cfg]
