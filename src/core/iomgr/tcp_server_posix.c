@@ -151,7 +151,7 @@ grpc_tcp_server_create (void)
 static void
 finish_shutdown (grpc_exec_ctx * exec_ctx, grpc_tcp_server * s)
 {
-  grpc_closure_list_add (closure_list, s->shutdown_complete, 1);
+  grpc_exec_ctx_enqueue (exec_ctx, s->shutdown_complete, 1);
 
   gpr_mu_destroy (&s->mu);
 

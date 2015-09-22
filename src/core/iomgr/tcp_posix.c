@@ -307,7 +307,7 @@ tcp_read (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, gpr_slice_buffer * incom
     }
   else
     {
-      grpc_closure_list_add (closure_list, &tcp->read_closure, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, &tcp->read_closure, 1);
     }
 }
 
@@ -457,7 +457,7 @@ tcp_write (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, gpr_slice_buffer * buf,
   if (buf->length == 0)
     {
       GRPC_TIMER_END (GRPC_PTAG_TCP_WRITE, 0);
-      grpc_closure_list_add (closure_list, cb, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, cb, 1);
       return;
     }
   tcp->outgoing_buffer = buf;
@@ -473,7 +473,7 @@ tcp_write (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, gpr_slice_buffer * buf,
     }
   else
     {
-      grpc_closure_list_add (closure_list, cb, status == FLUSH_DONE);
+      grpc_exec_ctx_enqueue (exec_ctx, cb, status == FLUSH_DONE);
     }
 
   GRPC_TIMER_END (GRPC_PTAG_TCP_WRITE, 0);

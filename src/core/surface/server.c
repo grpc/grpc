@@ -353,7 +353,7 @@ request_matcher_zombify_all_pending_calls (grpc_exec_ctx * exec_ctx, request_mat
       calld->state = ZOMBIED;
       gpr_mu_unlock (&calld->mu_state);
       grpc_closure_init (&calld->kill_zombie_closure, kill_zombie, grpc_call_stack_element (grpc_call_get_call_stack (calld->call), 0));
-      grpc_closure_list_add (closure_list, &calld->kill_zombie_closure, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, &calld->kill_zombie_closure, 1);
     }
 }
 
@@ -451,7 +451,7 @@ destroy_channel (grpc_exec_ctx * exec_ctx, channel_data * chand)
   maybe_finish_shutdown (exec_ctx, chand->server);
   chand->finish_destroy_channel_closure.cb = finish_destroy_channel;
   chand->finish_destroy_channel_closure.cb_arg = chand;
-  grpc_closure_list_add (closure_list, &chand->finish_destroy_channel_closure, 1);
+  grpc_exec_ctx_enqueue (exec_ctx, &chand->finish_destroy_channel_closure, 1);
 }
 
 static void
@@ -466,7 +466,7 @@ finish_start_new_rpc (grpc_exec_ctx * exec_ctx, grpc_server * server, grpc_call_
       calld->state = ZOMBIED;
       gpr_mu_unlock (&calld->mu_state);
       grpc_closure_init (&calld->kill_zombie_closure, kill_zombie, elem);
-      grpc_closure_list_add (closure_list, &calld->kill_zombie_closure, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, &calld->kill_zombie_closure, 1);
       return;
     }
 
@@ -678,7 +678,7 @@ server_on_recv (grpc_exec_ctx * exec_ctx, void *ptr, int success)
 	  calld->state = ZOMBIED;
 	  gpr_mu_unlock (&calld->mu_state);
 	  grpc_closure_init (&calld->kill_zombie_closure, kill_zombie, elem);
-	  grpc_closure_list_add (closure_list, &calld->kill_zombie_closure, 1);
+	  grpc_exec_ctx_enqueue (exec_ctx, &calld->kill_zombie_closure, 1);
 	}
       else
 	{
@@ -692,7 +692,7 @@ server_on_recv (grpc_exec_ctx * exec_ctx, void *ptr, int success)
 	  calld->state = ZOMBIED;
 	  gpr_mu_unlock (&calld->mu_state);
 	  grpc_closure_init (&calld->kill_zombie_closure, kill_zombie, elem);
-	  grpc_closure_list_add (closure_list, &calld->kill_zombie_closure, 1);
+	  grpc_exec_ctx_enqueue (exec_ctx, &calld->kill_zombie_closure, 1);
 	}
       else if (calld->state == PENDING)
 	{
@@ -1258,7 +1258,7 @@ queue_call_request (grpc_exec_ctx * exec_ctx, grpc_server * server, requested_ca
 	    {
 	      gpr_mu_unlock (&calld->mu_state);
 	      grpc_closure_init (&calld->kill_zombie_closure, kill_zombie, grpc_call_stack_element (grpc_call_get_call_stack (calld->call), 0));
-	      grpc_closure_list_add (closure_list, &calld->kill_zombie_closure, 1);
+	      grpc_exec_ctx_enqueue (exec_ctx, &calld->kill_zombie_closure, 1);
 	    }
 	  else
 	    {

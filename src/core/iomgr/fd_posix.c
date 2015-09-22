@@ -262,7 +262,7 @@ grpc_fd_orphan (grpc_exec_ctx * exec_ctx, grpc_fd * fd, grpc_closure * on_done, 
     {
       fd->closed = 1;
       close (fd->fd);
-      grpc_closure_list_add (closure_list, fd->on_done_closure, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, fd->on_done_closure, 1);
     }
   else
     {
@@ -325,7 +325,7 @@ notify_on (grpc_exec_ctx * exec_ctx, grpc_fd * fd, gpr_atm * st, grpc_closure * 
     case READY:
       GPR_ASSERT (gpr_atm_no_barrier_load (st) == READY);
       gpr_atm_rel_store (st, NOT_READY);
-      grpc_closure_list_add (closure_list, closure, !gpr_atm_acq_load (&fd->shutdown));
+      grpc_exec_ctx_enqueue (exec_ctx, closure, !gpr_atm_acq_load (&fd->shutdown));
       return;
     default:			/* WAITING */
       /* upcallptr was set to a different closure.  This is an error! */
@@ -358,7 +358,7 @@ set_ready_locked (grpc_exec_ctx * exec_ctx, grpc_fd * fd, gpr_atm * st)
       state = gpr_atm_acq_load (st);
     default:			/* waiting */
       GPR_ASSERT (gpr_atm_no_barrier_load (st) != READY && gpr_atm_no_barrier_load (st) != NOT_READY);
-      grpc_closure_list_add (closure_list, (grpc_closure *) state, !gpr_atm_acq_load (&fd->shutdown));
+      grpc_exec_ctx_enqueue (exec_ctx, (grpc_closure *) state, !gpr_atm_acq_load (&fd->shutdown));
       gpr_atm_rel_store (st, NOT_READY);
       return;
     }
@@ -483,7 +483,7 @@ grpc_fd_end_poll (grpc_exec_ctx * exec_ctx, grpc_fd_watcher * watcher, int got_r
     {
       fd->closed = 1;
       close (fd->fd);
-      grpc_closure_list_add (closure_list, fd->on_done_closure, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, fd->on_done_closure, 1);
     }
   gpr_mu_unlock (&fd->watcher_mu);
 

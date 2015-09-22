@@ -292,7 +292,7 @@ rr_shutdown (grpc_exec_ctx * exec_ctx, grpc_lb_policy * pol)
     {
       p->pending_picks = pp->next;
       *pp->target = NULL;
-      grpc_closure_list_add (closure_list, pp->on_complete, 0);
+      grpc_exec_ctx_enqueue (exec_ctx, pp->on_complete, 0);
       gpr_free (pp);
     }
   grpc_connectivity_state_set (exec_ctx, &p->state_tracker, GRPC_CHANNEL_FATAL_FAILURE, "shutdown");
@@ -416,7 +416,7 @@ rr_connectivity_changed (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
 		  gpr_log (GPR_DEBUG, "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)", selected->subchannel, selected);
 		}
 	      grpc_subchannel_del_interested_party (exec_ctx, selected->subchannel, pp->pollset);
-	      grpc_closure_list_add (closure_list, pp->on_complete, 1);
+	      grpc_exec_ctx_enqueue (exec_ctx, pp->on_complete, 1);
 	      gpr_free (pp);
 	    }
 	  grpc_subchannel_notify_on_state_change (exec_ctx, p->subchannels[this_idx], this_connectivity, &p->connectivity_changed_cbs[this_idx]);
@@ -458,7 +458,7 @@ rr_connectivity_changed (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
 		{
 		  p->pending_picks = pp->next;
 		  *pp->target = NULL;
-		  grpc_closure_list_add (closure_list, pp->on_complete, 1);
+		  grpc_exec_ctx_enqueue (exec_ctx, pp->on_complete, 1);
 		  gpr_free (pp);
 		}
 	      unref = 1;

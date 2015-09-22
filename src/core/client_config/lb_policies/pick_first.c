@@ -130,7 +130,7 @@ pf_shutdown (grpc_exec_ctx * exec_ctx, grpc_lb_policy * pol)
     {
       pending_pick *next = pp->next;
       *pp->target = NULL;
-      grpc_closure_list_add (closure_list, pp->on_complete, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, pp->on_complete, 1);
       gpr_free (pp);
       pp = next;
     }
@@ -168,7 +168,7 @@ pf_pick (grpc_exec_ctx * exec_ctx, grpc_lb_policy * pol, grpc_pollset * pollset,
     {
       gpr_mu_unlock (&p->mu);
       *target = p->selected;
-      grpc_closure_list_add (closure_list, on_complete, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, on_complete, 1);
     }
   else
     {
@@ -226,7 +226,7 @@ pf_connectivity_changed (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
 	      p->pending_picks = pp->next;
 	      *pp->target = p->selected;
 	      grpc_subchannel_del_interested_party (exec_ctx, p->selected, pp->pollset);
-	      grpc_closure_list_add (closure_list, pp->on_complete, 1);
+	      grpc_exec_ctx_enqueue (exec_ctx, pp->on_complete, 1);
 	      gpr_free (pp);
 	    }
 	  grpc_subchannel_notify_on_state_change (exec_ctx, p->selected, &p->checking_connectivity, &p->connectivity_changed);
@@ -263,7 +263,7 @@ pf_connectivity_changed (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
 		{
 		  p->pending_picks = pp->next;
 		  *pp->target = NULL;
-		  grpc_closure_list_add (closure_list, pp->on_complete, 1);
+		  grpc_exec_ctx_enqueue (exec_ctx, pp->on_complete, 1);
 		  gpr_free (pp);
 		}
 	      GRPC_LB_POLICY_UNREF (exec_ctx, &p->base, "pick_first_connectivity");

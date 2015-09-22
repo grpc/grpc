@@ -157,7 +157,7 @@ destruct_transport (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
   while (t->global.pings.next != &t->global.pings)
     {
       grpc_chttp2_outstanding_ping *ping = t->global.pings.next;
-      grpc_closure_list_add (closure_list, ping->on_recv, 0);
+      grpc_exec_ctx_enqueue (exec_ctx, ping->on_recv, 0);
       ping->next->prev = ping->prev;
       ping->prev->next = ping->next;
       gpr_free (ping);
@@ -523,7 +523,7 @@ unlock (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
     {
       t->writing_active = 1;
       REF_TRANSPORT (t, "writing");
-      grpc_closure_list_add (closure_list, &t->writing_action, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, &t->writing_action, 1);
       prevent_endpoint_shutdown (t);
     }
 
@@ -673,7 +673,7 @@ perform_stream_op_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global
       else
 	{
 	  grpc_sopb_reset (op->send_ops);
-	  grpc_closure_list_add (closure_list, stream_global->send_done_closure, 0);
+	  grpc_exec_ctx_enqueue (exec_ctx, stream_global->send_done_closure, 0);
 	}
     }
 
@@ -707,7 +707,7 @@ perform_stream_op_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global
       add_to_pollset_locked (TRANSPORT_FROM_GLOBAL (exec_ctx, transport_global), op->bind_pollset);
     }
 
-  grpc_closure_list_add (closure_list, op->on_consumed, 1);
+  grpc_exec_ctx_enqueue (exec_ctx, op->on_consumed, 1);
 }
 
 static void
@@ -748,7 +748,7 @@ perform_transport_op (grpc_exec_ctx * exec_ctx, grpc_transport * gt, grpc_transp
 
   lock (t);
 
-  grpc_closure_list_add (closure_list, op->on_consumed, 1);
+  grpc_exec_ctx_enqueue (exec_ctx, op->on_consumed, 1);
 
   if (op->on_connectivity_state_change)
     {
@@ -890,7 +890,7 @@ unlock_check_read_write_state (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport *
 		{
 		  grpc_sopb_reset (stream_global->outgoing_sopb);
 		  stream_global->outgoing_sopb = NULL;
-		  grpc_closure_list_add (closure_list, stream_global->send_done_closure, 1);
+		  grpc_exec_ctx_enqueue (exec_ctx, stream_global->send_done_closure, 1);
 		}
 	      stream_global->read_closed = 1;
 	      if (!stream_global->published_cancelled)
@@ -936,7 +936,7 @@ unlock_check_read_write_state (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport *
       grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op (&stream_global->incoming_metadata, &stream_global->incoming_sopb, &stream_global->outstanding_metadata);
       grpc_sopb_swap (stream_global->publish_sopb, &stream_global->incoming_sopb);
       stream_global->published_state = *stream_global->publish_state = state;
-      grpc_closure_list_add (closure_list, stream_global->recv_done_closure, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, stream_global->recv_done_closure, 1);
       stream_global->recv_done_closure = NULL;
       stream_global->publish_sopb = NULL;
       stream_global->publish_state = NULL;

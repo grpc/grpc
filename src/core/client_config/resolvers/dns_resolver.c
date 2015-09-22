@@ -96,7 +96,7 @@ dns_shutdown (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver)
   if (r->next_completion != NULL)
     {
       *r->target_config = NULL;
-      grpc_closure_list_add (closure_list, r->next_completion, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, r->next_completion, 1);
       r->next_completion = NULL;
     }
   gpr_mu_unlock (&r->mu);
@@ -197,7 +197,7 @@ dns_maybe_finish_next_locked (grpc_exec_ctx * exec_ctx, dns_resolver * r)
 	{
 	  grpc_client_config_ref (r->resolved_config);
 	}
-      grpc_closure_list_add (closure_list, r->next_completion, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, r->next_completion, 1);
       r->next_completion = NULL;
       r->published_version = r->resolved_version;
     }

@@ -627,7 +627,7 @@ publish_transport (grpc_exec_ctx * exec_ctx, grpc_subchannel * c)
   while (w4c != NULL)
     {
       waiting_for_connect *next = w4c->next;
-      grpc_closure_list_add (closure_list, &w4c->continuation, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, &w4c->continuation, 1);
       w4c = next;
     }
 

@@ -243,7 +243,7 @@ grpc_alarm_cancel (grpc_exec_ctx * exec_ctx, grpc_alarm * alarm)
   gpr_mu_lock (&shard->mu);
   if (!alarm->triggered)
     {
-      grpc_closure_list_add (closure_list, &alarm->closure, 0);
+      grpc_exec_ctx_enqueue (exec_ctx, &alarm->closure, 0);
       alarm->triggered = 1;
       if (alarm->heap_index == INVALID_HEAP_INDEX)
 	{
@@ -320,7 +320,7 @@ pop_alarms (grpc_exec_ctx * exec_ctx, shard_type * shard, gpr_timespec now, gpr_
   gpr_mu_lock (&shard->mu);
   while ((alarm = pop_one (shard, now)))
     {
-      grpc_closure_list_add (closure_list, &alarm->closure, success);
+      grpc_exec_ctx_enqueue (exec_ctx, &alarm->closure, success);
       n++;
     }
   *new_min_deadline = compute_min_deadline (shard);

@@ -81,9 +81,9 @@ grpc_transport_get_peer (grpc_exec_ctx * exec_ctx, grpc_transport * transport)
 void
 grpc_transport_stream_op_finish_with_failure (grpc_exec_ctx * exec_ctx, grpc_transport_stream_op * op)
 {
-  grpc_closure_list_add (closure_list, op->on_done_recv, 0);
-  grpc_closure_list_add (closure_list, op->on_done_send, 0);
-  grpc_closure_list_add (closure_list, op->on_consumed, 0);
+  grpc_exec_ctx_enqueue (exec_ctx, op->on_done_recv, 0);
+  grpc_exec_ctx_enqueue (exec_ctx, op->on_done_send, 0);
+  grpc_exec_ctx_enqueue (exec_ctx, op->on_consumed, 0);
 }
 
 void

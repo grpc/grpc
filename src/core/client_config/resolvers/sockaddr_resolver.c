@@ -98,7 +98,7 @@ sockaddr_shutdown (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver)
   if (r->next_completion != NULL)
     {
       *r->target_config = NULL;
-      grpc_closure_list_add (closure_list, r->next_completion, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, r->next_completion, 1);
       r->next_completion = NULL;
     }
   gpr_mu_unlock (&r->mu);
@@ -151,7 +151,7 @@ sockaddr_maybe_finish_next_locked (grpc_exec_ctx * exec_ctx, sockaddr_resolver *
       GRPC_LB_POLICY_UNREF (exec_ctx, lb_policy, "sockaddr");
       r->published = 1;
       *r->target_config = cfg;
-      grpc_closure_list_add (closure_list, r->next_completion, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, r->next_completion, 1);
       r->next_completion = NULL;
     }
 }

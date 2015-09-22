@@ -87,7 +87,7 @@ grpc_connectivity_state_destroy (grpc_exec_ctx * exec_ctx, grpc_connectivity_sta
 	{
 	  success = 0;
 	}
-      grpc_closure_list_add (closure_list, w->notify, success);
+      grpc_exec_ctx_enqueue (exec_ctx, w->notify, success);
       gpr_free (w);
     }
   gpr_free (tracker->name);
@@ -113,7 +113,7 @@ grpc_connectivity_state_notify_on_state_change (grpc_exec_ctx * exec_ctx, grpc_c
   if (tracker->current_state != *current)
     {
       *current = tracker->current_state;
-      grpc_closure_list_add (closure_list, notify, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, notify, 1);
     }
   else
     {
@@ -144,7 +144,7 @@ grpc_connectivity_state_set (grpc_exec_ctx * exec_ctx, grpc_connectivity_state_t
     {
       *w->current = tracker->current_state;
       tracker->watchers = w->next;
-      grpc_closure_list_add (closure_list, w->notify, 1);
+      grpc_exec_ctx_enqueue (exec_ctx, w->notify, 1);
       gpr_free (w);
     }
 }

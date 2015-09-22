@@ -148,7 +148,7 @@ call_read_cb (grpc_exec_ctx * exec_ctx, secure_endpoint * ep, int success)
 	}
     }
   ep->read_buffer = NULL;
-  grpc_closure_list_add (closure_list, ep->read_cb, success);
+  grpc_exec_ctx_enqueue (exec_ctx, ep->read_cb, success);
   SECURE_ENDPOINT_UNREF (exec_ctx, ep, "read");
 }
 
@@ -340,7 +340,7 @@ endpoint_write (grpc_exec_ctx * exec_ctx, grpc_endpoint * secure_ep, gpr_slice_b
     {
       /* TODO(yangg) do different things according to the error type? */
       gpr_slice_buffer_reset_and_unref (&ep->output_buffer);
-      grpc_closure_list_add (closure_list, cb, 0);
+      grpc_exec_ctx_enqueue (exec_ctx, cb, 0);
       return;
     }
 
