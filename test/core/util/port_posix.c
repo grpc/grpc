@@ -116,18 +116,18 @@ free_port_using_server (char *server, int port)
   req.path = path;
 
   grpc_httpcli_context_init (&context);
-  grpc_httpcli_get (&context, &pr.pollset, &req, GRPC_TIMEOUT_SECONDS_TO_DEADLINE (10), freed_port_from_server, &pr, &closure_list);
+  grpc_httpcli_get (&context, &pr.pollset, &req, GRPC_TIMEOUT_SECONDS_TO_DEADLINE (&exec_ctx, 10), freed_port_from_server, &pr);
   gpr_mu_lock (GRPC_POLLSET_MU (&pr.pollset));
   while (!pr.done)
     {
       grpc_pollset_worker worker;
-      grpc_pollset_work (&pr.pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), GRPC_TIMEOUT_SECONDS_TO_DEADLINE (1), &closure_list);
+      grpc_pollset_work (&pr.pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), GRPC_TIMEOUT_SECONDS_TO_DEADLINE (&exec_ctx, 1));
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (&pr.pollset));
 
   grpc_httpcli_context_destroy (&context);
   grpc_exec_ctx_finish (&exec_ctx);
-  grpc_pollset_shutdown (&pr.pollset, &shutdown_closure, &closure_list);
+  grpc_pollset_shutdown (&exec_ctx, &pr.pollset, &shutdown_closure);
   grpc_exec_ctx_finish (&exec_ctx);
   gpr_free (path);
 }
@@ -287,18 +287,18 @@ pick_port_using_server (char *server)
   req.path = "/get";
 
   grpc_httpcli_context_init (&context);
-  grpc_httpcli_get (&context, &pr.pollset, &req, GRPC_TIMEOUT_SECONDS_TO_DEADLINE (10), got_port_from_server, &pr, &closure_list);
+  grpc_httpcli_get (&context, &pr.pollset, &req, GRPC_TIMEOUT_SECONDS_TO_DEADLINE (&exec_ctx, 10), got_port_from_server, &pr);
   grpc_exec_ctx_finish (&exec_ctx);
   gpr_mu_lock (GRPC_POLLSET_MU (&pr.pollset));
   while (pr.port == -1)
     {
       grpc_pollset_worker worker;
-      grpc_pollset_work (&pr.pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), GRPC_TIMEOUT_SECONDS_TO_DEADLINE (1), &closure_list);
+      grpc_pollset_work (&pr.pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), GRPC_TIMEOUT_SECONDS_TO_DEADLINE (&exec_ctx, 1));
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (&pr.pollset));
 
   grpc_httpcli_context_destroy (&context);
-  grpc_pollset_shutdown (&pr.pollset, &shutdown_closure, &closure_list);
+  grpc_pollset_shutdown (&exec_ctx, &pr.pollset, &shutdown_closure);
   grpc_exec_ctx_finish (&exec_ctx);
 
   return pr.port;

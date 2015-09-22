@@ -62,16 +62,16 @@ test_add_closure (void)
   grpc_closure_init (&c, must_succeed, &done);
 
   grpc_workqueue_push (wq, &c, 1);
-  grpc_workqueue_add_to_pollset (wq, &g_pollset, &closure_list);
+  grpc_workqueue_add_to_pollset (&exec_ctx, wq, &g_pollset);
 
   gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
   GPR_ASSERT (!done);
-  grpc_pollset_work (&g_pollset, &worker, gpr_now (deadline.clock_type), deadline, &closure_list);
+  grpc_pollset_work (&g_pollset, &worker, gpr_now (&exec_ctx, deadline.clock_type), deadline);
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
   grpc_exec_ctx_finish (&exec_ctx);
   GPR_ASSERT (done);
 
-  GRPC_WORKQUEUE_UNREF (wq, "destroy", &closure_list);
+  GRPC_WORKQUEUE_UNREF (&exec_ctx, wq, "destroy");
   grpc_exec_ctx_finish (&exec_ctx);
 }
 
@@ -93,7 +93,7 @@ main (int argc, char **argv)
   test_add_closure ();
 
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
+  grpc_pollset_shutdown (&exec_ctx, &g_pollset, &destroyed);
   grpc_exec_ctx_finish (&exec_ctx);
   grpc_shutdown ();
   return 0;

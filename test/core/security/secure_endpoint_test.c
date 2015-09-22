@@ -57,8 +57,8 @@ secure_endpoint_create_fixture_tcp_socketpair (size_t slice_size, gpr_slice * le
   grpc_endpoint_pair tcp;
 
   tcp = grpc_iomgr_create_endpoint_pair ("fixture", slice_size);
-  grpc_endpoint_add_to_pollset (tcp.client, &g_pollset, &closure_list);
-  grpc_endpoint_add_to_pollset (tcp.server, &g_pollset, &closure_list);
+  grpc_endpoint_add_to_pollset (&exec_ctx, tcp.client, &g_pollset);
+  grpc_endpoint_add_to_pollset (&exec_ctx, tcp.server, &g_pollset);
 
   if (leftover_nslices == 0)
     {
@@ -161,16 +161,16 @@ test_leftover (grpc_endpoint_test_config config, size_t slice_size)
 
   gpr_slice_buffer_init (&incoming);
   grpc_closure_init (&done_closure, inc_call_ctr, &n);
-  grpc_endpoint_read (f.client_ep, &incoming, &done_closure, &closure_list);
+  grpc_endpoint_read (&exec_ctx, f.client_ep, &incoming, &done_closure);
   grpc_exec_ctx_finish (&exec_ctx);
   GPR_ASSERT (n == 1);
   GPR_ASSERT (incoming.count == 1);
   GPR_ASSERT (0 == gpr_slice_cmp (s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown (f.client_ep, &closure_list);
-  grpc_endpoint_shutdown (f.server_ep, &closure_list);
-  grpc_endpoint_destroy (f.client_ep, &closure_list);
-  grpc_endpoint_destroy (f.server_ep, &closure_list);
+  grpc_endpoint_shutdown (&exec_ctx, f.client_ep);
+  grpc_endpoint_shutdown (&exec_ctx, f.server_ep);
+  grpc_endpoint_destroy (&exec_ctx, f.client_ep);
+  grpc_endpoint_destroy (&exec_ctx, f.server_ep);
   grpc_exec_ctx_finish (&exec_ctx);
   gpr_slice_unref (s);
   gpr_slice_buffer_destroy (&incoming);
@@ -196,7 +196,7 @@ main (int argc, char **argv)
   grpc_endpoint_tests (configs[0], &g_pollset);
   test_leftover (configs[1], 1);
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
+  grpc_pollset_shutdown (&exec_ctx, &g_pollset, &destroyed);
   grpc_exec_ctx_finish (&exec_ctx);
   grpc_shutdown ();
 

@@ -208,7 +208,7 @@ grpc_insecure_channel_create (const char *target, const grpc_channel_args * args
   filters[n++] = &grpc_client_channel_filter;
   GPR_ASSERT (n <= MAX_FILTERS);
 
-  channel = grpc_channel_create_from_filters (target, filters, n, args, mdctx, 1, &closure_list);
+  channel = grpc_channel_create_from_filters (&exec_ctx, target, filters, n, args, mdctx, 1);
 
   f = gpr_malloc (sizeof (*f));
   f->base.vtable = &subchannel_factory_vtable;
@@ -224,9 +224,9 @@ grpc_insecure_channel_create (const char *target, const grpc_channel_args * args
       return NULL;
     }
 
-  grpc_client_channel_set_resolver (grpc_channel_get_channel_stack (channel), resolver, &closure_list);
-  GRPC_RESOLVER_UNREF (resolver, "create", &closure_list);
-  grpc_subchannel_factory_unref (&f->base, &closure_list);
+  grpc_client_channel_set_resolver (grpc_channel_get_channel_stack (&exec_ctx, channel), resolver);
+  GRPC_RESOLVER_UNREF (&exec_ctx, resolver, "create");
+  grpc_subchannel_factory_unref (&exec_ctx, &f->base);
 
   grpc_exec_ctx_finish (&exec_ctx);
 

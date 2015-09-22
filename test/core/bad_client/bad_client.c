@@ -77,7 +77,7 @@ server_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx
     &grpc_http_server_filter
   };
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport (a->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (a->server), &closure_list);
+  grpc_server_setup_transport (a->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (&exec_ctx, a->server));
   grpc_exec_ctx_finish (&exec_ctx);
 }
 
@@ -116,14 +116,14 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
   a.validator = validator;
   grpc_server_register_completion_queue (a.server, a.cq, NULL);
   grpc_server_start (a.server);
-  transport = grpc_create_chttp2_transport (NULL, sfd.server, mdctx, 0, &closure_list);
+  transport = grpc_create_chttp2_transport (&exec_ctx, NULL, sfd.server, mdctx, 0);
   server_setup_transport (&a, transport, mdctx);
-  grpc_chttp2_transport_start_reading (transport, NULL, 0, &closure_list);
+  grpc_chttp2_transport_start_reading (&exec_ctx, transport, NULL, 0);
   grpc_exec_ctx_finish (&exec_ctx);
 
   /* Bind everything into the same pollset */
-  grpc_endpoint_add_to_pollset (sfd.client, grpc_cq_pollset (a.cq), &closure_list);
-  grpc_endpoint_add_to_pollset (sfd.server, grpc_cq_pollset (a.cq), &closure_list);
+  grpc_endpoint_add_to_pollset (sfd.client, grpc_cq_pollset (&exec_ctx, a.cq));
+  grpc_endpoint_add_to_pollset (sfd.server, grpc_cq_pollset (&exec_ctx, a.cq));
 
   /* Check a ground truth */
   GPR_ASSERT (grpc_server_has_open_connections (a.server));
@@ -136,7 +136,7 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
   grpc_closure_init (&done_write_closure, done_write, &a);
 
   /* Write data */
-  grpc_endpoint_write (sfd.client, &outgoing, &done_write_closure, &closure_list);
+  grpc_endpoint_write (&exec_ctx, sfd.client, &outgoing, &done_write_closure);
   grpc_exec_ctx_finish (&exec_ctx);
 
   /* Await completion */
@@ -144,8 +144,8 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT)
     {
-      grpc_endpoint_shutdown (sfd.client, &closure_list);
-      grpc_endpoint_destroy (sfd.client, &closure_list);
+      grpc_endpoint_shutdown (&exec_ctx, sfd.client);
+      grpc_endpoint_destroy (&exec_ctx, sfd.client);
       grpc_exec_ctx_finish (&exec_ctx);
       sfd.client = NULL;
     }
@@ -155,8 +155,8 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
   /* Shutdown */
   if (sfd.client)
     {
-      grpc_endpoint_shutdown (sfd.client, &closure_list);
-      grpc_endpoint_destroy (sfd.client, &closure_list);
+      grpc_endpoint_shutdown (&exec_ctx, sfd.client);
+      grpc_endpoint_destroy (&exec_ctx, sfd.client);
       grpc_exec_ctx_finish (&exec_ctx);
     }
   grpc_server_shutdown_and_notify (a.server, a.cq, NULL);

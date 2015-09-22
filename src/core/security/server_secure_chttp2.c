@@ -300,7 +300,7 @@ grpc_server_add_secure_http2_port (grpc_server * server, const char *addr, grpc_
   gpr_ref_init (&state->refcount, 1);
 
   /* Register with the server only upon success */
-  grpc_server_add_listener (server, state, start, destroy, &closure_list);
+  grpc_server_add_listener (&exec_ctx, server, state, start, destroy);
 
   grpc_exec_ctx_finish (&exec_ctx);
   return port_num;
@@ -317,7 +317,7 @@ error:
     }
   if (tcp)
     {
-      grpc_tcp_server_destroy (tcp, NULL, &closure_list);
+      grpc_tcp_server_destroy (&exec_ctx, tcp, NULL);
     }
   if (state)
     {

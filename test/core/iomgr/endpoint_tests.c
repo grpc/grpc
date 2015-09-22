@@ -231,17 +231,17 @@ read_and_write_test (grpc_endpoint_test_config config, size_t num_bytes, size_t 
      for the first iteration as for later iterations. It does the right thing
      even when bytes_written is unsigned. */
   state.bytes_written -= state.current_write_size;
-  read_and_write_test_write_handler (&state, 1, &closure_list);
+  read_and_write_test_write_handler (&exec_ctx, &state, 1);
   grpc_exec_ctx_finish (&exec_ctx);
 
-  grpc_endpoint_read (state.read_ep, &state.incoming, &state.done_read, &closure_list);
+  grpc_endpoint_read (&exec_ctx, state.read_ep, &state.incoming, &state.done_read);
 
   if (shutdown)
     {
       gpr_log (GPR_DEBUG, "shutdown read");
-      grpc_endpoint_shutdown (state.read_ep, &closure_list);
+      grpc_endpoint_shutdown (&exec_ctx, state.read_ep);
       gpr_log (GPR_DEBUG, "shutdown write");
-      grpc_endpoint_shutdown (state.write_ep, &closure_list);
+      grpc_endpoint_shutdown (&exec_ctx, state.write_ep);
     }
   grpc_exec_ctx_finish (&exec_ctx);
 
@@ -250,7 +250,7 @@ read_and_write_test (grpc_endpoint_test_config config, size_t num_bytes, size_t 
     {
       grpc_pollset_worker worker;
       GPR_ASSERT (gpr_time_cmp (gpr_now (GPR_CLOCK_MONOTONIC), deadline) < 0);
-      grpc_pollset_work (g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline, &closure_list);
+      grpc_pollset_work (g_pollset, &worker, gpr_now (&exec_ctx, GPR_CLOCK_MONOTONIC), deadline);
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (g_pollset));
   grpc_exec_ctx_finish (&exec_ctx);
@@ -258,8 +258,8 @@ read_and_write_test (grpc_endpoint_test_config config, size_t num_bytes, size_t 
   end_test (config);
   gpr_slice_buffer_destroy (&state.outgoing);
   gpr_slice_buffer_destroy (&state.incoming);
-  grpc_endpoint_destroy (state.read_ep, &closure_list);
-  grpc_endpoint_destroy (state.write_ep, &closure_list);
+  grpc_endpoint_destroy (&exec_ctx, state.read_ep);
+  grpc_endpoint_destroy (&exec_ctx, state.write_ep);
   grpc_exec_ctx_finish (&exec_ctx);
 }
 

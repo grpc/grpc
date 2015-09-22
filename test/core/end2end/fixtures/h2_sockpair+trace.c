@@ -65,7 +65,7 @@ server_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx
     &grpc_http_server_filter
   };
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport (f->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (f->server), &closure_list);
+  grpc_server_setup_transport (f->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (&exec_ctx, f->server));
   grpc_exec_ctx_finish (&exec_ctx);
 }
 
@@ -118,10 +118,10 @@ chttp2_init_client_socketpair (grpc_end2end_test_fixture * f, grpc_channel_args 
   sp_client_setup cs;
   cs.client_args = client_args;
   cs.f = f;
-  transport = grpc_create_chttp2_transport (client_args, sfd->client, mdctx, 1, &closure_list);
-  client_setup_transport (&cs, transport, mdctx, &closure_list);
+  transport = grpc_create_chttp2_transport (&exec_ctx, client_args, sfd->client, mdctx, 1);
+  client_setup_transport (&exec_ctx, &cs, transport, mdctx);
   GPR_ASSERT (f->client);
-  grpc_chttp2_transport_start_reading (transport, NULL, 0, &closure_list);
+  grpc_chttp2_transport_start_reading (&exec_ctx, transport, NULL, 0);
   grpc_exec_ctx_finish (&exec_ctx);
 }
 
@@ -136,9 +136,9 @@ chttp2_init_server_socketpair (grpc_end2end_test_fixture * f, grpc_channel_args 
   f->server = grpc_server_create_from_filters (NULL, 0, server_args);
   grpc_server_register_completion_queue (f->server, f->cq, NULL);
   grpc_server_start (f->server);
-  transport = grpc_create_chttp2_transport (server_args, sfd->server, mdctx, 0, &closure_list);
+  transport = grpc_create_chttp2_transport (&exec_ctx, server_args, sfd->server, mdctx, 0);
   server_setup_transport (f, transport, mdctx);
-  grpc_chttp2_transport_start_reading (transport, NULL, 0, &closure_list);
+  grpc_chttp2_transport_start_reading (&exec_ctx, transport, NULL, 0);
   grpc_exec_ctx_finish (&exec_ctx);
 }
 

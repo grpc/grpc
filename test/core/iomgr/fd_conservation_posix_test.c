@@ -59,8 +59,8 @@ main (int argc, char **argv)
     {
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       p = grpc_iomgr_create_endpoint_pair ("test", 1);
-      grpc_endpoint_destroy (p.client, &closure_list);
-      grpc_endpoint_destroy (p.server, &closure_list);
+      grpc_endpoint_destroy (&exec_ctx, p.client);
+      grpc_endpoint_destroy (&exec_ctx, p.server);
       grpc_exec_ctx_finish (&exec_ctx);
     }
 

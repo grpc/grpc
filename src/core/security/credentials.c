@@ -810,7 +810,7 @@ on_simulated_token_fetch_done (void *user_data)
   grpc_credentials_metadata_request *r = (grpc_credentials_metadata_request *) user_data;
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *) r->creds;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  r->cb (r->user_data, c->md_store->entries, c->md_store->num_entries, GRPC_CREDENTIALS_OK, &closure_list);
+  r->cb (&exec_ctx, r->user_data, c->md_store->entries, c->md_store->num_entries, GRPC_CREDENTIALS_OK);
   grpc_credentials_metadata_request_destroy (r);
   grpc_exec_ctx_finish (&exec_ctx);
 }
@@ -1330,7 +1330,7 @@ plugin_md_request_metadata_ready (void *request, const grpc_metadata * md, size_
 	{
 	  gpr_log (GPR_ERROR, "Getting metadata from plugin failed with error: %s", error_details);
 	}
-      r->cb (r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR, &closure_list);
+      r->cb (&exec_ctx, r->user_data, NULL, 0, GRPC_CREDENTIALS_ERROR);
     }
   else
     {
@@ -1345,7 +1345,7 @@ plugin_md_request_metadata_ready (void *request, const grpc_metadata * md, size_
 	      md_array[i].value = gpr_slice_from_copied_buffer (md[i].value, md[i].value_length);
 	    }
 	}
-      r->cb (r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK, &closure_list);
+      r->cb (&exec_ctx, r->user_data, md_array, num_md, GRPC_CREDENTIALS_OK);
       if (md_array != NULL)
 	{
 	  for (i = 0; i < num_md; i++)

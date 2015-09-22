@@ -52,7 +52,7 @@ grpc_channel_check_connectivity_state (grpc_channel * channel, int try_to_connec
       gpr_log (GPR_ERROR, "grpc_channel_check_connectivity_state called on something that is " "not a client channel, but '%s'", client_channel_elem->filter->name);
       return GRPC_CHANNEL_FATAL_FAILURE;
     }
-  state = grpc_client_channel_check_connectivity_state (client_channel_elem, try_to_connect, &closure_list);
+  state = grpc_client_channel_check_connectivity_state (&exec_ctx, client_channel_elem, try_to_connect);
   grpc_exec_ctx_finish (&exec_ctx);
   return state;
 }
@@ -195,7 +195,7 @@ grpc_channel_watch_connectivity_state (grpc_channel * channel, grpc_connectivity
   w->tag = tag;
   w->channel = channel;
 
-  grpc_alarm_init (&w->alarm, gpr_convert_clock_type (deadline, GPR_CLOCK_MONOTONIC), timeout_complete, w, gpr_now (GPR_CLOCK_MONOTONIC), &closure_list);
+  grpc_alarm_init (&w->alarm, gpr_convert_clock_type (deadline, GPR_CLOCK_MONOTONIC), timeout_complete, w, gpr_now (&exec_ctx, GPR_CLOCK_MONOTONIC));
 
   if (client_channel_elem->filter != &grpc_client_channel_filter)
     {
@@ -205,8 +205,8 @@ grpc_channel_watch_connectivity_state (grpc_channel * channel, grpc_connectivity
   else
     {
       GRPC_CHANNEL_INTERNAL_REF (channel, "watch_connectivity");
-      grpc_client_channel_add_interested_party (client_channel_elem, grpc_cq_pollset (cq), &closure_list);
-      grpc_client_channel_watch_connectivity_state (client_channel_elem, &w->state, &w->on_complete, &closure_list);
+      grpc_client_channel_add_interested_party (client_channel_elem, grpc_cq_pollset (&exec_ctx, cq));
+      grpc_client_channel_watch_connectivity_state (&exec_ctx, client_channel_elem, &w->state, &w->on_complete);
     }
 
   grpc_exec_ctx_finish (&exec_ctx);

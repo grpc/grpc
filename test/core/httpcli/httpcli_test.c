@@ -88,12 +88,12 @@ test_get (int use_ssl, int port)
   req.path = "/get";
   req.handshaker = use_ssl ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
 
-  grpc_httpcli_get (&g_context, &g_pollset, &req, n_seconds_time (15), on_finish, (void *) 42, &closure_list);
+  grpc_httpcli_get (&g_context, &g_pollset, &req, n_seconds_time (15), on_finish, (&exec_ctx, void *) 42);
   gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
   while (!g_done)
     {
       grpc_pollset_worker worker;
-      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), n_seconds_time (20), &closure_list);
+      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), n_seconds_time (&exec_ctx, 20));
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
       grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
@@ -120,12 +120,12 @@ test_post (int use_ssl, int port)
   req.path = "/post";
   req.handshaker = use_ssl ? &grpc_httpcli_ssl : &grpc_httpcli_plaintext;
 
-  grpc_httpcli_post (&g_context, &g_pollset, &req, "hello", 5, n_seconds_time (15), on_finish, (void *) 42, &closure_list);
+  grpc_httpcli_post (&g_context, &g_pollset, &req, "hello", 5, n_seconds_time (15), on_finish, (&exec_ctx, void *) 42);
   gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
   while (!g_done)
     {
       grpc_pollset_worker worker;
-      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), n_seconds_time (20), &closure_list);
+      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), n_seconds_time (&exec_ctx, 20));
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
       grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
@@ -184,7 +184,7 @@ main (int argc, char **argv)
 
   grpc_httpcli_context_destroy (&g_context);
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
+  grpc_pollset_shutdown (&exec_ctx, &g_pollset, &destroyed);
   grpc_exec_ctx_finish (&exec_ctx);
   grpc_shutdown ();
 
