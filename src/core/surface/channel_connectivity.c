@@ -53,7 +53,7 @@ grpc_channel_check_connectivity_state (grpc_channel * channel, int try_to_connec
       return GRPC_CHANNEL_FATAL_FAILURE;
     }
   state = grpc_client_channel_check_connectivity_state (client_channel_elem, try_to_connect, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   return state;
 }
 
@@ -209,5 +209,5 @@ grpc_channel_watch_connectivity_state (grpc_channel * channel, grpc_connectivity
       grpc_client_channel_watch_connectivity_state (client_channel_elem, &w->state, &w->on_complete, &closure_list);
     }
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }

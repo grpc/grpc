@@ -95,7 +95,7 @@ test_get (int use_ssl, int port)
       grpc_pollset_worker worker;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), n_seconds_time (20), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
@@ -127,7 +127,7 @@ test_post (int use_ssl, int port)
       grpc_pollset_worker worker;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), n_seconds_time (20), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
@@ -185,7 +185,7 @@ main (int argc, char **argv)
   grpc_httpcli_context_destroy (&g_context);
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
   grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_shutdown ();
 
   gpr_subprocess_destroy (server);

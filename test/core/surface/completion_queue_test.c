@@ -244,7 +244,7 @@ producer_thread (void *arg)
     {
       grpc_cq_end_op (opt->cc, (void *) (gpr_intptr) 1, 1, free_completion, NULL, gpr_malloc (sizeof (grpc_cq_completion)), &closure_list);
       opt->events_triggered++;
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
     }
 
   gpr_log (GPR_INFO, "producer %d phase 2 done", opt->id);

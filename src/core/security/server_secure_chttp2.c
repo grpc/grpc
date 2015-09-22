@@ -302,7 +302,7 @@ grpc_server_add_secure_http2_port (grpc_server * server, const char *addr, grpc_
   /* Register with the server only upon success */
   grpc_server_add_listener (server, state, start, destroy, &closure_list);
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   return port_num;
 
 /* Error path: cleanup and return */
@@ -323,6 +323,6 @@ error:
     {
       gpr_free (state);
     }
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   return 0;
 }

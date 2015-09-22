@@ -123,7 +123,7 @@ is_stack_running_on_compute_engine (void)
 
   grpc_httpcli_get (&context, &detector.pollset, &request, gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), max_detection_delay), on_compute_engine_detection_http_response, &detector, &closure_list);
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */
@@ -138,7 +138,7 @@ is_stack_running_on_compute_engine (void)
   grpc_httpcli_context_destroy (&context);
   grpc_closure_init (&destroy_closure, destroy_pollset, &detector.pollset);
   grpc_pollset_shutdown (&detector.pollset, &destroy_closure, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   return detector.success;
 }

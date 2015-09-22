@@ -68,11 +68,11 @@ test_add_closure (void)
   GPR_ASSERT (!done);
   grpc_pollset_work (&g_pollset, &worker, gpr_now (deadline.clock_type), deadline, &closure_list);
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   GPR_ASSERT (done);
 
   GRPC_WORKQUEUE_UNREF (wq, "destroy", &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -94,7 +94,7 @@ main (int argc, char **argv)
 
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
   grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_shutdown ();
   return 0;
 }

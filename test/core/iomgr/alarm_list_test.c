@@ -74,7 +74,7 @@ add_test (void)
 
   /* collect alarms.  Only the first batch should be ready. */
   GPR_ASSERT (10 == grpc_alarm_check (gpr_time_add (start, gpr_time_from_millis (500, GPR_TIMESPAN)), NULL, &closure_list));
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   for (i = 0; i < 20; i++)
     {
       GPR_ASSERT (cb_called[i][1] == (i < 10));
@@ -82,7 +82,7 @@ add_test (void)
     }
 
   GPR_ASSERT (0 == grpc_alarm_check (gpr_time_add (start, gpr_time_from_millis (600, GPR_TIMESPAN)), NULL, &closure_list));
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   for (i = 0; i < 30; i++)
     {
       GPR_ASSERT (cb_called[i][1] == (i < 10));
@@ -91,7 +91,7 @@ add_test (void)
 
   /* collect the rest of the alarms */
   GPR_ASSERT (10 == grpc_alarm_check (gpr_time_add (start, gpr_time_from_millis (1500, GPR_TIMESPAN)), NULL, &closure_list));
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   for (i = 0; i < 30; i++)
     {
       GPR_ASSERT (cb_called[i][1] == (i < 20));
@@ -106,7 +106,7 @@ add_test (void)
     }
 
   grpc_alarm_list_shutdown (&closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static gpr_timespec
@@ -133,16 +133,16 @@ destruction_test (void)
   grpc_alarm_init (&alarms[3], tfm (3), cb, (void *) (gpr_intptr) 3, gpr_time_0 (GPR_CLOCK_REALTIME), &closure_list);
   grpc_alarm_init (&alarms[4], tfm (1), cb, (void *) (gpr_intptr) 4, gpr_time_0 (GPR_CLOCK_REALTIME), &closure_list);
   GPR_ASSERT (1 == grpc_alarm_check (tfm (2), NULL, &closure_list));
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   GPR_ASSERT (1 == cb_called[4][1]);
   grpc_alarm_cancel (&alarms[0], &closure_list);
   grpc_alarm_cancel (&alarms[3], &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   GPR_ASSERT (1 == cb_called[0][0]);
   GPR_ASSERT (1 == cb_called[3][0]);
 
   grpc_alarm_list_shutdown (&closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   GPR_ASSERT (1 == cb_called[1][0]);
   GPR_ASSERT (1 == cb_called[2][0]);
 }

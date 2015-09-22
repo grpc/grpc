@@ -812,7 +812,7 @@ on_simulated_token_fetch_done (void *user_data)
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   r->cb (r->user_data, c->md_store->entries, c->md_store->num_entries, GRPC_CREDENTIALS_OK, &closure_list);
   grpc_credentials_metadata_request_destroy (r);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void

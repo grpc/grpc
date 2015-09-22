@@ -228,7 +228,7 @@ grpc_insecure_channel_create (const char *target, const grpc_channel_args * args
   GRPC_RESOLVER_UNREF (resolver, "create", &closure_list);
   grpc_subchannel_factory_unref (&f->base, &closure_list);
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   return channel;
 }

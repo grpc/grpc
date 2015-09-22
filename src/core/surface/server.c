@@ -994,7 +994,7 @@ grpc_server_start (grpc_server * server)
       l->start (server, l->arg, server->pollsets, server->cq_count, &closure_list);
     }
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 void
@@ -1161,7 +1161,7 @@ grpc_server_shutdown_and_notify (grpc_server * server, grpc_completion_queue * c
   channel_broadcaster_shutdown (&broadcaster, 1, 0, &closure_list);
 
 done:
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 void
@@ -1175,7 +1175,7 @@ grpc_server_cancel_all_calls (grpc_server * server)
   gpr_mu_unlock (&server->mu_global);
 
   channel_broadcaster_shutdown (&broadcaster, 0, 1, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 void
@@ -1198,7 +1198,7 @@ grpc_server_destroy (grpc_server * server)
   gpr_mu_unlock (&server->mu_global);
 
   server_unref (server, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 void
@@ -1299,7 +1299,7 @@ grpc_server_request_call (grpc_server * server, grpc_call ** call, grpc_call_det
   rc->data.batch.initial_metadata = initial_metadata;
   error = queue_call_request (server, rc, &closure_list);
 done:
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   return error;
 }
 
@@ -1329,7 +1329,7 @@ grpc_server_request_registered_call (grpc_server * server, void *rm, grpc_call *
   rc->data.registered.optional_payload = optional_payload;
   error = queue_call_request (server, rc, &closure_list);
 done:
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   return error;
 }
 

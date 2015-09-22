@@ -75,7 +75,7 @@ test_no_op_with_start (void)
   LOG_TEST ("test_no_op_with_start");
   grpc_tcp_server_start (s, NULL, 0, on_connect, NULL, &closure_list);
   grpc_tcp_server_destroy (s, NULL, NULL);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -91,7 +91,7 @@ test_no_op_with_port (void)
   GPR_ASSERT (grpc_tcp_server_add_port (s, (struct sockaddr *) &addr, sizeof (addr)));
 
   grpc_tcp_server_destroy (s, NULL, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -109,7 +109,7 @@ test_no_op_with_port_and_start (void)
   grpc_tcp_server_start (s, NULL, 0, on_connect, NULL, &closure_list);
 
   grpc_tcp_server_destroy (s, NULL, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -157,7 +157,7 @@ test_connect (int n)
 	  grpc_pollset_worker worker;
 	  grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline, &closure_list);
 	  gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-	  grpc_closure_list_run (&closure_list);
+	  grpc_exec_ctx_finish (&exec_ctx);
 	  gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
 	}
       gpr_log (GPR_DEBUG, "wait done");
@@ -169,7 +169,7 @@ test_connect (int n)
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
 
   grpc_tcp_server_destroy (s, NULL, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -196,7 +196,7 @@ main (int argc, char **argv)
 
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
   grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_iomgr_shutdown ();
   return 0;
 }

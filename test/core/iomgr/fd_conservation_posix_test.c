@@ -61,7 +61,7 @@ main (int argc, char **argv)
       p = grpc_iomgr_create_endpoint_pair ("test", 1);
       grpc_endpoint_destroy (p.client, &closure_list);
       grpc_endpoint_destroy (p.server, &closure_list);
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
     }
 
   grpc_iomgr_shutdown ();
