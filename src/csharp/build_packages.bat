@@ -1,12 +1,12 @@
 @rem Builds gRPC NuGet packages
 
 @rem Current package versions
-set VERSION=0.7.0
-set CORE_VERSION=0.11.0
+set VERSION=0.7.1
+set CORE_VERSION=0.11.1
 set PROTOBUF_VERSION=3.0.0-alpha4
 
 @rem Packages that depend on prerelease packages (like Google.Protobuf) need to have prerelease suffix as well.
-set VERSION_WITH_BETA=0.7.0-beta
+set VERSION_WITH_BETA=%VERSION%-beta
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
