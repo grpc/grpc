@@ -59,20 +59,21 @@ static void thd_func(void *arg) {
   gpr_event_set(&a->done_thd, (void *)1);
 }
 
-static void done_write(void *arg, int success) {
+static void done_write(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   thd_args *a = arg;
   gpr_event_set(&a->done_write, (void *)1);
 }
 
 static void server_setup_transport(void *ts, grpc_transport *transport,
-                                   grpc_mdctx *mdctx,
-                                   grpc_workqueue *workqueue) {
+                                   grpc_mdctx *mdctx) {
   thd_args *a = ts;
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
-  grpc_server_setup_transport(a->server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters), mdctx, workqueue,
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_server_setup_transport(&exec_ctx, a->server, transport, extra_filters,
+                              GPR_ARRAY_SIZE(extra_filters), mdctx,
                               grpc_server_get_channel_args(a->server));
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
@@ -87,8 +88,8 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   gpr_slice slice =
       gpr_slice_from_copied_buffer(client_payload, client_payload_length);
   gpr_slice_buffer outgoing;
-  grpc_iomgr_closure done_write_closure;
-  grpc_workqueue *workqueue;
+  grpc_closure done_write_closure;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   hex = gpr_dump(client_payload, client_payload_length,
                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -101,10 +102,8 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   /* Init grpc */
   grpc_init();
 
-  workqueue = grpc_workqueue_create();
-
   /* Create endpoints */
-  sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536, workqueue);
+  sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
 
   /* Create server, completion events */
   a.server = grpc_server_create_from_filters(NULL, 0, NULL);
@@ -115,13 +114,14 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   grpc_server_register_completion_queue(a.server, a.cq, NULL);
   grpc_server_start(a.server);
   transport =
-      grpc_create_chttp2_transport(NULL, sfd.server, mdctx, workqueue, 0);
-  server_setup_transport(&a, transport, mdctx, workqueue);
-  grpc_chttp2_transport_start_reading(transport, NULL, 0);
+      grpc_create_chttp2_transport(&exec_ctx, NULL, sfd.server, mdctx, 0);
+  server_setup_transport(&a, transport, mdctx);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
+  grpc_exec_ctx_finish(&exec_ctx);
 
   /* Bind everything into the same pollset */
-  grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(a.cq));
-  grpc_endpoint_add_to_pollset(sfd.server, grpc_cq_pollset(a.cq));
+  grpc_endpoint_add_to_pollset(&exec_ctx, sfd.client, grpc_cq_pollset(a.cq));
+  grpc_endpoint_add_to_pollset(&exec_ctx, sfd.server, grpc_cq_pollset(a.cq));
 
   /* Check a ground truth */
   GPR_ASSERT(grpc_server_has_open_connections(a.server));
@@ -131,27 +131,20 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   gpr_slice_buffer_init(&outgoing);
   gpr_slice_buffer_add(&outgoing, slice);
-  grpc_iomgr_closure_init(&done_write_closure, done_write, &a);
+  grpc_closure_init(&done_write_closure, done_write, &a);
 
   /* Write data */
-  switch (grpc_endpoint_write(sfd.client, &outgoing, &done_write_closure)) {
-    case GRPC_ENDPOINT_DONE:
-      done_write(&a, 1);
-      break;
-    case GRPC_ENDPOINT_PENDING:
-      break;
-    case GRPC_ENDPOINT_ERROR:
-      done_write(&a, 0);
-      break;
-  }
+  grpc_endpoint_write(&exec_ctx, sfd.client, &outgoing, &done_write_closure);
+  grpc_exec_ctx_finish(&exec_ctx);
 
   /* Await completion */
   GPR_ASSERT(
       gpr_event_wait(&a.done_write, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5)));
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
-    grpc_endpoint_shutdown(sfd.client);
-    grpc_endpoint_destroy(sfd.client);
+    grpc_endpoint_shutdown(&exec_ctx, sfd.client);
+    grpc_endpoint_destroy(&exec_ctx, sfd.client);
+    grpc_exec_ctx_finish(&exec_ctx);
     sfd.client = NULL;
   }
 
@@ -159,8 +152,9 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   /* Shutdown */
   if (sfd.client) {
-    grpc_endpoint_shutdown(sfd.client);
-    grpc_endpoint_destroy(sfd.client);
+    grpc_endpoint_shutdown(&exec_ctx, sfd.client);
+    grpc_endpoint_destroy(&exec_ctx, sfd.client);
+    grpc_exec_ctx_finish(&exec_ctx);
   }
   grpc_server_shutdown_and_notify(a.server, a.cq, NULL);
   GPR_ASSERT(grpc_completion_queue_pluck(
@@ -170,6 +164,6 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   grpc_completion_queue_destroy(a.cq);
   gpr_slice_buffer_destroy(&outgoing);
 
-  GRPC_WORKQUEUE_UNREF(workqueue, "destroy");
+  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
 }

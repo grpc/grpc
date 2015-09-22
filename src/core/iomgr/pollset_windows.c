@@ -99,7 +99,7 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker, 
+void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
                        gpr_timespec now, gpr_timespec deadline) {
   int added_worker = 0;
   worker->next = worker->prev = NULL;

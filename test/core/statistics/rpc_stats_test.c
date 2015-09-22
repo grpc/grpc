@@ -54,7 +54,7 @@ static void test_init_shutdown(void) {
 }
 
 static void test_create_and_destroy(void) {
-  census_rpc_stats* stats = NULL;
+  census_rpc_stats *stats = NULL;
   census_aggregated_rpc_stats agg_stats = {0, NULL};
 
   stats = census_rpc_stats_create_empty();
@@ -69,7 +69,7 @@ static void test_create_and_destroy(void) {
   GPR_ASSERT(agg_stats.num_entries == 0);
   GPR_ASSERT(agg_stats.stats == NULL);
   agg_stats.num_entries = 1;
-  agg_stats.stats = (census_per_method_rpc_stats*)gpr_malloc(
+  agg_stats.stats = (census_per_method_rpc_stats *)gpr_malloc(
       sizeof(census_per_method_rpc_stats));
   agg_stats.stats[0].method = gpr_strdup("foo");
   census_aggregated_rpc_stats_set_empty(&agg_stats);
@@ -113,7 +113,8 @@ static void test_record_and_get_stats(void) {
   census_aggregated_rpc_stats_set_empty(&agg_stats);
   census_shutdown();
 
-  /* Record both server (once) and client (twice) stats with different op_ids.*/
+  /* Record both server (once) and client (twice) stats with different op_ids.
+   */
   census_init();
   id = census_tracing_start_op();
   census_add_method_tag(id, "m2");
@@ -186,7 +187,7 @@ static void test_record_stats_with_trace_store_uninitialized(void) {
   census_stats_store_shutdown();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_init_shutdown();
   test_create_and_destroy();

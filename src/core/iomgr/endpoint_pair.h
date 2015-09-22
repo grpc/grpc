@@ -42,7 +42,6 @@ typedef struct {
 } grpc_endpoint_pair;
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
-                                                   size_t read_slice_size,
-                                                   grpc_workqueue *workqueue);
+                                                   size_t read_slice_size);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_ENDPOINT_PAIR_H */

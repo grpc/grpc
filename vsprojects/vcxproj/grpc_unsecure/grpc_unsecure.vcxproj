@@ -234,6 +234,7 @@
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy_factory.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy_registry.h" />
@@ -255,8 +256,10 @@
     <ClInclude Include="..\..\..\src\core\iomgr\alarm.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\alarm_heap.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\alarm_internal.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\closure.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint_pair.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\exec_ctx.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\fd_posix.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\iocp_windows.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\iomgr.h" />
@@ -360,6 +363,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\round_robin.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policy.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policy_factory.c">
@@ -402,11 +407,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\alarm_heap.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\closure.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint_pair_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint_pair_windows.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\exec_ctx.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\fd_posix.c">
     </ClCompile>

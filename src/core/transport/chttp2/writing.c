@@ -163,7 +163,8 @@ int grpc_chttp2_unlocking_check_writes(
 }
 
 void grpc_chttp2_perform_writes(
-    grpc_chttp2_transport_writing *transport_writing, grpc_endpoint *endpoint) {
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
+    grpc_endpoint *endpoint) {
   GPR_ASSERT(transport_writing->outbuf.count > 0 ||
              grpc_chttp2_list_have_writing_streams(transport_writing));
 
@@ -172,17 +173,8 @@ void grpc_chttp2_perform_writes(
   GPR_ASSERT(transport_writing->outbuf.count > 0);
   GPR_ASSERT(endpoint);
 
-  switch (grpc_endpoint_write(endpoint, &transport_writing->outbuf,
-                              &transport_writing->done_cb)) {
-    case GRPC_ENDPOINT_DONE:
-      grpc_chttp2_terminate_writing(transport_writing, 1);
-      break;
-    case GRPC_ENDPOINT_ERROR:
-      grpc_chttp2_terminate_writing(transport_writing, 0);
-      break;
-    case GRPC_ENDPOINT_PENDING:
-      break;
-  }
+  grpc_endpoint_write(exec_ctx, endpoint, &transport_writing->outbuf,
+                      &transport_writing->done_cb);
 }
 
 static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
@@ -219,7 +211,7 @@ static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
 }
 
 void grpc_chttp2_cleanup_writing(
-    grpc_chttp2_transport_global *transport_global,
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_writing *transport_writing) {
   grpc_chttp2_stream_writing *stream_writing;
   grpc_chttp2_stream_global *stream_global;
@@ -238,8 +230,7 @@ void grpc_chttp2_cleanup_writing(
           stream_global->outgoing_sopb->nops == 0) {
         GPR_ASSERT(stream_global->write_state != GRPC_WRITE_STATE_QUEUED_CLOSE);
         stream_global->outgoing_sopb = NULL;
-        grpc_chttp2_schedule_closure(transport_global,
-                                     stream_global->send_done_closure, 1);
+        grpc_exec_ctx_enqueue(exec_ctx, stream_global->send_done_closure, 1);
       }
     }
     stream_global->writing_now = 0;

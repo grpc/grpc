@@ -91,7 +91,7 @@ typedef struct grpc_winsocket {
      This prevents that. */
   int added_to_iocp;
 
-  grpc_iomgr_closure shutdown_closure;
+  grpc_closure shutdown_closure;
 
   /* A label for iomgr to track outstanding objects */
   grpc_iomgr_object iomgr_object;

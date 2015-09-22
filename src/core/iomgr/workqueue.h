@@ -36,6 +36,8 @@
 
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/pollset.h"
+#include "src/core/iomgr/closure.h"
+#include "src/core/iomgr/exec_ctx.h"
 
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/iomgr/workqueue_posix.h"
@@ -50,32 +52,34 @@ struct grpc_workqueue;
 typedef struct grpc_workqueue grpc_workqueue;
 
 /** Create a work queue */
-grpc_workqueue *grpc_workqueue_create(void);
+grpc_workqueue *grpc_workqueue_create(grpc_exec_ctx *exec_ctx);
 
-void grpc_workqueue_flush(grpc_workqueue *workqueue, int asynchronously);
+void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 
+#define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #define GRPC_WORKQUEUE_REF(p, r) \
   grpc_workqueue_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_WORKQUEUE_UNREF(p, r) \
-  grpc_workqueue_unref((p), __FILE__, __LINE__, (r))
+#define GRPC_WORKQUEUE_UNREF(cl, p, r) \
+  grpc_workqueue_unref((cl), (p), __FILE__, __LINE__, (r))
 void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
                         const char *reason);
-void grpc_workqueue_unref(grpc_workqueue *workqueue, const char *file, int line,
-                          const char *reason);
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                          const char *file, int line, const char *reason);
 #else
 #define GRPC_WORKQUEUE_REF(p, r) grpc_workqueue_ref((p))
-#define GRPC_WORKQUEUE_UNREF(p, r) grpc_workqueue_unref((p))
+#define GRPC_WORKQUEUE_UNREF(cl, p, r) grpc_workqueue_unref((cl), (p))
 void grpc_workqueue_ref(grpc_workqueue *workqueue);
-void grpc_workqueue_unref(grpc_workqueue *workqueue);
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 #endif
 
 /** Bind this workqueue to a pollset */
-void grpc_workqueue_add_to_pollset(grpc_workqueue *workqueue,
+void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
+                                   grpc_workqueue *workqueue,
                                    grpc_pollset *pollset);
 
 /** Add a work item to a workqueue */
-void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_iomgr_closure *closure,
+void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,
                          int success);
 
 #endif
