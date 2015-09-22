@@ -180,8 +180,7 @@ def gyp_test_paths(travis, config=None):
   binaries = get_c_tests(travis, 'c')
   out = []
   for target in binaries:
-    if config is not None:
-      if config.build_config in target['exclude_configs']:
+    if config is not None and config.build_config in target['exclude_configs']:
         continue
     binary = 'out/Debug/%s' % target['name']
     out.append(binary)
@@ -568,8 +567,7 @@ else:
 
 make_targets = list(set(itertools.chain.from_iterable(
                                          l.make_targets() for l in languages)))
-build_steps = []
-build_steps.extend(set(
+build_steps = list(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs
                    for l in languages
