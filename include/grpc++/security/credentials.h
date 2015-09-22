@@ -177,7 +177,7 @@ class MetadataCredentialsPlugin {
   // a different thread from the one processing the call.
   virtual bool IsBlocking() const { return true; }
 
-  // Gets the auth metatada produced by this plugin. */
+  // Gets the auth metatada produced by this plugin.
   virtual Status GetMetadata(
       grpc::string_ref service_url,
       std::multimap<grpc::string, grpc::string_ref>* metadata) = 0;
