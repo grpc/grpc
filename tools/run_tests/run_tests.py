@@ -132,6 +132,7 @@ def get_c_tests(travis, test_lang) :
                     not (travis and tgt['flaky'])]
   return binaries
 
+
 class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
@@ -144,7 +145,7 @@ class CLanguage(object):
     binaries = get_c_tests(travis, self.test_lang)
     for target in binaries:
       if config.build_config in tgt['exclude_configs']:
-        continue;
+        continue
       if self.platform == 'windows':
         binary = 'vsprojects/%s/%s.exe' % (
             _WINDOWS_CONFIG[config.build_config], target['name'])
@@ -174,6 +175,7 @@ class CLanguage(object):
   def __str__(self):
     return self.make_target
 
+
 def gyp_test_paths(travis, config=None):
   binaries = get_c_tests(travis, 'c')
   out = []
@@ -184,6 +186,7 @@ def gyp_test_paths(travis, config=None):
     binary = 'out/Debug/%s' % target['name']
     out.append(binary)
   return sorted(out)
+
 
 class GYPCLanguage(object):
 
@@ -205,6 +208,7 @@ class GYPCLanguage(object):
 
   def __str__(self):
     return 'gyp'
+
 
 class NodeLanguage(object):
 
