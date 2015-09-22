@@ -39,7 +39,7 @@
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;
 
-/* New server callback: tcp is the newly connected tcp connection */
+/* Called for newly connected TCP connections. */
 typedef void (*grpc_tcp_server_cb)(void *arg, grpc_endpoint *ep,
                                    grpc_call_list *call_list);
 
@@ -48,8 +48,9 @@ grpc_tcp_server *grpc_tcp_server_create(void);
 
 /* Start listening to bound ports */
 void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset **pollsets,
-                           size_t pollset_count, grpc_tcp_server_cb cb,
-                           void *cb_arg, grpc_call_list *call_list);
+                           size_t pollset_count,
+                           grpc_tcp_server_cb on_accept_cb, void *cb_arg,
+                           grpc_call_list *call_list);
 
 /* Add a port to the server, returning port number on success, or negative
    on failure.

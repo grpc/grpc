@@ -64,10 +64,19 @@ typedef void (*grpc_security_check_cb)(void *user_data,
                                        grpc_security_status status,
                                        grpc_call_list *call_list);
 
+/* Ownership of the secure_endpoint is transfered. */
+typedef void (*grpc_security_handshake_done_cb)(void *user_data,
+                                                grpc_security_status status,
+                                                grpc_endpoint *wrapped_endpoint,
+                                                grpc_endpoint *secure_endpoint,
+                                                grpc_call_list *call_list);
+
 typedef struct {
   void (*destroy)(grpc_security_connector *sc);
-  grpc_security_status (*create_handshaker)(grpc_security_connector *sc,
-                                            tsi_handshaker **handshaker);
+  void (*do_handshake)(grpc_security_connector *sc,
+                       grpc_endpoint *nonsecure_endpoint,
+                       grpc_security_handshake_done_cb cb, void *user_data,
+                       grpc_call_list *call_list);
   grpc_security_status (*check_peer)(grpc_security_connector *sc, tsi_peer peer,
                                      grpc_security_check_cb cb,
                                      void *user_data);
@@ -101,9 +110,12 @@ grpc_security_connector *grpc_security_connector_ref(
 void grpc_security_connector_unref(grpc_security_connector *policy);
 #endif
 
-/* Handshake creation. */
-grpc_security_status grpc_security_connector_create_handshaker(
-    grpc_security_connector *sc, tsi_handshaker **handshaker);
+/* Handshake. */
+void grpc_security_connector_do_handshake(grpc_security_connector *connector,
+                                          grpc_endpoint *nonsecure_endpoint,
+                                          grpc_security_handshake_done_cb cb,
+                                          void *user_data,
+                                          grpc_call_list *call_list);
 
 /* Check the peer.
    Implementations can choose to check the peer either synchronously or
