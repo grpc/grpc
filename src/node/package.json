@@ -27,7 +27,7 @@
   "dependencies": {
     "bindings": "^1.2.0",
     "lodash": "^3.9.3",
-    "nan": "^1.5.0",
+    "nan": "^2.0.0",
     "protobufjs": "^4.0.0"
   },
   "devDependencies": {
