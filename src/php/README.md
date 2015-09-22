@@ -5,7 +5,7 @@ This directory contains source code for PHP implementation of gRPC layered on sh
 
 #Status
 
-Alpha : Ready for early adopters
+Beta
 
 ## Environment
 
@@ -49,7 +49,7 @@ sudo apt-get install libgrpc-dev
 Install the gRPC PHP extension
 
 ```sh
-sudo pecl install grpc-alpha
+sudo pecl install grpc-beta
 ```
 
 **Mac OS X:**
@@ -96,7 +96,7 @@ $ sudo make install   # 'make' should have been run by core grpc
 Install the gRPC PHP extension
 
 ```sh
-$ sudo pecl install grpc-alpha
+$ sudo pecl install grpc-beta
 ```
 
 OR
@@ -109,15 +109,19 @@ $ make
 $ sudo make install
 ```
 
-In your php.ini file, add the line `extension=grpc.so` to load the extension
-at PHP startup.
+Add this line to your `php.ini` file, e.g. `/etc/php5/cli/php.ini`
+
+```sh
+extension=grpc.so
+```
 
 Install Composer
 
 ```sh
 $ cd grpc/src/php
 $ curl -sS https://getcomposer.org/installer | php
-$ php composer.phar install
+$ sudo mv composer.phar /usr/local/bin/composer
+$ composer install
 ```
 
 ## Unit Tests
@@ -162,6 +166,132 @@ Run the generated code tests
 ```sh
 $ cd grpc/src/php
 $ ./bin/run_gen_code_test.sh
+```
+
+## Use the gRPC PHP extension with Apache
+
+Install `apache2`, in addition to `php5` above
+
+```sh
+$ sudo apt-get install apache2
+```
+
+Add this line to your `php.ini` file, e.g. `/etc/php5/apache2/php.ini`
+
+```sh
+extension=grpc.so
+```
+
+Restart apache
+
+```sh
+$ sudo service apache2 restart
+```
+
+Make sure the Node math server is still running, as above. 
+
+```sh
+$ cd grpc/src/node
+$ nodejs examples/math_server.js
+```
+
+Make sure you have run `composer install` to generate the `vendor/autoload.php` file
+
+```sh
+$ composer install
+```
+
+Make sure you have generated the client stub `math.php`
+
+```sh
+$ ./bin/generate_proto_php.sh
+```
+
+Copy the `math_client.php` file into your Apache document root, e.g.
+
+```sh
+$ cp tests/generated_code/math_client.php /var/www/html
+```
+
+You may have to fix the first two lines to point the includes to your installation:
+
+```php
+include 'vendor/autoload.php';
+include 'tests/generated_code/math.php';
+```
+
+Connect to `localhost/math_client.php` in your browser, or run this from command line:
+
+```sh
+$ curl localhost/math_client.php
+```
+
+## Use the gRPC PHP extension with Nginx/PHP-FPM
+
+Install `nginx` and `php5-fpm`, in addition to `php5` above
+
+```sh
+$ sudo apt-get install nginx php5-fpm
+```
+
+Add this line to your `php.ini` file, e.g. `/etc/php5/fpm/php.ini`
+
+```sh
+extension=grpc.so
+```
+
+Uncomment the following lines in your `/etc/nginx/sites-available/default` file:
+
+```
+location ~ \.php$ {
+    include snippets/fastcgi-php.conf;
+    fastcgi_pass unix:/var/run/php5-fpm.sock;
+}
+```
+
+Restart nginx and php-fpm
+
+```sh
+$ sudo service nginx restart
+$ sudo service php5-fpm restart
+```
+
+Make sure the Node math server is still running, as above. 
+
+```sh
+$ cd grpc/src/node
+$ nodejs examples/math_server.js
+```
+
+Make sure you have run `composer install` to generate the `vendor/autoload.php` file
+
+```sh
+$ composer install
+```
+
+Make sure you have generated the client stub `math.php`
+
+```sh
+$ ./bin/generate_proto_php.sh
+```
+
+Copy the `math_client.php` file into your Nginx document root, e.g.
+
+```sh
+$ cp tests/generated_code/math_client.php /var/www/html
+```
+
+You may have to fix the first two lines to point the includes to your installation:
+
+```php
+include 'vendor/autoload.php';
+include 'tests/generated_code/math.php';
+```
+
+Connect to `localhost/math_client.php` in your browser, or run this from command line:
+
+```sh
+$ curl localhost/math_client.php
 ```
 
 [homebrew]:http://brew.sh
