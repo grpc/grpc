@@ -75,7 +75,7 @@ static grpc_httpcli_post_override g_post_override = NULL;
 static void
 plaintext_handshake (void *arg, grpc_endpoint * endpoint, const char *host, void (*on_done) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint, grpc_closure_list * closure_list))
 {
-  on_done (arg, endpoint, closure_list);
+  on_done (exec_ctx, arg, endpoint);
 }
 
 const grpc_httpcli_handshaker grpc_httpcli_plaintext = { "http",
@@ -99,8 +99,8 @@ static void next_address (grpc_exec_ctx * exec_ctx, internal_request * req);
 static void
 finish (grpc_exec_ctx * exec_ctx, internal_request * req, int success)
 {
-  grpc_pollset_set_del_pollset (&req->context->pollset_set, req->pollset, closure_list);
-  req->on_response (req->user_data, success ? &req->parser.r : NULL, closure_list);
+  grpc_pollset_set_del_pollset (exec_ctx, &req->context->pollset_set, req->pollset);
+  req->on_response (exec_ctx, req->user_data, success ? &req->parser.r : NULL);
   grpc_httpcli_parser_destroy (&req->parser);
   if (req->addresses != NULL)
     {
@@ -108,7 +108,7 @@ finish (grpc_exec_ctx * exec_ctx, internal_request * req, int success)
     }
   if (req->ep != NULL)
     {
-      grpc_endpoint_destroy (req->ep, closure_list);
+      grpc_endpoint_destroy (exec_ctx, req->ep);
     }
   gpr_slice_unref (req->request_text);
   gpr_free (req->host);
@@ -123,7 +123,7 @@ static void on_read (grpc_exec_ctx * exec_ctx, void *user_data, int success);
 static void
 do_read (grpc_exec_ctx * exec_ctx, internal_request * req)
 {
-  grpc_endpoint_read (req->ep, &req->incoming, &req->on_read, closure_list);
+  grpc_endpoint_read (exec_ctx, req->ep, &req->incoming, &req->on_read);
 }
 
 static void
@@ -139,7 +139,7 @@ on_read (grpc_exec_ctx * exec_ctx, void *user_data, int success)
 	  req->have_read_byte = 1;
 	  if (!grpc_httpcli_parser_parse (&req->parser, req->incoming.slices[i]))
 	    {
-	      finish (req, 0, closure_list);
+	      finish (exec_ctx, req, 0);
 	      return;
 	    }
 	}
@@ -147,22 +147,22 @@ on_read (grpc_exec_ctx * exec_ctx, void *user_data, int success)
 
   if (success)
     {
-      do_read (req, closure_list);
+      do_read (exec_ctx, req);
     }
   else if (!req->have_read_byte)
     {
-      next_address (req, closure_list);
+      next_address (exec_ctx, req);
     }
   else
     {
-      finish (req, grpc_httpcli_parser_eof (&req->parser), closure_list);
+      finish (req, grpc_httpcli_parser_eof (exec_ctx, &req->parser));
     }
 }
 
 static void
 on_written (grpc_exec_ctx * exec_ctx, internal_request * req)
 {
-  do_read (req, closure_list);
+  do_read (exec_ctx, req);
 }
 
 static void
@@ -171,11 +171,11 @@ done_write (grpc_exec_ctx * exec_ctx, void *arg, int success)
   internal_request *req = arg;
   if (success)
     {
-      on_written (req, closure_list);
+      on_written (exec_ctx, req);
     }
   else
     {
-      next_address (req, closure_list);
+      next_address (exec_ctx, req);
     }
 }
 
@@ -184,7 +184,7 @@ start_write (grpc_exec_ctx * exec_ctx, internal_request * req)
 {
   gpr_slice_ref (req->request_text);
   gpr_slice_buffer_add (&req->outgoing, req->request_text);
-  grpc_endpoint_write (req->ep, &req->outgoing, &req->done_write, closure_list);
+  grpc_endpoint_write (exec_ctx, req->ep, &req->outgoing, &req->done_write);
 }
 
 static void
@@ -194,12 +194,12 @@ on_handshake_done (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * ep)
 
   if (!ep)
     {
-      next_address (req, closure_list);
+      next_address (exec_ctx, req);
       return;
     }
 
   req->ep = ep;
-  start_write (req, closure_list);
+  start_write (exec_ctx, req);
 }
 
 static void
@@ -209,10 +209,10 @@ on_connected (grpc_exec_ctx * exec_ctx, void *arg, int success)
 
   if (!req->ep)
     {
-      next_address (req, closure_list);
+      next_address (exec_ctx, req);
       return;
     }
-  req->handshaker->handshake (req, req->ep, req->host, on_handshake_done, closure_list);
+  req->handshaker->handshake (exec_ctx, req, req->ep, req->host, on_handshake_done);
 }
 
 static void
@@ -221,12 +221,12 @@ next_address (grpc_exec_ctx * exec_ctx, internal_request * req)
   grpc_resolved_address *addr;
   if (req->next_address == req->addresses->naddrs)
     {
-      finish (req, 0, closure_list);
+      finish (exec_ctx, req, 0);
       return;
     }
   addr = &req->addresses->addrs[req->next_address++];
   grpc_closure_init (&req->connected, on_connected, req);
-  grpc_tcp_client_connect (&req->connected, &req->ep, &req->context->pollset_set, (struct sockaddr *) &addr->addr, addr->len, req->deadline, closure_list);
+  grpc_tcp_client_connect (&req->connected, &req->ep, &req->context->pollset_set, (exec_ctx, struct sockaddr *) &addr->addr, addr->len, req->deadline);
 }
 
 static void
@@ -235,12 +235,12 @@ on_resolved (grpc_exec_ctx * exec_ctx, void *arg, grpc_resolved_addresses * addr
   internal_request *req = arg;
   if (!addresses)
     {
-      finish (req, 0, closure_list);
+      finish (exec_ctx, req, 0);
       return;
     }
   req->addresses = addresses;
   req->next_address = 0;
-  next_address (req, closure_list);
+  next_address (exec_ctx, req);
 }
 
 static void
@@ -263,7 +263,7 @@ internal_request_begin (grpc_exec_ctx * exec_ctx, grpc_httpcli_context * context
   grpc_iomgr_register_object (&req->iomgr_obj, name);
   req->host = gpr_strdup (request->host);
 
-  grpc_pollset_set_add_pollset (&req->context->pollset_set, req->pollset, closure_list);
+  grpc_pollset_set_add_pollset (exec_ctx, &req->context->pollset_set, req->pollset);
   grpc_resolve_address (request->host, req->handshaker->default_port, on_resolved, req);
 }
 
@@ -271,12 +271,12 @@ void
 grpc_httpcli_get (grpc_exec_ctx * exec_ctx, grpc_httpcli_context * context, grpc_pollset * pollset, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   char *name;
-  if (g_get_override && g_get_override (request, deadline, on_response, user_data, closure_list))
+  if (g_get_override && g_get_override (exec_ctx, request, deadline, on_response, user_data))
     {
       return;
     }
   gpr_asprintf (&name, "HTTP:GET:%s:%s", request->host, request->path);
-  internal_request_begin (context, pollset, request, deadline, on_response, user_data, name, grpc_httpcli_format_get_request (request), closure_list);
+  internal_request_begin (context, pollset, request, deadline, on_response, user_data, name, grpc_httpcli_format_get_request (exec_ctx, request));
   gpr_free (name);
 }
 
@@ -284,12 +284,12 @@ void
 grpc_httpcli_post (grpc_exec_ctx * exec_ctx, grpc_httpcli_context * context, grpc_pollset * pollset, const grpc_httpcli_request * request, const char *body_bytes, size_t body_size, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   char *name;
-  if (g_post_override && g_post_override (request, body_bytes, body_size, deadline, on_response, user_data, closure_list))
+  if (g_post_override && g_post_override (exec_ctx, request, body_bytes, body_size, deadline, on_response, user_data))
     {
       return;
     }
   gpr_asprintf (&name, "HTTP:POST:%s:%s", request->host, request->path);
-  internal_request_begin (context, pollset, request, deadline, on_response, user_data, name, grpc_httpcli_format_post_request (request, body_bytes, body_size), closure_list);
+  internal_request_begin (context, pollset, request, deadline, on_response, user_data, name, grpc_httpcli_format_post_request (exec_ctx, request, body_bytes, body_size));
   gpr_free (name);
 }
 

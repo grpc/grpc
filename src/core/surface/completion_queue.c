@@ -181,7 +181,7 @@ grpc_cq_end_op (grpc_completion_queue * cc, void *tag, int success, void (*done)
       GPR_ASSERT (cc->shutdown_called);
       cc->shutdown = 1;
       gpr_mu_unlock (GRPC_POLLSET_MU (&cc->pollset));
-      grpc_pollset_shutdown (&cc->pollset, &cc->pollset_destroy_done, closure_list);
+      grpc_pollset_shutdown (exec_ctx, &cc->pollset, &cc->pollset_destroy_done);
     }
 }
 

@@ -116,7 +116,7 @@ hc_on_recv (grpc_exec_ctx * exec_ctx, void *user_data, int success)
       a.closure_list = closure_list;
       grpc_metadata_batch_filter (&op->data.metadata, client_recv_filter, &a);
     }
-  calld->on_done_recv->cb (calld->on_done_recv->cb_arg, success, closure_list);
+  calld->on_done_recv->cb (exec_ctx, calld->on_done_recv->cb_arg, success);
 }
 
 static grpc_mdelem *
@@ -181,7 +181,7 @@ hc_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_
 {
   GRPC_CALL_LOG_OP (GPR_INFO, elem, op);
   hc_mutate_op (elem, op);
-  grpc_call_next_op (elem, op, closure_list);
+  grpc_call_next_op (exec_ctx, elem, op);
 }
 
 /* Constructor for call_data */

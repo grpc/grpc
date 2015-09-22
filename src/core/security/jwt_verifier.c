@@ -774,7 +774,7 @@ on_openid_config_retrieved (grpc_exec_ctx * exec_ctx, void *user_data, const grp
     {
       *(req.host + (req.path - jwks_uri)) = '\0';
     }
-  grpc_httpcli_get (&ctx->verifier->http_ctx, ctx->pollset, &req, gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay), on_keys_retrieved, ctx, closure_list);
+  grpc_httpcli_get (&ctx->verifier->http_ctx, ctx->pollset, &req, gpr_time_add (gpr_now (exec_ctx, GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay), on_keys_retrieved, ctx);
   grpc_json_destroy (json);
   gpr_free (req.host);
   return;
@@ -893,7 +893,7 @@ retrieve_key_and_verify (grpc_exec_ctx * exec_ctx, verifier_cb_ctx * ctx)
       http_cb = on_openid_config_retrieved;
     }
 
-  grpc_httpcli_get (&ctx->verifier->http_ctx, ctx->pollset, &req, gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay), http_cb, ctx, closure_list);
+  grpc_httpcli_get (&ctx->verifier->http_ctx, ctx->pollset, &req, gpr_time_add (gpr_now (exec_ctx, GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay), http_cb, ctx);
   gpr_free (req.host);
   gpr_free (req.path);
   return;
@@ -943,7 +943,7 @@ grpc_jwt_verifier_verify (grpc_exec_ctx * exec_ctx, grpc_jwt_verifier * verifier
   signature = grpc_base64_decode (cur, 1);
   if (GPR_SLICE_IS_EMPTY (signature))
     goto error;
-  retrieve_key_and_verify (verifier_cb_ctx_create (verifier, pollset, header, claims, audience, signature, jwt, signed_jwt_len, user_data, cb), closure_list);
+  retrieve_key_and_verify (verifier_cb_ctx_create (exec_ctx, verifier, pollset, header, claims, audience, signature, jwt, signed_jwt_len, user_data, cb));
   return;
 
 error:

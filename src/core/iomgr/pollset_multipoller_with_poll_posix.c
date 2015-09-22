@@ -163,7 +163,7 @@ multipoll_with_poll_pollset_maybe_work_and_unlock (grpc_exec_ctx * exec_ctx, grp
 
   for (i = 1; i < pfd_count; i++)
     {
-      grpc_fd_end_poll (&watchers[i], pfds[i].revents & POLLIN, pfds[i].revents & POLLOUT, closure_list);
+      grpc_fd_end_poll (exec_ctx, &watchers[i], pfds[i].revents & POLLIN, pfds[i].revents & POLLOUT);
     }
 
   if (r < 0)
@@ -191,11 +191,11 @@ multipoll_with_poll_pollset_maybe_work_and_unlock (grpc_exec_ctx * exec_ctx, grp
 	    }
 	  if (pfds[i].revents & (POLLIN | POLLHUP | POLLERR))
 	    {
-	      grpc_fd_become_readable (watchers[i].fd, closure_list);
+	      grpc_fd_become_readable (exec_ctx, watchers[i].fd);
 	    }
 	  if (pfds[i].revents & (POLLOUT | POLLHUP | POLLERR))
 	    {
-	      grpc_fd_become_writable (watchers[i].fd, closure_list);
+	      grpc_fd_become_writable (exec_ctx, watchers[i].fd);
 	    }
 	}
     }

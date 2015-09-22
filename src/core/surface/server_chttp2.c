@@ -48,7 +48,7 @@ setup_transport (grpc_exec_ctx * exec_ctx, void *server, grpc_transport * transp
   static grpc_channel_filter const *extra_filters[] = {
     &grpc_http_server_filter
   };
-  grpc_server_setup_transport (server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (server), closure_list);
+  grpc_server_setup_transport (server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (exec_ctx, server));
 }
 
 static void
@@ -62,9 +62,9 @@ new_transport (grpc_exec_ctx * exec_ctx, void *server, grpc_endpoint * tcp)
    * case.
    */
   grpc_mdctx *mdctx = grpc_mdctx_create ();
-  grpc_transport *transport = grpc_create_chttp2_transport (grpc_server_get_channel_args (server), tcp, mdctx, 0, closure_list);
-  setup_transport (server, transport, mdctx, closure_list);
-  grpc_chttp2_transport_start_reading (transport, NULL, 0, closure_list);
+  grpc_transport *transport = grpc_create_chttp2_transport (grpc_server_get_channel_args (exec_ctx, server), tcp, mdctx, 0);
+  setup_transport (exec_ctx, server, transport, mdctx);
+  grpc_chttp2_transport_start_reading (exec_ctx, transport, NULL, 0);
 }
 
 /* Server callback: start listening on our ports */
@@ -72,7 +72,7 @@ static void
 start (grpc_exec_ctx * exec_ctx, grpc_server * server, void *tcpp, grpc_pollset ** pollsets, size_t pollset_count)
 {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_start (tcp, pollsets, pollset_count, new_transport, server, closure_list);
+  grpc_tcp_server_start (exec_ctx, tcp, pollsets, pollset_count, new_transport, server);
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further
@@ -81,7 +81,7 @@ static void
 destroy (grpc_exec_ctx * exec_ctx, grpc_server * server, void *tcpp, grpc_closure * destroy_done)
 {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_destroy (tcp, destroy_done, closure_list);
+  grpc_tcp_server_destroy (exec_ctx, tcp, destroy_done);
 }
 
 int

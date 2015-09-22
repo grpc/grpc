@@ -90,7 +90,7 @@ finally_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd)
 	    }
 	}
     }
-  grpc_fd_end_poll (&watcher, 0, 0, closure_list);
+  grpc_fd_end_poll (exec_ctx, &watcher, 0, 0);
 }
 
 static void
@@ -100,7 +100,7 @@ perform_delayed_add (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_status)
 
   if (!grpc_fd_is_orphaned (da->fd))
     {
-      finally_add_fd (da->pollset, da->fd, closure_list);
+      finally_add_fd (exec_ctx, da->pollset, da->fd);
     }
 
   gpr_mu_lock (&da->pollset->mu);
@@ -127,7 +127,7 @@ multipoll_with_epoll_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * po
   if (and_unlock_pollset)
     {
       gpr_mu_unlock (&pollset->mu);
-      finally_add_fd (pollset, fd, closure_list);
+      finally_add_fd (exec_ctx, pollset, fd);
     }
   else
     {
@@ -235,11 +235,11 @@ multipoll_with_epoll_pollset_maybe_work_and_unlock (grpc_exec_ctx * exec_ctx, gr
 		      int write = ep_ev[i].events & EPOLLOUT;
 		      if (read || cancel)
 			{
-			  grpc_fd_become_readable (fd, closure_list);
+			  grpc_fd_become_readable (exec_ctx, fd);
 			}
 		      if (write || cancel)
 			{
-			  grpc_fd_become_writable (fd, closure_list);
+			  grpc_fd_become_writable (exec_ctx, fd);
 			}
 		    }
 		}
@@ -286,7 +286,7 @@ epoll_become_multipoller (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc
     }
   for (i = 0; i < nfds; i++)
     {
-      multipoll_with_epoll_pollset_add_fd (pollset, fds[i], 0, closure_list);
+      multipoll_with_epoll_pollset_add_fd (exec_ctx, pollset, fds[i], 0);
     }
 }
 

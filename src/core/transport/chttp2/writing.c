@@ -150,7 +150,7 @@ grpc_chttp2_perform_writes (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_writ
   GPR_ASSERT (transport_writing->outbuf.count > 0);
   GPR_ASSERT (endpoint);
 
-  grpc_endpoint_write (endpoint, &transport_writing->outbuf, &transport_writing->done_cb, closure_list);
+  grpc_endpoint_write (exec_ctx, endpoint, &transport_writing->outbuf, &transport_writing->done_cb);
 }
 
 static void

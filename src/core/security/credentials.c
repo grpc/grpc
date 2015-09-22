@@ -126,11 +126,11 @@ grpc_credentials_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credential
     {
       if (cb != NULL)
 	{
-	  cb (user_data, NULL, 0, GRPC_CREDENTIALS_OK, closure_list);
+	  cb (exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK);
 	}
       return;
     }
-  creds->vtable->get_request_metadata (creds, pollset, service_url, cb, user_data, closure_list);
+  creds->vtable->get_request_metadata (exec_ctx, creds, pollset, service_url, cb, user_data);
 }
 
 grpc_security_status
@@ -460,12 +460,12 @@ jwt_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, gr
 
   if (jwt_md != NULL)
     {
-      cb (user_data, jwt_md->entries, jwt_md->num_entries, GRPC_CREDENTIALS_OK, closure_list);
+      cb (exec_ctx, user_data, jwt_md->entries, jwt_md->num_entries, GRPC_CREDENTIALS_OK);
       grpc_credentials_md_store_unref (jwt_md);
     }
   else
     {
-      cb (user_data, NULL, 0, GRPC_CREDENTIALS_ERROR, closure_list);
+      cb (exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_ERROR);
     }
 }
 
@@ -644,12 +644,12 @@ on_oauth2_token_fetcher_http_response (grpc_exec_ctx * exec_ctx, void *user_data
   if (status == GRPC_CREDENTIALS_OK)
     {
       c->token_expiration = gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), token_lifetime);
-      r->cb (r->user_data, c->access_token_md->entries, c->access_token_md->num_entries, status, closure_list);
+      r->cb (exec_ctx, r->user_data, c->access_token_md->entries, c->access_token_md->num_entries, status);
     }
   else
     {
       c->token_expiration = gpr_inf_past (GPR_CLOCK_REALTIME);
-      r->cb (r->user_data, NULL, 0, status, closure_list);
+      r->cb (exec_ctx, r->user_data, NULL, 0, status);
     }
   gpr_mu_unlock (&c->mu);
   grpc_credentials_metadata_request_destroy (r);
@@ -671,12 +671,12 @@ oauth2_token_fetcher_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_creden
   }
   if (cached_access_token_md != NULL)
     {
-      cb (user_data, cached_access_token_md->entries, cached_access_token_md->num_entries, GRPC_CREDENTIALS_OK, closure_list);
+      cb (exec_ctx, user_data, cached_access_token_md->entries, cached_access_token_md->num_entries, GRPC_CREDENTIALS_OK);
       grpc_credentials_md_store_unref (cached_access_token_md);
     }
   else
     {
-      c->fetch_func (grpc_credentials_metadata_request_create (creds, cb, user_data), &c->httpcli_context, pollset, on_oauth2_token_fetcher_http_response, gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), refresh_threshold), closure_list);
+      c->fetch_func (grpc_credentials_metadata_request_create (creds, cb, user_data), &c->httpcli_context, pollset, on_oauth2_token_fetcher_http_response, gpr_time_add (gpr_now (exec_ctx, GPR_CLOCK_REALTIME), refresh_threshold));
     }
 }
 
@@ -710,7 +710,7 @@ compute_engine_fetch_oauth2 (grpc_exec_ctx * exec_ctx, grpc_credentials_metadata
   request.path = GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH;
   request.hdr_count = 1;
   request.hdrs = &header;
-  grpc_httpcli_get (httpcli_context, pollset, &request, deadline, response_cb, metadata_req, closure_list);
+  grpc_httpcli_get (exec_ctx, httpcli_context, pollset, &request, deadline, response_cb, metadata_req);
 }
 
 grpc_credentials *
@@ -755,7 +755,7 @@ refresh_token_fetch_oauth2 (grpc_exec_ctx * exec_ctx, grpc_credentials_metadata_
   request.hdr_count = 1;
   request.hdrs = &header;
   request.handshaker = &grpc_httpcli_ssl;
-  grpc_httpcli_post (httpcli_context, pollset, &request, body, strlen (body), deadline, response_cb, metadata_req, closure_list);
+  grpc_httpcli_post (httpcli_context, pollset, &request, body, strlen (exec_ctx, body), deadline, response_cb, metadata_req);
   gpr_free (body);
 }
 
@@ -828,7 +828,7 @@ md_only_test_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * 
     }
   else
     {
-      cb (user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK, closure_list);
+      cb (exec_ctx, user_data, c->md_store->entries, 1, GRPC_CREDENTIALS_OK);
     }
 }
 
@@ -877,7 +877,7 @@ static void
 access_token_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data)
 {
   grpc_access_token_credentials *c = (grpc_access_token_credentials *) creds;
-  cb (user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK, closure_list);
+  cb (exec_ctx, user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK);
 }
 
 static grpc_credentials_vtable access_token_vtable = {
@@ -1047,7 +1047,7 @@ composite_metadata_cb (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credentia
   grpc_composite_credentials_metadata_context *ctx = (grpc_composite_credentials_metadata_context *) user_data;
   if (status != GRPC_CREDENTIALS_OK)
     {
-      ctx->cb (ctx->user_data, NULL, 0, status, closure_list);
+      ctx->cb (exec_ctx, ctx->user_data, NULL, 0, status);
       return;
     }
 
@@ -1067,13 +1067,13 @@ composite_metadata_cb (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credentia
       grpc_credentials *inner_creds = ctx->composite_creds->inner.creds_array[ctx->creds_index++];
       if (grpc_credentials_has_request_metadata (inner_creds))
 	{
-	  grpc_credentials_get_request_metadata (inner_creds, ctx->pollset, ctx->service_url, composite_metadata_cb, ctx, closure_list);
+	  grpc_credentials_get_request_metadata (exec_ctx, inner_creds, ctx->pollset, ctx->service_url, composite_metadata_cb, ctx);
 	  return;
 	}
     }
 
   /* We're done!. */
-  ctx->cb (ctx->user_data, ctx->md_elems->entries, ctx->md_elems->num_entries, GRPC_CREDENTIALS_OK, closure_list);
+  ctx->cb (exec_ctx, ctx->user_data, ctx->md_elems->entries, ctx->md_elems->num_entries, GRPC_CREDENTIALS_OK);
   composite_md_context_destroy (ctx);
   grpc_closure_list_run (closure_list);
 }
@@ -1085,7 +1085,7 @@ composite_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * cre
   grpc_composite_credentials_metadata_context *ctx;
   if (!grpc_credentials_has_request_metadata (creds))
     {
-      cb (user_data, NULL, 0, GRPC_CREDENTIALS_OK, closure_list);
+      cb (exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK);
       return;
     }
   ctx = gpr_malloc (sizeof (grpc_composite_credentials_metadata_context));
@@ -1101,7 +1101,7 @@ composite_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * cre
       grpc_credentials *inner_creds = c->inner.creds_array[ctx->creds_index++];
       if (grpc_credentials_has_request_metadata (inner_creds))
 	{
-	  grpc_credentials_get_request_metadata (inner_creds, pollset, service_url, composite_metadata_cb, ctx, closure_list);
+	  grpc_credentials_get_request_metadata (exec_ctx, inner_creds, pollset, service_url, composite_metadata_cb, ctx);
 	  return;
 	}
     }
@@ -1262,7 +1262,7 @@ static void
 iam_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data)
 {
   grpc_google_iam_credentials *c = (grpc_google_iam_credentials *) creds;
-  cb (user_data, c->iam_md->entries, c->iam_md->num_entries, GRPC_CREDENTIALS_OK, closure_list);
+  cb (exec_ctx, user_data, c->iam_md->entries, c->iam_md->num_entries, GRPC_CREDENTIALS_OK);
 }
 
 static grpc_credentials_vtable iam_vtable = {
@@ -1373,7 +1373,7 @@ plugin_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds,
     }
   else
     {
-      cb (user_data, NULL, 0, GRPC_CREDENTIALS_OK, closure_list);
+      cb (exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK);
     }
 }
 

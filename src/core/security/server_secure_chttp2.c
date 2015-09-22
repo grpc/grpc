@@ -104,7 +104,7 @@ setup_transport (grpc_exec_ctx * exec_ctx, void *statep, grpc_transport * transp
   args_to_add[0] = grpc_security_connector_to_arg (state->sc);
   args_to_add[1] = grpc_auth_metadata_processor_to_arg (&state->creds->processor);
   args_copy = grpc_channel_args_copy_and_add (grpc_server_get_channel_args (state->server), args_to_add, GPR_ARRAY_SIZE (args_to_add));
-  grpc_server_setup_transport (state->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, args_copy, closure_list);
+  grpc_server_setup_transport (state->server, transport, extra_filters, GPR_ARRAY_SIZE (exec_ctx, extra_filters), mdctx, args_copy);
   grpc_channel_args_destroy (args_copy);
 }
 
@@ -146,15 +146,15 @@ on_secure_handshake_done (grpc_exec_ctx * exec_ctx, void *statep, grpc_security_
       if (!state->is_shutdown)
 	{
 	  mdctx = grpc_mdctx_create ();
-	  transport = grpc_create_chttp2_transport (grpc_server_get_channel_args (state->server), secure_endpoint, mdctx, 0, closure_list);
-	  setup_transport (state, transport, mdctx, closure_list);
-	  grpc_chttp2_transport_start_reading (transport, NULL, 0, closure_list);
+	  transport = grpc_create_chttp2_transport (grpc_server_get_channel_args (exec_ctx, state->server), secure_endpoint, mdctx, 0);
+	  setup_transport (exec_ctx, state, transport, mdctx);
+	  grpc_chttp2_transport_start_reading (exec_ctx, transport, NULL, 0);
 	}
       else
 	{
 	  /* We need to consume this here, because the server may already have gone
 	   * away. */
-	  grpc_endpoint_destroy (secure_endpoint, closure_list);
+	  grpc_endpoint_destroy (exec_ctx, secure_endpoint);
 	}
       gpr_mu_unlock (&state->mu);
     }
@@ -180,7 +180,7 @@ on_accept (grpc_exec_ctx * exec_ctx, void *statep, grpc_endpoint * tcp)
   node->next = state->handshaking_tcp_endpoints;
   state->handshaking_tcp_endpoints = node;
   gpr_mu_unlock (&state->mu);
-  grpc_security_connector_do_handshake (state->sc, tcp, on_secure_handshake_done, state, closure_list);
+  grpc_security_connector_do_handshake (exec_ctx, state->sc, tcp, on_secure_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */
@@ -188,18 +188,18 @@ static void
 start (grpc_exec_ctx * exec_ctx, grpc_server * server, void *statep, grpc_pollset ** pollsets, size_t pollset_count)
 {
   grpc_server_secure_state *state = statep;
-  grpc_tcp_server_start (state->tcp, pollsets, pollset_count, on_accept, state, closure_list);
+  grpc_tcp_server_start (exec_ctx, state->tcp, pollsets, pollset_count, on_accept, state);
 }
 
 static void
 destroy_done (grpc_exec_ctx * exec_ctx, void *statep, int success)
 {
   grpc_server_secure_state *state = statep;
-  state->destroy_callback->cb (state->destroy_callback->cb_arg, success, closure_list);
+  state->destroy_callback->cb (exec_ctx, state->destroy_callback->cb_arg, success);
   gpr_mu_lock (&state->mu);
   while (state->handshaking_tcp_endpoints != NULL)
     {
-      grpc_endpoint_shutdown (state->handshaking_tcp_endpoints->tcp_endpoint, closure_list);
+      grpc_endpoint_shutdown (exec_ctx, state->handshaking_tcp_endpoints->tcp_endpoint);
       remove_tcp_from_list_locked (state, state->handshaking_tcp_endpoints->tcp_endpoint);
     }
   gpr_mu_unlock (&state->mu);
@@ -219,7 +219,7 @@ destroy (grpc_exec_ctx * exec_ctx, grpc_server * server, void *statep, grpc_clos
   tcp = state->tcp;
   gpr_mu_unlock (&state->mu);
   grpc_closure_init (&state->destroy_closure, destroy_done, state);
-  grpc_tcp_server_destroy (tcp, &state->destroy_closure, closure_list);
+  grpc_tcp_server_destroy (exec_ctx, tcp, &state->destroy_closure);
 }
 
 int

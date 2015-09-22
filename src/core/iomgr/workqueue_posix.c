@@ -59,7 +59,7 @@ grpc_workqueue_create (grpc_closure_list * closure_list)
   sprintf (name, "workqueue:%p", (void *) workqueue);
   workqueue->wakeup_read_fd = grpc_fd_create (GRPC_WAKEUP_FD_GET_READ_FD (&workqueue->wakeup_fd), name);
   grpc_closure_init (&workqueue->read_closure, on_readable, workqueue);
-  grpc_fd_notify_on_read (workqueue->wakeup_read_fd, &workqueue->read_closure, closure_list);
+  grpc_fd_notify_on_read (exec_ctx, workqueue->wakeup_read_fd, &workqueue->read_closure);
   return workqueue;
 }
 
@@ -67,7 +67,7 @@ static void
 workqueue_destroy (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue)
 {
   GPR_ASSERT (grpc_closure_list_empty (workqueue->closure_list));
-  grpc_fd_shutdown (workqueue->wakeup_read_fd, closure_list);
+  grpc_fd_shutdown (exec_ctx, workqueue->wakeup_read_fd);
 }
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -95,21 +95,21 @@ grpc_workqueue_unref (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue)
 #endif
   if (gpr_unref (&workqueue->refs))
     {
-      workqueue_destroy (workqueue, closure_list);
+      workqueue_destroy (exec_ctx, workqueue);
     }
 }
 
 void
 grpc_workqueue_add_to_pollset (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue, grpc_pollset * pollset)
 {
-  grpc_pollset_add_fd (pollset, workqueue->wakeup_read_fd, closure_list);
+  grpc_pollset_add_fd (exec_ctx, pollset, workqueue->wakeup_read_fd);
 }
 
 void
 grpc_workqueue_flush (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue)
 {
   gpr_mu_lock (&workqueue->mu);
-  grpc_closure_list_move (&workqueue->closure_list, closure_list);
+  grpc_closure_list_move (exec_ctx, &workqueue->closure_list);
   gpr_mu_unlock (&workqueue->mu);
 }
 
@@ -124,16 +124,16 @@ on_readable (grpc_exec_ctx * exec_ctx, void *arg, int success)
       /* HACK: let wakeup_fd code know that we stole the fd */
       workqueue->wakeup_fd.read_fd = 0;
       grpc_wakeup_fd_destroy (&workqueue->wakeup_fd);
-      grpc_fd_orphan (workqueue->wakeup_read_fd, NULL, "destroy", closure_list);
+      grpc_fd_orphan (exec_ctx, workqueue->wakeup_read_fd, NULL, "destroy");
       gpr_free (workqueue);
     }
   else
     {
       gpr_mu_lock (&workqueue->mu);
-      grpc_closure_list_move (&workqueue->closure_list, closure_list);
+      grpc_closure_list_move (exec_ctx, &workqueue->closure_list);
       grpc_wakeup_fd_consume_wakeup (&workqueue->wakeup_fd);
       gpr_mu_unlock (&workqueue->mu);
-      grpc_fd_notify_on_read (workqueue->wakeup_read_fd, &workqueue->read_closure, closure_list);
+      grpc_fd_notify_on_read (exec_ctx, workqueue->wakeup_read_fd, &workqueue->read_closure);
     }
 }
 

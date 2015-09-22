@@ -45,37 +45,37 @@ grpc_transport_stream_size (grpc_transport * transport)
 void
 grpc_transport_destroy (grpc_exec_ctx * exec_ctx, grpc_transport * transport)
 {
-  transport->vtable->destroy (transport, closure_list);
+  transport->vtable->destroy (exec_ctx, transport);
 }
 
 int
 grpc_transport_init_stream (grpc_exec_ctx * exec_ctx, grpc_transport * transport, grpc_stream * stream, const void *server_data, grpc_transport_stream_op * initial_op)
 {
-  return transport->vtable->init_stream (transport, stream, server_data, initial_op, closure_list);
+  return transport->vtable->init_stream (exec_ctx, transport, stream, server_data, initial_op);
 }
 
 void
 grpc_transport_perform_stream_op (grpc_exec_ctx * exec_ctx, grpc_transport * transport, grpc_stream * stream, grpc_transport_stream_op * op)
 {
-  transport->vtable->perform_stream_op (transport, stream, op, closure_list);
+  transport->vtable->perform_stream_op (exec_ctx, transport, stream, op);
 }
 
 void
 grpc_transport_perform_op (grpc_exec_ctx * exec_ctx, grpc_transport * transport, grpc_transport_op * op)
 {
-  transport->vtable->perform_op (transport, op, closure_list);
+  transport->vtable->perform_op (exec_ctx, transport, op);
 }
 
 void
 grpc_transport_destroy_stream (grpc_exec_ctx * exec_ctx, grpc_transport * transport, grpc_stream * stream)
 {
-  transport->vtable->destroy_stream (transport, stream, closure_list);
+  transport->vtable->destroy_stream (exec_ctx, transport, stream);
 }
 
 char *
 grpc_transport_get_peer (grpc_exec_ctx * exec_ctx, grpc_transport * transport)
 {
-  return transport->vtable->get_peer (transport, closure_list);
+  return transport->vtable->get_peer (exec_ctx, transport);
 }
 
 void
@@ -119,7 +119,7 @@ free_message (grpc_exec_ctx * exec_ctx, void *p, int iomgr_success)
   gpr_slice_unref (cmd->message);
   if (cmd->then_call != NULL)
     {
-      cmd->then_call->cb (cmd->then_call->cb_arg, iomgr_success, closure_list);
+      cmd->then_call->cb (exec_ctx, cmd->then_call->cb_arg, iomgr_success);
     }
   gpr_free (cmd);
 }

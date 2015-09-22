@@ -65,42 +65,42 @@ grpc_lb_policy_unref (grpc_exec_ctx * exec_ctx, grpc_lb_policy * policy)
 #endif
   if (gpr_unref (&policy->refs))
     {
-      policy->vtable->destroy (policy, closure_list);
+      policy->vtable->destroy (exec_ctx, policy);
     }
 }
 
 void
 grpc_lb_policy_shutdown (grpc_exec_ctx * exec_ctx, grpc_lb_policy * policy)
 {
-  policy->vtable->shutdown (policy, closure_list);
+  policy->vtable->shutdown (exec_ctx, policy);
 }
 
 void
 grpc_lb_policy_pick (grpc_exec_ctx * exec_ctx, grpc_lb_policy * policy, grpc_pollset * pollset, grpc_metadata_batch * initial_metadata, grpc_subchannel ** target, grpc_closure * on_complete)
 {
-  policy->vtable->pick (policy, pollset, initial_metadata, target, on_complete, closure_list);
+  policy->vtable->pick (exec_ctx, policy, pollset, initial_metadata, target, on_complete);
 }
 
 void
 grpc_lb_policy_broadcast (grpc_exec_ctx * exec_ctx, grpc_lb_policy * policy, grpc_transport_op * op)
 {
-  policy->vtable->broadcast (policy, op, closure_list);
+  policy->vtable->broadcast (exec_ctx, policy, op);
 }
 
 void
 grpc_lb_policy_exit_idle (grpc_exec_ctx * exec_ctx, grpc_lb_policy * policy)
 {
-  policy->vtable->exit_idle (policy, closure_list);
+  policy->vtable->exit_idle (exec_ctx, policy);
 }
 
 void
 grpc_lb_policy_notify_on_state_change (grpc_exec_ctx * exec_ctx, grpc_lb_policy * policy, grpc_connectivity_state * state, grpc_closure * closure)
 {
-  policy->vtable->notify_on_state_change (policy, state, closure, closure_list);
+  policy->vtable->notify_on_state_change (exec_ctx, policy, state, closure);
 }
 
 grpc_connectivity_state
 grpc_lb_policy_check_connectivity (grpc_exec_ctx * exec_ctx, grpc_lb_policy * policy)
 {
-  return policy->vtable->check_connectivity (policy, closure_list);
+  return policy->vtable->check_connectivity (exec_ctx, policy);
 }

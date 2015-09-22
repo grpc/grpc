@@ -153,7 +153,7 @@ read_and_write_test_read_handler (grpc_exec_ctx * exec_ctx, void *data, int succ
     }
   else if (success)
     {
-      grpc_endpoint_read (state->read_ep, &state->incoming, &state->done_read, closure_list);
+      grpc_endpoint_read (exec_ctx, state->read_ep, &state->incoming, &state->done_read);
     }
 }
 
@@ -176,7 +176,7 @@ read_and_write_test_write_handler (grpc_exec_ctx * exec_ctx, void *data, int suc
 	  slices = allocate_blocks (state->current_write_size, 8192, &nslices, &state->current_write_data);
 	  gpr_slice_buffer_reset_and_unref (&state->outgoing);
 	  gpr_slice_buffer_addn (&state->outgoing, slices, nslices);
-	  grpc_endpoint_write (state->write_ep, &state->outgoing, &state->done_write, closure_list);
+	  grpc_endpoint_write (exec_ctx, state->write_ep, &state->outgoing, &state->done_write);
 	  free (slices);
 	  return;
 	}

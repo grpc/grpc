@@ -51,8 +51,8 @@ static int g_nconnects = 0;
 static void
 on_connect (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * tcp)
 {
-  grpc_endpoint_shutdown (tcp, closure_list);
-  grpc_endpoint_destroy (tcp, closure_list);
+  grpc_endpoint_shutdown (exec_ctx, tcp);
+  grpc_endpoint_destroy (exec_ctx, tcp);
 
   gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
   g_nconnects++;

@@ -68,20 +68,20 @@ security_handshake_done (grpc_exec_ctx * exec_ctx, grpc_security_handshake * h, 
 {
   if (is_success)
     {
-      h->cb (h->user_data, GRPC_SECURITY_OK, h->wrapped_endpoint, h->secure_endpoint, closure_list);
+      h->cb (exec_ctx, h->user_data, GRPC_SECURITY_OK, h->wrapped_endpoint, h->secure_endpoint);
     }
   else
     {
       if (h->secure_endpoint != NULL)
 	{
-	  grpc_endpoint_shutdown (h->secure_endpoint, closure_list);
-	  grpc_endpoint_destroy (h->secure_endpoint, closure_list);
+	  grpc_endpoint_shutdown (exec_ctx, h->secure_endpoint);
+	  grpc_endpoint_destroy (exec_ctx, h->secure_endpoint);
 	}
       else
 	{
-	  grpc_endpoint_destroy (h->wrapped_endpoint, closure_list);
+	  grpc_endpoint_destroy (exec_ctx, h->wrapped_endpoint);
 	}
-      h->cb (h->user_data, GRPC_SECURITY_ERROR, h->wrapped_endpoint, NULL, closure_list);
+      h->cb (exec_ctx, h->user_data, GRPC_SECURITY_ERROR, h->wrapped_endpoint, NULL);
     }
   if (h->handshaker != NULL)
     tsi_handshaker_destroy (h->handshaker);
@@ -103,20 +103,20 @@ on_peer_checked (grpc_exec_ctx * exec_ctx, void *user_data, grpc_security_status
   if (status != GRPC_SECURITY_OK)
     {
       gpr_log (GPR_ERROR, "Error checking peer.");
-      security_handshake_done (h, 0, closure_list);
+      security_handshake_done (exec_ctx, h, 0);
       return;
     }
   result = tsi_handshaker_create_frame_protector (h->handshaker, NULL, &protector);
   if (result != TSI_OK)
     {
       gpr_log (GPR_ERROR, "Frame protector creation failed with error %s.", tsi_result_to_string (result));
-      security_handshake_done (h, 0, closure_list);
+      security_handshake_done (exec_ctx, h, 0);
       return;
     }
   h->secure_endpoint = grpc_secure_endpoint_create (protector, h->wrapped_endpoint, h->left_overs.slices, h->left_overs.count);
   h->left_overs.count = 0;
   h->left_overs.length = 0;
-  security_handshake_done (h, 1, closure_list);
+  security_handshake_done (exec_ctx, h, 1);
   return;
 }
 
@@ -130,19 +130,19 @@ check_peer (grpc_exec_ctx * exec_ctx, grpc_security_handshake * h)
   if (result != TSI_OK)
     {
       gpr_log (GPR_ERROR, "Peer extraction failed with error %s", tsi_result_to_string (result));
-      security_handshake_done (h, 0, closure_list);
+      security_handshake_done (exec_ctx, h, 0);
       return;
     }
   peer_status = grpc_security_connector_check_peer (h->connector, peer, on_peer_checked, h);
   if (peer_status == GRPC_SECURITY_ERROR)
     {
       gpr_log (GPR_ERROR, "Peer check failed.");
-      security_handshake_done (h, 0, closure_list);
+      security_handshake_done (exec_ctx, h, 0);
       return;
     }
   else if (peer_status == GRPC_SECURITY_OK)
     {
-      on_peer_checked (h, peer_status, closure_list);
+      on_peer_checked (exec_ctx, h, peer_status);
     }
 }
 
@@ -169,7 +169,7 @@ send_handshake_bytes_to_peer (grpc_exec_ctx * exec_ctx, grpc_security_handshake 
   if (result != TSI_OK)
     {
       gpr_log (GPR_ERROR, "Handshake failed with error %s", tsi_result_to_string (result));
-      security_handshake_done (h, 0, closure_list);
+      security_handshake_done (exec_ctx, h, 0);
       return;
     }
 
@@ -178,7 +178,7 @@ send_handshake_bytes_to_peer (grpc_exec_ctx * exec_ctx, grpc_security_handshake 
   gpr_slice_buffer_add (&h->outgoing, to_send);
   /* TODO(klempner,jboeuf): This should probably use the client setup
      deadline */
-  grpc_endpoint_write (h->wrapped_endpoint, &h->outgoing, &h->on_handshake_data_sent_to_peer, closure_list);
+  grpc_endpoint_write (exec_ctx, h->wrapped_endpoint, &h->outgoing, &h->on_handshake_data_sent_to_peer);
 }
 
 static void
@@ -194,7 +194,7 @@ on_handshake_data_received_from_peer (grpc_exec_ctx * exec_ctx, void *handshake,
   if (!success)
     {
       gpr_log (GPR_ERROR, "Read failed.");
-      security_handshake_done (h, 0, closure_list);
+      security_handshake_done (exec_ctx, h, 0);
       return;
     }
 
@@ -211,12 +211,12 @@ on_handshake_data_received_from_peer (grpc_exec_ctx * exec_ctx, void *handshake,
       /* We may need more data. */
       if (result == TSI_INCOMPLETE_DATA)
 	{
-	  grpc_endpoint_read (h->wrapped_endpoint, &h->incoming, &h->on_handshake_data_received_from_peer, closure_list);
+	  grpc_endpoint_read (exec_ctx, h->wrapped_endpoint, &h->incoming, &h->on_handshake_data_received_from_peer);
 	  return;
 	}
       else
 	{
-	  send_handshake_bytes_to_peer (h, closure_list);
+	  send_handshake_bytes_to_peer (exec_ctx, h);
 	  return;
 	}
     }
@@ -224,7 +224,7 @@ on_handshake_data_received_from_peer (grpc_exec_ctx * exec_ctx, void *handshake,
   if (result != TSI_OK)
     {
       gpr_log (GPR_ERROR, "Handshake failed with error %s", tsi_result_to_string (result));
-      security_handshake_done (h, 0, closure_list);
+      security_handshake_done (exec_ctx, h, 0);
       return;
     }
 
@@ -233,7 +233,7 @@ on_handshake_data_received_from_peer (grpc_exec_ctx * exec_ctx, void *handshake,
   num_left_overs = (has_left_overs_in_current_slice ? 1 : 0) + h->incoming.count - i - 1;
   if (num_left_overs == 0)
     {
-      check_peer (h, closure_list);
+      check_peer (exec_ctx, h);
       return;
     }
 
@@ -244,7 +244,7 @@ on_handshake_data_received_from_peer (grpc_exec_ctx * exec_ctx, void *handshake,
       gpr_slice_unref (h->incoming.slices[i]);	/* split_tail above increments refcount. */
     }
   gpr_slice_buffer_addn (&h->left_overs, &h->incoming.slices[i + 1], num_left_overs - (size_t) has_left_overs_in_current_slice);
-  check_peer (h, closure_list);
+  check_peer (exec_ctx, h);
 }
 
 /* If handshake is NULL, the handshake is done. */
@@ -258,7 +258,7 @@ on_handshake_data_sent_to_peer (grpc_exec_ctx * exec_ctx, void *handshake, int s
     {
       gpr_log (GPR_ERROR, "Write failed.");
       if (handshake != NULL)
-	security_handshake_done (h, 0, closure_list);
+	security_handshake_done (exec_ctx, h, 0);
       return;
     }
 
@@ -267,11 +267,11 @@ on_handshake_data_sent_to_peer (grpc_exec_ctx * exec_ctx, void *handshake, int s
     {
       /* TODO(klempner,jboeuf): This should probably use the client setup
          deadline */
-      grpc_endpoint_read (h->wrapped_endpoint, &h->incoming, &h->on_handshake_data_received_from_peer, closure_list);
+      grpc_endpoint_read (exec_ctx, h->wrapped_endpoint, &h->incoming, &h->on_handshake_data_received_from_peer);
     }
   else
     {
-      check_peer (h, closure_list);
+      check_peer (exec_ctx, h);
     }
 }
 
@@ -292,5 +292,5 @@ grpc_do_security_handshake (grpc_exec_ctx * exec_ctx, tsi_handshaker * handshake
   gpr_slice_buffer_init (&h->left_overs);
   gpr_slice_buffer_init (&h->outgoing);
   gpr_slice_buffer_init (&h->incoming);
-  send_handshake_bytes_to_peer (h, closure_list);
+  send_handshake_bytes_to_peer (exec_ctx, h);
 }

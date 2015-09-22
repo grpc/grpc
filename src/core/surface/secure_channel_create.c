@@ -113,8 +113,8 @@ on_secure_handshake_done (grpc_exec_ctx * exec_ctx, void *arg, grpc_security_sta
       GPR_ASSERT (c->connecting_endpoint == wrapped_endpoint);
       c->connecting_endpoint = NULL;
       gpr_mu_unlock (&c->mu);
-      c->result->transport = grpc_create_chttp2_transport (c->args.channel_args, secure_endpoint, c->mdctx, 1, closure_list);
-      grpc_chttp2_transport_start_reading (c->result->transport, NULL, 0, closure_list);
+      c->result->transport = grpc_create_chttp2_transport (exec_ctx, c->args.channel_args, secure_endpoint, c->mdctx, 1);
+      grpc_chttp2_transport_start_reading (exec_ctx, c->result->transport, NULL, 0);
       c->result->filters = gpr_malloc (sizeof (grpc_channel_filter *) * 2);
       c->result->filters[0] = &grpc_http_client_filter;
       c->result->filters[1] = &grpc_client_auth_filter;
@@ -122,7 +122,7 @@ on_secure_handshake_done (grpc_exec_ctx * exec_ctx, void *arg, grpc_security_sta
     }
   notify = c->notify;
   c->notify = NULL;
-  notify->cb (notify->cb_arg, 1, closure_list);
+  notify->cb (exec_ctx, notify->cb_arg, 1);
 }
 
 static void
@@ -137,14 +137,14 @@ connected (grpc_exec_ctx * exec_ctx, void *arg, int success)
       GPR_ASSERT (c->connecting_endpoint == NULL);
       c->connecting_endpoint = tcp;
       gpr_mu_unlock (&c->mu);
-      grpc_security_connector_do_handshake (&c->security_connector->base, tcp, on_secure_handshake_done, c, closure_list);
+      grpc_security_connector_do_handshake (exec_ctx, &c->security_connector->base, tcp, on_secure_handshake_done, c);
     }
   else
     {
       memset (c->result, 0, sizeof (*c->result));
       notify = c->notify;
       c->notify = NULL;
-      notify->cb (notify->cb_arg, 1, closure_list);
+      notify->cb (exec_ctx, notify->cb_arg, 1);
     }
 }
 
@@ -159,7 +159,7 @@ connector_shutdown (grpc_exec_ctx * exec_ctx, grpc_connector * con)
   gpr_mu_unlock (&c->mu);
   if (ep)
     {
-      grpc_endpoint_shutdown (ep, closure_list);
+      grpc_endpoint_shutdown (exec_ctx, ep);
     }
 }
 
@@ -176,7 +176,7 @@ connector_connect (grpc_exec_ctx * exec_ctx, grpc_connector * con, const grpc_co
   GPR_ASSERT (c->connecting_endpoint == NULL);
   gpr_mu_unlock (&c->mu);
   grpc_closure_init (&c->connected_closure, connected, c);
-  grpc_tcp_client_connect (&c->connected_closure, &c->newly_connecting_endpoint, args->interested_parties, args->addr, args->addr_len, args->deadline, closure_list);
+  grpc_tcp_client_connect (exec_ctx, &c->connected_closure, &c->newly_connecting_endpoint, args->interested_parties, args->addr, args->addr_len, args->deadline);
 }
 
 static const grpc_connector_vtable connector_vtable = {
@@ -207,7 +207,7 @@ subchannel_factory_unref (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * sc
   if (gpr_unref (&f->refs))
     {
       GRPC_SECURITY_CONNECTOR_UNREF (&f->security_connector->base, "subchannel_factory");
-      GRPC_CHANNEL_INTERNAL_UNREF (f->master, "subchannel_factory", closure_list);
+      GRPC_CHANNEL_INTERNAL_UNREF (exec_ctx, f->master, "subchannel_factory");
       grpc_channel_args_destroy (f->merge_args);
       grpc_mdctx_unref (f->mdctx);
       gpr_free (f);
@@ -231,7 +231,7 @@ subchannel_factory_create_subchannel (grpc_exec_ctx * exec_ctx, grpc_subchannel_
   args->master = f->master;
   args->mdctx = f->mdctx;
   s = grpc_subchannel_create (&c->base, args);
-  grpc_connector_unref (&c->base, closure_list);
+  grpc_connector_unref (exec_ctx, &c->base);
   grpc_channel_args_destroy (final_args);
   return s;
 }

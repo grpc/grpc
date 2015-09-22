@@ -175,7 +175,7 @@ auth_on_recv (grpc_exec_ctx * exec_ctx, void *user_data, int success)
 	  return;
 	}
     }
-  calld->on_done_recv->cb (calld->on_done_recv->cb_arg, success, closure_list);
+  calld->on_done_recv->cb (exec_ctx, calld->on_done_recv->cb_arg, success);
 }
 
 static void
@@ -202,7 +202,7 @@ static void
 auth_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   set_recv_ops_md_callbacks (elem, op);
-  grpc_call_next_op (elem, op, closure_list);
+  grpc_call_next_op (exec_ctx, elem, op);
 }
 
 /* Constructor for call_data */

@@ -117,7 +117,7 @@ sockaddr_next (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver, grpc_client_c
   GPR_ASSERT (!r->next_completion);
   r->next_completion = on_complete;
   r->target_config = target_config;
-  sockaddr_maybe_finish_next_locked (r, closure_list);
+  sockaddr_maybe_finish_next_locked (exec_ctx, r);
   gpr_mu_unlock (&r->mu);
 }
 
@@ -140,7 +140,7 @@ sockaddr_maybe_finish_next_locked (grpc_exec_ctx * exec_ctx, sockaddr_resolver *
 	  memset (&args, 0, sizeof (args));
 	  args.addr = (struct sockaddr *) &r->addrs[i];
 	  args.addr_len = r->addrs_len[i];
-	  subchannels[i] = grpc_subchannel_factory_create_subchannel (r->subchannel_factory, &args, closure_list);
+	  subchannels[i] = grpc_subchannel_factory_create_subchannel (exec_ctx, r->subchannel_factory, &args);
 	}
       memset (&lb_policy_args, 0, sizeof (lb_policy_args));
       lb_policy_args.subchannels = subchannels;
@@ -148,7 +148,7 @@ sockaddr_maybe_finish_next_locked (grpc_exec_ctx * exec_ctx, sockaddr_resolver *
       lb_policy = grpc_lb_policy_create (r->lb_policy_name, &lb_policy_args);
       gpr_free (subchannels);
       grpc_client_config_set_lb_policy (cfg, lb_policy);
-      GRPC_LB_POLICY_UNREF (lb_policy, "sockaddr", closure_list);
+      GRPC_LB_POLICY_UNREF (exec_ctx, lb_policy, "sockaddr");
       r->published = 1;
       *r->target_config = cfg;
       grpc_closure_list_add (closure_list, r->next_completion, 1);
@@ -161,7 +161,7 @@ sockaddr_destroy (grpc_exec_ctx * exec_ctx, grpc_resolver * gr)
 {
   sockaddr_resolver *r = (sockaddr_resolver *) gr;
   gpr_mu_destroy (&r->mu);
-  grpc_subchannel_factory_unref (r->subchannel_factory, closure_list);
+  grpc_subchannel_factory_unref (exec_ctx, r->subchannel_factory);
   gpr_free (r->addrs);
   gpr_free (r->addrs_len);
   gpr_free (r->lb_policy_name);

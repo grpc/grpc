@@ -65,24 +65,24 @@ grpc_resolver_unref (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver)
 #endif
   if (gpr_unref (&resolver->refs))
     {
-      resolver->vtable->destroy (resolver, closure_list);
+      resolver->vtable->destroy (exec_ctx, resolver);
     }
 }
 
 void
 grpc_resolver_shutdown (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver)
 {
-  resolver->vtable->shutdown (resolver, closure_list);
+  resolver->vtable->shutdown (exec_ctx, resolver);
 }
 
 void
 grpc_resolver_channel_saw_error (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver, struct sockaddr *failing_address, int failing_address_len)
 {
-  resolver->vtable->channel_saw_error (resolver, failing_address, failing_address_len, closure_list);
+  resolver->vtable->channel_saw_error (exec_ctx, resolver, failing_address, failing_address_len);
 }
 
 void
 grpc_resolver_next (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver, grpc_client_config ** target_config, grpc_closure * on_complete)
 {
-  resolver->vtable->next (resolver, target_config, on_complete, closure_list);
+  resolver->vtable->next (exec_ctx, resolver, target_config, on_complete);
 }
