@@ -97,7 +97,7 @@ static void test_early_server_shutdown_finishes_inflight_calls(
     grpc_end2end_test_config config) {
   grpc_call *c;
   grpc_call *s;
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = n_seconds_time(10);
   grpc_end2end_test_fixture f = begin_test(
       config, "test_early_server_shutdown_finishes_inflight_calls", NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
