@@ -159,7 +159,8 @@ static void test_connect(int n) {
 
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
-  grpc_tcp_server_destroy(s, NULL, NULL);
+  grpc_tcp_server_destroy(s, NULL, &call_list);
+  grpc_call_list_run(&call_list);
 }
 
 static void destroy_pollset(void *p, int success, grpc_call_list *call_list) {

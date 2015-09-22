@@ -140,7 +140,6 @@ static grpc_endpoint_test_config configs[] = {
 
 static void inc_call_ctr(void *arg, int success, grpc_call_list *call_list) {
   ++*(int *)arg;
-  ;
 }
 
 static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
@@ -155,7 +154,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
 
   gpr_slice_buffer_init(&incoming);
   grpc_closure_init(&done_closure, inc_call_ctr, &n);
-  grpc_endpoint_read(f.client_ep, &incoming, NULL, &call_list);
+  grpc_endpoint_read(f.client_ep, &incoming, &done_closure, &call_list);
   grpc_call_list_run(&call_list);
   GPR_ASSERT(n == 1);
   GPR_ASSERT(incoming.count == 1);

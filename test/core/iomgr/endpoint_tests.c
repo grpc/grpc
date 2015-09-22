@@ -151,18 +151,12 @@ static void read_and_write_test_write_handler(void *data, int success,
   size_t nslices;
 
   if (success) {
-    for (;;) {
-      /* Need to do inline writes until they don't succeed synchronously or we
-         finish writing */
-      state->bytes_written += state->current_write_size;
-      if (state->target_bytes - state->bytes_written <
-          state->current_write_size) {
-        state->current_write_size = state->target_bytes - state->bytes_written;
-      }
-      if (state->current_write_size == 0) {
-        break;
-      }
-
+    state->bytes_written += state->current_write_size;
+    if (state->target_bytes - state->bytes_written <
+        state->current_write_size) {
+      state->current_write_size = state->target_bytes - state->bytes_written;
+    }
+    if (state->current_write_size != 0) {
       slices = allocate_blocks(state->current_write_size, 8192, &nslices,
                                &state->current_write_data);
       gpr_slice_buffer_reset_and_unref(&state->outgoing);
@@ -170,8 +164,8 @@ static void read_and_write_test_write_handler(void *data, int success,
       grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
                           call_list);
       free(slices);
+      return;
     }
-    GPR_ASSERT(state->bytes_written == state->target_bytes);
   }
 
   gpr_log(GPR_INFO, "Write handler done");
