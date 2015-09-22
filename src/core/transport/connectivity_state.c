@@ -137,4 +137,3 @@ void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
     gpr_free(w);
   }
 }
-

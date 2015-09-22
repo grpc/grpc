@@ -146,8 +146,7 @@ static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r,
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
     lb_policy_args.subchannels = subchannels;
     lb_policy_args.num_subchannels = r->num_addrs;
-    lb_policy =
-        grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
+    lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     gpr_free(subchannels);
     grpc_client_config_set_lb_policy(cfg, lb_policy);
     GRPC_LB_POLICY_UNREF(lb_policy, "sockaddr", closure_list);
@@ -333,9 +332,9 @@ static grpc_resolver *sockaddr_create(
   r->addrs = gpr_malloc(sizeof(struct sockaddr_storage) * r->num_addrs);
   r->addrs_len = gpr_malloc(sizeof(*r->addrs_len) * r->num_addrs);
 
-  for(i = 0; i < r->num_addrs; i++) {
+  for (i = 0; i < r->num_addrs; i++) {
     grpc_uri ith_uri = *args->uri;
-    char* part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
+    char *part_str = gpr_dump_slice(path_parts.slices[i], GPR_DUMP_ASCII);
     ith_uri.path = part_str;
     if (!parse(&ith_uri, &r->addrs[i], &r->addrs_len[i])) {
       errors_found = 1; /* GPR_TRUE */

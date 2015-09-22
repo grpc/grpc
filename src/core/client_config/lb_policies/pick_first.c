@@ -337,7 +337,8 @@ static grpc_lb_policy *create_pick_first(grpc_lb_policy_factory *factory,
   GPR_ASSERT(args->num_subchannels > 0);
   memset(p, 0, sizeof(*p));
   grpc_lb_policy_init(&p->base, &pick_first_lb_policy_vtable);
-  p->subchannels = gpr_malloc(sizeof(grpc_subchannel *) * args->num_subchannels);
+  p->subchannels =
+      gpr_malloc(sizeof(grpc_subchannel *) * args->num_subchannels);
   p->num_subchannels = args->num_subchannels;
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "pick_first");

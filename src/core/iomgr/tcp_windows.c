@@ -108,18 +108,18 @@ static void tcp_free(grpc_tcp *tcp) {
 #define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 static void tcp_unref(grpc_tcp *tcp, const char *reason, const char *file,
-  int line) {
+                      int line) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp,
-    reason, tcp->refcount.count, tcp->refcount.count - 1);
+          reason, tcp->refcount.count, tcp->refcount.count - 1);
   if (gpr_unref(&tcp->refcount)) {
     tcp_free(tcp);
   }
 }
 
 static void tcp_ref(grpc_tcp *tcp, const char *reason, const char *file,
-  int line) {
+                    int line) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP   ref %p : %s %d -> %d", tcp,
-    reason, tcp->refcount.count, tcp->refcount.count + 1);
+          reason, tcp->refcount.count, tcp->refcount.count + 1);
   gpr_ref(&tcp->refcount);
 }
 #else

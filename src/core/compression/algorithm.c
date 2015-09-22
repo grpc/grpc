@@ -106,7 +106,7 @@ grpc_compression_level grpc_compression_level_for_algorithm(
 }
 
 void grpc_compression_options_init(grpc_compression_options *opts) {
-  opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT)-1;
+  opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
   opts->default_compression_algorithm = GRPC_COMPRESS_NONE;
 }
 

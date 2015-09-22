@@ -227,16 +227,17 @@ void test_times_out(void) {
     gpr_timespec continue_verifying_time =
         gpr_time_from_seconds(5, GPR_TIMESPAN);
     gpr_timespec grace_time = gpr_time_from_seconds(3, GPR_TIMESPAN);
-    gpr_timespec finish_time = gpr_time_add(connect_deadline, continue_verifying_time);
-    gpr_timespec restart_verifying_time = gpr_time_add(connect_deadline, grace_time);
+    gpr_timespec finish_time =
+        gpr_time_add(connect_deadline, continue_verifying_time);
+    gpr_timespec restart_verifying_time =
+        gpr_time_add(connect_deadline, grace_time);
     int is_after_deadline = gpr_time_cmp(now, connect_deadline) > 0;
     if (gpr_time_cmp(now, finish_time) > 0) {
       break;
     }
-    gpr_log(GPR_DEBUG, "now=%d.%09d connect_deadline=%d.%09d", 
-        now.tv_sec, now.tv_nsec, connect_deadline.tv_sec, connect_deadline.tv_nsec);
-    if (is_after_deadline &&
-        gpr_time_cmp(now, restart_verifying_time) <= 0) {
+    gpr_log(GPR_DEBUG, "now=%d.%09d connect_deadline=%d.%09d", now.tv_sec,
+            now.tv_nsec, connect_deadline.tv_sec, connect_deadline.tv_nsec);
+    if (is_after_deadline && gpr_time_cmp(now, restart_verifying_time) <= 0) {
       /* allow some slack before insisting that things be done */
     } else {
       GPR_ASSERT(g_connections_complete ==

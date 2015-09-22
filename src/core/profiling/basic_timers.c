@@ -70,10 +70,10 @@ static void log_report() {
   int i;
   for (i = 0; i < count; i++) {
     grpc_timer_entry* entry = &(log[i]);
-    printf("GRPC_LAT_PROF %ld.%09d  %p %c %d(%s) %p %s %d\n",
-           entry->tm.tv_sec, entry->tm.tv_nsec,
-           (void*)(gpr_intptr)gpr_thd_currentid(), entry->type, entry->tag,
-           entry->tagstr, entry->id, entry->file, entry->line);
+    printf("GRPC_LAT_PROF %ld.%09d  %p %c %d(%s) %p %s %d\n", entry->tm.tv_sec,
+           entry->tm.tv_nsec, (void*)(gpr_intptr)gpr_thd_currentid(),
+           entry->type, entry->tag, entry->tagstr, entry->id, entry->file,
+           entry->line);
   }
 
   /* Now clear out the log */
