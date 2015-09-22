@@ -55,9 +55,8 @@ void grpc_register_resolver_type(grpc_resolver_factory *factory);
     If a resolver factory was found, use it to instantiate a resolver and
     return it.
     If a resolver factory was not found, return NULL. */
-grpc_resolver *grpc_resolver_create(const char *target,
-                                    grpc_subchannel_factory *subchannel_factory,
-                                    grpc_workqueue *workqueue);
+grpc_resolver *grpc_resolver_create(
+    const char *target, grpc_subchannel_factory *subchannel_factory);
 
 /** Given a target, return a (freshly allocated with gpr_malloc) string
     representing the default authority to pass from a client. */

@@ -36,6 +36,7 @@
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/connector.h"
+#include "src/core/transport/connectivity_state.h"
 
 /** A (sub-)channel that knows how to connect to exactly one target
     address. Provides a target for load balancing. */
@@ -46,39 +47,44 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 #ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
   grpc_subchannel_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_UNREF(p, r) \
-  grpc_subchannel_unref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_UNREF(cl, p, r) \
+  grpc_subchannel_unref((cl), (p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) \
   grpc_subchannel_call_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_CALL_UNREF(p, r) \
-  grpc_subchannel_call_unref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_CALL_UNREF(cl, p, r) \
+  grpc_subchannel_call_unref((cl), (p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS \
   , const char *file, int line, const char *reason
 #else
 #define GRPC_SUBCHANNEL_REF(p, r) grpc_subchannel_ref((p))
-#define GRPC_SUBCHANNEL_UNREF(p, r) grpc_subchannel_unref((p))
+#define GRPC_SUBCHANNEL_UNREF(cl, p, r) grpc_subchannel_unref((cl), (p))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) grpc_subchannel_call_ref((p))
-#define GRPC_SUBCHANNEL_CALL_UNREF(p, r) grpc_subchannel_call_unref((p))
+#define GRPC_SUBCHANNEL_CALL_UNREF(cl, p, r) \
+  grpc_subchannel_call_unref((cl), (p))
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
 #endif
 
 void grpc_subchannel_ref(
     grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_unref(
-    grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
+                           grpc_subchannel *channel
+                               GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_ref(
     grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_call_unref(
-    grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
+                                grpc_subchannel_call *call
+                                    GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
 /** construct a call (possibly asynchronously) */
-void grpc_subchannel_create_call(grpc_subchannel *subchannel,
+void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx,
+                                 grpc_subchannel *subchannel,
                                  grpc_pollset *pollset,
                                  grpc_subchannel_call **target,
-                                 grpc_iomgr_closure *notify);
+                                 grpc_closure *notify);
 
 /** process a transport level op */
-void grpc_subchannel_process_transport_op(grpc_subchannel *subchannel,
+void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
+                                          grpc_subchannel *subchannel,
                                           grpc_transport_op *op);
 
 /** poll the current connectivity state of a channel */
@@ -87,23 +93,28 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(
 
 /** call notify when the connectivity state of a channel changes from *state.
     Updates *state with the new state of the channel */
-void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
+void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
+                                            grpc_subchannel *channel,
                                             grpc_connectivity_state *state,
-                                            grpc_iomgr_closure *notify);
+                                            grpc_closure *notify);
 
 /** express interest in \a channel's activities through \a pollset. */
-void grpc_subchannel_add_interested_party(grpc_subchannel *channel,
+void grpc_subchannel_add_interested_party(grpc_exec_ctx *exec_ctx,
+                                          grpc_subchannel *channel,
                                           grpc_pollset *pollset);
 /** stop following \a channel's activity through \a pollset. */
-void grpc_subchannel_del_interested_party(grpc_subchannel *channel,
+void grpc_subchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
+                                          grpc_subchannel *channel,
                                           grpc_pollset *pollset);
 
 /** continue processing a transport op */
-void grpc_subchannel_call_process_op(grpc_subchannel_call *subchannel_call,
+void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
+                                     grpc_subchannel_call *subchannel_call,
                                      grpc_transport_stream_op *op);
 
 /** continue querying for peer */
-char *grpc_subchannel_call_get_peer(grpc_subchannel_call *subchannel_call);
+char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
+                                    grpc_subchannel_call *subchannel_call);
 
 struct grpc_subchannel_args {
   /** Channel filters for this channel - wrapped factories will likely

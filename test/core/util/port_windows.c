@@ -244,7 +244,7 @@ int grpc_pick_unused_port(void) {
     }
 
     /* TODO(ctiller): consider caching this port in some structure, to avoid
-                      handing it out again */
+       handing it out again */
 
     chose_port(port);
     return port;

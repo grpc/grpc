@@ -82,8 +82,8 @@ typedef struct grpc_tcp {
   /* Refcounting how many operations are in progress. */
   gpr_refcount refcount;
 
-  grpc_iomgr_closure *read_cb;
-  grpc_iomgr_closure *write_cb;
+  grpc_closure *read_cb;
+  grpc_closure *write_cb;
   gpr_slice read_slice;
   gpr_slice_buffer *write_slices;
   gpr_slice_buffer *read_slices;
@@ -108,18 +108,18 @@ static void tcp_free(grpc_tcp *tcp) {
 #define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 static void tcp_unref(grpc_tcp *tcp, const char *reason, const char *file,
-  int line) {
+                      int line) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp,
-    reason, tcp->refcount.count, tcp->refcount.count - 1);
+          reason, tcp->refcount.count, tcp->refcount.count - 1);
   if (gpr_unref(&tcp->refcount)) {
     tcp_free(tcp);
   }
 }
 
 static void tcp_ref(grpc_tcp *tcp, const char *reason, const char *file,
-  int line) {
+                    int line) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP   ref %p : %s %d -> %d", tcp,
-    reason, tcp->refcount.count, tcp->refcount.count + 1);
+          reason, tcp->refcount.count, tcp->refcount.count + 1);
   gpr_ref(&tcp->refcount);
 }
 #else
@@ -169,7 +169,7 @@ static int on_read(grpc_tcp *tcp, int success) {
 
 static void on_read_cb(void *tcpp, int from_iocp) {
   grpc_tcp *tcp = tcpp;
-  grpc_iomgr_closure *cb = tcp->read_cb;
+  grpc_closure *cb = tcp->read_cb;
   int success = on_read(tcp, from_iocp);
   tcp->read_cb = NULL;
   TCP_UNREF(tcp, "read");
@@ -180,7 +180,7 @@ static void on_read_cb(void *tcpp, int from_iocp) {
 
 static grpc_endpoint_op_status win_read(grpc_endpoint *ep,
                                         gpr_slice_buffer *read_slices,
-                                        grpc_iomgr_closure *cb) {
+                                        grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_winsocket *handle = tcp->socket;
   grpc_winsocket_callback_info *info = &handle->read_info;
@@ -241,7 +241,7 @@ static void on_write(void *tcpp, int success) {
   grpc_tcp *tcp = (grpc_tcp *)tcpp;
   grpc_winsocket *handle = tcp->socket;
   grpc_winsocket_callback_info *info = &handle->write_info;
-  grpc_iomgr_closure *cb;
+  grpc_closure *cb;
   int do_abort = 0;
 
   gpr_mu_lock(&tcp->mu);
@@ -269,7 +269,7 @@ static void on_write(void *tcpp, int success) {
 /* Initiates a write. */
 static grpc_endpoint_op_status win_write(grpc_endpoint *ep,
                                          gpr_slice_buffer *slices,
-                                         grpc_iomgr_closure *cb) {
+                                         grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_winsocket *socket = tcp->socket;
   grpc_winsocket_callback_info *info = &socket->write_info;

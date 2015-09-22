@@ -232,10 +232,10 @@
     <ClInclude Include="..\..\..\src\core\security\auth_filters.h" />
     <ClInclude Include="..\..\..\src\core\security\base64.h" />
     <ClInclude Include="..\..\..\src\core\security\credentials.h" />
+    <ClInclude Include="..\..\..\src\core\security\handshake.h" />
     <ClInclude Include="..\..\..\src\core\security\json_token.h" />
     <ClInclude Include="..\..\..\src\core\security\jwt_verifier.h" />
     <ClInclude Include="..\..\..\src\core\security\secure_endpoint.h" />
-    <ClInclude Include="..\..\..\src\core\security\secure_transport_setup.h" />
     <ClInclude Include="..\..\..\src\core\security\security_connector.h" />
     <ClInclude Include="..\..\..\src\core\security\security_context.h" />
     <ClInclude Include="..\..\..\src\core\tsi\fake_transport_security.h" />
@@ -255,6 +255,7 @@
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy_factory.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy_registry.h" />
@@ -276,8 +277,10 @@
     <ClInclude Include="..\..\..\src\core\iomgr\alarm.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\alarm_heap.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\alarm_internal.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\closure.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint_pair.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\exec_ctx.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\fd_posix.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\iocp_windows.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\iomgr.h" />
@@ -369,13 +372,13 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\google_default_credentials.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\security\handshake.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\json_token.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\jwt_verifier.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\secure_endpoint.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\security\secure_transport_setup.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\security_connector.c">
     </ClCompile>
@@ -421,6 +424,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\round_robin.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policy.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policy_factory.c">
@@ -463,11 +468,15 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\alarm_heap.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\closure.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint_pair_posix.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint_pair_windows.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\exec_ctx.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\fd_posix.c">
     </ClCompile>

@@ -36,12 +36,11 @@
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/subchannel_factory.h"
-#include "src/core/iomgr/workqueue.h"
 
 grpc_channel *grpc_channel_create_from_filters(
-    const char *target, const grpc_channel_filter **filters, size_t count,
-    const grpc_channel_args *args, grpc_mdctx *mdctx, grpc_workqueue *workqueue,
-    int is_client);
+    grpc_exec_ctx *exec_ctx, const char *target,
+    const grpc_channel_filter **filters, size_t count,
+    const grpc_channel_args *args, grpc_mdctx *mdctx, int is_client);
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel);
@@ -63,22 +62,22 @@ grpc_mdstr *grpc_channel_get_encodings_accepted_by_peer_string(
 grpc_mdstr *grpc_channel_get_message_string(grpc_channel *channel);
 gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel);
 
-grpc_workqueue *grpc_channel_get_workqueue(grpc_channel *channel);
-
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
 void grpc_channel_internal_ref(grpc_channel *channel, const char *reason);
-void grpc_channel_internal_unref(grpc_channel *channel, const char *reason);
+void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
+                                 const char *reason);
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
   grpc_channel_internal_ref(channel, reason)
-#define GRPC_CHANNEL_INTERNAL_UNREF(channel, reason) \
-  grpc_channel_internal_unref(channel, reason)
+#define GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, reason) \
+  grpc_channel_internal_unref(exec_ctx, channel, reason)
 #else
 void grpc_channel_internal_ref(grpc_channel *channel);
-void grpc_channel_internal_unref(grpc_channel *channel);
+void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel *channel);
 #define GRPC_CHANNEL_INTERNAL_REF(channel, reason) \
   grpc_channel_internal_ref(channel)
-#define GRPC_CHANNEL_INTERNAL_UNREF(channel, reason) \
-  grpc_channel_internal_unref(channel)
+#define GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, channel, reason) \
+  grpc_channel_internal_unref(exec_ctx, channel)
 #endif
 
 #endif /* GRPC_INTERNAL_CORE_SURFACE_CHANNEL_H */

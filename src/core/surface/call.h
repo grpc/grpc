@@ -82,11 +82,13 @@ typedef union {
 
 typedef struct {
   grpc_ioreq_op op;
-  gpr_uint32 flags; /**< A copy of the write flags from grpc_op */
+  gpr_uint32 flags;
+  /**< A copy of the write flags from grpc_op */
   grpc_ioreq_data data;
 } grpc_ioreq;
 
-typedef void (*grpc_ioreq_completion_func)(grpc_call *call, int success,
+typedef void (*grpc_ioreq_completion_func)(grpc_exec_ctx *exec_ctx,
+                                           grpc_call *call, int success,
                                            void *user_data);
 
 grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
@@ -97,28 +99,29 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
                             size_t add_initial_metadata_count,
                             gpr_timespec send_deadline);
 
-void grpc_call_set_completion_queue(grpc_call *call, grpc_completion_queue *cq);
+void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
+                                    grpc_completion_queue *cq);
 grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call);
 
 #ifdef GRPC_CALL_REF_COUNT_DEBUG
 void grpc_call_internal_ref(grpc_call *call, const char *reason);
-void grpc_call_internal_unref(grpc_call *call, const char *reason,
-                              int allow_immediate_deletion);
+void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *call,
+                              const char *reason);
 #define GRPC_CALL_INTERNAL_REF(call, reason) \
   grpc_call_internal_ref(call, reason)
-#define GRPC_CALL_INTERNAL_UNREF(call, reason, allow_immediate_deletion) \
-  grpc_call_internal_unref(call, reason, allow_immediate_deletion)
+#define GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, reason) \
+  grpc_call_internal_unref(exec_ctx, call, reason)
 #else
 void grpc_call_internal_ref(grpc_call *call);
-void grpc_call_internal_unref(grpc_call *call, int allow_immediate_deletion);
+void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *call);
 #define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call)
-#define GRPC_CALL_INTERNAL_UNREF(call, reason, allow_immediate_deletion) \
-  grpc_call_internal_unref(call, allow_immediate_deletion)
+#define GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, reason) \
+  grpc_call_internal_unref(exec_ctx, call)
 #endif
 
 grpc_call_error grpc_call_start_ioreq_and_call_back(
-    grpc_call *call, const grpc_ioreq *reqs, size_t nreqs,
-    grpc_ioreq_completion_func on_complete, void *user_data);
+    grpc_exec_ctx *exec_ctx, grpc_call *call, const grpc_ioreq *reqs,
+    size_t nreqs, grpc_ioreq_completion_func on_complete, void *user_data);
 
 grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
 

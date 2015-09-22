@@ -52,6 +52,7 @@ static int buffers_are_equal(const unsigned char *buf1,
   }
   return 1;
 }
+
 static void test_simple_encode_decode_b64(int url_safe, int multiline) {
   const char *hello = "hello";
   char *hello_b64 =

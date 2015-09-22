@@ -770,10 +770,10 @@ include/grpc/census.h \
 src/core/security/auth_filters.h \
 src/core/security/base64.h \
 src/core/security/credentials.h \
+src/core/security/handshake.h \
 src/core/security/json_token.h \
 src/core/security/jwt_verifier.h \
 src/core/security/secure_endpoint.h \
-src/core/security/secure_transport_setup.h \
 src/core/security/security_connector.h \
 src/core/security/security_context.h \
 src/core/tsi/fake_transport_security.h \
@@ -793,6 +793,7 @@ src/core/channel/noop_filter.h \
 src/core/client_config/client_config.h \
 src/core/client_config/connector.h \
 src/core/client_config/lb_policies/pick_first.h \
+src/core/client_config/lb_policies/round_robin.h \
 src/core/client_config/lb_policy.h \
 src/core/client_config/lb_policy_factory.h \
 src/core/client_config/lb_policy_registry.h \
@@ -814,8 +815,10 @@ src/core/httpcli/parser.h \
 src/core/iomgr/alarm.h \
 src/core/iomgr/alarm_heap.h \
 src/core/iomgr/alarm_internal.h \
+src/core/iomgr/closure.h \
 src/core/iomgr/endpoint.h \
 src/core/iomgr/endpoint_pair.h \
+src/core/iomgr/exec_ctx.h \
 src/core/iomgr/fd_posix.h \
 src/core/iomgr/iocp_windows.h \
 src/core/iomgr/iomgr.h \
@@ -897,10 +900,10 @@ src/core/security/credentials_metadata.c \
 src/core/security/credentials_posix.c \
 src/core/security/credentials_win32.c \
 src/core/security/google_default_credentials.c \
+src/core/security/handshake.c \
 src/core/security/json_token.c \
 src/core/security/jwt_verifier.c \
 src/core/security/secure_endpoint.c \
-src/core/security/secure_transport_setup.c \
 src/core/security/security_connector.c \
 src/core/security/security_context.c \
 src/core/security/server_auth_filter.c \
@@ -923,6 +926,7 @@ src/core/channel/noop_filter.c \
 src/core/client_config/client_config.c \
 src/core/client_config/connector.c \
 src/core/client_config/lb_policies/pick_first.c \
+src/core/client_config/lb_policies/round_robin.c \
 src/core/client_config/lb_policy.c \
 src/core/client_config/lb_policy_factory.c \
 src/core/client_config/lb_policy_registry.c \
@@ -944,9 +948,11 @@ src/core/httpcli/httpcli.c \
 src/core/httpcli/parser.c \
 src/core/iomgr/alarm.c \
 src/core/iomgr/alarm_heap.c \
+src/core/iomgr/closure.c \
 src/core/iomgr/endpoint.c \
 src/core/iomgr/endpoint_pair_posix.c \
 src/core/iomgr/endpoint_pair_windows.c \
+src/core/iomgr/exec_ctx.c \
 src/core/iomgr/fd_posix.c \
 src/core/iomgr/iocp_windows.c \
 src/core/iomgr/iomgr.c \

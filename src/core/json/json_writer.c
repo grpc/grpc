@@ -37,22 +37,22 @@
 
 #include "src/core/json/json_writer.h"
 
-static void json_writer_output_char(grpc_json_writer* writer, char c) {
+static void json_writer_output_char(grpc_json_writer *writer, char c) {
   writer->vtable->output_char(writer->userdata, c);
 }
 
-static void json_writer_output_string(grpc_json_writer* writer,
-                                      const char* str) {
+static void json_writer_output_string(grpc_json_writer *writer,
+                                      const char *str) {
   writer->vtable->output_string(writer->userdata, str);
 }
 
-static void json_writer_output_string_with_len(grpc_json_writer* writer,
-                                               const char* str, size_t len) {
+static void json_writer_output_string_with_len(grpc_json_writer *writer,
+                                               const char *str, size_t len) {
   writer->vtable->output_string_with_len(writer->userdata, str, len);
 }
 
-void grpc_json_writer_init(grpc_json_writer* writer, int indent,
-                           grpc_json_writer_vtable* vtable, void* userdata) {
+void grpc_json_writer_init(grpc_json_writer *writer, int indent,
+                           grpc_json_writer_vtable *vtable, void *userdata) {
   memset(writer, 0, sizeof(*writer));
   writer->container_empty = 1;
   writer->indent = indent;
@@ -60,7 +60,7 @@ void grpc_json_writer_init(grpc_json_writer* writer, int indent,
   writer->userdata = userdata;
 }
 
-static void json_writer_output_indent(grpc_json_writer* writer) {
+static void json_writer_output_indent(grpc_json_writer *writer) {
   static const char spacesstr[] =
       "                "
       "                "
@@ -88,7 +88,7 @@ static void json_writer_output_indent(grpc_json_writer* writer) {
       writer, spacesstr + sizeof(spacesstr) - 1 - spaces, spaces);
 }
 
-static void json_writer_value_end(grpc_json_writer* writer) {
+static void json_writer_value_end(grpc_json_writer *writer) {
   if (writer->container_empty) {
     writer->container_empty = 0;
     if ((writer->indent == 0) || (writer->depth == 0)) return;
@@ -100,7 +100,7 @@ static void json_writer_value_end(grpc_json_writer* writer) {
   }
 }
 
-static void json_writer_escape_utf16(grpc_json_writer* writer,
+static void json_writer_escape_utf16(grpc_json_writer *writer,
                                      gpr_uint16 utf16) {
   static const char hex[] = "0123456789abcdef";
 
@@ -111,8 +111,8 @@ static void json_writer_escape_utf16(grpc_json_writer* writer,
   json_writer_output_char(writer, hex[(utf16)&0x0f]);
 }
 
-static void json_writer_escape_string(grpc_json_writer* writer,
-                                      const char* string) {
+static void json_writer_escape_string(grpc_json_writer *writer,
+                                      const char *string) {
   json_writer_output_char(writer, '"');
 
   for (;;) {
@@ -207,7 +207,7 @@ static void json_writer_escape_string(grpc_json_writer* writer,
   json_writer_output_char(writer, '"');
 }
 
-void grpc_json_writer_container_begins(grpc_json_writer* writer,
+void grpc_json_writer_container_begins(grpc_json_writer *writer,
                                        grpc_json_type type) {
   if (!writer->got_key) json_writer_value_end(writer);
   json_writer_output_indent(writer);
@@ -217,7 +217,7 @@ void grpc_json_writer_container_begins(grpc_json_writer* writer,
   writer->depth++;
 }
 
-void grpc_json_writer_container_ends(grpc_json_writer* writer,
+void grpc_json_writer_container_ends(grpc_json_writer *writer,
                                      grpc_json_type type) {
   if (writer->indent && !writer->container_empty)
     json_writer_output_char(writer, '\n');
@@ -228,7 +228,7 @@ void grpc_json_writer_container_ends(grpc_json_writer* writer,
   writer->got_key = 0;
 }
 
-void grpc_json_writer_object_key(grpc_json_writer* writer, const char* string) {
+void grpc_json_writer_object_key(grpc_json_writer *writer, const char *string) {
   json_writer_value_end(writer);
   json_writer_output_indent(writer);
   json_writer_escape_string(writer, string);
@@ -236,23 +236,23 @@ void grpc_json_writer_object_key(grpc_json_writer* writer, const char* string) {
   writer->got_key = 1;
 }
 
-void grpc_json_writer_value_raw(grpc_json_writer* writer, const char* string) {
+void grpc_json_writer_value_raw(grpc_json_writer *writer, const char *string) {
   if (!writer->got_key) json_writer_value_end(writer);
   json_writer_output_indent(writer);
   json_writer_output_string(writer, string);
   writer->got_key = 0;
 }
 
-void grpc_json_writer_value_raw_with_len(grpc_json_writer* writer,
-                                         const char* string, size_t len) {
+void grpc_json_writer_value_raw_with_len(grpc_json_writer *writer,
+                                         const char *string, size_t len) {
   if (!writer->got_key) json_writer_value_end(writer);
   json_writer_output_indent(writer);
   json_writer_output_string_with_len(writer, string, len);
   writer->got_key = 0;
 }
 
-void grpc_json_writer_value_string(grpc_json_writer* writer,
-                                   const char* string) {
+void grpc_json_writer_value_string(grpc_json_writer *writer,
+                                   const char *string) {
   if (!writer->got_key) json_writer_value_end(writer);
   json_writer_output_indent(writer);
   json_writer_escape_string(writer, string);
