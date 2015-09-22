@@ -73,7 +73,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame (grpc_chttp2_data_pa
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */
-grpc_chttp2_parse_error grpc_chttp2_data_parser_parse (void *parser, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last, grpc_closure_list * closure_list);
+grpc_chttp2_parse_error grpc_chttp2_data_parser_parse (grpc_exec_ctx * exec_ctx, void *parser, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last);
 
 /* create a slice with an empty data frame and is_last set */
 gpr_slice grpc_chttp2_data_frame_create_empty_close (gpr_uint32 id);

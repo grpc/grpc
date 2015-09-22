@@ -52,7 +52,7 @@ static int init_ping_parser (grpc_chttp2_transport_parsing * transport_parsing);
 static int init_goaway_parser (grpc_chttp2_transport_parsing * transport_parsing);
 static int init_skip_frame_parser (grpc_chttp2_transport_parsing * transport_parsing, int is_header);
 
-static int parse_frame_slice (grpc_chttp2_transport_parsing * transport_parsing, gpr_slice slice, int is_last, grpc_closure_list * closure_list);
+static int parse_frame_slice (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_parsing * transport_parsing, gpr_slice slice, int is_last);
 
 void
 grpc_chttp2_prepare_to_read (grpc_chttp2_transport_global * transport_global, grpc_chttp2_transport_parsing * transport_parsing)
@@ -80,7 +80,7 @@ grpc_chttp2_prepare_to_read (grpc_chttp2_transport_global * transport_global, gr
 }
 
 void
-grpc_chttp2_publish_reads (grpc_chttp2_transport_global * transport_global, grpc_chttp2_transport_parsing * transport_parsing, grpc_closure_list * closure_list)
+grpc_chttp2_publish_reads (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global, grpc_chttp2_transport_parsing * transport_parsing)
 {
   grpc_chttp2_stream_global *stream_global;
   grpc_chttp2_stream_parsing *stream_parsing;
@@ -202,7 +202,7 @@ grpc_chttp2_publish_reads (grpc_chttp2_transport_global * transport_global, grpc
 }
 
 int
-grpc_chttp2_perform_read (grpc_chttp2_transport_parsing * transport_parsing, gpr_slice slice, grpc_closure_list * closure_list)
+grpc_chttp2_perform_read (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_parsing * transport_parsing, gpr_slice slice)
 {
   gpr_uint8 *beg = GPR_SLICE_START_PTR (slice);
   gpr_uint8 *end = GPR_SLICE_END_PTR (slice);
@@ -441,7 +441,7 @@ init_frame_parser (grpc_chttp2_transport_parsing * transport_parsing)
 }
 
 static grpc_chttp2_parse_error
-skip_parser (void *parser, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last, grpc_closure_list * closure_list)
+skip_parser (grpc_exec_ctx * exec_ctx, void *parser, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last)
 {
   return GRPC_CHTTP2_PARSE_OK;
 }
@@ -754,7 +754,7 @@ static int is_window_update_legal(gpr_int64 window_update, gpr_int64 window) {
 */
 
 static int
-parse_frame_slice (grpc_chttp2_transport_parsing * transport_parsing, gpr_slice slice, int is_last, grpc_closure_list * closure_list)
+parse_frame_slice (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_parsing * transport_parsing, gpr_slice slice, int is_last)
 {
   grpc_chttp2_stream_parsing *stream_parsing = transport_parsing->incoming_stream;
   switch (transport_parsing->parser (transport_parsing->parser_data, transport_parsing, stream_parsing, slice, is_last, closure_list))

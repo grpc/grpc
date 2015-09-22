@@ -1458,7 +1458,7 @@ grpc_chttp2_hpack_parser_parse (grpc_chttp2_hpack_parser * p, const gpr_uint8 * 
 }
 
 grpc_chttp2_parse_error
-grpc_chttp2_header_parser_parse (void *hpack_parser, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last, grpc_closure_list * closure_list)
+grpc_chttp2_header_parser_parse (grpc_exec_ctx * exec_ctx, void *hpack_parser, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last)
 {
   grpc_chttp2_hpack_parser *parser = hpack_parser;
   if (!grpc_chttp2_hpack_parser_parse (parser, GPR_SLICE_START_PTR (slice), GPR_SLICE_END_PTR (slice)))

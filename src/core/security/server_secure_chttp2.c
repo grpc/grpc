@@ -93,7 +93,7 @@ state_unref (grpc_server_secure_state * state)
 }
 
 static void
-setup_transport (void *statep, grpc_transport * transport, grpc_mdctx * mdctx, grpc_closure_list * closure_list)
+setup_transport (grpc_exec_ctx * exec_ctx, void *statep, grpc_transport * transport, grpc_mdctx * mdctx)
 {
   static grpc_channel_filter const *extra_filters[] = {
     &grpc_server_auth_filter, &grpc_http_server_filter
@@ -134,7 +134,7 @@ remove_tcp_from_list_locked (grpc_server_secure_state * state, grpc_endpoint * t
 }
 
 static void
-on_secure_handshake_done (void *statep, grpc_security_status status, grpc_endpoint * wrapped_endpoint, grpc_endpoint * secure_endpoint, grpc_closure_list * closure_list)
+on_secure_handshake_done (grpc_exec_ctx * exec_ctx, void *statep, grpc_security_status status, grpc_endpoint * wrapped_endpoint, grpc_endpoint * secure_endpoint)
 {
   grpc_server_secure_state *state = statep;
   grpc_transport *transport;
@@ -169,7 +169,7 @@ on_secure_handshake_done (void *statep, grpc_security_status status, grpc_endpoi
 }
 
 static void
-on_accept (void *statep, grpc_endpoint * tcp, grpc_closure_list * closure_list)
+on_accept (grpc_exec_ctx * exec_ctx, void *statep, grpc_endpoint * tcp)
 {
   grpc_server_secure_state *state = statep;
   tcp_endpoint_list *node;
@@ -185,14 +185,14 @@ on_accept (void *statep, grpc_endpoint * tcp, grpc_closure_list * closure_list)
 
 /* Server callback: start listening on our ports */
 static void
-start (grpc_server * server, void *statep, grpc_pollset ** pollsets, size_t pollset_count, grpc_closure_list * closure_list)
+start (grpc_exec_ctx * exec_ctx, grpc_server * server, void *statep, grpc_pollset ** pollsets, size_t pollset_count)
 {
   grpc_server_secure_state *state = statep;
   grpc_tcp_server_start (state->tcp, pollsets, pollset_count, on_accept, state, closure_list);
 }
 
 static void
-destroy_done (void *statep, int success, grpc_closure_list * closure_list)
+destroy_done (grpc_exec_ctx * exec_ctx, void *statep, int success)
 {
   grpc_server_secure_state *state = statep;
   state->destroy_callback->cb (state->destroy_callback->cb_arg, success, closure_list);
@@ -209,7 +209,7 @@ destroy_done (void *statep, int success, grpc_closure_list * closure_list)
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
 static void
-destroy (grpc_server * server, void *statep, grpc_closure * callback, grpc_closure_list * closure_list)
+destroy (grpc_exec_ctx * exec_ctx, grpc_server * server, void *statep, grpc_closure * callback)
 {
   grpc_server_secure_state *state = statep;
   grpc_tcp_server *tcp;

@@ -50,14 +50,14 @@ struct grpc_subchannel_factory
 struct grpc_subchannel_factory_vtable
 {
   void (*ref) (grpc_subchannel_factory * factory);
-  void (*unref) (grpc_subchannel_factory * factory, grpc_closure_list * closure_list);
-  grpc_subchannel *(*create_subchannel) (grpc_subchannel_factory * factory, grpc_subchannel_args * args, grpc_closure_list * closure_list);
+  void (*unref) (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * factory);
+  grpc_subchannel *(*create_subchannel) (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * factory, grpc_subchannel_args * args);
 };
 
 void grpc_subchannel_factory_ref (grpc_subchannel_factory * factory);
-void grpc_subchannel_factory_unref (grpc_subchannel_factory * factory, grpc_closure_list * closure_list);
+void grpc_subchannel_factory_unref (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * factory);
 
 /** Create a new grpc_subchannel */
-grpc_subchannel *grpc_subchannel_factory_create_subchannel (grpc_subchannel_factory * factory, grpc_subchannel_args * args, grpc_closure_list * closure_list);
+grpc_subchannel *grpc_subchannel_factory_create_subchannel (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * factory, grpc_subchannel_args * args);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */

@@ -57,8 +57,8 @@
 typedef struct listener
 {
   void *arg;
-  void (*start) (grpc_server * server, void *arg, grpc_pollset ** pollsets, size_t pollset_count, grpc_closure_list * closure_list);
-  void (*destroy) (grpc_server * server, void *arg, grpc_closure * closure, grpc_closure_list * closure_list);
+  void (*start) (grpc_exec_ctx * exec_ctx, grpc_server * server, void *arg, grpc_pollset ** pollsets, size_t pollset_count);
+  void (*destroy) (grpc_exec_ctx * exec_ctx, grpc_server * server, void *arg, grpc_closure * closure);
   struct listener *next;
   grpc_closure destroy_done;
 } listener;
@@ -240,11 +240,11 @@ struct grpc_server
 #define SERVER_FROM_CALL_ELEM(elem) \
   (((channel_data *)(elem)->channel_data)->server)
 
-static void begin_call (grpc_server * server, call_data * calld, requested_call * rc, grpc_closure_list * closure_list);
-static void fail_call (grpc_server * server, requested_call * rc, grpc_closure_list * closure_list);
+static void begin_call (grpc_exec_ctx * exec_ctx, grpc_server * server, call_data * calld, requested_call * rc);
+static void fail_call (grpc_exec_ctx * exec_ctx, grpc_server * server, requested_call * rc);
 /* Before calling maybe_finish_shutdown, we must hold mu_global and not
    hold mu_call */
-static void maybe_finish_shutdown (grpc_server * server, grpc_closure_list * closure_list);
+static void maybe_finish_shutdown (grpc_exec_ctx * exec_ctx, grpc_server * server);
 
 /*
  * channel broadcaster
@@ -277,7 +277,7 @@ struct shutdown_cleanup_args
 };
 
 static void
-shutdown_cleanup (void *arg, int iomgr_status_ignored, grpc_closure_list * closure_list)
+shutdown_cleanup (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_status_ignored)
 {
   struct shutdown_cleanup_args *a = arg;
   gpr_slice_unref (a->slice);
@@ -285,7 +285,7 @@ shutdown_cleanup (void *arg, int iomgr_status_ignored, grpc_closure_list * closu
 }
 
 static void
-send_shutdown (grpc_channel * channel, int send_goaway, int send_disconnect, grpc_closure_list * closure_list)
+send_shutdown (grpc_exec_ctx * exec_ctx, grpc_channel * channel, int send_goaway, int send_disconnect)
 {
   grpc_transport_op op;
   struct shutdown_cleanup_args *sc;
@@ -306,7 +306,7 @@ send_shutdown (grpc_channel * channel, int send_goaway, int send_disconnect, grp
 }
 
 static void
-channel_broadcaster_shutdown (channel_broadcaster * cb, int send_goaway, int force_disconnect, grpc_closure_list * closure_list)
+channel_broadcaster_shutdown (grpc_exec_ctx * exec_ctx, channel_broadcaster * cb, int send_goaway, int force_disconnect)
 {
   size_t i;
 
@@ -337,13 +337,13 @@ request_matcher_destroy (request_matcher * request_matcher)
 }
 
 static void
-kill_zombie (void *elem, int success, grpc_closure_list * closure_list)
+kill_zombie (grpc_exec_ctx * exec_ctx, void *elem, int success)
 {
   grpc_call_destroy (grpc_call_from_top_element (elem));
 }
 
 static void
-request_matcher_zombify_all_pending_calls (request_matcher * request_matcher, grpc_closure_list * closure_list)
+request_matcher_zombify_all_pending_calls (grpc_exec_ctx * exec_ctx, request_matcher * request_matcher)
 {
   while (request_matcher->pending_head)
     {
@@ -358,7 +358,7 @@ request_matcher_zombify_all_pending_calls (request_matcher * request_matcher, gr
 }
 
 static void
-request_matcher_kill_requests (grpc_server * server, request_matcher * rm, grpc_closure_list * closure_list)
+request_matcher_kill_requests (grpc_exec_ctx * exec_ctx, grpc_server * server, request_matcher * rm)
 {
   int request_id;
   while ((request_id = gpr_stack_lockfree_pop (rm->requests)) != -1)
@@ -378,7 +378,7 @@ server_ref (grpc_server * server)
 }
 
 static void
-server_delete (grpc_server * server, grpc_closure_list * closure_list)
+server_delete (grpc_exec_ctx * exec_ctx, grpc_server * server)
 {
   registered_method *rm;
   size_t i;
@@ -408,7 +408,7 @@ server_delete (grpc_server * server, grpc_closure_list * closure_list)
 }
 
 static void
-server_unref (grpc_server * server, grpc_closure_list * closure_list)
+server_unref (grpc_exec_ctx * exec_ctx, grpc_server * server)
 {
   if (gpr_unref (&server->internal_refcount))
     {
@@ -431,7 +431,7 @@ orphan_channel (channel_data * chand)
 }
 
 static void
-finish_destroy_channel (void *cd, int success, grpc_closure_list * closure_list)
+finish_destroy_channel (grpc_exec_ctx * exec_ctx, void *cd, int success)
 {
   channel_data *chand = cd;
   grpc_server *server = chand->server;
@@ -441,7 +441,7 @@ finish_destroy_channel (void *cd, int success, grpc_closure_list * closure_list)
 }
 
 static void
-destroy_channel (channel_data * chand, grpc_closure_list * closure_list)
+destroy_channel (grpc_exec_ctx * exec_ctx, channel_data * chand)
 {
   if (is_channel_orphaned (chand))
     return;
@@ -455,7 +455,7 @@ destroy_channel (channel_data * chand, grpc_closure_list * closure_list)
 }
 
 static void
-finish_start_new_rpc (grpc_server * server, grpc_call_element * elem, request_matcher * request_matcher, grpc_closure_list * closure_list)
+finish_start_new_rpc (grpc_exec_ctx * exec_ctx, grpc_server * server, grpc_call_element * elem, request_matcher * request_matcher)
 {
   call_data *calld = elem->call_data;
   int request_id;
@@ -499,7 +499,7 @@ finish_start_new_rpc (grpc_server * server, grpc_call_element * elem, request_ma
 }
 
 static void
-start_new_rpc (grpc_call_element * elem, grpc_closure_list * closure_list)
+start_new_rpc (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
@@ -556,7 +556,7 @@ num_listeners (grpc_server * server)
 }
 
 static void
-done_shutdown_event (void *server, grpc_cq_completion * completion, grpc_closure_list * closure_list)
+done_shutdown_event (grpc_exec_ctx * exec_ctx, void *server, grpc_cq_completion * completion)
 {
   server_unref (server, closure_list);
 }
@@ -574,7 +574,7 @@ num_channels (grpc_server * server)
 }
 
 static void
-kill_pending_work_locked (grpc_server * server, grpc_closure_list * closure_list)
+kill_pending_work_locked (grpc_exec_ctx * exec_ctx, grpc_server * server)
 {
   registered_method *rm;
   request_matcher_kill_requests (server, &server->unregistered_request_matcher, closure_list);
@@ -587,7 +587,7 @@ kill_pending_work_locked (grpc_server * server, grpc_closure_list * closure_list
 }
 
 static void
-maybe_finish_shutdown (grpc_server * server, grpc_closure_list * closure_list)
+maybe_finish_shutdown (grpc_exec_ctx * exec_ctx, grpc_server * server)
 {
   size_t i;
   if (!gpr_atm_acq_load (&server->shutdown_flag) || server->shutdown_published)
@@ -634,7 +634,7 @@ server_filter (void *user_data, grpc_mdelem * md)
 }
 
 static void
-server_on_recv (void *ptr, int success, grpc_closure_list * closure_list)
+server_on_recv (grpc_exec_ctx * exec_ctx, void *ptr, int success)
 {
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
@@ -727,7 +727,7 @@ server_mutate_op (grpc_call_element * elem, grpc_transport_stream_op * op)
 }
 
 static void
-server_start_transport_stream_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+server_start_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   GRPC_CALL_LOG_OP (GPR_INFO, elem, op);
   server_mutate_op (elem, op);
@@ -743,7 +743,7 @@ accept_stream (void *cd, grpc_transport * transport, const void *transport_serve
 }
 
 static void
-channel_connectivity_changed (void *cd, int iomgr_status_ignored, grpc_closure_list * closure_list)
+channel_connectivity_changed (grpc_exec_ctx * exec_ctx, void *cd, int iomgr_status_ignored)
 {
   channel_data *chand = cd;
   grpc_server *server = chand->server;
@@ -764,7 +764,7 @@ channel_connectivity_changed (void *cd, int iomgr_status_ignored, grpc_closure_l
 }
 
 static void
-init_call_elem (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+init_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op)
 {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -782,7 +782,7 @@ init_call_elem (grpc_call_element * elem, const void *server_transport_data, grp
 }
 
 static void
-destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+destroy_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
@@ -804,7 +804,7 @@ destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
 }
 
 static void
-init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, int is_first, int is_last, grpc_closure_list * closure_list)
+init_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, int is_first, int is_last)
 {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT (is_first);
@@ -820,7 +820,7 @@ init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grp
 }
 
 static void
-destroy_channel_elem (grpc_channel_element * elem, grpc_closure_list * closure_list)
+destroy_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem)
 {
   size_t i;
   channel_data *chand = elem->channel_data;
@@ -998,7 +998,7 @@ grpc_server_start (grpc_server * server)
 }
 
 void
-grpc_server_setup_transport (grpc_server * s, grpc_transport * transport, grpc_channel_filter const **extra_filters, size_t num_extra_filters, grpc_mdctx * mdctx, const grpc_channel_args * args, grpc_closure_list * closure_list)
+grpc_server_setup_transport (grpc_exec_ctx * exec_ctx, grpc_server * s, grpc_transport * transport, grpc_channel_filter const **extra_filters, size_t num_extra_filters, grpc_mdctx * mdctx, const grpc_channel_args * args)
 {
   size_t num_filters = s->channel_filter_count + num_extra_filters + 1;
   grpc_channel_filter const **filters = gpr_malloc (sizeof (grpc_channel_filter *) * num_filters);
@@ -1093,14 +1093,14 @@ grpc_server_setup_transport (grpc_server * s, grpc_transport * transport, grpc_c
 }
 
 void
-done_published_shutdown (void *done_arg, grpc_cq_completion * storage, grpc_closure_list * closure_list)
+done_published_shutdown (grpc_exec_ctx * exec_ctx, void *done_arg, grpc_cq_completion * storage)
 {
   (void) done_arg;
   gpr_free (storage);
 }
 
 static void
-listener_destroy_done (void *s, int success, grpc_closure_list * closure_list)
+listener_destroy_done (grpc_exec_ctx * exec_ctx, void *s, int success)
 {
   grpc_server *server = s;
   gpr_mu_lock (&server->mu_global);
@@ -1202,7 +1202,7 @@ grpc_server_destroy (grpc_server * server)
 }
 
 void
-grpc_server_add_listener (grpc_server * server, void *arg, void (*start) (grpc_server * server, void *arg, grpc_pollset ** pollsets, size_t pollset_count, grpc_closure_list * closure_list), void (*destroy) (grpc_server * server, void *arg, grpc_closure * on_done, grpc_closure_list * closure_list), grpc_closure_list * closure_list)
+grpc_server_add_listener (grpc_server * server, void *arg, void (*start) (grpc_exec_ctx * exec_ctx, grpc_server * server, void *arg, grpc_pollset ** pollsets, size_t pollset_count), void (*destroy) (grpc_exec_ctx * exec_ctx, grpc_server * server, void *arg, grpc_closure * on_done, grpc_closure_list * closure_list))
 {
   listener *l = gpr_malloc (sizeof (listener));
   l->arg = arg;
@@ -1213,7 +1213,7 @@ grpc_server_add_listener (grpc_server * server, void *arg, void (*start) (grpc_s
 }
 
 static grpc_call_error
-queue_call_request (grpc_server * server, requested_call * rc, grpc_closure_list * closure_list)
+queue_call_request (grpc_exec_ctx * exec_ctx, grpc_server * server, requested_call * rc)
 {
   call_data *calld = NULL;
   request_matcher *request_matcher = NULL;
@@ -1333,9 +1333,9 @@ done:
   return error;
 }
 
-static void publish_registered_or_batch (grpc_call * call, int success, void *tag, grpc_closure_list * closure_list);
+static void publish_registered_or_batch (grpc_exec_ctx * exec_ctx, grpc_call * call, int success, void *tag);
 static void
-publish_was_not_set (grpc_call * call, int success, void *tag, grpc_closure_list * closure_list)
+publish_was_not_set (grpc_exec_ctx * exec_ctx, grpc_call * call, int success, void *tag)
 {
   abort ();
 }
@@ -1355,7 +1355,7 @@ cpstr (char **dest, size_t * capacity, grpc_mdstr * value)
 }
 
 static void
-begin_call (grpc_server * server, call_data * calld, requested_call * rc, grpc_closure_list * closure_list)
+begin_call (grpc_exec_ctx * exec_ctx, grpc_server * server, call_data * calld, requested_call * rc)
 {
   grpc_ioreq_completion_func publish = publish_was_not_set;
   grpc_ioreq req[2];
@@ -1406,7 +1406,7 @@ begin_call (grpc_server * server, call_data * calld, requested_call * rc, grpc_c
 }
 
 static void
-done_request_event (void *req, grpc_cq_completion * c, grpc_closure_list * closure_list)
+done_request_event (grpc_exec_ctx * exec_ctx, void *req, grpc_cq_completion * c)
 {
   requested_call *rc = req;
   grpc_server *server = rc->server;
@@ -1425,7 +1425,7 @@ done_request_event (void *req, grpc_cq_completion * c, grpc_closure_list * closu
 }
 
 static void
-fail_call (grpc_server * server, requested_call * rc, grpc_closure_list * closure_list)
+fail_call (grpc_exec_ctx * exec_ctx, grpc_server * server, requested_call * rc)
 {
   *rc->call = NULL;
   switch (rc->type)
@@ -1442,7 +1442,7 @@ fail_call (grpc_server * server, requested_call * rc, grpc_closure_list * closur
 }
 
 static void
-publish_registered_or_batch (grpc_call * call, int success, void *prc, grpc_closure_list * closure_list)
+publish_registered_or_batch (grpc_exec_ctx * exec_ctx, grpc_call * call, int success, void *prc)
 {
   grpc_call_element *elem = grpc_call_stack_element (grpc_call_get_call_stack (call), 0);
   requested_call *rc = prc;

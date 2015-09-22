@@ -81,7 +81,7 @@ typedef struct
 } state_watcher;
 
 static void
-delete_state_watcher (state_watcher * w, grpc_closure_list * closure_list)
+delete_state_watcher (grpc_exec_ctx * exec_ctx, state_watcher * w)
 {
   GRPC_CHANNEL_INTERNAL_UNREF (w->channel, "watch_connectivity", closure_list);
   gpr_mu_destroy (&w->mu);
@@ -89,7 +89,7 @@ delete_state_watcher (state_watcher * w, grpc_closure_list * closure_list)
 }
 
 static void
-finished_completion (void *pw, grpc_cq_completion * ignored, grpc_closure_list * closure_list)
+finished_completion (grpc_exec_ctx * exec_ctx, void *pw, grpc_cq_completion * ignored)
 {
   int delete = 0;
   state_watcher *w = pw;
@@ -117,7 +117,7 @@ finished_completion (void *pw, grpc_cq_completion * ignored, grpc_closure_list *
 }
 
 static void
-partly_done (state_watcher * w, int due_to_completion, grpc_closure_list * closure_list)
+partly_done (grpc_exec_ctx * exec_ctx, state_watcher * w, int due_to_completion)
 {
   int delete = 0;
   grpc_channel_element *client_channel_elem = NULL;
@@ -165,13 +165,13 @@ partly_done (state_watcher * w, int due_to_completion, grpc_closure_list * closu
 }
 
 static void
-watch_complete (void *pw, int success, grpc_closure_list * closure_list)
+watch_complete (grpc_exec_ctx * exec_ctx, void *pw, int success)
 {
   partly_done (pw, 1, closure_list);
 }
 
 static void
-timeout_complete (void *pw, int success, grpc_closure_list * closure_list)
+timeout_complete (grpc_exec_ctx * exec_ctx, void *pw, int success)
 {
   partly_done (pw, 0, closure_list);
 }

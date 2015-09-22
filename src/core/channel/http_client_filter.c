@@ -98,7 +98,7 @@ client_recv_filter (void *user_data, grpc_mdelem * md)
 }
 
 static void
-hc_on_recv (void *user_data, int success, grpc_closure_list * closure_list)
+hc_on_recv (grpc_exec_ctx * exec_ctx, void *user_data, int success)
 {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
@@ -177,7 +177,7 @@ hc_mutate_op (grpc_call_element * elem, grpc_transport_stream_op * op)
 }
 
 static void
-hc_start_transport_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+hc_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   GRPC_CALL_LOG_OP (GPR_INFO, elem, op);
   hc_mutate_op (elem, op);
@@ -186,7 +186,7 @@ hc_start_transport_op (grpc_call_element * elem, grpc_transport_stream_op * op, 
 
 /* Constructor for call_data */
 static void
-init_call_elem (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+init_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op)
 {
   call_data *calld = elem->call_data;
   calld->sent_initial_metadata = 0;
@@ -199,7 +199,7 @@ init_call_elem (grpc_call_element * elem, const void *server_transport_data, grp
 
 /* Destructor for call_data */
 static void
-destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+destroy_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
 }
 
@@ -281,7 +281,7 @@ user_agent_from_args (grpc_mdctx * mdctx, const grpc_channel_args * args)
 
 /* Constructor for channel_data */
 static void
-init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * channel_args, grpc_mdctx * mdctx, int is_first, int is_last, grpc_closure_list * closure_list)
+init_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * channel_args, grpc_mdctx * mdctx, int is_first, int is_last)
 {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
@@ -302,7 +302,7 @@ init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grp
 
 /* Destructor for channel data */
 static void
-destroy_channel_elem (grpc_channel_element * elem, grpc_closure_list * closure_list)
+destroy_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem)
 {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;

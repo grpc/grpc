@@ -120,7 +120,7 @@ grpc_credentials_has_request_metadata_only (grpc_credentials * creds)
 }
 
 void
-grpc_credentials_get_request_metadata (grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data, grpc_closure_list * closure_list)
+grpc_credentials_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data)
 {
   if (creds == NULL || !grpc_credentials_has_request_metadata (creds) || creds->vtable->get_request_metadata == NULL)
     {
@@ -420,7 +420,7 @@ jwt_has_request_metadata_only (const grpc_credentials * creds)
 }
 
 static void
-jwt_get_request_metadata (grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data, grpc_closure_list * closure_list)
+jwt_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data)
 {
   grpc_service_account_jwt_access_credentials *c = (grpc_service_account_jwt_access_credentials *) creds;
   gpr_timespec refresh_threshold = gpr_time_from_seconds (GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
@@ -632,7 +632,7 @@ end:
 }
 
 static void
-on_oauth2_token_fetcher_http_response (void *user_data, const grpc_httpcli_response * response, grpc_closure_list * closure_list)
+on_oauth2_token_fetcher_http_response (grpc_exec_ctx * exec_ctx, void *user_data, const grpc_httpcli_response * response)
 {
   grpc_credentials_metadata_request *r = (grpc_credentials_metadata_request *) user_data;
   grpc_oauth2_token_fetcher_credentials *c = (grpc_oauth2_token_fetcher_credentials *) r->creds;
@@ -656,7 +656,7 @@ on_oauth2_token_fetcher_http_response (void *user_data, const grpc_httpcli_respo
 }
 
 static void
-oauth2_token_fetcher_get_request_metadata (grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data, grpc_closure_list * closure_list)
+oauth2_token_fetcher_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data)
 {
   grpc_oauth2_token_fetcher_credentials *c = (grpc_oauth2_token_fetcher_credentials *) creds;
   gpr_timespec refresh_threshold = gpr_time_from_seconds (GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
@@ -701,7 +701,7 @@ static grpc_credentials_vtable compute_engine_vtable = {
 };
 
 static void
-compute_engine_fetch_oauth2 (grpc_credentials_metadata_request * metadata_req, grpc_httpcli_context * httpcli_context, grpc_pollset * pollset, grpc_httpcli_response_cb response_cb, gpr_timespec deadline, grpc_closure_list * closure_list)
+compute_engine_fetch_oauth2 (grpc_exec_ctx * exec_ctx, grpc_credentials_metadata_request * metadata_req, grpc_httpcli_context * httpcli_context, grpc_pollset * pollset, grpc_httpcli_response_cb response_cb, gpr_timespec deadline)
 {
   grpc_httpcli_header header = { "Metadata-Flavor", "Google" };
   grpc_httpcli_request request;
@@ -740,7 +740,7 @@ static grpc_credentials_vtable refresh_token_vtable = {
 };
 
 static void
-refresh_token_fetch_oauth2 (grpc_credentials_metadata_request * metadata_req, grpc_httpcli_context * httpcli_context, grpc_pollset * pollset, grpc_httpcli_response_cb response_cb, gpr_timespec deadline, grpc_closure_list * closure_list)
+refresh_token_fetch_oauth2 (grpc_exec_ctx * exec_ctx, grpc_credentials_metadata_request * metadata_req, grpc_httpcli_context * httpcli_context, grpc_pollset * pollset, grpc_httpcli_response_cb response_cb, gpr_timespec deadline)
 {
   grpc_google_refresh_token_credentials *c = (grpc_google_refresh_token_credentials *) metadata_req->creds;
   grpc_httpcli_header header = { "Content-Type",
@@ -816,7 +816,7 @@ on_simulated_token_fetch_done (void *user_data)
 }
 
 static void
-md_only_test_get_request_metadata (grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data, grpc_closure_list * closure_list)
+md_only_test_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data)
 {
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *) creds;
 
@@ -874,7 +874,7 @@ access_token_has_request_metadata_only (const grpc_credentials * creds)
 }
 
 static void
-access_token_get_request_metadata (grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data, grpc_closure_list * closure_list)
+access_token_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data)
 {
   grpc_access_token_credentials *c = (grpc_access_token_credentials *) creds;
   cb (user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK, closure_list);
@@ -1042,7 +1042,7 @@ composite_md_context_destroy (grpc_composite_credentials_metadata_context * ctx)
 }
 
 static void
-composite_metadata_cb (void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status, grpc_closure_list * closure_list)
+composite_metadata_cb (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status)
 {
   grpc_composite_credentials_metadata_context *ctx = (grpc_composite_credentials_metadata_context *) user_data;
   if (status != GRPC_CREDENTIALS_OK)
@@ -1079,7 +1079,7 @@ composite_metadata_cb (void *user_data, grpc_credentials_md * md_elems, size_t n
 }
 
 static void
-composite_get_request_metadata (grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data, grpc_closure_list * closure_list)
+composite_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data)
 {
   grpc_composite_credentials *c = (grpc_composite_credentials *) creds;
   grpc_composite_credentials_metadata_context *ctx;
@@ -1259,7 +1259,7 @@ iam_has_request_metadata_only (const grpc_credentials * creds)
 }
 
 static void
-iam_get_request_metadata (grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data, grpc_closure_list * closure_list)
+iam_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data)
 {
   grpc_google_iam_credentials *c = (grpc_google_iam_credentials *) creds;
   cb (user_data, c->iam_md->entries, c->iam_md->num_entries, GRPC_CREDENTIALS_OK, closure_list);
@@ -1360,7 +1360,7 @@ plugin_md_request_metadata_ready (void *request, const grpc_metadata * md, size_
 }
 
 static void
-plugin_get_request_metadata (grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data, grpc_closure_list * closure_list)
+plugin_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_credentials * creds, grpc_pollset * pollset, const char *service_url, grpc_credentials_metadata_cb cb, void *user_data)
 {
   grpc_plugin_credentials *c = (grpc_plugin_credentials *) creds;
   if (c->plugin.get_metadata != NULL)

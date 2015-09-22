@@ -68,7 +68,7 @@ typedef struct
 } compute_engine_detector;
 
 static void
-on_compute_engine_detection_http_response (void *user_data, const grpc_httpcli_response * response, grpc_closure_list * closure_list)
+on_compute_engine_detection_http_response (grpc_exec_ctx * exec_ctx, void *user_data, const grpc_httpcli_response * response)
 {
   compute_engine_detector *detector = (compute_engine_detector *) user_data;
   if (response != NULL && response->status == 200 && response->hdr_count > 0)
@@ -93,7 +93,7 @@ on_compute_engine_detection_http_response (void *user_data, const grpc_httpcli_r
 }
 
 static void
-destroy_pollset (void *p, int s, grpc_closure_list * closure_list)
+destroy_pollset (grpc_exec_ctx * exec_ctx, void *p, int s)
 {
   grpc_pollset_destroy (p);
 }

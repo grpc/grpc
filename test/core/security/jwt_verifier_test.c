@@ -190,14 +190,14 @@ http_response (int status, char *body)
 }
 
 static int
-httpcli_post_should_not_be_called (const grpc_httpcli_request * request, const char *body_bytes, size_t body_size, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, grpc_closure_list * closure_list)
+httpcli_post_should_not_be_called (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request * request, const char *body_bytes, size_t body_size, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   GPR_ASSERT ("HTTP POST should not be called" == NULL);
   return 1;
 }
 
 static int
-httpcli_get_google_keys_for_email (const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, grpc_closure_list * closure_list)
+httpcli_get_google_keys_for_email (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   grpc_httpcli_response response = http_response (200, good_google_email_keys ());
   GPR_ASSERT (request->handshaker == &grpc_httpcli_ssl);
@@ -240,7 +240,7 @@ test_jwt_verifier_google_email_issuer_success (void)
 }
 
 static int
-httpcli_get_custom_keys_for_email (const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, grpc_closure_list * closure_list)
+httpcli_get_custom_keys_for_email (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   grpc_httpcli_response response = http_response (200, gpr_strdup (good_jwk_set));
   GPR_ASSERT (request->handshaker == &grpc_httpcli_ssl);
@@ -273,7 +273,7 @@ test_jwt_verifier_custom_email_issuer_success (void)
 }
 
 static int
-httpcli_get_jwk_set (const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, grpc_closure_list * closure_list)
+httpcli_get_jwk_set (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   grpc_httpcli_response response = http_response (200, gpr_strdup (good_jwk_set));
   GPR_ASSERT (request->handshaker == &grpc_httpcli_ssl);
@@ -285,7 +285,7 @@ httpcli_get_jwk_set (const grpc_httpcli_request * request, gpr_timespec deadline
 }
 
 static int
-httpcli_get_openid_config (const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, grpc_closure_list * closure_list)
+httpcli_get_openid_config (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   grpc_httpcli_response response = http_response (200, gpr_strdup (good_openid_config));
   GPR_ASSERT (request->handshaker == &grpc_httpcli_ssl);
@@ -327,7 +327,7 @@ on_verification_key_retrieval_error (void *user_data, grpc_jwt_verifier_status s
 }
 
 static int
-httpcli_get_bad_json (const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, grpc_closure_list * closure_list)
+httpcli_get_bad_json (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   grpc_httpcli_response response = http_response (200, gpr_strdup ("{\"bad\": \"stuff\"}"));
   GPR_ASSERT (request->handshaker == &grpc_httpcli_ssl);
@@ -427,7 +427,7 @@ test_jwt_verifier_bad_signature (void)
 }
 
 static int
-httpcli_get_should_not_be_called (const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data, grpc_closure_list * closure_list)
+httpcli_get_should_not_be_called (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request * request, gpr_timespec deadline, grpc_httpcli_response_cb on_response, void *user_data)
 {
   GPR_ASSERT (0);
   return 1;

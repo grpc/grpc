@@ -59,12 +59,12 @@ typedef struct
   grpc_closure on_handshake_data_received_from_peer;
 } grpc_security_handshake;
 
-static void on_handshake_data_received_from_peer (void *setup, int success, grpc_closure_list * closure_list);
+static void on_handshake_data_received_from_peer (grpc_exec_ctx * exec_ctx, void *setup, int success);
 
-static void on_handshake_data_sent_to_peer (void *setup, int success, grpc_closure_list * closure_list);
+static void on_handshake_data_sent_to_peer (grpc_exec_ctx * exec_ctx, void *setup, int success);
 
 static void
-security_handshake_done (grpc_security_handshake * h, int is_success, grpc_closure_list * closure_list)
+security_handshake_done (grpc_exec_ctx * exec_ctx, grpc_security_handshake * h, int is_success)
 {
   if (is_success)
     {
@@ -95,7 +95,7 @@ security_handshake_done (grpc_security_handshake * h, int is_success, grpc_closu
 }
 
 static void
-on_peer_checked (void *user_data, grpc_security_status status, grpc_closure_list * closure_list)
+on_peer_checked (grpc_exec_ctx * exec_ctx, void *user_data, grpc_security_status status)
 {
   grpc_security_handshake *h = user_data;
   tsi_frame_protector *protector;
@@ -121,7 +121,7 @@ on_peer_checked (void *user_data, grpc_security_status status, grpc_closure_list
 }
 
 static void
-check_peer (grpc_security_handshake * h, grpc_closure_list * closure_list)
+check_peer (grpc_exec_ctx * exec_ctx, grpc_security_handshake * h)
 {
   grpc_security_status peer_status;
   tsi_peer peer;
@@ -147,7 +147,7 @@ check_peer (grpc_security_handshake * h, grpc_closure_list * closure_list)
 }
 
 static void
-send_handshake_bytes_to_peer (grpc_security_handshake * h, grpc_closure_list * closure_list)
+send_handshake_bytes_to_peer (grpc_exec_ctx * exec_ctx, grpc_security_handshake * h)
 {
   size_t offset = 0;
   tsi_result result = TSI_OK;
@@ -182,7 +182,7 @@ send_handshake_bytes_to_peer (grpc_security_handshake * h, grpc_closure_list * c
 }
 
 static void
-on_handshake_data_received_from_peer (void *handshake, int success, grpc_closure_list * closure_list)
+on_handshake_data_received_from_peer (grpc_exec_ctx * exec_ctx, void *handshake, int success)
 {
   grpc_security_handshake *h = handshake;
   size_t consumed_slice_size = 0;
@@ -249,7 +249,7 @@ on_handshake_data_received_from_peer (void *handshake, int success, grpc_closure
 
 /* If handshake is NULL, the handshake is done. */
 static void
-on_handshake_data_sent_to_peer (void *handshake, int success, grpc_closure_list * closure_list)
+on_handshake_data_sent_to_peer (grpc_exec_ctx * exec_ctx, void *handshake, int success)
 {
   grpc_security_handshake *h = handshake;
 
@@ -276,7 +276,7 @@ on_handshake_data_sent_to_peer (void *handshake, int success, grpc_closure_list 
 }
 
 void
-grpc_do_security_handshake (tsi_handshaker * handshaker, grpc_security_connector * connector, grpc_endpoint * nonsecure_endpoint, grpc_security_handshake_done_cb cb, void *user_data, grpc_closure_list * closure_list)
+grpc_do_security_handshake (grpc_exec_ctx * exec_ctx, tsi_handshaker * handshaker, grpc_security_connector * connector, grpc_endpoint * nonsecure_endpoint, grpc_security_handshake_done_cb cb, void *user_data)
 {
   grpc_security_handshake *h = gpr_malloc (sizeof (grpc_security_handshake));
   memset (h, 0, sizeof (grpc_security_handshake));

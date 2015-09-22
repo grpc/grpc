@@ -60,15 +60,15 @@ typedef struct
 extern int grpc_connectivity_state_trace;
 
 void grpc_connectivity_state_init (grpc_connectivity_state_tracker * tracker, grpc_connectivity_state init_state, const char *name);
-void grpc_connectivity_state_destroy (grpc_connectivity_state_tracker * tracker, grpc_closure_list * closure_list);
+void grpc_connectivity_state_destroy (grpc_exec_ctx * exec_ctx, grpc_connectivity_state_tracker * tracker);
 
 /** Set connectivity state; not thread safe; access must be serialized with an
  * external lock */
-void grpc_connectivity_state_set (grpc_connectivity_state_tracker * tracker, grpc_connectivity_state state, const char *reason, grpc_closure_list * closure_list);
+void grpc_connectivity_state_set (grpc_exec_ctx * exec_ctx, grpc_connectivity_state_tracker * tracker, grpc_connectivity_state state, const char *reason);
 
 grpc_connectivity_state grpc_connectivity_state_check (grpc_connectivity_state_tracker * tracker);
 
 /** Return 1 if the channel should start connecting, 0 otherwise */
-int grpc_connectivity_state_notify_on_state_change (grpc_connectivity_state_tracker * tracker, grpc_connectivity_state * current, grpc_closure * notify, grpc_closure_list * closure_list);
+int grpc_connectivity_state_notify_on_state_change (grpc_exec_ctx * exec_ctx, grpc_connectivity_state_tracker * tracker, grpc_connectivity_state * current, grpc_closure * notify);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H */

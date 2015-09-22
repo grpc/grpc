@@ -77,13 +77,13 @@ typedef struct
   grpc_client_config **target_config;
 } sockaddr_resolver;
 
-static void sockaddr_destroy (grpc_resolver * r, grpc_closure_list * closure_list);
+static void sockaddr_destroy (grpc_exec_ctx * exec_ctx, grpc_resolver * r);
 
-static void sockaddr_maybe_finish_next_locked (sockaddr_resolver * r, grpc_closure_list * closure_list);
+static void sockaddr_maybe_finish_next_locked (grpc_exec_ctx * exec_ctx, sockaddr_resolver * r);
 
-static void sockaddr_shutdown (grpc_resolver * r, grpc_closure_list * closure_list);
-static void sockaddr_channel_saw_error (grpc_resolver * r, struct sockaddr *failing_address, int failing_address_len, grpc_closure_list * closure_list);
-static void sockaddr_next (grpc_resolver * r, grpc_client_config ** target_config, grpc_closure * on_complete, grpc_closure_list * closure_list);
+static void sockaddr_shutdown (grpc_exec_ctx * exec_ctx, grpc_resolver * r);
+static void sockaddr_channel_saw_error (grpc_exec_ctx * exec_ctx, grpc_resolver * r, struct sockaddr *failing_address, int failing_address_len);
+static void sockaddr_next (grpc_exec_ctx * exec_ctx, grpc_resolver * r, grpc_client_config ** target_config, grpc_closure * on_complete);
 
 static const grpc_resolver_vtable sockaddr_resolver_vtable = {
   sockaddr_destroy, sockaddr_shutdown, sockaddr_channel_saw_error,
@@ -91,7 +91,7 @@ static const grpc_resolver_vtable sockaddr_resolver_vtable = {
 };
 
 static void
-sockaddr_shutdown (grpc_resolver * resolver, grpc_closure_list * closure_list)
+sockaddr_shutdown (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver)
 {
   sockaddr_resolver *r = (sockaddr_resolver *) resolver;
   gpr_mu_lock (&r->mu);
@@ -105,12 +105,12 @@ sockaddr_shutdown (grpc_resolver * resolver, grpc_closure_list * closure_list)
 }
 
 static void
-sockaddr_channel_saw_error (grpc_resolver * resolver, struct sockaddr *sa, int len, grpc_closure_list * closure_list)
+sockaddr_channel_saw_error (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver, struct sockaddr *sa, int len)
 {
 }
 
 static void
-sockaddr_next (grpc_resolver * resolver, grpc_client_config ** target_config, grpc_closure * on_complete, grpc_closure_list * closure_list)
+sockaddr_next (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver, grpc_client_config ** target_config, grpc_closure * on_complete)
 {
   sockaddr_resolver *r = (sockaddr_resolver *) resolver;
   gpr_mu_lock (&r->mu);
@@ -122,7 +122,7 @@ sockaddr_next (grpc_resolver * resolver, grpc_client_config ** target_config, gr
 }
 
 static void
-sockaddr_maybe_finish_next_locked (sockaddr_resolver * r, grpc_closure_list * closure_list)
+sockaddr_maybe_finish_next_locked (grpc_exec_ctx * exec_ctx, sockaddr_resolver * r)
 {
   grpc_client_config *cfg;
   grpc_lb_policy *lb_policy;
@@ -157,7 +157,7 @@ sockaddr_maybe_finish_next_locked (sockaddr_resolver * r, grpc_closure_list * cl
 }
 
 static void
-sockaddr_destroy (grpc_resolver * gr, grpc_closure_list * closure_list)
+sockaddr_destroy (grpc_exec_ctx * exec_ctx, grpc_resolver * gr)
 {
   sockaddr_resolver *r = (sockaddr_resolver *) gr;
   gpr_mu_destroy (&r->mu);

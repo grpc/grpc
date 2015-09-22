@@ -44,7 +44,7 @@
 static int cb_called[MAX_CB][2];
 
 static void
-cb (void *arg, int success, grpc_closure_list * closure_list)
+cb (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   cb_called[(gpr_intptr) arg][success]++;
 }

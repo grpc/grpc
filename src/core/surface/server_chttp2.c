@@ -43,7 +43,7 @@
 #include <grpc/support/useful.h>
 
 static void
-setup_transport (void *server, grpc_transport * transport, grpc_mdctx * mdctx, grpc_closure_list * closure_list)
+setup_transport (grpc_exec_ctx * exec_ctx, void *server, grpc_transport * transport, grpc_mdctx * mdctx)
 {
   static grpc_channel_filter const *extra_filters[] = {
     &grpc_http_server_filter
@@ -52,7 +52,7 @@ setup_transport (void *server, grpc_transport * transport, grpc_mdctx * mdctx, g
 }
 
 static void
-new_transport (void *server, grpc_endpoint * tcp, grpc_closure_list * closure_list)
+new_transport (grpc_exec_ctx * exec_ctx, void *server, grpc_endpoint * tcp)
 {
   /*
    * Beware that the call to grpc_create_chttp2_transport() has to happen before
@@ -69,7 +69,7 @@ new_transport (void *server, grpc_endpoint * tcp, grpc_closure_list * closure_li
 
 /* Server callback: start listening on our ports */
 static void
-start (grpc_server * server, void *tcpp, grpc_pollset ** pollsets, size_t pollset_count, grpc_closure_list * closure_list)
+start (grpc_exec_ctx * exec_ctx, grpc_server * server, void *tcpp, grpc_pollset ** pollsets, size_t pollset_count)
 {
   grpc_tcp_server *tcp = tcpp;
   grpc_tcp_server_start (tcp, pollsets, pollset_count, new_transport, server, closure_list);
@@ -78,7 +78,7 @@ start (grpc_server * server, void *tcpp, grpc_pollset ** pollsets, size_t pollse
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
 static void
-destroy (grpc_server * server, void *tcpp, grpc_closure * destroy_done, grpc_closure_list * closure_list)
+destroy (grpc_exec_ctx * exec_ctx, grpc_server * server, void *tcpp, grpc_closure * destroy_done)
 {
   grpc_tcp_server *tcp = tcpp;
   grpc_tcp_server_destroy (tcp, destroy_done, closure_list);

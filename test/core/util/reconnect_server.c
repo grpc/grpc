@@ -67,7 +67,7 @@ pretty_print_backoffs (reconnect_server * server)
 }
 
 static void
-on_connect (void *arg, grpc_endpoint * tcp, grpc_closure_list * closure_list)
+on_connect (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * tcp)
 {
   char *peer;
   char *last_colon;
@@ -175,7 +175,7 @@ reconnect_server_clear_timestamps (reconnect_server * server)
 }
 
 static void
-do_nothing (void *ignored, int success, grpc_closure_list * closure_list)
+do_nothing (grpc_exec_ctx * exec_ctx, void *ignored, int success)
 {
 }
 

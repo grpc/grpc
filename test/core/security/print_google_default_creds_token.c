@@ -51,7 +51,7 @@ typedef struct
 } synchronizer;
 
 static void
-on_metadata_response (void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status, grpc_closure_list * closure_list)
+on_metadata_response (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status)
 {
   synchronizer *sync = user_data;
   if (status == GRPC_CREDENTIALS_ERROR)

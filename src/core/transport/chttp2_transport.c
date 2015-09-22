@@ -78,24 +78,24 @@ int grpc_flowctl_trace = 0;
 static const grpc_transport_vtable vtable;
 
 static void lock (grpc_chttp2_transport * t);
-static void unlock (grpc_chttp2_transport * t, grpc_closure_list * closure_list);
+static void unlock (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t);
 
-static void unlock_check_read_write_state (grpc_chttp2_transport * t, grpc_closure_list * closure_list);
+static void unlock_check_read_write_state (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t);
 
 /* forward declarations of various callbacks that we'll build closures around */
-static void writing_action (void *t, int iomgr_success_ignored, grpc_closure_list * closure_list);
+static void writing_action (grpc_exec_ctx * exec_ctx, void *t, int iomgr_success_ignored);
 
 /** Set a transport level setting, and push it to our peer */
 static void push_setting (grpc_chttp2_transport * t, grpc_chttp2_setting_id id, gpr_uint32 value);
 
 /** Endpoint callback to process incoming data */
-static void recv_data (void *tp, int success, grpc_closure_list * closure_list);
+static void recv_data (grpc_exec_ctx * exec_ctx, void *tp, int success);
 
 /** Start disconnection chain */
-static void drop_connection (grpc_chttp2_transport * t, grpc_closure_list * closure_list);
+static void drop_connection (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t);
 
 /** Perform a transport_op */
-static void perform_stream_op_locked (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global, grpc_transport_stream_op * op, grpc_closure_list * closure_list);
+static void perform_stream_op_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global, grpc_transport_stream_op * op);
 
 /** Cancel a stream: coming from the transport API */
 static void cancel_from_api (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global, grpc_status_code status);
@@ -103,20 +103,20 @@ static void cancel_from_api (grpc_chttp2_transport_global * transport_global, gr
 static void close_from_api (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global, grpc_status_code status, gpr_slice * optional_message);
 
 /** Add endpoint from this transport to pollset */
-static void add_to_pollset_locked (grpc_chttp2_transport * t, grpc_pollset * pollset, grpc_closure_list * closure_list);
-static void add_to_pollset_set_locked (grpc_chttp2_transport * t, grpc_pollset_set * pollset_set, grpc_closure_list * closure_list);
+static void add_to_pollset_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t, grpc_pollset * pollset);
+static void add_to_pollset_set_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t, grpc_pollset_set * pollset_set);
 
 /** Start new streams that have been created if we can */
-static void maybe_start_some_streams (grpc_chttp2_transport_global * transport_global, grpc_closure_list * closure_list);
+static void maybe_start_some_streams (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global);
 
-static void connectivity_state_set (grpc_chttp2_transport_global * transport_global, grpc_connectivity_state state, const char *reason, grpc_closure_list * closure_list);
+static void connectivity_state_set (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global, grpc_connectivity_state state, const char *reason);
 
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
 
 static void
-destruct_transport (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
+destruct_transport (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
   size_t i;
 
@@ -191,7 +191,7 @@ ref_transport (grpc_chttp2_transport * t, const char *reason, const char *file, 
 #define REF_TRANSPORT(t, r) ref_transport(t)
 #define UNREF_TRANSPORT(t, r, cl) unref_transport(t, cl)
 static void
-unref_transport (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
+unref_transport (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
   if (!gpr_unref (&t->refs))
     return;
@@ -206,7 +206,7 @@ ref_transport (grpc_chttp2_transport * t)
 #endif
 
 static void
-init_transport (grpc_chttp2_transport * t, const grpc_channel_args * channel_args, grpc_endpoint * ep, grpc_mdctx * mdctx, gpr_uint8 is_client, grpc_closure_list * closure_list)
+init_transport (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t, const grpc_channel_args * channel_args, grpc_endpoint * ep, grpc_mdctx * mdctx, gpr_uint8 is_client)
 {
   size_t i;
   int j;
@@ -327,7 +327,7 @@ init_transport (grpc_chttp2_transport * t, const grpc_channel_args * channel_arg
 }
 
 static void
-destroy_transport (grpc_transport * gt, grpc_closure_list * closure_list)
+destroy_transport (grpc_exec_ctx * exec_ctx, grpc_transport * gt)
 {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *) gt;
 
@@ -349,7 +349,7 @@ prevent_endpoint_shutdown (grpc_chttp2_transport * t)
 }
 
 static void
-allow_endpoint_shutdown_locked (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
+allow_endpoint_shutdown_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
   if (gpr_unref (&t->shutdown_ep_refs))
     {
@@ -361,7 +361,7 @@ allow_endpoint_shutdown_locked (grpc_chttp2_transport * t, grpc_closure_list * c
 }
 
 static void
-allow_endpoint_shutdown_unlocked (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
+allow_endpoint_shutdown_unlocked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
   if (gpr_unref (&t->shutdown_ep_refs))
     {
@@ -375,7 +375,7 @@ allow_endpoint_shutdown_unlocked (grpc_chttp2_transport * t, grpc_closure_list *
 }
 
 static void
-destroy_endpoint (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
+destroy_endpoint (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
   grpc_endpoint_destroy (t->ep, closure_list);
   t->ep = NULL;
@@ -384,7 +384,7 @@ destroy_endpoint (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
 }
 
 static void
-close_transport_locked (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
+close_transport_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
   if (!t->closed)
     {
@@ -398,7 +398,7 @@ close_transport_locked (grpc_chttp2_transport * t, grpc_closure_list * closure_l
 }
 
 static int
-init_stream (grpc_transport * gt, grpc_stream * gs, const void *server_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+init_stream (grpc_exec_ctx * exec_ctx, grpc_transport * gt, grpc_stream * gs, const void *server_data, grpc_transport_stream_op * initial_op)
 {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *) gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *) gs;
@@ -434,7 +434,7 @@ init_stream (grpc_transport * gt, grpc_stream * gs, const void *server_data, grp
 }
 
 static void
-destroy_stream (grpc_transport * gt, grpc_stream * gs, grpc_closure_list * closure_list)
+destroy_stream (grpc_exec_ctx * exec_ctx, grpc_transport * gt, grpc_stream * gs)
 {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *) gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *) gs;
@@ -516,7 +516,7 @@ lock (grpc_chttp2_transport * t)
 }
 
 static void
-unlock (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
+unlock (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
   unlock_check_read_write_state (t, closure_list);
   if (!t->writing_active && !t->closed && grpc_chttp2_unlocking_check_writes (&t->global, &t->writing))
@@ -551,7 +551,7 @@ push_setting (grpc_chttp2_transport * t, grpc_chttp2_setting_id id, gpr_uint32 v
 }
 
 void
-grpc_chttp2_terminate_writing (void *transport_writing_ptr, int success, grpc_closure_list * closure_list)
+grpc_chttp2_terminate_writing (grpc_exec_ctx * exec_ctx, void *transport_writing_ptr, int success)
 {
   grpc_chttp2_transport_writing *transport_writing = transport_writing_ptr;
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING (transport_writing);
@@ -582,14 +582,14 @@ grpc_chttp2_terminate_writing (void *transport_writing_ptr, int success, grpc_cl
 }
 
 static void
-writing_action (void *gt, int iomgr_success_ignored, grpc_closure_list * closure_list)
+writing_action (grpc_exec_ctx * exec_ctx, void *gt, int iomgr_success_ignored)
 {
   grpc_chttp2_transport *t = gt;
   grpc_chttp2_perform_writes (&t->writing, t->ep, closure_list);
 }
 
 void
-grpc_chttp2_add_incoming_goaway (grpc_chttp2_transport_global * transport_global, gpr_uint32 goaway_error, gpr_slice goaway_text, grpc_closure_list * closure_list)
+grpc_chttp2_add_incoming_goaway (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global, gpr_uint32 goaway_error, gpr_slice goaway_text)
 {
   char *msg = gpr_dump_slice (goaway_text, GPR_DUMP_HEX | GPR_DUMP_ASCII);
   gpr_log (GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg);
@@ -600,7 +600,7 @@ grpc_chttp2_add_incoming_goaway (grpc_chttp2_transport_global * transport_global
 }
 
 static void
-maybe_start_some_streams (grpc_chttp2_transport_global * transport_global, grpc_closure_list * closure_list)
+maybe_start_some_streams (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global)
 {
   grpc_chttp2_stream_global *stream_global;
   /* start streams where we have free grpc_chttp2_stream ids and free
@@ -635,7 +635,7 @@ maybe_start_some_streams (grpc_chttp2_transport_global * transport_global, grpc_
 }
 
 static void
-perform_stream_op_locked (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+perform_stream_op_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global, grpc_transport_stream_op * op)
 {
   if (op->cancel_with_status != GRPC_STATUS_OK)
     {
@@ -711,7 +711,7 @@ perform_stream_op_locked (grpc_chttp2_transport_global * transport_global, grpc_
 }
 
 static void
-perform_stream_op (grpc_transport * gt, grpc_stream * gs, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+perform_stream_op (grpc_exec_ctx * exec_ctx, grpc_transport * gt, grpc_stream * gs, grpc_transport_stream_op * op)
 {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *) gt;
   grpc_chttp2_stream *s = (grpc_chttp2_stream *) gs;
@@ -741,7 +741,7 @@ send_ping_locked (grpc_chttp2_transport * t, grpc_closure * on_recv)
 }
 
 static void
-perform_transport_op (grpc_transport * gt, grpc_transport_op * op, grpc_closure_list * closure_list)
+perform_transport_op (grpc_exec_ctx * exec_ctx, grpc_transport * gt, grpc_transport_op * op)
 {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *) gt;
   int close_transport = 0;
@@ -815,7 +815,7 @@ compute_state (gpr_uint8 write_closed, gpr_uint8 read_closed)
 }
 
 static void
-remove_stream (grpc_chttp2_transport * t, gpr_uint32 id, grpc_closure_list * closure_list)
+remove_stream (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t, gpr_uint32 id)
 {
   size_t new_stream_count;
   grpc_chttp2_stream *s = grpc_chttp2_stream_map_delete (&t->parsing_stream_map, id);
@@ -846,7 +846,7 @@ remove_stream (grpc_chttp2_transport * t, gpr_uint32 id, grpc_closure_list * clo
 }
 
 static void
-unlock_check_read_write_state (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
+unlock_check_read_write_state (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
   grpc_chttp2_transport_global *transport_global = &t->global;
   grpc_chttp2_stream_global *stream_global;
@@ -1070,7 +1070,7 @@ end_all_the_calls (grpc_chttp2_transport * t)
 }
 
 static void
-drop_connection (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
+drop_connection (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
   close_transport_locked (t, closure_list);
   end_all_the_calls (t);
@@ -1099,7 +1099,7 @@ update_global_window (void *args, gpr_uint32 id, void *stream)
 }
 
 static void
-read_error_locked (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
+read_error_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
   t->endpoint_reading = 0;
   if (!t->writing_active && t->ep)
@@ -1110,7 +1110,7 @@ read_error_locked (grpc_chttp2_transport * t, grpc_closure_list * closure_list)
 
 /* tcp read callback */
 static void
-recv_data (void *tp, int success, grpc_closure_list * closure_list)
+recv_data (grpc_exec_ctx * exec_ctx, void *tp, int success)
 {
   size_t i;
   int keep_reading = 0;
@@ -1176,7 +1176,7 @@ recv_data (void *tp, int success, grpc_closure_list * closure_list)
  */
 
 static void
-connectivity_state_set (grpc_chttp2_transport_global * transport_global, grpc_connectivity_state state, const char *reason, grpc_closure_list * closure_list)
+connectivity_state_set (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global, grpc_connectivity_state state, const char *reason)
 {
   GRPC_CHTTP2_IF_TRACING (gpr_log (GPR_DEBUG, "set connectivity_state=%d", state));
   grpc_connectivity_state_set (&TRANSPORT_FROM_GLOBAL (transport_global)->channel_callback.state_tracker, state, reason, closure_list);
@@ -1187,7 +1187,7 @@ connectivity_state_set (grpc_chttp2_transport_global * transport_global, grpc_co
  */
 
 static void
-add_to_pollset_locked (grpc_chttp2_transport * t, grpc_pollset * pollset, grpc_closure_list * closure_list)
+add_to_pollset_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t, grpc_pollset * pollset)
 {
   if (t->ep)
     {
@@ -1196,7 +1196,7 @@ add_to_pollset_locked (grpc_chttp2_transport * t, grpc_pollset * pollset, grpc_c
 }
 
 static void
-add_to_pollset_set_locked (grpc_chttp2_transport * t, grpc_pollset_set * pollset_set, grpc_closure_list * closure_list)
+add_to_pollset_set_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t, grpc_pollset_set * pollset_set)
 {
   if (t->ep)
     {
@@ -1238,7 +1238,7 @@ grpc_chttp2_flowctl_trace (const char *file, int line, const char *reason, const
  */
 
 static char *
-chttp2_get_peer (grpc_transport * t, grpc_closure_list * closure_list)
+chttp2_get_peer (grpc_exec_ctx * exec_ctx, grpc_transport * t)
 {
   return gpr_strdup (((grpc_chttp2_transport *) t)->peer_string);
 }
@@ -1253,7 +1253,7 @@ static const grpc_transport_vtable vtable = { sizeof (grpc_chttp2_stream),
 };
 
 grpc_transport *
-grpc_create_chttp2_transport (const grpc_channel_args * channel_args, grpc_endpoint * ep, grpc_mdctx * mdctx, int is_client, grpc_closure_list * closure_list)
+grpc_create_chttp2_transport (grpc_exec_ctx * exec_ctx, const grpc_channel_args * channel_args, grpc_endpoint * ep, grpc_mdctx * mdctx, int is_client)
 {
   grpc_chttp2_transport *t = gpr_malloc (sizeof (grpc_chttp2_transport));
   init_transport (t, channel_args, ep, mdctx, is_client != 0, closure_list);
@@ -1261,7 +1261,7 @@ grpc_create_chttp2_transport (const grpc_channel_args * channel_args, grpc_endpo
 }
 
 void
-grpc_chttp2_transport_start_reading (grpc_transport * transport, gpr_slice * slices, size_t nslices, grpc_closure_list * closure_list)
+grpc_chttp2_transport_start_reading (grpc_exec_ctx * exec_ctx, grpc_transport * transport, gpr_slice * slices, size_t nslices)
 {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *) transport;
   REF_TRANSPORT (t, "recv_data");	/* matches unref inside recv_data */

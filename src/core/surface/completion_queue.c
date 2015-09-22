@@ -72,7 +72,7 @@ struct grpc_completion_queue
   grpc_closure pollset_destroy_done;
 };
 
-static void on_pollset_destroy_done (void *cc, int success, grpc_closure_list * closure_list);
+static void on_pollset_destroy_done (grpc_exec_ctx * exec_ctx, void *cc, int success);
 
 grpc_completion_queue *
 grpc_completion_queue_create (void *reserved)
@@ -105,7 +105,7 @@ grpc_cq_internal_ref (grpc_completion_queue * cc)
 }
 
 static void
-on_pollset_destroy_done (void *arg, int success, grpc_closure_list * closure_list)
+on_pollset_destroy_done (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   grpc_completion_queue *cc = arg;
   GRPC_CQ_INTERNAL_UNREF (cc, "pollset_destroy");
@@ -144,7 +144,7 @@ grpc_cq_begin_op (grpc_completion_queue * cc)
    event, then enter shutdown mode */
 /* Queue a GRPC_OP_COMPLETED operation */
 void
-grpc_cq_end_op (grpc_completion_queue * cc, void *tag, int success, void (*done) (void *done_arg, grpc_cq_completion * storage, grpc_closure_list * closure_list), void *done_arg, grpc_cq_completion * storage, grpc_closure_list * closure_list)
+grpc_cq_end_op (grpc_completion_queue * cc, void *tag, int success, void (*done) (grpc_exec_ctx * exec_ctx, void *done_arg, grpc_cq_completion * storage, grpc_closure_list * closure_list), void *done_arg, grpc_cq_completion * storage)
 {
   int shutdown;
   int i;

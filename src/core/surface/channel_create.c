@@ -72,7 +72,7 @@ connector_ref (grpc_connector * con)
 }
 
 static void
-connector_unref (grpc_connector * con, grpc_closure_list * closure_list)
+connector_unref (grpc_exec_ctx * exec_ctx, grpc_connector * con)
 {
   connector *c = (connector *) con;
   if (gpr_unref (&c->refs))
@@ -83,7 +83,7 @@ connector_unref (grpc_connector * con, grpc_closure_list * closure_list)
 }
 
 static void
-connected (void *arg, int success, grpc_closure_list * closure_list)
+connected (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   connector *c = arg;
   grpc_closure *notify;
@@ -107,12 +107,12 @@ connected (void *arg, int success, grpc_closure_list * closure_list)
 }
 
 static void
-connector_shutdown (grpc_connector * con, grpc_closure_list * closure_list)
+connector_shutdown (grpc_exec_ctx * exec_ctx, grpc_connector * con)
 {
 }
 
 static void
-connector_connect (grpc_connector * con, const grpc_connect_in_args * args, grpc_connect_out_args * result, grpc_closure * notify, grpc_closure_list * closure_list)
+connector_connect (grpc_exec_ctx * exec_ctx, grpc_connector * con, const grpc_connect_in_args * args, grpc_connect_out_args * result, grpc_closure * notify)
 {
   connector *c = (connector *) con;
   GPR_ASSERT (c->notify == NULL);
@@ -146,7 +146,7 @@ subchannel_factory_ref (grpc_subchannel_factory * scf)
 }
 
 static void
-subchannel_factory_unref (grpc_subchannel_factory * scf, grpc_closure_list * closure_list)
+subchannel_factory_unref (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * scf)
 {
   subchannel_factory *f = (subchannel_factory *) scf;
   if (gpr_unref (&f->refs))
@@ -159,7 +159,7 @@ subchannel_factory_unref (grpc_subchannel_factory * scf, grpc_closure_list * clo
 }
 
 static grpc_subchannel *
-subchannel_factory_create_subchannel (grpc_subchannel_factory * scf, grpc_subchannel_args * args, grpc_closure_list * closure_list)
+subchannel_factory_create_subchannel (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * scf, grpc_subchannel_args * args)
 {
   subchannel_factory *f = (subchannel_factory *) scf;
   connector *c = gpr_malloc (sizeof (*c));

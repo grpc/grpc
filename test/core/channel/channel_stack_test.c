@@ -42,7 +42,7 @@
 #include "test/core/util/test_config.h"
 
 static void
-channel_init_func (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, int is_first, int is_last, grpc_closure_list * closure_list)
+channel_init_func (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, int is_first, int is_last)
 {
   GPR_ASSERT (args->num_args == 1);
   GPR_ASSERT (args->args[0].type == GRPC_ARG_INTEGER);
@@ -54,37 +54,37 @@ channel_init_func (grpc_channel_element * elem, grpc_channel * master, const grp
 }
 
 static void
-call_init_func (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+call_init_func (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op)
 {
   ++*(int *) (elem->channel_data);
   *(int *) (elem->call_data) = 0;
 }
 
 static void
-channel_destroy_func (grpc_channel_element * elem, grpc_closure_list * closure_list)
+channel_destroy_func (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem)
 {
 }
 
 static void
-call_destroy_func (grpc_call_element * elem, grpc_closure_list * closure_list)
+call_destroy_func (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   ++*(int *) (elem->channel_data);
 }
 
 static void
-call_func (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+call_func (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   ++*(int *) (elem->call_data);
 }
 
 static void
-channel_func (grpc_channel_element * elem, grpc_transport_op * op, grpc_closure_list * closure_list)
+channel_func (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_transport_op * op)
 {
   ++*(int *) (elem->channel_data);
 }
 
 static char *
-get_peer (grpc_call_element * elem, grpc_closure_list * closure_list)
+get_peer (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   return gpr_strdup ("peer");
 }

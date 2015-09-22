@@ -157,7 +157,7 @@ count_slices (gpr_slice * slices, size_t nslices, int *current_data)
 }
 
 static void
-read_cb (void *user_data, int success, grpc_closure_list * closure_list)
+read_cb (grpc_exec_ctx * exec_ctx, void *user_data, int success)
 {
   struct read_socket_state *state = (struct read_socket_state *) user_data;
   size_t read_bytes;
@@ -468,7 +468,7 @@ static grpc_endpoint_test_config configs[] = {
 };
 
 static void
-destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+destroy_pollset (grpc_exec_ctx * exec_ctx, void *p, int success)
 {
   grpc_pollset_destroy (p);
 }

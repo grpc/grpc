@@ -104,7 +104,7 @@ grpc_call_stack_element (grpc_call_stack * call_stack, size_t index)
 }
 
 void
-grpc_channel_stack_init (const grpc_channel_filter ** filters, size_t filter_count, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, grpc_channel_stack * stack, grpc_closure_list * closure_list)
+grpc_channel_stack_init (grpc_exec_ctx * exec_ctx, const grpc_channel_filter ** filters, size_t filter_count, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, grpc_channel_stack * stack)
 {
   size_t call_size = ROUND_UP_TO_ALIGNMENT_SIZE (sizeof (grpc_call_stack)) + ROUND_UP_TO_ALIGNMENT_SIZE (filter_count * sizeof (grpc_call_element));
   grpc_channel_element *elems;
@@ -132,7 +132,7 @@ grpc_channel_stack_init (const grpc_channel_filter ** filters, size_t filter_cou
 }
 
 void
-grpc_channel_stack_destroy (grpc_channel_stack * stack, grpc_closure_list * closure_list)
+grpc_channel_stack_destroy (grpc_exec_ctx * exec_ctx, grpc_channel_stack * stack)
 {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK (stack);
   size_t count = stack->count;
@@ -146,7 +146,7 @@ grpc_channel_stack_destroy (grpc_channel_stack * stack, grpc_closure_list * clos
 }
 
 void
-grpc_call_stack_init (grpc_channel_stack * channel_stack, const void *transport_server_data, grpc_transport_stream_op * initial_op, grpc_call_stack * call_stack, grpc_closure_list * closure_list)
+grpc_call_stack_init (grpc_exec_ctx * exec_ctx, grpc_channel_stack * channel_stack, const void *transport_server_data, grpc_transport_stream_op * initial_op, grpc_call_stack * call_stack)
 {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK (channel_stack);
   size_t count = channel_stack->count;
@@ -170,7 +170,7 @@ grpc_call_stack_init (grpc_channel_stack * channel_stack, const void *transport_
 }
 
 void
-grpc_call_stack_destroy (grpc_call_stack * stack, grpc_closure_list * closure_list)
+grpc_call_stack_destroy (grpc_exec_ctx * exec_ctx, grpc_call_stack * stack)
 {
   grpc_call_element *elems = CALL_ELEMS_FROM_STACK (stack);
   size_t count = stack->count;
@@ -184,21 +184,21 @@ grpc_call_stack_destroy (grpc_call_stack * stack, grpc_closure_list * closure_li
 }
 
 void
-grpc_call_next_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+grpc_call_next_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   grpc_call_element *next_elem = elem + 1;
   next_elem->filter->start_transport_stream_op (next_elem, op, closure_list);
 }
 
 char *
-grpc_call_next_get_peer (grpc_call_element * elem, grpc_closure_list * closure_list)
+grpc_call_next_get_peer (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   grpc_call_element *next_elem = elem + 1;
   return next_elem->filter->get_peer (next_elem, closure_list);
 }
 
 void
-grpc_channel_next_op (grpc_channel_element * elem, grpc_transport_op * op, grpc_closure_list * closure_list)
+grpc_channel_next_op (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_transport_op * op)
 {
   grpc_channel_element *next_elem = elem + 1;
   next_elem->filter->start_transport_op (next_elem, op, closure_list);
@@ -217,7 +217,7 @@ grpc_call_stack_from_top_element (grpc_call_element * elem)
 }
 
 void
-grpc_call_element_send_cancel (grpc_call_element * cur_elem, grpc_closure_list * closure_list)
+grpc_call_element_send_cancel (grpc_exec_ctx * exec_ctx, grpc_call_element * cur_elem)
 {
   grpc_transport_stream_op op;
   memset (&op, 0, sizeof (op));

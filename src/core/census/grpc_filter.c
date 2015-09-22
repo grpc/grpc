@@ -96,14 +96,14 @@ client_mutate_op (grpc_call_element * elem, grpc_transport_stream_op * op)
 }
 
 static void
-client_start_transport_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+client_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   client_mutate_op (elem, op);
   grpc_call_next_op (elem, op, closure_list);
 }
 
 static void
-server_on_done_recv (void *ptr, int success, grpc_closure_list * closure_list)
+server_on_done_recv (grpc_exec_ctx * exec_ctx, void *ptr, int success)
 {
   grpc_call_element *elem = ptr;
   call_data *calld = elem->call_data;
@@ -129,7 +129,7 @@ server_mutate_op (grpc_call_element * elem, grpc_transport_stream_op * op)
 }
 
 static void
-server_start_transport_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+server_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   call_data *calld = elem->call_data;
   GPR_ASSERT ((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
@@ -138,7 +138,7 @@ server_start_transport_op (grpc_call_element * elem, grpc_transport_stream_op * 
 }
 
 static void
-client_init_call_elem (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+client_init_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op)
 {
   call_data *d = elem->call_data;
   GPR_ASSERT (d != NULL);
@@ -148,7 +148,7 @@ client_init_call_elem (grpc_call_element * elem, const void *server_transport_da
 }
 
 static void
-client_destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+client_destroy_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   call_data *d = elem->call_data;
   GPR_ASSERT (d != NULL);
@@ -156,7 +156,7 @@ client_destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_
 }
 
 static void
-server_init_call_elem (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+server_init_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op)
 {
   call_data *d = elem->call_data;
   GPR_ASSERT (d != NULL);
@@ -168,7 +168,7 @@ server_init_call_elem (grpc_call_element * elem, const void *server_transport_da
 }
 
 static void
-server_destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+server_destroy_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
 {
   call_data *d = elem->call_data;
   GPR_ASSERT (d != NULL);
@@ -176,7 +176,7 @@ server_destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_
 }
 
 static void
-init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_first, int is_last, grpc_closure_list * closure_list)
+init_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_first, int is_last)
 {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT (chand != NULL);
@@ -184,7 +184,7 @@ init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grp
 }
 
 static void
-destroy_channel_elem (grpc_channel_element * elem, grpc_closure_list * closure_list)
+destroy_channel_elem (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem)
 {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT (chand != NULL);

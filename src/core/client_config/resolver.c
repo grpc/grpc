@@ -60,7 +60,7 @@ grpc_resolver_unref (grpc_resolver * resolver, grpc_closure_list * closure_list,
   gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "RESOLVER:%p unref %d -> %d %s", resolver, (int) resolver->refs.count, (int) resolver->refs.count - 1, reason);
 #else
 void
-grpc_resolver_unref (grpc_resolver * resolver, grpc_closure_list * closure_list)
+grpc_resolver_unref (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver)
 {
 #endif
   if (gpr_unref (&resolver->refs))
@@ -70,19 +70,19 @@ grpc_resolver_unref (grpc_resolver * resolver, grpc_closure_list * closure_list)
 }
 
 void
-grpc_resolver_shutdown (grpc_resolver * resolver, grpc_closure_list * closure_list)
+grpc_resolver_shutdown (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver)
 {
   resolver->vtable->shutdown (resolver, closure_list);
 }
 
 void
-grpc_resolver_channel_saw_error (grpc_resolver * resolver, struct sockaddr *failing_address, int failing_address_len, grpc_closure_list * closure_list)
+grpc_resolver_channel_saw_error (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver, struct sockaddr *failing_address, int failing_address_len)
 {
   resolver->vtable->channel_saw_error (resolver, failing_address, failing_address_len, closure_list);
 }
 
 void
-grpc_resolver_next (grpc_resolver * resolver, grpc_client_config ** target_config, grpc_closure * on_complete, grpc_closure_list * closure_list)
+grpc_resolver_next (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver, grpc_client_config ** target_config, grpc_closure * on_complete)
 {
   resolver->vtable->next (resolver, target_config, on_complete, closure_list);
 }

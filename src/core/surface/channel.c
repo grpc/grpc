@@ -92,7 +92,7 @@ struct grpc_channel
 #define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
 
 grpc_channel *
-grpc_channel_create_from_filters (const char *target, const grpc_channel_filter ** filters, size_t num_filters, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_client, grpc_closure_list * closure_list)
+grpc_channel_create_from_filters (grpc_exec_ctx * exec_ctx, const char *target, const grpc_channel_filter ** filters, size_t num_filters, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_client)
 {
   size_t i;
   size_t size = sizeof (grpc_channel) + grpc_channel_stack_size (filters, num_filters);
@@ -262,7 +262,7 @@ grpc_channel_internal_ref (grpc_channel * c)
 }
 
 static void
-destroy_channel (grpc_channel * channel, grpc_closure_list * closure_list)
+destroy_channel (grpc_exec_ctx * exec_ctx, grpc_channel * channel)
 {
   size_t i;
   grpc_channel_stack_destroy (CHANNEL_STACK_FROM_CHANNEL (channel), closure_list);
@@ -299,12 +299,12 @@ destroy_channel (grpc_channel * channel, grpc_closure_list * closure_list)
 
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
 void
-grpc_channel_internal_unref (grpc_channel * channel, const char *reason, grpc_closure_list * closure_list)
+grpc_channel_internal_unref (grpc_exec_ctx * exec_ctx, grpc_channel * channel, const char *reason)
 {
   gpr_log (GPR_DEBUG, "CHANNEL: unref %p %d -> %d [%s]", channel, channel->refs.count, channel->refs.count - 1, reason);
 #else
 void
-grpc_channel_internal_unref (grpc_channel * channel, grpc_closure_list * closure_list)
+grpc_channel_internal_unref (grpc_exec_ctx * exec_ctx, grpc_channel * channel)
 {
 #endif
   if (gpr_unref (&channel->refs))

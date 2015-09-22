@@ -283,18 +283,18 @@ struct grpc_call
 #define CALL_FROM_TOP_ELEM(top_elem) \
   CALL_FROM_CALL_STACK(grpc_call_stack_from_top_element(top_elem))
 
-static void set_deadline_alarm (grpc_call * call, gpr_timespec deadline, grpc_closure_list * closure_list);
-static void call_on_done_recv (void *call, int success, grpc_closure_list * closure_list);
-static void call_on_done_send (void *call, int success, grpc_closure_list * closure_list);
+static void set_deadline_alarm (grpc_exec_ctx * exec_ctx, grpc_call * call, gpr_timespec deadline);
+static void call_on_done_recv (grpc_exec_ctx * exec_ctx, void *call, int success);
+static void call_on_done_send (grpc_exec_ctx * exec_ctx, void *call, int success);
 static int fill_send_ops (grpc_call * call, grpc_transport_stream_op * op);
-static void execute_op (grpc_call * call, grpc_transport_stream_op * op, grpc_closure_list * closure_list);
-static void recv_metadata (grpc_call * call, grpc_metadata_batch * metadata, grpc_closure_list * closure_list);
+static void execute_op (grpc_exec_ctx * exec_ctx, grpc_call * call, grpc_transport_stream_op * op);
+static void recv_metadata (grpc_exec_ctx * exec_ctx, grpc_call * call, grpc_metadata_batch * metadata);
 static void finish_read_ops (grpc_call * call);
 static grpc_call_error cancel_with_status (grpc_call * c, grpc_status_code status, const char *description);
-static void finished_loose_op (void *call, int success, grpc_closure_list * closure_list);
+static void finished_loose_op (grpc_exec_ctx * exec_ctx, void *call, int success);
 
 static void lock (grpc_call * call);
-static void unlock (grpc_call * call, grpc_closure_list * closure_list);
+static void unlock (grpc_exec_ctx * exec_ctx, grpc_call * call);
 
 grpc_call *
 grpc_call_create (grpc_channel * channel, grpc_call * parent_call, gpr_uint32 propagation_mask, grpc_completion_queue * cq, const void *server_transport_data, grpc_mdelem ** add_initial_metadata, size_t add_initial_metadata_count, gpr_timespec send_deadline)
@@ -409,7 +409,7 @@ grpc_call_create (grpc_channel * channel, grpc_call * parent_call, gpr_uint32 pr
 }
 
 void
-grpc_call_set_completion_queue (grpc_call * call, grpc_completion_queue * cq, grpc_closure_list * closure_list)
+grpc_call_set_completion_queue (grpc_exec_ctx * exec_ctx, grpc_call * call, grpc_completion_queue * cq)
 {
   lock (call);
   call->cq = cq;
@@ -446,7 +446,7 @@ allocate_completion (grpc_call * call)
 }
 
 static void
-done_completion (void *call, grpc_cq_completion * completion, grpc_closure_list * closure_list)
+done_completion (grpc_exec_ctx * exec_ctx, void *call, grpc_cq_completion * completion)
 {
   grpc_call *c = call;
   gpr_mu_lock (&c->completion_mu);
@@ -469,7 +469,7 @@ grpc_call_internal_ref (grpc_call * c)
 }
 
 static void
-destroy_call (grpc_call * call, grpc_closure_list * closure_list)
+destroy_call (grpc_exec_ctx * exec_ctx, grpc_call * call)
 {
   size_t i;
   grpc_call *c = call;
@@ -517,12 +517,12 @@ destroy_call (grpc_call * call, grpc_closure_list * closure_list)
 
 #ifdef GRPC_CALL_REF_COUNT_DEBUG
 void
-grpc_call_internal_unref (grpc_call * c, const char *reason, grpc_closure_list * closure_list)
+grpc_call_internal_unref (grpc_exec_ctx * exec_ctx, grpc_call * c, const char *reason)
 {
   gpr_log (GPR_DEBUG, "CALL: unref %p %d -> %d [%s]", c, c->internal_refcount.count, c->internal_refcount.count - 1, reason);
 #else
 void
-grpc_call_internal_unref (grpc_call * c, grpc_closure_list * closure_list)
+grpc_call_internal_unref (grpc_exec_ctx * exec_ctx, grpc_call * c)
 {
 #endif
   if (gpr_unref (&c->internal_refcount))
@@ -638,7 +638,7 @@ need_more_data (grpc_call * call)
 }
 
 static void
-unlock (grpc_call * call, grpc_closure_list * closure_list)
+unlock (grpc_exec_ctx * exec_ctx, grpc_call * call)
 {
   grpc_transport_stream_op op;
   completed_request completed_requests[GRPC_IOREQ_OP_COUNT];
@@ -889,7 +889,7 @@ early_out_write_ops (grpc_call * call)
 }
 
 static void
-call_on_done_send (void *pc, int success, grpc_closure_list * closure_list)
+call_on_done_send (grpc_exec_ctx * exec_ctx, void *pc, int success)
 {
   grpc_call *call = pc;
   lock (call);
@@ -1036,7 +1036,7 @@ add_slice_to_message (grpc_call * call, gpr_slice slice)
 }
 
 static void
-call_on_done_recv (void *pc, int success, grpc_closure_list * closure_list)
+call_on_done_recv (grpc_exec_ctx * exec_ctx, void *pc, int success)
 {
   grpc_call *call = pc;
   grpc_call *child_call;
@@ -1381,7 +1381,7 @@ start_ioreq (grpc_call * call, const grpc_ioreq * reqs, size_t nreqs, grpc_ioreq
 }
 
 grpc_call_error
-grpc_call_start_ioreq_and_call_back (grpc_call * call, const grpc_ioreq * reqs, size_t nreqs, grpc_ioreq_completion_func on_complete, void *user_data, grpc_closure_list * closure_list)
+grpc_call_start_ioreq_and_call_back (grpc_exec_ctx * exec_ctx, grpc_call * call, const grpc_ioreq * reqs, size_t nreqs, grpc_ioreq_completion_func on_complete, void *user_data)
 {
   grpc_call_error err;
   lock (call);
@@ -1465,7 +1465,7 @@ cancel_with_status (grpc_call * c, grpc_status_code status, const char *descript
 }
 
 static void
-finished_loose_op (void *call, int success_ignored, grpc_closure_list * closure_list)
+finished_loose_op (grpc_exec_ctx * exec_ctx, void *call, int success_ignored)
 {
   GRPC_CALL_INTERNAL_UNREF (call, "loose-op", closure_list);
 }
@@ -1477,7 +1477,7 @@ typedef struct
 } finished_loose_op_allocated_args;
 
 static void
-finished_loose_op_allocated (void *alloc, int success, grpc_closure_list * closure_list)
+finished_loose_op_allocated (grpc_exec_ctx * exec_ctx, void *alloc, int success)
 {
   finished_loose_op_allocated_args *args = alloc;
   finished_loose_op (args->call, success, closure_list);
@@ -1485,7 +1485,7 @@ finished_loose_op_allocated (void *alloc, int success, grpc_closure_list * closu
 }
 
 static void
-execute_op (grpc_call * call, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+execute_op (grpc_exec_ctx * exec_ctx, grpc_call * call, grpc_transport_stream_op * op)
 {
   grpc_call_element *elem;
 
@@ -1528,7 +1528,7 @@ grpc_call_from_top_element (grpc_call_element * elem)
 }
 
 static void
-call_alarm (void *arg, int success, grpc_closure_list * closure_list)
+call_alarm (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   grpc_call *call = arg;
   lock (call);
@@ -1543,7 +1543,7 @@ call_alarm (void *arg, int success, grpc_closure_list * closure_list)
 }
 
 static void
-set_deadline_alarm (grpc_call * call, gpr_timespec deadline, grpc_closure_list * closure_list)
+set_deadline_alarm (grpc_exec_ctx * exec_ctx, grpc_call * call, gpr_timespec deadline)
 {
   if (call->have_alarm)
     {
@@ -1617,7 +1617,7 @@ decode_compression (grpc_mdelem * md)
 }
 
 static void
-recv_metadata (grpc_call * call, grpc_metadata_batch * md, grpc_closure_list * closure_list)
+recv_metadata (grpc_exec_ctx * exec_ctx, grpc_call * call, grpc_metadata_batch * md)
 {
   grpc_linked_mdelem *l;
   grpc_metadata_array *dest;
@@ -1712,13 +1712,13 @@ set_cancelled_value (grpc_status_code status, void *dest)
 }
 
 static void
-finish_batch (grpc_call * call, int success, void *tag, grpc_closure_list * closure_list)
+finish_batch (grpc_exec_ctx * exec_ctx, grpc_call * call, int success, void *tag)
 {
   grpc_cq_end_op (call->cq, tag, success, done_completion, call, allocate_completion (call), closure_list);
 }
 
 static void
-finish_batch_with_close (grpc_call * call, int success, void *tag, grpc_closure_list * closure_list)
+finish_batch_with_close (grpc_exec_ctx * exec_ctx, grpc_call * call, int success, void *tag)
 {
   grpc_cq_end_op (call->cq, tag, 1, done_completion, call, allocate_completion (call), closure_list);
 }

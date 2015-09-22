@@ -84,7 +84,7 @@ test_wait_empty (void)
 }
 
 static void
-do_nothing_end_completion (void *arg, grpc_cq_completion * c, grpc_closure_list * closure_list)
+do_nothing_end_completion (grpc_exec_ctx * exec_ctx, void *arg, grpc_cq_completion * c)
 {
 }
 
@@ -213,7 +213,7 @@ ten_seconds_time (void)
 }
 
 static void
-free_completion (void *arg, grpc_cq_completion * completion, grpc_closure_list * closure_list)
+free_completion (grpc_exec_ctx * exec_ctx, void *arg, grpc_cq_completion * completion)
 {
   gpr_free (completion);
 }

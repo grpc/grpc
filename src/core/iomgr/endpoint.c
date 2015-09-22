@@ -34,37 +34,37 @@
 #include "src/core/iomgr/endpoint.h"
 
 void
-grpc_endpoint_read (grpc_endpoint * ep, gpr_slice_buffer * slices, grpc_closure * cb, grpc_closure_list * closure_list)
+grpc_endpoint_read (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, gpr_slice_buffer * slices, grpc_closure * cb)
 {
   ep->vtable->read (ep, slices, cb, closure_list);
 }
 
 void
-grpc_endpoint_write (grpc_endpoint * ep, gpr_slice_buffer * slices, grpc_closure * cb, grpc_closure_list * closure_list)
+grpc_endpoint_write (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, gpr_slice_buffer * slices, grpc_closure * cb)
 {
   ep->vtable->write (ep, slices, cb, closure_list);
 }
 
 void
-grpc_endpoint_add_to_pollset (grpc_endpoint * ep, grpc_pollset * pollset, grpc_closure_list * closure_list)
+grpc_endpoint_add_to_pollset (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, grpc_pollset * pollset)
 {
   ep->vtable->add_to_pollset (ep, pollset, closure_list);
 }
 
 void
-grpc_endpoint_add_to_pollset_set (grpc_endpoint * ep, grpc_pollset_set * pollset_set, grpc_closure_list * closure_list)
+grpc_endpoint_add_to_pollset_set (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, grpc_pollset_set * pollset_set)
 {
   ep->vtable->add_to_pollset_set (ep, pollset_set, closure_list);
 }
 
 void
-grpc_endpoint_shutdown (grpc_endpoint * ep, grpc_closure_list * closure_list)
+grpc_endpoint_shutdown (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep)
 {
   ep->vtable->shutdown (ep, closure_list);
 }
 
 void
-grpc_endpoint_destroy (grpc_endpoint * ep, grpc_closure_list * closure_list)
+grpc_endpoint_destroy (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep)
 {
   ep->vtable->destroy (ep, closure_list);
 }

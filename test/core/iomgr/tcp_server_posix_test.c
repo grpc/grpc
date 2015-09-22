@@ -49,7 +49,7 @@ static grpc_pollset g_pollset;
 static int g_nconnects = 0;
 
 static void
-on_connect (void *arg, grpc_endpoint * tcp, grpc_closure_list * closure_list)
+on_connect (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * tcp)
 {
   grpc_endpoint_shutdown (tcp, closure_list);
   grpc_endpoint_destroy (tcp, closure_list);
@@ -173,7 +173,7 @@ test_connect (int n)
 }
 
 static void
-destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+destroy_pollset (grpc_exec_ctx * exec_ctx, void *p, int success)
 {
   grpc_pollset_destroy (p);
 }

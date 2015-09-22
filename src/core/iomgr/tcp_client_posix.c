@@ -95,7 +95,7 @@ error:
 }
 
 static void
-tc_on_alarm (void *acp, int success, grpc_closure_list * closure_list)
+tc_on_alarm (grpc_exec_ctx * exec_ctx, void *acp, int success)
 {
   int done;
   async_connect *ac = acp;
@@ -119,7 +119,7 @@ tc_on_alarm (void *acp, int success, grpc_closure_list * closure_list)
 }
 
 static void
-on_writable (void *acp, int success, grpc_closure_list * closure_list)
+on_writable (grpc_exec_ctx * exec_ctx, void *acp, int success)
 {
   async_connect *ac = acp;
   int so_error = 0;
@@ -229,7 +229,7 @@ finish:
 }
 
 void
-grpc_tcp_client_connect (grpc_closure * closure, grpc_endpoint ** ep, grpc_pollset_set * interested_parties, const struct sockaddr *addr, size_t addr_len, gpr_timespec deadline, grpc_closure_list * closure_list)
+grpc_tcp_client_connect (grpc_exec_ctx * exec_ctx, grpc_closure * closure, grpc_endpoint ** ep, grpc_pollset_set * interested_parties, const struct sockaddr *addr, size_t addr_len, gpr_timespec deadline)
 {
   int fd;
   grpc_dualstack_mode dsmode;

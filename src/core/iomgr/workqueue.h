@@ -53,7 +53,7 @@ typedef struct grpc_workqueue grpc_workqueue;
 /** Create a work queue */
 grpc_workqueue *grpc_workqueue_create (grpc_closure_list * closure_list);
 
-void grpc_workqueue_flush (grpc_workqueue * workqueue, grpc_closure_list * closure_list);
+void grpc_workqueue_flush (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue);
 
 #define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -67,11 +67,11 @@ void grpc_workqueue_unref (grpc_workqueue * workqueue, grpc_closure_list * closu
 #define GRPC_WORKQUEUE_REF(p, r) grpc_workqueue_ref((p))
 #define GRPC_WORKQUEUE_UNREF(p, r, cl) grpc_workqueue_unref((p), (cl))
 void grpc_workqueue_ref (grpc_workqueue * workqueue);
-void grpc_workqueue_unref (grpc_workqueue * workqueue, grpc_closure_list * closure_list);
+void grpc_workqueue_unref (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue);
 #endif
 
 /** Bind this workqueue to a pollset */
-void grpc_workqueue_add_to_pollset (grpc_workqueue * workqueue, grpc_pollset * pollset, grpc_closure_list * closure_list);
+void grpc_workqueue_add_to_pollset (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue, grpc_pollset * pollset);
 
 /** Add a work item to a workqueue */
 void grpc_workqueue_push (grpc_workqueue * workqueue, grpc_closure * closure, int success);

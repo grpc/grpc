@@ -250,7 +250,7 @@ listen_cb (void *arg,		 /*=sv_arg*/
    When connection request arrives, listen_cb() is called to accept the
    connection request. */
 static int
-server_start (server * sv, grpc_closure_list * closure_list)
+server_start (grpc_exec_ctx * exec_ctx, server * sv)
 {
   int port = 0;
   int fd;
@@ -382,7 +382,7 @@ client_session_write (void *arg,	/*client */
 
 /* Start a client to send a stream of bytes. */
 static void
-client_start (client * cl, int port, grpc_closure_list * closure_list)
+client_start (grpc_exec_ctx * exec_ctx, client * cl, int port)
 {
   int fd;
   struct sockaddr_in sin;
@@ -455,7 +455,7 @@ test_grpc_fd (void)
 
 typedef struct fd_change_data
 {
-  void (*cb_that_ran) (void *, int success, grpc_closure_list * closure_list);
+  void (*cb_that_ran) (grpc_exec_ctx * exec_ctx, void *, int success);
 } fd_change_data;
 
 void
@@ -578,7 +578,7 @@ test_grpc_fd_change (void)
 }
 
 static void
-destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+destroy_pollset (grpc_exec_ctx * exec_ctx, void *p, int success)
 {
   grpc_pollset_destroy (p);
 }

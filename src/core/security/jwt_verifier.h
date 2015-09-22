@@ -118,7 +118,7 @@ void grpc_jwt_verifier_destroy (grpc_jwt_verifier * verifier);
 typedef void (*grpc_jwt_verification_done_cb) (void *user_data, grpc_jwt_verifier_status status, grpc_jwt_claims * claims);
 
 /* Verifies for the JWT for the given expected audience. */
-void grpc_jwt_verifier_verify (grpc_jwt_verifier * verifier, grpc_pollset * pollset, const char *jwt, const char *audience, grpc_jwt_verification_done_cb cb, void *user_data, grpc_closure_list * closure_list);
+void grpc_jwt_verifier_verify (grpc_exec_ctx * exec_ctx, grpc_jwt_verifier * verifier, grpc_pollset * pollset, const char *jwt, const char *audience, grpc_jwt_verification_done_cb cb, void *user_data);
 
 /* --- TESTING ONLY exposed functions. --- */
 
