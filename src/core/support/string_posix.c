@@ -41,50 +41,44 @@
 
 #include <grpc/support/alloc.h>
 
-int
-gpr_asprintf (char **strp, const char *format, ...)
-{
+int gpr_asprintf(char **strp, const char *format, ...) {
   va_list args;
   int ret;
   char buf[64];
   size_t strp_buflen;
 
   /* Use a constant-sized buffer to determine the length. */
-  va_start (args, format);
-  ret = vsnprintf (buf, sizeof (buf), format, args);
-  va_end (args);
-  if (ret < 0)
-    {
-      *strp = NULL;
-      return -1;
-    }
+  va_start(args, format);
+  ret = vsnprintf(buf, sizeof(buf), format, args);
+  va_end(args);
+  if (ret < 0) {
+    *strp = NULL;
+    return -1;
+  }
 
   /* Allocate a new buffer, with space for the NUL terminator. */
-  strp_buflen = (size_t) ret + 1;
-  if ((*strp = gpr_malloc (strp_buflen)) == NULL)
-    {
-      /* This shouldn't happen, because gpr_malloc() calls abort(). */
-      return -1;
-    }
+  strp_buflen = (size_t)ret + 1;
+  if ((*strp = gpr_malloc(strp_buflen)) == NULL) {
+    /* This shouldn't happen, because gpr_malloc() calls abort(). */
+    return -1;
+  }
 
   /* Return early if we have all the bytes. */
-  if (strp_buflen <= sizeof (buf))
-    {
-      memcpy (*strp, buf, strp_buflen);
-      return ret;
-    }
+  if (strp_buflen <= sizeof(buf)) {
+    memcpy(*strp, buf, strp_buflen);
+    return ret;
+  }
 
   /* Try again using the larger buffer. */
-  va_start (args, format);
-  ret = vsnprintf (*strp, strp_buflen, format, args);
-  va_end (args);
-  if ((size_t) ret == strp_buflen - 1)
-    {
-      return ret;
-    }
+  va_start(args, format);
+  ret = vsnprintf(*strp, strp_buflen, format, args);
+  va_end(args);
+  if ((size_t)ret == strp_buflen - 1) {
+    return ret;
+  }
 
   /* This should never happen. */
-  gpr_free (*strp);
+  gpr_free(*strp);
   *strp = NULL;
   return -1;
 }

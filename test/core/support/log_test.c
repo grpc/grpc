@@ -37,27 +37,23 @@
 
 #include "test/core/util/test_config.h"
 
-static void
-test_callback (gpr_log_func_args * args)
-{
-  GPR_ASSERT (0 == strcmp (__FILE__, args->file));
-  GPR_ASSERT (args->severity == GPR_LOG_SEVERITY_INFO);
-  GPR_ASSERT (0 == strcmp (args->message, "hello 1 2 3"));
+static void test_callback(gpr_log_func_args *args) {
+  GPR_ASSERT(0 == strcmp(__FILE__, args->file));
+  GPR_ASSERT(args->severity == GPR_LOG_SEVERITY_INFO);
+  GPR_ASSERT(0 == strcmp(args->message, "hello 1 2 3"));
 }
 
-int
-main (int argc, char **argv)
-{
-  grpc_test_init (argc, argv);
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
   /* test logging at various verbosity levels */
-  gpr_log (GPR_DEBUG, "%s", "hello world");
-  gpr_log (GPR_INFO, "%s", "hello world");
-  gpr_log (GPR_ERROR, "%s", "hello world");
+  gpr_log(GPR_DEBUG, "%s", "hello world");
+  gpr_log(GPR_INFO, "%s", "hello world");
+  gpr_log(GPR_ERROR, "%s", "hello world");
   /* should succeed */
-  GPR_ASSERT (1);
-  gpr_set_log_function (test_callback);
-  gpr_log_message (GPR_INFO, "hello 1 2 3");
-  gpr_log (GPR_INFO, "hello %d %d %d", 1, 2, 3);
+  GPR_ASSERT(1);
+  gpr_set_log_function(test_callback);
+  gpr_log_message(GPR_INFO, "hello 1 2 3");
+  gpr_log(GPR_INFO, "hello %d %d %d", 1, 2, 3);
   /* TODO(ctiller): should we add a GPR_ASSERT failure test here */
   return 0;
 }

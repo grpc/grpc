@@ -35,9 +35,9 @@
 #define GRPC_INTERNAL_CORE_IOMGR_IOMGR_H
 
 /** Initializes the iomgr. */
-void grpc_iomgr_init (void);
+void grpc_iomgr_init(void);
 
 /** Signals the intention to shutdown the iomgr. */
-void grpc_iomgr_shutdown (void);
+void grpc_iomgr_shutdown(void);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_H */

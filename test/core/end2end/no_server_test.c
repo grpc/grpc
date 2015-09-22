@@ -37,18 +37,12 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/test_config.h"
 
-static void *
-tag (gpr_intptr i)
-{
-  return (void *) i;
-}
+static void *tag(gpr_intptr i) { return (void *)i; }
 
-int
-main (int argc, char **argv)
-{
+int main(int argc, char **argv) {
   grpc_channel *chan;
   grpc_call *call;
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE (2);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2);
   grpc_completion_queue *cq;
   cq_verifier *cqv;
   grpc_op ops[6];
@@ -58,17 +52,18 @@ main (int argc, char **argv)
   char *details = NULL;
   size_t details_capacity = 0;
 
-  grpc_test_init (argc, argv);
-  grpc_init ();
+  grpc_test_init(argc, argv);
+  grpc_init();
 
-  grpc_metadata_array_init (&trailing_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
 
-  cq = grpc_completion_queue_create (NULL);
-  cqv = cq_verifier_create (cq);
+  cq = grpc_completion_queue_create(NULL);
+  cqv = cq_verifier_create(cq);
 
   /* create a call, channel to a non existant server */
-  chan = grpc_insecure_channel_create ("nonexistant:54321", NULL, NULL);
-  call = grpc_channel_create_call (chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/Foo", "nonexistant", deadline, NULL);
+  chan = grpc_insecure_channel_create("nonexistant:54321", NULL, NULL);
+  call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  "/Foo", "nonexistant", deadline, NULL);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -84,25 +79,28 @@ main (int argc, char **argv)
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  GPR_ASSERT (GRPC_CALL_OK == grpc_call_start_batch (call, ops, (size_t) (op - ops), tag (1), NULL));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(
+                                 call, ops, (size_t)(op - ops), tag(1), NULL));
   /* verify that all tags get completed */
-  cq_expect_completion (cqv, tag (1), 1);
-  cq_verify (cqv);
+  cq_expect_completion(cqv, tag(1), 1);
+  cq_verify(cqv);
 
-  GPR_ASSERT (status == GRPC_STATUS_DEADLINE_EXCEEDED);
+  GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
 
-  grpc_completion_queue_shutdown (cq);
-  while (grpc_completion_queue_next (cq, gpr_inf_future (GPR_CLOCK_REALTIME), NULL).type != GRPC_QUEUE_SHUTDOWN)
+  grpc_completion_queue_shutdown(cq);
+  while (
+      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
+          .type != GRPC_QUEUE_SHUTDOWN)
     ;
-  grpc_completion_queue_destroy (cq);
-  grpc_call_destroy (call);
-  grpc_channel_destroy (chan);
-  cq_verifier_destroy (cqv);
+  grpc_completion_queue_destroy(cq);
+  grpc_call_destroy(call);
+  grpc_channel_destroy(chan);
+  cq_verifier_destroy(cqv);
 
-  gpr_free (details);
-  grpc_metadata_array_destroy (&trailing_metadata_recv);
+  gpr_free(details);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
 
-  grpc_shutdown ();
+  grpc_shutdown();
 
   return 0;
 }

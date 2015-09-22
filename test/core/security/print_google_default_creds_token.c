@@ -44,76 +44,72 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
-typedef struct
-{
+typedef struct {
   grpc_pollset pollset;
   int is_done;
 } synchronizer;
 
-static void
-on_metadata_response (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credentials_md * md_elems, size_t num_md, grpc_credentials_status status)
-{
+static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *user_data,
+                                 grpc_credentials_md *md_elems, size_t num_md,
+                                 grpc_credentials_status status) {
   synchronizer *sync = user_data;
-  if (status == GRPC_CREDENTIALS_ERROR)
-    {
-      fprintf (stderr, "Fetching token failed.\n");
-    }
-  else
-    {
-      char *token;
-      GPR_ASSERT (num_md == 1);
-      token = gpr_dump_slice (md_elems[0].value, GPR_DUMP_ASCII);
-      printf ("\nGot token: %s\n\n", token);
-      gpr_free (token);
-    }
-  gpr_mu_lock (GRPC_POLLSET_MU (&sync->pollset));
+  if (status == GRPC_CREDENTIALS_ERROR) {
+    fprintf(stderr, "Fetching token failed.\n");
+  } else {
+    char *token;
+    GPR_ASSERT(num_md == 1);
+    token = gpr_dump_slice(md_elems[0].value, GPR_DUMP_ASCII);
+    printf("\nGot token: %s\n\n", token);
+    gpr_free(token);
+  }
+  gpr_mu_lock(GRPC_POLLSET_MU(&sync->pollset));
   sync->is_done = 1;
-  grpc_pollset_kick (&sync->pollset, NULL);
-  gpr_mu_unlock (GRPC_POLLSET_MU (&sync->pollset));
+  grpc_pollset_kick(&sync->pollset, NULL);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&sync->pollset));
 }
 
-int
-main (int argc, char **argv)
-{
+int main(int argc, char **argv) {
   int result = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   synchronizer sync;
   grpc_credentials *creds = NULL;
   char *service_url = "https://test.foo.google.com/Foo";
-  gpr_cmdline *cl = gpr_cmdline_create ("print_google_default_creds_token");
-  gpr_cmdline_add_string (cl, "service_url", "Service URL for the token request.", &service_url);
-  gpr_cmdline_parse (cl, argc, argv);
+  gpr_cmdline *cl = gpr_cmdline_create("print_google_default_creds_token");
+  gpr_cmdline_add_string(cl, "service_url",
+                         "Service URL for the token request.", &service_url);
+  gpr_cmdline_parse(cl, argc, argv);
 
-  grpc_init ();
+  grpc_init();
 
-  creds = grpc_google_default_credentials_create ();
-  if (creds == NULL)
-    {
-      fprintf (stderr, "\nCould not find default credentials.\n\n");
-      result = 1;
-      goto end;
-    }
+  creds = grpc_google_default_credentials_create();
+  if (creds == NULL) {
+    fprintf(stderr, "\nCould not find default credentials.\n\n");
+    result = 1;
+    goto end;
+  }
 
-  grpc_pollset_init (&sync.pollset);
+  grpc_pollset_init(&sync.pollset);
   sync.is_done = 0;
 
-  grpc_credentials_get_request_metadata (&exec_ctx, creds, &sync.pollset, service_url, on_metadata_response, &sync);
+  grpc_credentials_get_request_metadata(&exec_ctx, creds, &sync.pollset,
+                                        service_url, on_metadata_response,
+                                        &sync);
 
-  gpr_mu_lock (GRPC_POLLSET_MU (&sync.pollset));
-  while (!sync.is_done)
-    {
-      grpc_pollset_worker worker;
-      grpc_pollset_work (&sync.pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (&exec_ctx, GPR_CLOCK_MONOTONIC));
-      gpr_mu_unlock (GRPC_POLLSET_MU (&sync.pollset));
-      grpc_exec_ctx_finish (&exec_ctx);
-      gpr_mu_lock (GRPC_POLLSET_MU (&sync.pollset));
-    }
-  gpr_mu_unlock (GRPC_POLLSET_MU (&sync.pollset));
+  gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
+  while (!sync.is_done) {
+    grpc_pollset_worker worker;
+    grpc_pollset_work(&sync.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_inf_future(&exec_ctx, GPR_CLOCK_MONOTONIC));
+    gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
+    grpc_exec_ctx_finish(&exec_ctx);
+    gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
+  }
+  gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
 
-  grpc_credentials_release (creds);
+  grpc_credentials_release(creds);
 
 end:
-  gpr_cmdline_destroy (cl);
-  grpc_shutdown ();
+  gpr_cmdline_destroy(cl);
+  grpc_shutdown();
   return result;
 }

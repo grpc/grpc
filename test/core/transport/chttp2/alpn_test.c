@@ -36,24 +36,18 @@
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
-static void
-test_alpn_success (void)
-{
-  GPR_ASSERT (grpc_chttp2_is_alpn_version_supported ("h2", 2));
+static void test_alpn_success(void) {
+  GPR_ASSERT(grpc_chttp2_is_alpn_version_supported("h2", 2));
 }
 
-static void
-test_alpn_failure (void)
-{
-  GPR_ASSERT (!grpc_chttp2_is_alpn_version_supported ("h2-155", 6));
-  GPR_ASSERT (!grpc_chttp2_is_alpn_version_supported ("h1-15", 5));
+static void test_alpn_failure(void) {
+  GPR_ASSERT(!grpc_chttp2_is_alpn_version_supported("h2-155", 6));
+  GPR_ASSERT(!grpc_chttp2_is_alpn_version_supported("h1-15", 5));
 }
 
-int
-main (int argc, char **argv)
-{
-  grpc_test_init (argc, argv);
-  test_alpn_success ();
-  test_alpn_failure ();
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  test_alpn_success();
+  test_alpn_failure();
   return 0;
 }

@@ -45,67 +45,56 @@
 #include <time.h>
 #include <pthread.h>
 
-static gpr_intptr
-gettid (void)
-{
-  return (gpr_intptr) pthread_self ();
-}
+static gpr_intptr gettid(void) { return (gpr_intptr)pthread_self(); }
 
-void
-gpr_log (const char *file, int line, gpr_log_severity severity, const char *format, ...)
-{
+void gpr_log(const char *file, int line, gpr_log_severity severity,
+             const char *format, ...) {
   char buf[64];
   char *allocated = NULL;
   char *message = NULL;
   int ret;
   va_list args;
-  va_start (args, format);
-  ret = vsnprintf (buf, sizeof (buf), format, args);
-  va_end (args);
-  if (ret < 0)
-    {
-      message = NULL;
-    }
-  else if ((size_t) ret <= sizeof (buf) - 1)
-    {
-      message = buf;
-    }
-  else
-    {
-      message = allocated = gpr_malloc ((size_t) ret + 1);
-      va_start (args, format);
-      vsnprintf (message, (size_t) (ret + 1), format, args);
-      va_end (args);
-    }
-  gpr_log_message (file, line, severity, message);
-  gpr_free (allocated);
+  va_start(args, format);
+  ret = vsnprintf(buf, sizeof(buf), format, args);
+  va_end(args);
+  if (ret < 0) {
+    message = NULL;
+  } else if ((size_t)ret <= sizeof(buf) - 1) {
+    message = buf;
+  } else {
+    message = allocated = gpr_malloc((size_t)ret + 1);
+    va_start(args, format);
+    vsnprintf(message, (size_t)(ret + 1), format, args);
+    va_end(args);
+  }
+  gpr_log_message(file, line, severity, message);
+  gpr_free(allocated);
 }
 
-void
-gpr_default_log (gpr_log_func_args * args)
-{
+void gpr_default_log(gpr_log_func_args *args) {
   char *final_slash;
   const char *display_file;
   char time_buffer[64];
-  gpr_timespec now = gpr_now (GPR_CLOCK_REALTIME);
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   struct tm tm;
 
-  final_slash = strrchr (args->file, '/');
+  final_slash = strrchr(args->file, '/');
   if (final_slash == NULL)
     display_file = args->file;
   else
     display_file = final_slash + 1;
 
-  if (!localtime_r (&now.tv_sec, &tm))
-    {
-      strcpy (time_buffer, "error:localtime");
-    }
-  else if (0 == strftime (time_buffer, sizeof (time_buffer), "%m%d %H:%M:%S", &tm))
-    {
-      strcpy (time_buffer, "error:strftime");
-    }
+  if (!localtime_r(&now.tv_sec, &tm)) {
+    strcpy(time_buffer, "error:localtime");
+  } else if (0 ==
+             strftime(time_buffer, sizeof(time_buffer), "%m%d %H:%M:%S", &tm)) {
+    strcpy(time_buffer, "error:strftime");
+  }
 
-  fprintf (stderr, "%s%s.%09d %7tu %s:%d] %s\n", gpr_log_severity_string (args->severity), time_buffer, (int) (now.tv_nsec), gettid (), display_file, args->line, args->message);
+  fprintf(stderr, "%s%s.%09d %7tu %s:%d] %s\n",
+          gpr_log_severity_string(args->severity), time_buffer,
+          (int)(now.tv_nsec), gettid(), display_file, args->line,
+          args->message);
 }
 
 #endif /* defined(GPR_POSIX_LOG) */

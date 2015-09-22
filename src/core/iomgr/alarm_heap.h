@@ -36,23 +36,22 @@
 
 #include "src/core/iomgr/alarm.h"
 
-typedef struct
-{
+typedef struct {
   grpc_alarm **alarms;
   gpr_uint32 alarm_count;
   gpr_uint32 alarm_capacity;
 } grpc_alarm_heap;
 
 /* return 1 if the new alarm is the first alarm in the heap */
-int grpc_alarm_heap_add (grpc_alarm_heap * heap, grpc_alarm * alarm);
+int grpc_alarm_heap_add(grpc_alarm_heap *heap, grpc_alarm *alarm);
 
-void grpc_alarm_heap_init (grpc_alarm_heap * heap);
-void grpc_alarm_heap_destroy (grpc_alarm_heap * heap);
+void grpc_alarm_heap_init(grpc_alarm_heap *heap);
+void grpc_alarm_heap_destroy(grpc_alarm_heap *heap);
 
-void grpc_alarm_heap_remove (grpc_alarm_heap * heap, grpc_alarm * alarm);
-grpc_alarm *grpc_alarm_heap_top (grpc_alarm_heap * heap);
-void grpc_alarm_heap_pop (grpc_alarm_heap * heap);
+void grpc_alarm_heap_remove(grpc_alarm_heap *heap, grpc_alarm *alarm);
+grpc_alarm *grpc_alarm_heap_top(grpc_alarm_heap *heap);
+void grpc_alarm_heap_pop(grpc_alarm_heap *heap);
 
-int grpc_alarm_heap_is_empty (grpc_alarm_heap * heap);
+int grpc_alarm_heap_is_empty(grpc_alarm_heap *heap);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H */

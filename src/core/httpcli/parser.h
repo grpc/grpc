@@ -38,15 +38,13 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
 
-typedef enum
-{
+typedef enum {
   GRPC_HTTPCLI_INITIAL_RESPONSE,
   GRPC_HTTPCLI_HEADERS,
   GRPC_HTTPCLI_BODY
 } grpc_httpcli_parser_state;
 
-typedef struct
-{
+typedef struct {
   grpc_httpcli_parser_state state;
 
   grpc_httpcli_response r;
@@ -57,10 +55,10 @@ typedef struct
   size_t cur_line_length;
 } grpc_httpcli_parser;
 
-void grpc_httpcli_parser_init (grpc_httpcli_parser * parser);
-void grpc_httpcli_parser_destroy (grpc_httpcli_parser * parser);
+void grpc_httpcli_parser_init(grpc_httpcli_parser* parser);
+void grpc_httpcli_parser_destroy(grpc_httpcli_parser* parser);
 
-int grpc_httpcli_parser_parse (grpc_httpcli_parser * parser, gpr_slice slice);
-int grpc_httpcli_parser_eof (grpc_httpcli_parser * parser);
+int grpc_httpcli_parser_parse(grpc_httpcli_parser* parser, gpr_slice slice);
+int grpc_httpcli_parser_eof(grpc_httpcli_parser* parser);
 
 #endif /* GRPC_INTERNAL_CORE_HTTPCLI_PARSER_H */

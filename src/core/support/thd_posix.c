@@ -45,61 +45,47 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/useful.h>
 
-struct thd_arg
-{
-  void (*body) (void *arg);	/* body of a thread */
-  void *arg;			/* argument to a thread */
+struct thd_arg {
+  void (*body)(void *arg); /* body of a thread */
+  void *arg;               /* argument to a thread */
 };
 
 /* Body of every thread started via gpr_thd_new. */
-static void *
-thread_body (void *v)
-{
-  struct thd_arg a = *(struct thd_arg *) v;
-  gpr_free (v);
-  (*a.body) (a.arg);
+static void *thread_body(void *v) {
+  struct thd_arg a = *(struct thd_arg *)v;
+  gpr_free(v);
+  (*a.body)(a.arg);
   return NULL;
 }
 
-int
-gpr_thd_new (gpr_thd_id * t, void (*thd_body) (void *arg), void *arg, const gpr_thd_options * options)
-{
+int gpr_thd_new(gpr_thd_id *t, void (*thd_body)(void *arg), void *arg,
+                const gpr_thd_options *options) {
   int thread_started;
   pthread_attr_t attr;
   pthread_t p;
-  struct thd_arg *a = gpr_malloc (sizeof (*a));
+  struct thd_arg *a = gpr_malloc(sizeof(*a));
   a->body = thd_body;
   a->arg = arg;
 
-  GPR_ASSERT (pthread_attr_init (&attr) == 0);
-  if (gpr_thd_options_is_detached (options))
-    {
-      GPR_ASSERT (pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_DETACHED) == 0);
-    }
-  else
-    {
-      GPR_ASSERT (pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_JOINABLE) == 0);
-    }
-  thread_started = (pthread_create (&p, &attr, &thread_body, a) == 0);
-  GPR_ASSERT (pthread_attr_destroy (&attr) == 0);
-  if (!thread_started)
-    {
-      gpr_free (a);
-    }
-  *t = (gpr_thd_id) p;
+  GPR_ASSERT(pthread_attr_init(&attr) == 0);
+  if (gpr_thd_options_is_detached(options)) {
+    GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
+               0);
+  } else {
+    GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
+               0);
+  }
+  thread_started = (pthread_create(&p, &attr, &thread_body, a) == 0);
+  GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
+  if (!thread_started) {
+    gpr_free(a);
+  }
+  *t = (gpr_thd_id)p;
   return thread_started;
 }
 
-gpr_thd_id
-gpr_thd_currentid (void)
-{
-  return (gpr_thd_id) pthread_self ();
-}
+gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)pthread_self(); }
 
-void
-gpr_thd_join (gpr_thd_id t)
-{
-  pthread_join ((pthread_t) t, NULL);
-}
+void gpr_thd_join(gpr_thd_id t) { pthread_join((pthread_t)t, NULL); }
 
 #endif /* GPR_POSIX_SYNC */

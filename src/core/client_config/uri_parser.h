@@ -34,8 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_URI_PARSER_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_URI_PARSER_H
 
-typedef struct
-{
+typedef struct {
   char *scheme;
   char *authority;
   char *path;
@@ -44,9 +43,9 @@ typedef struct
 } grpc_uri;
 
 /** parse a uri, return NULL on failure */
-grpc_uri *grpc_uri_parse (const char *uri_text, int suppress_errors);
+grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors);
 
 /** destroy a uri */
-void grpc_uri_destroy (grpc_uri * uri);
+void grpc_uri_destroy(grpc_uri *uri);
 
 #endif

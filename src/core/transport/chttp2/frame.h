@@ -39,8 +39,7 @@
 
 /* Common definitions for frame handling in the chttp2 transport */
 
-typedef enum
-{
+typedef enum {
   GRPC_CHTTP2_PARSE_OK,
   GRPC_CHTTP2_STREAM_ERROR,
   GRPC_CHTTP2_CONNECTION_ERROR

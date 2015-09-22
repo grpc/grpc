@@ -38,6 +38,6 @@
 
 /** Returns a load balancing factory for the pick first policy, which picks up
  * the first subchannel from \a subchannels to succesfully connect */
-grpc_lb_policy_factory *grpc_pick_first_lb_factory_create ();
+grpc_lb_policy_factory *grpc_pick_first_lb_factory_create();
 
 #endif

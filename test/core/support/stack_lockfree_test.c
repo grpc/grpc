@@ -46,51 +46,42 @@
 
 #define MAX_THREADS 32
 
-static void
-test_serial_sized (size_t size)
-{
-  gpr_stack_lockfree *stack = gpr_stack_lockfree_create (size);
+static void test_serial_sized(size_t size) {
+  gpr_stack_lockfree *stack = gpr_stack_lockfree_create(size);
   size_t i;
   size_t j;
 
   /* First try popping empty */
-  GPR_ASSERT (gpr_stack_lockfree_pop (stack) == -1);
+  GPR_ASSERT(gpr_stack_lockfree_pop(stack) == -1);
 
   /* Now add one item and check it */
-  gpr_stack_lockfree_push (stack, 3);
-  GPR_ASSERT (gpr_stack_lockfree_pop (stack) == 3);
-  GPR_ASSERT (gpr_stack_lockfree_pop (stack) == -1);
+  gpr_stack_lockfree_push(stack, 3);
+  GPR_ASSERT(gpr_stack_lockfree_pop(stack) == 3);
+  GPR_ASSERT(gpr_stack_lockfree_pop(stack) == -1);
 
   /* Now add repeatedly more items and check them */
-  for (i = 1; i < size; i *= 2)
-    {
-      for (j = 0; j <= i; j++)
-	{
-	  GPR_ASSERT (gpr_stack_lockfree_push (stack, (int) j) == (j == 0));
-	}
-      for (j = 0; j <= i; j++)
-	{
-	  GPR_ASSERT (gpr_stack_lockfree_pop (stack) == (int) (i - j));
-	}
-      GPR_ASSERT (gpr_stack_lockfree_pop (stack) == -1);
+  for (i = 1; i < size; i *= 2) {
+    for (j = 0; j <= i; j++) {
+      GPR_ASSERT(gpr_stack_lockfree_push(stack, (int)j) == (j == 0));
     }
+    for (j = 0; j <= i; j++) {
+      GPR_ASSERT(gpr_stack_lockfree_pop(stack) == (int)(i - j));
+    }
+    GPR_ASSERT(gpr_stack_lockfree_pop(stack) == -1);
+  }
 
-  gpr_stack_lockfree_destroy (stack);
+  gpr_stack_lockfree_destroy(stack);
 }
 
-static void
-test_serial ()
-{
+static void test_serial() {
   size_t i;
-  for (i = 128; i < MAX_STACK_SIZE; i *= 2)
-    {
-      test_serial_sized (i);
-    }
-  test_serial_sized (MAX_STACK_SIZE);
+  for (i = 128; i < MAX_STACK_SIZE; i *= 2) {
+    test_serial_sized(i);
+  }
+  test_serial_sized(MAX_STACK_SIZE);
 }
 
-struct test_arg
-{
+struct test_arg {
   gpr_stack_lockfree *stack;
   int stack_size;
   int nthreads;
@@ -98,83 +89,67 @@ struct test_arg
   int sum;
 };
 
-static void
-test_mt_body (void *v)
-{
-  struct test_arg *arg = (struct test_arg *) v;
+static void test_mt_body(void *v) {
+  struct test_arg *arg = (struct test_arg *)v;
   int lo, hi;
   int i;
   int res;
   lo = arg->rank * arg->stack_size / arg->nthreads;
   hi = (arg->rank + 1) * arg->stack_size / arg->nthreads;
-  for (i = lo; i < hi; i++)
-    {
-      gpr_stack_lockfree_push (arg->stack, i);
-      if ((res = gpr_stack_lockfree_pop (arg->stack)) != -1)
-	{
-	  arg->sum += res;
-	}
-    }
-  while ((res = gpr_stack_lockfree_pop (arg->stack)) != -1)
-    {
+  for (i = lo; i < hi; i++) {
+    gpr_stack_lockfree_push(arg->stack, i);
+    if ((res = gpr_stack_lockfree_pop(arg->stack)) != -1) {
       arg->sum += res;
     }
+  }
+  while ((res = gpr_stack_lockfree_pop(arg->stack)) != -1) {
+    arg->sum += res;
+  }
 }
 
-static void
-test_mt_sized (size_t size, int nth)
-{
+static void test_mt_sized(size_t size, int nth) {
   gpr_stack_lockfree *stack;
   struct test_arg args[MAX_THREADS];
   gpr_thd_id thds[MAX_THREADS];
   int sum;
   int i;
-  gpr_thd_options options = gpr_thd_options_default ();
+  gpr_thd_options options = gpr_thd_options_default();
 
-  stack = gpr_stack_lockfree_create (size);
-  for (i = 0; i < nth; i++)
-    {
-      args[i].stack = stack;
-      args[i].stack_size = (int) size;
-      args[i].nthreads = nth;
-      args[i].rank = i;
-      args[i].sum = 0;
-    }
-  gpr_thd_options_set_joinable (&options);
-  for (i = 0; i < nth; i++)
-    {
-      GPR_ASSERT (gpr_thd_new (&thds[i], test_mt_body, &args[i], &options));
-    }
+  stack = gpr_stack_lockfree_create(size);
+  for (i = 0; i < nth; i++) {
+    args[i].stack = stack;
+    args[i].stack_size = (int)size;
+    args[i].nthreads = nth;
+    args[i].rank = i;
+    args[i].sum = 0;
+  }
+  gpr_thd_options_set_joinable(&options);
+  for (i = 0; i < nth; i++) {
+    GPR_ASSERT(gpr_thd_new(&thds[i], test_mt_body, &args[i], &options));
+  }
   sum = 0;
-  for (i = 0; i < nth; i++)
-    {
-      gpr_thd_join (thds[i]);
-      sum = sum + args[i].sum;
-    }
-  GPR_ASSERT ((unsigned) sum == ((unsigned) size * (size - 1)) / 2);
-  gpr_stack_lockfree_destroy (stack);
+  for (i = 0; i < nth; i++) {
+    gpr_thd_join(thds[i]);
+    sum = sum + args[i].sum;
+  }
+  GPR_ASSERT((unsigned)sum == ((unsigned)size * (size - 1)) / 2);
+  gpr_stack_lockfree_destroy(stack);
 }
 
-static void
-test_mt ()
-{
+static void test_mt() {
   size_t size;
   int nth;
-  for (nth = 1; nth < MAX_THREADS; nth++)
-    {
-      for (size = 128; size < MAX_STACK_SIZE; size *= 2)
-	{
-	  test_mt_sized (size, nth);
-	}
-      test_mt_sized (MAX_STACK_SIZE, nth);
+  for (nth = 1; nth < MAX_THREADS; nth++) {
+    for (size = 128; size < MAX_STACK_SIZE; size *= 2) {
+      test_mt_sized(size, nth);
     }
+    test_mt_sized(MAX_STACK_SIZE, nth);
+  }
 }
 
-int
-main (int argc, char **argv)
-{
-  grpc_test_init (argc, argv);
-  test_serial ();
-  test_mt ();
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  test_serial();
+  test_mt();
   return 0;
 }

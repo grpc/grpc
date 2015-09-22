@@ -52,9 +52,9 @@ struct grpc_workqueue;
 typedef struct grpc_workqueue grpc_workqueue;
 
 /** Create a work queue */
-grpc_workqueue *grpc_workqueue_create (grpc_exec_ctx *exec_ctx);
+grpc_workqueue *grpc_workqueue_create(grpc_exec_ctx *exec_ctx);
 
-void grpc_workqueue_flush (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue);
+void grpc_workqueue_flush(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 
 #define GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
@@ -62,19 +62,24 @@ void grpc_workqueue_flush (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue)
   grpc_workqueue_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_WORKQUEUE_UNREF(cl, p, r) \
   grpc_workqueue_unref((cl), (p), __FILE__, __LINE__, (r))
-void grpc_workqueue_ref (grpc_workqueue * workqueue, const char *file, int line, const char *reason);
-void grpc_workqueue_unref (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue, const char *file, int line, const char *reason);
+void grpc_workqueue_ref(grpc_workqueue *workqueue, const char *file, int line,
+                        const char *reason);
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue,
+                          const char *file, int line, const char *reason);
 #else
 #define GRPC_WORKQUEUE_REF(p, r) grpc_workqueue_ref((p))
 #define GRPC_WORKQUEUE_UNREF(cl, p, r) grpc_workqueue_unref((cl), (p))
-void grpc_workqueue_ref (grpc_workqueue * workqueue);
-void grpc_workqueue_unref (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue);
+void grpc_workqueue_ref(grpc_workqueue *workqueue);
+void grpc_workqueue_unref(grpc_exec_ctx *exec_ctx, grpc_workqueue *workqueue);
 #endif
 
 /** Bind this workqueue to a pollset */
-void grpc_workqueue_add_to_pollset (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue, grpc_pollset * pollset);
+void grpc_workqueue_add_to_pollset(grpc_exec_ctx *exec_ctx,
+                                   grpc_workqueue *workqueue,
+                                   grpc_pollset *pollset);
 
 /** Add a work item to a workqueue */
-void grpc_workqueue_push (grpc_workqueue * workqueue, grpc_closure * closure, int success);
+void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,
+                         int success);
 
 #endif

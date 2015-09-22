@@ -42,8 +42,7 @@
 #include "src/core/transport/stream_op.h"
 #include "src/core/transport/chttp2/frame.h"
 
-typedef enum
-{
+typedef enum {
   GRPC_CHTTP2_DATA_FH_0,
   GRPC_CHTTP2_DATA_FH_1,
   GRPC_CHTTP2_DATA_FH_2,
@@ -52,8 +51,7 @@ typedef enum
   GRPC_CHTTP2_DATA_FRAME
 } grpc_chttp2_stream_state;
 
-typedef struct
-{
+typedef struct {
   grpc_chttp2_stream_state state;
   gpr_uint8 is_last_frame;
   gpr_uint8 frame_type;
@@ -64,18 +62,23 @@ typedef struct
 } grpc_chttp2_data_parser;
 
 /* initialize per-stream state for data frame parsing */
-grpc_chttp2_parse_error grpc_chttp2_data_parser_init (grpc_chttp2_data_parser * parser);
+grpc_chttp2_parse_error grpc_chttp2_data_parser_init(
+    grpc_chttp2_data_parser *parser);
 
-void grpc_chttp2_data_parser_destroy (grpc_chttp2_data_parser * parser);
+void grpc_chttp2_data_parser_destroy(grpc_chttp2_data_parser *parser);
 
 /* start processing a new data frame */
-grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame (grpc_chttp2_data_parser * parser, gpr_uint8 flags);
+grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame(
+    grpc_chttp2_data_parser *parser, gpr_uint8 flags);
 
 /* handle a slice of a data frame - is_last indicates the last slice of a
    frame */
-grpc_chttp2_parse_error grpc_chttp2_data_parser_parse (grpc_exec_ctx * exec_ctx, void *parser, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last);
+grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
+    grpc_exec_ctx *exec_ctx, void *parser,
+    grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
 
 /* create a slice with an empty data frame and is_last set */
-gpr_slice grpc_chttp2_data_frame_create_empty_close (gpr_uint32 id);
+gpr_slice grpc_chttp2_data_frame_create_empty_close(gpr_uint32 id);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_DATA_H */

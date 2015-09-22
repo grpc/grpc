@@ -37,7 +37,8 @@
 #include <grpc/grpc.h>
 #include "test/core/util/test_config.h"
 
-typedef void (*grpc_bad_client_server_side_validator) (grpc_server * server, grpc_completion_queue * cq);
+typedef void (*grpc_bad_client_server_side_validator)(
+    grpc_server *server, grpc_completion_queue *cq);
 
 #define GRPC_BAD_CLIENT_DISCONNECT 1
 
@@ -46,7 +47,9 @@ typedef void (*grpc_bad_client_server_side_validator) (grpc_server * server, grp
    Create a server, and send client_payload to it as bytes from a client.
    Execute validator in a separate thread to assert that the bytes are
    handled as expected. */
-void grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const char *client_payload, size_t client_payload_length, gpr_uint32 flags);
+void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
+                              const char *client_payload,
+                              size_t client_payload_length, gpr_uint32 flags);
 
 #define GRPC_RUN_BAD_CLIENT_TEST(validator, payload, flags) \
   grpc_run_bad_client_test(validator, payload, sizeof(payload) - 1, flags)

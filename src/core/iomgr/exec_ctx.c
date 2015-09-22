@@ -33,30 +33,28 @@
 
 #include "src/core/iomgr/exec_ctx.h"
 
-void
-grpc_exec_ctx_flush (grpc_exec_ctx *exec_ctx)
-{
-  while (!grpc_closure_list_empty (exec_ctx->closure_list))
-    {
-      grpc_closure *c = closure_list->head;
-      closure_list->head = closure_list->tail = NULL;
-      while (c != NULL)
-	{
-	  grpc_closure *next = c->next;
-	  c->cb (exec_ctx, c->cb_arg, c->success);
-	  c = next;
-	}
+void grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
+  while (!grpc_closure_list_empty(exec_ctx->closure_list)) {
+    grpc_closure *c = closure_list->head;
+    closure_list->head = closure_list->tail = NULL;
+    while (c != NULL) {
+      grpc_closure *next = c->next;
+      c->cb(exec_ctx, c->cb_arg, c->success);
+      c = next;
     }
+  }
 }
 
 void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
   grpc_exec_ctx_flush(exec_ctx);
 }
 
-void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure, int success) {
+void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                           int success) {
   grpc_closure_list_add(&exec_ctx->closure_list, closure, success);
 }
 
-void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
+void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
+                                grpc_closure_list *list) {
   grpc_closure_list_move(list, &exec_ctx->closure_list);
 }

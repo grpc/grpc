@@ -54,9 +54,10 @@
 #include "src/core/iomgr/pollset_windows.h"
 #endif
 
-void grpc_pollset_init (grpc_pollset * pollset);
-void grpc_pollset_shutdown (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_closure * closure);
-void grpc_pollset_destroy (grpc_pollset * pollset);
+void grpc_pollset_init(grpc_pollset *pollset);
+void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                           grpc_closure *closure);
+void grpc_pollset_destroy(grpc_pollset *pollset);
 
 /* Do some work on a pollset.
    May involve invoking asynchronous callbacks, or actually polling file
@@ -76,11 +77,14 @@ void grpc_pollset_destroy (grpc_pollset * pollset);
    May call grpc_closure_list_run on grpc_closure_list, without holding the
    pollset
    lock */
-void grpc_pollset_work (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec now, gpr_timespec deadline);
+void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                       grpc_pollset_worker *worker, gpr_timespec now,
+                       gpr_timespec deadline);
 
 /* Break one polling thread out of polling work for this pollset.
    If specific_worker is GRPC_POLLSET_KICK_BROADCAST, kick ALL the workers.
    Otherwise, if specific_worker is non-NULL, then kick that worker. */
-void grpc_pollset_kick (grpc_pollset * pollset, grpc_pollset_worker * specific_worker);
+void grpc_pollset_kick(grpc_pollset *pollset,
+                       grpc_pollset_worker *specific_worker);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */

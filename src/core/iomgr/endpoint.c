@@ -33,44 +33,35 @@
 
 #include "src/core/iomgr/endpoint.h"
 
-void
-grpc_endpoint_read (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, gpr_slice_buffer * slices, grpc_closure * cb)
-{
-  ep->vtable->read (exec_ctx, ep, slices, cb);
+void grpc_endpoint_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                        gpr_slice_buffer* slices, grpc_closure* cb) {
+  ep->vtable->read(exec_ctx, ep, slices, cb);
 }
 
-void
-grpc_endpoint_write (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, gpr_slice_buffer * slices, grpc_closure * cb)
-{
-  ep->vtable->write (exec_ctx, ep, slices, cb);
+void grpc_endpoint_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                         gpr_slice_buffer* slices, grpc_closure* cb) {
+  ep->vtable->write(exec_ctx, ep, slices, cb);
 }
 
-void
-grpc_endpoint_add_to_pollset (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, grpc_pollset * pollset)
-{
-  ep->vtable->add_to_pollset (exec_ctx, ep, pollset);
+void grpc_endpoint_add_to_pollset(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
+                                  grpc_pollset* pollset) {
+  ep->vtable->add_to_pollset(exec_ctx, ep, pollset);
 }
 
-void
-grpc_endpoint_add_to_pollset_set (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, grpc_pollset_set * pollset_set)
-{
-  ep->vtable->add_to_pollset_set (exec_ctx, ep, pollset_set);
+void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx* exec_ctx,
+                                      grpc_endpoint* ep,
+                                      grpc_pollset_set* pollset_set) {
+  ep->vtable->add_to_pollset_set(exec_ctx, ep, pollset_set);
 }
 
-void
-grpc_endpoint_shutdown (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep)
-{
-  ep->vtable->shutdown (exec_ctx, ep);
+void grpc_endpoint_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
+  ep->vtable->shutdown(exec_ctx, ep);
 }
 
-void
-grpc_endpoint_destroy (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep)
-{
-  ep->vtable->destroy (exec_ctx, ep);
+void grpc_endpoint_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
+  ep->vtable->destroy(exec_ctx, ep);
 }
 
-char *
-grpc_endpoint_get_peer (grpc_endpoint * ep)
-{
-  return ep->vtable->get_peer (ep);
+char* grpc_endpoint_get_peer(grpc_endpoint* ep) {
+  return ep->vtable->get_peer(ep);
 }

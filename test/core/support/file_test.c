@@ -46,63 +46,57 @@
 
 static const char prefix[] = "file_test";
 
-static void
-test_load_empty_file (void)
-{
+static void test_load_empty_file(void) {
   FILE *tmp = NULL;
   gpr_slice slice;
   gpr_slice slice_with_null_term;
   int success;
   char *tmp_name;
 
-  LOG_TEST_NAME ("test_load_empty_file");
+  LOG_TEST_NAME("test_load_empty_file");
 
-  tmp = gpr_tmpfile (prefix, &tmp_name);
-  GPR_ASSERT (tmp_name != NULL);
-  GPR_ASSERT (tmp != NULL);
-  fclose (tmp);
+  tmp = gpr_tmpfile(prefix, &tmp_name);
+  GPR_ASSERT(tmp_name != NULL);
+  GPR_ASSERT(tmp != NULL);
+  fclose(tmp);
 
-  slice = gpr_load_file (tmp_name, 0, &success);
-  GPR_ASSERT (success == 1);
-  GPR_ASSERT (GPR_SLICE_LENGTH (slice) == 0);
+  slice = gpr_load_file(tmp_name, 0, &success);
+  GPR_ASSERT(success == 1);
+  GPR_ASSERT(GPR_SLICE_LENGTH(slice) == 0);
 
-  slice_with_null_term = gpr_load_file (tmp_name, 1, &success);
-  GPR_ASSERT (success == 1);
-  GPR_ASSERT (GPR_SLICE_LENGTH (slice_with_null_term) == 1);
-  GPR_ASSERT (GPR_SLICE_START_PTR (slice_with_null_term)[0] == 0);
+  slice_with_null_term = gpr_load_file(tmp_name, 1, &success);
+  GPR_ASSERT(success == 1);
+  GPR_ASSERT(GPR_SLICE_LENGTH(slice_with_null_term) == 1);
+  GPR_ASSERT(GPR_SLICE_START_PTR(slice_with_null_term)[0] == 0);
 
-  remove (tmp_name);
-  gpr_free (tmp_name);
-  gpr_slice_unref (slice);
-  gpr_slice_unref (slice_with_null_term);
+  remove(tmp_name);
+  gpr_free(tmp_name);
+  gpr_slice_unref(slice);
+  gpr_slice_unref(slice_with_null_term);
 }
 
-static void
-test_load_failure (void)
-{
+static void test_load_failure(void) {
   FILE *tmp = NULL;
   gpr_slice slice;
   int success;
   char *tmp_name;
 
-  LOG_TEST_NAME ("test_load_failure");
+  LOG_TEST_NAME("test_load_failure");
 
-  tmp = gpr_tmpfile (prefix, &tmp_name);
-  GPR_ASSERT (tmp_name != NULL);
-  GPR_ASSERT (tmp != NULL);
-  fclose (tmp);
-  remove (tmp_name);
+  tmp = gpr_tmpfile(prefix, &tmp_name);
+  GPR_ASSERT(tmp_name != NULL);
+  GPR_ASSERT(tmp != NULL);
+  fclose(tmp);
+  remove(tmp_name);
 
-  slice = gpr_load_file (tmp_name, 0, &success);
-  GPR_ASSERT (success == 0);
-  GPR_ASSERT (GPR_SLICE_LENGTH (slice) == 0);
-  gpr_free (tmp_name);
-  gpr_slice_unref (slice);
+  slice = gpr_load_file(tmp_name, 0, &success);
+  GPR_ASSERT(success == 0);
+  GPR_ASSERT(GPR_SLICE_LENGTH(slice) == 0);
+  gpr_free(tmp_name);
+  gpr_slice_unref(slice);
 }
 
-static void
-test_load_small_file (void)
-{
+static void test_load_small_file(void) {
   FILE *tmp = NULL;
   gpr_slice slice;
   gpr_slice slice_with_null_term;
@@ -110,33 +104,32 @@ test_load_small_file (void)
   char *tmp_name;
   const char *blah = "blah";
 
-  LOG_TEST_NAME ("test_load_small_file");
+  LOG_TEST_NAME("test_load_small_file");
 
-  tmp = gpr_tmpfile (prefix, &tmp_name);
-  GPR_ASSERT (tmp_name != NULL);
-  GPR_ASSERT (tmp != NULL);
-  GPR_ASSERT (fwrite (blah, 1, strlen (blah), tmp) == strlen (blah));
-  fclose (tmp);
+  tmp = gpr_tmpfile(prefix, &tmp_name);
+  GPR_ASSERT(tmp_name != NULL);
+  GPR_ASSERT(tmp != NULL);
+  GPR_ASSERT(fwrite(blah, 1, strlen(blah), tmp) == strlen(blah));
+  fclose(tmp);
 
-  slice = gpr_load_file (tmp_name, 0, &success);
-  GPR_ASSERT (success == 1);
-  GPR_ASSERT (GPR_SLICE_LENGTH (slice) == strlen (blah));
-  GPR_ASSERT (!memcmp (GPR_SLICE_START_PTR (slice), blah, strlen (blah)));
+  slice = gpr_load_file(tmp_name, 0, &success);
+  GPR_ASSERT(success == 1);
+  GPR_ASSERT(GPR_SLICE_LENGTH(slice) == strlen(blah));
+  GPR_ASSERT(!memcmp(GPR_SLICE_START_PTR(slice), blah, strlen(blah)));
 
-  slice_with_null_term = gpr_load_file (tmp_name, 1, &success);
-  GPR_ASSERT (success == 1);
-  GPR_ASSERT (GPR_SLICE_LENGTH (slice_with_null_term) == (strlen (blah) + 1));
-  GPR_ASSERT (strcmp ((const char *) GPR_SLICE_START_PTR (slice_with_null_term), blah) == 0);
+  slice_with_null_term = gpr_load_file(tmp_name, 1, &success);
+  GPR_ASSERT(success == 1);
+  GPR_ASSERT(GPR_SLICE_LENGTH(slice_with_null_term) == (strlen(blah) + 1));
+  GPR_ASSERT(strcmp((const char *)GPR_SLICE_START_PTR(slice_with_null_term),
+                    blah) == 0);
 
-  remove (tmp_name);
-  gpr_free (tmp_name);
-  gpr_slice_unref (slice);
-  gpr_slice_unref (slice_with_null_term);
+  remove(tmp_name);
+  gpr_free(tmp_name);
+  gpr_slice_unref(slice);
+  gpr_slice_unref(slice_with_null_term);
 }
 
-static void
-test_load_big_file (void)
-{
+static void test_load_big_file(void) {
   FILE *tmp = NULL;
   gpr_slice slice;
   int success;
@@ -145,40 +138,36 @@ test_load_big_file (void)
   unsigned char *current;
   size_t i;
 
-  LOG_TEST_NAME ("test_load_big_file");
+  LOG_TEST_NAME("test_load_big_file");
 
-  for (i = 0; i < sizeof (buffer); i++)
-    {
-      buffer[i] = 42;
-    }
+  for (i = 0; i < sizeof(buffer); i++) {
+    buffer[i] = 42;
+  }
 
-  tmp = gpr_tmpfile (prefix, &tmp_name);
-  GPR_ASSERT (tmp != NULL);
-  GPR_ASSERT (tmp_name != NULL);
-  GPR_ASSERT (fwrite (buffer, 1, sizeof (buffer), tmp) == sizeof (buffer));
-  fclose (tmp);
+  tmp = gpr_tmpfile(prefix, &tmp_name);
+  GPR_ASSERT(tmp != NULL);
+  GPR_ASSERT(tmp_name != NULL);
+  GPR_ASSERT(fwrite(buffer, 1, sizeof(buffer), tmp) == sizeof(buffer));
+  fclose(tmp);
 
-  slice = gpr_load_file (tmp_name, 0, &success);
-  GPR_ASSERT (success == 1);
-  GPR_ASSERT (GPR_SLICE_LENGTH (slice) == sizeof (buffer));
-  current = GPR_SLICE_START_PTR (slice);
-  for (i = 0; i < sizeof (buffer); i++)
-    {
-      GPR_ASSERT (current[i] == 42);
-    }
+  slice = gpr_load_file(tmp_name, 0, &success);
+  GPR_ASSERT(success == 1);
+  GPR_ASSERT(GPR_SLICE_LENGTH(slice) == sizeof(buffer));
+  current = GPR_SLICE_START_PTR(slice);
+  for (i = 0; i < sizeof(buffer); i++) {
+    GPR_ASSERT(current[i] == 42);
+  }
 
-  remove (tmp_name);
-  gpr_free (tmp_name);
-  gpr_slice_unref (slice);
+  remove(tmp_name);
+  gpr_free(tmp_name);
+  gpr_slice_unref(slice);
 }
 
-int
-main (int argc, char **argv)
-{
-  grpc_test_init (argc, argv);
-  test_load_empty_file ();
-  test_load_failure ();
-  test_load_small_file ();
-  test_load_big_file ();
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  test_load_empty_file();
+  test_load_failure();
+  test_load_small_file();
+  test_load_big_file();
   return 0;
 }

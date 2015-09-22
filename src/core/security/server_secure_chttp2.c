@@ -51,14 +51,12 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
 
-typedef struct tcp_endpoint_list
-{
+typedef struct tcp_endpoint_list {
   grpc_endpoint *tcp_endpoint;
   struct tcp_endpoint_list *next;
 } tcp_endpoint_list;
 
-typedef struct grpc_server_secure_state
-{
+typedef struct grpc_server_secure_state {
   grpc_server *server;
   grpc_tcp_server *tcp;
   grpc_security_connector *sc;
@@ -71,160 +69,148 @@ typedef struct grpc_server_secure_state
   grpc_closure *destroy_callback;
 } grpc_server_secure_state;
 
-static void
-state_ref (grpc_server_secure_state * state)
-{
-  gpr_ref (&state->refcount);
+static void state_ref(grpc_server_secure_state *state) {
+  gpr_ref(&state->refcount);
 }
 
-static void
-state_unref (grpc_server_secure_state * state)
-{
-  if (gpr_unref (&state->refcount))
-    {
-      /* ensure all threads have unlocked */
-      gpr_mu_lock (&state->mu);
-      gpr_mu_unlock (&state->mu);
-      /* clean up */
-      GRPC_SECURITY_CONNECTOR_UNREF (state->sc, "server");
-      grpc_server_credentials_unref (state->creds);
-      gpr_free (state);
-    }
+static void state_unref(grpc_server_secure_state *state) {
+  if (gpr_unref(&state->refcount)) {
+    /* ensure all threads have unlocked */
+    gpr_mu_lock(&state->mu);
+    gpr_mu_unlock(&state->mu);
+    /* clean up */
+    GRPC_SECURITY_CONNECTOR_UNREF(state->sc, "server");
+    grpc_server_credentials_unref(state->creds);
+    gpr_free(state);
+  }
 }
 
-static void
-setup_transport (grpc_exec_ctx * exec_ctx, void *statep, grpc_transport * transport, grpc_mdctx * mdctx)
-{
+static void setup_transport(grpc_exec_ctx *exec_ctx, void *statep,
+                            grpc_transport *transport, grpc_mdctx *mdctx) {
   static grpc_channel_filter const *extra_filters[] = {
-    &grpc_server_auth_filter, &grpc_http_server_filter
-  };
+      &grpc_server_auth_filter, &grpc_http_server_filter};
   grpc_server_secure_state *state = statep;
   grpc_channel_args *args_copy;
   grpc_arg args_to_add[2];
-  args_to_add[0] = grpc_security_connector_to_arg (state->sc);
-  args_to_add[1] = grpc_auth_metadata_processor_to_arg (&state->creds->processor);
-  args_copy = grpc_channel_args_copy_and_add (grpc_server_get_channel_args (state->server), args_to_add, GPR_ARRAY_SIZE (args_to_add));
-  grpc_server_setup_transport (exec_ctx, state->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, args_copy);
-  grpc_channel_args_destroy (args_copy);
+  args_to_add[0] = grpc_security_connector_to_arg(state->sc);
+  args_to_add[1] =
+      grpc_auth_metadata_processor_to_arg(&state->creds->processor);
+  args_copy = grpc_channel_args_copy_and_add(
+      grpc_server_get_channel_args(state->server), args_to_add,
+      GPR_ARRAY_SIZE(args_to_add));
+  grpc_server_setup_transport(exec_ctx, state->server, transport, extra_filters,
+                              GPR_ARRAY_SIZE(extra_filters), mdctx, args_copy);
+  grpc_channel_args_destroy(args_copy);
 }
 
-static int
-remove_tcp_from_list_locked (grpc_server_secure_state * state, grpc_endpoint * tcp)
-{
+static int remove_tcp_from_list_locked(grpc_server_secure_state *state,
+                                       grpc_endpoint *tcp) {
   tcp_endpoint_list *node = state->handshaking_tcp_endpoints;
   tcp_endpoint_list *tmp = NULL;
-  if (node && node->tcp_endpoint == tcp)
-    {
-      state->handshaking_tcp_endpoints = state->handshaking_tcp_endpoints->next;
-      gpr_free (node);
+  if (node && node->tcp_endpoint == tcp) {
+    state->handshaking_tcp_endpoints = state->handshaking_tcp_endpoints->next;
+    gpr_free(node);
+    return 0;
+  }
+  while (node) {
+    if (node->next->tcp_endpoint == tcp) {
+      tmp = node->next;
+      node->next = node->next->next;
+      gpr_free(tmp);
       return 0;
     }
-  while (node)
-    {
-      if (node->next->tcp_endpoint == tcp)
-	{
-	  tmp = node->next;
-	  node->next = node->next->next;
-	  gpr_free (tmp);
-	  return 0;
-	}
-      node = node->next;
-    }
+    node = node->next;
+  }
   return -1;
 }
 
-static void
-on_secure_handshake_done (grpc_exec_ctx * exec_ctx, void *statep, grpc_security_status status, grpc_endpoint * wrapped_endpoint, grpc_endpoint * secure_endpoint)
-{
+static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
+                                     grpc_security_status status,
+                                     grpc_endpoint *wrapped_endpoint,
+                                     grpc_endpoint *secure_endpoint) {
   grpc_server_secure_state *state = statep;
   grpc_transport *transport;
   grpc_mdctx *mdctx;
-  if (status == GRPC_SECURITY_OK)
-    {
-      gpr_mu_lock (&state->mu);
-      remove_tcp_from_list_locked (state, wrapped_endpoint);
-      if (!state->is_shutdown)
-	{
-	  mdctx = grpc_mdctx_create ();
-	  transport = grpc_create_chttp2_transport (exec_ctx, grpc_server_get_channel_args (state->server), secure_endpoint, mdctx, 0);
-	  setup_transport (exec_ctx, state, transport, mdctx);
-	  grpc_chttp2_transport_start_reading (exec_ctx, transport, NULL, 0);
-	}
-      else
-	{
-	  /* We need to consume this here, because the server may already have gone
-	   * away. */
-	  grpc_endpoint_destroy (exec_ctx, secure_endpoint);
-	}
-      gpr_mu_unlock (&state->mu);
+  if (status == GRPC_SECURITY_OK) {
+    gpr_mu_lock(&state->mu);
+    remove_tcp_from_list_locked(state, wrapped_endpoint);
+    if (!state->is_shutdown) {
+      mdctx = grpc_mdctx_create();
+      transport = grpc_create_chttp2_transport(
+          exec_ctx, grpc_server_get_channel_args(state->server),
+          secure_endpoint, mdctx, 0);
+      setup_transport(exec_ctx, state, transport, mdctx);
+      grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
+    } else {
+      /* We need to consume this here, because the server may already have gone
+       * away. */
+      grpc_endpoint_destroy(exec_ctx, secure_endpoint);
     }
-  else
-    {
-      gpr_mu_lock (&state->mu);
-      remove_tcp_from_list_locked (state, wrapped_endpoint);
-      gpr_mu_unlock (&state->mu);
-      gpr_log (GPR_ERROR, "Secure transport failed with error %d", status);
-    }
-  state_unref (state);
+    gpr_mu_unlock(&state->mu);
+  } else {
+    gpr_mu_lock(&state->mu);
+    remove_tcp_from_list_locked(state, wrapped_endpoint);
+    gpr_mu_unlock(&state->mu);
+    gpr_log(GPR_ERROR, "Secure transport failed with error %d", status);
+  }
+  state_unref(state);
 }
 
-static void
-on_accept (grpc_exec_ctx * exec_ctx, void *statep, grpc_endpoint * tcp)
-{
+static void on_accept(grpc_exec_ctx *exec_ctx, void *statep,
+                      grpc_endpoint *tcp) {
   grpc_server_secure_state *state = statep;
   tcp_endpoint_list *node;
-  state_ref (state);
-  node = gpr_malloc (sizeof (tcp_endpoint_list));
+  state_ref(state);
+  node = gpr_malloc(sizeof(tcp_endpoint_list));
   node->tcp_endpoint = tcp;
-  gpr_mu_lock (&state->mu);
+  gpr_mu_lock(&state->mu);
   node->next = state->handshaking_tcp_endpoints;
   state->handshaking_tcp_endpoints = node;
-  gpr_mu_unlock (&state->mu);
-  grpc_security_connector_do_handshake (exec_ctx, state->sc, tcp, on_secure_handshake_done, state);
+  gpr_mu_unlock(&state->mu);
+  grpc_security_connector_do_handshake(exec_ctx, state->sc, tcp,
+                                       on_secure_handshake_done, state);
 }
 
 /* Server callback: start listening on our ports */
-static void
-start (grpc_exec_ctx * exec_ctx, grpc_server * server, void *statep, grpc_pollset ** pollsets, size_t pollset_count)
-{
+static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
+                  grpc_pollset **pollsets, size_t pollset_count) {
   grpc_server_secure_state *state = statep;
-  grpc_tcp_server_start (exec_ctx, state->tcp, pollsets, pollset_count, on_accept, state);
+  grpc_tcp_server_start(exec_ctx, state->tcp, pollsets, pollset_count,
+                        on_accept, state);
 }
 
-static void
-destroy_done (grpc_exec_ctx * exec_ctx, void *statep, int success)
-{
+static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, int success) {
   grpc_server_secure_state *state = statep;
-  state->destroy_callback->cb (exec_ctx, state->destroy_callback->cb_arg, success);
-  gpr_mu_lock (&state->mu);
-  while (state->handshaking_tcp_endpoints != NULL)
-    {
-      grpc_endpoint_shutdown (exec_ctx, state->handshaking_tcp_endpoints->tcp_endpoint);
-      remove_tcp_from_list_locked (state, state->handshaking_tcp_endpoints->tcp_endpoint);
-    }
-  gpr_mu_unlock (&state->mu);
-  state_unref (state);
+  state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
+                              success);
+  gpr_mu_lock(&state->mu);
+  while (state->handshaking_tcp_endpoints != NULL) {
+    grpc_endpoint_shutdown(exec_ctx,
+                           state->handshaking_tcp_endpoints->tcp_endpoint);
+    remove_tcp_from_list_locked(state,
+                                state->handshaking_tcp_endpoints->tcp_endpoint);
+  }
+  gpr_mu_unlock(&state->mu);
+  state_unref(state);
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
-static void
-destroy (grpc_exec_ctx * exec_ctx, grpc_server * server, void *statep, grpc_closure * callback)
-{
+static void destroy(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
+                    grpc_closure *callback) {
   grpc_server_secure_state *state = statep;
   grpc_tcp_server *tcp;
-  gpr_mu_lock (&state->mu);
+  gpr_mu_lock(&state->mu);
   state->is_shutdown = 1;
   state->destroy_callback = callback;
   tcp = state->tcp;
-  gpr_mu_unlock (&state->mu);
-  grpc_closure_init (&state->destroy_closure, destroy_done, state);
-  grpc_tcp_server_destroy (exec_ctx, tcp, &state->destroy_closure);
+  gpr_mu_unlock(&state->mu);
+  grpc_closure_init(&state->destroy_closure, destroy_done, state);
+  grpc_tcp_server_destroy(exec_ctx, tcp, &state->destroy_closure);
 }
 
-int
-grpc_server_add_secure_http2_port (grpc_server * server, const char *addr, grpc_server_credentials * creds)
-{
+int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
+                                      grpc_server_credentials *creds) {
   grpc_resolved_addresses *resolved = NULL;
   grpc_tcp_server *tcp = NULL;
   grpc_server_secure_state *state = NULL;
@@ -237,92 +223,83 @@ grpc_server_add_secure_http2_port (grpc_server * server, const char *addr, grpc_
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   /* create security context */
-  if (creds == NULL)
+  if (creds == NULL) goto error;
+  status = grpc_server_credentials_create_security_connector(creds, &sc);
+  if (status != GRPC_SECURITY_OK) {
+    gpr_log(GPR_ERROR,
+            "Unable to create secure server with credentials of type %s.",
+            creds->type);
     goto error;
-  status = grpc_server_credentials_create_security_connector (creds, &sc);
-  if (status != GRPC_SECURITY_OK)
-    {
-      gpr_log (GPR_ERROR, "Unable to create secure server with credentials of type %s.", creds->type);
-      goto error;
-    }
+  }
 
   /* resolve address */
-  resolved = grpc_blocking_resolve_address (addr, "https");
-  if (!resolved)
-    {
-      goto error;
-    }
+  resolved = grpc_blocking_resolve_address(addr, "https");
+  if (!resolved) {
+    goto error;
+  }
 
-  tcp = grpc_tcp_server_create ();
-  if (!tcp)
-    {
-      goto error;
-    }
+  tcp = grpc_tcp_server_create();
+  if (!tcp) {
+    goto error;
+  }
 
-  for (i = 0; i < resolved->naddrs; i++)
-    {
-      port_temp = grpc_tcp_server_add_port (tcp, (struct sockaddr *) &resolved->addrs[i].addr, resolved->addrs[i].len);
-      if (port_temp >= 0)
-	{
-	  if (port_num == -1)
-	    {
-	      port_num = port_temp;
-	    }
-	  else
-	    {
-	      GPR_ASSERT (port_num == port_temp);
-	    }
-	  count++;
-	}
+  for (i = 0; i < resolved->naddrs; i++) {
+    port_temp = grpc_tcp_server_add_port(
+        tcp, (struct sockaddr *)&resolved->addrs[i].addr,
+        resolved->addrs[i].len);
+    if (port_temp >= 0) {
+      if (port_num == -1) {
+        port_num = port_temp;
+      } else {
+        GPR_ASSERT(port_num == port_temp);
+      }
+      count++;
     }
-  if (count == 0)
-    {
-      gpr_log (GPR_ERROR, "No address added out of total %d resolved", resolved->naddrs);
-      goto error;
-    }
-  if (count != resolved->naddrs)
-    {
-      gpr_log (GPR_ERROR, "Only %d addresses added out of total %d resolved", count, resolved->naddrs);
-      /* if it's an error, don't we want to goto error; here ? */
-    }
-  grpc_resolved_addresses_destroy (resolved);
+  }
+  if (count == 0) {
+    gpr_log(GPR_ERROR, "No address added out of total %d resolved",
+            resolved->naddrs);
+    goto error;
+  }
+  if (count != resolved->naddrs) {
+    gpr_log(GPR_ERROR, "Only %d addresses added out of total %d resolved",
+            count, resolved->naddrs);
+    /* if it's an error, don't we want to goto error; here ? */
+  }
+  grpc_resolved_addresses_destroy(resolved);
 
-  state = gpr_malloc (sizeof (*state));
-  memset (state, 0, sizeof (*state));
+  state = gpr_malloc(sizeof(*state));
+  memset(state, 0, sizeof(*state));
   state->server = server;
   state->tcp = tcp;
   state->sc = sc;
-  state->creds = grpc_server_credentials_ref (creds);
+  state->creds = grpc_server_credentials_ref(creds);
 
   state->handshaking_tcp_endpoints = NULL;
   state->is_shutdown = 0;
-  gpr_mu_init (&state->mu);
-  gpr_ref_init (&state->refcount, 1);
+  gpr_mu_init(&state->mu);
+  gpr_ref_init(&state->refcount, 1);
 
   /* Register with the server only upon success */
-  grpc_server_add_listener (&exec_ctx, server, state, start, destroy);
+  grpc_server_add_listener(&exec_ctx, server, state, start, destroy);
 
-  grpc_exec_ctx_finish (&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   return port_num;
 
 /* Error path: cleanup and return */
 error:
-  if (sc)
-    {
-      GRPC_SECURITY_CONNECTOR_UNREF (sc, "server");
-    }
-  if (resolved)
-    {
-      grpc_resolved_addresses_destroy (resolved);
-    }
-  if (tcp)
-    {
-      grpc_tcp_server_destroy (&exec_ctx, tcp, NULL);
-    }
-  if (state)
-    {
-      gpr_free (state);
-    }
-  grpc_exec_ctx_finish (&exec_ctx);
+  if (sc) {
+    GRPC_SECURITY_CONNECTOR_UNREF(sc, "server");
+  }
+  if (resolved) {
+    grpc_resolved_addresses_destroy(resolved);
+  }
+  if (tcp) {
+    grpc_tcp_server_destroy(&exec_ctx, tcp, NULL);
+  }
+  if (state) {
+    gpr_free(state);
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
   return 0;
 }

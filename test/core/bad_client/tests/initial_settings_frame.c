@@ -36,43 +36,60 @@
 
 #define PFX_STR "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
 
-static void
-verifier (grpc_server * server, grpc_completion_queue * cq)
-{
-  while (grpc_server_has_open_connections (server))
-    {
-      GPR_ASSERT (grpc_completion_queue_next (cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE (20), NULL).type == GRPC_QUEUE_TIMEOUT);
-    }
+static void verifier(grpc_server *server, grpc_completion_queue *cq) {
+  while (grpc_server_has_open_connections(server)) {
+    GPR_ASSERT(grpc_completion_queue_next(
+                   cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20), NULL)
+                   .type == GRPC_QUEUE_TIMEOUT);
+  }
 }
 
-int
-main (int argc, char **argv)
-{
-  grpc_test_init (argc, argv);
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
 
   /* various partial prefixes */
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x00", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x06", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x06", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x06", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x00\x04", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x00\x04\x00", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x00\x04\x01", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x00\x04\xff", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x00\x04\x00\x00", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x00\x04\x00\x00\x00", GRPC_BAD_CLIENT_DISCONNECT);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x00\x04\x00\x00\x00\x00", GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x00",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x00\x00",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x06",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x06",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x00\x06",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x00\x00\x04",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x00\x00\x04\x00",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x00\x00\x04\x01",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x00\x00\x04\xff",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x00\x00\x04\x00\x00",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x00\x00\x04\x00\x00\x00",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR "\x00\x00\x00\x04\x00\x00\x00\x00",
+                           GRPC_BAD_CLIENT_DISCONNECT);
   /* must not send frames with stream id != 0 */
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x00\x04\x00\x00\x00\x00\x01", 0);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x00\x04\x00\x40\x00\x00\x00", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR "\x00\x00\x00\x04\x00\x00\x00\x00\x01", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR "\x00\x00\x00\x04\x00\x40\x00\x00\x00", 0);
   /* settings frame must be a multiple of six bytes long */
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x01\x04\x00\x00\x00\x00\x00", 0);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x02\x04\x00\x00\x00\x00\x00", 0);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x03\x04\x00\x00\x00\x00\x00", 0);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x04\x04\x00\x00\x00\x00\x00", 0);
-  GRPC_RUN_BAD_CLIENT_TEST (verifier, PFX_STR "\x00\x00\x05\x04\x00\x00\x00\x00\x00", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR "\x00\x00\x01\x04\x00\x00\x00\x00\x00", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR "\x00\x00\x02\x04\x00\x00\x00\x00\x00", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR "\x00\x00\x03\x04\x00\x00\x00\x00\x00", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR "\x00\x00\x04\x04\x00\x00\x00\x00\x00", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR "\x00\x00\x05\x04\x00\x00\x00\x00\x00", 0);
 
   return 0;
 }

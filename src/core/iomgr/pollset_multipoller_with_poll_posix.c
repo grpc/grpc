@@ -48,8 +48,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-typedef struct
-{
+typedef struct {
   /* all polled fds */
   size_t fd_count;
   size_t fd_capacity;
@@ -60,52 +59,48 @@ typedef struct
   grpc_fd **dels;
 } pollset_hdr;
 
-static void
-multipoll_with_poll_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset)
-{
+static void multipoll_with_poll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
+                                               grpc_pollset *pollset,
+                                               grpc_fd *fd,
+                                               int and_unlock_pollset) {
   size_t i;
   pollset_hdr *h = pollset->data.ptr;
   /* TODO(ctiller): this is O(num_fds^2); maybe switch to a hash set here */
-  for (i = 0; i < h->fd_count; i++)
-    {
-      if (h->fds[i] == fd)
-	goto exit;
-    }
-  if (h->fd_count == h->fd_capacity)
-    {
-      h->fd_capacity = GPR_MAX (h->fd_capacity + 8, h->fd_count * 3 / 2);
-      h->fds = gpr_realloc (h->fds, sizeof (grpc_fd *) * h->fd_capacity);
-    }
+  for (i = 0; i < h->fd_count; i++) {
+    if (h->fds[i] == fd) goto exit;
+  }
+  if (h->fd_count == h->fd_capacity) {
+    h->fd_capacity = GPR_MAX(h->fd_capacity + 8, h->fd_count * 3 / 2);
+    h->fds = gpr_realloc(h->fds, sizeof(grpc_fd *) * h->fd_capacity);
+  }
   h->fds[h->fd_count++] = fd;
-  GRPC_FD_REF (fd, "multipoller");
+  GRPC_FD_REF(fd, "multipoller");
 exit:
-  if (and_unlock_pollset)
-    {
-      gpr_mu_unlock (&pollset->mu);
-    }
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
+  }
 }
 
-static void
-multipoll_with_poll_pollset_del_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd, int and_unlock_pollset)
-{
+static void multipoll_with_poll_pollset_del_fd(grpc_exec_ctx *exec_ctx,
+                                               grpc_pollset *pollset,
+                                               grpc_fd *fd,
+                                               int and_unlock_pollset) {
   /* will get removed next poll cycle */
   pollset_hdr *h = pollset->data.ptr;
-  if (h->del_count == h->del_capacity)
-    {
-      h->del_capacity = GPR_MAX (h->del_capacity + 8, h->del_count * 3 / 2);
-      h->dels = gpr_realloc (h->dels, sizeof (grpc_fd *) * h->del_capacity);
-    }
+  if (h->del_count == h->del_capacity) {
+    h->del_capacity = GPR_MAX(h->del_capacity + 8, h->del_count * 3 / 2);
+    h->dels = gpr_realloc(h->dels, sizeof(grpc_fd *) * h->del_capacity);
+  }
   h->dels[h->del_count++] = fd;
-  GRPC_FD_REF (fd, "multipoller_del");
-  if (and_unlock_pollset)
-    {
-      gpr_mu_unlock (&pollset->mu);
-    }
+  GRPC_FD_REF(fd, "multipoller_del");
+  if (and_unlock_pollset) {
+    gpr_mu_unlock(&pollset->mu);
+  }
 }
 
-static void
-multipoll_with_poll_pollset_maybe_work_and_unlock (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollset_worker * worker, gpr_timespec deadline, gpr_timespec now)
-{
+static void multipoll_with_poll_pollset_maybe_work_and_unlock(
+    grpc_exec_ctx *exec_ctx, grpc_pollset *pollset, grpc_pollset_worker *worker,
+    gpr_timespec deadline, gpr_timespec now) {
   int timeout;
   int r;
   size_t i, j, fd_count;
@@ -116,150 +111,125 @@ multipoll_with_poll_pollset_maybe_work_and_unlock (grpc_exec_ctx * exec_ctx, grp
   struct pollfd *pfds;
 
   h = pollset->data.ptr;
-  timeout = grpc_poll_deadline_to_millis_timeout (deadline, now);
+  timeout = grpc_poll_deadline_to_millis_timeout(deadline, now);
   /* TODO(ctiller): perform just one malloc here if we exceed the inline case */
-  pfds = gpr_malloc (sizeof (*pfds) * (h->fd_count + 1));
-  watchers = gpr_malloc (sizeof (*watchers) * (h->fd_count + 1));
+  pfds = gpr_malloc(sizeof(*pfds) * (h->fd_count + 1));
+  watchers = gpr_malloc(sizeof(*watchers) * (h->fd_count + 1));
   fd_count = 0;
   pfd_count = 1;
-  pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD (&worker->wakeup_fd);
+  pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker->wakeup_fd);
   pfds[0].events = POLLIN;
   pfds[0].revents = POLLOUT;
-  for (i = 0; i < h->fd_count; i++)
-    {
-      int remove = grpc_fd_is_orphaned (h->fds[i]);
-      for (j = 0; !remove && j < h->del_count; j++)
-	{
-	  if (h->fds[i] == h->dels[j])
-	    remove = 1;
-	}
-      if (remove)
-	{
-	  GRPC_FD_UNREF (h->fds[i], "multipoller");
-	}
-      else
-	{
-	  h->fds[fd_count++] = h->fds[i];
-	  watchers[pfd_count].fd = h->fds[i];
-	  pfds[pfd_count].fd = h->fds[i]->fd;
-	  pfds[pfd_count].revents = 0;
-	  pfd_count++;
-	}
+  for (i = 0; i < h->fd_count; i++) {
+    int remove = grpc_fd_is_orphaned(h->fds[i]);
+    for (j = 0; !remove && j < h->del_count; j++) {
+      if (h->fds[i] == h->dels[j]) remove = 1;
     }
-  for (j = 0; j < h->del_count; j++)
-    {
-      GRPC_FD_UNREF (h->dels[j], "multipoller_del");
+    if (remove) {
+      GRPC_FD_UNREF(h->fds[i], "multipoller");
+    } else {
+      h->fds[fd_count++] = h->fds[i];
+      watchers[pfd_count].fd = h->fds[i];
+      pfds[pfd_count].fd = h->fds[i]->fd;
+      pfds[pfd_count].revents = 0;
+      pfd_count++;
     }
+  }
+  for (j = 0; j < h->del_count; j++) {
+    GRPC_FD_UNREF(h->dels[j], "multipoller_del");
+  }
   h->del_count = 0;
   h->fd_count = fd_count;
-  gpr_mu_unlock (&pollset->mu);
+  gpr_mu_unlock(&pollset->mu);
 
-  for (i = 1; i < pfd_count; i++)
-    {
-      pfds[i].events = (short) grpc_fd_begin_poll (watchers[i].fd, pollset, POLLIN, POLLOUT, &watchers[i]);
-    }
+  for (i = 1; i < pfd_count; i++) {
+    pfds[i].events = (short)grpc_fd_begin_poll(watchers[i].fd, pollset, POLLIN,
+                                               POLLOUT, &watchers[i]);
+  }
 
-  r = grpc_poll_function (pfds, pfd_count, timeout);
+  r = grpc_poll_function(pfds, pfd_count, timeout);
 
-  for (i = 1; i < pfd_count; i++)
-    {
-      grpc_fd_end_poll (exec_ctx, &watchers[i], pfds[i].revents & POLLIN, pfds[i].revents & POLLOUT);
-    }
+  for (i = 1; i < pfd_count; i++) {
+    grpc_fd_end_poll(exec_ctx, &watchers[i], pfds[i].revents & POLLIN,
+                     pfds[i].revents & POLLOUT);
+  }
 
-  if (r < 0)
-    {
-      if (errno != EINTR)
-	{
-	  gpr_log (GPR_ERROR, "poll() failed: %s", strerror (errno));
-	}
+  if (r < 0) {
+    if (errno != EINTR) {
+      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
     }
-  else if (r == 0)
-    {
-      /* do nothing */
+  } else if (r == 0) {
+    /* do nothing */
+  } else {
+    if (pfds[0].revents & POLLIN) {
+      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd);
     }
-  else
-    {
-      if (pfds[0].revents & POLLIN)
-	{
-	  grpc_wakeup_fd_consume_wakeup (&worker->wakeup_fd);
-	}
-      for (i = 1; i < pfd_count; i++)
-	{
-	  if (watchers[i].fd == NULL)
-	    {
-	      continue;
-	    }
-	  if (pfds[i].revents & (POLLIN | POLLHUP | POLLERR))
-	    {
-	      grpc_fd_become_readable (exec_ctx, watchers[i].fd);
-	    }
-	  if (pfds[i].revents & (POLLOUT | POLLHUP | POLLERR))
-	    {
-	      grpc_fd_become_writable (exec_ctx, watchers[i].fd);
-	    }
-	}
+    for (i = 1; i < pfd_count; i++) {
+      if (watchers[i].fd == NULL) {
+        continue;
+      }
+      if (pfds[i].revents & (POLLIN | POLLHUP | POLLERR)) {
+        grpc_fd_become_readable(exec_ctx, watchers[i].fd);
+      }
+      if (pfds[i].revents & (POLLOUT | POLLHUP | POLLERR)) {
+        grpc_fd_become_writable(exec_ctx, watchers[i].fd);
+      }
     }
+  }
 
-  gpr_free (pfds);
-  gpr_free (watchers);
+  gpr_free(pfds);
+  gpr_free(watchers);
 }
 
-static void
-multipoll_with_poll_pollset_finish_shutdown (grpc_pollset * pollset)
-{
+static void multipoll_with_poll_pollset_finish_shutdown(grpc_pollset *pollset) {
   size_t i;
   pollset_hdr *h = pollset->data.ptr;
-  for (i = 0; i < h->fd_count; i++)
-    {
-      GRPC_FD_UNREF (h->fds[i], "multipoller");
-    }
-  for (i = 0; i < h->del_count; i++)
-    {
-      GRPC_FD_UNREF (h->dels[i], "multipoller_del");
-    }
+  for (i = 0; i < h->fd_count; i++) {
+    GRPC_FD_UNREF(h->fds[i], "multipoller");
+  }
+  for (i = 0; i < h->del_count; i++) {
+    GRPC_FD_UNREF(h->dels[i], "multipoller_del");
+  }
   h->fd_count = 0;
   h->del_count = 0;
 }
 
-static void
-multipoll_with_poll_pollset_destroy (grpc_pollset * pollset)
-{
+static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
   pollset_hdr *h = pollset->data.ptr;
-  multipoll_with_poll_pollset_finish_shutdown (pollset);
-  gpr_free (h->fds);
-  gpr_free (h->dels);
-  gpr_free (h);
+  multipoll_with_poll_pollset_finish_shutdown(pollset);
+  gpr_free(h->fds);
+  gpr_free(h->dels);
+  gpr_free(h);
 }
 
 static const grpc_pollset_vtable multipoll_with_poll_pollset = {
-  multipoll_with_poll_pollset_add_fd, multipoll_with_poll_pollset_del_fd,
-  multipoll_with_poll_pollset_maybe_work_and_unlock,
-  multipoll_with_poll_pollset_finish_shutdown,
-  multipoll_with_poll_pollset_destroy
-};
+    multipoll_with_poll_pollset_add_fd, multipoll_with_poll_pollset_del_fd,
+    multipoll_with_poll_pollset_maybe_work_and_unlock,
+    multipoll_with_poll_pollset_finish_shutdown,
+    multipoll_with_poll_pollset_destroy};
 
-void
-grpc_poll_become_multipoller (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd ** fds, size_t nfds)
-{
+void grpc_poll_become_multipoller(grpc_exec_ctx *exec_ctx,
+                                  grpc_pollset *pollset, grpc_fd **fds,
+                                  size_t nfds) {
   size_t i;
-  pollset_hdr *h = gpr_malloc (sizeof (pollset_hdr));
+  pollset_hdr *h = gpr_malloc(sizeof(pollset_hdr));
   pollset->vtable = &multipoll_with_poll_pollset;
   pollset->data.ptr = h;
   h->fd_count = nfds;
   h->fd_capacity = nfds;
-  h->fds = gpr_malloc (nfds * sizeof (grpc_fd *));
+  h->fds = gpr_malloc(nfds * sizeof(grpc_fd *));
   h->del_count = 0;
   h->del_capacity = 0;
   h->dels = NULL;
-  for (i = 0; i < nfds; i++)
-    {
-      h->fds[i] = fds[i];
-      GRPC_FD_REF (fds[i], "multipoller");
-    }
+  for (i = 0; i < nfds; i++) {
+    h->fds[i] = fds[i];
+    GRPC_FD_REF(fds[i], "multipoller");
+  }
 }
 
 #endif /* GPR_POSIX_SOCKET */
 
 #ifdef GPR_POSIX_MULTIPOLL_WITH_POLL
-grpc_platform_become_multipoller_type grpc_platform_become_multipoller = grpc_poll_become_multipoller;
+grpc_platform_become_multipoller_type grpc_platform_become_multipoller =
+    grpc_poll_become_multipoller;
 #endif

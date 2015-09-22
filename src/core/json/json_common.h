@@ -35,8 +35,7 @@
 #define GRPC_INTERNAL_CORE_JSON_JSON_COMMON_H
 
 /* The various json types. */
-typedef enum
-{
+typedef enum {
   GRPC_JSON_OBJECT,
   GRPC_JSON_ARRAY,
   GRPC_JSON_STRING,
