@@ -125,12 +125,11 @@ def get_c_tests(travis, test_lang) :
   platforms_str = 'ci_platforms' if travis else 'platforms'
   with open('tools/run_tests/tests.json') as f:
     js = json.load(f)
-    binaries = [tgt
-                for tgt in js
-                if tgt['language'] == test_lang and
-                    platform_string() in tgt[platforms_str] and
-                    not (travis and tgt['flaky'])]
-  return binaries
+    return [tgt
+            for tgt in js
+            if tgt['language'] == test_lang and
+                platform_string() in tgt[platforms_str] and
+                not (travis and tgt['flaky'])]
 
 
 class CLanguage(object):
@@ -144,7 +143,7 @@ class CLanguage(object):
     out = []
     binaries = get_c_tests(travis, self.test_lang)
     for target in binaries:
-      if config.build_config in tgt['exclude_configs']:
+      if config.build_config in target['exclude_configs']:
         continue
       if self.platform == 'windows':
         binary = 'vsprojects/%s/%s.exe' % (
@@ -168,6 +167,9 @@ class CLanguage(object):
 
   def build_steps(self):
     return []
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return True
@@ -194,13 +196,16 @@ class GYPCLanguage(object):
             for binary in gyp_test_paths(travis, config)]
 
   def pre_build_steps(self):
-    return [['gyp', '--depth=.', 'grpc.gyp']]
+    return [['gyp', '--depth=.', '--suffix=-gyp', 'grpc.gyp']]
 
   def make_targets(self):
     return gyp_test_paths(False)
 
   def build_steps(self):
     return []
+
+  def makefile_name(self):
+    return 'Makefile-gyp'
 
   def supports_multi_config(self):
     return False
@@ -224,6 +229,9 @@ class NodeLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
 
+  def makefile_name(self):
+    return 'Makefile'
+
   def supports_multi_config(self):
     return False
 
@@ -245,6 +253,9 @@ class PhpLanguage(object):
 
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return False
@@ -289,6 +300,9 @@ class PythonLanguage(object):
                        do_newline=True)
     return commands
 
+  def makefile_name(self):
+    return 'Makefile'
+
   def supports_multi_config(self):
     return False
 
@@ -310,6 +324,9 @@ class RubyLanguage(object):
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return False
@@ -353,6 +370,9 @@ class CSharpLanguage(object):
     else:
       return [['tools/run_tests/build_csharp.sh']]
 
+  def makefile_name(self):
+    return 'Makefile'
+
   def supports_multi_config(self):
     return False
 
@@ -374,6 +394,9 @@ class ObjCLanguage(object):
 
   def build_steps(self):
     return [['src/objective-c/tests/build_tests.sh']]
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return False
@@ -397,6 +420,9 @@ class Sanity(object):
   def build_steps(self):
     return []
 
+  def makefile_name(self):
+    return 'Makefile'
+
   def supports_multi_config(self):
     return False
 
@@ -417,6 +443,9 @@ class Build(object):
 
   def build_steps(self):
     return []
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return True
@@ -543,7 +572,7 @@ if len(build_configs) > 1:
       sys.exit(1)
 
 if platform.system() == 'Windows':
-  def make_jobspec(cfg, targets):
+  def make_jobspec(cfg, targets, makefile='Makefile'):
     extra_args = []
     # better do parallel compilation
     extra_args.extend(["/m"])
@@ -557,23 +586,27 @@ if platform.system() == 'Windows':
                       shell=True, timeout_seconds=90*60)
       for target in targets]
 else:
-  def make_jobspec(cfg, targets):
+  def make_jobspec(cfg, targets, makefile='Makefile'):
     return [jobset.JobSpec([os.getenv('MAKE', 'make'),
+                            '-f', makefile,
                             '-j', '%d' % (multiprocessing.cpu_count() + 1),
                             'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
                                 args.slowdown,
                             'CONFIG=%s' % cfg] + targets,
                            timeout_seconds=30*60)]
+make_targets = {}
+for l in languages:
+  makefile = l.makefile_name()
+  make_targets[makefile] = make_targets.get(makefile, set()).union(
+      set(l.make_targets()))
 
-make_targets = list(set(itertools.chain.from_iterable(
-                                         l.make_targets() for l in languages)))
 build_steps = list(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs
                    for l in languages
                    for cmdline in l.pre_build_steps()))
 if make_targets:
-  make_commands = itertools.chain.from_iterable(make_jobspec(cfg, make_targets) for cfg in build_configs)
+  make_commands = itertools.chain.from_iterable(make_jobspec(cfg, list(targets), makefile) for cfg in build_configs for (makefile, targets) in make_targets.iteritems())
   build_steps.extend(set(make_commands))
 build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
