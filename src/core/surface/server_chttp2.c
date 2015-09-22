@@ -135,7 +135,7 @@ grpc_server_add_insecure_http2_port (grpc_server * server, const char *addr)
   grpc_resolved_addresses_destroy (resolved);
 
   /* Register with the server only upon success */
-  grpc_server_add_listener (server, tcp, start, destroy, &closure_list);
+  grpc_server_add_listener (&exec_ctx, server, tcp, start, destroy);
   goto done;
 
 /* Error path: cleanup and return */

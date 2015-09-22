@@ -58,8 +58,8 @@ create_fixture_endpoint_pair (size_t slice_size)
 
   f.client_ep = p.client;
   f.server_ep = p.server;
-  grpc_endpoint_add_to_pollset (f.client_ep, &g_pollset, &closure_list);
-  grpc_endpoint_add_to_pollset (f.server_ep, &g_pollset, &closure_list);
+  grpc_endpoint_add_to_pollset (&exec_ctx, f.client_ep, &g_pollset);
+  grpc_endpoint_add_to_pollset (&exec_ctx, f.server_ep, &g_pollset);
   grpc_exec_ctx_finish (&exec_ctx);
 
   return f;
@@ -85,7 +85,7 @@ main (int argc, char **argv)
   grpc_pollset_init (&g_pollset);
   grpc_endpoint_tests (configs[0], &g_pollset);
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
+  grpc_pollset_shutdown (&exec_ctx, &g_pollset, &destroyed);
   grpc_exec_ctx_finish (&exec_ctx);
   grpc_shutdown ();
 

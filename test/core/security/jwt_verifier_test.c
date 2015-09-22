@@ -232,7 +232,7 @@ test_jwt_verifier_google_email_issuer_success (void)
   jwt = grpc_jwt_encode_and_sign (&key, expected_audience, expected_lifetime, NULL);
   grpc_auth_json_key_destruct (&key);
   GPR_ASSERT (jwt != NULL);
-  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_success, (void *) expected_user_data, &closure_list);
+  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_success, (&exec_ctx, void *) expected_user_data);
   gpr_free (jwt);
   grpc_jwt_verifier_destroy (verifier);
   grpc_httpcli_set_override (NULL, NULL);
@@ -265,7 +265,7 @@ test_jwt_verifier_custom_email_issuer_success (void)
   jwt = grpc_jwt_encode_and_sign (&key, expected_audience, expected_lifetime, NULL);
   grpc_auth_json_key_destruct (&key);
   GPR_ASSERT (jwt != NULL);
-  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_success, (void *) expected_user_data, &closure_list);
+  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_success, (&exec_ctx, void *) expected_user_data);
   gpr_free (jwt);
   grpc_jwt_verifier_destroy (verifier);
   grpc_httpcli_set_override (NULL, NULL);
@@ -311,7 +311,7 @@ test_jwt_verifier_url_issuer_success (void)
   jwt = grpc_jwt_encode_and_sign (&key, expected_audience, expected_lifetime, NULL);
   grpc_auth_json_key_destruct (&key);
   GPR_ASSERT (jwt != NULL);
-  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_success, (void *) expected_user_data, &closure_list);
+  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_success, (&exec_ctx, void *) expected_user_data);
   gpr_free (jwt);
   grpc_jwt_verifier_destroy (verifier);
   grpc_httpcli_set_override (NULL, NULL);
@@ -350,7 +350,7 @@ test_jwt_verifier_url_issuer_bad_config (void)
   jwt = grpc_jwt_encode_and_sign (&key, expected_audience, expected_lifetime, NULL);
   grpc_auth_json_key_destruct (&key);
   GPR_ASSERT (jwt != NULL);
-  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_key_retrieval_error, (void *) expected_user_data, &closure_list);
+  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_key_retrieval_error, (&exec_ctx, void *) expected_user_data);
   gpr_free (jwt);
   grpc_jwt_verifier_destroy (verifier);
   grpc_httpcli_set_override (NULL, NULL);
@@ -371,7 +371,7 @@ test_jwt_verifier_bad_json_key (void)
   jwt = grpc_jwt_encode_and_sign (&key, expected_audience, expected_lifetime, NULL);
   grpc_auth_json_key_destruct (&key);
   GPR_ASSERT (jwt != NULL);
-  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_key_retrieval_error, (void *) expected_user_data, &closure_list);
+  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_key_retrieval_error, (&exec_ctx, void *) expected_user_data);
   gpr_free (jwt);
   grpc_jwt_verifier_destroy (verifier);
   grpc_httpcli_set_override (NULL, NULL);
@@ -419,7 +419,7 @@ test_jwt_verifier_bad_signature (void)
   grpc_auth_json_key_destruct (&key);
   corrupt_jwt_sig (jwt);
   GPR_ASSERT (jwt != NULL);
-  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_bad_signature, (void *) expected_user_data, &closure_list);
+  grpc_jwt_verifier_verify (verifier, NULL, jwt, expected_audience, on_verification_bad_signature, (&exec_ctx, void *) expected_user_data);
   gpr_free (jwt);
   grpc_jwt_verifier_destroy (verifier);
   grpc_httpcli_set_override (NULL, NULL);
@@ -447,7 +447,7 @@ test_jwt_verifier_bad_format (void)
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create (NULL, 0);
   grpc_httpcli_set_override (httpcli_get_should_not_be_called, httpcli_post_should_not_be_called);
-  grpc_jwt_verifier_verify (verifier, NULL, "bad jwt", expected_audience, on_verification_bad_format, (void *) expected_user_data, &closure_list);
+  grpc_jwt_verifier_verify (verifier, NULL, "bad jwt", expected_audience, on_verification_bad_format, (&exec_ctx, void *) expected_user_data);
   grpc_jwt_verifier_destroy (verifier);
   grpc_httpcli_set_override (NULL, NULL);
   grpc_exec_ctx_finish (&exec_ctx);

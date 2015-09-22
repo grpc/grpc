@@ -322,9 +322,9 @@ grpc_channel_destroy (grpc_channel * channel)
   memset (&op, 0, sizeof (op));
   op.disconnect = 1;
   elem = grpc_channel_stack_element (CHANNEL_STACK_FROM_CHANNEL (channel), 0);
-  elem->filter->start_transport_op (elem, &op, &closure_list);
+  elem->filter->start_transport_op (&exec_ctx, elem, &op);
 
-  GRPC_CHANNEL_INTERNAL_UNREF (channel, "channel", &closure_list);
+  GRPC_CHANNEL_INTERNAL_UNREF (&exec_ctx, channel, "channel");
 
   grpc_exec_ctx_finish (&exec_ctx);
 }

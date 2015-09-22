@@ -140,7 +140,7 @@ reconnect_server_start (reconnect_server * server, int port)
   port_added = grpc_tcp_server_add_port (server->tcp_server, &addr, sizeof (addr));
   GPR_ASSERT (port_added == port);
 
-  grpc_tcp_server_start (server->tcp_server, server->pollsets, 1, on_connect, server, &closure_list);
+  grpc_tcp_server_start (&exec_ctx, server->tcp_server, server->pollsets, 1, on_connect, server);
   gpr_log (GPR_INFO, "reconnect tcp server listening on 0.0.0.0:%d", port);
 
   grpc_exec_ctx_finish (&exec_ctx);
@@ -154,7 +154,7 @@ reconnect_server_poll (reconnect_server * server, int seconds)
 					gpr_time_from_seconds (seconds, GPR_TIMESPAN));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock (GRPC_POLLSET_MU (&server->pollset));
-  grpc_pollset_work (&server->pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline, &closure_list);
+  grpc_pollset_work (&server->pollset, &worker, gpr_now (&exec_ctx, GPR_CLOCK_MONOTONIC), deadline);
   gpr_mu_unlock (GRPC_POLLSET_MU (&server->pollset));
   grpc_exec_ctx_finish (&exec_ctx);
 }
@@ -186,9 +186,9 @@ reconnect_server_destroy (reconnect_server * server)
   grpc_closure do_nothing_closure[2];
   grpc_closure_init (&do_nothing_closure[0], do_nothing, NULL);
   grpc_closure_init (&do_nothing_closure[1], do_nothing, NULL);
-  grpc_tcp_server_destroy (server->tcp_server, &do_nothing_closure[0], &closure_list);
+  grpc_tcp_server_destroy (&exec_ctx, server->tcp_server, &do_nothing_closure[0]);
   reconnect_server_clear_timestamps (server);
-  grpc_pollset_shutdown (&server->pollset, &do_nothing_closure[1], &closure_list);
+  grpc_pollset_shutdown (&exec_ctx, &server->pollset, &do_nothing_closure[1]);
   grpc_exec_ctx_finish (&exec_ctx);
   grpc_pollset_destroy (&server->pollset);
   grpc_shutdown ();

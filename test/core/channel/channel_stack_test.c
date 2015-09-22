@@ -120,14 +120,14 @@ test_create_channel_stack (void)
   chan_args.args = &arg;
 
   channel_stack = gpr_malloc (grpc_channel_stack_size (&filters, 1));
-  grpc_channel_stack_init (&filters, 1, NULL, &chan_args, metadata_context, channel_stack, &closure_list);
+  grpc_channel_stack_init (&exec_ctx, &filters, 1, NULL, &chan_args, metadata_context, channel_stack);
   GPR_ASSERT (channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element (channel_stack, 0);
   channel_data = (int *) channel_elem->channel_data;
   GPR_ASSERT (*channel_data == 0);
 
   call_stack = gpr_malloc (channel_stack->call_stack_size);
-  grpc_call_stack_init (channel_stack, NULL, NULL, call_stack, &closure_list);
+  grpc_call_stack_init (&exec_ctx, channel_stack, NULL, NULL, call_stack);
   GPR_ASSERT (call_stack->count == 1);
   call_elem = grpc_call_stack_element (call_stack, 0);
   GPR_ASSERT (call_elem->filter == channel_elem->filter);
@@ -136,11 +136,11 @@ test_create_channel_stack (void)
   GPR_ASSERT (*call_data == 0);
   GPR_ASSERT (*channel_data == 1);
 
-  grpc_call_stack_destroy (call_stack, &closure_list);
+  grpc_call_stack_destroy (&exec_ctx, call_stack);
   gpr_free (call_stack);
   GPR_ASSERT (*channel_data == 2);
 
-  grpc_channel_stack_destroy (channel_stack, &closure_list);
+  grpc_channel_stack_destroy (&exec_ctx, channel_stack);
   gpr_free (channel_stack);
 
   grpc_mdctx_unref (metadata_context);

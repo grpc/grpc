@@ -113,7 +113,7 @@ grpc_iomgr_shutdown (void)
 	    }
 	  last_warning_time = gpr_now (GPR_CLOCK_REALTIME);
 	}
-      if (grpc_alarm_check (gpr_inf_future (GPR_CLOCK_MONOTONIC), NULL, &closure_list))
+      if (grpc_alarm_check (gpr_inf_future (&exec_ctx, GPR_CLOCK_MONOTONIC), NULL))
 	{
 	  gpr_mu_unlock (&g_mu);
 	  grpc_exec_ctx_finish (&exec_ctx);

@@ -121,7 +121,7 @@ is_stack_running_on_compute_engine (void)
 
   grpc_httpcli_context_init (&context);
 
-  grpc_httpcli_get (&context, &detector.pollset, &request, gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), max_detection_delay), on_compute_engine_detection_http_response, &detector, &closure_list);
+  grpc_httpcli_get (&context, &detector.pollset, &request, gpr_time_add (gpr_now (&exec_ctx, GPR_CLOCK_REALTIME), max_detection_delay), on_compute_engine_detection_http_response, &detector);
 
   grpc_exec_ctx_finish (&exec_ctx);
 
@@ -131,13 +131,13 @@ is_stack_running_on_compute_engine (void)
   while (!detector.is_done)
     {
       grpc_pollset_worker worker;
-      grpc_pollset_work (&detector.pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
+      grpc_pollset_work (&detector.pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (&exec_ctx, GPR_CLOCK_MONOTONIC));
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (&detector.pollset));
 
   grpc_httpcli_context_destroy (&context);
   grpc_closure_init (&destroy_closure, destroy_pollset, &detector.pollset);
-  grpc_pollset_shutdown (&detector.pollset, &destroy_closure, &closure_list);
+  grpc_pollset_shutdown (&exec_ctx, &detector.pollset, &destroy_closure);
   grpc_exec_ctx_finish (&exec_ctx);
 
   return detector.success;

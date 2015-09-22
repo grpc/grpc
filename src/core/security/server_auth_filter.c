@@ -134,7 +134,7 @@ on_md_processing_done (void *user_data, const grpc_metadata * consumed_md, size_
       calld->num_consumed_md = num_consumed_md;
       grpc_metadata_batch_filter (&calld->md_op->data.metadata, remove_consumed_md, elem);
       grpc_metadata_array_destroy (&calld->md);
-      calld->on_done_recv->cb (calld->on_done_recv->cb_arg, 1, &closure_list);
+      calld->on_done_recv->cb (&exec_ctx, calld->on_done_recv->cb_arg, 1);
     }
   else
     {
@@ -144,7 +144,7 @@ on_md_processing_done (void *user_data, const grpc_metadata * consumed_md, size_
       message = gpr_slice_from_copied_string (error_details);
       grpc_sopb_reset (calld->recv_ops);
       grpc_transport_stream_op_add_close (&calld->transport_op, status, &message);
-      grpc_call_next_op (elem, &calld->transport_op, &closure_list);
+      grpc_call_next_op (&exec_ctx, elem, &calld->transport_op);
     }
 
   grpc_exec_ctx_finish (&exec_ctx);

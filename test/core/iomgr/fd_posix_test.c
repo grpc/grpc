@@ -283,7 +283,7 @@ server_wait_and_shutdown (server * sv)
     {
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       grpc_pollset_worker worker;
-      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
+      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (&exec_ctx, GPR_CLOCK_MONOTONIC));
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
       grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
@@ -423,7 +423,7 @@ client_wait_and_shutdown (client * cl)
     {
       grpc_pollset_worker worker;
       grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
+      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (&exec_ctx, GPR_CLOCK_MONOTONIC));
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
       grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
@@ -443,9 +443,9 @@ test_grpc_fd (void)
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   server_init (&sv);
-  port = server_start (&sv, &closure_list);
+  port = server_start (&exec_ctx, &sv);
   client_init (&cl);
-  client_start (&cl, port, &closure_list);
+  client_start (&exec_ctx, &cl, port);
   grpc_exec_ctx_finish (&exec_ctx);
   client_wait_and_shutdown (&cl);
   server_wait_and_shutdown (&sv);
@@ -525,10 +525,10 @@ test_grpc_fd_change (void)
   GPR_ASSERT (fcntl (sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
 
   em_fd = grpc_fd_create (sv[0], "test_grpc_fd_change");
-  grpc_pollset_add_fd (&g_pollset, em_fd, &closure_list);
+  grpc_pollset_add_fd (&exec_ctx, &g_pollset, em_fd);
 
   /* Register the first callback, then make its FD readable */
-  grpc_fd_notify_on_read (em_fd, &first_closure, &closure_list);
+  grpc_fd_notify_on_read (&exec_ctx, em_fd, &first_closure);
   data = 0;
   result = write (sv[1], &data, 1);
   GPR_ASSERT (result == 1);
@@ -538,7 +538,7 @@ test_grpc_fd_change (void)
   while (a.cb_that_ran == NULL)
     {
       grpc_pollset_worker worker;
-      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
+      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (&exec_ctx, GPR_CLOCK_MONOTONIC));
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
       grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
@@ -552,7 +552,7 @@ test_grpc_fd_change (void)
 
   /* Now register a second callback with distinct change data, and do the same
      thing again. */
-  grpc_fd_notify_on_read (em_fd, &second_closure, &closure_list);
+  grpc_fd_notify_on_read (&exec_ctx, em_fd, &second_closure);
   data = 0;
   result = write (sv[1], &data, 1);
   GPR_ASSERT (result == 1);
@@ -561,7 +561,7 @@ test_grpc_fd_change (void)
   while (b.cb_that_ran == NULL)
     {
       grpc_pollset_worker worker;
-      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
+      grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (&exec_ctx, GPR_CLOCK_MONOTONIC));
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
       grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
@@ -570,7 +570,7 @@ test_grpc_fd_change (void)
   GPR_ASSERT (b.cb_that_ran == second_read_callback);
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
 
-  grpc_fd_orphan (em_fd, NULL, "d", &closure_list);
+  grpc_fd_orphan (&exec_ctx, em_fd, NULL, "d");
   grpc_exec_ctx_finish (&exec_ctx);
   destroy_change_data (&a);
   destroy_change_data (&b);
@@ -594,7 +594,7 @@ main (int argc, char **argv)
   test_grpc_fd ();
   test_grpc_fd_change ();
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
+  grpc_pollset_shutdown (&exec_ctx, &g_pollset, &destroyed);
   grpc_exec_ctx_finish (&exec_ctx);
   grpc_iomgr_shutdown ();
   return 0;

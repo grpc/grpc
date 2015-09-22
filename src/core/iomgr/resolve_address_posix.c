@@ -166,7 +166,7 @@ do_request_thread (void *rp)
   grpc_resolve_cb cb = r->cb;
   gpr_free (r->name);
   gpr_free (r->default_port);
-  cb (arg, resolved, &closure_list);
+  cb (&exec_ctx, arg, resolved);
   grpc_iomgr_unregister_object (&r->iomgr_object);
   gpr_free (r);
   grpc_exec_ctx_finish (&exec_ctx);
