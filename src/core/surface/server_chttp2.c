@@ -48,7 +48,7 @@ setup_transport (grpc_exec_ctx * exec_ctx, void *server, grpc_transport * transp
   static grpc_channel_filter const *extra_filters[] = {
     &grpc_http_server_filter
   };
-  grpc_server_setup_transport (server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (exec_ctx, server));
+  grpc_server_setup_transport (exec_ctx, server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (server));
 }
 
 static void
@@ -62,7 +62,7 @@ new_transport (grpc_exec_ctx * exec_ctx, void *server, grpc_endpoint * tcp)
    * case.
    */
   grpc_mdctx *mdctx = grpc_mdctx_create ();
-  grpc_transport *transport = grpc_create_chttp2_transport (grpc_server_get_channel_args (exec_ctx, server), tcp, mdctx, 0);
+  grpc_transport *transport = grpc_create_chttp2_transport (exec_ctx, grpc_server_get_channel_args (server), tcp, mdctx, 0);
   setup_transport (exec_ctx, server, transport, mdctx);
   grpc_chttp2_transport_start_reading (exec_ctx, transport, NULL, 0);
 }
@@ -146,7 +146,7 @@ error:
     }
   if (tcp)
     {
-      grpc_tcp_server_destroy (tcp, NULL, NULL);
+      grpc_tcp_server_destroy (&exec_ctx, tcp, NULL);
     }
   port_num = 0;
 

@@ -95,10 +95,8 @@ typedef struct
   char *peer_string;
 } grpc_tcp;
 
-static void tcp_handle_read (void *arg /* grpc_tcp */ , int success,
-			     grpc_closure_list * closure_list);
-static void tcp_handle_write (void *arg /* grpc_tcp */ , int success,
-			      grpc_closure_list * closure_list);
+static void tcp_handle_read (grpc_exec_ctx * exec_ctx, void *arg /* grpc_tcp */ , int success);
+static void tcp_handle_write (grpc_exec_ctx * exec_ctx, void *arg /* grpc_tcp */ , int success);
 
 static void
 tcp_shutdown (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep)
@@ -117,11 +115,11 @@ tcp_free (grpc_exec_ctx * exec_ctx, grpc_tcp * tcp)
 
 /*#define GRPC_TCP_REFCOUNT_DEBUG*/
 #ifdef GRPC_TCP_REFCOUNT_DEBUG
-#define TCP_UNREF(tcp, reason, cl) \
-  tcp_unref((tcp), (cl), (reason), __FILE__, __LINE__)
+#define TCP_UNREF(cl, tcp, reason) \
+  tcp_unref((cl), (tcp), (reason), __FILE__, __LINE__)
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 static void
-tcp_unref (grpc_tcp * tcp, grpc_closure_list * closure_list, const char *reason, const char *file, int line)
+tcp_unref (grpc_exec_ctx *exec_ctx, grpc_tcp * tcp, const char *reason, const char *file, int line)
 {
   gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp, reason, tcp->refcount.count, tcp->refcount.count - 1);
   if (gpr_unref (&tcp->refcount))
@@ -137,7 +135,7 @@ tcp_ref (grpc_tcp * tcp, const char *reason, const char *file, int line)
   gpr_ref (&tcp->refcount);
 }
 #else
-#define TCP_UNREF(tcp, reason, cl) tcp_unref((tcp), (cl))
+#define TCP_UNREF(cl, tcp, reason) tcp_unref((cl), (tcp))
 #define TCP_REF(tcp, reason) tcp_ref((tcp))
 static void
 tcp_unref (grpc_exec_ctx * exec_ctx, grpc_tcp * tcp)
@@ -273,8 +271,7 @@ tcp_continue_read (grpc_exec_ctx * exec_ctx, grpc_tcp * tcp)
 }
 
 static void
-tcp_handle_read (void *arg /* grpc_tcp */ , int success,
-		 grpc_closure_list * closure_list)
+tcp_handle_read (grpc_exec_ctx * exec_ctx, void *arg /* grpc_tcp */ , int success)
 {
   grpc_tcp *tcp = (grpc_tcp *) arg;
   GPR_ASSERT (!tcp->finished_edge);
@@ -401,8 +398,7 @@ tcp_flush (grpc_tcp * tcp)
 }
 
 static void
-tcp_handle_write (void *arg /* grpc_tcp */ , int success,
-		  grpc_closure_list * closure_list)
+tcp_handle_write (grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */ , int success)
 {
   grpc_tcp *tcp = (grpc_tcp *) arg;
   flush_result status;

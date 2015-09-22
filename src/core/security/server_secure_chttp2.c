@@ -104,7 +104,7 @@ setup_transport (grpc_exec_ctx * exec_ctx, void *statep, grpc_transport * transp
   args_to_add[0] = grpc_security_connector_to_arg (state->sc);
   args_to_add[1] = grpc_auth_metadata_processor_to_arg (&state->creds->processor);
   args_copy = grpc_channel_args_copy_and_add (grpc_server_get_channel_args (state->server), args_to_add, GPR_ARRAY_SIZE (args_to_add));
-  grpc_server_setup_transport (state->server, transport, extra_filters, GPR_ARRAY_SIZE (exec_ctx, extra_filters), mdctx, args_copy);
+  grpc_server_setup_transport (exec_ctx, state->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, args_copy);
   grpc_channel_args_destroy (args_copy);
 }
 
@@ -146,7 +146,7 @@ on_secure_handshake_done (grpc_exec_ctx * exec_ctx, void *statep, grpc_security_
       if (!state->is_shutdown)
 	{
 	  mdctx = grpc_mdctx_create ();
-	  transport = grpc_create_chttp2_transport (grpc_server_get_channel_args (exec_ctx, state->server), secure_endpoint, mdctx, 0);
+	  transport = grpc_create_chttp2_transport (exec_ctx, grpc_server_get_channel_args (state->server), secure_endpoint, mdctx, 0);
 	  setup_transport (exec_ctx, state, transport, mdctx);
 	  grpc_chttp2_transport_start_reading (exec_ctx, transport, NULL, 0);
 	}

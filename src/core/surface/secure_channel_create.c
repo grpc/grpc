@@ -302,7 +302,7 @@ grpc_secure_channel_create (grpc_credentials * creds, const char *target, const 
       return NULL;
     }
 
-  grpc_client_channel_set_resolver (grpc_channel_get_channel_stack (&exec_ctx, channel), resolver);
+  grpc_client_channel_set_resolver (&exec_ctx, grpc_channel_get_channel_stack (channel), resolver);
   GRPC_RESOLVER_UNREF (&exec_ctx, resolver, "create");
   grpc_subchannel_factory_unref (&exec_ctx, &f->base);
   GRPC_SECURITY_CONNECTOR_UNREF (&connector->base, "channel_create");

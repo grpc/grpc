@@ -159,7 +159,7 @@ static int
 subchannel_unref_locked (grpc_subchannel * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
   GRPC_MUST_USE_RESULT;
      static void connection_ref_locked (connection * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-     static grpc_subchannel *connection_unref_locked (connection * c, grpc_closure_list * closure_list GRPC_SUBCHANNEL_REF_EXTRA_ARGS) GRPC_MUST_USE_RESULT;
+     static grpc_subchannel *connection_unref_locked (grpc_exec_ctx *exec_ctx, connection * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) GRPC_MUST_USE_RESULT;
      static void subchannel_destroy (grpc_exec_ctx * exec_ctx, grpc_subchannel * c);
 
 #ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
@@ -169,8 +169,8 @@ subchannel_unref_locked (grpc_subchannel * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
   subchannel_unref_locked((p), __FILE__, __LINE__, (r))
 #define CONNECTION_REF_LOCKED(p, r) \
   connection_ref_locked((p), __FILE__, __LINE__, (r))
-#define CONNECTION_UNREF_LOCKED(p, r, cl) \
-  connection_unref_locked((p), (cl), __FILE__, __LINE__, (r))
+#define CONNECTION_UNREF_LOCKED(cl, p, r) \
+  connection_unref_locked((cl), (p), __FILE__, __LINE__, (r))
 #define REF_PASS_ARGS , file, line, reason
 #define REF_LOG(name, p)                                                  \
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "%s: %p   ref %d -> %d %s", \
@@ -182,7 +182,7 @@ subchannel_unref_locked (grpc_subchannel * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
 #define SUBCHANNEL_REF_LOCKED(p, r) subchannel_ref_locked((p))
 #define SUBCHANNEL_UNREF_LOCKED(p, r) subchannel_unref_locked((p))
 #define CONNECTION_REF_LOCKED(p, r) connection_ref_locked((p))
-#define CONNECTION_UNREF_LOCKED(p, r, cl) connection_unref_locked((p), (cl))
+#define CONNECTION_UNREF_LOCKED(cl, p, r) connection_unref_locked((cl), (p))
 #define REF_PASS_ARGS
 #define REF_LOG(name, p) \
   do {                   \
@@ -199,7 +199,7 @@ subchannel_unref_locked (grpc_subchannel * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
      static void connection_destroy (grpc_exec_ctx * exec_ctx, connection * c)
 {
   GPR_ASSERT (c->refs == 0);
-  grpc_channel_stack_destroy (CHANNEL_STACK_FROM_CONNECTION (exec_ctx, c));
+  grpc_channel_stack_destroy (exec_ctx, CHANNEL_STACK_FROM_CONNECTION (c));
   gpr_free (c);
 }
 
@@ -212,7 +212,7 @@ connection_ref_locked (connection * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
 }
 
 static grpc_subchannel *
-connection_unref_locked (connection * c, grpc_closure_list * closure_list GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
+connection_unref_locked (grpc_exec_ctx *exec_ctx, connection * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
 {
   grpc_subchannel *destroy = NULL;
   UNREF_LOG ("CONNECTION", c);
@@ -254,7 +254,7 @@ grpc_subchannel_ref (grpc_subchannel * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
 }
 
 void
-grpc_subchannel_unref (grpc_subchannel * c, grpc_closure_list * closure_list GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
+grpc_subchannel_unref (grpc_exec_ctx *exec_ctx, grpc_subchannel * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
 {
   int destroy;
   gpr_mu_lock (&c->mu);
@@ -761,13 +761,13 @@ grpc_subchannel_call_ref (grpc_subchannel_call * c GRPC_SUBCHANNEL_REF_EXTRA_ARG
 }
 
 void
-grpc_subchannel_call_unref (grpc_subchannel_call * c, grpc_closure_list * closure_list GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
+grpc_subchannel_call_unref (grpc_exec_ctx *exec_ctx, grpc_subchannel_call * c GRPC_SUBCHANNEL_REF_EXTRA_ARGS)
 {
   if (gpr_unref (&c->refs))
     {
       gpr_mu *mu = &c->connection->subchannel->mu;
       grpc_subchannel *destroy;
-      grpc_call_stack_destroy (SUBCHANNEL_CALL_TO_CALL_STACK (exec_ctx, c));
+      grpc_call_stack_destroy (exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK (c));
       gpr_mu_lock (mu);
       destroy = CONNECTION_UNREF_LOCKED (exec_ctx, c->connection, "call");
       gpr_mu_unlock (mu);

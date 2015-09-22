@@ -387,7 +387,7 @@ on_read (grpc_exec_ctx * exec_ctx, void *arg, int success)
 	{
 	  grpc_pollset_add_fd (exec_ctx, sp->server->pollsets[i], fdobj);
 	}
-      sp->server->on_accept_cb (sp->server->on_accept_cb_arg, grpc_tcp_create (exec_ctx, fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str));
+      sp->server->on_accept_cb (exec_ctx, sp->server->on_accept_cb_arg, grpc_tcp_create (fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str));
 
       gpr_free (name);
       gpr_free (addr_str);

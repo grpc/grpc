@@ -73,7 +73,7 @@ static grpc_httpcli_get_override g_get_override = NULL;
 static grpc_httpcli_post_override g_post_override = NULL;
 
 static void
-plaintext_handshake (void *arg, grpc_endpoint * endpoint, const char *host, void (*on_done) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint, grpc_closure_list * closure_list))
+plaintext_handshake (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint, const char *host, void (*on_done) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint))
 {
   on_done (exec_ctx, arg, endpoint);
 }
@@ -155,7 +155,7 @@ on_read (grpc_exec_ctx * exec_ctx, void *user_data, int success)
     }
   else
     {
-      finish (req, grpc_httpcli_parser_eof (exec_ctx, &req->parser));
+      finish (exec_ctx, req, grpc_httpcli_parser_eof (&req->parser));
     }
 }
 
@@ -226,7 +226,7 @@ next_address (grpc_exec_ctx * exec_ctx, internal_request * req)
     }
   addr = &req->addresses->addrs[req->next_address++];
   grpc_closure_init (&req->connected, on_connected, req);
-  grpc_tcp_client_connect (&req->connected, &req->ep, &req->context->pollset_set, (exec_ctx, struct sockaddr *) &addr->addr, addr->len, req->deadline);
+  grpc_tcp_client_connect (exec_ctx, &req->connected, &req->ep, &req->context->pollset_set, (struct sockaddr *) &addr->addr, addr->len, req->deadline);
 }
 
 static void
@@ -276,7 +276,7 @@ grpc_httpcli_get (grpc_exec_ctx * exec_ctx, grpc_httpcli_context * context, grpc
       return;
     }
   gpr_asprintf (&name, "HTTP:GET:%s:%s", request->host, request->path);
-  internal_request_begin (context, pollset, request, deadline, on_response, user_data, name, grpc_httpcli_format_get_request (exec_ctx, request));
+  internal_request_begin (exec_ctx, context, pollset, request, deadline, on_response, user_data, name, grpc_httpcli_format_get_request (request));
   gpr_free (name);
 }
 
@@ -289,7 +289,7 @@ grpc_httpcli_post (grpc_exec_ctx * exec_ctx, grpc_httpcli_context * context, grp
       return;
     }
   gpr_asprintf (&name, "HTTP:POST:%s:%s", request->host, request->path);
-  internal_request_begin (context, pollset, request, deadline, on_response, user_data, name, grpc_httpcli_format_post_request (exec_ctx, request, body_bytes, body_size));
+  internal_request_begin (exec_ctx, context, pollset, request, deadline, on_response, user_data, name, grpc_httpcli_format_post_request (request, body_bytes, body_size));
   gpr_free (name);
 }
 

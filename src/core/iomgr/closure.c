@@ -59,22 +59,6 @@ grpc_closure_list_add (grpc_closure_list * closure_list, grpc_closure * closure,
   closure_list->tail = closure;
 }
 
-void
-grpc_closure_list_run (grpc_closure_list * closure_list)
-{
-  while (!grpc_closure_list_empty (*closure_list))
-    {
-      grpc_closure *c = closure_list->head;
-      closure_list->head = closure_list->tail = NULL;
-      while (c != NULL)
-	{
-	  grpc_closure *next = c->next;
-	  c->cb (exec_ctx, c->cb_arg, c->success);
-	  c = next;
-	}
-    }
-}
-
 int
 grpc_closure_list_empty (grpc_closure_list closure_list)
 {

@@ -79,7 +79,7 @@ typedef struct channel_data
 typedef struct
 {
   grpc_call_element *elem;
-  grpc_closure_list *closure_list;
+  grpc_exec_ctx *exec_ctx;
 } server_filter_args;
 
 static grpc_mdelem *
@@ -134,7 +134,7 @@ server_filter (void *user_data, grpc_mdelem * md)
       /* swallow it and error everything out. */
       /* TODO(klempner): We ought to generate more descriptive error messages
          on the wire here. */
-      grpc_call_element_send_cancel (elem, a->closure_list);
+      grpc_call_element_send_cancel (a->exec_ctx, elem);
       return NULL;
     }
   else if (md->key == channeld->path_key)
@@ -186,7 +186,7 @@ hs_on_recv (grpc_exec_ctx * exec_ctx, void *user_data, int success)
 	    continue;
 	  calld->got_initial_metadata = 1;
 	  a.elem = elem;
-	  a.closure_list = closure_list;
+	  a.exec_ctx = exec_ctx;
 	  grpc_metadata_batch_filter (&op->data.metadata, server_filter, &a);
 	  /* Have we seen the required http2 transport headers?
 	     (:method, :scheme, content-type, with :path and :authority covered

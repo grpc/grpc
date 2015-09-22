@@ -36,4 +36,15 @@
 
 #include "src/core/iomgr/closure.h"
 
+struct grpc_exec_ctx {
+  grpc_closure_list closure_list;
+};
+
+#define GRPC_EXEC_CTX_INIT { GRPC_CLOSURE_LIST_INIT }
+
+void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx);
+void grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx);
+void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure, int success);
+void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx, grpc_closure_list *list);
+
 #endif

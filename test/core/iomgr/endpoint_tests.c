@@ -250,7 +250,7 @@ read_and_write_test (grpc_endpoint_test_config config, size_t num_bytes, size_t 
     {
       grpc_pollset_worker worker;
       GPR_ASSERT (gpr_time_cmp (gpr_now (GPR_CLOCK_MONOTONIC), deadline) < 0);
-      grpc_pollset_work (g_pollset, &worker, gpr_now (&exec_ctx, GPR_CLOCK_MONOTONIC), deadline);
+      grpc_pollset_work (&exec_ctx, g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline);
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (g_pollset));
   grpc_exec_ctx_finish (&exec_ctx);

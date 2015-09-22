@@ -325,6 +325,7 @@ Pod::Spec.new do |s|
                       'src/core/iomgr/endpoint.c',
                       'src/core/iomgr/endpoint_pair_posix.c',
                       'src/core/iomgr/endpoint_pair_windows.c',
+                      'src/core/iomgr/exec_ctx.c',
                       'src/core/iomgr/fd_posix.c',
                       'src/core/iomgr/iocp_windows.c',
                       'src/core/iomgr/iomgr.c',

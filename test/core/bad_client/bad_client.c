@@ -77,7 +77,7 @@ server_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx
     &grpc_http_server_filter
   };
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport (a->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (&exec_ctx, a->server));
+  grpc_server_setup_transport (&exec_ctx, a->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (a->server));
   grpc_exec_ctx_finish (&exec_ctx);
 }
 
@@ -122,8 +122,8 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
   grpc_exec_ctx_finish (&exec_ctx);
 
   /* Bind everything into the same pollset */
-  grpc_endpoint_add_to_pollset (sfd.client, grpc_cq_pollset (&exec_ctx, a.cq));
-  grpc_endpoint_add_to_pollset (sfd.server, grpc_cq_pollset (&exec_ctx, a.cq));
+  grpc_endpoint_add_to_pollset (&exec_ctx, sfd.client, grpc_cq_pollset (a.cq));
+  grpc_endpoint_add_to_pollset (&exec_ctx, sfd.server, grpc_cq_pollset (a.cq));
 
   /* Check a ground truth */
   GPR_ASSERT (grpc_server_has_open_connections (a.server));

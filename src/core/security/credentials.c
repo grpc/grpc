@@ -676,7 +676,7 @@ oauth2_token_fetcher_get_request_metadata (grpc_exec_ctx * exec_ctx, grpc_creden
     }
   else
     {
-      c->fetch_func (grpc_credentials_metadata_request_create (creds, cb, user_data), &c->httpcli_context, pollset, on_oauth2_token_fetcher_http_response, gpr_time_add (gpr_now (exec_ctx, GPR_CLOCK_REALTIME), refresh_threshold));
+      c->fetch_func (exec_ctx, grpc_credentials_metadata_request_create (creds, cb, user_data), &c->httpcli_context, pollset, on_oauth2_token_fetcher_http_response, gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), refresh_threshold));
     }
 }
 
@@ -755,7 +755,7 @@ refresh_token_fetch_oauth2 (grpc_exec_ctx * exec_ctx, grpc_credentials_metadata_
   request.hdr_count = 1;
   request.hdrs = &header;
   request.handshaker = &grpc_httpcli_ssl;
-  grpc_httpcli_post (httpcli_context, pollset, &request, body, strlen (exec_ctx, body), deadline, response_cb, metadata_req);
+  grpc_httpcli_post (exec_ctx,httpcli_context, pollset, &request, body, strlen ( body), deadline, response_cb, metadata_req);
   gpr_free (body);
 }
 
@@ -1075,7 +1075,6 @@ composite_metadata_cb (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credentia
   /* We're done!. */
   ctx->cb (exec_ctx, ctx->user_data, ctx->md_elems->entries, ctx->md_elems->num_entries, GRPC_CREDENTIALS_OK);
   composite_md_context_destroy (ctx);
-  grpc_closure_list_run (closure_list);
 }
 
 static void

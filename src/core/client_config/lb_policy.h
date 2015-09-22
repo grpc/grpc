@@ -76,13 +76,13 @@ struct grpc_lb_policy_vtable
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
 #define GRPC_LB_POLICY_REF(p, r) \
   grpc_lb_policy_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_LB_POLICY_UNREF(p, r, cl) \
-  grpc_lb_policy_unref((p), (cl), __FILE__, __LINE__, (r))
+#define GRPC_LB_POLICY_UNREF(exec_ctx, p, r) \
+  grpc_lb_policy_unref((exec_ctx), (p), __FILE__, __LINE__, (r))
 void grpc_lb_policy_ref (grpc_lb_policy * policy, const char *file, int line, const char *reason);
-void grpc_lb_policy_unref (grpc_lb_policy * policy, grpc_closure_list * closure_list, const char *file, int line, const char *reason);
+void grpc_lb_policy_unref (grpc_exec_ctx * exec_ctx, grpc_lb_policy * policy, const char *file, int line, const char *reason);
 #else
 #define GRPC_LB_POLICY_REF(p, r) grpc_lb_policy_ref((p))
-#define GRPC_LB_POLICY_UNREF(p, r, cl) grpc_lb_policy_unref((p), (cl))
+#define GRPC_LB_POLICY_UNREF(cl, p, r) grpc_lb_policy_unref((cl), (p))
 void grpc_lb_policy_ref (grpc_lb_policy * policy);
 void grpc_lb_policy_unref (grpc_exec_ctx * exec_ctx, grpc_lb_policy * policy);
 #endif

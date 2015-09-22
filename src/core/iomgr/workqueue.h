@@ -37,6 +37,7 @@
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/pollset.h"
 #include "src/core/iomgr/closure.h"
+#include "src/core/iomgr/exec_ctx.h"
 
 #ifdef GPR_POSIX_SOCKET
 #include "src/core/iomgr/workqueue_posix.h"
@@ -51,7 +52,7 @@ struct grpc_workqueue;
 typedef struct grpc_workqueue grpc_workqueue;
 
 /** Create a work queue */
-grpc_workqueue *grpc_workqueue_create (grpc_closure_list * closure_list);
+grpc_workqueue *grpc_workqueue_create (grpc_exec_ctx *exec_ctx);
 
 void grpc_workqueue_flush (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue);
 
@@ -59,13 +60,13 @@ void grpc_workqueue_flush (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue)
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 #define GRPC_WORKQUEUE_REF(p, r) \
   grpc_workqueue_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_WORKQUEUE_UNREF(p, r, cl) \
-  grpc_workqueue_unref((p), (cl), __FILE__, __LINE__, (r))
+#define GRPC_WORKQUEUE_UNREF(cl, p, r) \
+  grpc_workqueue_unref((cl), (p), __FILE__, __LINE__, (r))
 void grpc_workqueue_ref (grpc_workqueue * workqueue, const char *file, int line, const char *reason);
-void grpc_workqueue_unref (grpc_workqueue * workqueue, grpc_closure_list * closure_list, const char *file, int line, const char *reason);
+void grpc_workqueue_unref (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue, const char *file, int line, const char *reason);
 #else
 #define GRPC_WORKQUEUE_REF(p, r) grpc_workqueue_ref((p))
-#define GRPC_WORKQUEUE_UNREF(p, r, cl) grpc_workqueue_unref((p), (cl))
+#define GRPC_WORKQUEUE_UNREF(cl, p, r) grpc_workqueue_unref((cl), (p))
 void grpc_workqueue_ref (grpc_workqueue * workqueue);
 void grpc_workqueue_unref (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue);
 #endif

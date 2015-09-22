@@ -105,10 +105,10 @@ grpc_alarm_list_init (gpr_timespec now)
 }
 
 void
-grpc_alarm_list_shutdown (grpc_closure_list * closure_list)
+grpc_alarm_list_shutdown (grpc_exec_ctx *exec_ctx)
 {
   int i;
-  run_some_expired_alarms (gpr_inf_future (exec_ctx, g_clock_type), NULL, 0);
+  run_some_expired_alarms (exec_ctx, gpr_inf_future (g_clock_type), NULL, 0);
   for (i = 0; i < NUM_SHARDS; i++)
     {
       shard_type *shard = &g_shards[i];
@@ -373,7 +373,7 @@ int
 grpc_alarm_check (grpc_exec_ctx * exec_ctx, gpr_timespec now, gpr_timespec * next)
 {
   GPR_ASSERT (now.clock_type == g_clock_type);
-  return run_some_expired_alarms (now, next, gpr_time_cmp (now, gpr_inf_future (exec_ctx, now.clock_type)) != 0);
+  return run_some_expired_alarms (exec_ctx, now, next, gpr_time_cmp (now, gpr_inf_future (now.clock_type)) != 0);
 }
 
 gpr_timespec

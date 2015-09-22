@@ -491,10 +491,10 @@ on_lb_policy_state_changed_locked (grpc_exec_ctx * exec_ctx, lb_policy_connectiv
   if (w->lb_policy != w->chand->lb_policy)
     return;
 
-  grpc_connectivity_state_set (&w->chand->state_tracker, w->state, "lb_changed", cl);
+  grpc_connectivity_state_set (exec_ctx, &w->chand->state_tracker, w->state, "lb_changed");
   if (w->state != GRPC_CHANNEL_FATAL_FAILURE)
     {
-      watch_lb_policy (w->chand, w->lb_policy, w->state, cl);
+      watch_lb_policy (exec_ctx, w->chand, w->lb_policy, w->state);
     }
 }
 
@@ -554,7 +554,7 @@ cc_on_config_changed (grpc_exec_ctx * exec_ctx, void *arg, int iomgr_success)
   chand->lb_policy = lb_policy;
   if (lb_policy != NULL || chand->resolver == NULL /* disconnected */ )
     {
-      grpc_closure_list_move (exec_ctx, &chand->waiting_for_config_closures);
+      grpc_exec_ctx_enqueue_list (exec_ctx, &chand->waiting_for_config_closures);
     }
   if (lb_policy != NULL && chand->exit_idle_when_lb_policy_arrives)
     {

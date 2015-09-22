@@ -154,7 +154,7 @@ reconnect_server_poll (reconnect_server * server, int seconds)
 					gpr_time_from_seconds (seconds, GPR_TIMESPAN));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock (GRPC_POLLSET_MU (&server->pollset));
-  grpc_pollset_work (&server->pollset, &worker, gpr_now (&exec_ctx, GPR_CLOCK_MONOTONIC), deadline);
+  grpc_pollset_work (&exec_ctx, &server->pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline);
   gpr_mu_unlock (GRPC_POLLSET_MU (&server->pollset));
   grpc_exec_ctx_finish (&exec_ctx);
 }
