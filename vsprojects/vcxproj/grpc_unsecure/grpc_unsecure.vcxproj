@@ -234,6 +234,7 @@
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy_factory.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy_registry.h" />
@@ -359,6 +360,8 @@
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\round_robin.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policy.c">
     </ClCompile>

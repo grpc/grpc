@@ -71,6 +71,7 @@ typedef struct {
   gpr_mu mu;
   callback_phase phase;
   int success;
+  int removed;
   grpc_closure on_complete;
   grpc_alarm alarm;
   grpc_connectivity_state state;
@@ -81,10 +82,6 @@ typedef struct {
 } state_watcher;
 
 static void delete_state_watcher(state_watcher *w, grpc_call_list *call_list) {
-  grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
-      grpc_channel_get_channel_stack(w->channel));
-  grpc_client_channel_del_interested_party(client_channel_elem,
-                                           grpc_cq_pollset(w->cq), call_list);
   GRPC_CHANNEL_INTERNAL_UNREF(w->channel, "watch_connectivity", call_list);
   gpr_mu_destroy(&w->mu);
   gpr_free(w);
@@ -118,7 +115,17 @@ static void finished_completion(void *pw, grpc_cq_completion *ignored,
 static void partly_done(state_watcher *w, int due_to_completion,
                         grpc_call_list *call_list) {
   int delete = 0;
+  grpc_channel_element *client_channel_elem = NULL;
 
+  gpr_mu_lock(&w->mu);
+  if (w->removed == 0) {
+    w->removed = 1;
+    client_channel_elem = grpc_channel_stack_last_element(
+        grpc_channel_get_channel_stack(w->channel));
+    grpc_client_channel_del_interested_party(client_channel_elem,
+                                             grpc_cq_pollset(w->cq), call_list);
+  }
+  gpr_mu_unlock(&w->mu);
   if (due_to_completion) {
     gpr_mu_lock(&w->mu);
     w->success = 1;
@@ -174,6 +181,7 @@ void grpc_channel_watch_connectivity_state(
   w->phase = WAITING;
   w->state = last_observed_state;
   w->success = 0;
+  w->removed = 0;
   w->cq = cq;
   w->tag = tag;
   w->channel = channel;

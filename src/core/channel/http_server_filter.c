@@ -117,8 +117,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     return NULL;
   } else if (md->key == channeld->te_trailers->key ||
              md->key == channeld->method_post->key ||
-             md->key == channeld->http_scheme->key ||
-             md->key == channeld->content_type->key) {
+             md->key == channeld->http_scheme->key) {
     gpr_log(GPR_ERROR, "Invalid %s: header: '%s'",
             grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
     /* swallow it and error everything out. */

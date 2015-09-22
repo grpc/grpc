@@ -47,7 +47,6 @@
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/security/auth_filters.h"
 #include "src/core/security/credentials.h"
-#include "src/core/security/secure_transport_setup.h"
 #include "src/core/surface/channel.h"
 #include "src/core/transport/chttp2_transport.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -84,11 +83,10 @@ static void connector_unref(grpc_connector *con, grpc_call_list *call_list) {
   }
 }
 
-static void on_secure_transport_setup_done(void *arg,
-                                           grpc_security_status status,
-                                           grpc_endpoint *wrapped_endpoint,
-                                           grpc_endpoint *secure_endpoint,
-                                           grpc_call_list *call_list) {
+static void on_secure_handshake_done(void *arg, grpc_security_status status,
+                                     grpc_endpoint *wrapped_endpoint,
+                                     grpc_endpoint *secure_endpoint,
+                                     grpc_call_list *call_list) {
   connector *c = arg;
   grpc_closure *notify;
   gpr_mu_lock(&c->mu);
@@ -97,7 +95,7 @@ static void on_secure_transport_setup_done(void *arg,
     gpr_mu_unlock(&c->mu);
   } else if (status != GRPC_SECURITY_OK) {
     GPR_ASSERT(c->connecting_endpoint == wrapped_endpoint);
-    gpr_log(GPR_ERROR, "Secure transport setup failed with error %d.", status);
+    gpr_log(GPR_ERROR, "Secure handshake failed with error %d.", status);
     memset(c->result, 0, sizeof(*c->result));
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
@@ -128,8 +126,9 @@ static void connected(void *arg, int success, grpc_call_list *call_list) {
     GPR_ASSERT(c->connecting_endpoint == NULL);
     c->connecting_endpoint = tcp;
     gpr_mu_unlock(&c->mu);
-    grpc_setup_secure_transport(&c->security_connector->base, tcp,
-                                on_secure_transport_setup_done, c, call_list);
+    grpc_security_connector_do_handshake(&c->security_connector->base, tcp,
+                                         on_secure_handshake_done, c,
+                                         call_list);
   } else {
     memset(c->result, 0, sizeof(*c->result));
     notify = c->notify;

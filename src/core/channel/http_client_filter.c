@@ -70,16 +70,18 @@ typedef struct channel_data {
 typedef struct {
   grpc_call_element *elem;
   grpc_call_list *call_list;
-} client_filter_args;
+} client_recv_filter_args;
 
-static grpc_mdelem *client_filter(void *user_data, grpc_mdelem *md) {
-  client_filter_args *a = user_data;
+static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
+  client_recv_filter_args *a = user_data;
   grpc_call_element *elem = a->elem;
   channel_data *channeld = elem->channel_data;
   if (md == channeld->status) {
     return NULL;
   } else if (md->key == channeld->status->key) {
     grpc_call_element_send_cancel(elem, a->call_list);
+    return NULL;
+  } else if (md->key == channeld->content_type->key) {
     return NULL;
   }
   return md;
@@ -94,12 +96,12 @@ static void hc_on_recv(void *user_data, int success,
   grpc_stream_op *ops = calld->recv_ops->ops;
   for (i = 0; i < nops; i++) {
     grpc_stream_op *op = &ops[i];
-    client_filter_args a;
+    client_recv_filter_args a;
     if (op->type != GRPC_OP_METADATA) continue;
     calld->got_initial_metadata = 1;
     a.elem = elem;
     a.call_list = call_list;
-    grpc_metadata_batch_filter(&op->data.metadata, client_filter, &a);
+    grpc_metadata_batch_filter(&op->data.metadata, client_recv_filter, &a);
   }
   calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success, call_list);
 }

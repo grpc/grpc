@@ -63,6 +63,7 @@ typedef struct {
   int sent_initial_metadata;
   gpr_uint8 security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
+  char *service_url;
 } call_data;
 
 /* We can have a per-channel credentials. */
@@ -74,6 +75,13 @@ typedef struct {
   grpc_mdstr *error_msg_key;
   grpc_mdstr *status_key;
 } channel_data;
+
+static void reset_service_url(call_data *calld) {
+  if (calld->service_url != NULL) {
+    gpr_free(calld->service_url);
+    calld->service_url = NULL;
+  }
+}
 
 static void bubble_up_error(grpc_call_element *elem, grpc_status_code status,
                             const char *error_msg, grpc_call_list *call_list) {
@@ -94,6 +102,7 @@ static void on_credentials_metadata(void *user_data,
   grpc_transport_stream_op *op = &calld->op;
   grpc_metadata_batch *mdb;
   size_t i;
+  reset_service_url(calld);
   if (status != GRPC_CREDENTIALS_OK) {
     bubble_up_error(elem, GRPC_STATUS_UNAUTHENTICATED,
                     "Credentials failed to get metadata.", call_list);
@@ -112,8 +121,7 @@ static void on_credentials_metadata(void *user_data,
   grpc_call_next_op(elem, op, call_list);
 }
 
-static char *build_service_url(const char *url_scheme, call_data *calld) {
-  char *service_url;
+void build_service_url(const char *url_scheme, call_data *calld) {
   char *service = gpr_strdup(grpc_mdstr_as_c_string(calld->method));
   char *last_slash = strrchr(service, '/');
   if (last_slash == NULL) {
@@ -126,10 +134,10 @@ static char *build_service_url(const char *url_scheme, call_data *calld) {
     *last_slash = '\0';
   }
   if (url_scheme == NULL) url_scheme = "";
-  gpr_asprintf(&service_url, "%s://%s%s", url_scheme,
+  reset_service_url(calld);
+  gpr_asprintf(&calld->service_url, "%s://%s%s", url_scheme,
                grpc_mdstr_as_c_string(calld->host), service);
   gpr_free(service);
-  return service_url;
 }
 
 static void send_security_metadata(grpc_call_element *elem,
@@ -139,7 +147,6 @@ static void send_security_metadata(grpc_call_element *elem,
   channel_data *chand = elem->channel_data;
   grpc_client_security_context *ctx =
       (grpc_client_security_context *)op->context[GRPC_CONTEXT_SECURITY].value;
-  char *service_url = NULL;
   grpc_credentials *channel_creds =
       chand->security_connector->request_metadata_creds;
   int channel_creds_has_md =
@@ -168,14 +175,12 @@ static void send_security_metadata(grpc_call_element *elem,
         grpc_credentials_ref(call_creds_has_md ? ctx->creds : channel_creds);
   }
 
-  service_url =
-      build_service_url(chand->security_connector->base.url_scheme, calld);
+  build_service_url(chand->security_connector->base.url_scheme, calld);
   calld->op = *op; /* Copy op (originates from the caller's stack). */
   GPR_ASSERT(calld->pollset);
-  grpc_credentials_get_request_metadata(calld->creds, calld->pollset,
-                                        service_url, on_credentials_metadata,
-                                        elem, call_list);
-  gpr_free(service_url);
+  grpc_credentials_get_request_metadata(
+      calld->creds, calld->pollset, calld->service_url, on_credentials_metadata,
+      elem, call_list);
 }
 
 static void on_host_checked(void *user_data, grpc_security_status status,
@@ -283,13 +288,7 @@ static void init_call_elem(grpc_call_element *elem,
                            grpc_transport_stream_op *initial_op,
                            grpc_call_list *call_list) {
   call_data *calld = elem->call_data;
-  calld->creds = NULL;
-  calld->host = NULL;
-  calld->method = NULL;
-  calld->pollset = NULL;
-  calld->sent_initial_metadata = 0;
-  calld->security_context_set = 0;
-
+  memset(calld, 0, sizeof(*calld));
   GPR_ASSERT(!initial_op || !initial_op->send_ops);
 }
 
@@ -304,6 +303,7 @@ static void destroy_call_elem(grpc_call_element *elem,
   if (calld->method != NULL) {
     GRPC_MDSTR_UNREF(calld->method);
   }
+  reset_service_url(calld);
 }
 
 /* Constructor for channel_data */

@@ -284,7 +284,7 @@ done:
 
 static void do_nothing(void *ignored) {}
 static grpc_resolver *sockaddr_create(
-    grpc_resolver_args *args, const char *lb_policy_name,
+    grpc_resolver_args *args, const char *default_lb_policy_name,
     int parse(grpc_uri *uri, struct sockaddr_storage *dst, size_t *len)) {
   size_t i;
   int errors_found = 0; /* GPR_FALSE */
@@ -293,12 +293,33 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_buffer path_parts;
 
   if (0 != strcmp(args->uri->authority, "")) {
-    gpr_log(GPR_ERROR, "authority based uri's not supported");
+    gpr_log(GPR_ERROR, "authority based uri's not supported by the %s scheme",
+            args->uri->scheme);
     return NULL;
   }
 
   r = gpr_malloc(sizeof(sockaddr_resolver));
   memset(r, 0, sizeof(*r));
+
+  r->lb_policy_name = NULL;
+  if (0 != strcmp(args->uri->query, "")) {
+    gpr_slice query_slice;
+    gpr_slice_buffer query_parts;
+
+    query_slice =
+        gpr_slice_new(args->uri->query, strlen(args->uri->query), do_nothing);
+    gpr_slice_buffer_init(&query_parts);
+    gpr_slice_split(query_slice, "=", &query_parts);
+    GPR_ASSERT(query_parts.count == 2);
+    if (0 == gpr_slice_str_cmp(query_parts.slices[0], "lb_policy")) {
+      r->lb_policy_name = gpr_dump_slice(query_parts.slices[1], GPR_DUMP_ASCII);
+    }
+    gpr_slice_buffer_destroy(&query_parts);
+    gpr_slice_unref(query_slice);
+  }
+  if (r->lb_policy_name == NULL) {
+    r->lb_policy_name = gpr_strdup(default_lb_policy_name);
+  }
 
   path_slice =
       gpr_slice_new(args->uri->path, strlen(args->uri->path), do_nothing);
@@ -332,7 +353,6 @@ static grpc_resolver *sockaddr_create(
   grpc_resolver_init(&r->base, &sockaddr_resolver_vtable);
   r->subchannel_factory = args->subchannel_factory;
   grpc_subchannel_factory_ref(r->subchannel_factory);
-  r->lb_policy_name = gpr_strdup(lb_policy_name);
 
   return &r->base;
 }
