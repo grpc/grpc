@@ -173,7 +173,7 @@ void MetadataCredentialsPluginWrapper::GetMetadata(
 void MetadataCredentialsPluginWrapper::InvokePlugin(
     const char* service_url, grpc_credentials_plugin_metadata_cb cb,
     void* user_data) {
-  std::multimap<grpc::string, grpc::string_ref> metadata;
+  std::multimap<grpc::string, grpc::string> metadata;
   Status status = plugin_->GetMetadata(service_url, &metadata);
   std::vector<grpc_metadata> md;
   for (auto it = metadata.begin(); it != metadata.end(); ++it) {
