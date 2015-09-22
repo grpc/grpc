@@ -39,7 +39,8 @@
 #include "src/core/transport/chttp2/frame.h"
 #include "src/core/iomgr/exec_ctx.h"
 
-typedef enum {
+typedef enum
+{
   GRPC_CHTTP2_SPS_ID0,
   GRPC_CHTTP2_SPS_ID1,
   GRPC_CHTTP2_SPS_VAL0,
@@ -49,7 +50,8 @@ typedef enum {
 } grpc_chttp2_settings_parse_state;
 
 /* The things HTTP/2 defines as connection level settings */
-typedef enum {
+typedef enum
+{
   GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE = 1,
   GRPC_CHTTP2_SETTINGS_ENABLE_PUSH = 2,
   GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS = 3,
@@ -59,7 +61,8 @@ typedef enum {
   GRPC_CHTTP2_NUM_SETTINGS
 } grpc_chttp2_setting_id;
 
-typedef struct {
+typedef struct
+{
   grpc_chttp2_settings_parse_state state;
   gpr_uint32 *target_settings;
   gpr_uint8 is_ack;
@@ -68,12 +71,14 @@ typedef struct {
   gpr_uint32 incoming_settings[GRPC_CHTTP2_NUM_SETTINGS];
 } grpc_chttp2_settings_parser;
 
-typedef enum {
+typedef enum
+{
   GRPC_CHTTP2_CLAMP_INVALID_VALUE,
   GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE
 } grpc_chttp2_invalid_value_behavior;
 
-typedef struct {
+typedef struct
+{
   const char *name;
   gpr_uint32 default_value;
   gpr_uint32 min_value;
@@ -82,21 +87,14 @@ typedef struct {
 } grpc_chttp2_setting_parameters;
 
 /* HTTP/2 mandated connection setting parameters */
-extern const grpc_chttp2_setting_parameters
-    grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS];
+extern const grpc_chttp2_setting_parameters grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS];
 
 /* Create a settings frame by diffing old & new, and updating old to be new */
-gpr_slice grpc_chttp2_settings_create(gpr_uint32 *old, const gpr_uint32 *new,
-                                      gpr_uint32 force_mask, size_t count);
+gpr_slice grpc_chttp2_settings_create (gpr_uint32 * old, const gpr_uint32 * new, gpr_uint32 force_mask, size_t count);
 /* Create an ack settings frame */
-gpr_slice grpc_chttp2_settings_ack_create(void);
+gpr_slice grpc_chttp2_settings_ack_create (void);
 
-grpc_chttp2_parse_error grpc_chttp2_settings_parser_begin_frame(
-    grpc_chttp2_settings_parser *parser, gpr_uint32 length, gpr_uint8 flags,
-    gpr_uint32 *settings);
-grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last,
-    grpc_closure_list *closure_list);
+grpc_chttp2_parse_error grpc_chttp2_settings_parser_begin_frame (grpc_chttp2_settings_parser * parser, gpr_uint32 length, gpr_uint8 flags, gpr_uint32 * settings);
+grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse (void *parser, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last, grpc_closure_list * closure_list);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_SETTINGS_H */

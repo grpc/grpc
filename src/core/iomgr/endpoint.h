@@ -46,28 +46,24 @@
 typedef struct grpc_endpoint grpc_endpoint;
 typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
 
-struct grpc_endpoint_vtable {
-  void (*read)(grpc_endpoint *ep, gpr_slice_buffer *slices, grpc_closure *cb,
-               grpc_closure_list *closure_list);
-  void (*write)(grpc_endpoint *ep, gpr_slice_buffer *slices, grpc_closure *cb,
-                grpc_closure_list *closure_list);
-  void (*add_to_pollset)(grpc_endpoint *ep, grpc_pollset *pollset,
-                         grpc_closure_list *closure_list);
-  void (*add_to_pollset_set)(grpc_endpoint *ep, grpc_pollset_set *pollset,
-                             grpc_closure_list *closure_list);
-  void (*shutdown)(grpc_endpoint *ep, grpc_closure_list *closure_list);
-  void (*destroy)(grpc_endpoint *ep, grpc_closure_list *closure_list);
-  char *(*get_peer)(grpc_endpoint *ep);
+struct grpc_endpoint_vtable
+{
+  void (*read) (grpc_endpoint * ep, gpr_slice_buffer * slices, grpc_closure * cb, grpc_closure_list * closure_list);
+  void (*write) (grpc_endpoint * ep, gpr_slice_buffer * slices, grpc_closure * cb, grpc_closure_list * closure_list);
+  void (*add_to_pollset) (grpc_endpoint * ep, grpc_pollset * pollset, grpc_closure_list * closure_list);
+  void (*add_to_pollset_set) (grpc_endpoint * ep, grpc_pollset_set * pollset, grpc_closure_list * closure_list);
+  void (*shutdown) (grpc_endpoint * ep, grpc_closure_list * closure_list);
+  void (*destroy) (grpc_endpoint * ep, grpc_closure_list * closure_list);
+  char *(*get_peer) (grpc_endpoint * ep);
 };
 
 /* When data is available on the connection, calls the callback with slices.
    Callback success indicates that the endpoint can accept more reads, failure
    indicates the endpoint is closed.
    Valid slices may be placed into \a slices even on callback success == 0. */
-void grpc_endpoint_read(grpc_endpoint *ep, gpr_slice_buffer *slices,
-                        grpc_closure *cb, grpc_closure_list *closure_list);
+void grpc_endpoint_read (grpc_endpoint * ep, gpr_slice_buffer * slices, grpc_closure * cb, grpc_closure_list * closure_list);
 
-char *grpc_endpoint_get_peer(grpc_endpoint *ep);
+char *grpc_endpoint_get_peer (grpc_endpoint * ep);
 
 /* Write slices out to the socket.
 
@@ -79,23 +75,20 @@ char *grpc_endpoint_get_peer(grpc_endpoint *ep);
    No guarantee is made to the content of slices after a write EXCEPT that
    it is a valid slice buffer.
    */
-void grpc_endpoint_write(grpc_endpoint *ep, gpr_slice_buffer *slices,
-                         grpc_closure *cb, grpc_closure_list *closure_list);
+void grpc_endpoint_write (grpc_endpoint * ep, gpr_slice_buffer * slices, grpc_closure * cb, grpc_closure_list * closure_list);
 
 /* Causes any pending read/write callbacks to run immediately with
    success==0 */
-void grpc_endpoint_shutdown(grpc_endpoint *ep, grpc_closure_list *closure_list);
-void grpc_endpoint_destroy(grpc_endpoint *ep, grpc_closure_list *closure_list);
+void grpc_endpoint_shutdown (grpc_endpoint * ep, grpc_closure_list * closure_list);
+void grpc_endpoint_destroy (grpc_endpoint * ep, grpc_closure_list * closure_list);
 
 /* Add an endpoint to a pollset, so that when the pollset is polled, events from
    this endpoint are considered */
-void grpc_endpoint_add_to_pollset(grpc_endpoint *ep, grpc_pollset *pollset,
-                                  grpc_closure_list *closure_list);
-void grpc_endpoint_add_to_pollset_set(grpc_endpoint *ep,
-                                      grpc_pollset_set *pollset_set,
-                                      grpc_closure_list *closure_list);
+void grpc_endpoint_add_to_pollset (grpc_endpoint * ep, grpc_pollset * pollset, grpc_closure_list * closure_list);
+void grpc_endpoint_add_to_pollset_set (grpc_endpoint * ep, grpc_pollset_set * pollset_set, grpc_closure_list * closure_list);
 
-struct grpc_endpoint {
+struct grpc_endpoint
+{
   const grpc_endpoint_vtable *vtable;
 };
 

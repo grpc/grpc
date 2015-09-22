@@ -56,112 +56,118 @@
 /* chttp2 transport that is immediately available (used for testing
    connected_channel without a client_channel */
 
-static void server_setup_transport(void *ts, grpc_transport *transport,
-                                   grpc_mdctx *mdctx) {
+static void
+server_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx)
+{
   grpc_end2end_test_fixture *f = ts;
   static grpc_channel_filter const *extra_filters[] = {
-      &grpc_http_server_filter};
+    &grpc_http_server_filter
+  };
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
-  grpc_server_setup_transport(
-      f->server, transport, extra_filters, GPR_ARRAY_SIZE(extra_filters), mdctx,
-      grpc_server_get_channel_args(f->server), &closure_list);
-  grpc_closure_list_run(&closure_list);
+  grpc_server_setup_transport (f->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (f->server), &closure_list);
+  grpc_closure_list_run (&closure_list);
 }
 
-typedef struct {
+typedef struct
+{
   grpc_end2end_test_fixture *f;
   grpc_channel_args *client_args;
 } sp_client_setup;
 
-static void client_setup_transport(void *ts, grpc_transport *transport,
-                                   grpc_mdctx *mdctx,
-                                   grpc_closure_list *closure_list) {
+static void
+client_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx, grpc_closure_list * closure_list)
+{
   sp_client_setup *cs = ts;
 
-  const grpc_channel_filter *filters[] = {&grpc_http_client_filter,
-                                          &grpc_compress_filter,
-                                          &grpc_connected_channel_filter};
-  size_t nfilters = sizeof(filters) / sizeof(*filters);
-  grpc_channel *channel =
-      grpc_channel_create_from_filters("socketpair-target", filters, nfilters,
-                                       cs->client_args, mdctx, 1, closure_list);
+  const grpc_channel_filter *filters[] = { &grpc_http_client_filter,
+    &grpc_compress_filter,
+    &grpc_connected_channel_filter
+  };
+  size_t nfilters = sizeof (filters) / sizeof (*filters);
+  grpc_channel *channel = grpc_channel_create_from_filters ("socketpair-target", filters, nfilters,
+							    cs->client_args, mdctx, 1, closure_list);
 
   cs->f->client = channel;
 
-  grpc_connected_channel_bind_transport(grpc_channel_get_channel_stack(channel),
-                                        transport);
+  grpc_connected_channel_bind_transport (grpc_channel_get_channel_stack (channel), transport);
 }
 
-static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
-    grpc_channel_args *client_args, grpc_channel_args *server_args) {
-  grpc_endpoint_pair *sfd = gpr_malloc(sizeof(grpc_endpoint_pair));
+static grpc_end2end_test_fixture
+chttp2_create_fixture_socketpair (grpc_channel_args * client_args, grpc_channel_args * server_args)
+{
+  grpc_endpoint_pair *sfd = gpr_malloc (sizeof (grpc_endpoint_pair));
 
   grpc_end2end_test_fixture f;
-  memset(&f, 0, sizeof(f));
+  memset (&f, 0, sizeof (f));
   f.fixture_data = sfd;
-  f.cq = grpc_completion_queue_create(NULL);
+  f.cq = grpc_completion_queue_create (NULL);
 
-  *sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
+  *sfd = grpc_iomgr_create_endpoint_pair ("fixture", 65536);
 
   return f;
 }
 
-static void chttp2_init_client_socketpair(grpc_end2end_test_fixture *f,
-                                          grpc_channel_args *client_args) {
+static void
+chttp2_init_client_socketpair (grpc_end2end_test_fixture * f, grpc_channel_args * client_args)
+{
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_endpoint_pair *sfd = f->fixture_data;
   grpc_transport *transport;
-  grpc_mdctx *mdctx = grpc_mdctx_create();
+  grpc_mdctx *mdctx = grpc_mdctx_create ();
   sp_client_setup cs;
   cs.client_args = client_args;
   cs.f = f;
-  transport = grpc_create_chttp2_transport(client_args, sfd->client, mdctx, 1,
-                                           &closure_list);
-  client_setup_transport(&cs, transport, mdctx, &closure_list);
-  GPR_ASSERT(f->client);
-  grpc_chttp2_transport_start_reading(transport, NULL, 0, &closure_list);
-  grpc_closure_list_run(&closure_list);
+  transport = grpc_create_chttp2_transport (client_args, sfd->client, mdctx, 1, &closure_list);
+  client_setup_transport (&cs, transport, mdctx, &closure_list);
+  GPR_ASSERT (f->client);
+  grpc_chttp2_transport_start_reading (transport, NULL, 0, &closure_list);
+  grpc_closure_list_run (&closure_list);
 }
 
-static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
-                                          grpc_channel_args *server_args) {
+static void
+chttp2_init_server_socketpair (grpc_end2end_test_fixture * f, grpc_channel_args * server_args)
+{
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_endpoint_pair *sfd = f->fixture_data;
-  grpc_mdctx *mdctx = grpc_mdctx_create();
+  grpc_mdctx *mdctx = grpc_mdctx_create ();
   grpc_transport *transport;
-  GPR_ASSERT(!f->server);
-  f->server = grpc_server_create_from_filters(NULL, 0, server_args);
-  grpc_server_register_completion_queue(f->server, f->cq, NULL);
-  grpc_server_start(f->server);
-  transport = grpc_create_chttp2_transport(server_args, sfd->server, mdctx, 0,
-                                           &closure_list);
-  server_setup_transport(f, transport, mdctx);
-  grpc_chttp2_transport_start_reading(transport, NULL, 0, &closure_list);
-  grpc_closure_list_run(&closure_list);
+  GPR_ASSERT (!f->server);
+  f->server = grpc_server_create_from_filters (NULL, 0, server_args);
+  grpc_server_register_completion_queue (f->server, f->cq, NULL);
+  grpc_server_start (f->server);
+  transport = grpc_create_chttp2_transport (server_args, sfd->server, mdctx, 0, &closure_list);
+  server_setup_transport (f, transport, mdctx);
+  grpc_chttp2_transport_start_reading (transport, NULL, 0, &closure_list);
+  grpc_closure_list_run (&closure_list);
 }
 
-static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture *f) {
-  gpr_free(f->fixture_data);
+static void
+chttp2_tear_down_socketpair (grpc_end2end_test_fixture * f)
+{
+  gpr_free (f->fixture_data);
 }
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/socketpair", 0, chttp2_create_fixture_socketpair,
-     chttp2_init_client_socketpair, chttp2_init_server_socketpair,
-     chttp2_tear_down_socketpair},
+  {"chttp2/socketpair", 0, chttp2_create_fixture_socketpair,
+   chttp2_init_client_socketpair, chttp2_init_server_socketpair,
+   chttp2_tear_down_socketpair},
 };
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
   size_t i;
 
-  grpc_test_init(argc, argv);
-  grpc_init();
+  grpc_test_init (argc, argv);
+  grpc_init ();
 
-  for (i = 0; i < sizeof(configs) / sizeof(*configs); i++) {
-    grpc_end2end_tests(configs[i]);
-  }
+  for (i = 0; i < sizeof (configs) / sizeof (*configs); i++)
+    {
+      grpc_end2end_tests (configs[i]);
+    }
 
-  grpc_shutdown();
+  grpc_shutdown ();
 
   return 0;
 }

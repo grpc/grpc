@@ -36,8 +36,8 @@
 
 #include <grpc/support/port_platform.h>
 
-void grpc_register_tracer(const char *name, int *flag);
-void grpc_tracer_init(const char *env_var_name);
-void grpc_tracer_shutdown(void);
+void grpc_register_tracer (const char *name, int *flag);
+void grpc_tracer_init (const char *env_var_name);
+void grpc_tracer_shutdown (void);
 
 #endif /* GRPC_INTERNAL_CORE_DEBUG_TRACE_H */

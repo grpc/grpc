@@ -56,7 +56,8 @@
    GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD)
 
 /* hpack decoder table */
-typedef struct {
+typedef struct
+{
   grpc_mdctx *mdctx;
   /* the first used entry in ents */
   gpr_uint16 first_ent;
@@ -77,21 +78,20 @@ typedef struct {
 } grpc_chttp2_hptbl;
 
 /* initialize a hpack table */
-void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx);
-void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl *tbl);
+void grpc_chttp2_hptbl_init (grpc_chttp2_hptbl * tbl, grpc_mdctx * mdctx);
+void grpc_chttp2_hptbl_destroy (grpc_chttp2_hptbl * tbl);
 
 /* lookup a table entry based on its hpack index */
-grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
-                                      gpr_uint32 index);
+grpc_mdelem *grpc_chttp2_hptbl_lookup (const grpc_chttp2_hptbl * tbl, gpr_uint32 index);
 /* add a table entry to the index */
-void grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md);
+void grpc_chttp2_hptbl_add (grpc_chttp2_hptbl * tbl, grpc_mdelem * md);
 /* Find a key/value pair in the table... returns the index in the table of the
    most similar entry, or 0 if the value was not found */
-typedef struct {
+typedef struct
+{
   gpr_uint16 index;
   gpr_uint8 has_value;
 } grpc_chttp2_hptbl_find_result;
-grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
-    const grpc_chttp2_hptbl *tbl, grpc_mdelem *md);
+grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find (const grpc_chttp2_hptbl * tbl, grpc_mdelem * md);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_TABLE_H */

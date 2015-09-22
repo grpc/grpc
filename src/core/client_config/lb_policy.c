@@ -33,69 +33,74 @@
 
 #include "src/core/client_config/lb_policy.h"
 
-void grpc_lb_policy_init(grpc_lb_policy *policy,
-                         const grpc_lb_policy_vtable *vtable) {
+void
+grpc_lb_policy_init (grpc_lb_policy * policy, const grpc_lb_policy_vtable * vtable)
+{
   policy->vtable = vtable;
-  gpr_ref_init(&policy->refs, 1);
+  gpr_ref_init (&policy->refs, 1);
 }
 
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
-void grpc_lb_policy_ref(grpc_lb_policy *policy, const char *file, int line,
-                        const char *reason) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "LB_POLICY:%p   ref %d -> %d %s",
-          policy, (int)policy->refs.count, (int)policy->refs.count + 1, reason);
+void
+grpc_lb_policy_ref (grpc_lb_policy * policy, const char *file, int line, const char *reason)
+{
+  gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "LB_POLICY:%p   ref %d -> %d %s", policy, (int) policy->refs.count, (int) policy->refs.count + 1, reason);
 #else
-void grpc_lb_policy_ref(grpc_lb_policy *policy) {
+void
+grpc_lb_policy_ref (grpc_lb_policy * policy)
+{
 #endif
-  gpr_ref(&policy->refs);
+  gpr_ref (&policy->refs);
 }
 
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
-void grpc_lb_policy_unref(grpc_lb_policy *policy,
-                          grpc_closure_list *closure_list, const char *file,
-                          int line, const char *reason) {
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "LB_POLICY:%p unref %d -> %d %s",
-          policy, (int)policy->refs.count, (int)policy->refs.count - 1, reason);
+void
+grpc_lb_policy_unref (grpc_lb_policy * policy, grpc_closure_list * closure_list, const char *file, int line, const char *reason)
+{
+  gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "LB_POLICY:%p unref %d -> %d %s", policy, (int) policy->refs.count, (int) policy->refs.count - 1, reason);
 #else
-void grpc_lb_policy_unref(grpc_lb_policy *policy,
-                          grpc_closure_list *closure_list) {
+void
+grpc_lb_policy_unref (grpc_lb_policy * policy, grpc_closure_list * closure_list)
+{
 #endif
-  if (gpr_unref(&policy->refs)) {
-    policy->vtable->destroy(policy, closure_list);
-  }
+  if (gpr_unref (&policy->refs))
+    {
+      policy->vtable->destroy (policy, closure_list);
+    }
 }
 
-void grpc_lb_policy_shutdown(grpc_lb_policy *policy,
-                             grpc_closure_list *closure_list) {
-  policy->vtable->shutdown(policy, closure_list);
+void
+grpc_lb_policy_shutdown (grpc_lb_policy * policy, grpc_closure_list * closure_list)
+{
+  policy->vtable->shutdown (policy, closure_list);
 }
 
-void grpc_lb_policy_pick(grpc_lb_policy *policy, grpc_pollset *pollset,
-                         grpc_metadata_batch *initial_metadata,
-                         grpc_subchannel **target, grpc_closure *on_complete,
-                         grpc_closure_list *closure_list) {
-  policy->vtable->pick(policy, pollset, initial_metadata, target, on_complete,
-                       closure_list);
+void
+grpc_lb_policy_pick (grpc_lb_policy * policy, grpc_pollset * pollset, grpc_metadata_batch * initial_metadata, grpc_subchannel ** target, grpc_closure * on_complete, grpc_closure_list * closure_list)
+{
+  policy->vtable->pick (policy, pollset, initial_metadata, target, on_complete, closure_list);
 }
 
-void grpc_lb_policy_broadcast(grpc_lb_policy *policy, grpc_transport_op *op,
-                              grpc_closure_list *closure_list) {
-  policy->vtable->broadcast(policy, op, closure_list);
+void
+grpc_lb_policy_broadcast (grpc_lb_policy * policy, grpc_transport_op * op, grpc_closure_list * closure_list)
+{
+  policy->vtable->broadcast (policy, op, closure_list);
 }
 
-void grpc_lb_policy_exit_idle(grpc_lb_policy *policy,
-                              grpc_closure_list *closure_list) {
-  policy->vtable->exit_idle(policy, closure_list);
+void
+grpc_lb_policy_exit_idle (grpc_lb_policy * policy, grpc_closure_list * closure_list)
+{
+  policy->vtable->exit_idle (policy, closure_list);
 }
 
-void grpc_lb_policy_notify_on_state_change(grpc_lb_policy *policy,
-                                           grpc_connectivity_state *state,
-                                           grpc_closure *closure,
-                                           grpc_closure_list *closure_list) {
-  policy->vtable->notify_on_state_change(policy, state, closure, closure_list);
+void
+grpc_lb_policy_notify_on_state_change (grpc_lb_policy * policy, grpc_connectivity_state * state, grpc_closure * closure, grpc_closure_list * closure_list)
+{
+  policy->vtable->notify_on_state_change (policy, state, closure, closure_list);
 }
 
-grpc_connectivity_state grpc_lb_policy_check_connectivity(
-    grpc_lb_policy *policy, grpc_closure_list *closure_list) {
-  return policy->vtable->check_connectivity(policy, closure_list);
+grpc_connectivity_state
+grpc_lb_policy_check_connectivity (grpc_lb_policy * policy, grpc_closure_list * closure_list)
+{
+  return policy->vtable->check_connectivity (policy, closure_list);
 }

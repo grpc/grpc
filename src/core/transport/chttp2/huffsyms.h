@@ -38,7 +38,8 @@
 
 #define GRPC_CHTTP2_NUM_HUFFSYMS 257
 
-typedef struct {
+typedef struct
+{
   unsigned bits;
   unsigned length;
 } grpc_chttp2_huffsym;

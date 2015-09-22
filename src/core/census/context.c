@@ -39,8 +39,9 @@
 
 /* Placeholder implementation only. */
 
-size_t census_context_serialize(const census_context *context, char *buffer,
-                                size_t buf_size) {
+size_t
+census_context_serialize (const census_context * context, char *buffer, size_t buf_size)
+{
   /* TODO(aveitch): implement serialization */
   return 0;
 }

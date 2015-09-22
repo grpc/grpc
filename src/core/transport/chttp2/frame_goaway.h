@@ -40,7 +40,8 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 
-typedef enum {
+typedef enum
+{
   GRPC_CHTTP2_GOAWAY_LSI0,
   GRPC_CHTTP2_GOAWAY_LSI1,
   GRPC_CHTTP2_GOAWAY_LSI2,
@@ -52,7 +53,8 @@ typedef enum {
   GRPC_CHTTP2_GOAWAY_DEBUG
 } grpc_chttp2_goaway_parse_state;
 
-typedef struct {
+typedef struct
+{
   grpc_chttp2_goaway_parse_state state;
   gpr_uint32 last_stream_id;
   gpr_uint32 error_code;
@@ -61,17 +63,11 @@ typedef struct {
   gpr_uint32 debug_pos;
 } grpc_chttp2_goaway_parser;
 
-void grpc_chttp2_goaway_parser_init(grpc_chttp2_goaway_parser *p);
-void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser *p);
-grpc_chttp2_parse_error grpc_chttp2_goaway_parser_begin_frame(
-    grpc_chttp2_goaway_parser *parser, gpr_uint32 length, gpr_uint8 flags);
-grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last,
-    grpc_closure_list *closure_list);
+void grpc_chttp2_goaway_parser_init (grpc_chttp2_goaway_parser * p);
+void grpc_chttp2_goaway_parser_destroy (grpc_chttp2_goaway_parser * p);
+grpc_chttp2_parse_error grpc_chttp2_goaway_parser_begin_frame (grpc_chttp2_goaway_parser * parser, gpr_uint32 length, gpr_uint8 flags);
+grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse (void *parser, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last, grpc_closure_list * closure_list);
 
-void grpc_chttp2_goaway_append(gpr_uint32 last_stream_id, gpr_uint32 error_code,
-                               gpr_slice debug_data,
-                               gpr_slice_buffer *slice_buffer);
+void grpc_chttp2_goaway_append (gpr_uint32 last_stream_id, gpr_uint32 error_code, gpr_slice debug_data, gpr_slice_buffer * slice_buffer);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_GOAWAY_H */

@@ -58,346 +58,348 @@
 
 /* core list management */
 
-static int stream_list_empty(grpc_chttp2_transport *t,
-                             grpc_chttp2_stream_list_id id) {
+static int
+stream_list_empty (grpc_chttp2_transport * t, grpc_chttp2_stream_list_id id)
+{
   return t->lists[id].head == NULL;
 }
 
-static int stream_list_pop(grpc_chttp2_transport *t,
-                           grpc_chttp2_stream **stream,
-                           grpc_chttp2_stream_list_id id) {
+static int
+stream_list_pop (grpc_chttp2_transport * t, grpc_chttp2_stream ** stream, grpc_chttp2_stream_list_id id)
+{
   grpc_chttp2_stream *s = t->lists[id].head;
-  if (s) {
-    grpc_chttp2_stream *new_head = s->links[id].next;
-    GPR_ASSERT(s->included[id]);
-    if (new_head) {
-      t->lists[id].head = new_head;
-      new_head->links[id].prev = NULL;
-    } else {
-      t->lists[id].head = NULL;
-      t->lists[id].tail = NULL;
+  if (s)
+    {
+      grpc_chttp2_stream *new_head = s->links[id].next;
+      GPR_ASSERT (s->included[id]);
+      if (new_head)
+	{
+	  t->lists[id].head = new_head;
+	  new_head->links[id].prev = NULL;
+	}
+      else
+	{
+	  t->lists[id].head = NULL;
+	  t->lists[id].tail = NULL;
+	}
+      s->included[id] = 0;
     }
-    s->included[id] = 0;
-  }
   *stream = s;
   return s != 0;
 }
 
-static void stream_list_remove(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-                               grpc_chttp2_stream_list_id id) {
-  GPR_ASSERT(s->included[id]);
+static void
+stream_list_remove (grpc_chttp2_transport * t, grpc_chttp2_stream * s, grpc_chttp2_stream_list_id id)
+{
+  GPR_ASSERT (s->included[id]);
   s->included[id] = 0;
-  if (s->links[id].prev) {
-    s->links[id].prev->links[id].next = s->links[id].next;
-  } else {
-    GPR_ASSERT(t->lists[id].head == s);
-    t->lists[id].head = s->links[id].next;
-  }
-  if (s->links[id].next) {
-    s->links[id].next->links[id].prev = s->links[id].prev;
-  } else {
-    t->lists[id].tail = s->links[id].prev;
-  }
+  if (s->links[id].prev)
+    {
+      s->links[id].prev->links[id].next = s->links[id].next;
+    }
+  else
+    {
+      GPR_ASSERT (t->lists[id].head == s);
+      t->lists[id].head = s->links[id].next;
+    }
+  if (s->links[id].next)
+    {
+      s->links[id].next->links[id].prev = s->links[id].prev;
+    }
+  else
+    {
+      t->lists[id].tail = s->links[id].prev;
+    }
 }
 
-static void stream_list_maybe_remove(grpc_chttp2_transport *t,
-                                     grpc_chttp2_stream *s,
-                                     grpc_chttp2_stream_list_id id) {
-  if (s->included[id]) {
-    stream_list_remove(t, s, id);
-  }
+static void
+stream_list_maybe_remove (grpc_chttp2_transport * t, grpc_chttp2_stream * s, grpc_chttp2_stream_list_id id)
+{
+  if (s->included[id])
+    {
+      stream_list_remove (t, s, id);
+    }
 }
 
-static void stream_list_add_head(grpc_chttp2_transport *t,
-                                 grpc_chttp2_stream *s,
-                                 grpc_chttp2_stream_list_id id) {
+static void
+stream_list_add_head (grpc_chttp2_transport * t, grpc_chttp2_stream * s, grpc_chttp2_stream_list_id id)
+{
   grpc_chttp2_stream *old_head;
-  GPR_ASSERT(!s->included[id]);
+  GPR_ASSERT (!s->included[id]);
   old_head = t->lists[id].head;
   s->links[id].next = old_head;
   s->links[id].prev = NULL;
-  if (old_head) {
-    old_head->links[id].prev = s;
-  } else {
-    t->lists[id].tail = s;
-  }
+  if (old_head)
+    {
+      old_head->links[id].prev = s;
+    }
+  else
+    {
+      t->lists[id].tail = s;
+    }
   t->lists[id].head = s;
   s->included[id] = 1;
 }
 
-static void stream_list_add_tail(grpc_chttp2_transport *t,
-                                 grpc_chttp2_stream *s,
-                                 grpc_chttp2_stream_list_id id) {
+static void
+stream_list_add_tail (grpc_chttp2_transport * t, grpc_chttp2_stream * s, grpc_chttp2_stream_list_id id)
+{
   grpc_chttp2_stream *old_tail;
-  GPR_ASSERT(!s->included[id]);
+  GPR_ASSERT (!s->included[id]);
   old_tail = t->lists[id].tail;
   s->links[id].next = NULL;
   s->links[id].prev = old_tail;
-  if (old_tail) {
-    old_tail->links[id].next = s;
-  } else {
-    t->lists[id].head = s;
-  }
+  if (old_tail)
+    {
+      old_tail->links[id].next = s;
+    }
+  else
+    {
+      t->lists[id].head = s;
+    }
   t->lists[id].tail = s;
   s->included[id] = 1;
 }
 
-static void stream_list_add(grpc_chttp2_transport *t, grpc_chttp2_stream *s,
-                            grpc_chttp2_stream_list_id id) {
-  if (s->included[id]) {
-    return;
-  }
-  stream_list_add_tail(t, s, id);
+static void
+stream_list_add (grpc_chttp2_transport * t, grpc_chttp2_stream * s, grpc_chttp2_stream_list_id id)
+{
+  if (s->included[id])
+    {
+      return;
+    }
+  stream_list_add_tail (t, s, id);
 }
 
 /* wrappers for specializations */
 
-void grpc_chttp2_list_add_writable_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  GPR_ASSERT(stream_global->id != 0);
-  stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
-                  STREAM_FROM_GLOBAL(stream_global), GRPC_CHTTP2_LIST_WRITABLE);
+void
+grpc_chttp2_list_add_writable_stream (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global)
+{
+  GPR_ASSERT (stream_global->id != 0);
+  stream_list_add (TRANSPORT_FROM_GLOBAL (transport_global), STREAM_FROM_GLOBAL (stream_global), GRPC_CHTTP2_LIST_WRITABLE);
 }
 
-void grpc_chttp2_list_add_first_writable_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  GPR_ASSERT(stream_global->id != 0);
-  stream_list_add_head(TRANSPORT_FROM_GLOBAL(transport_global),
-                       STREAM_FROM_GLOBAL(stream_global),
-                       GRPC_CHTTP2_LIST_WRITABLE);
+void
+grpc_chttp2_list_add_first_writable_stream (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global)
+{
+  GPR_ASSERT (stream_global->id != 0);
+  stream_list_add_head (TRANSPORT_FROM_GLOBAL (transport_global), STREAM_FROM_GLOBAL (stream_global), GRPC_CHTTP2_LIST_WRITABLE);
 }
 
-int grpc_chttp2_list_pop_writable_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_transport_writing *transport_writing,
-    grpc_chttp2_stream_global **stream_global,
-    grpc_chttp2_stream_writing **stream_writing) {
+int
+grpc_chttp2_list_pop_writable_stream (grpc_chttp2_transport_global * transport_global, grpc_chttp2_transport_writing * transport_writing, grpc_chttp2_stream_global ** stream_global, grpc_chttp2_stream_writing ** stream_writing)
+{
   grpc_chttp2_stream *stream;
-  int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
-                          GRPC_CHTTP2_LIST_WRITABLE);
-  if (r != 0) {
-    *stream_global = &stream->global;
-    *stream_writing = &stream->writing;
-  }
+  int r = stream_list_pop (TRANSPORT_FROM_GLOBAL (transport_global), &stream,
+			   GRPC_CHTTP2_LIST_WRITABLE);
+  if (r != 0)
+    {
+      *stream_global = &stream->global;
+      *stream_writing = &stream->writing;
+    }
   return r;
 }
 
-void grpc_chttp2_list_remove_writable_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  stream_list_maybe_remove(TRANSPORT_FROM_GLOBAL(transport_global),
-                           STREAM_FROM_GLOBAL(stream_global),
-                           GRPC_CHTTP2_LIST_WRITABLE);
+void
+grpc_chttp2_list_remove_writable_stream (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global)
+{
+  stream_list_maybe_remove (TRANSPORT_FROM_GLOBAL (transport_global), STREAM_FROM_GLOBAL (stream_global), GRPC_CHTTP2_LIST_WRITABLE);
 }
 
-void grpc_chttp2_list_add_writing_stream(
-    grpc_chttp2_transport_writing *transport_writing,
-    grpc_chttp2_stream_writing *stream_writing) {
-  stream_list_add(TRANSPORT_FROM_WRITING(transport_writing),
-                  STREAM_FROM_WRITING(stream_writing),
-                  GRPC_CHTTP2_LIST_WRITING);
+void
+grpc_chttp2_list_add_writing_stream (grpc_chttp2_transport_writing * transport_writing, grpc_chttp2_stream_writing * stream_writing)
+{
+  stream_list_add (TRANSPORT_FROM_WRITING (transport_writing), STREAM_FROM_WRITING (stream_writing), GRPC_CHTTP2_LIST_WRITING);
 }
 
-int grpc_chttp2_list_have_writing_streams(
-    grpc_chttp2_transport_writing *transport_writing) {
-  return !stream_list_empty(TRANSPORT_FROM_WRITING(transport_writing),
-                            GRPC_CHTTP2_LIST_WRITING);
+int
+grpc_chttp2_list_have_writing_streams (grpc_chttp2_transport_writing * transport_writing)
+{
+  return !stream_list_empty (TRANSPORT_FROM_WRITING (transport_writing), GRPC_CHTTP2_LIST_WRITING);
 }
 
-int grpc_chttp2_list_pop_writing_stream(
-    grpc_chttp2_transport_writing *transport_writing,
-    grpc_chttp2_stream_writing **stream_writing) {
+int
+grpc_chttp2_list_pop_writing_stream (grpc_chttp2_transport_writing * transport_writing, grpc_chttp2_stream_writing ** stream_writing)
+{
   grpc_chttp2_stream *stream;
-  int r = stream_list_pop(TRANSPORT_FROM_WRITING(transport_writing), &stream,
-                          GRPC_CHTTP2_LIST_WRITING);
-  if (r != 0) {
-    *stream_writing = &stream->writing;
-  }
+  int r = stream_list_pop (TRANSPORT_FROM_WRITING (transport_writing), &stream,
+			   GRPC_CHTTP2_LIST_WRITING);
+  if (r != 0)
+    {
+      *stream_writing = &stream->writing;
+    }
   return r;
 }
 
-void grpc_chttp2_list_add_written_stream(
-    grpc_chttp2_transport_writing *transport_writing,
-    grpc_chttp2_stream_writing *stream_writing) {
-  stream_list_add(TRANSPORT_FROM_WRITING(transport_writing),
-                  STREAM_FROM_WRITING(stream_writing),
-                  GRPC_CHTTP2_LIST_WRITTEN);
+void
+grpc_chttp2_list_add_written_stream (grpc_chttp2_transport_writing * transport_writing, grpc_chttp2_stream_writing * stream_writing)
+{
+  stream_list_add (TRANSPORT_FROM_WRITING (transport_writing), STREAM_FROM_WRITING (stream_writing), GRPC_CHTTP2_LIST_WRITTEN);
 }
 
-int grpc_chttp2_list_pop_written_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_transport_writing *transport_writing,
-    grpc_chttp2_stream_global **stream_global,
-    grpc_chttp2_stream_writing **stream_writing) {
+int
+grpc_chttp2_list_pop_written_stream (grpc_chttp2_transport_global * transport_global, grpc_chttp2_transport_writing * transport_writing, grpc_chttp2_stream_global ** stream_global, grpc_chttp2_stream_writing ** stream_writing)
+{
   grpc_chttp2_stream *stream;
-  int r = stream_list_pop(TRANSPORT_FROM_WRITING(transport_writing), &stream,
-                          GRPC_CHTTP2_LIST_WRITTEN);
-  if (r != 0) {
-    *stream_global = &stream->global;
-    *stream_writing = &stream->writing;
-  }
+  int r = stream_list_pop (TRANSPORT_FROM_WRITING (transport_writing), &stream,
+			   GRPC_CHTTP2_LIST_WRITTEN);
+  if (r != 0)
+    {
+      *stream_global = &stream->global;
+      *stream_writing = &stream->writing;
+    }
   return r;
 }
 
-void grpc_chttp2_list_add_parsing_seen_stream(
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing) {
-  stream_list_add(TRANSPORT_FROM_PARSING(transport_parsing),
-                  STREAM_FROM_PARSING(stream_parsing),
-                  GRPC_CHTTP2_LIST_PARSING_SEEN);
+void
+grpc_chttp2_list_add_parsing_seen_stream (grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing)
+{
+  stream_list_add (TRANSPORT_FROM_PARSING (transport_parsing), STREAM_FROM_PARSING (stream_parsing), GRPC_CHTTP2_LIST_PARSING_SEEN);
 }
 
-int grpc_chttp2_list_pop_parsing_seen_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_global **stream_global,
-    grpc_chttp2_stream_parsing **stream_parsing) {
+int
+grpc_chttp2_list_pop_parsing_seen_stream (grpc_chttp2_transport_global * transport_global, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_global ** stream_global, grpc_chttp2_stream_parsing ** stream_parsing)
+{
   grpc_chttp2_stream *stream;
-  int r = stream_list_pop(TRANSPORT_FROM_PARSING(transport_parsing), &stream,
-                          GRPC_CHTTP2_LIST_PARSING_SEEN);
-  if (r != 0) {
-    *stream_global = &stream->global;
-    *stream_parsing = &stream->parsing;
-  }
+  int r = stream_list_pop (TRANSPORT_FROM_PARSING (transport_parsing), &stream,
+			   GRPC_CHTTP2_LIST_PARSING_SEEN);
+  if (r != 0)
+    {
+      *stream_global = &stream->global;
+      *stream_parsing = &stream->parsing;
+    }
   return r;
 }
 
-void grpc_chttp2_list_add_waiting_for_concurrency(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
-                  STREAM_FROM_GLOBAL(stream_global),
-                  GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY);
+void
+grpc_chttp2_list_add_waiting_for_concurrency (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global)
+{
+  stream_list_add (TRANSPORT_FROM_GLOBAL (transport_global), STREAM_FROM_GLOBAL (stream_global), GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY);
 }
 
-int grpc_chttp2_list_pop_waiting_for_concurrency(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global **stream_global) {
+int
+grpc_chttp2_list_pop_waiting_for_concurrency (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global ** stream_global)
+{
   grpc_chttp2_stream *stream;
-  int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
-                          GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY);
-  if (r != 0) {
-    *stream_global = &stream->global;
-  }
+  int r = stream_list_pop (TRANSPORT_FROM_GLOBAL (transport_global), &stream,
+			   GRPC_CHTTP2_LIST_WAITING_FOR_CONCURRENCY);
+  if (r != 0)
+    {
+      *stream_global = &stream->global;
+    }
   return r;
 }
 
-void grpc_chttp2_list_add_closed_waiting_for_parsing(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
-                  STREAM_FROM_GLOBAL(stream_global),
-                  GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING);
+void
+grpc_chttp2_list_add_closed_waiting_for_parsing (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global)
+{
+  stream_list_add (TRANSPORT_FROM_GLOBAL (transport_global), STREAM_FROM_GLOBAL (stream_global), GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING);
 }
 
-int grpc_chttp2_list_pop_closed_waiting_for_parsing(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global **stream_global) {
+int
+grpc_chttp2_list_pop_closed_waiting_for_parsing (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global ** stream_global)
+{
   grpc_chttp2_stream *stream;
-  int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
-                          GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING);
-  if (r != 0) {
-    *stream_global = &stream->global;
-  }
+  int r = stream_list_pop (TRANSPORT_FROM_GLOBAL (transport_global), &stream,
+			   GRPC_CHTTP2_LIST_CLOSED_WAITING_FOR_PARSING);
+  if (r != 0)
+    {
+      *stream_global = &stream->global;
+    }
   return r;
 }
 
-void grpc_chttp2_list_add_cancelled_waiting_for_writing(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
-                  STREAM_FROM_GLOBAL(stream_global),
-                  GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_WRITING);
+void
+grpc_chttp2_list_add_cancelled_waiting_for_writing (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global)
+{
+  stream_list_add (TRANSPORT_FROM_GLOBAL (transport_global), STREAM_FROM_GLOBAL (stream_global), GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_WRITING);
 }
 
-int grpc_chttp2_list_pop_cancelled_waiting_for_writing(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global **stream_global) {
+int
+grpc_chttp2_list_pop_cancelled_waiting_for_writing (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global ** stream_global)
+{
   grpc_chttp2_stream *stream;
-  int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
-                          GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_WRITING);
-  if (r != 0) {
-    *stream_global = &stream->global;
-  }
+  int r = stream_list_pop (TRANSPORT_FROM_GLOBAL (transport_global), &stream,
+			   GRPC_CHTTP2_LIST_CANCELLED_WAITING_FOR_WRITING);
+  if (r != 0)
+    {
+      *stream_global = &stream->global;
+    }
   return r;
 }
 
-void grpc_chttp2_list_add_incoming_window_updated(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
-                  STREAM_FROM_GLOBAL(stream_global),
-                  GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED);
+void
+grpc_chttp2_list_add_incoming_window_updated (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global)
+{
+  stream_list_add (TRANSPORT_FROM_GLOBAL (transport_global), STREAM_FROM_GLOBAL (stream_global), GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED);
 }
 
-int grpc_chttp2_list_pop_incoming_window_updated(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_global **stream_global,
-    grpc_chttp2_stream_parsing **stream_parsing) {
+int
+grpc_chttp2_list_pop_incoming_window_updated (grpc_chttp2_transport_global * transport_global, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_global ** stream_global, grpc_chttp2_stream_parsing ** stream_parsing)
+{
   grpc_chttp2_stream *stream;
-  int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
-                          GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED);
-  if (r != 0) {
-    *stream_global = &stream->global;
-    *stream_parsing = &stream->parsing;
-  }
+  int r = stream_list_pop (TRANSPORT_FROM_GLOBAL (transport_global), &stream,
+			   GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED);
+  if (r != 0)
+    {
+      *stream_global = &stream->global;
+      *stream_parsing = &stream->parsing;
+    }
   return r;
 }
 
-void grpc_chttp2_list_remove_incoming_window_updated(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  stream_list_maybe_remove(TRANSPORT_FROM_GLOBAL(transport_global),
-                           STREAM_FROM_GLOBAL(stream_global),
-                           GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED);
+void
+grpc_chttp2_list_remove_incoming_window_updated (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global)
+{
+  stream_list_maybe_remove (TRANSPORT_FROM_GLOBAL (transport_global), STREAM_FROM_GLOBAL (stream_global), GRPC_CHTTP2_LIST_INCOMING_WINDOW_UPDATED);
 }
 
-void grpc_chttp2_list_add_read_write_state_changed(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  stream_list_add(TRANSPORT_FROM_GLOBAL(transport_global),
-                  STREAM_FROM_GLOBAL(stream_global),
-                  GRPC_CHTTP2_LIST_READ_WRITE_STATE_CHANGED);
+void
+grpc_chttp2_list_add_read_write_state_changed (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global * stream_global)
+{
+  stream_list_add (TRANSPORT_FROM_GLOBAL (transport_global), STREAM_FROM_GLOBAL (stream_global), GRPC_CHTTP2_LIST_READ_WRITE_STATE_CHANGED);
 }
 
-int grpc_chttp2_list_pop_read_write_state_changed(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global **stream_global) {
+int
+grpc_chttp2_list_pop_read_write_state_changed (grpc_chttp2_transport_global * transport_global, grpc_chttp2_stream_global ** stream_global)
+{
   grpc_chttp2_stream *stream;
-  int r = stream_list_pop(TRANSPORT_FROM_GLOBAL(transport_global), &stream,
-                          GRPC_CHTTP2_LIST_READ_WRITE_STATE_CHANGED);
-  if (r != 0) {
-    *stream_global = &stream->global;
-  }
+  int r = stream_list_pop (TRANSPORT_FROM_GLOBAL (transport_global), &stream,
+			   GRPC_CHTTP2_LIST_READ_WRITE_STATE_CHANGED);
+  if (r != 0)
+    {
+      *stream_global = &stream->global;
+    }
   return r;
 }
 
-void grpc_chttp2_register_stream(grpc_chttp2_transport *t,
-                                 grpc_chttp2_stream *s) {
-  stream_list_add_tail(t, s, GRPC_CHTTP2_LIST_ALL_STREAMS);
+void
+grpc_chttp2_register_stream (grpc_chttp2_transport * t, grpc_chttp2_stream * s)
+{
+  stream_list_add_tail (t, s, GRPC_CHTTP2_LIST_ALL_STREAMS);
 }
 
-int grpc_chttp2_unregister_stream(grpc_chttp2_transport *t,
-                                  grpc_chttp2_stream *s) {
-  stream_list_maybe_remove(t, s, GRPC_CHTTP2_LIST_ALL_STREAMS);
-  return stream_list_empty(t, GRPC_CHTTP2_LIST_ALL_STREAMS);
+int
+grpc_chttp2_unregister_stream (grpc_chttp2_transport * t, grpc_chttp2_stream * s)
+{
+  stream_list_maybe_remove (t, s, GRPC_CHTTP2_LIST_ALL_STREAMS);
+  return stream_list_empty (t, GRPC_CHTTP2_LIST_ALL_STREAMS);
 }
 
-int grpc_chttp2_has_streams(grpc_chttp2_transport *t) {
-  return !stream_list_empty(t, GRPC_CHTTP2_LIST_ALL_STREAMS);
+int
+grpc_chttp2_has_streams (grpc_chttp2_transport * t)
+{
+  return !stream_list_empty (t, GRPC_CHTTP2_LIST_ALL_STREAMS);
 }
 
-void grpc_chttp2_for_all_streams(
-    grpc_chttp2_transport_global *transport_global, void *user_data,
-    void (*cb)(grpc_chttp2_transport_global *transport_global, void *user_data,
-               grpc_chttp2_stream_global *stream_global)) {
+void
+grpc_chttp2_for_all_streams (grpc_chttp2_transport_global * transport_global, void *user_data, void (*cb) (grpc_chttp2_transport_global * transport_global, void *user_data, grpc_chttp2_stream_global * stream_global))
+{
   grpc_chttp2_stream *s;
-  grpc_chttp2_transport *t = TRANSPORT_FROM_GLOBAL(transport_global);
-  for (s = t->lists[GRPC_CHTTP2_LIST_ALL_STREAMS].head; s != NULL;
-       s = s->links[GRPC_CHTTP2_LIST_ALL_STREAMS].next) {
-    cb(transport_global, user_data, &s->global);
-  }
+  grpc_chttp2_transport *t = TRANSPORT_FROM_GLOBAL (transport_global);
+  for (s = t->lists[GRPC_CHTTP2_LIST_ALL_STREAMS].head; s != NULL; s = s->links[GRPC_CHTTP2_LIST_ALL_STREAMS].next)
+    {
+      cb (transport_global, user_data, &s->global);
+    }
 }

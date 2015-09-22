@@ -45,133 +45,151 @@
 #include "src/core/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
 
-static void pretty_print_backoffs(reconnect_server *server) {
+static void
+pretty_print_backoffs (reconnect_server * server)
+{
   gpr_timespec diff;
   int i = 1;
   double expected_backoff = 1000.0, backoff;
   timestamp_list *head = server->head;
-  gpr_log(GPR_INFO, "reconnect server: new connection");
-  for (head = server->head; head && head->next; head = head->next, i++) {
-    diff = gpr_time_sub(head->next->timestamp, head->timestamp);
-    backoff = gpr_time_to_millis(diff);
-    gpr_log(GPR_INFO,
-            "retry %2d:backoff %6.2fs,expected backoff %6.2fs, jitter %4.2f%%",
-            i, backoff / 1000.0, expected_backoff / 1000.0,
-            (backoff - expected_backoff) * 100.0 / expected_backoff);
-    expected_backoff *= 1.6;
-    if (expected_backoff > 120 * 1000) {
-      expected_backoff = 120 * 1000;
+  gpr_log (GPR_INFO, "reconnect server: new connection");
+  for (head = server->head; head && head->next; head = head->next, i++)
+    {
+      diff = gpr_time_sub (head->next->timestamp, head->timestamp);
+      backoff = gpr_time_to_millis (diff);
+      gpr_log (GPR_INFO, "retry %2d:backoff %6.2fs,expected backoff %6.2fs, jitter %4.2f%%", i, backoff / 1000.0, expected_backoff / 1000.0, (backoff - expected_backoff) * 100.0 / expected_backoff);
+      expected_backoff *= 1.6;
+      if (expected_backoff > 120 * 1000)
+	{
+	  expected_backoff = 120 * 1000;
+	}
     }
-  }
 }
 
-static void on_connect(void *arg, grpc_endpoint *tcp,
-                       grpc_closure_list *closure_list) {
+static void
+on_connect (void *arg, grpc_endpoint * tcp, grpc_closure_list * closure_list)
+{
   char *peer;
   char *last_colon;
-  reconnect_server *server = (reconnect_server *)arg;
-  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+  reconnect_server *server = (reconnect_server *) arg;
+  gpr_timespec now = gpr_now (GPR_CLOCK_REALTIME);
   timestamp_list *new_tail;
-  peer = grpc_endpoint_get_peer(tcp);
-  grpc_endpoint_shutdown(tcp, closure_list);
-  grpc_endpoint_destroy(tcp, closure_list);
-  if (peer) {
-    last_colon = strrchr(peer, ':');
-    if (server->peer == NULL) {
-      server->peer = peer;
-    } else {
-      if (last_colon == NULL) {
-        gpr_log(GPR_ERROR, "peer does not contain a ':'");
-      } else if (strncmp(server->peer, peer, (size_t)(last_colon - peer)) !=
-                 0) {
-        gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer, peer);
-      }
-      gpr_free(peer);
+  peer = grpc_endpoint_get_peer (tcp);
+  grpc_endpoint_shutdown (tcp, closure_list);
+  grpc_endpoint_destroy (tcp, closure_list);
+  if (peer)
+    {
+      last_colon = strrchr (peer, ':');
+      if (server->peer == NULL)
+	{
+	  server->peer = peer;
+	}
+      else
+	{
+	  if (last_colon == NULL)
+	    {
+	      gpr_log (GPR_ERROR, "peer does not contain a ':'");
+	    }
+	  else if (strncmp (server->peer, peer, (size_t) (last_colon - peer)) != 0)
+	    {
+	      gpr_log (GPR_ERROR, "mismatched peer! %s vs %s", server->peer, peer);
+	    }
+	  gpr_free (peer);
+	}
     }
-  }
-  new_tail = gpr_malloc(sizeof(timestamp_list));
+  new_tail = gpr_malloc (sizeof (timestamp_list));
   new_tail->timestamp = now;
   new_tail->next = NULL;
-  if (server->tail == NULL) {
-    server->head = new_tail;
-    server->tail = new_tail;
-  } else {
-    server->tail->next = new_tail;
-    server->tail = new_tail;
-  }
-  pretty_print_backoffs(server);
+  if (server->tail == NULL)
+    {
+      server->head = new_tail;
+      server->tail = new_tail;
+    }
+  else
+    {
+      server->tail->next = new_tail;
+      server->tail = new_tail;
+    }
+  pretty_print_backoffs (server);
 }
 
-void reconnect_server_init(reconnect_server *server) {
-  grpc_init();
+void
+reconnect_server_init (reconnect_server * server)
+{
+  grpc_init ();
   server->tcp_server = NULL;
-  grpc_pollset_init(&server->pollset);
+  grpc_pollset_init (&server->pollset);
   server->pollsets[0] = &server->pollset;
   server->head = NULL;
   server->tail = NULL;
   server->peer = NULL;
 }
 
-void reconnect_server_start(reconnect_server *server, int port) {
+void
+reconnect_server_start (reconnect_server * server, int port)
+{
   struct sockaddr_in addr;
   int port_added;
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
   addr.sin_family = AF_INET;
-  addr.sin_port = htons((gpr_uint16)port);
-  memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
+  addr.sin_port = htons ((gpr_uint16) port);
+  memset (&addr.sin_addr, 0, sizeof (addr.sin_addr));
 
-  server->tcp_server = grpc_tcp_server_create();
-  port_added =
-      grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr));
-  GPR_ASSERT(port_added == port);
+  server->tcp_server = grpc_tcp_server_create ();
+  port_added = grpc_tcp_server_add_port (server->tcp_server, &addr, sizeof (addr));
+  GPR_ASSERT (port_added == port);
 
-  grpc_tcp_server_start(server->tcp_server, server->pollsets, 1, on_connect,
-                        server, &closure_list);
-  gpr_log(GPR_INFO, "reconnect tcp server listening on 0.0.0.0:%d", port);
+  grpc_tcp_server_start (server->tcp_server, server->pollsets, 1, on_connect, server, &closure_list);
+  gpr_log (GPR_INFO, "reconnect tcp server listening on 0.0.0.0:%d", port);
 
-  grpc_closure_list_run(&closure_list);
+  grpc_closure_list_run (&closure_list);
 }
 
-void reconnect_server_poll(reconnect_server *server, int seconds) {
+void
+reconnect_server_poll (reconnect_server * server, int seconds)
+{
   grpc_pollset_worker worker;
-  gpr_timespec deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_seconds(seconds, GPR_TIMESPAN));
+  gpr_timespec deadline = gpr_time_add (gpr_now (GPR_CLOCK_MONOTONIC),
+					gpr_time_from_seconds (seconds, GPR_TIMESPAN));
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
-  gpr_mu_lock(GRPC_POLLSET_MU(&server->pollset));
-  grpc_pollset_work(&server->pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                    deadline, &closure_list);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&server->pollset));
-  grpc_closure_list_run(&closure_list);
+  gpr_mu_lock (GRPC_POLLSET_MU (&server->pollset));
+  grpc_pollset_work (&server->pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline, &closure_list);
+  gpr_mu_unlock (GRPC_POLLSET_MU (&server->pollset));
+  grpc_closure_list_run (&closure_list);
 }
 
-void reconnect_server_clear_timestamps(reconnect_server *server) {
+void
+reconnect_server_clear_timestamps (reconnect_server * server)
+{
   timestamp_list *new_head = server->head;
-  while (server->head) {
-    new_head = server->head->next;
-    gpr_free(server->head);
-    server->head = new_head;
-  }
+  while (server->head)
+    {
+      new_head = server->head->next;
+      gpr_free (server->head);
+      server->head = new_head;
+    }
   server->tail = NULL;
-  gpr_free(server->peer);
+  gpr_free (server->peer);
   server->peer = NULL;
 }
 
-static void do_nothing(void *ignored, int success,
-                       grpc_closure_list *closure_list) {}
+static void
+do_nothing (void *ignored, int success, grpc_closure_list * closure_list)
+{
+}
 
-void reconnect_server_destroy(reconnect_server *server) {
+void
+reconnect_server_destroy (reconnect_server * server)
+{
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_closure do_nothing_closure[2];
-  grpc_closure_init(&do_nothing_closure[0], do_nothing, NULL);
-  grpc_closure_init(&do_nothing_closure[1], do_nothing, NULL);
-  grpc_tcp_server_destroy(server->tcp_server, &do_nothing_closure[0],
-                          &closure_list);
-  reconnect_server_clear_timestamps(server);
-  grpc_pollset_shutdown(&server->pollset, &do_nothing_closure[1],
-                        &closure_list);
-  grpc_closure_list_run(&closure_list);
-  grpc_pollset_destroy(&server->pollset);
-  grpc_shutdown();
+  grpc_closure_init (&do_nothing_closure[0], do_nothing, NULL);
+  grpc_closure_init (&do_nothing_closure[1], do_nothing, NULL);
+  grpc_tcp_server_destroy (server->tcp_server, &do_nothing_closure[0], &closure_list);
+  reconnect_server_clear_timestamps (server);
+  grpc_pollset_shutdown (&server->pollset, &do_nothing_closure[1], &closure_list);
+  grpc_closure_list_run (&closure_list);
+  grpc_pollset_destroy (&server->pollset);
+  grpc_shutdown ();
 }

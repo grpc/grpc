@@ -37,8 +37,9 @@
 #include <grpc/support/time.h>
 
 #ifdef __cplusplus
-extern "C" {
-#endif /*  __cplusplus */
+extern "C"
+{
+#endif				/*  __cplusplus */
 
 #ifndef GRPC_TEST_SLOWDOWN_BUILD_FACTOR
 #define GRPC_TEST_SLOWDOWN_BUILD_FACTOR 1.0
@@ -48,7 +49,7 @@ extern "C" {
 #define GRPC_TEST_SLOWDOWN_MACHINE_FACTOR 1.0
 #endif
 
-extern double g_fixture_slowdown_factor;
+  extern double g_fixture_slowdown_factor;
 
 #define GRPC_TEST_SLOWDOWN_FACTOR                                        \
   (GRPC_TEST_SLOWDOWN_BUILD_FACTOR * GRPC_TEST_SLOWDOWN_MACHINE_FACTOR * \
@@ -70,10 +71,10 @@ extern double g_fixture_slowdown_factor;
 #define GRPC_TEST_PICK_PORT
 #endif
 
-void grpc_test_init(int argc, char **argv);
+  void grpc_test_init (int argc, char **argv);
 
 #ifdef __cplusplus
 }
-#endif /*  __cplusplus */
+#endif				/*  __cplusplus */
 
-#endif /* GRPC_TEST_CORE_UTIL_TEST_CONFIG_H */
+#endif				/* GRPC_TEST_CORE_UTIL_TEST_CONFIG_H */

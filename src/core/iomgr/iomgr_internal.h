@@ -37,16 +37,17 @@
 #include "src/core/iomgr/iomgr.h"
 #include <grpc/support/sync.h>
 
-typedef struct grpc_iomgr_object {
+typedef struct grpc_iomgr_object
+{
   char *name;
   struct grpc_iomgr_object *next;
   struct grpc_iomgr_object *prev;
 } grpc_iomgr_object;
 
-void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name);
-void grpc_iomgr_unregister_object(grpc_iomgr_object *obj);
+void grpc_iomgr_register_object (grpc_iomgr_object * obj, const char *name);
+void grpc_iomgr_unregister_object (grpc_iomgr_object * obj);
 
-void grpc_iomgr_platform_init(void);
-void grpc_iomgr_platform_shutdown(void);
+void grpc_iomgr_platform_init (void);
+void grpc_iomgr_platform_shutdown (void);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H */

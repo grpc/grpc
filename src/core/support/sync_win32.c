@@ -41,88 +41,126 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-void gpr_mu_init(gpr_mu *mu) {
-  InitializeCriticalSection(&mu->cs);
+void
+gpr_mu_init (gpr_mu * mu)
+{
+  InitializeCriticalSection (&mu->cs);
   mu->locked = 0;
 }
 
-void gpr_mu_destroy(gpr_mu *mu) { DeleteCriticalSection(&mu->cs); }
+void
+gpr_mu_destroy (gpr_mu * mu)
+{
+  DeleteCriticalSection (&mu->cs);
+}
 
-void gpr_mu_lock(gpr_mu *mu) {
-  EnterCriticalSection(&mu->cs);
-  GPR_ASSERT(!mu->locked);
+void
+gpr_mu_lock (gpr_mu * mu)
+{
+  EnterCriticalSection (&mu->cs);
+  GPR_ASSERT (!mu->locked);
   mu->locked = 1;
 }
 
-void gpr_mu_unlock(gpr_mu *mu) {
+void
+gpr_mu_unlock (gpr_mu * mu)
+{
   mu->locked = 0;
-  LeaveCriticalSection(&mu->cs);
+  LeaveCriticalSection (&mu->cs);
 }
 
-int gpr_mu_trylock(gpr_mu *mu) {
-  int result = TryEnterCriticalSection(&mu->cs);
-  if (result) {
-    if (mu->locked) {                /* This thread already holds the lock. */
-      LeaveCriticalSection(&mu->cs); /* Decrement lock count. */
-      result = 0;                    /* Indicate failure */
+int
+gpr_mu_trylock (gpr_mu * mu)
+{
+  int result = TryEnterCriticalSection (&mu->cs);
+  if (result)
+    {
+      if (mu->locked)
+	{			/* This thread already holds the lock. */
+	  LeaveCriticalSection (&mu->cs);	/* Decrement lock count. */
+	  result = 0;		/* Indicate failure */
+	}
+      mu->locked = 1;
     }
-    mu->locked = 1;
-  }
   return result;
 }
 
 /*----------------------------------------*/
 
-void gpr_cv_init(gpr_cv *cv) { InitializeConditionVariable(cv); }
+void
+gpr_cv_init (gpr_cv * cv)
+{
+  InitializeConditionVariable (cv);
+}
 
-void gpr_cv_destroy(gpr_cv *cv) {
+void
+gpr_cv_destroy (gpr_cv * cv)
+{
   /* Condition variables don't need destruction in Win32. */
 }
 
-int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
+int
+gpr_cv_wait (gpr_cv * cv, gpr_mu * mu, gpr_timespec abs_deadline)
+{
   int timeout = 0;
   DWORD timeout_max_ms;
   mu->locked = 0;
-  if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) ==
-      0) {
-    SleepConditionVariableCS(cv, &mu->cs, INFINITE);
-  } else {
-    gpr_timespec now = gpr_now(abs_deadline.clock_type);
-    gpr_int64 now_ms = (gpr_int64)now.tv_sec * 1000 + now.tv_nsec / 1000000;
-    gpr_int64 deadline_ms =
-        (gpr_int64)abs_deadline.tv_sec * 1000 + abs_deadline.tv_nsec / 1000000;
-    if (now_ms >= deadline_ms) {
-      timeout = 1;
-    } else {
-      timeout_max_ms = (DWORD)min(deadline_ms - now_ms, INFINITE - 1);
-      timeout = (SleepConditionVariableCS(cv, &mu->cs, timeout_max_ms) == 0 &&
-                 GetLastError() == ERROR_TIMEOUT);
+  if (gpr_time_cmp (abs_deadline, gpr_inf_future (abs_deadline.clock_type)) == 0)
+    {
+      SleepConditionVariableCS (cv, &mu->cs, INFINITE);
     }
-  }
+  else
+    {
+      gpr_timespec now = gpr_now (abs_deadline.clock_type);
+      gpr_int64 now_ms = (gpr_int64) now.tv_sec * 1000 + now.tv_nsec / 1000000;
+      gpr_int64 deadline_ms = (gpr_int64) abs_deadline.tv_sec * 1000 + abs_deadline.tv_nsec / 1000000;
+      if (now_ms >= deadline_ms)
+	{
+	  timeout = 1;
+	}
+      else
+	{
+	  timeout_max_ms = (DWORD) min (deadline_ms - now_ms, INFINITE - 1);
+	  timeout = (SleepConditionVariableCS (cv, &mu->cs, timeout_max_ms) == 0 && GetLastError () == ERROR_TIMEOUT);
+	}
+    }
   mu->locked = 1;
   return timeout;
 }
 
-void gpr_cv_signal(gpr_cv *cv) { WakeConditionVariable(cv); }
+void
+gpr_cv_signal (gpr_cv * cv)
+{
+  WakeConditionVariable (cv);
+}
 
-void gpr_cv_broadcast(gpr_cv *cv) { WakeAllConditionVariable(cv); }
+void
+gpr_cv_broadcast (gpr_cv * cv)
+{
+  WakeAllConditionVariable (cv);
+}
 
 /*----------------------------------------*/
 
 static void *dummy;
-struct run_once_func_arg {
-  void (*init_function)(void);
+struct run_once_func_arg
+{
+  void (*init_function) (void);
 };
-static BOOL CALLBACK run_once_func(gpr_once *once, void *v, void **pv) {
+static BOOL CALLBACK
+run_once_func (gpr_once * once, void *v, void **pv)
+{
   struct run_once_func_arg *arg = v;
-  (*arg->init_function)();
+  (*arg->init_function) ();
   return 1;
 }
 
-void gpr_once_init(gpr_once *once, void (*init_function)(void)) {
+void
+gpr_once_init (gpr_once * once, void (*init_function) (void))
+{
   struct run_once_func_arg arg;
   arg.init_function = init_function;
-  InitOnceExecuteOnce(once, run_once_func, &arg, &dummy);
+  InitOnceExecuteOnce (once, run_once_func, &arg, &dummy);
 }
 
 #endif /* GPR_WIN32 */

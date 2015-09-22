@@ -41,7 +41,8 @@
 #include <grpc/support/time.h>
 #include "test/core/util/test_config.h"
 
-struct test {
+struct test
+{
   gpr_mu mu;
   int n;
   int is_done;
@@ -49,53 +50,67 @@ struct test {
 };
 
 /* A Thread body.   Decrement t->n, and if is becomes zero, set t->done. */
-static void thd_body(void *v) {
+static void
+thd_body (void *v)
+{
   struct test *t = v;
-  gpr_mu_lock(&t->mu);
+  gpr_mu_lock (&t->mu);
   t->n--;
-  if (t->n == 0) {
-    t->is_done = 1;
-    gpr_cv_signal(&t->done_cv);
-  }
-  gpr_mu_unlock(&t->mu);
+  if (t->n == 0)
+    {
+      t->is_done = 1;
+      gpr_cv_signal (&t->done_cv);
+    }
+  gpr_mu_unlock (&t->mu);
 }
 
-static void thd_body_joinable(void *v) {}
+static void
+thd_body_joinable (void *v)
+{
+}
 
 /* Test that we can create a number of threads and wait for them. */
-static void test(void) {
+static void
+test (void)
+{
   int i;
   gpr_thd_id thd;
   gpr_thd_id thds[1000];
   struct test t;
   int n = 1000;
-  gpr_thd_options options = gpr_thd_options_default();
-  gpr_mu_init(&t.mu);
-  gpr_cv_init(&t.done_cv);
+  gpr_thd_options options = gpr_thd_options_default ();
+  gpr_mu_init (&t.mu);
+  gpr_cv_init (&t.done_cv);
   t.n = n;
   t.is_done = 0;
-  for (i = 0; i != n; i++) {
-    GPR_ASSERT(gpr_thd_new(&thd, &thd_body, &t, NULL));
-  }
-  gpr_mu_lock(&t.mu);
-  while (!t.is_done) {
-    gpr_cv_wait(&t.done_cv, &t.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
-  }
-  gpr_mu_unlock(&t.mu);
-  GPR_ASSERT(t.n == 0);
-  gpr_thd_options_set_joinable(&options);
-  for (i = 0; i < n; i++) {
-    GPR_ASSERT(gpr_thd_new(&thds[i], &thd_body_joinable, NULL, &options));
-  }
-  for (i = 0; i < n; i++) {
-    gpr_thd_join(thds[i]);
-  }
+  for (i = 0; i != n; i++)
+    {
+      GPR_ASSERT (gpr_thd_new (&thd, &thd_body, &t, NULL));
+    }
+  gpr_mu_lock (&t.mu);
+  while (!t.is_done)
+    {
+      gpr_cv_wait (&t.done_cv, &t.mu, gpr_inf_future (GPR_CLOCK_REALTIME));
+    }
+  gpr_mu_unlock (&t.mu);
+  GPR_ASSERT (t.n == 0);
+  gpr_thd_options_set_joinable (&options);
+  for (i = 0; i < n; i++)
+    {
+      GPR_ASSERT (gpr_thd_new (&thds[i], &thd_body_joinable, NULL, &options));
+    }
+  for (i = 0; i < n; i++)
+    {
+      gpr_thd_join (thds[i]);
+    }
 }
 
 /* ------------------------------------------------- */
 
-int main(int argc, char *argv[]) {
-  grpc_test_init(argc, argv);
-  test();
+int
+main (int argc, char *argv[])
+{
+  grpc_test_init (argc, argv);
+  test ();
   return 0;
 }

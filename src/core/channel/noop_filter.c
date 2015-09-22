@@ -34,25 +34,31 @@
 #include "src/core/channel/noop_filter.h"
 #include <grpc/support/log.h>
 
-typedef struct call_data {
-  int unused; /* C89 requires at least one struct element */
+typedef struct call_data
+{
+  int unused;			/* C89 requires at least one struct element */
 } call_data;
 
-typedef struct channel_data {
-  int unused; /* C89 requires at least one struct element */
+typedef struct channel_data
+{
+  int unused;			/* C89 requires at least one struct element */
 } channel_data;
 
 /* used to silence 'variable not used' warnings */
-static void ignore_unused(void *ignored) {}
+static void
+ignore_unused (void *ignored)
+{
+}
 
-static void noop_mutate_op(grpc_call_element *elem,
-                           grpc_transport_stream_op *op) {
+static void
+noop_mutate_op (grpc_call_element * elem, grpc_transport_stream_op * op)
+{
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
 
-  ignore_unused(calld);
-  ignore_unused(channeld);
+  ignore_unused (calld);
+  ignore_unused (channeld);
 
   /* do nothing */
 }
@@ -62,20 +68,19 @@ static void noop_mutate_op(grpc_call_element *elem,
      - a network event (or similar) from below, to receive something
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
-static void noop_start_transport_stream_op(grpc_call_element *elem,
-                                           grpc_transport_stream_op *op,
-                                           grpc_closure_list *closure_list) {
-  noop_mutate_op(elem, op);
+static void
+noop_start_transport_stream_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+{
+  noop_mutate_op (elem, op);
 
   /* pass control down the stack */
-  grpc_call_next_op(elem, op, closure_list);
+  grpc_call_next_op (elem, op, closure_list);
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data,
-                           grpc_transport_stream_op *initial_op,
-                           grpc_closure_list *closure_list) {
+static void
+init_call_elem (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+{
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
@@ -83,47 +88,51 @@ static void init_call_elem(grpc_call_element *elem,
   /* initialize members */
   calld->unused = channeld->unused;
 
-  if (initial_op) noop_mutate_op(elem, initial_op);
+  if (initial_op)
+    noop_mutate_op (elem, initial_op);
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem,
-                              grpc_closure_list *closure_list) {}
+static void
+destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+{
+}
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
-                              const grpc_channel_args *args, grpc_mdctx *mdctx,
-                              int is_first, int is_last,
-                              grpc_closure_list *closure_list) {
+static void
+init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_first, int is_last, grpc_closure_list * closure_list)
+{
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
   /* The first and the last filters tend to be implemented differently to
      handle the case that there's no 'next' filter to call on the up or down
      path */
-  GPR_ASSERT(!is_first);
-  GPR_ASSERT(!is_last);
+  GPR_ASSERT (!is_first);
+  GPR_ASSERT (!is_last);
 
   /* initialize members */
   channeld->unused = 0;
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element *elem,
-                                 grpc_closure_list *closure_list) {
+static void
+destroy_channel_elem (grpc_channel_element * elem, grpc_closure_list * closure_list)
+{
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
-  ignore_unused(channeld);
+  ignore_unused (channeld);
 }
 
-const grpc_channel_filter grpc_no_op_filter = {noop_start_transport_stream_op,
-                                               grpc_channel_next_op,
-                                               sizeof(call_data),
-                                               init_call_elem,
-                                               destroy_call_elem,
-                                               sizeof(channel_data),
-                                               init_channel_elem,
-                                               destroy_channel_elem,
-                                               grpc_call_next_get_peer,
-                                               "no-op"};
+const grpc_channel_filter grpc_no_op_filter = { noop_start_transport_stream_op,
+  grpc_channel_next_op,
+  sizeof (call_data),
+  init_call_elem,
+  destroy_call_elem,
+  sizeof (channel_data),
+  init_channel_elem,
+  destroy_channel_elem,
+  grpc_call_next_get_peer,
+  "no-op"
+};

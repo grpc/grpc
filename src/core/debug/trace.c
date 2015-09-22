@@ -40,15 +40,18 @@
 #include <grpc/support/log.h>
 #include "src/core/support/env.h"
 
-typedef struct tracer {
+typedef struct tracer
+{
   const char *name;
   int *flag;
   struct tracer *next;
 } tracer;
 static tracer *tracers;
 
-void grpc_register_tracer(const char *name, int *flag) {
-  tracer *t = gpr_malloc(sizeof(*t));
+void
+grpc_register_tracer (const char *name, int *flag)
+{
+  tracer *t = gpr_malloc (sizeof (*t));
   t->name = name;
   t->flag = flag;
   t->next = tracers;
@@ -56,81 +59,107 @@ void grpc_register_tracer(const char *name, int *flag) {
   tracers = t;
 }
 
-static void add(const char *beg, const char *end, char ***ss, size_t *ns) {
+static void
+add (const char *beg, const char *end, char ***ss, size_t * ns)
+{
   size_t n = *ns;
   size_t np = n + 1;
   char *s;
   size_t len;
-  GPR_ASSERT(end >= beg);
-  len = (size_t)(end - beg);
-  s = gpr_malloc(len + 1);
-  memcpy(s, beg, len);
+  GPR_ASSERT (end >= beg);
+  len = (size_t) (end - beg);
+  s = gpr_malloc (len + 1);
+  memcpy (s, beg, len);
   s[len] = 0;
-  *ss = gpr_realloc(*ss, sizeof(char **) * np);
+  *ss = gpr_realloc (*ss, sizeof (char **) * np);
   (*ss)[n] = s;
   *ns = np;
 }
 
-static void split(const char *s, char ***ss, size_t *ns) {
-  const char *c = strchr(s, ',');
-  if (c == NULL) {
-    add(s, s + strlen(s), ss, ns);
-  } else {
-    add(s, c, ss, ns);
-    split(c + 1, ss, ns);
-  }
+static void
+split (const char *s, char ***ss, size_t * ns)
+{
+  const char *c = strchr (s, ',');
+  if (c == NULL)
+    {
+      add (s, s + strlen (s), ss, ns);
+    }
+  else
+    {
+      add (s, c, ss, ns);
+      split (c + 1, ss, ns);
+    }
 }
 
-static void parse(const char *s) {
+static void
+parse (const char *s)
+{
   char **strings = NULL;
   size_t nstrings = 0;
   size_t i;
-  split(s, &strings, &nstrings);
+  split (s, &strings, &nstrings);
 
-  for (i = 0; i < nstrings; i++) {
-    grpc_tracer_set_enabled(strings[i], 1);
-  }
+  for (i = 0; i < nstrings; i++)
+    {
+      grpc_tracer_set_enabled (strings[i], 1);
+    }
 
-  for (i = 0; i < nstrings; i++) {
-    gpr_free(strings[i]);
-  }
-  gpr_free(strings);
+  for (i = 0; i < nstrings; i++)
+    {
+      gpr_free (strings[i]);
+    }
+  gpr_free (strings);
 }
 
-void grpc_tracer_init(const char *env_var) {
-  char *e = gpr_getenv(env_var);
-  if (e != NULL) {
-    parse(e);
-    gpr_free(e);
-  }
+void
+grpc_tracer_init (const char *env_var)
+{
+  char *e = gpr_getenv (env_var);
+  if (e != NULL)
+    {
+      parse (e);
+      gpr_free (e);
+    }
 }
 
-void grpc_tracer_shutdown(void) {
-  while (tracers) {
-    tracer *t = tracers;
-    tracers = t->next;
-    gpr_free(t);
-  }
+void
+grpc_tracer_shutdown (void)
+{
+  while (tracers)
+    {
+      tracer *t = tracers;
+      tracers = t->next;
+      gpr_free (t);
+    }
 }
 
-int grpc_tracer_set_enabled(const char *name, int enabled) {
+int
+grpc_tracer_set_enabled (const char *name, int enabled)
+{
   tracer *t;
-  if (0 == strcmp(name, "all")) {
-    for (t = tracers; t; t = t->next) {
-      *t->flag = 1;
+  if (0 == strcmp (name, "all"))
+    {
+      for (t = tracers; t; t = t->next)
+	{
+	  *t->flag = 1;
+	}
     }
-  } else {
-    int found = 0;
-    for (t = tracers; t; t = t->next) {
-      if (0 == strcmp(name, t->name)) {
-        *t->flag = enabled;
-        found = 1;
-      }
+  else
+    {
+      int found = 0;
+      for (t = tracers; t; t = t->next)
+	{
+	  if (0 == strcmp (name, t->name))
+	    {
+	      *t->flag = enabled;
+	      found = 1;
+	    }
+	}
+      if (!found)
+	{
+	  gpr_log (GPR_ERROR, "Unknown trace var: '%s'", name);
+	  return 0;		/* early return */
+	}
     }
-    if (!found) {
-      gpr_log(GPR_ERROR, "Unknown trace var: '%s'", name);
-      return 0; /* early return */
-    }
-  }
   return 1;
 }

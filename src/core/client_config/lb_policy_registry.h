@@ -38,17 +38,16 @@
 
 /** Initialize the registry and set \a default_factory as the factory to be
  * returned when no name is provided in a lookup */
-void grpc_lb_policy_registry_init(grpc_lb_policy_factory *default_factory);
-void grpc_lb_policy_registry_shutdown(void);
+void grpc_lb_policy_registry_init (grpc_lb_policy_factory * default_factory);
+void grpc_lb_policy_registry_shutdown (void);
 
 /** Register a LB policy factory. */
-void grpc_register_lb_policy(grpc_lb_policy_factory *factory);
+void grpc_register_lb_policy (grpc_lb_policy_factory * factory);
 
 /** Create a \a grpc_lb_policy instance.
  *
  * If \a name is NULL, the default factory from \a grpc_lb_policy_registry_init
  * will be returned. */
-grpc_lb_policy *grpc_lb_policy_create(const char *name,
-                                      grpc_lb_policy_args *args);
+grpc_lb_policy *grpc_lb_policy_create (const char *name, grpc_lb_policy_args * args);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_REGISTRY_H */

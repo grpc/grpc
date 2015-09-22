@@ -43,49 +43,73 @@
 #include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
-enum { TIMEOUT = 200000 };
+enum
+{ TIMEOUT = 200000 };
 
-static void *tag(gpr_intptr t) { return (void *)t; }
-
-static gpr_timespec n_seconds_time(int n) {
-  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(n);
+static void *
+tag (gpr_intptr t)
+{
+  return (void *) t;
 }
 
-static gpr_timespec five_seconds_time(void) { return n_seconds_time(5); }
+static gpr_timespec
+n_seconds_time (int n)
+{
+  return GRPC_TIMEOUT_SECONDS_TO_DEADLINE (n);
+}
 
-static void drain_cq(grpc_completion_queue *cq) {
+static gpr_timespec
+five_seconds_time (void)
+{
+  return n_seconds_time (5);
+}
+
+static void
+drain_cq (grpc_completion_queue * cq)
+{
   grpc_event ev;
-  do {
-    ev = grpc_completion_queue_next(cq, five_seconds_time(), NULL);
-  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
+  do
+    {
+      ev = grpc_completion_queue_next (cq, five_seconds_time (), NULL);
+    }
+  while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture *f) {
-  if (!f->server) return;
-  grpc_server_destroy(f->server);
+static void
+shutdown_server (grpc_end2end_test_fixture * f)
+{
+  if (!f->server)
+    return;
+  grpc_server_destroy (f->server);
   f->server = NULL;
 }
 
-static void shutdown_client(grpc_end2end_test_fixture *f) {
-  if (!f->client) return;
-  grpc_channel_destroy(f->client);
+static void
+shutdown_client (grpc_end2end_test_fixture * f)
+{
+  if (!f->client)
+    return;
+  grpc_channel_destroy (f->client);
   f->client = NULL;
 }
 
-static void end_test(grpc_end2end_test_fixture *f) {
-  shutdown_server(f);
-  shutdown_client(f);
+static void
+end_test (grpc_end2end_test_fixture * f)
+{
+  shutdown_server (f);
+  shutdown_client (f);
 
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
+  grpc_completion_queue_shutdown (f->cq);
+  drain_cq (f->cq);
+  grpc_completion_queue_destroy (f->cq);
 }
 
-static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
-                                           cq_verifier *cqv) {
+static void
+do_request_and_shutdown_server (grpc_end2end_test_fixture * f, cq_verifier * cqv)
+{
   grpc_call *c;
   grpc_call *s;
-  gpr_timespec deadline = five_seconds_time();
+  gpr_timespec deadline = five_seconds_time ();
   grpc_op ops[6];
   grpc_op *op;
   grpc_metadata_array initial_metadata_recv;
@@ -98,15 +122,13 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
   size_t details_capacity = 0;
   int was_cancelled = 2;
 
-  c = grpc_channel_create_call(f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                               "/foo", "foo.test.google.fr:1234", deadline,
-                               NULL);
-  GPR_ASSERT(c);
+  c = grpc_channel_create_call (f->client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq, "/foo", "foo.test.google.fr:1234", deadline, NULL);
+  GPR_ASSERT (c);
 
-  grpc_metadata_array_init(&initial_metadata_recv);
-  grpc_metadata_array_init(&trailing_metadata_recv);
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_call_details_init(&call_details);
+  grpc_metadata_array_init (&initial_metadata_recv);
+  grpc_metadata_array_init (&trailing_metadata_recv);
+  grpc_metadata_array_init (&request_metadata_recv);
+  grpc_call_details_init (&call_details);
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -131,19 +153,17 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  error = grpc_call_start_batch (c, ops, (size_t) (op - ops), tag (1), NULL);
+  GPR_ASSERT (GRPC_CALL_OK == error);
 
-  error =
-      grpc_server_request_call(f->server, &s, &call_details,
-                               &request_metadata_recv, f->cq, f->cq, tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
-  cq_expect_completion(cqv, tag(101), 1);
-  cq_verify(cqv);
+  error = grpc_server_request_call (f->server, &s, &call_details, &request_metadata_recv, f->cq, f->cq, tag (101));
+  GPR_ASSERT (GRPC_CALL_OK == error);
+  cq_expect_completion (cqv, tag (101), 1);
+  cq_verify (cqv);
 
   /* should be able to shut down the server early
      - and still complete the request */
-  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_server_shutdown_and_notify (f->server, f->cq, tag (1000));
 
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -163,53 +183,57 @@ static void do_request_and_shutdown_server(grpc_end2end_test_fixture *f,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  error = grpc_call_start_batch (s, ops, (size_t) (op - ops), tag (102), NULL);
+  GPR_ASSERT (GRPC_CALL_OK == error);
 
-  cq_expect_completion(cqv, tag(102), 1);
-  cq_expect_completion(cqv, tag(1), 1);
-  cq_expect_completion(cqv, tag(1000), 1);
-  cq_verify(cqv);
+  cq_expect_completion (cqv, tag (102), 1);
+  cq_expect_completion (cqv, tag (1), 1);
+  cq_expect_completion (cqv, tag (1000), 1);
+  cq_verify (cqv);
 
-  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-  GPR_ASSERT(0 == strcmp(details, "xyz"));
-  GPR_ASSERT(0 == strcmp(call_details.method, "/foo"));
-  GPR_ASSERT(0 == strcmp(call_details.host, "foo.test.google.fr:1234"));
-  GPR_ASSERT(was_cancelled == 1);
+  GPR_ASSERT (status == GRPC_STATUS_UNIMPLEMENTED);
+  GPR_ASSERT (0 == strcmp (details, "xyz"));
+  GPR_ASSERT (0 == strcmp (call_details.method, "/foo"));
+  GPR_ASSERT (0 == strcmp (call_details.host, "foo.test.google.fr:1234"));
+  GPR_ASSERT (was_cancelled == 1);
 
-  gpr_free(details);
-  grpc_metadata_array_destroy(&initial_metadata_recv);
-  grpc_metadata_array_destroy(&trailing_metadata_recv);
-  grpc_metadata_array_destroy(&request_metadata_recv);
-  grpc_call_details_destroy(&call_details);
+  gpr_free (details);
+  grpc_metadata_array_destroy (&initial_metadata_recv);
+  grpc_metadata_array_destroy (&trailing_metadata_recv);
+  grpc_metadata_array_destroy (&request_metadata_recv);
+  grpc_call_details_destroy (&call_details);
 
-  grpc_call_destroy(c);
-  grpc_call_destroy(s);
+  grpc_call_destroy (c);
+  grpc_call_destroy (s);
 }
 
-static void disappearing_server_test(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
-  cq_verifier *cqv = cq_verifier_create(f.cq);
+static void
+disappearing_server_test (grpc_end2end_test_config config)
+{
+  grpc_end2end_test_fixture f = config.create_fixture (NULL, NULL);
+  cq_verifier *cqv = cq_verifier_create (f.cq);
 
-  gpr_log(GPR_INFO, "%s/%s", "disappearing_server_test", config.name);
+  gpr_log (GPR_INFO, "%s/%s", "disappearing_server_test", config.name);
 
-  config.init_client(&f, NULL);
-  config.init_server(&f, NULL);
+  config.init_client (&f, NULL);
+  config.init_server (&f, NULL);
 
-  do_request_and_shutdown_server(&f, cqv);
+  do_request_and_shutdown_server (&f, cqv);
 
   /* now destroy and recreate the server */
-  config.init_server(&f, NULL);
+  config.init_server (&f, NULL);
 
-  do_request_and_shutdown_server(&f, cqv);
+  do_request_and_shutdown_server (&f, cqv);
 
-  cq_verifier_destroy(cqv);
+  cq_verifier_destroy (cqv);
 
-  end_test(&f);
-  config.tear_down_data(&f);
+  end_test (&f);
+  config.tear_down_data (&f);
 }
 
-void grpc_end2end_tests(grpc_end2end_test_config config) {
-  GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
-  disappearing_server_test(config);
+void
+grpc_end2end_tests (grpc_end2end_test_config config)
+{
+  GPR_ASSERT (config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
+  disappearing_server_test (config);
 }

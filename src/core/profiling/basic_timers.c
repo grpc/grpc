@@ -44,20 +44,22 @@
 #include <grpc/support/thd.h>
 #include <stdio.h>
 
-typedef enum {
+typedef enum
+{
   BEGIN = '{',
   END = '}',
   MARK = '.',
   IMPORTANT = '!'
 } marker_type;
 
-typedef struct grpc_timer_entry {
+typedef struct grpc_timer_entry
+{
   gpr_timespec tm;
   int tag;
-  const char* tagstr;
+  const char *tagstr;
   marker_type type;
-  void* id;
-  const char* file;
+  void *id;
+  const char *file;
   int line;
 } grpc_timer_entry;
 
@@ -66,32 +68,34 @@ typedef struct grpc_timer_entry {
 static __thread grpc_timer_entry log[MAX_COUNT];
 static __thread int count;
 
-static void log_report() {
+static void
+log_report ()
+{
   int i;
-  for (i = 0; i < count; i++) {
-    grpc_timer_entry* entry = &(log[i]);
-    printf("GRPC_LAT_PROF %ld.%09d  %p %c %d(%s) %p %s %d\n", entry->tm.tv_sec,
-           entry->tm.tv_nsec, (void*)(gpr_intptr)gpr_thd_currentid(),
-           entry->type, entry->tag, entry->tagstr, entry->id, entry->file,
-           entry->line);
-  }
+  for (i = 0; i < count; i++)
+    {
+      grpc_timer_entry *entry = &(log[i]);
+      printf ("GRPC_LAT_PROF %ld.%09d  %p %c %d(%s) %p %s %d\n", entry->tm.tv_sec, entry->tm.tv_nsec, (void *) (gpr_intptr) gpr_thd_currentid (), entry->type, entry->tag, entry->tagstr, entry->id, entry->file, entry->line);
+    }
 
   /* Now clear out the log */
   count = 0;
 }
 
-static void grpc_timers_log_add(int tag, const char* tagstr, marker_type type,
-                                void* id, const char* file, int line) {
-  grpc_timer_entry* entry;
+static void
+grpc_timers_log_add (int tag, const char *tagstr, marker_type type, void *id, const char *file, int line)
+{
+  grpc_timer_entry *entry;
 
   /* TODO (vpai) : Improve concurrency */
-  if (count == MAX_COUNT) {
-    log_report();
-  }
+  if (count == MAX_COUNT)
+    {
+      log_report ();
+    }
 
   entry = &log[count++];
 
-  entry->tm = gpr_now(GPR_CLOCK_PRECISE);
+  entry->tm = gpr_now (GPR_CLOCK_PRECISE);
   entry->tag = tag;
   entry->tagstr = tagstr;
   entry->type = type;
@@ -101,40 +105,61 @@ static void grpc_timers_log_add(int tag, const char* tagstr, marker_type type,
 }
 
 /* Latency profiler API implementation. */
-void grpc_timer_add_mark(int tag, const char* tagstr, void* id,
-                         const char* file, int line) {
-  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, tagstr, MARK, id, file, line);
-  }
+void
+grpc_timer_add_mark (int tag, const char *tagstr, void *id, const char *file, int line)
+{
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD)
+    {
+      grpc_timers_log_add (tag, tagstr, MARK, id, file, line);
+    }
 }
 
-void grpc_timer_add_important_mark(int tag, const char* tagstr, void* id,
-                                   const char* file, int line) {
-  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, tagstr, IMPORTANT, id, file, line);
-  }
+void
+grpc_timer_add_important_mark (int tag, const char *tagstr, void *id, const char *file, int line)
+{
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD)
+    {
+      grpc_timers_log_add (tag, tagstr, IMPORTANT, id, file, line);
+    }
 }
 
-void grpc_timer_begin(int tag, const char* tagstr, void* id, const char* file,
-                      int line) {
-  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, tagstr, BEGIN, id, file, line);
-  }
+void
+grpc_timer_begin (int tag, const char *tagstr, void *id, const char *file, int line)
+{
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD)
+    {
+      grpc_timers_log_add (tag, tagstr, BEGIN, id, file, line);
+    }
 }
 
-void grpc_timer_end(int tag, const char* tagstr, void* id, const char* file,
-                    int line) {
-  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, tagstr, END, id, file, line);
-  }
+void
+grpc_timer_end (int tag, const char *tagstr, void *id, const char *file, int line)
+{
+  if (tag < GRPC_PTAG_IGNORE_THRESHOLD)
+    {
+      grpc_timers_log_add (tag, tagstr, END, id, file, line);
+    }
 }
 
 /* Basic profiler specific API functions. */
-void grpc_timers_global_init(void) {}
+void
+grpc_timers_global_init (void)
+{
+}
 
-void grpc_timers_global_destroy(void) {}
+void
+grpc_timers_global_destroy (void)
+{
+}
 
-#else  /* !GRPC_BASIC_PROFILER */
-void grpc_timers_global_init(void) {}
-void grpc_timers_global_destroy(void) {}
+#else /* !GRPC_BASIC_PROFILER */
+void
+grpc_timers_global_init (void)
+{
+}
+
+void
+grpc_timers_global_destroy (void)
+{
+}
 #endif /* GRPC_BASIC_PROFILER */

@@ -37,37 +37,50 @@
 
 #include <grpc/support/alloc.h>
 
-struct grpc_client_config {
+struct grpc_client_config
+{
   gpr_refcount refs;
   grpc_lb_policy *lb_policy;
 };
 
-grpc_client_config *grpc_client_config_create() {
-  grpc_client_config *c = gpr_malloc(sizeof(*c));
-  memset(c, 0, sizeof(*c));
-  gpr_ref_init(&c->refs, 1);
+grpc_client_config *
+grpc_client_config_create ()
+{
+  grpc_client_config *c = gpr_malloc (sizeof (*c));
+  memset (c, 0, sizeof (*c));
+  gpr_ref_init (&c->refs, 1);
   return c;
 }
 
-void grpc_client_config_ref(grpc_client_config *c) { gpr_ref(&c->refs); }
-
-void grpc_client_config_unref(grpc_client_config *c,
-                              grpc_closure_list *closure_list) {
-  if (gpr_unref(&c->refs)) {
-    GRPC_LB_POLICY_UNREF(c->lb_policy, "client_config", closure_list);
-    gpr_free(c);
-  }
+void
+grpc_client_config_ref (grpc_client_config * c)
+{
+  gpr_ref (&c->refs);
 }
 
-void grpc_client_config_set_lb_policy(grpc_client_config *c,
-                                      grpc_lb_policy *lb_policy) {
-  GPR_ASSERT(c->lb_policy == NULL);
-  if (lb_policy) {
-    GRPC_LB_POLICY_REF(lb_policy, "client_config");
-  }
+void
+grpc_client_config_unref (grpc_client_config * c, grpc_closure_list * closure_list)
+{
+  if (gpr_unref (&c->refs))
+    {
+      GRPC_LB_POLICY_UNREF (c->lb_policy, "client_config", closure_list);
+      gpr_free (c);
+    }
+}
+
+void
+grpc_client_config_set_lb_policy (grpc_client_config * c, grpc_lb_policy * lb_policy)
+{
+  GPR_ASSERT (c->lb_policy == NULL);
+  if (lb_policy)
+    {
+      GRPC_LB_POLICY_REF (lb_policy, "client_config");
+    }
   c->lb_policy = lb_policy;
 }
 
-grpc_lb_policy *grpc_client_config_get_lb_policy(grpc_client_config *c) {
+grpc_lb_policy *
+grpc_client_config_get_lb_policy (grpc_client_config * c)
+{
   return c->lb_policy;
 }

@@ -36,7 +36,8 @@
 
 struct grpc_fd;
 
-struct grpc_workqueue {
+struct grpc_workqueue
+{
   gpr_refcount refs;
 
   gpr_mu mu;

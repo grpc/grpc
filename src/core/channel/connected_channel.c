@@ -46,11 +46,15 @@
 
 #define MAX_BUFFER_LENGTH 8192
 
-typedef struct connected_channel_channel_data {
+typedef struct connected_channel_channel_data
+{
   grpc_transport *transport;
 } channel_data;
 
-typedef struct connected_channel_call_data { void *unused; } call_data;
+typedef struct connected_channel_call_data
+{
+  void *unused;
+} call_data;
 
 /* We perform a small hack to locate transport data alongside the connected
    channel data in call allocations, to allow everything to be pulled in minimal
@@ -61,98 +65,95 @@ typedef struct connected_channel_call_data { void *unused; } call_data;
 
 /* Intercept a call operation and either push it directly up or translate it
    into transport stream operations */
-static void con_start_transport_stream_op(grpc_call_element *elem,
-                                          grpc_transport_stream_op *op,
-                                          grpc_closure_list *closure_list) {
+static void
+con_start_transport_stream_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+{
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
+  GPR_ASSERT (elem->filter == &grpc_connected_channel_filter);
+  GRPC_CALL_LOG_OP (GPR_INFO, elem, op);
 
-  grpc_transport_perform_stream_op(chand->transport,
-                                   TRANSPORT_STREAM_FROM_CALL_DATA(calld), op,
-                                   closure_list);
+  grpc_transport_perform_stream_op (chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA (calld), op, closure_list);
 }
 
-static void con_start_transport_op(grpc_channel_element *elem,
-                                   grpc_transport_op *op,
-                                   grpc_closure_list *closure_list) {
+static void
+con_start_transport_op (grpc_channel_element * elem, grpc_transport_op * op, grpc_closure_list * closure_list)
+{
   channel_data *chand = elem->channel_data;
-  grpc_transport_perform_op(chand->transport, op, closure_list);
+  grpc_transport_perform_op (chand->transport, op, closure_list);
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data,
-                           grpc_transport_stream_op *initial_op,
-                           grpc_closure_list *closure_list) {
+static void
+init_call_elem (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+{
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   int r;
 
-  GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
-  r = grpc_transport_init_stream(
-      chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-      server_transport_data, initial_op, closure_list);
-  GPR_ASSERT(r == 0);
+  GPR_ASSERT (elem->filter == &grpc_connected_channel_filter);
+  r = grpc_transport_init_stream (chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA (calld), server_transport_data, initial_op, closure_list);
+  GPR_ASSERT (r == 0);
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem,
-                              grpc_closure_list *closure_list) {
+static void
+destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+{
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
-  GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
-  grpc_transport_destroy_stream(
-      chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld), closure_list);
+  GPR_ASSERT (elem->filter == &grpc_connected_channel_filter);
+  grpc_transport_destroy_stream (chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA (calld), closure_list);
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
-                              const grpc_channel_args *args, grpc_mdctx *mdctx,
-                              int is_first, int is_last,
-                              grpc_closure_list *closure_list) {
-  channel_data *cd = (channel_data *)elem->channel_data;
-  GPR_ASSERT(is_last);
-  GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
+static void
+init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_first, int is_last, grpc_closure_list * closure_list)
+{
+  channel_data *cd = (channel_data *) elem->channel_data;
+  GPR_ASSERT (is_last);
+  GPR_ASSERT (elem->filter == &grpc_connected_channel_filter);
   cd->transport = NULL;
 }
 
 /* Destructor for channel_data */
-static void destroy_channel_elem(grpc_channel_element *elem,
-                                 grpc_closure_list *closure_list) {
-  channel_data *cd = (channel_data *)elem->channel_data;
-  GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
-  grpc_transport_destroy(cd->transport, closure_list);
+static void
+destroy_channel_elem (grpc_channel_element * elem, grpc_closure_list * closure_list)
+{
+  channel_data *cd = (channel_data *) elem->channel_data;
+  GPR_ASSERT (elem->filter == &grpc_connected_channel_filter);
+  grpc_transport_destroy (cd->transport, closure_list);
 }
 
-static char *con_get_peer(grpc_call_element *elem,
-                          grpc_closure_list *closure_list) {
+static char *
+con_get_peer (grpc_call_element * elem, grpc_closure_list * closure_list)
+{
   channel_data *chand = elem->channel_data;
-  return grpc_transport_get_peer(chand->transport, closure_list);
+  return grpc_transport_get_peer (chand->transport, closure_list);
 }
 
 const grpc_channel_filter grpc_connected_channel_filter = {
-    con_start_transport_stream_op,
-    con_start_transport_op,
-    sizeof(call_data),
-    init_call_elem,
-    destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    con_get_peer,
-    "connected",
+  con_start_transport_stream_op,
+  con_start_transport_op,
+  sizeof (call_data),
+  init_call_elem,
+  destroy_call_elem,
+  sizeof (channel_data),
+  init_channel_elem,
+  destroy_channel_elem,
+  con_get_peer,
+  "connected",
 };
 
-void grpc_connected_channel_bind_transport(grpc_channel_stack *channel_stack,
-                                           grpc_transport *transport) {
+void
+grpc_connected_channel_bind_transport (grpc_channel_stack * channel_stack, grpc_transport * transport)
+{
   /* Assumes that the connected channel filter is always the last filter
      in a channel stack */
-  grpc_channel_element *elem = grpc_channel_stack_last_element(channel_stack);
-  channel_data *cd = (channel_data *)elem->channel_data;
-  GPR_ASSERT(elem->filter == &grpc_connected_channel_filter);
-  GPR_ASSERT(cd->transport == NULL);
+  grpc_channel_element *elem = grpc_channel_stack_last_element (channel_stack);
+  channel_data *cd = (channel_data *) elem->channel_data;
+  GPR_ASSERT (elem->filter == &grpc_connected_channel_filter);
+  GPR_ASSERT (cd->transport == NULL);
   cd->transport = transport;
 
   /* HACK(ctiller): increase call stack size for the channel to make space
@@ -161,5 +162,5 @@ void grpc_connected_channel_bind_transport(grpc_channel_stack *channel_stack,
      This is only "safe" because call stacks place no additional data after
      the last call element, and the last call element MUST be the connected
      channel. */
-  channel_stack->call_stack_size += grpc_transport_stream_size(transport);
+  channel_stack->call_stack_size += grpc_transport_stream_size (transport);
 }
