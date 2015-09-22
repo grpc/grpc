@@ -169,6 +169,9 @@
     <ClCompile Include="..\..\..\src\core\iomgr\alarm_heap.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\closure.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
@@ -608,10 +611,16 @@
     <ClInclude Include="..\..\..\src\core\iomgr\alarm_internal.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\closure.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint_pair.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\exec_ctx.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\iomgr\fd_posix.h">

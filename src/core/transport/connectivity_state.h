@@ -35,7 +35,7 @@
 #define GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H
 
 #include <grpc/grpc.h>
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/exec_ctx.h"
 
 typedef struct grpc_connectivity_state_watcher {
   /** we keep watchers in a linked list */

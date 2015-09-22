@@ -35,6 +35,7 @@
 #define GRPC_INTERNAL_CORE_IOMGR_ALARM_H
 
 #include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/exec_ctx.h"
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 

@@ -36,7 +36,7 @@
 
 /* Parser for GRPC streams embedded in DATA frames */
 
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/exec_ctx.h"
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 #include "src/core/transport/stream_op.h"

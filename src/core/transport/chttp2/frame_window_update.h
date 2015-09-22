@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H
 #define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_WINDOW_UPDATE_H
 
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/exec_ctx.h"
 #include <grpc/support/slice.h>
 #include "src/core/transport/chttp2/frame.h"
 

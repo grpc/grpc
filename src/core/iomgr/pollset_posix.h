@@ -37,6 +37,7 @@
 #include <poll.h>
 
 #include <grpc/support/sync.h>
+#include "src/core/iomgr/exec_ctx.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
