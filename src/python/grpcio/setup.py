@@ -103,7 +103,7 @@ _COMMAND_CLASS = {
 
 setuptools.setup(
     name='grpcio',
-    version='0.11.0b0',
+    version='0.11.0b1',
     ext_modules=_EXTENSION_MODULES,
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,
