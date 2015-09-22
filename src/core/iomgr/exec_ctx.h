@@ -36,6 +36,23 @@
 
 #include "src/core/iomgr/closure.h"
 
+/** Execution context.
+ *  A bag of data that collects information along a callstack.
+ *  Generally created at public API entry points, and passed down as 
+ *  pointer to child functions that manipulate it.
+ *
+ *  Specific responsibilities (this may grow in the future):
+ *  - track a list of work that needs to be delayed until the top of the
+ *    call stack (this provides a convenient mechanism to run callbacks
+ *    without worrying about locking issues)
+ *
+ *  CONVENTIONS:
+ *  Instance of this must ALWAYS be constructed on the stack, never
+ *  heap allocated. Instances and pointers to them must always be called 
+ *  exec_ctx. Instances are always passed as the first argument
+ *  to a function that takes it, and always as a pointer (grpc_exec_ctx
+ *  is never copied).
+ */
 struct grpc_exec_ctx {
   grpc_closure_list closure_list;
 };
@@ -43,10 +60,17 @@ struct grpc_exec_ctx {
 #define GRPC_EXEC_CTX_INIT \
   { GRPC_CLOSURE_LIST_INIT }
 
-void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx);
+/** Flush any work that has been enqueued onto this grpc_exec_ctx.
+ *  Caller must guarantee that no interfering locks are held. */
 void grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx);
+/** Finish any pending work for a grpc_exec_ctx. Must be called before
+ *  the instance is destroyed, or work may be lost. */
+void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx);
+/** Add a closure to be executed at the next flush/finish point */
 void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
                            int success);
+/** Add a list of closures to be executed at the next flush/finish point.
+ *  Leaves \a list empty. */
 void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
                                 grpc_closure_list *list);
 
