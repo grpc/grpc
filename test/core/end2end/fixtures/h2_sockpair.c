@@ -64,7 +64,7 @@ server_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx
     &grpc_http_server_filter
   };
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_server_setup_transport (f->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (&exec_ctx, f->server));
+  grpc_server_setup_transport (&exec_ctx, f->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (f->server));
   grpc_exec_ctx_finish (&exec_ctx);
 }
 
@@ -84,8 +84,8 @@ client_setup_transport (grpc_exec_ctx * exec_ctx, void *ts, grpc_transport * tra
     &grpc_connected_channel_filter
   };
   size_t nfilters = sizeof (filters) / sizeof (*filters);
-  grpc_channel *channel = grpc_channel_create_from_filters ("socketpair-target", filters, nfilters,
-							    cs->client_args, mdctx, 1, closure_list);
+  grpc_channel *channel = grpc_channel_create_from_filters (exec_ctx,"socketpair-target", filters, nfilters,
+							    cs->client_args, mdctx, 1);
 
   cs->f->client = channel;
 

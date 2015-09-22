@@ -121,6 +121,9 @@
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint_pair_windows.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\exec_ctx.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\fd_posix.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>

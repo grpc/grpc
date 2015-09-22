@@ -355,7 +355,7 @@ grpc_call_create (grpc_channel * channel, grpc_call * parent_call, gpr_uint32 pr
       GRPC_CALL_INTERNAL_REF (call, "receiving");
       initial_op_ptr = &initial_op;
     }
-  grpc_call_stack_init (channel_stack, server_transport_data, initial_op_ptr, CALL_STACK_FROM_CALL (&exec_ctx, call));
+  grpc_call_stack_init (&exec_ctx, channel_stack, server_transport_data, initial_op_ptr, CALL_STACK_FROM_CALL (call));
   if (parent_call != NULL)
     {
       GRPC_CALL_INTERNAL_REF (parent_call, "child");
@@ -473,7 +473,7 @@ destroy_call (grpc_exec_ctx * exec_ctx, grpc_call * call)
 {
   size_t i;
   grpc_call *c = call;
-  grpc_call_stack_destroy (CALL_STACK_FROM_CALL (exec_ctx, c));
+  grpc_call_stack_destroy (exec_ctx, CALL_STACK_FROM_CALL (c));
   GRPC_CHANNEL_INTERNAL_UNREF (exec_ctx, c->channel, "call");
   gpr_mu_destroy (&c->mu);
   gpr_mu_destroy (&c->completion_mu);
@@ -1554,7 +1554,7 @@ set_deadline_alarm (grpc_exec_ctx * exec_ctx, grpc_call * call, gpr_timespec dea
   GRPC_CALL_INTERNAL_REF (call, "alarm");
   call->have_alarm = 1;
   call->send_deadline = gpr_convert_clock_type (deadline, GPR_CLOCK_MONOTONIC);
-  grpc_alarm_init (&call->alarm, call->send_deadline, call_alarm, call, gpr_now (exec_ctx, GPR_CLOCK_MONOTONIC));
+  grpc_alarm_init (exec_ctx, &call->alarm, call->send_deadline, call_alarm, call, gpr_now (GPR_CLOCK_MONOTONIC));
 }
 
 /* we offset status by a small amount when storing it into transport metadata
@@ -1714,13 +1714,13 @@ set_cancelled_value (grpc_status_code status, void *dest)
 static void
 finish_batch (grpc_exec_ctx * exec_ctx, grpc_call * call, int success, void *tag)
 {
-  grpc_cq_end_op (call->cq, tag, success, done_completion, call, allocate_completion (exec_ctx, call));
+  grpc_cq_end_op (exec_ctx,call->cq, tag, success, done_completion, call, allocate_completion ( call));
 }
 
 static void
 finish_batch_with_close (grpc_exec_ctx * exec_ctx, grpc_call * call, int success, void *tag)
 {
-  grpc_cq_end_op (call->cq, tag, 1, done_completion, call, allocate_completion (exec_ctx, call));
+  grpc_cq_end_op (exec_ctx,call->cq, tag, 1, done_completion, call, allocate_completion ( call));
 }
 
 static int
@@ -1740,7 +1740,7 @@ grpc_call_start_batch (grpc_call * call, const grpc_op * ops, size_t nops, void 
   size_t out;
   const grpc_op *op;
   grpc_ioreq *req;
-  void (*finish_func) (grpc_call *, int, void *, grpc_closure_list *) = finish_batch;
+  void (*finish_func) (grpc_exec_ctx *, grpc_call *, int, void *) = finish_batch;
   grpc_call_error error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -1756,7 +1756,7 @@ grpc_call_start_batch (grpc_call * call, const grpc_op * ops, size_t nops, void 
     {
       grpc_cq_begin_op (call->cq);
       GRPC_CALL_INTERNAL_REF (call, "completion");
-      grpc_cq_end_op (call->cq, tag, 1, done_completion, call, allocate_completion (&exec_ctx, call));
+      grpc_cq_end_op (&exec_ctx, call->cq, tag, 1, done_completion, call, allocate_completion (call));
       error = GRPC_CALL_OK;
       goto done;
     }

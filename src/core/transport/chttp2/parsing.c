@@ -119,7 +119,7 @@ grpc_chttp2_publish_reads (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_globa
      published later */
   if (transport_parsing->goaway_received)
     {
-      grpc_chttp2_add_incoming_goaway (transport_global, (exec_ctx, gpr_uint32) transport_parsing->goaway_error, transport_parsing->goaway_text);
+      grpc_chttp2_add_incoming_goaway (exec_ctx,transport_global, ( gpr_uint32) transport_parsing->goaway_error, transport_parsing->goaway_text);
       transport_parsing->goaway_text = gpr_empty_slice ();
       transport_parsing->goaway_received = 0;
     }
@@ -339,7 +339,7 @@ grpc_chttp2_perform_read (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_parsin
 	}
       if (transport_parsing->incoming_frame_size == 0)
 	{
-	  if (!parse_frame_slice (transport_parsing, gpr_empty_slice (exec_ctx, ), 1))
+	  if (!parse_frame_slice (exec_ctx, transport_parsing, gpr_empty_slice (), 1))
 	    {
 	      return 0;
 	    }
@@ -360,7 +360,7 @@ grpc_chttp2_perform_read (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_parsin
       GPR_ASSERT (cur < end);
       if ((gpr_uint32) (end - cur) == transport_parsing->incoming_frame_size)
 	{
-	  if (!parse_frame_slice (transport_parsing, gpr_slice_sub_no_ref (slice, (size_t) (cur - beg), (size_t) (exec_ctx, end - beg)), 1))
+	  if (!parse_frame_slice (exec_ctx, transport_parsing, gpr_slice_sub_no_ref (slice, (size_t) (cur - beg), (size_t) (end - beg)), 1))
 	    {
 	      return 0;
 	    }
@@ -371,7 +371,7 @@ grpc_chttp2_perform_read (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_parsin
       else if ((gpr_uint32) (end - cur) > transport_parsing->incoming_frame_size)
 	{
 	  size_t cur_offset = (size_t) (cur - beg);
-	  if (!parse_frame_slice (transport_parsing, gpr_slice_sub_no_ref (exec_ctx, slice, cur_offset, cur_offset + transport_parsing->incoming_frame_size), 1))
+	  if (!parse_frame_slice (exec_ctx, transport_parsing, gpr_slice_sub_no_ref (slice, cur_offset, cur_offset + transport_parsing->incoming_frame_size), 1))
 	    {
 	      return 0;
 	    }
@@ -381,7 +381,7 @@ grpc_chttp2_perform_read (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_parsin
 	}
       else
 	{
-	  if (!parse_frame_slice (transport_parsing, gpr_slice_sub_no_ref (slice, (size_t) (cur - beg), (size_t) (exec_ctx, end - beg)), 0))
+	  if (!parse_frame_slice (exec_ctx, transport_parsing, gpr_slice_sub_no_ref (slice, (size_t) (cur - beg), (size_t) (end - beg)), 0))
 	    {
 	      return 0;
 	    }

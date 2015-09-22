@@ -217,7 +217,7 @@ grpc_pollset_work (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollse
   grpc_wakeup_fd_init (&worker->wakeup_fd);
   if (!grpc_pollset_has_workers (pollset) && !grpc_closure_list_empty (pollset->idle_jobs))
     {
-      grpc_closure_list_move (exec_ctx, &pollset->idle_jobs);
+      grpc_exec_ctx_enqueue_list (exec_ctx, &pollset->idle_jobs);
       goto done;
     }
   if (grpc_alarm_check (exec_ctx, now, &deadline))
@@ -251,7 +251,7 @@ grpc_pollset_work (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollse
 done:
   if (!locked)
     {
-      grpc_closure_list_run (closure_list);
+      grpc_exec_ctx_flush (exec_ctx);
       gpr_mu_lock (&pollset->mu);
       locked = 1;
     }
@@ -271,7 +271,7 @@ done:
 	  pollset->called_shutdown = 1;
 	  gpr_mu_unlock (&pollset->mu);
 	  finish_shutdown (exec_ctx, pollset);
-	  grpc_closure_list_run (closure_list);
+	  grpc_exec_ctx_flush (exec_ctx);
 	  /* Continuing to access pollset here is safe -- it is the caller's
 	   * responsibility to not destroy when it has outstanding calls to
 	   * grpc_pollset_work.
@@ -397,7 +397,7 @@ basic_do_promote (grpc_exec_ctx * exec_ctx, void *args, int success)
 
       if (fds[0] && !grpc_fd_is_orphaned (fds[0]))
 	{
-	  grpc_platform_become_multipoller (pollset, fds, GPR_ARRAY_SIZE (exec_ctx, fds));
+	  grpc_platform_become_multipoller (exec_ctx, pollset, fds, GPR_ARRAY_SIZE (fds));
 	  GRPC_FD_UNREF (fds[0], "basicpoll");
 	}
       else
@@ -417,8 +417,6 @@ basic_do_promote (grpc_exec_ctx * exec_ctx, void *args, int success)
 
   /* Matching ref in basic_pollset_add_fd */
   GRPC_FD_UNREF (fd, "basicpoll_add");
-
-  grpc_closure_list_run (closure_list);
 }
 
 static void
@@ -445,7 +443,7 @@ basic_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd 
 	}
       else if (!grpc_fd_is_orphaned (fds[0]))
 	{
-	  grpc_platform_become_multipoller (pollset, fds, GPR_ARRAY_SIZE (exec_ctx, fds));
+	  grpc_platform_become_multipoller (exec_ctx, pollset, fds, GPR_ARRAY_SIZE (fds));
 	  GRPC_FD_UNREF (fds[0], "basicpoll");
 	}
       else

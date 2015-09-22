@@ -164,7 +164,7 @@ on_secure_transport_setup_done (grpc_exec_ctx * exec_ctx, void *rp, grpc_securit
 }
 
 static void
-ssl_handshake (void *arg, grpc_endpoint * tcp, const char *host, void (*on_done) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint, grpc_closure_list * closure_list))
+ssl_handshake (grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint * tcp, const char *host, void (*on_done) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint))
 {
   grpc_channel_security_connector *sc = NULL;
   const unsigned char *pem_root_certs = NULL;

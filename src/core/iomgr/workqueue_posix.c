@@ -48,7 +48,7 @@
 static void on_readable (grpc_exec_ctx * exec_ctx, void *arg, int success);
 
 grpc_workqueue *
-grpc_workqueue_create (grpc_closure_list * closure_list)
+grpc_workqueue_create (grpc_exec_ctx *exec_ctx)
 {
   char name[32];
   grpc_workqueue *workqueue = gpr_malloc (sizeof (grpc_workqueue));
@@ -85,7 +85,7 @@ grpc_workqueue_ref (grpc_workqueue * workqueue)
 
 #ifdef GRPC_WORKQUEUE_REFCOUNT_DEBUG
 void
-grpc_workqueue_unref (grpc_workqueue * workqueue, grpc_closure_list * closure_list, const char *file, int line, const char *reason)
+grpc_workqueue_unref (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue, const char *file, int line, const char *reason)
 {
   gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "WORKQUEUE:%p unref %d -> %d %s", workqueue, (int) workqueue->refs.count, (int) workqueue->refs.count - 1, reason);
 #else
@@ -109,7 +109,7 @@ void
 grpc_workqueue_flush (grpc_exec_ctx * exec_ctx, grpc_workqueue * workqueue)
 {
   gpr_mu_lock (&workqueue->mu);
-  grpc_closure_list_move (exec_ctx, &workqueue->closure_list);
+  grpc_closure_list_move (&exec_ctx->closure_list, &workqueue->closure_list);
   gpr_mu_unlock (&workqueue->mu);
 }
 
@@ -130,7 +130,7 @@ on_readable (grpc_exec_ctx * exec_ctx, void *arg, int success)
   else
     {
       gpr_mu_lock (&workqueue->mu);
-      grpc_closure_list_move (exec_ctx, &workqueue->closure_list);
+      grpc_closure_list_move (&exec_ctx->closure_list, &workqueue->closure_list);
       grpc_wakeup_fd_consume_wakeup (&workqueue->wakeup_fd);
       gpr_mu_unlock (&workqueue->mu);
       grpc_fd_notify_on_read (exec_ctx, workqueue->wakeup_read_fd, &workqueue->read_closure);

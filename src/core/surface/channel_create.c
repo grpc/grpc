@@ -224,7 +224,7 @@ grpc_insecure_channel_create (const char *target, const grpc_channel_args * args
       return NULL;
     }
 
-  grpc_client_channel_set_resolver (grpc_channel_get_channel_stack (&exec_ctx, channel), resolver);
+  grpc_client_channel_set_resolver (&exec_ctx, grpc_channel_get_channel_stack (channel), resolver);
   GRPC_RESOLVER_UNREF (&exec_ctx, resolver, "create");
   grpc_subchannel_factory_unref (&exec_ctx, &f->base);
 

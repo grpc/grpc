@@ -64,7 +64,7 @@ typedef struct grpc_httpcli_context
 typedef struct
 {
   const char *default_port;
-  void (*handshake) (void *arg, grpc_endpoint * endpoint, const char *host, void (*on_done) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint, grpc_closure_list * closure_list));
+  void (*handshake) (grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint * endpoint, const char *host, void (*on_done) (grpc_exec_ctx * exec_ctx, void *arg, grpc_endpoint * endpoint));
 } grpc_httpcli_handshaker;
 
 extern const grpc_httpcli_handshaker grpc_httpcli_plaintext;

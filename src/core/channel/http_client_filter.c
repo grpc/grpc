@@ -72,7 +72,7 @@ typedef struct channel_data
 typedef struct
 {
   grpc_call_element *elem;
-  grpc_closure_list *closure_list;
+  grpc_exec_ctx *exec_ctx;
 } client_recv_filter_args;
 
 static grpc_mdelem *
@@ -87,7 +87,7 @@ client_recv_filter (void *user_data, grpc_mdelem * md)
     }
   else if (md->key == channeld->status->key)
     {
-      grpc_call_element_send_cancel (elem, a->closure_list);
+      grpc_call_element_send_cancel (a->exec_ctx, elem);
       return NULL;
     }
   else if (md->key == channeld->content_type->key)
@@ -113,7 +113,7 @@ hc_on_recv (grpc_exec_ctx * exec_ctx, void *user_data, int success)
 	continue;
       calld->got_initial_metadata = 1;
       a.elem = elem;
-      a.closure_list = closure_list;
+      a.exec_ctx = exec_ctx;
       grpc_metadata_batch_filter (&op->data.metadata, client_recv_filter, &a);
     }
   calld->on_done_recv->cb (exec_ctx, calld->on_done_recv->cb_arg, success);

@@ -144,7 +144,7 @@ grpc_cq_begin_op (grpc_completion_queue * cc)
    event, then enter shutdown mode */
 /* Queue a GRPC_OP_COMPLETED operation */
 void
-grpc_cq_end_op (grpc_completion_queue * cc, void *tag, int success, void (*done) (grpc_exec_ctx * exec_ctx, void *done_arg, grpc_cq_completion * storage, grpc_closure_list * closure_list), void *done_arg, grpc_cq_completion * storage)
+grpc_cq_end_op (grpc_exec_ctx * exec_ctx,grpc_completion_queue * cc, void *tag, int success, void (*done) (grpc_exec_ctx * exec_ctx, void *done_arg, grpc_cq_completion * storage), void *done_arg, grpc_cq_completion * storage)
 {
   int shutdown;
   int i;

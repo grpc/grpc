@@ -127,7 +127,7 @@ partly_done (grpc_exec_ctx * exec_ctx, state_watcher * w, int due_to_completion)
     {
       w->removed = 1;
       client_channel_elem = grpc_channel_stack_last_element (grpc_channel_get_channel_stack (w->channel));
-      grpc_client_channel_del_interested_party (client_channel_elem, grpc_cq_pollset (exec_ctx, w->cq));
+      grpc_client_channel_del_interested_party (exec_ctx, client_channel_elem, grpc_cq_pollset (w->cq));
     }
   gpr_mu_unlock (&w->mu);
   if (due_to_completion)
@@ -195,17 +195,17 @@ grpc_channel_watch_connectivity_state (grpc_channel * channel, grpc_connectivity
   w->tag = tag;
   w->channel = channel;
 
-  grpc_alarm_init (&w->alarm, gpr_convert_clock_type (deadline, GPR_CLOCK_MONOTONIC), timeout_complete, w, gpr_now (&exec_ctx, GPR_CLOCK_MONOTONIC));
+  grpc_alarm_init (&exec_ctx, &w->alarm, gpr_convert_clock_type (deadline, GPR_CLOCK_MONOTONIC), timeout_complete, w, gpr_now (GPR_CLOCK_MONOTONIC));
 
   if (client_channel_elem->filter != &grpc_client_channel_filter)
     {
       gpr_log (GPR_ERROR, "grpc_channel_watch_connectivity_state called on something that is " "not a client channel, but '%s'", client_channel_elem->filter->name);
-      grpc_closure_list_add (&closure_list, &w->on_complete, 1);
+      grpc_exec_ctx_enqueue(&exec_ctx, &w->on_complete ,1);
     }
   else
     {
       GRPC_CHANNEL_INTERNAL_REF (channel, "watch_connectivity");
-      grpc_client_channel_add_interested_party (client_channel_elem, grpc_cq_pollset (&exec_ctx, cq));
+      grpc_client_channel_add_interested_party (&exec_ctx, client_channel_elem, grpc_cq_pollset (cq));
       grpc_client_channel_watch_connectivity_state (&exec_ctx, client_channel_elem, &w->state, &w->on_complete);
     }
 

@@ -315,13 +315,13 @@ fake_channel_check_call_host (grpc_exec_ctx * exec_ctx, grpc_channel_security_co
 static void
 fake_channel_do_handshake (grpc_exec_ctx * exec_ctx, grpc_security_connector * sc, grpc_endpoint * nonsecure_endpoint, grpc_security_handshake_done_cb cb, void *user_data)
 {
-  grpc_do_security_handshake (tsi_create_fake_handshaker (exec_ctx, 1), sc, nonsecure_endpoint, cb, user_data);
+  grpc_do_security_handshake (exec_ctx, tsi_create_fake_handshaker (1), sc, nonsecure_endpoint, cb, user_data);
 }
 
 static void
 fake_server_do_handshake (grpc_exec_ctx * exec_ctx, grpc_security_connector * sc, grpc_endpoint * nonsecure_endpoint, grpc_security_handshake_done_cb cb, void *user_data)
 {
-  grpc_do_security_handshake (tsi_create_fake_handshaker (exec_ctx, 0), sc, nonsecure_endpoint, cb, user_data);
+  grpc_do_security_handshake (exec_ctx, tsi_create_fake_handshaker (0), sc, nonsecure_endpoint, cb, user_data);
 }
 
 static grpc_security_connector_vtable fake_channel_vtable = {

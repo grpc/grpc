@@ -31,32 +31,32 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H
-#define GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H
-
 #include "src/core/iomgr/exec_ctx.h"
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
-/* iomgr internal api for dealing with alarms */
+void
+grpc_exec_ctx_flush (grpc_exec_ctx *exec_ctx)
+{
+  while (!grpc_closure_list_empty (exec_ctx->closure_list))
+    {
+      grpc_closure *c = closure_list->head;
+      closure_list->head = closure_list->tail = NULL;
+      while (c != NULL)
+	{
+	  grpc_closure *next = c->next;
+	  c->cb (exec_ctx, c->cb_arg, c->success);
+	  c = next;
+	}
+    }
+}
 
-/* Check for alarms to be run, and run them.
-   Return non zero if alarm callbacks were executed.
-   Drops drop_mu if it is non-null before executing callbacks.
-   If next is non-null, TRY to update *next with the next running alarm
-   IF that alarm occurs before *next current value.
-   *next is never guaranteed to be updated on any given execution; however,
-   with high probability at least one thread in the system will see an update
-   at any time slice. */
+void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
+  grpc_exec_ctx_flush(exec_ctx);
+}
 
-int grpc_alarm_check (grpc_exec_ctx * exec_ctx, gpr_timespec now, gpr_timespec * next);
-void grpc_alarm_list_init (gpr_timespec now);
-void grpc_alarm_list_shutdown (grpc_exec_ctx * exec_ctx);
+void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure, int success) {
+  grpc_closure_list_add(&exec_ctx->closure_list, closure, success);
+}
 
-gpr_timespec grpc_alarm_list_next_timeout (void);
-
-/* the following must be implemented by each iomgr implementation */
-
-void grpc_kick_poller (void);
-
-#endif /* GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H */
+void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx, grpc_closure_list *list) {
+  grpc_closure_list_move(list, &exec_ctx->closure_list);
+}

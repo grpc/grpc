@@ -85,8 +85,8 @@ destroy (grpc_exec_ctx * exec_ctx, secure_endpoint * secure_ep)
 
 /*#define GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG*/
 #ifdef GRPC_SECURE_ENDPOINT_REFCOUNT_DEBUG
-#define SECURE_ENDPOINT_UNREF(ep, reason, cl) \
-  secure_endpoint_unref((ep), (cl), (reason), __FILE__, __LINE__)
+#define SECURE_ENDPOINT_UNREF(exec_ctx, ep, reason) \
+  secure_endpoint_unref((exec_ctx), (ep), (reason), __FILE__, __LINE__)
 #define SECURE_ENDPOINT_REF(ep, reason) \
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
 static void
@@ -106,7 +106,7 @@ secure_endpoint_ref (secure_endpoint * ep, const char *reason, const char *file,
   gpr_ref (&ep->ref);
 }
 #else
-#define SECURE_ENDPOINT_UNREF(ep, reason, cl) secure_endpoint_unref((ep), (cl))
+#define SECURE_ENDPOINT_UNREF(exec_ctx, ep, reason) secure_endpoint_unref((exec_ctx), (ep))
 #define SECURE_ENDPOINT_REF(ep, reason) secure_endpoint_ref((ep))
 static void
 secure_endpoint_unref (grpc_exec_ctx * exec_ctx, secure_endpoint * ep)

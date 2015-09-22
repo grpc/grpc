@@ -171,9 +171,9 @@ destruct_transport (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 
 #ifdef REFCOUNTING_DEBUG
 #define REF_TRANSPORT(t, r) ref_transport(t, r, __FILE__, __LINE__)
-#define UNREF_TRANSPORT(t, r, cl) unref_transport(t, cl, r, __FILE__, __LINE__)
+#define UNREF_TRANSPORT(cl, t, r) unref_transport(cl, t, r, __FILE__, __LINE__)
 static void
-unref_transport (grpc_chttp2_transport * t, grpc_closure_list * closure_list, const char *reason, const char *file, int line)
+unref_transport (grpc_exec_ctx *exec_ctx, grpc_chttp2_transport * t,  const char *reason, const char *file, int line)
 {
   gpr_log (GPR_DEBUG, "chttp2:unref:%p %d->%d %s [%s:%d]", t, t->refs.count, t->refs.count - 1, reason, file, line);
   if (!gpr_unref (&t->refs))
@@ -189,7 +189,7 @@ ref_transport (grpc_chttp2_transport * t, const char *reason, const char *file, 
 }
 #else
 #define REF_TRANSPORT(t, r) ref_transport(t)
-#define UNREF_TRANSPORT(t, r, cl) unref_transport(t, cl)
+#define UNREF_TRANSPORT(cl, t, r) unref_transport(cl, t)
 static void
 unref_transport (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport * t)
 {
@@ -704,7 +704,7 @@ perform_stream_op_locked (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global
 
   if (op->bind_pollset)
     {
-      add_to_pollset_locked (TRANSPORT_FROM_GLOBAL (exec_ctx, transport_global), op->bind_pollset);
+      add_to_pollset_locked (exec_ctx,TRANSPORT_FROM_GLOBAL ( transport_global), op->bind_pollset);
     }
 
   grpc_exec_ctx_enqueue (exec_ctx, op->on_consumed, 1);
@@ -1179,7 +1179,7 @@ static void
 connectivity_state_set (grpc_exec_ctx * exec_ctx, grpc_chttp2_transport_global * transport_global, grpc_connectivity_state state, const char *reason)
 {
   GRPC_CHTTP2_IF_TRACING (gpr_log (GPR_DEBUG, "set connectivity_state=%d", state));
-  grpc_connectivity_state_set (&TRANSPORT_FROM_GLOBAL (exec_ctx, transport_global)->channel_callback.state_tracker, state, reason);
+  grpc_connectivity_state_set (exec_ctx,&TRANSPORT_FROM_GLOBAL ( transport_global)->channel_callback.state_tracker, state, reason);
 }
 
 /*

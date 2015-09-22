@@ -39,6 +39,10 @@
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
 
+/* forward declaration for exec_ctx.h */
+struct grpc_exec_ctx;
+typedef struct grpc_exec_ctx grpc_exec_ctx;
+
 typedef struct grpc_closure_list
 {
   grpc_closure *head;
@@ -77,7 +81,6 @@ void grpc_closure_init (grpc_closure * closure, grpc_iomgr_cb_func cb, void *cb_
   { NULL, NULL }
 
 void grpc_closure_list_add (grpc_closure_list * list, grpc_closure * closure, int success);
-void grpc_closure_list_run (grpc_closure_list * list);
 void grpc_closure_list_move (grpc_closure_list * src, grpc_closure_list * dst);
 int grpc_closure_list_empty (grpc_closure_list list);
 

@@ -187,7 +187,7 @@ grpc_channel_create_from_filters (grpc_exec_ctx * exec_ctx, const char *target, 
       gpr_free (default_authority);
     }
 
-  grpc_channel_stack_init (filters, num_filters, channel, args, channel->metadata_context, CHANNEL_STACK_FROM_CHANNEL (exec_ctx, channel));
+  grpc_channel_stack_init (exec_ctx, filters, num_filters, channel, args, channel->metadata_context, CHANNEL_STACK_FROM_CHANNEL (channel));
 
   return channel;
 }
@@ -265,7 +265,7 @@ static void
 destroy_channel (grpc_exec_ctx * exec_ctx, grpc_channel * channel)
 {
   size_t i;
-  grpc_channel_stack_destroy (CHANNEL_STACK_FROM_CHANNEL (exec_ctx, channel));
+  grpc_channel_stack_destroy (exec_ctx,CHANNEL_STACK_FROM_CHANNEL ( channel));
   for (i = 0; i < NUM_CACHED_STATUS_ELEMS; i++)
     {
       GRPC_MDELEM_UNREF (channel->grpc_status_elem[i]);

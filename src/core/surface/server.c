@@ -752,7 +752,7 @@ channel_connectivity_changed (grpc_exec_ctx * exec_ctx, void *cd, int iomgr_stat
       grpc_transport_op op;
       memset (&op, 0, sizeof (op));
       op.on_connectivity_state_change = &chand->channel_connectivity_changed, op.connectivity_state = &chand->connectivity_state;
-      grpc_channel_next_op (grpc_channel_stack_element (grpc_channel_get_channel_stack (exec_ctx, chand->channel), 0), &op);
+      grpc_channel_next_op (exec_ctx, grpc_channel_stack_element (grpc_channel_get_channel_stack (chand->channel), 0), &op);
     }
   else
     {
@@ -1124,7 +1124,7 @@ grpc_server_shutdown_and_notify (grpc_server * server, grpc_completion_queue * c
   grpc_cq_begin_op (cq);
   if (server->shutdown_published)
     {
-      grpc_cq_end_op (cq, tag, 1, done_published_shutdown, NULL, gpr_malloc (sizeof (&exec_ctx, grpc_cq_completion)));
+      grpc_cq_end_op (&exec_ctx, cq, tag, 1, done_published_shutdown, NULL, gpr_malloc (sizeof (grpc_cq_completion)));
       gpr_mu_unlock (&server->mu_global);
       goto done;
     }
@@ -1202,7 +1202,7 @@ grpc_server_destroy (grpc_server * server)
 }
 
 void
-grpc_server_add_listener (grpc_server * server, void *arg, void (*start) (grpc_exec_ctx * exec_ctx, grpc_server * server, void *arg, grpc_pollset ** pollsets, size_t pollset_count), void (*destroy) (grpc_exec_ctx * exec_ctx, grpc_server * server, void *arg, grpc_closure * on_done, grpc_closure_list * closure_list))
+grpc_server_add_listener (grpc_exec_ctx * exec_ctx, grpc_server * server, void *arg, void (*start) (grpc_exec_ctx * exec_ctx, grpc_server * server, void *arg, grpc_pollset ** pollsets, size_t pollset_count), void (*destroy) (grpc_exec_ctx * exec_ctx, grpc_server * server, void *arg, grpc_closure * on_done))
 {
   listener *l = gpr_malloc (sizeof (listener));
   l->arg = arg;
@@ -1402,7 +1402,7 @@ begin_call (grpc_exec_ctx * exec_ctx, grpc_server * server, call_data * calld, r
     }
 
   GRPC_CALL_INTERNAL_REF (calld->call, "server");
-  grpc_call_start_ioreq_and_call_back (calld->call, req, (size_t) (exec_ctx, r - req), publish, rc);
+  grpc_call_start_ioreq_and_call_back (exec_ctx, calld->call, req, (size_t) (r - req), publish, rc);
 }
 
 static void

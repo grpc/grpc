@@ -59,13 +59,13 @@ struct grpc_resolver_vtable
 
 #ifdef GRPC_RESOLVER_REFCOUNT_DEBUG
 #define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_RESOLVER_UNREF(p, r, cl) \
-  grpc_resolver_unref((p), (cl), __FILE__, __LINE__, (r))
+#define GRPC_RESOLVER_UNREF(cl, p, r) \
+  grpc_resolver_unref((cl), (p), __FILE__, __LINE__, (r))
 void grpc_resolver_ref (grpc_resolver * policy, const char *file, int line, const char *reason);
 void grpc_resolver_unref (grpc_resolver * policy, grpc_closure_list * closure_list, const char *file, int line, const char *reason);
 #else
 #define GRPC_RESOLVER_REF(p, r) grpc_resolver_ref((p))
-#define GRPC_RESOLVER_UNREF(p, r, cl) grpc_resolver_unref((p), (cl))
+#define GRPC_RESOLVER_UNREF(cl, p, r) grpc_resolver_unref((cl), (p))
 void grpc_resolver_ref (grpc_resolver * policy);
 void grpc_resolver_unref (grpc_exec_ctx * exec_ctx, grpc_resolver * policy);
 #endif

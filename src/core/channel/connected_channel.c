@@ -73,7 +73,7 @@ con_start_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * ele
   GPR_ASSERT (elem->filter == &grpc_connected_channel_filter);
   GRPC_CALL_LOG_OP (GPR_INFO, elem, op);
 
-  grpc_transport_perform_stream_op (chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA (exec_ctx, calld), op);
+  grpc_transport_perform_stream_op (exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA (calld), op);
 }
 
 static void
@@ -92,7 +92,7 @@ init_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *
   int r;
 
   GPR_ASSERT (elem->filter == &grpc_connected_channel_filter);
-  r = grpc_transport_init_stream (chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA (exec_ctx, calld), server_transport_data, initial_op);
+  r = grpc_transport_init_stream (exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA (calld), server_transport_data, initial_op);
   GPR_ASSERT (r == 0);
 }
 
@@ -103,7 +103,7 @@ destroy_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem)
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GPR_ASSERT (elem->filter == &grpc_connected_channel_filter);
-  grpc_transport_destroy_stream (chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA (exec_ctx, calld));
+  grpc_transport_destroy_stream (exec_ctx, chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA (calld));
 }
 
 /* Constructor for channel_data */
