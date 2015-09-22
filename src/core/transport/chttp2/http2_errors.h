@@ -35,8 +35,7 @@
 #define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HTTP2_ERRORS_H
 
 /* error codes for RST_STREAM from http2 draft 14 section 7 */
-typedef enum
-{
+typedef enum {
   GRPC_CHTTP2_NO_ERROR = 0x0,
   GRPC_CHTTP2_PROTOCOL_ERROR = 0x1,
   GRPC_CHTTP2_INTERNAL_ERROR = 0x2,

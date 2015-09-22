@@ -33,11 +33,8 @@
 
 #include "src/core/transport/chttp2/status_conversion.h"
 
-int
-grpc_chttp2_grpc_status_to_http2_error (grpc_status_code status)
-{
-  switch (status)
-    {
+int grpc_chttp2_grpc_status_to_http2_error(grpc_status_code status) {
+  switch (status) {
     case GRPC_STATUS_OK:
       return GRPC_CHTTP2_NO_ERROR;
     case GRPC_STATUS_CANCELLED:
@@ -50,14 +47,12 @@ grpc_chttp2_grpc_status_to_http2_error (grpc_status_code status)
       return GRPC_CHTTP2_REFUSED_STREAM;
     default:
       return GRPC_CHTTP2_INTERNAL_ERROR;
-    }
+  }
 }
 
-grpc_status_code
-grpc_chttp2_http2_error_to_grpc_status (grpc_chttp2_error_code error)
-{
-  switch (error)
-    {
+grpc_status_code grpc_chttp2_http2_error_to_grpc_status(
+    grpc_chttp2_error_code error) {
+  switch (error) {
     case GRPC_CHTTP2_NO_ERROR:
       /* should never be received */
       return GRPC_STATUS_INTERNAL;
@@ -71,15 +66,12 @@ grpc_chttp2_http2_error_to_grpc_status (grpc_chttp2_error_code error)
       return GRPC_STATUS_UNAVAILABLE;
     default:
       return GRPC_STATUS_INTERNAL;
-    }
+  }
 }
 
-grpc_status_code
-grpc_chttp2_http2_status_to_grpc_status (int status)
-{
-  switch (status)
-    {
-      /* these HTTP2 status codes are called out explicitly in status.proto */
+grpc_status_code grpc_chttp2_http2_status_to_grpc_status(int status) {
+  switch (status) {
+    /* these HTTP2 status codes are called out explicitly in status.proto */
     case 200:
       return GRPC_STATUS_OK;
     case 400:
@@ -106,14 +98,12 @@ grpc_chttp2_http2_status_to_grpc_status (int status)
       return GRPC_STATUS_UNAVAILABLE;
     case 504:
       return GRPC_STATUS_DEADLINE_EXCEEDED;
-      /* everything else is unknown */
+    /* everything else is unknown */
     default:
       return GRPC_STATUS_UNKNOWN;
-    }
+  }
 }
 
-int
-grpc_chttp2_grpc_status_to_http2_status (grpc_status_code status)
-{
+int grpc_chttp2_grpc_status_to_http2_status(grpc_status_code status) {
   return 200;
 }

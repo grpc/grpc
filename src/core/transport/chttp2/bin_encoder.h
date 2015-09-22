@@ -38,19 +38,19 @@
 
 /* base64 encode a slice. Returns a new slice, does not take ownership of the
    input */
-gpr_slice grpc_chttp2_base64_encode (gpr_slice input);
+gpr_slice grpc_chttp2_base64_encode(gpr_slice input);
 
 /* Compress a slice with the static huffman encoder detailed in the hpack
    standard. Returns a new slice, does not take ownership of the input */
-gpr_slice grpc_chttp2_huffman_compress (gpr_slice input);
+gpr_slice grpc_chttp2_huffman_compress(gpr_slice input);
 
 /* equivalent to:
    gpr_slice x = grpc_chttp2_base64_encode(input);
    gpr_slice y = grpc_chttp2_huffman_compress(x);
    gpr_slice_unref(x);
    return y; */
-gpr_slice grpc_chttp2_base64_encode_and_huffman_compress (gpr_slice input);
+gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input);
 
-int grpc_is_binary_header (const char *key, size_t length);
+int grpc_is_binary_header(const char *key, size_t length);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_BIN_ENCODER_H */

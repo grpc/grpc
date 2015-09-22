@@ -44,18 +44,17 @@
 #include "src/core/support/env.h"
 #include "src/core/support/string.h"
 
-char *
-grpc_get_well_known_google_credentials_file_path (void)
-{
+char *grpc_get_well_known_google_credentials_file_path(void) {
   char *result = NULL;
-  char *home = gpr_getenv ("HOME");
-  if (home == NULL)
-    {
-      gpr_log (GPR_ERROR, "Could not get HOME environment variable.");
-      return NULL;
-    }
-  gpr_asprintf (&result, "%s/.config/%s/%s", home, GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY, GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE);
-  gpr_free (home);
+  char *home = gpr_getenv("HOME");
+  if (home == NULL) {
+    gpr_log(GPR_ERROR, "Could not get HOME environment variable.");
+    return NULL;
+  }
+  gpr_asprintf(&result, "%s/.config/%s/%s", home,
+               GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY,
+               GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE);
+  gpr_free(home);
   return result;
 }
 

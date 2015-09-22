@@ -41,220 +41,188 @@
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x);
 
-static void
-test_slice_malloc_returns_something_sensible (void)
-{
+static void test_slice_malloc_returns_something_sensible(void) {
   /* Calls gpr_slice_create for various lengths and verifies the internals for
      consistency. */
   size_t length;
   size_t i;
   gpr_slice slice;
 
-  LOG_TEST_NAME ("test_slice_malloc_returns_something_sensible");
+  LOG_TEST_NAME("test_slice_malloc_returns_something_sensible");
 
-  for (length = 0; length <= 1024; length++)
-    {
-      slice = gpr_slice_malloc (length);
-      /* If there is a length, slice.data must be non-NULL. If length is zero
-         we don't care. */
-      if (length)
-	{
-	  GPR_ASSERT (GPR_SLICE_START_PTR (slice));
-	}
-      /* Returned slice length must be what was requested. */
-      GPR_ASSERT (GPR_SLICE_LENGTH (slice) == length);
-      /* If the slice has a refcount, it must be destroyable. */
-      if (slice.refcount)
-	{
-	  GPR_ASSERT (slice.refcount->ref != NULL);
-	  GPR_ASSERT (slice.refcount->unref != NULL);
-	}
-      /* We must be able to write to every byte of the data */
-      for (i = 0; i < length; i++)
-	{
-	  GPR_SLICE_START_PTR (slice)[i] = (gpr_uint8) i;
-	}
-      /* And finally we must succeed in destroying the slice */
-      gpr_slice_unref (slice);
+  for (length = 0; length <= 1024; length++) {
+    slice = gpr_slice_malloc(length);
+    /* If there is a length, slice.data must be non-NULL. If length is zero
+       we don't care. */
+    if (length) {
+      GPR_ASSERT(GPR_SLICE_START_PTR(slice));
     }
+    /* Returned slice length must be what was requested. */
+    GPR_ASSERT(GPR_SLICE_LENGTH(slice) == length);
+    /* If the slice has a refcount, it must be destroyable. */
+    if (slice.refcount) {
+      GPR_ASSERT(slice.refcount->ref != NULL);
+      GPR_ASSERT(slice.refcount->unref != NULL);
+    }
+    /* We must be able to write to every byte of the data */
+    for (i = 0; i < length; i++) {
+      GPR_SLICE_START_PTR(slice)[i] = (gpr_uint8)i;
+    }
+    /* And finally we must succeed in destroying the slice */
+    gpr_slice_unref(slice);
+  }
 }
 
-static void
-do_nothing (void *ignored)
-{
-}
+static void do_nothing(void *ignored) {}
 
-static void
-test_slice_new_returns_something_sensible (void)
-{
+static void test_slice_new_returns_something_sensible(void) {
   gpr_uint8 x;
 
-  gpr_slice slice = gpr_slice_new (&x, 1, do_nothing);
-  GPR_ASSERT (slice.refcount);
-  GPR_ASSERT (slice.data.refcounted.bytes == &x);
-  GPR_ASSERT (slice.data.refcounted.length == 1);
-  gpr_slice_unref (slice);
+  gpr_slice slice = gpr_slice_new(&x, 1, do_nothing);
+  GPR_ASSERT(slice.refcount);
+  GPR_ASSERT(slice.data.refcounted.bytes == &x);
+  GPR_ASSERT(slice.data.refcounted.length == 1);
+  gpr_slice_unref(slice);
 }
 
 static int do_nothing_with_len_1_calls = 0;
 
-static void
-do_nothing_with_len_1 (void *ignored, size_t len)
-{
-  GPR_ASSERT (len == 1);
+static void do_nothing_with_len_1(void *ignored, size_t len) {
+  GPR_ASSERT(len == 1);
   do_nothing_with_len_1_calls++;
 }
 
-static void
-test_slice_new_with_len_returns_something_sensible (void)
-{
+static void test_slice_new_with_len_returns_something_sensible(void) {
   gpr_uint8 x;
 
-  gpr_slice slice = gpr_slice_new_with_len (&x, 1, do_nothing_with_len_1);
-  GPR_ASSERT (slice.refcount);
-  GPR_ASSERT (slice.data.refcounted.bytes == &x);
-  GPR_ASSERT (slice.data.refcounted.length == 1);
-  GPR_ASSERT (do_nothing_with_len_1_calls == 0);
-  gpr_slice_unref (slice);
-  GPR_ASSERT (do_nothing_with_len_1_calls == 1);
+  gpr_slice slice = gpr_slice_new_with_len(&x, 1, do_nothing_with_len_1);
+  GPR_ASSERT(slice.refcount);
+  GPR_ASSERT(slice.data.refcounted.bytes == &x);
+  GPR_ASSERT(slice.data.refcounted.length == 1);
+  GPR_ASSERT(do_nothing_with_len_1_calls == 0);
+  gpr_slice_unref(slice);
+  GPR_ASSERT(do_nothing_with_len_1_calls == 1);
 }
 
-static void
-test_slice_sub_works (unsigned length)
-{
+static void test_slice_sub_works(unsigned length) {
   gpr_slice slice;
   gpr_slice sub;
   unsigned i, j, k;
 
-  LOG_TEST_NAME ("test_slice_sub_works");
-  gpr_log (GPR_INFO, "length=%d", length);
+  LOG_TEST_NAME("test_slice_sub_works");
+  gpr_log(GPR_INFO, "length=%d", length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
      beginning of the slice. */
-  slice = gpr_slice_malloc (length);
-  for (i = 0; i < length; i++)
-    {
-      GPR_SLICE_START_PTR (slice)[i] = (gpr_uint8) i;
-    }
+  slice = gpr_slice_malloc(length);
+  for (i = 0; i < length; i++) {
+    GPR_SLICE_START_PTR(slice)[i] = (gpr_uint8)i;
+  }
 
   /* Ensure that for all subsets length is correct and that we start on the
      correct byte. Additionally check that no copies were made. */
-  for (i = 0; i < length; i++)
-    {
-      for (j = i; j < length; j++)
-	{
-	  sub = gpr_slice_sub (slice, i, j);
-	  GPR_ASSERT (GPR_SLICE_LENGTH (sub) == j - i);
-	  for (k = 0; k < j - i; k++)
-	    {
-	      GPR_ASSERT (GPR_SLICE_START_PTR (sub)[k] == (gpr_uint8) (i + k));
-	    }
-	  gpr_slice_unref (sub);
-	}
+  for (i = 0; i < length; i++) {
+    for (j = i; j < length; j++) {
+      sub = gpr_slice_sub(slice, i, j);
+      GPR_ASSERT(GPR_SLICE_LENGTH(sub) == j - i);
+      for (k = 0; k < j - i; k++) {
+        GPR_ASSERT(GPR_SLICE_START_PTR(sub)[k] == (gpr_uint8)(i + k));
+      }
+      gpr_slice_unref(sub);
     }
-  gpr_slice_unref (slice);
+  }
+  gpr_slice_unref(slice);
 }
 
-static void
-check_head_tail (gpr_slice slice, gpr_slice head, gpr_slice tail)
-{
-  GPR_ASSERT (GPR_SLICE_LENGTH (slice) == GPR_SLICE_LENGTH (head) + GPR_SLICE_LENGTH (tail));
-  GPR_ASSERT (0 == memcmp (GPR_SLICE_START_PTR (slice), GPR_SLICE_START_PTR (head), GPR_SLICE_LENGTH (head)));
-  GPR_ASSERT (0 == memcmp (GPR_SLICE_START_PTR (slice) + GPR_SLICE_LENGTH (head), GPR_SLICE_START_PTR (tail), GPR_SLICE_LENGTH (tail)));
+static void check_head_tail(gpr_slice slice, gpr_slice head, gpr_slice tail) {
+  GPR_ASSERT(GPR_SLICE_LENGTH(slice) ==
+             GPR_SLICE_LENGTH(head) + GPR_SLICE_LENGTH(tail));
+  GPR_ASSERT(0 == memcmp(GPR_SLICE_START_PTR(slice), GPR_SLICE_START_PTR(head),
+                         GPR_SLICE_LENGTH(head)));
+  GPR_ASSERT(0 == memcmp(GPR_SLICE_START_PTR(slice) + GPR_SLICE_LENGTH(head),
+                         GPR_SLICE_START_PTR(tail), GPR_SLICE_LENGTH(tail)));
 }
 
-static void
-test_slice_split_head_works (size_t length)
-{
+static void test_slice_split_head_works(size_t length) {
   gpr_slice slice;
   gpr_slice head, tail;
   size_t i;
 
-  LOG_TEST_NAME ("test_slice_split_head_works");
-  gpr_log (GPR_INFO, "length=%d", length);
+  LOG_TEST_NAME("test_slice_split_head_works");
+  gpr_log(GPR_INFO, "length=%d", length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
      beginning of the slice. */
-  slice = gpr_slice_malloc (length);
-  for (i = 0; i < length; i++)
-    {
-      GPR_SLICE_START_PTR (slice)[i] = (gpr_uint8) i;
-    }
+  slice = gpr_slice_malloc(length);
+  for (i = 0; i < length; i++) {
+    GPR_SLICE_START_PTR(slice)[i] = (gpr_uint8)i;
+  }
 
   /* Ensure that for all subsets length is correct and that we start on the
      correct byte. Additionally check that no copies were made. */
-  for (i = 0; i < length; i++)
-    {
-      tail = gpr_slice_ref (slice);
-      head = gpr_slice_split_head (&tail, i);
-      check_head_tail (slice, head, tail);
-      gpr_slice_unref (tail);
-      gpr_slice_unref (head);
-    }
+  for (i = 0; i < length; i++) {
+    tail = gpr_slice_ref(slice);
+    head = gpr_slice_split_head(&tail, i);
+    check_head_tail(slice, head, tail);
+    gpr_slice_unref(tail);
+    gpr_slice_unref(head);
+  }
 
-  gpr_slice_unref (slice);
+  gpr_slice_unref(slice);
 }
 
-static void
-test_slice_split_tail_works (size_t length)
-{
+static void test_slice_split_tail_works(size_t length) {
   gpr_slice slice;
   gpr_slice head, tail;
   size_t i;
 
-  LOG_TEST_NAME ("test_slice_split_tail_works");
-  gpr_log (GPR_INFO, "length=%d", length);
+  LOG_TEST_NAME("test_slice_split_tail_works");
+  gpr_log(GPR_INFO, "length=%d", length);
 
   /* Create a slice in which each byte is equal to the distance from it to the
      beginning of the slice. */
-  slice = gpr_slice_malloc (length);
-  for (i = 0; i < length; i++)
-    {
-      GPR_SLICE_START_PTR (slice)[i] = (gpr_uint8) i;
-    }
+  slice = gpr_slice_malloc(length);
+  for (i = 0; i < length; i++) {
+    GPR_SLICE_START_PTR(slice)[i] = (gpr_uint8)i;
+  }
 
   /* Ensure that for all subsets length is correct and that we start on the
      correct byte. Additionally check that no copies were made. */
-  for (i = 0; i < length; i++)
-    {
-      head = gpr_slice_ref (slice);
-      tail = gpr_slice_split_tail (&head, i);
-      check_head_tail (slice, head, tail);
-      gpr_slice_unref (tail);
-      gpr_slice_unref (head);
-    }
+  for (i = 0; i < length; i++) {
+    head = gpr_slice_ref(slice);
+    tail = gpr_slice_split_tail(&head, i);
+    check_head_tail(slice, head, tail);
+    gpr_slice_unref(tail);
+    gpr_slice_unref(head);
+  }
 
-  gpr_slice_unref (slice);
+  gpr_slice_unref(slice);
 }
 
-static void
-test_slice_from_copied_string_works (void)
-{
+static void test_slice_from_copied_string_works(void) {
   static const char *text = "HELLO WORLD!";
   gpr_slice slice;
 
-  LOG_TEST_NAME ("test_slice_from_copied_string_works");
+  LOG_TEST_NAME("test_slice_from_copied_string_works");
 
-  slice = gpr_slice_from_copied_string (text);
-  GPR_ASSERT (strlen (text) == GPR_SLICE_LENGTH (slice));
-  GPR_ASSERT (0 == memcmp (text, GPR_SLICE_START_PTR (slice), GPR_SLICE_LENGTH (slice)));
-  gpr_slice_unref (slice);
+  slice = gpr_slice_from_copied_string(text);
+  GPR_ASSERT(strlen(text) == GPR_SLICE_LENGTH(slice));
+  GPR_ASSERT(0 ==
+             memcmp(text, GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice)));
+  gpr_slice_unref(slice);
 }
 
-int
-main (int argc, char **argv)
-{
+int main(int argc, char **argv) {
   unsigned length;
-  grpc_test_init (argc, argv);
-  test_slice_malloc_returns_something_sensible ();
-  test_slice_new_returns_something_sensible ();
-  test_slice_new_with_len_returns_something_sensible ();
-  for (length = 0; length < 128; length++)
-    {
-      test_slice_sub_works (length);
-      test_slice_split_head_works (length);
-      test_slice_split_tail_works (length);
-    }
-  test_slice_from_copied_string_works ();
+  grpc_test_init(argc, argv);
+  test_slice_malloc_returns_something_sensible();
+  test_slice_new_returns_something_sensible();
+  test_slice_new_with_len_returns_something_sensible();
+  for (length = 0; length < 128; length++) {
+    test_slice_sub_works(length);
+    test_slice_split_head_works(length);
+    test_slice_split_tail_works(length);
+  }
+  test_slice_from_copied_string_works();
   return 0;
 }

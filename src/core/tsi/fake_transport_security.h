@@ -37,8 +37,7 @@
 #include "src/core/tsi/transport_security_interface.h"
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for FAKE certs. */
@@ -49,13 +48,14 @@ extern "C"
    No cryptography is performed in these objects. They just simulate handshake
    messages going back and forth for the handshaker and do some framing on
    cleartext data for the protector.  */
-  tsi_handshaker *tsi_create_fake_handshaker (int is_client);
+tsi_handshaker *tsi_create_fake_handshaker(int is_client);
 
 /* Creates a protector directly without going through the handshake phase. */
-  tsi_frame_protector *tsi_create_fake_protector (size_t * max_protected_frame_size);
+tsi_frame_protector *tsi_create_fake_protector(
+    size_t *max_protected_frame_size);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif				/* GRPC_INTERNAL_CORE_TSI_FAKE_TRANSPORT_SECURITY_H */
+#endif /* GRPC_INTERNAL_CORE_TSI_FAKE_TRANSPORT_SECURITY_H */

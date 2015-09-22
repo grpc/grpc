@@ -43,69 +43,68 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 
-void
-create_jwt (const char *json_key_file_path, const char *service_url, const char *scope)
-{
+void create_jwt(const char *json_key_file_path, const char *service_url,
+                const char *scope) {
   grpc_auth_json_key key;
   int ok = 0;
   char *jwt;
-  gpr_slice json_key_data = gpr_load_file (json_key_file_path, 1, &ok);
-  if (!ok)
-    {
-      fprintf (stderr, "Could not read %s.\n", json_key_file_path);
-      exit (1);
-    }
-  key = grpc_auth_json_key_create_from_string ((const char *) GPR_SLICE_START_PTR (json_key_data));
-  gpr_slice_unref (json_key_data);
-  if (!grpc_auth_json_key_is_valid (&key))
-    {
-      fprintf (stderr, "Could not parse json key.\n");
-      exit (1);
-    }
-  jwt = grpc_jwt_encode_and_sign (&key, service_url == NULL ? GRPC_JWT_OAUTH2_AUDIENCE : service_url, grpc_max_auth_token_lifetime, scope);
-  grpc_auth_json_key_destruct (&key);
-  if (jwt == NULL)
-    {
-      fprintf (stderr, "Could not create JWT.\n");
-      exit (1);
-    }
-  fprintf (stdout, "%s\n", jwt);
-  gpr_free (jwt);
+  gpr_slice json_key_data = gpr_load_file(json_key_file_path, 1, &ok);
+  if (!ok) {
+    fprintf(stderr, "Could not read %s.\n", json_key_file_path);
+    exit(1);
+  }
+  key = grpc_auth_json_key_create_from_string(
+      (const char *)GPR_SLICE_START_PTR(json_key_data));
+  gpr_slice_unref(json_key_data);
+  if (!grpc_auth_json_key_is_valid(&key)) {
+    fprintf(stderr, "Could not parse json key.\n");
+    exit(1);
+  }
+  jwt = grpc_jwt_encode_and_sign(
+      &key, service_url == NULL ? GRPC_JWT_OAUTH2_AUDIENCE : service_url,
+      grpc_max_auth_token_lifetime, scope);
+  grpc_auth_json_key_destruct(&key);
+  if (jwt == NULL) {
+    fprintf(stderr, "Could not create JWT.\n");
+    exit(1);
+  }
+  fprintf(stdout, "%s\n", jwt);
+  gpr_free(jwt);
 }
 
-int
-main (int argc, char **argv)
-{
+int main(int argc, char **argv) {
   char *scope = NULL;
   char *json_key_file_path = NULL;
   char *service_url = NULL;
-  gpr_cmdline *cl = gpr_cmdline_create ("create_jwt");
-  gpr_cmdline_add_string (cl, "json_key", "File path of the json key.", &json_key_file_path);
-  gpr_cmdline_add_string (cl, "scope", "OPTIONAL Space delimited permissions. Mutually " "exclusive with service_url", &scope);
-  gpr_cmdline_add_string (cl, "service_url", "OPTIONAL service URL. Mutually exclusive with scope.", &service_url);
-  gpr_cmdline_parse (cl, argc, argv);
+  gpr_cmdline *cl = gpr_cmdline_create("create_jwt");
+  gpr_cmdline_add_string(cl, "json_key", "File path of the json key.",
+                         &json_key_file_path);
+  gpr_cmdline_add_string(cl, "scope",
+                         "OPTIONAL Space delimited permissions. Mutually "
+                         "exclusive with service_url",
+                         &scope);
+  gpr_cmdline_add_string(cl, "service_url",
+                         "OPTIONAL service URL. Mutually exclusive with scope.",
+                         &service_url);
+  gpr_cmdline_parse(cl, argc, argv);
 
-  if (json_key_file_path == NULL)
-    {
-      fprintf (stderr, "Missing --json_key option.\n");
-      exit (1);
+  if (json_key_file_path == NULL) {
+    fprintf(stderr, "Missing --json_key option.\n");
+    exit(1);
+  }
+  if (scope != NULL) {
+    if (service_url != NULL) {
+      fprintf(stderr,
+              "Options --scope and --service_url are mutually exclusive.\n");
+      exit(1);
     }
-  if (scope != NULL)
-    {
-      if (service_url != NULL)
-	{
-	  fprintf (stderr, "Options --scope and --service_url are mutually exclusive.\n");
-	  exit (1);
-	}
-    }
-  else if (service_url == NULL)
-    {
-      fprintf (stderr, "Need one of --service_url or --scope options.\n");
-      exit (1);
-    }
+  } else if (service_url == NULL) {
+    fprintf(stderr, "Need one of --service_url or --scope options.\n");
+    exit(1);
+  }
 
-  create_jwt (json_key_file_path, service_url, scope);
+  create_jwt(json_key_file_path, service_url, scope);
 
-  gpr_cmdline_destroy (cl);
+  gpr_cmdline_destroy(cl);
   return 0;
 }

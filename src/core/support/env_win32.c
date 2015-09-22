@@ -44,27 +44,22 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-char *
-gpr_getenv (const char *name)
-{
+char *gpr_getenv(const char *name) {
   size_t size;
   char *result = NULL;
   char *duplicated;
   errno_t err;
 
-  err = _dupenv_s (&result, &size, name);
-  if (err)
-    return NULL;
-  duplicated = gpr_strdup (result);
-  free (result);
+  err = _dupenv_s(&result, &size, name);
+  if (err) return NULL;
+  duplicated = gpr_strdup(result);
+  free(result);
   return duplicated;
 }
 
-void
-gpr_setenv (const char *name, const char *value)
-{
-  errno_t res = _putenv_s (name, value);
-  GPR_ASSERT (res == 0);
+void gpr_setenv(const char *name, const char *value) {
+  errno_t res = _putenv_s(name, value);
+  GPR_ASSERT(res == 0);
 }
 
 #endif /* GPR_WIN32 */

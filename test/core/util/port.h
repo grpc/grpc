@@ -35,19 +35,18 @@
 #define GRPC_TEST_CORE_UTIL_PORT_H
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /* pick a port number that is currently unused by either tcp or udp. return
    0 on failure. */
-  int grpc_pick_unused_port ();
+int grpc_pick_unused_port();
 /* pick a port number that is currently unused by either tcp or udp. abort
    on failure. */
-  int grpc_pick_unused_port_or_die ();
+int grpc_pick_unused_port_or_die();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif				/* GRPC_TEST_CORE_UTIL_PORT_H */
+#endif /* GRPC_TEST_CORE_UTIL_PORT_H */

@@ -37,16 +37,12 @@
 #include "src/core/statistics/census_rpc_stats.h"
 #include "src/core/statistics/census_tracing.h"
 
-void
-census_init (void)
-{
-  census_tracing_init ();
-  census_stats_store_init ();
+void census_init(void) {
+  census_tracing_init();
+  census_stats_store_init();
 }
 
-void
-census_shutdown (void)
-{
-  census_stats_store_shutdown ();
-  census_tracing_shutdown ();
+void census_shutdown(void) {
+  census_stats_store_shutdown();
+  census_tracing_shutdown();
 }

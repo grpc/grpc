@@ -42,18 +42,17 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-static void
-setup_transport (grpc_exec_ctx * exec_ctx, void *server, grpc_transport * transport, grpc_mdctx * mdctx)
-{
+static void setup_transport(grpc_exec_ctx *exec_ctx, void *server,
+                            grpc_transport *transport, grpc_mdctx *mdctx) {
   static grpc_channel_filter const *extra_filters[] = {
-    &grpc_http_server_filter
-  };
-  grpc_server_setup_transport (exec_ctx, server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (server));
+      &grpc_http_server_filter};
+  grpc_server_setup_transport(exec_ctx, server, transport, extra_filters,
+                              GPR_ARRAY_SIZE(extra_filters), mdctx,
+                              grpc_server_get_channel_args(server));
 }
 
-static void
-new_transport (grpc_exec_ctx * exec_ctx, void *server, grpc_endpoint * tcp)
-{
+static void new_transport(grpc_exec_ctx *exec_ctx, void *server,
+                          grpc_endpoint *tcp) {
   /*
    * Beware that the call to grpc_create_chttp2_transport() has to happen before
    * grpc_tcp_server_destroy(). This is fine here, but similar code
@@ -61,32 +60,30 @@ new_transport (grpc_exec_ctx * exec_ctx, void *server, grpc_endpoint * tcp)
    * (as in server_secure_chttp2.c) needs to add synchronization to avoid this
    * case.
    */
-  grpc_mdctx *mdctx = grpc_mdctx_create ();
-  grpc_transport *transport = grpc_create_chttp2_transport (exec_ctx, grpc_server_get_channel_args (server), tcp, mdctx, 0);
-  setup_transport (exec_ctx, server, transport, mdctx);
-  grpc_chttp2_transport_start_reading (exec_ctx, transport, NULL, 0);
+  grpc_mdctx *mdctx = grpc_mdctx_create();
+  grpc_transport *transport = grpc_create_chttp2_transport(
+      exec_ctx, grpc_server_get_channel_args(server), tcp, mdctx, 0);
+  setup_transport(exec_ctx, server, transport, mdctx);
+  grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
 }
 
 /* Server callback: start listening on our ports */
-static void
-start (grpc_exec_ctx * exec_ctx, grpc_server * server, void *tcpp, grpc_pollset ** pollsets, size_t pollset_count)
-{
+static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
+                  grpc_pollset **pollsets, size_t pollset_count) {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_start (exec_ctx, tcp, pollsets, pollset_count, new_transport, server);
+  grpc_tcp_server_start(exec_ctx, tcp, pollsets, pollset_count, new_transport,
+                        server);
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
-static void
-destroy (grpc_exec_ctx * exec_ctx, grpc_server * server, void *tcpp, grpc_closure * destroy_done)
-{
+static void destroy(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
+                    grpc_closure *destroy_done) {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_destroy (exec_ctx, tcp, destroy_done);
+  grpc_tcp_server_destroy(exec_ctx, tcp, destroy_done);
 }
 
-int
-grpc_server_add_insecure_http2_port (grpc_server * server, const char *addr)
-{
+int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   grpc_resolved_addresses *resolved = NULL;
   grpc_tcp_server *tcp = NULL;
   size_t i;
@@ -95,62 +92,55 @@ grpc_server_add_insecure_http2_port (grpc_server * server, const char *addr)
   int port_temp;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  resolved = grpc_blocking_resolve_address (addr, "http");
-  if (!resolved)
-    {
-      goto error;
-    }
+  resolved = grpc_blocking_resolve_address(addr, "http");
+  if (!resolved) {
+    goto error;
+  }
 
-  tcp = grpc_tcp_server_create ();
-  if (!tcp)
-    {
-      goto error;
-    }
+  tcp = grpc_tcp_server_create();
+  if (!tcp) {
+    goto error;
+  }
 
-  for (i = 0; i < resolved->naddrs; i++)
-    {
-      port_temp = grpc_tcp_server_add_port (tcp, (struct sockaddr *) &resolved->addrs[i].addr, resolved->addrs[i].len);
-      if (port_temp >= 0)
-	{
-	  if (port_num == -1)
-	    {
-	      port_num = port_temp;
-	    }
-	  else
-	    {
-	      GPR_ASSERT (port_num == port_temp);
-	    }
-	  count++;
-	}
+  for (i = 0; i < resolved->naddrs; i++) {
+    port_temp = grpc_tcp_server_add_port(
+        tcp, (struct sockaddr *)&resolved->addrs[i].addr,
+        resolved->addrs[i].len);
+    if (port_temp >= 0) {
+      if (port_num == -1) {
+        port_num = port_temp;
+      } else {
+        GPR_ASSERT(port_num == port_temp);
+      }
+      count++;
     }
-  if (count == 0)
-    {
-      gpr_log (GPR_ERROR, "No address added out of total %d resolved", resolved->naddrs);
-      goto error;
-    }
-  if (count != resolved->naddrs)
-    {
-      gpr_log (GPR_ERROR, "Only %d addresses added out of total %d resolved", count, resolved->naddrs);
-    }
-  grpc_resolved_addresses_destroy (resolved);
+  }
+  if (count == 0) {
+    gpr_log(GPR_ERROR, "No address added out of total %d resolved",
+            resolved->naddrs);
+    goto error;
+  }
+  if (count != resolved->naddrs) {
+    gpr_log(GPR_ERROR, "Only %d addresses added out of total %d resolved",
+            count, resolved->naddrs);
+  }
+  grpc_resolved_addresses_destroy(resolved);
 
   /* Register with the server only upon success */
-  grpc_server_add_listener (&exec_ctx, server, tcp, start, destroy);
+  grpc_server_add_listener(&exec_ctx, server, tcp, start, destroy);
   goto done;
 
 /* Error path: cleanup and return */
 error:
-  if (resolved)
-    {
-      grpc_resolved_addresses_destroy (resolved);
-    }
-  if (tcp)
-    {
-      grpc_tcp_server_destroy (&exec_ctx, tcp, NULL);
-    }
+  if (resolved) {
+    grpc_resolved_addresses_destroy(resolved);
+  }
+  if (tcp) {
+    grpc_tcp_server_destroy(&exec_ctx, tcp, NULL);
+  }
   port_num = 0;
 
 done:
-  grpc_exec_ctx_finish (&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
   return port_num;
 }

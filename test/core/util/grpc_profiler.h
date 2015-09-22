@@ -35,15 +35,14 @@
 #define GRPC_TEST_CORE_UTIL_GRPC_PROFILER_H
 
 #ifdef __cplusplus
-extern "C"
-{
-#endif				/*  __cplusplus */
+extern "C" {
+#endif /*  __cplusplus */
 
-  void grpc_profiler_start (const char *filename);
-  void grpc_profiler_stop ();
+void grpc_profiler_start(const char *filename);
+void grpc_profiler_stop();
 
 #ifdef __cplusplus
 }
-#endif				/*  __cplusplus */
+#endif /*  __cplusplus */
 
-#endif				/* GRPC_TEST_CORE_UTIL_GRPC_PROFILER_H */
+#endif /* GRPC_TEST_CORE_UTIL_GRPC_PROFILER_H */

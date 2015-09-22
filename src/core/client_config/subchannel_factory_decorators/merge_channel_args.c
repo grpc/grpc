@@ -35,58 +35,52 @@
 #include <grpc/support/alloc.h>
 #include "src/core/channel/channel_args.h"
 
-typedef struct
-{
+typedef struct {
   grpc_subchannel_factory base;
   gpr_refcount refs;
   grpc_subchannel_factory *wrapped;
   grpc_channel_args *merge_args;
 } merge_args_factory;
 
-static void
-merge_args_factory_ref (grpc_subchannel_factory * scf)
-{
-  merge_args_factory *f = (merge_args_factory *) scf;
-  gpr_ref (&f->refs);
+static void merge_args_factory_ref(grpc_subchannel_factory *scf) {
+  merge_args_factory *f = (merge_args_factory *)scf;
+  gpr_ref(&f->refs);
 }
 
-static void
-merge_args_factory_unref (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * scf)
-{
-  merge_args_factory *f = (merge_args_factory *) scf;
-  if (gpr_unref (&f->refs))
-    {
-      grpc_subchannel_factory_unref (exec_ctx, f->wrapped);
-      grpc_channel_args_destroy (f->merge_args);
-      gpr_free (f);
-    }
+static void merge_args_factory_unref(grpc_exec_ctx *exec_ctx,
+                                     grpc_subchannel_factory *scf) {
+  merge_args_factory *f = (merge_args_factory *)scf;
+  if (gpr_unref(&f->refs)) {
+    grpc_subchannel_factory_unref(exec_ctx, f->wrapped);
+    grpc_channel_args_destroy(f->merge_args);
+    gpr_free(f);
+  }
 }
 
-static grpc_subchannel *
-merge_args_factory_create_subchannel (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * scf, grpc_subchannel_args * args)
-{
-  merge_args_factory *f = (merge_args_factory *) scf;
-  grpc_channel_args *final_args = grpc_channel_args_merge (args->args, f->merge_args);
+static grpc_subchannel *merge_args_factory_create_subchannel(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *scf,
+    grpc_subchannel_args *args) {
+  merge_args_factory *f = (merge_args_factory *)scf;
+  grpc_channel_args *final_args =
+      grpc_channel_args_merge(args->args, f->merge_args);
   grpc_subchannel *s;
   args->args = final_args;
-  s = grpc_subchannel_factory_create_subchannel (exec_ctx, f->wrapped, args);
-  grpc_channel_args_destroy (final_args);
+  s = grpc_subchannel_factory_create_subchannel(exec_ctx, f->wrapped, args);
+  grpc_channel_args_destroy(final_args);
   return s;
 }
 
 static const grpc_subchannel_factory_vtable merge_args_factory_vtable = {
-  merge_args_factory_ref, merge_args_factory_unref,
-  merge_args_factory_create_subchannel
-};
+    merge_args_factory_ref, merge_args_factory_unref,
+    merge_args_factory_create_subchannel};
 
-grpc_subchannel_factory *
-grpc_subchannel_factory_merge_channel_args (grpc_subchannel_factory * input, const grpc_channel_args * args)
-{
-  merge_args_factory *f = gpr_malloc (sizeof (*f));
+grpc_subchannel_factory *grpc_subchannel_factory_merge_channel_args(
+    grpc_subchannel_factory *input, const grpc_channel_args *args) {
+  merge_args_factory *f = gpr_malloc(sizeof(*f));
   f->base.vtable = &merge_args_factory_vtable;
-  gpr_ref_init (&f->refs, 1);
-  grpc_subchannel_factory_ref (input);
+  gpr_ref_init(&f->refs, 1);
+  grpc_subchannel_factory_ref(input);
   f->wrapped = input;
-  f->merge_args = grpc_channel_args_copy (args);
+  f->merge_args = grpc_channel_args_copy(args);
   return &f->base;
 }

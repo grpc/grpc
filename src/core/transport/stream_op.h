@@ -45,8 +45,7 @@
 
 /* Operations that can be performed on a stream.
    Used by grpc_stream_op. */
-typedef enum grpc_stream_op_code
-{
+typedef enum grpc_stream_op_code {
   /* Do nothing code. Useful if rewriting a batch to exclude some operations.
      Must be ignored by receivers */
   GRPC_NO_OP,
@@ -66,8 +65,7 @@ typedef enum grpc_stream_op_code
 #define GRPC_WRITE_INTERNAL_USED_MASK (GRPC_WRITE_INTERNAL_COMPRESS)
 
 /* Arguments for GRPC_OP_BEGIN_MESSAGE */
-typedef struct grpc_begin_message
-{
+typedef struct grpc_begin_message {
   /* How many bytes of data will this message contain */
   gpr_uint32 length;
   /* Write flags for the message: see grpc.h GRPC_WRITE_* for the public bits,
@@ -75,22 +73,19 @@ typedef struct grpc_begin_message
   gpr_uint32 flags;
 } grpc_begin_message;
 
-typedef struct grpc_linked_mdelem
-{
+typedef struct grpc_linked_mdelem {
   grpc_mdelem *md;
   struct grpc_linked_mdelem *next;
   struct grpc_linked_mdelem *prev;
   void *reserved;
 } grpc_linked_mdelem;
 
-typedef struct grpc_mdelem_list
-{
+typedef struct grpc_mdelem_list {
   grpc_linked_mdelem *head;
   grpc_linked_mdelem *tail;
 } grpc_mdelem_list;
 
-typedef struct grpc_metadata_batch
-{
+typedef struct grpc_metadata_batch {
   /** Metadata elements in this batch */
   grpc_mdelem_list list;
   /** Elements that have been removed from the batch, but have
@@ -103,26 +98,30 @@ typedef struct grpc_metadata_batch
   gpr_timespec deadline;
 } grpc_metadata_batch;
 
-void grpc_metadata_batch_init (grpc_metadata_batch * batch);
-void grpc_metadata_batch_destroy (grpc_metadata_batch * batch);
-void grpc_metadata_batch_merge (grpc_metadata_batch * target, grpc_metadata_batch * add);
+void grpc_metadata_batch_init(grpc_metadata_batch *batch);
+void grpc_metadata_batch_destroy(grpc_metadata_batch *batch);
+void grpc_metadata_batch_merge(grpc_metadata_batch *target,
+                               grpc_metadata_batch *add);
 
 /** Moves the metadata information from \a src to \a dst. Upon return, \a src is
  * zeroed. */
-void grpc_metadata_batch_move (grpc_metadata_batch * dst, grpc_metadata_batch * src);
+void grpc_metadata_batch_move(grpc_metadata_batch *dst,
+                              grpc_metadata_batch *src);
 
 /** Add \a storage to the beginning of \a batch. storage->md is
     assumed to be valid.
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call. */
-void grpc_metadata_batch_link_head (grpc_metadata_batch * batch, grpc_linked_mdelem * storage);
+void grpc_metadata_batch_link_head(grpc_metadata_batch *batch,
+                                   grpc_linked_mdelem *storage);
 /** Add \a storage to the end of \a batch. storage->md is
     assumed to be valid.
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call. */
-void grpc_metadata_batch_link_tail (grpc_metadata_batch * batch, grpc_linked_mdelem * storage);
+void grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
+                                   grpc_linked_mdelem *storage);
 
 /** Add \a elem_to_add as the first element in \a batch, using
     \a storage as backing storage for the linked list element.
@@ -130,23 +129,30 @@ void grpc_metadata_batch_link_tail (grpc_metadata_batch * batch, grpc_linked_mde
     lifetime of batch. This usually means it should be around
     for the lifetime of the call.
     Takes ownership of \a elem_to_add */
-void grpc_metadata_batch_add_head (grpc_metadata_batch * batch, grpc_linked_mdelem * storage, grpc_mdelem * elem_to_add);
+void grpc_metadata_batch_add_head(grpc_metadata_batch *batch,
+                                  grpc_linked_mdelem *storage,
+                                  grpc_mdelem *elem_to_add);
 /** Add \a elem_to_add as the last element in \a batch, using
     \a storage as backing storage for the linked list element.
     \a storage is owned by the caller and must survive for the
     lifetime of batch. This usually means it should be around
     for the lifetime of the call.
     Takes ownership of \a elem_to_add */
-void grpc_metadata_batch_add_tail (grpc_metadata_batch * batch, grpc_linked_mdelem * storage, grpc_mdelem * elem_to_add);
+void grpc_metadata_batch_add_tail(grpc_metadata_batch *batch,
+                                  grpc_linked_mdelem *storage,
+                                  grpc_mdelem *elem_to_add);
 
 /** For each element in \a batch, execute \a filter.
     The return value from \a filter will be substituted for the
     grpc_mdelem passed to \a filter. If \a filter returns NULL,
     the element will be moved to the garbage list. */
-void grpc_metadata_batch_filter (grpc_metadata_batch * batch, grpc_mdelem * (*filter) (void *user_data, grpc_mdelem * elem), void *user_data);
+void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
+                                grpc_mdelem *(*filter)(void *user_data,
+                                                       grpc_mdelem *elem),
+                                void *user_data);
 
 #ifndef NDEBUG
-void grpc_metadata_batch_assert_ok (grpc_metadata_batch * comd);
+void grpc_metadata_batch_assert_ok(grpc_metadata_batch *comd);
 #else
 #define grpc_metadata_batch_assert_ok(comd) \
   do {                                      \
@@ -154,14 +160,12 @@ void grpc_metadata_batch_assert_ok (grpc_metadata_batch * comd);
 #endif
 
 /* Represents a single operation performed on a stream/transport */
-typedef struct grpc_stream_op
-{
+typedef struct grpc_stream_op {
   /* the operation to be applied */
   enum grpc_stream_op_code type;
   /* the arguments to this operation. union fields are named according to the
      associated op-code */
-  union
-  {
+  union {
     grpc_begin_message begin_message;
     grpc_metadata_batch metadata;
     gpr_slice slice;
@@ -170,8 +174,7 @@ typedef struct grpc_stream_op
 
 /** A stream op buffer is a wrapper around stream operations that is
  * dynamically extendable. */
-typedef struct grpc_stream_op_buffer
-{
+typedef struct grpc_stream_op_buffer {
   grpc_stream_op *ops;
   size_t nops;
   size_t capacity;
@@ -179,28 +182,31 @@ typedef struct grpc_stream_op_buffer
 } grpc_stream_op_buffer;
 
 /* Initialize a stream op buffer */
-void grpc_sopb_init (grpc_stream_op_buffer * sopb);
+void grpc_sopb_init(grpc_stream_op_buffer *sopb);
 /* Destroy a stream op buffer */
-void grpc_sopb_destroy (grpc_stream_op_buffer * sopb);
+void grpc_sopb_destroy(grpc_stream_op_buffer *sopb);
 /* Reset a sopb to no elements */
-void grpc_sopb_reset (grpc_stream_op_buffer * sopb);
+void grpc_sopb_reset(grpc_stream_op_buffer *sopb);
 /* Swap two sopbs */
-void grpc_sopb_swap (grpc_stream_op_buffer * a, grpc_stream_op_buffer * b);
+void grpc_sopb_swap(grpc_stream_op_buffer *a, grpc_stream_op_buffer *b);
 
-void grpc_stream_ops_unref_owned_objects (grpc_stream_op * ops, size_t nops);
+void grpc_stream_ops_unref_owned_objects(grpc_stream_op *ops, size_t nops);
 
 /* Append a GRPC_NO_OP to a buffer */
-void grpc_sopb_add_no_op (grpc_stream_op_buffer * sopb);
+void grpc_sopb_add_no_op(grpc_stream_op_buffer *sopb);
 /* Append a GRPC_OP_BEGIN to a buffer */
-void grpc_sopb_add_begin_message (grpc_stream_op_buffer * sopb, gpr_uint32 length, gpr_uint32 flags);
-void grpc_sopb_add_metadata (grpc_stream_op_buffer * sopb, grpc_metadata_batch metadata);
+void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
+                                 gpr_uint32 flags);
+void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb,
+                            grpc_metadata_batch metadata);
 /* Append a GRPC_SLICE to a buffer - does not ref/unref the slice */
-void grpc_sopb_add_slice (grpc_stream_op_buffer * sopb, gpr_slice slice);
+void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice);
 /* Append a buffer to a buffer - does not ref/unref any internal objects */
-void grpc_sopb_append (grpc_stream_op_buffer * sopb, grpc_stream_op * ops, size_t nops);
+void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
+                      size_t nops);
 
-void grpc_sopb_move_to (grpc_stream_op_buffer * src, grpc_stream_op_buffer * dst);
+void grpc_sopb_move_to(grpc_stream_op_buffer *src, grpc_stream_op_buffer *dst);
 
-char *grpc_sopb_string (grpc_stream_op_buffer * sopb);
+char *grpc_sopb_string(grpc_stream_op_buffer *sopb);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_STREAM_OP_H */

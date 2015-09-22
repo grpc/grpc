@@ -40,43 +40,38 @@
 
 #include "test/core/util/test_config.h"
 
-static void
-test_compression_algorithm_parse (void)
-{
+static void test_compression_algorithm_parse(void) {
   size_t i;
-  const char *valid_names[] = { "identity", "gzip", "deflate" };
+  const char *valid_names[] = {"identity", "gzip", "deflate"};
   const grpc_compression_algorithm valid_algorithms[] = {
-    GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_DEFLATE
-  };
-  const char *invalid_names[] = { "gzip2", "foo", "", "2gzip" };
+      GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_DEFLATE};
+  const char *invalid_names[] = {"gzip2", "foo", "", "2gzip"};
 
-  gpr_log (GPR_DEBUG, "test_compression_algorithm_parse");
+  gpr_log(GPR_DEBUG, "test_compression_algorithm_parse");
 
-  for (i = 0; i < GPR_ARRAY_SIZE (valid_names); i++)
-    {
-      const char *valid_name = valid_names[i];
-      grpc_compression_algorithm algorithm;
-      int success;
-      success = grpc_compression_algorithm_parse (valid_name, strlen (valid_name), &algorithm);
-      GPR_ASSERT (success != 0);
-      GPR_ASSERT (algorithm == valid_algorithms[i]);
-    }
+  for (i = 0; i < GPR_ARRAY_SIZE(valid_names); i++) {
+    const char *valid_name = valid_names[i];
+    grpc_compression_algorithm algorithm;
+    int success;
+    success = grpc_compression_algorithm_parse(valid_name, strlen(valid_name),
+                                               &algorithm);
+    GPR_ASSERT(success != 0);
+    GPR_ASSERT(algorithm == valid_algorithms[i]);
+  }
 
-  for (i = 0; i < GPR_ARRAY_SIZE (invalid_names); i++)
-    {
-      const char *invalid_name = invalid_names[i];
-      grpc_compression_algorithm algorithm;
-      int success;
-      success = grpc_compression_algorithm_parse (invalid_name, strlen (invalid_name), &algorithm);
-      GPR_ASSERT (success == 0);
-      /* the value of "algorithm" is undefined upon failure */
-    }
+  for (i = 0; i < GPR_ARRAY_SIZE(invalid_names); i++) {
+    const char *invalid_name = invalid_names[i];
+    grpc_compression_algorithm algorithm;
+    int success;
+    success = grpc_compression_algorithm_parse(
+        invalid_name, strlen(invalid_name), &algorithm);
+    GPR_ASSERT(success == 0);
+    /* the value of "algorithm" is undefined upon failure */
+  }
 }
 
-int
-main (int argc, char **argv)
-{
-  test_compression_algorithm_parse ();
+int main(int argc, char **argv) {
+  test_compression_algorithm_parse();
 
   return 0;
 }

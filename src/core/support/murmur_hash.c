@@ -46,10 +46,8 @@
    handle aligned reads, do the conversion here */
 #define GETBLOCK32(p, i) (p)[(i)]
 
-gpr_uint32
-gpr_murmur_hash3 (const void *key, size_t len, gpr_uint32 seed)
-{
-  const gpr_uint8 *data = (const gpr_uint8 *) key;
+gpr_uint32 gpr_murmur_hash3(const void *key, size_t len, gpr_uint32 seed) {
+  const gpr_uint8 *data = (const gpr_uint8 *)key;
   const size_t nblocks = len / 4;
   int i;
 
@@ -59,42 +57,40 @@ gpr_murmur_hash3 (const void *key, size_t len, gpr_uint32 seed)
   const gpr_uint32 c1 = 0xcc9e2d51;
   const gpr_uint32 c2 = 0x1b873593;
 
-  const gpr_uint32 *blocks = ((const gpr_uint32 *) key) + nblocks;
-  const gpr_uint8 *tail = (const gpr_uint8 *) (data + nblocks * 4);
+  const gpr_uint32 *blocks = ((const gpr_uint32 *)key) + nblocks;
+  const gpr_uint8 *tail = (const gpr_uint8 *)(data + nblocks * 4);
 
   /* body */
-  for (i = -(int) nblocks; i; i++)
-    {
-      k1 = GETBLOCK32 (blocks, i);
+  for (i = -(int)nblocks; i; i++) {
+    k1 = GETBLOCK32(blocks, i);
 
-      k1 *= c1;
-      k1 = ROTL32 (k1, 15);
-      k1 *= c2;
+    k1 *= c1;
+    k1 = ROTL32(k1, 15);
+    k1 *= c2;
 
-      h1 ^= k1;
-      h1 = ROTL32 (h1, 13);
-      h1 = h1 * 5 + 0xe6546b64;
-    }
+    h1 ^= k1;
+    h1 = ROTL32(h1, 13);
+    h1 = h1 * 5 + 0xe6546b64;
+  }
 
   k1 = 0;
 
   /* tail */
-  switch (len & 3)
-    {
+  switch (len & 3) {
     case 3:
-      k1 ^= ((gpr_uint32) tail[2]) << 16;
+      k1 ^= ((gpr_uint32)tail[2]) << 16;
     case 2:
-      k1 ^= ((gpr_uint32) tail[1]) << 8;
+      k1 ^= ((gpr_uint32)tail[1]) << 8;
     case 1:
       k1 ^= tail[0];
       k1 *= c1;
-      k1 = ROTL32 (k1, 15);
+      k1 = ROTL32(k1, 15);
       k1 *= c2;
       h1 ^= k1;
-    };
+  };
 
   /* finalization */
-  h1 ^= (gpr_uint32) len;
-  FMIX32 (h1);
+  h1 ^= (gpr_uint32)len;
+  FMIX32(h1);
   return h1;
 }

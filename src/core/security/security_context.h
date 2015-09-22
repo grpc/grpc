@@ -43,15 +43,13 @@
 
 /* Property names are always NULL terminated. */
 
-typedef struct
-{
+typedef struct {
   grpc_auth_property *array;
   size_t count;
   size_t capacity;
 } grpc_auth_property_array;
 
-struct grpc_auth_context
-{
+struct grpc_auth_context {
   struct grpc_auth_context *chained;
   grpc_auth_property_array properties;
   gpr_refcount refcount;
@@ -60,7 +58,7 @@ struct grpc_auth_context
 };
 
 /* Creation. */
-grpc_auth_context *grpc_auth_context_create (grpc_auth_context * chained);
+grpc_auth_context *grpc_auth_context_create(grpc_auth_context *chained);
 
 /* Refcounting. */
 #ifdef GRPC_AUTH_CONTEXT_REFCOUNT_DEBUG
@@ -68,47 +66,50 @@ grpc_auth_context *grpc_auth_context_create (grpc_auth_context * chained);
   grpc_auth_context_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_AUTH_CONTEXT_UNREF(p, r) \
   grpc_auth_context_unref((p), __FILE__, __LINE__, (r))
-grpc_auth_context *grpc_auth_context_ref (grpc_auth_context * policy, const char *file, int line, const char *reason);
-void grpc_auth_context_unref (grpc_auth_context * policy, const char *file, int line, const char *reason);
+grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy,
+                                         const char *file, int line,
+                                         const char *reason);
+void grpc_auth_context_unref(grpc_auth_context *policy, const char *file,
+                             int line, const char *reason);
 #else
 #define GRPC_AUTH_CONTEXT_REF(p, r) grpc_auth_context_ref((p))
 #define GRPC_AUTH_CONTEXT_UNREF(p, r) grpc_auth_context_unref((p))
-grpc_auth_context *grpc_auth_context_ref (grpc_auth_context * policy);
-void grpc_auth_context_unref (grpc_auth_context * policy);
+grpc_auth_context *grpc_auth_context_ref(grpc_auth_context *policy);
+void grpc_auth_context_unref(grpc_auth_context *policy);
 #endif
 
-void grpc_auth_property_reset (grpc_auth_property * property);
+void grpc_auth_property_reset(grpc_auth_property *property);
 
 /* --- grpc_client_security_context ---
 
    Internal client-side security context. */
 
-typedef struct
-{
+typedef struct {
   grpc_credentials *creds;
   grpc_auth_context *auth_context;
 } grpc_client_security_context;
 
-grpc_client_security_context *grpc_client_security_context_create (void);
-void grpc_client_security_context_destroy (void *ctx);
+grpc_client_security_context *grpc_client_security_context_create(void);
+void grpc_client_security_context_destroy(void *ctx);
 
 /* --- grpc_server_security_context ---
 
    Internal server-side security context. */
 
-typedef struct
-{
+typedef struct {
   grpc_auth_context *auth_context;
 } grpc_server_security_context;
 
-grpc_server_security_context *grpc_server_security_context_create (void);
-void grpc_server_security_context_destroy (void *ctx);
+grpc_server_security_context *grpc_server_security_context_create(void);
+void grpc_server_security_context_destroy(void *ctx);
 
 /* --- Auth metadata processing. --- */
 #define GRPC_AUTH_METADATA_PROCESSOR_ARG "grpc.auth_metadata_processor"
 
-grpc_arg grpc_auth_metadata_processor_to_arg (grpc_auth_metadata_processor * p);
-grpc_auth_metadata_processor *grpc_auth_metadata_processor_from_arg (const grpc_arg * arg);
-grpc_auth_metadata_processor *grpc_find_auth_metadata_processor_in_args (const grpc_channel_args * args);
+grpc_arg grpc_auth_metadata_processor_to_arg(grpc_auth_metadata_processor *p);
+grpc_auth_metadata_processor *grpc_auth_metadata_processor_from_arg(
+    const grpc_arg *arg);
+grpc_auth_metadata_processor *grpc_find_auth_metadata_processor_in_args(
+    const grpc_channel_args *args);
 
 #endif /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */

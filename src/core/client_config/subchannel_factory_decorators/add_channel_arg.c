@@ -34,11 +34,10 @@
 #include "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h"
 #include "src/core/client_config/subchannel_factory_decorators/merge_channel_args.h"
 
-grpc_subchannel_factory *
-grpc_subchannel_factory_add_channel_arg (grpc_subchannel_factory * input, const grpc_arg * arg)
-{
+grpc_subchannel_factory *grpc_subchannel_factory_add_channel_arg(
+    grpc_subchannel_factory *input, const grpc_arg *arg) {
   grpc_channel_args args;
   args.num_args = 1;
-  args.args = (grpc_arg *) arg;
-  return grpc_subchannel_factory_merge_channel_args (input, &args);
+  args.args = (grpc_arg *)arg;
+  return grpc_subchannel_factory_merge_channel_args(input, &args);
 }

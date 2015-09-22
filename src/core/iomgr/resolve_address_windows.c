@@ -50,8 +50,7 @@
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
-typedef struct
-{
+typedef struct {
   char *name;
   char *default_port;
   grpc_resolve_cb cb;
@@ -59,9 +58,8 @@ typedef struct
   grpc_iomgr_object iomgr_object;
 } request;
 
-grpc_resolved_addresses *
-grpc_blocking_resolve_address (const char *name, const char *default_port)
-{
+grpc_resolved_addresses *grpc_blocking_resolve_address(
+    const char *name, const char *default_port) {
   struct addrinfo hints;
   struct addrinfo *result = NULL, *resp;
   char *host;
@@ -71,106 +69,95 @@ grpc_blocking_resolve_address (const char *name, const char *default_port)
   grpc_resolved_addresses *addrs = NULL;
 
   /* parse name, splitting it into host and port parts */
-  gpr_split_host_port (name, &host, &port);
-  if (host == NULL)
-    {
-      gpr_log (GPR_ERROR, "unparseable host:port: '%s'", name);
+  gpr_split_host_port(name, &host, &port);
+  if (host == NULL) {
+    gpr_log(GPR_ERROR, "unparseable host:port: '%s'", name);
+    goto done;
+  }
+  if (port == NULL) {
+    if (default_port == NULL) {
+      gpr_log(GPR_ERROR, "no port in name '%s'", name);
       goto done;
     }
-  if (port == NULL)
-    {
-      if (default_port == NULL)
-	{
-	  gpr_log (GPR_ERROR, "no port in name '%s'", name);
-	  goto done;
-	}
-      port = gpr_strdup (default_port);
-    }
+    port = gpr_strdup(default_port);
+  }
 
   /* Call getaddrinfo */
-  memset (&hints, 0, sizeof (hints));
-  hints.ai_family = AF_UNSPEC;	/* ipv4 or ipv6 */
-  hints.ai_socktype = SOCK_STREAM;	/* stream socket */
-  hints.ai_flags = AI_PASSIVE;	/* for wildcard IP address */
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_family = AF_UNSPEC;     /* ipv4 or ipv6 */
+  hints.ai_socktype = SOCK_STREAM; /* stream socket */
+  hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
-  s = getaddrinfo (host, port, &hints, &result);
-  if (s != 0)
-    {
-      gpr_log (GPR_ERROR, "getaddrinfo: %s", gai_strerror (s));
-      goto done;
-    }
+  s = getaddrinfo(host, port, &hints, &result);
+  if (s != 0) {
+    gpr_log(GPR_ERROR, "getaddrinfo: %s", gai_strerror(s));
+    goto done;
+  }
 
   /* Success path: set addrs non-NULL, fill it in */
-  addrs = gpr_malloc (sizeof (grpc_resolved_addresses));
+  addrs = gpr_malloc(sizeof(grpc_resolved_addresses));
   addrs->naddrs = 0;
-  for (resp = result; resp != NULL; resp = resp->ai_next)
-    {
-      addrs->naddrs++;
-    }
-  addrs->addrs = gpr_malloc (sizeof (grpc_resolved_address) * addrs->naddrs);
+  for (resp = result; resp != NULL; resp = resp->ai_next) {
+    addrs->naddrs++;
+  }
+  addrs->addrs = gpr_malloc(sizeof(grpc_resolved_address) * addrs->naddrs);
   i = 0;
-  for (resp = result; resp != NULL; resp = resp->ai_next)
-    {
-      memcpy (&addrs->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
-      addrs->addrs[i].len = resp->ai_addrlen;
-      i++;
-    }
+  for (resp = result; resp != NULL; resp = resp->ai_next) {
+    memcpy(&addrs->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
+    addrs->addrs[i].len = resp->ai_addrlen;
+    i++;
+  }
 
   {
-    for (i = 0; i < addrs->naddrs; i++)
-      {
-	char *buf;
-	grpc_sockaddr_to_string (&buf, (struct sockaddr *) &addrs->addrs[i].addr, 0);
-	gpr_free (buf);
-      }
+    for (i = 0; i < addrs->naddrs; i++) {
+      char *buf;
+      grpc_sockaddr_to_string(&buf, (struct sockaddr *)&addrs->addrs[i].addr,
+                              0);
+      gpr_free(buf);
+    }
   }
 
 done:
-  gpr_free (host);
-  gpr_free (port);
-  if (result)
-    {
-      freeaddrinfo (result);
-    }
+  gpr_free(host);
+  gpr_free(port);
+  if (result) {
+    freeaddrinfo(result);
+  }
   return addrs;
 }
 
 /* Thread function to asynch-ify grpc_blocking_resolve_address */
-static void
-do_request (void *rp)
-{
+static void do_request(void *rp) {
   request *r = rp;
-  grpc_resolved_addresses *resolved = grpc_blocking_resolve_address (r->name, r->default_port);
+  grpc_resolved_addresses *resolved =
+      grpc_blocking_resolve_address(r->name, r->default_port);
   void *arg = r->arg;
   grpc_resolve_cb cb = r->cb;
-  gpr_free (r->name);
-  gpr_free (r->default_port);
-  grpc_iomgr_unregister_object (&r->iomgr_object);
-  gpr_free (r);
-  cb (arg, resolved);
+  gpr_free(r->name);
+  gpr_free(r->default_port);
+  grpc_iomgr_unregister_object(&r->iomgr_object);
+  gpr_free(r);
+  cb(arg, resolved);
 }
 
-void
-grpc_resolved_addresses_destroy (grpc_resolved_addresses * addrs)
-{
-  gpr_free (addrs->addrs);
-  gpr_free (addrs);
+void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
+  gpr_free(addrs->addrs);
+  gpr_free(addrs);
 }
 
-void
-grpc_resolve_address (const char *name, const char *default_port, grpc_resolve_cb cb, void *arg)
-{
-  request *r = gpr_malloc (sizeof (request));
+void grpc_resolve_address(const char *name, const char *default_port,
+                          grpc_resolve_cb cb, void *arg) {
+  request *r = gpr_malloc(sizeof(request));
   gpr_thd_id id;
   const char *label;
-  gpr_asprintf (&label, "resolve:%s", name);
-  grpc_iomgr_register_object (&r->iomgr_object, label);
-  gpr_free (label);
-  r->name = gpr_strdup (name);
-  r->default_port = gpr_strdup (default_port);
+  gpr_asprintf(&label, "resolve:%s", name);
+  grpc_iomgr_register_object(&r->iomgr_object, label);
+  gpr_free(label);
+  r->name = gpr_strdup(name);
+  r->default_port = gpr_strdup(default_port);
   r->cb = cb;
   r->arg = arg;
-  gpr_thd_new (&id, do_request, r, NULL);
+  gpr_thd_new(&id, do_request, r, NULL);
 }
 
 #endif

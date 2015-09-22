@@ -60,11 +60,9 @@ static char *details = NULL;
 static size_t details_capacity = 0;
 static grpc_op *op;
 
-static void
-init_ping_pong_request (void)
-{
-  grpc_metadata_array_init (&initial_metadata_recv);
-  grpc_metadata_array_init (&trailing_metadata_recv);
+static void init_ping_pong_request(void) {
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
 
   op = ops;
 
@@ -90,29 +88,31 @@ init_ping_pong_request (void)
   op++;
 }
 
-static void
-step_ping_pong_request (void)
-{
-  call = grpc_channel_create_call (channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/Reflector/reflectUnary", "localhost", gpr_inf_future (GPR_CLOCK_REALTIME), NULL);
-  GPR_ASSERT (GRPC_CALL_OK == grpc_call_start_batch (call, ops, (size_t) (op - ops), (void *) 1, NULL));
-  grpc_completion_queue_next (cq, gpr_inf_future (GPR_CLOCK_REALTIME), NULL);
-  grpc_call_destroy (call);
-  grpc_byte_buffer_destroy (response_payload_recv);
+static void step_ping_pong_request(void) {
+  call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  "/Reflector/reflectUnary", "localhost",
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call, ops,
+                                                   (size_t)(op - ops),
+                                                   (void *)1, NULL));
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_call_destroy(call);
+  grpc_byte_buffer_destroy(response_payload_recv);
   call = NULL;
 }
 
-static void
-init_ping_pong_stream (void)
-{
+static void init_ping_pong_stream(void) {
   grpc_call_error error;
-  call = grpc_channel_create_call (channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq, "/Reflector/reflectStream", "localhost", gpr_inf_future (GPR_CLOCK_REALTIME), NULL);
+  call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
+                                  "/Reflector/reflectStream", "localhost",
+                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   stream_init_op.op = GRPC_OP_SEND_INITIAL_METADATA;
   stream_init_op.data.send_initial_metadata.count = 0;
-  error = grpc_call_start_batch (call, &stream_init_op, 1, (void *) 1, NULL);
-  GPR_ASSERT (GRPC_CALL_OK == error);
-  grpc_completion_queue_next (cq, gpr_inf_future (GPR_CLOCK_REALTIME), NULL);
+  error = grpc_call_start_batch(call, &stream_init_op, 1, (void *)1, NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
 
-  grpc_metadata_array_init (&initial_metadata_recv);
+  grpc_metadata_array_init(&initial_metadata_recv);
 
   stream_step_ops[0].op = GRPC_OP_SEND_MESSAGE;
   stream_step_ops[0].data.send_message = the_buffer;
@@ -120,39 +120,32 @@ init_ping_pong_stream (void)
   stream_step_ops[1].data.recv_message = &response_payload_recv;
 }
 
-static void
-step_ping_pong_stream (void)
-{
+static void step_ping_pong_stream(void) {
   grpc_call_error error;
-  error = grpc_call_start_batch (call, stream_step_ops, 2, (void *) 1, NULL);
-  GPR_ASSERT (GRPC_CALL_OK == error);
-  grpc_completion_queue_next (cq, gpr_inf_future (GPR_CLOCK_REALTIME), NULL);
-  grpc_byte_buffer_destroy (response_payload_recv);
+  error = grpc_call_start_batch(call, stream_step_ops, 2, (void *)1, NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  grpc_byte_buffer_destroy(response_payload_recv);
 }
 
-static double
-now (void)
-{
-  gpr_timespec tv = gpr_now (GPR_CLOCK_REALTIME);
-  return 1e9 * (double) tv.tv_sec + tv.tv_nsec;
+static double now(void) {
+  gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
+  return 1e9 * (double)tv.tv_sec + tv.tv_nsec;
 }
 
-typedef struct
-{
+typedef struct {
   const char *name;
-  void (*init) ();
-  void (*do_one_step) ();
+  void (*init)();
+  void (*do_one_step)();
 } scenario;
 
 static const scenario scenarios[] = {
-  {"ping-pong-request", init_ping_pong_request, step_ping_pong_request},
-  {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream},
+    {"ping-pong-request", init_ping_pong_request, step_ping_pong_request},
+    {"ping-pong-stream", init_ping_pong_stream, step_ping_pong_stream},
 };
 
-int
-main (int argc, char **argv)
-{
-  gpr_slice slice = gpr_slice_from_copied_string ("x");
+int main(int argc, char **argv) {
+  gpr_slice slice = gpr_slice_from_copied_string("x");
   double start, stop;
   unsigned i;
 
@@ -164,82 +157,79 @@ main (int argc, char **argv)
   gpr_cmdline *cl;
   grpc_event event;
   char *scenario_name = "ping-pong-request";
-  scenario sc = { NULL, NULL, NULL };
+  scenario sc = {NULL, NULL, NULL};
 
-  GPR_ASSERT (argc >= 1);
+  GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
-  grpc_test_init (1, fake_argv);
+  grpc_test_init(1, fake_argv);
 
-  grpc_init ();
+  grpc_init();
 
-  cl = gpr_cmdline_create ("fling client");
-  gpr_cmdline_add_int (cl, "payload_size", "Size of the payload to send", &payload_size);
-  gpr_cmdline_add_string (cl, "target", "Target host:port", &target);
-  gpr_cmdline_add_flag (cl, "secure", "Run with security?", &secure);
-  gpr_cmdline_add_string (cl, "scenario", "Scenario", &scenario_name);
-  gpr_cmdline_parse (cl, argc, argv);
-  gpr_cmdline_destroy (cl);
+  cl = gpr_cmdline_create("fling client");
+  gpr_cmdline_add_int(cl, "payload_size", "Size of the payload to send",
+                      &payload_size);
+  gpr_cmdline_add_string(cl, "target", "Target host:port", &target);
+  gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
+  gpr_cmdline_add_string(cl, "scenario", "Scenario", &scenario_name);
+  gpr_cmdline_parse(cl, argc, argv);
+  gpr_cmdline_destroy(cl);
 
-  for (i = 0; i < GPR_ARRAY_SIZE (scenarios); i++)
-    {
-      if (0 == strcmp (scenarios[i].name, scenario_name))
-	{
-	  sc = scenarios[i];
-	}
+  for (i = 0; i < GPR_ARRAY_SIZE(scenarios); i++) {
+    if (0 == strcmp(scenarios[i].name, scenario_name)) {
+      sc = scenarios[i];
     }
-  if (!sc.name)
-    {
-      fprintf (stderr, "unsupported scenario '%s'. Valid are:", scenario_name);
-      for (i = 0; i < GPR_ARRAY_SIZE (scenarios); i++)
-	{
-	  fprintf (stderr, " %s", scenarios[i].name);
-	}
-      return 1;
+  }
+  if (!sc.name) {
+    fprintf(stderr, "unsupported scenario '%s'. Valid are:", scenario_name);
+    for (i = 0; i < GPR_ARRAY_SIZE(scenarios); i++) {
+      fprintf(stderr, " %s", scenarios[i].name);
     }
+    return 1;
+  }
 
-  channel = grpc_insecure_channel_create (target, NULL, NULL);
-  cq = grpc_completion_queue_create (NULL);
-  the_buffer = grpc_raw_byte_buffer_create (&slice, (size_t) payload_size);
-  histogram = gpr_histogram_create (0.01, 60e9);
+  channel = grpc_insecure_channel_create(target, NULL, NULL);
+  cq = grpc_completion_queue_create(NULL);
+  the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)payload_size);
+  histogram = gpr_histogram_create(0.01, 60e9);
 
-  sc.init ();
+  sc.init();
 
-  for (i = 0; i < 1000; i++)
-    {
-      sc.do_one_step ();
-    }
+  for (i = 0; i < 1000; i++) {
+    sc.do_one_step();
+  }
 
-  gpr_log (GPR_INFO, "start profiling");
-  grpc_profiler_start ("client.prof");
-  for (i = 0; i < 100000; i++)
-    {
-      start = now ();
-      sc.do_one_step ();
-      stop = now ();
-      gpr_histogram_add (histogram, stop - start);
-    }
-  grpc_profiler_stop ();
+  gpr_log(GPR_INFO, "start profiling");
+  grpc_profiler_start("client.prof");
+  for (i = 0; i < 100000; i++) {
+    start = now();
+    sc.do_one_step();
+    stop = now();
+    gpr_histogram_add(histogram, stop - start);
+  }
+  grpc_profiler_stop();
 
-  if (call)
-    {
-      grpc_call_destroy (call);
-    }
+  if (call) {
+    grpc_call_destroy(call);
+  }
 
-  grpc_channel_destroy (channel);
-  grpc_completion_queue_shutdown (cq);
-  do
-    {
-      event = grpc_completion_queue_next (cq, gpr_inf_future (GPR_CLOCK_REALTIME), NULL);
-    }
-  while (event.type != GRPC_QUEUE_SHUTDOWN);
-  grpc_completion_queue_destroy (cq);
-  grpc_byte_buffer_destroy (the_buffer);
-  gpr_slice_unref (slice);
+  grpc_channel_destroy(channel);
+  grpc_completion_queue_shutdown(cq);
+  do {
+    event = grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                       NULL);
+  } while (event.type != GRPC_QUEUE_SHUTDOWN);
+  grpc_completion_queue_destroy(cq);
+  grpc_byte_buffer_destroy(the_buffer);
+  gpr_slice_unref(slice);
 
-  gpr_log (GPR_INFO, "latency (50/95/99/99.9): %f/%f/%f/%f", gpr_histogram_percentile (histogram, 50), gpr_histogram_percentile (histogram, 95), gpr_histogram_percentile (histogram, 99), gpr_histogram_percentile (histogram, 99.9));
-  gpr_histogram_destroy (histogram);
+  gpr_log(GPR_INFO, "latency (50/95/99/99.9): %f/%f/%f/%f",
+          gpr_histogram_percentile(histogram, 50),
+          gpr_histogram_percentile(histogram, 95),
+          gpr_histogram_percentile(histogram, 99),
+          gpr_histogram_percentile(histogram, 99.9));
+  gpr_histogram_destroy(histogram);
 
-  grpc_shutdown ();
+  grpc_shutdown();
 
   return 0;
 }

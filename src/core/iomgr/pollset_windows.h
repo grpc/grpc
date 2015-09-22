@@ -43,15 +43,13 @@
    used to synchronize with the IOCP, and workers are condition variables
    used to block threads until work is ready. */
 
-typedef struct grpc_pollset_worker
-{
+typedef struct grpc_pollset_worker {
   gpr_cv cv;
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
 } grpc_pollset_worker;
 
-typedef struct grpc_pollset
-{
+typedef struct grpc_pollset {
   gpr_mu mu;
   int shutting_down;
   int kicked_without_pollers;

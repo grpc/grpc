@@ -64,37 +64,59 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
 #endif
 
-void grpc_subchannel_ref (grpc_subchannel * channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_unref (grpc_exec_ctx *exec_ctx, grpc_subchannel * channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_call_ref (grpc_subchannel_call * call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_call_unref (grpc_exec_ctx *exec_ctx, grpc_subchannel_call * call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_ref(
+    grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
+                           grpc_subchannel *channel
+                               GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_call_ref(
+    grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
+                                grpc_subchannel_call *call
+                                    GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
 /** construct a call (possibly asynchronously) */
-void grpc_subchannel_create_call (grpc_exec_ctx * exec_ctx, grpc_subchannel * subchannel, grpc_pollset * pollset, grpc_subchannel_call ** target, grpc_closure * notify);
+void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx,
+                                 grpc_subchannel *subchannel,
+                                 grpc_pollset *pollset,
+                                 grpc_subchannel_call **target,
+                                 grpc_closure *notify);
 
 /** process a transport level op */
-void grpc_subchannel_process_transport_op (grpc_exec_ctx * exec_ctx, grpc_subchannel * subchannel, grpc_transport_op * op);
+void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
+                                          grpc_subchannel *subchannel,
+                                          grpc_transport_op *op);
 
 /** poll the current connectivity state of a channel */
-grpc_connectivity_state grpc_subchannel_check_connectivity (grpc_subchannel * channel);
+grpc_connectivity_state grpc_subchannel_check_connectivity(
+    grpc_subchannel *channel);
 
 /** call notify when the connectivity state of a channel changes from *state.
     Updates *state with the new state of the channel */
-void grpc_subchannel_notify_on_state_change (grpc_exec_ctx * exec_ctx, grpc_subchannel * channel, grpc_connectivity_state * state, grpc_closure * notify);
+void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
+                                            grpc_subchannel *channel,
+                                            grpc_connectivity_state *state,
+                                            grpc_closure *notify);
 
 /** express interest in \a channel's activities through \a pollset. */
-void grpc_subchannel_add_interested_party (grpc_exec_ctx * exec_ctx, grpc_subchannel * channel, grpc_pollset * pollset);
+void grpc_subchannel_add_interested_party(grpc_exec_ctx *exec_ctx,
+                                          grpc_subchannel *channel,
+                                          grpc_pollset *pollset);
 /** stop following \a channel's activity through \a pollset. */
-void grpc_subchannel_del_interested_party (grpc_exec_ctx * exec_ctx, grpc_subchannel * channel, grpc_pollset * pollset);
+void grpc_subchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
+                                          grpc_subchannel *channel,
+                                          grpc_pollset *pollset);
 
 /** continue processing a transport op */
-void grpc_subchannel_call_process_op (grpc_exec_ctx * exec_ctx, grpc_subchannel_call * subchannel_call, grpc_transport_stream_op * op);
+void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
+                                     grpc_subchannel_call *subchannel_call,
+                                     grpc_transport_stream_op *op);
 
 /** continue querying for peer */
-char *grpc_subchannel_call_get_peer (grpc_exec_ctx * exec_ctx, grpc_subchannel_call * subchannel_call);
+char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
+                                    grpc_subchannel_call *subchannel_call);
 
-struct grpc_subchannel_args
-{
+struct grpc_subchannel_args {
   /** Channel filters for this channel - wrapped factories will likely
       want to mutate this */
   const grpc_channel_filter **filters;
@@ -112,6 +134,7 @@ struct grpc_subchannel_args
 };
 
 /** create a subchannel given a connector */
-grpc_subchannel *grpc_subchannel_create (grpc_connector * connector, grpc_subchannel_args * args);
+grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
+                                        grpc_subchannel_args *args);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H */

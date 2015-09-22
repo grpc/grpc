@@ -42,22 +42,25 @@ typedef struct grpc_subchannel_factory_vtable grpc_subchannel_factory_vtable;
 
 /** Constructor for new configured channels.
     Creating decorators around this type is encouraged to adapt behavior. */
-struct grpc_subchannel_factory
-{
+struct grpc_subchannel_factory {
   const grpc_subchannel_factory_vtable *vtable;
 };
 
-struct grpc_subchannel_factory_vtable
-{
-  void (*ref) (grpc_subchannel_factory * factory);
-  void (*unref) (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * factory);
-  grpc_subchannel *(*create_subchannel) (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * factory, grpc_subchannel_args * args);
+struct grpc_subchannel_factory_vtable {
+  void (*ref)(grpc_subchannel_factory *factory);
+  void (*unref)(grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory);
+  grpc_subchannel *(*create_subchannel)(grpc_exec_ctx *exec_ctx,
+                                        grpc_subchannel_factory *factory,
+                                        grpc_subchannel_args *args);
 };
 
-void grpc_subchannel_factory_ref (grpc_subchannel_factory * factory);
-void grpc_subchannel_factory_unref (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * factory);
+void grpc_subchannel_factory_ref(grpc_subchannel_factory *factory);
+void grpc_subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
+                                   grpc_subchannel_factory *factory);
 
 /** Create a new grpc_subchannel */
-grpc_subchannel *grpc_subchannel_factory_create_subchannel (grpc_exec_ctx * exec_ctx, grpc_subchannel_factory * factory, grpc_subchannel_args * args);
+grpc_subchannel *grpc_subchannel_factory_create_subchannel(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory,
+    grpc_subchannel_args *args);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */

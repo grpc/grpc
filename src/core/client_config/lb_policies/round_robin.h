@@ -41,6 +41,6 @@ extern int grpc_lb_round_robin_trace;
 #include "src/core/client_config/lb_policy_factory.h"
 
 /** Returns a load balancing factory for the round robin policy */
-grpc_lb_policy_factory *grpc_round_robin_lb_factory_create ();
+grpc_lb_policy_factory *grpc_round_robin_lb_factory_create();
 
 #endif
