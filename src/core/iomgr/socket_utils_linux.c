@@ -40,12 +40,13 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
-                 int nonblock, int cloexec) {
+int
+grpc_accept4 (int sockfd, struct sockaddr *addr, socklen_t * addrlen, int nonblock, int cloexec)
+{
   int flags = 0;
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
-  return accept4(sockfd, addr, addrlen, flags);
+  return accept4 (sockfd, addr, addrlen, flags);
 }
 
 #endif

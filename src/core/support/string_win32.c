@@ -45,63 +45,82 @@
 
 #include "src/core/support/string.h"
 
-int gpr_asprintf(char **strp, const char *format, ...) {
+int
+gpr_asprintf (char **strp, const char *format, ...)
+{
   va_list args;
   int ret;
   size_t strp_buflen;
 
   /* Determine the length. */
-  va_start(args, format);
-  ret = _vscprintf(format, args);
-  va_end(args);
-  if (ret < 0) {
-    *strp = NULL;
-    return -1;
-  }
+  va_start (args, format);
+  ret = _vscprintf (format, args);
+  va_end (args);
+  if (ret < 0)
+    {
+      *strp = NULL;
+      return -1;
+    }
 
   /* Allocate a new buffer, with space for the NUL terminator. */
-  strp_buflen = (size_t)ret + 1;
-  if ((*strp = gpr_malloc(strp_buflen)) == NULL) {
-    /* This shouldn't happen, because gpr_malloc() calls abort(). */
-    return -1;
-  }
+  strp_buflen = (size_t) ret + 1;
+  if ((*strp = gpr_malloc (strp_buflen)) == NULL)
+    {
+      /* This shouldn't happen, because gpr_malloc() calls abort(). */
+      return -1;
+    }
 
   /* Print to the buffer. */
-  va_start(args, format);
-  ret = vsnprintf_s(*strp, strp_buflen, _TRUNCATE, format, args);
-  va_end(args);
-  if ((size_t)ret == strp_buflen - 1) {
-    return ret;
-  }
+  va_start (args, format);
+  ret = vsnprintf_s (*strp, strp_buflen, _TRUNCATE, format, args);
+  va_end (args);
+  if ((size_t) ret == strp_buflen - 1)
+    {
+      return ret;
+    }
 
   /* This should never happen. */
-  gpr_free(*strp);
+  gpr_free (*strp);
   *strp = NULL;
   return -1;
 }
 
 #if defined UNICODE || defined _UNICODE
-LPTSTR gpr_char_to_tchar(LPCSTR input) {
+LPTSTR
+gpr_char_to_tchar (LPCSTR input)
+{
   LPTSTR ret;
-  int needed = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);
-  if (needed == 0) return NULL;
-  ret = gpr_malloc(needed * sizeof(TCHAR));
-  MultiByteToWideChar(CP_UTF8, 0, input, -1, ret, needed);
+  int needed = MultiByteToWideChar (CP_UTF8, 0, input, -1, NULL, 0);
+  if (needed == 0)
+    return NULL;
+  ret = gpr_malloc (needed * sizeof (TCHAR));
+  MultiByteToWideChar (CP_UTF8, 0, input, -1, ret, needed);
   return ret;
 }
 
-LPSTR gpr_tchar_to_char(LPCTSTR input) {
+LPSTR
+gpr_tchar_to_char (LPCTSTR input)
+{
   LPSTR ret;
-  int needed = WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
-  if (needed == 0) return NULL;
-  ret = gpr_malloc(needed);
-  WideCharToMultiByte(CP_UTF8, 0, input, -1, ret, needed, NULL, NULL);
+  int needed = WideCharToMultiByte (CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
+  if (needed == 0)
+    return NULL;
+  ret = gpr_malloc (needed);
+  WideCharToMultiByte (CP_UTF8, 0, input, -1, ret, needed, NULL, NULL);
   return ret;
 }
 #else
-char *gpr_tchar_to_char(LPTSTR input) { return gpr_strdup(input); }
+char *
+gpr_tchar_to_char (LPTSTR input)
+{
+  return gpr_strdup (input);
+}
 
-char *gpr_char_to_tchar(LPTSTR input) { return gpr_strdup(input); }
+char *
+gpr_char_to_tchar (LPTSTR input)
+{
+  return gpr_strdup (input);
+}
 #endif
 
 #endif /* GPR_WIN32 */

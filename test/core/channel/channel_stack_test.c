@@ -41,56 +41,63 @@
 
 #include "test/core/util/test_config.h"
 
-static void channel_init_func(grpc_channel_element *elem, grpc_channel *master,
-                              const grpc_channel_args *args,
-                              grpc_mdctx *metadata_context, int is_first,
-                              int is_last, grpc_closure_list *closure_list) {
-  GPR_ASSERT(args->num_args == 1);
-  GPR_ASSERT(args->args[0].type == GRPC_ARG_INTEGER);
-  GPR_ASSERT(0 == strcmp(args->args[0].key, "test_key"));
-  GPR_ASSERT(args->args[0].value.integer == 42);
-  GPR_ASSERT(is_first);
-  GPR_ASSERT(is_last);
-  *(int *)(elem->channel_data) = 0;
+static void
+channel_init_func (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * metadata_context, int is_first, int is_last, grpc_closure_list * closure_list)
+{
+  GPR_ASSERT (args->num_args == 1);
+  GPR_ASSERT (args->args[0].type == GRPC_ARG_INTEGER);
+  GPR_ASSERT (0 == strcmp (args->args[0].key, "test_key"));
+  GPR_ASSERT (args->args[0].value.integer == 42);
+  GPR_ASSERT (is_first);
+  GPR_ASSERT (is_last);
+  *(int *) (elem->channel_data) = 0;
 }
 
-static void call_init_func(grpc_call_element *elem,
-                           const void *server_transport_data,
-                           grpc_transport_stream_op *initial_op,
-                           grpc_closure_list *closure_list) {
-  ++*(int *)(elem->channel_data);
-  *(int *)(elem->call_data) = 0;
+static void
+call_init_func (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+{
+  ++*(int *) (elem->channel_data);
+  *(int *) (elem->call_data) = 0;
 }
 
-static void channel_destroy_func(grpc_channel_element *elem,
-                                 grpc_closure_list *closure_list) {}
-
-static void call_destroy_func(grpc_call_element *elem,
-                              grpc_closure_list *closure_list) {
-  ++*(int *)(elem->channel_data);
+static void
+channel_destroy_func (grpc_channel_element * elem, grpc_closure_list * closure_list)
+{
 }
 
-static void call_func(grpc_call_element *elem, grpc_transport_stream_op *op,
-                      grpc_closure_list *closure_list) {
-  ++*(int *)(elem->call_data);
+static void
+call_destroy_func (grpc_call_element * elem, grpc_closure_list * closure_list)
+{
+  ++*(int *) (elem->channel_data);
 }
 
-static void channel_func(grpc_channel_element *elem, grpc_transport_op *op,
-                         grpc_closure_list *closure_list) {
-  ++*(int *)(elem->channel_data);
+static void
+call_func (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+{
+  ++*(int *) (elem->call_data);
 }
 
-static char *get_peer(grpc_call_element *elem,
-                      grpc_closure_list *closure_list) {
-  return gpr_strdup("peer");
+static void
+channel_func (grpc_channel_element * elem, grpc_transport_op * op, grpc_closure_list * closure_list)
+{
+  ++*(int *) (elem->channel_data);
 }
 
-static void test_create_channel_stack(void) {
-  const grpc_channel_filter filter = {call_func,         channel_func,
-                                      sizeof(int),       call_init_func,
-                                      call_destroy_func, sizeof(int),
-                                      channel_init_func, channel_destroy_func,
-                                      get_peer,          "some_test_filter"};
+static char *
+get_peer (grpc_call_element * elem, grpc_closure_list * closure_list)
+{
+  return gpr_strdup ("peer");
+}
+
+static void
+test_create_channel_stack (void)
+{
+  const grpc_channel_filter filter = { call_func, channel_func,
+    sizeof (int), call_init_func,
+    call_destroy_func, sizeof (int),
+    channel_init_func, channel_destroy_func,
+    get_peer, "some_test_filter"
+  };
   const grpc_channel_filter *filters = &filter;
   grpc_channel_stack *channel_stack;
   grpc_call_stack *call_stack;
@@ -103,7 +110,7 @@ static void test_create_channel_stack(void) {
   int *call_data;
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
-  metadata_context = grpc_mdctx_create();
+  metadata_context = grpc_mdctx_create ();
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "test_key";
@@ -112,38 +119,39 @@ static void test_create_channel_stack(void) {
   chan_args.num_args = 1;
   chan_args.args = &arg;
 
-  channel_stack = gpr_malloc(grpc_channel_stack_size(&filters, 1));
-  grpc_channel_stack_init(&filters, 1, NULL, &chan_args, metadata_context,
-                          channel_stack, &closure_list);
-  GPR_ASSERT(channel_stack->count == 1);
-  channel_elem = grpc_channel_stack_element(channel_stack, 0);
-  channel_data = (int *)channel_elem->channel_data;
-  GPR_ASSERT(*channel_data == 0);
+  channel_stack = gpr_malloc (grpc_channel_stack_size (&filters, 1));
+  grpc_channel_stack_init (&filters, 1, NULL, &chan_args, metadata_context, channel_stack, &closure_list);
+  GPR_ASSERT (channel_stack->count == 1);
+  channel_elem = grpc_channel_stack_element (channel_stack, 0);
+  channel_data = (int *) channel_elem->channel_data;
+  GPR_ASSERT (*channel_data == 0);
 
-  call_stack = gpr_malloc(channel_stack->call_stack_size);
-  grpc_call_stack_init(channel_stack, NULL, NULL, call_stack, &closure_list);
-  GPR_ASSERT(call_stack->count == 1);
-  call_elem = grpc_call_stack_element(call_stack, 0);
-  GPR_ASSERT(call_elem->filter == channel_elem->filter);
-  GPR_ASSERT(call_elem->channel_data == channel_elem->channel_data);
-  call_data = (int *)call_elem->call_data;
-  GPR_ASSERT(*call_data == 0);
-  GPR_ASSERT(*channel_data == 1);
+  call_stack = gpr_malloc (channel_stack->call_stack_size);
+  grpc_call_stack_init (channel_stack, NULL, NULL, call_stack, &closure_list);
+  GPR_ASSERT (call_stack->count == 1);
+  call_elem = grpc_call_stack_element (call_stack, 0);
+  GPR_ASSERT (call_elem->filter == channel_elem->filter);
+  GPR_ASSERT (call_elem->channel_data == channel_elem->channel_data);
+  call_data = (int *) call_elem->call_data;
+  GPR_ASSERT (*call_data == 0);
+  GPR_ASSERT (*channel_data == 1);
 
-  grpc_call_stack_destroy(call_stack, &closure_list);
-  gpr_free(call_stack);
-  GPR_ASSERT(*channel_data == 2);
+  grpc_call_stack_destroy (call_stack, &closure_list);
+  gpr_free (call_stack);
+  GPR_ASSERT (*channel_data == 2);
 
-  grpc_channel_stack_destroy(channel_stack, &closure_list);
-  gpr_free(channel_stack);
+  grpc_channel_stack_destroy (channel_stack, &closure_list);
+  gpr_free (channel_stack);
 
-  grpc_mdctx_unref(metadata_context);
+  grpc_mdctx_unref (metadata_context);
 
-  GPR_ASSERT(grpc_closure_list_empty(closure_list));
+  GPR_ASSERT (grpc_closure_list_empty (closure_list));
 }
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  test_create_channel_stack();
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
+  test_create_channel_stack ();
   return 0;
 }

@@ -43,40 +43,40 @@ typedef struct grpc_resolver_factory_vtable grpc_resolver_factory_vtable;
 
 /** grpc_resolver provides grpc_client_config objects to grpc_channel
     objects */
-struct grpc_resolver_factory {
+struct grpc_resolver_factory
+{
   const grpc_resolver_factory_vtable *vtable;
 };
 
-typedef struct grpc_resolver_args {
+typedef struct grpc_resolver_args
+{
   grpc_uri *uri;
   grpc_subchannel_factory *subchannel_factory;
 } grpc_resolver_args;
 
-struct grpc_resolver_factory_vtable {
-  void (*ref)(grpc_resolver_factory *factory);
-  void (*unref)(grpc_resolver_factory *factory);
+struct grpc_resolver_factory_vtable
+{
+  void (*ref) (grpc_resolver_factory * factory);
+  void (*unref) (grpc_resolver_factory * factory);
 
   /** Implementation of grpc_resolver_factory_create_resolver */
-  grpc_resolver *(*create_resolver)(grpc_resolver_factory *factory,
-                                    grpc_resolver_args *args);
+  grpc_resolver *(*create_resolver) (grpc_resolver_factory * factory, grpc_resolver_args * args);
 
   /** Implementation of grpc_resolver_factory_get_default_authority */
-  char *(*get_default_authority)(grpc_resolver_factory *factory, grpc_uri *uri);
+  char *(*get_default_authority) (grpc_resolver_factory * factory, grpc_uri * uri);
 
   /** URI scheme that this factory implements */
   const char *scheme;
 };
 
-void grpc_resolver_factory_ref(grpc_resolver_factory *resolver);
-void grpc_resolver_factory_unref(grpc_resolver_factory *resolver);
+void grpc_resolver_factory_ref (grpc_resolver_factory * resolver);
+void grpc_resolver_factory_unref (grpc_resolver_factory * resolver);
 
 /** Create a resolver instance for a name */
-grpc_resolver *grpc_resolver_factory_create_resolver(
-    grpc_resolver_factory *factory, grpc_resolver_args *args);
+grpc_resolver *grpc_resolver_factory_create_resolver (grpc_resolver_factory * factory, grpc_resolver_args * args);
 
 /** Return a (freshly allocated with gpr_malloc) string representing
     the default authority to use for this scheme. */
-char *grpc_resolver_factory_get_default_authority(
-    grpc_resolver_factory *factory, grpc_uri *uri);
+char *grpc_resolver_factory_get_default_authority (grpc_resolver_factory * factory, grpc_uri * uri);
 
 #endif /* GRPC_INTERNAL_CORE_CONFIG_RESOLVER_FACTORY_H */

@@ -44,43 +44,50 @@
 
 static grpc_pollset g_pollset;
 
-static void clean_up(void) {}
+static void
+clean_up (void)
+{
+}
 
-static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
-    size_t slice_size) {
+static grpc_endpoint_test_fixture
+create_fixture_endpoint_pair (size_t slice_size)
+{
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_endpoint_test_fixture f;
-  grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair("test", slice_size);
+  grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair ("test", slice_size);
 
   f.client_ep = p.client;
   f.server_ep = p.server;
-  grpc_endpoint_add_to_pollset(f.client_ep, &g_pollset, &closure_list);
-  grpc_endpoint_add_to_pollset(f.server_ep, &g_pollset, &closure_list);
-  grpc_closure_list_run(&closure_list);
+  grpc_endpoint_add_to_pollset (f.client_ep, &g_pollset, &closure_list);
+  grpc_endpoint_add_to_pollset (f.server_ep, &g_pollset, &closure_list);
+  grpc_closure_list_run (&closure_list);
 
   return f;
 }
 
 static grpc_endpoint_test_config configs[] = {
-    {"tcp/tcp_socketpair", create_fixture_endpoint_pair, clean_up},
+  {"tcp/tcp_socketpair", create_fixture_endpoint_pair, clean_up},
 };
 
-static void destroy_pollset(void *p, int success,
-                            grpc_closure_list *closure_list) {
-  grpc_pollset_destroy(p);
+static void
+destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+{
+  grpc_pollset_destroy (p);
 }
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
   grpc_closure destroyed;
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
-  grpc_test_init(argc, argv);
-  grpc_init();
-  grpc_pollset_init(&g_pollset);
-  grpc_endpoint_tests(configs[0], &g_pollset);
-  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&g_pollset, &destroyed, &closure_list);
-  grpc_closure_list_run(&closure_list);
-  grpc_shutdown();
+  grpc_test_init (argc, argv);
+  grpc_init ();
+  grpc_pollset_init (&g_pollset);
+  grpc_endpoint_tests (configs[0], &g_pollset);
+  grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
+  grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
+  grpc_closure_list_run (&closure_list);
+  grpc_shutdown ();
 
   return 0;
 }

@@ -67,7 +67,8 @@ typedef struct grpc_mdstr grpc_mdstr;
 typedef struct grpc_mdelem grpc_mdelem;
 
 /* if changing this, make identical changes in internal_string in metadata.c */
-struct grpc_mdstr {
+struct grpc_mdstr
+{
   const gpr_slice slice;
   const gpr_uint32 hash;
   /* there is a private part to this in metadata.c */
@@ -75,58 +76,48 @@ struct grpc_mdstr {
 
 /* if changing this, make identical changes in internal_metadata in
    metadata.c */
-struct grpc_mdelem {
+struct grpc_mdelem
+{
   grpc_mdstr *const key;
   grpc_mdstr *const value;
   /* there is a private part to this in metadata.c */
 };
 
 /* Create/orphan a metadata context */
-grpc_mdctx *grpc_mdctx_create(void);
-grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed);
-void grpc_mdctx_ref(grpc_mdctx *mdctx);
-void grpc_mdctx_unref(grpc_mdctx *mdctx);
+grpc_mdctx *grpc_mdctx_create (void);
+grpc_mdctx *grpc_mdctx_create_with_seed (gpr_uint32 seed);
+void grpc_mdctx_ref (grpc_mdctx * mdctx);
+void grpc_mdctx_unref (grpc_mdctx * mdctx);
 
 /* Test only accessors to internal state - only for testing this code - do not
    rely on it outside of metadata_test.c */
-size_t grpc_mdctx_get_mdtab_capacity_test_only(grpc_mdctx *mdctx);
-size_t grpc_mdctx_get_mdtab_count_test_only(grpc_mdctx *mdctx);
-size_t grpc_mdctx_get_mdtab_free_test_only(grpc_mdctx *mdctx);
+size_t grpc_mdctx_get_mdtab_capacity_test_only (grpc_mdctx * mdctx);
+size_t grpc_mdctx_get_mdtab_count_test_only (grpc_mdctx * mdctx);
+size_t grpc_mdctx_get_mdtab_free_test_only (grpc_mdctx * mdctx);
 
 /* Constructors for grpc_mdstr instances; take a variety of data types that
    clients may have handy */
-grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str,
-                                   int perform_key_canonicalization);
+grpc_mdstr *grpc_mdstr_from_string (grpc_mdctx * ctx, const char *str, int perform_key_canonicalization);
 /* Unrefs the slice. */
-grpc_mdstr *grpc_mdstr_from_slice(grpc_mdctx *ctx, gpr_slice slice);
-grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *str,
-                                   size_t length);
+grpc_mdstr *grpc_mdstr_from_slice (grpc_mdctx * ctx, gpr_slice slice);
+grpc_mdstr *grpc_mdstr_from_buffer (grpc_mdctx * ctx, const gpr_uint8 * str, size_t length);
 
 /* Returns a borrowed slice from the mdstr with its contents base64 encoded
    and huffman compressed */
-gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
+gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed (grpc_mdstr * str);
 
 /* Constructors for grpc_mdelem instances; take a variety of data types that
    clients may have handy */
-grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx, grpc_mdstr *key,
-                                               grpc_mdstr *value);
-grpc_mdelem *grpc_mdelem_from_strings(grpc_mdctx *ctx, const char *key,
-                                      const char *value);
+grpc_mdelem *grpc_mdelem_from_metadata_strings (grpc_mdctx * ctx, grpc_mdstr * key, grpc_mdstr * value);
+grpc_mdelem *grpc_mdelem_from_strings (grpc_mdctx * ctx, const char *key, const char *value);
 /* Unrefs the slices. */
-grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,
-                                     gpr_slice value);
-grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,
-                                                const char *key,
-                                                const gpr_uint8 *value,
-                                                size_t value_length,
-                                                int canonicalize_key);
+grpc_mdelem *grpc_mdelem_from_slices (grpc_mdctx * ctx, gpr_slice key, gpr_slice value);
+grpc_mdelem *grpc_mdelem_from_string_and_buffer (grpc_mdctx * ctx, const char *key, const gpr_uint8 * value, size_t value_length, int canonicalize_key);
 
 /* Mutator and accessor for grpc_mdelem user data. The destructor function
    is used as a type tag and is checked during user_data fetch. */
-void *grpc_mdelem_get_user_data(grpc_mdelem *md,
-                                void (*if_destroy_func)(void *));
-void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
-                               void *user_data);
+void *grpc_mdelem_get_user_data (grpc_mdelem * md, void (*if_destroy_func) (void *));
+void grpc_mdelem_set_user_data (grpc_mdelem * md, void (*destroy_func) (void *), void *user_data);
 
 /* Reference counting */
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
@@ -134,28 +125,28 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
 #define GRPC_MDSTR_UNREF(s) grpc_mdstr_unref((s), __FILE__, __LINE__)
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s), __FILE__, __LINE__)
 #define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s), __FILE__, __LINE__)
-grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *s, const char *file, int line);
-void grpc_mdstr_unref(grpc_mdstr *s, const char *file, int line);
-grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md, const char *file, int line);
-void grpc_mdelem_unref(grpc_mdelem *md, const char *file, int line);
+grpc_mdstr *grpc_mdstr_ref (grpc_mdstr * s, const char *file, int line);
+void grpc_mdstr_unref (grpc_mdstr * s, const char *file, int line);
+grpc_mdelem *grpc_mdelem_ref (grpc_mdelem * md, const char *file, int line);
+void grpc_mdelem_unref (grpc_mdelem * md, const char *file, int line);
 #else
 #define GRPC_MDSTR_REF(s) grpc_mdstr_ref((s))
 #define GRPC_MDSTR_UNREF(s) grpc_mdstr_unref((s))
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s))
 #define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s))
-grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *s);
-void grpc_mdstr_unref(grpc_mdstr *s);
-grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *md);
-void grpc_mdelem_unref(grpc_mdelem *md);
+grpc_mdstr *grpc_mdstr_ref (grpc_mdstr * s);
+void grpc_mdstr_unref (grpc_mdstr * s);
+grpc_mdelem *grpc_mdelem_ref (grpc_mdelem * md);
+void grpc_mdelem_unref (grpc_mdelem * md);
 #endif
 
 /* Recover a char* from a grpc_mdstr. The returned string is null terminated.
    Does not promise that the returned string has no embedded nulls however. */
-const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
+const char *grpc_mdstr_as_c_string (grpc_mdstr * s);
 
-int grpc_mdstr_is_legal_header(grpc_mdstr *s);
-int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s);
-int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
+int grpc_mdstr_is_legal_header (grpc_mdstr * s);
+int grpc_mdstr_is_legal_nonbin_header (grpc_mdstr * s);
+int grpc_mdstr_is_bin_suffixed (grpc_mdstr * s);
 
 /* Batch mode metadata functions.
    These API's have equivalents above, but allow taking the mdctx just once,
@@ -163,21 +154,20 @@ int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 
 /* Lock the metadata context: it's only safe to call _locked_ functions against
    this context from the calling thread until grpc_mdctx_unlock is called */
-void grpc_mdctx_lock(grpc_mdctx *ctx);
+void grpc_mdctx_lock (grpc_mdctx * ctx);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
 #define GRPC_MDCTX_LOCKED_MDELEM_UNREF(ctx, elem) \
   grpc_mdctx_locked_mdelem_unref((ctx), (elem), __FILE__, __LINE__)
 /* Unref a metadata element */
-void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *elem,
-                                    const char *file, int line);
+void grpc_mdctx_locked_mdelem_unref (grpc_mdctx * ctx, grpc_mdelem * elem, const char *file, int line);
 #else
 #define GRPC_MDCTX_LOCKED_MDELEM_UNREF(ctx, elem) \
   grpc_mdctx_locked_mdelem_unref((ctx), (elem))
 /* Unref a metadata element */
-void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *elem);
+void grpc_mdctx_locked_mdelem_unref (grpc_mdctx * ctx, grpc_mdelem * elem);
 #endif
 /* Unlock the metadata context */
-void grpc_mdctx_unlock(grpc_mdctx *ctx);
+void grpc_mdctx_unlock (grpc_mdctx * ctx);
 
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 

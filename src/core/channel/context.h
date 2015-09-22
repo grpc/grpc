@@ -35,15 +35,17 @@
 #define GRPC_INTERNAL_CORE_CHANNEL_CONTEXT_H
 
 /* Call object context pointers */
-typedef enum {
+typedef enum
+{
   GRPC_CONTEXT_SECURITY = 0,
   GRPC_CONTEXT_TRACING,
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
-typedef struct {
+typedef struct
+{
   void *value;
-  void (*destroy)(void *);
+  void (*destroy) (void *);
 } grpc_call_context_element;
 
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CONTEXT_H */

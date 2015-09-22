@@ -53,7 +53,6 @@ extern int grpc_tcp_trace;
 
 /* Create a tcp endpoint given a file desciptor and a read slice size.
    Takes ownership of fd. */
-grpc_endpoint *grpc_tcp_create(grpc_fd *fd, size_t read_slice_size,
-                               const char *peer_string);
+grpc_endpoint *grpc_tcp_create (grpc_fd * fd, size_t read_slice_size, const char *peer_string);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_POSIX_H */

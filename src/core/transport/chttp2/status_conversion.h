@@ -38,13 +38,11 @@
 #include "src/core/transport/chttp2/http2_errors.h"
 
 /* Conversion of grpc status codes to http2 error codes (for RST_STREAM) */
-grpc_chttp2_error_code grpc_chttp2_grpc_status_to_http2_error(
-    grpc_status_code status);
-grpc_status_code grpc_chttp2_http2_error_to_grpc_status(
-    grpc_chttp2_error_code error);
+grpc_chttp2_error_code grpc_chttp2_grpc_status_to_http2_error (grpc_status_code status);
+grpc_status_code grpc_chttp2_http2_error_to_grpc_status (grpc_chttp2_error_code error);
 
 /* Conversion of HTTP status codes (:status) to grpc status codes */
-grpc_status_code grpc_chttp2_http2_status_to_grpc_status(int status);
-int grpc_chttp2_grpc_status_to_http2_status(grpc_status_code status);
+grpc_status_code grpc_chttp2_http2_status_to_grpc_status (int status);
+int grpc_chttp2_grpc_status_to_http2_status (grpc_status_code status);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STATUS_CONVERSION_H */

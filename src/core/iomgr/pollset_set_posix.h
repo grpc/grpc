@@ -37,7 +37,8 @@
 #include "src/core/iomgr/fd_posix.h"
 #include "src/core/iomgr/pollset_posix.h"
 
-typedef struct grpc_pollset_set {
+typedef struct grpc_pollset_set
+{
   gpr_mu mu;
 
   size_t pollset_count;
@@ -49,9 +50,7 @@ typedef struct grpc_pollset_set {
   grpc_fd **fds;
 } grpc_pollset_set;
 
-void grpc_pollset_set_add_fd(grpc_pollset_set *pollset_set, grpc_fd *fd,
-                             grpc_closure_list *closure_list);
-void grpc_pollset_set_del_fd(grpc_pollset_set *pollset_set, grpc_fd *fd,
-                             grpc_closure_list *closure_list);
+void grpc_pollset_set_add_fd (grpc_pollset_set * pollset_set, grpc_fd * fd, grpc_closure_list * closure_list);
+void grpc_pollset_set_del_fd (grpc_pollset_set * pollset_set, grpc_fd * fd, grpc_closure_list * closure_list);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

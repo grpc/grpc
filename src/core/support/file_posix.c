@@ -48,37 +48,43 @@
 
 #include "src/core/support/string.h"
 
-FILE *gpr_tmpfile(const char *prefix, char **tmp_filename) {
+FILE *
+gpr_tmpfile (const char *prefix, char **tmp_filename)
+{
   FILE *result = NULL;
   char *template;
   int fd;
 
-  if (tmp_filename != NULL) *tmp_filename = NULL;
+  if (tmp_filename != NULL)
+    *tmp_filename = NULL;
 
-  gpr_asprintf(&template, "/tmp/%s_XXXXXX", prefix);
-  GPR_ASSERT(template != NULL);
+  gpr_asprintf (&template, "/tmp/%s_XXXXXX", prefix);
+  GPR_ASSERT (template != NULL);
 
-  fd = mkstemp(template);
-  if (fd == -1) {
-    gpr_log(GPR_ERROR, "mkstemp failed for template %s with error %s.",
-            template, strerror(errno));
-    goto end;
-  }
-  result = fdopen(fd, "w+");
-  if (result == NULL) {
-    gpr_log(GPR_ERROR, "Could not open file %s from fd %d (error = %s).",
-            template, fd, strerror(errno));
-    unlink(template);
-    close(fd);
-    goto end;
-  }
+  fd = mkstemp (template);
+  if (fd == -1)
+    {
+      gpr_log (GPR_ERROR, "mkstemp failed for template %s with error %s.", template, strerror (errno));
+      goto end;
+    }
+  result = fdopen (fd, "w+");
+  if (result == NULL)
+    {
+      gpr_log (GPR_ERROR, "Could not open file %s from fd %d (error = %s).", template, fd, strerror (errno));
+      unlink (template);
+      close (fd);
+      goto end;
+    }
 
 end:
-  if (result != NULL && tmp_filename != NULL) {
-    *tmp_filename = template;
-  } else {
-    gpr_free(template);
-  }
+  if (result != NULL && tmp_filename != NULL)
+    {
+      *tmp_filename = template;
+    }
+  else
+    {
+      gpr_free (template);
+    }
   return result;
 }
 

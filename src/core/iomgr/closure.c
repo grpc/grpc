@@ -33,51 +33,69 @@
 
 #include "src/core/iomgr/closure.h"
 
-void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
-                       void *cb_arg) {
+void
+grpc_closure_init (grpc_closure * closure, grpc_iomgr_cb_func cb, void *cb_arg)
+{
   closure->cb = cb;
   closure->cb_arg = cb_arg;
   closure->next = NULL;
 }
 
-void grpc_closure_list_add(grpc_closure_list *closure_list,
-                           grpc_closure *closure, int success) {
-  if (closure == NULL) return;
+void
+grpc_closure_list_add (grpc_closure_list * closure_list, grpc_closure * closure, int success)
+{
+  if (closure == NULL)
+    return;
   closure->next = NULL;
   closure->success = success;
-  if (closure_list->head == NULL) {
-    closure_list->head = closure;
-  } else {
-    closure_list->tail->next = closure;
-  }
+  if (closure_list->head == NULL)
+    {
+      closure_list->head = closure;
+    }
+  else
+    {
+      closure_list->tail->next = closure;
+    }
   closure_list->tail = closure;
 }
 
-void grpc_closure_list_run(grpc_closure_list *closure_list) {
-  while (!grpc_closure_list_empty(*closure_list)) {
-    grpc_closure *c = closure_list->head;
-    closure_list->head = closure_list->tail = NULL;
-    while (c != NULL) {
-      grpc_closure *next = c->next;
-      c->cb(c->cb_arg, c->success, closure_list);
-      c = next;
+void
+grpc_closure_list_run (grpc_closure_list * closure_list)
+{
+  while (!grpc_closure_list_empty (*closure_list))
+    {
+      grpc_closure *c = closure_list->head;
+      closure_list->head = closure_list->tail = NULL;
+      while (c != NULL)
+	{
+	  grpc_closure *next = c->next;
+	  c->cb (c->cb_arg, c->success, closure_list);
+	  c = next;
+	}
     }
-  }
 }
 
-int grpc_closure_list_empty(grpc_closure_list closure_list) {
+int
+grpc_closure_list_empty (grpc_closure_list closure_list)
+{
   return closure_list.head == NULL;
 }
 
-void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst) {
-  if (src->head == NULL) {
-    return;
-  }
-  if (dst->head == NULL) {
-    *dst = *src;
-  } else {
-    dst->tail->next = src->head;
-    dst->tail = src->tail;
-  }
+void
+grpc_closure_list_move (grpc_closure_list * src, grpc_closure_list * dst)
+{
+  if (src->head == NULL)
+    {
+      return;
+    }
+  if (dst->head == NULL)
+    {
+      *dst = *src;
+    }
+  else
+    {
+      dst->tail->next = src->head;
+      dst->tail = src->tail;
+    }
   src->head = src->tail = NULL;
 }

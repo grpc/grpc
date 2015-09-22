@@ -43,93 +43,105 @@
 
 #include "src/core/iomgr/pollset_set.h"
 
-void grpc_pollset_set_init(grpc_pollset_set *pollset_set) {
-  memset(pollset_set, 0, sizeof(*pollset_set));
-  gpr_mu_init(&pollset_set->mu);
+void
+grpc_pollset_set_init (grpc_pollset_set * pollset_set)
+{
+  memset (pollset_set, 0, sizeof (*pollset_set));
+  gpr_mu_init (&pollset_set->mu);
 }
 
-void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set) {
+void
+grpc_pollset_set_destroy (grpc_pollset_set * pollset_set)
+{
   size_t i;
-  gpr_mu_destroy(&pollset_set->mu);
-  for (i = 0; i < pollset_set->fd_count; i++) {
-    GRPC_FD_UNREF(pollset_set->fds[i], "pollset");
-  }
-  gpr_free(pollset_set->pollsets);
-  gpr_free(pollset_set->fds);
+  gpr_mu_destroy (&pollset_set->mu);
+  for (i = 0; i < pollset_set->fd_count; i++)
+    {
+      GRPC_FD_UNREF (pollset_set->fds[i], "pollset");
+    }
+  gpr_free (pollset_set->pollsets);
+  gpr_free (pollset_set->fds);
 }
 
-void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set,
-                                  grpc_pollset *pollset,
-                                  grpc_closure_list *closure_list) {
+void
+grpc_pollset_set_add_pollset (grpc_pollset_set * pollset_set, grpc_pollset * pollset, grpc_closure_list * closure_list)
+{
   size_t i, j;
-  gpr_mu_lock(&pollset_set->mu);
-  if (pollset_set->pollset_count == pollset_set->pollset_capacity) {
-    pollset_set->pollset_capacity =
-        GPR_MAX(8, 2 * pollset_set->pollset_capacity);
-    pollset_set->pollsets =
-        gpr_realloc(pollset_set->pollsets, pollset_set->pollset_capacity *
-                                               sizeof(*pollset_set->pollsets));
-  }
+  gpr_mu_lock (&pollset_set->mu);
+  if (pollset_set->pollset_count == pollset_set->pollset_capacity)
+    {
+      pollset_set->pollset_capacity = GPR_MAX (8, 2 * pollset_set->pollset_capacity);
+      pollset_set->pollsets = gpr_realloc (pollset_set->pollsets, pollset_set->pollset_capacity * sizeof (*pollset_set->pollsets));
+    }
   pollset_set->pollsets[pollset_set->pollset_count++] = pollset;
-  for (i = 0, j = 0; i < pollset_set->fd_count; i++) {
-    if (grpc_fd_is_orphaned(pollset_set->fds[i])) {
-      GRPC_FD_UNREF(pollset_set->fds[i], "pollset");
-    } else {
-      grpc_pollset_add_fd(pollset, pollset_set->fds[i], closure_list);
-      pollset_set->fds[j++] = pollset_set->fds[i];
+  for (i = 0, j = 0; i < pollset_set->fd_count; i++)
+    {
+      if (grpc_fd_is_orphaned (pollset_set->fds[i]))
+	{
+	  GRPC_FD_UNREF (pollset_set->fds[i], "pollset");
+	}
+      else
+	{
+	  grpc_pollset_add_fd (pollset, pollset_set->fds[i], closure_list);
+	  pollset_set->fds[j++] = pollset_set->fds[i];
+	}
     }
-  }
   pollset_set->fd_count = j;
-  gpr_mu_unlock(&pollset_set->mu);
+  gpr_mu_unlock (&pollset_set->mu);
 }
 
-void grpc_pollset_set_del_pollset(grpc_pollset_set *pollset_set,
-                                  grpc_pollset *pollset,
-                                  grpc_closure_list *closure_list) {
+void
+grpc_pollset_set_del_pollset (grpc_pollset_set * pollset_set, grpc_pollset * pollset, grpc_closure_list * closure_list)
+{
   size_t i;
-  gpr_mu_lock(&pollset_set->mu);
-  for (i = 0; i < pollset_set->pollset_count; i++) {
-    if (pollset_set->pollsets[i] == pollset) {
-      pollset_set->pollset_count--;
-      GPR_SWAP(grpc_pollset *, pollset_set->pollsets[i],
-               pollset_set->pollsets[pollset_set->pollset_count]);
-      break;
+  gpr_mu_lock (&pollset_set->mu);
+  for (i = 0; i < pollset_set->pollset_count; i++)
+    {
+      if (pollset_set->pollsets[i] == pollset)
+	{
+	  pollset_set->pollset_count--;
+	  GPR_SWAP (grpc_pollset *, pollset_set->pollsets[i], pollset_set->pollsets[pollset_set->pollset_count]);
+	  break;
+	}
     }
-  }
-  gpr_mu_unlock(&pollset_set->mu);
+  gpr_mu_unlock (&pollset_set->mu);
 }
 
-void grpc_pollset_set_add_fd(grpc_pollset_set *pollset_set, grpc_fd *fd,
-                             grpc_closure_list *closure_list) {
+void
+grpc_pollset_set_add_fd (grpc_pollset_set * pollset_set, grpc_fd * fd, grpc_closure_list * closure_list)
+{
   size_t i;
-  gpr_mu_lock(&pollset_set->mu);
-  if (pollset_set->fd_count == pollset_set->fd_capacity) {
-    pollset_set->fd_capacity = GPR_MAX(8, 2 * pollset_set->fd_capacity);
-    pollset_set->fds = gpr_realloc(
-        pollset_set->fds, pollset_set->fd_capacity * sizeof(*pollset_set->fds));
-  }
-  GRPC_FD_REF(fd, "pollset_set");
+  gpr_mu_lock (&pollset_set->mu);
+  if (pollset_set->fd_count == pollset_set->fd_capacity)
+    {
+      pollset_set->fd_capacity = GPR_MAX (8, 2 * pollset_set->fd_capacity);
+      pollset_set->fds = gpr_realloc (pollset_set->fds, pollset_set->fd_capacity * sizeof (*pollset_set->fds));
+    }
+  GRPC_FD_REF (fd, "pollset_set");
   pollset_set->fds[pollset_set->fd_count++] = fd;
-  for (i = 0; i < pollset_set->pollset_count; i++) {
-    grpc_pollset_add_fd(pollset_set->pollsets[i], fd, closure_list);
-  }
-  gpr_mu_unlock(&pollset_set->mu);
+  for (i = 0; i < pollset_set->pollset_count; i++)
+    {
+      grpc_pollset_add_fd (pollset_set->pollsets[i], fd, closure_list);
+    }
+  gpr_mu_unlock (&pollset_set->mu);
 }
 
-void grpc_pollset_set_del_fd(grpc_pollset_set *pollset_set, grpc_fd *fd,
-                             grpc_closure_list *closure_list) {
+void
+grpc_pollset_set_del_fd (grpc_pollset_set * pollset_set, grpc_fd * fd, grpc_closure_list * closure_list)
+{
   size_t i;
-  gpr_mu_lock(&pollset_set->mu);
-  for (i = 0; i < pollset_set->fd_count; i++) {
-    if (pollset_set->fds[i] == fd) {
-      pollset_set->fd_count--;
-      GPR_SWAP(grpc_fd *, pollset_set->fds[i],
-               pollset_set->fds[pollset_set->fd_count]);
-      GRPC_FD_UNREF(fd, "pollset_set");
-      break;
+  gpr_mu_lock (&pollset_set->mu);
+  for (i = 0; i < pollset_set->fd_count; i++)
+    {
+      if (pollset_set->fds[i] == fd)
+	{
+	  pollset_set->fd_count--;
+	  GPR_SWAP (grpc_fd *, pollset_set->fds[i], pollset_set->fds[pollset_set->fd_count]);
+	  GRPC_FD_UNREF (fd, "pollset_set");
+	  break;
+	}
     }
-  }
-  gpr_mu_unlock(&pollset_set->mu);
+  gpr_mu_unlock (&pollset_set->mu);
 }
 
 #endif /* GPR_POSIX_SOCKET */

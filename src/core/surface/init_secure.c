@@ -36,7 +36,9 @@
 #include "src/core/security/secure_endpoint.h"
 #include "src/core/tsi/transport_security_interface.h"
 
-void grpc_security_pre_init(void) {
-  grpc_register_tracer("secure_endpoint", &grpc_trace_secure_endpoint);
-  grpc_register_tracer("transport_security", &tsi_tracing_enabled);
+void
+grpc_security_pre_init (void)
+{
+  grpc_register_tracer ("secure_endpoint", &grpc_trace_secure_endpoint);
+  grpc_register_tracer ("transport_security", &tsi_tracing_enabled);
 }

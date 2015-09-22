@@ -37,7 +37,8 @@
 #include "src/core/tsi/transport_security_interface.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs. */
@@ -55,7 +56,7 @@ extern "C" {
    This object creates tsi_handshaker objects implemented in terms of the
    TLS 1.2 specificiation.  */
 
-typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
+  typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
 
 /* Creates a client handshaker factory.
    - pem_private_key is the buffer containing the PEM encoding of the client's
@@ -84,13 +85,7 @@ typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
 
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
-tsi_result tsi_create_ssl_client_handshaker_factory(
-    const unsigned char* pem_private_key, size_t pem_private_key_size,
-    const unsigned char* pem_cert_chain, size_t pem_cert_chain_size,
-    const unsigned char* pem_root_certs, size_t pem_root_certs_size,
-    const char* cipher_suites, const unsigned char** alpn_protocols,
-    const unsigned char* alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_handshaker_factory** factory);
+  tsi_result tsi_create_ssl_client_handshaker_factory (const unsigned char *pem_private_key, size_t pem_private_key_size, const unsigned char *pem_cert_chain, size_t pem_cert_chain_size, const unsigned char *pem_root_certs, size_t pem_root_certs_size, const char *cipher_suites, const unsigned char **alpn_protocols, const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols, tsi_ssl_handshaker_factory ** factory);
 
 /* Creates a server handshaker factory.
    - version indicates which version of the specification to use.
@@ -130,15 +125,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
 
    - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
      where a parameter is invalid.  */
-tsi_result tsi_create_ssl_server_handshaker_factory(
-    const unsigned char** pem_private_keys,
-    const size_t* pem_private_keys_sizes, const unsigned char** pem_cert_chains,
-    const size_t* pem_cert_chains_sizes, size_t key_cert_pair_count,
-    const unsigned char* pem_client_root_certs,
-    size_t pem_client_root_certs_size, int force_client_auth,
-    const char* cipher_suites, const unsigned char** alpn_protocols,
-    const unsigned char* alpn_protocols_lengths, uint16_t num_alpn_protocols,
-    tsi_ssl_handshaker_factory** factory);
+  tsi_result tsi_create_ssl_server_handshaker_factory (const unsigned char **pem_private_keys, const size_t * pem_private_keys_sizes, const unsigned char **pem_cert_chains, const size_t * pem_cert_chains_sizes, size_t key_cert_pair_count, const unsigned char *pem_client_root_certs, size_t pem_client_root_certs_size, int force_client_auth, const char *cipher_suites, const unsigned char **alpn_protocols, const unsigned char *alpn_protocols_lengths, uint16_t num_alpn_protocols, tsi_ssl_handshaker_factory ** factory);
 
 /* Creates a handshaker.
   - self is the factory from which the handshaker will be created.
@@ -150,13 +137,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
 
   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
     where a parameter is invalid.  */
-tsi_result tsi_ssl_handshaker_factory_create_handshaker(
-    tsi_ssl_handshaker_factory* self, const char* server_name_indication,
-    tsi_handshaker** handshaker);
+  tsi_result tsi_ssl_handshaker_factory_create_handshaker (tsi_ssl_handshaker_factory * self, const char *server_name_indication, tsi_handshaker ** handshaker);
 
 /* Destroys the handshaker factory. WARNING: it is unsafe to destroy a factory
    while handshakers created with this factory are still in use.  */
-void tsi_ssl_handshaker_factory_destroy(tsi_ssl_handshaker_factory* self);
+  void tsi_ssl_handshaker_factory_destroy (tsi_ssl_handshaker_factory * self);
 
 /* Util that checks that an ssl peer matches a specific name.
    Still TODO(jboeuf):
@@ -164,10 +149,10 @@ void tsi_ssl_handshaker_factory_destroy(tsi_ssl_handshaker_factory* self);
    - handle %encoded chars.
    - handle public suffix wildchar more strictly (e.g. *.co.uk)
    - handle IP addresses in SAN. */
-int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name);
+  int tsi_ssl_peer_matches_name (const tsi_peer * peer, const char *name);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H */
+#endif				/* GRPC_INTERNAL_CORE_TSI_SSL_TRANSPORT_SECURITY_H */

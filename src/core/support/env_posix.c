@@ -44,14 +44,18 @@
 #include "src/core/support/string.h"
 #include <grpc/support/string_util.h>
 
-char *gpr_getenv(const char *name) {
-  char *result = getenv(name);
-  return result == NULL ? result : gpr_strdup(result);
+char *
+gpr_getenv (const char *name)
+{
+  char *result = getenv (name);
+  return result == NULL ? result : gpr_strdup (result);
 }
 
-void gpr_setenv(const char *name, const char *value) {
-  int res = setenv(name, value, 1);
-  GPR_ASSERT(res == 0);
+void
+gpr_setenv (const char *name, const char *value)
+{
+  int res = setenv (name, value, 1);
+  GPR_ASSERT (res == 0);
 }
 
 #endif /* GPR_POSIX_ENV */

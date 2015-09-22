@@ -38,87 +38,71 @@
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
 
-static void test_format_get_request(void) {
-  grpc_httpcli_header hdr = {"x-yz", "abc"};
+static void
+test_format_get_request (void)
+{
+  grpc_httpcli_header hdr = { "x-yz", "abc" };
   grpc_httpcli_request req;
   gpr_slice slice;
 
-  memset(&req, 0, sizeof(req));
+  memset (&req, 0, sizeof (req));
   req.host = "example.com";
   req.path = "/index.html";
   req.hdr_count = 1;
   req.hdrs = &hdr;
 
-  slice = grpc_httpcli_format_get_request(&req);
+  slice = grpc_httpcli_format_get_request (&req);
 
-  GPR_ASSERT(0 == gpr_slice_str_cmp(slice,
-                                    "GET /index.html HTTP/1.0\r\n"
-                                    "Host: example.com\r\n"
-                                    "Connection: close\r\n"
-                                    "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                    "\r\n"
-                                    "x-yz: abc\r\n"
-                                    "\r\n"));
+  GPR_ASSERT (0 == gpr_slice_str_cmp (slice, "GET /index.html HTTP/1.0\r\n" "Host: example.com\r\n" "Connection: close\r\n" "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n" "x-yz: abc\r\n" "\r\n"));
 
-  gpr_slice_unref(slice);
+  gpr_slice_unref (slice);
 }
 
-static void test_format_post_request(void) {
-  grpc_httpcli_header hdr = {"x-yz", "abc"};
+static void
+test_format_post_request (void)
+{
+  grpc_httpcli_header hdr = { "x-yz", "abc" };
   grpc_httpcli_request req;
   gpr_slice slice;
   char body_bytes[] = "fake body";
   size_t body_len = 9;
 
-  memset(&req, 0, sizeof(req));
+  memset (&req, 0, sizeof (req));
   req.host = "example.com";
   req.path = "/index.html";
   req.hdr_count = 1;
   req.hdrs = &hdr;
 
-  slice = grpc_httpcli_format_post_request(&req, body_bytes, body_len);
+  slice = grpc_httpcli_format_post_request (&req, body_bytes, body_len);
 
-  GPR_ASSERT(0 == gpr_slice_str_cmp(slice,
-                                    "POST /index.html HTTP/1.0\r\n"
-                                    "Host: example.com\r\n"
-                                    "Connection: close\r\n"
-                                    "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                    "\r\n"
-                                    "x-yz: abc\r\n"
-                                    "Content-Type: text/plain\r\n"
-                                    "Content-Length: 9\r\n"
-                                    "\r\n"
-                                    "fake body"));
+  GPR_ASSERT (0 == gpr_slice_str_cmp (slice, "POST /index.html HTTP/1.0\r\n" "Host: example.com\r\n" "Connection: close\r\n" "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n" "x-yz: abc\r\n" "Content-Type: text/plain\r\n" "Content-Length: 9\r\n" "\r\n" "fake body"));
 
-  gpr_slice_unref(slice);
+  gpr_slice_unref (slice);
 }
 
-static void test_format_post_request_no_body(void) {
-  grpc_httpcli_header hdr = {"x-yz", "abc"};
+static void
+test_format_post_request_no_body (void)
+{
+  grpc_httpcli_header hdr = { "x-yz", "abc" };
   grpc_httpcli_request req;
   gpr_slice slice;
 
-  memset(&req, 0, sizeof(req));
+  memset (&req, 0, sizeof (req));
   req.host = "example.com";
   req.path = "/index.html";
   req.hdr_count = 1;
   req.hdrs = &hdr;
 
-  slice = grpc_httpcli_format_post_request(&req, NULL, 0);
+  slice = grpc_httpcli_format_post_request (&req, NULL, 0);
 
-  GPR_ASSERT(0 == gpr_slice_str_cmp(slice,
-                                    "POST /index.html HTTP/1.0\r\n"
-                                    "Host: example.com\r\n"
-                                    "Connection: close\r\n"
-                                    "User-Agent: " GRPC_HTTPCLI_USER_AGENT
-                                    "\r\n"
-                                    "x-yz: abc\r\n"
-                                    "\r\n"));
+  GPR_ASSERT (0 == gpr_slice_str_cmp (slice, "POST /index.html HTTP/1.0\r\n" "Host: example.com\r\n" "Connection: close\r\n" "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n" "x-yz: abc\r\n" "\r\n"));
 
-  gpr_slice_unref(slice);
+  gpr_slice_unref (slice);
 }
 
-static void test_format_post_request_content_type_override(void) {
+static void
+test_format_post_request_content_type_override (void)
+{
   grpc_httpcli_header hdrs[2];
   grpc_httpcli_request req;
   gpr_slice slice;
@@ -129,36 +113,28 @@ static void test_format_post_request_content_type_override(void) {
   hdrs[0].value = "abc";
   hdrs[1].key = "Content-Type";
   hdrs[1].value = "application/x-www-form-urlencoded";
-  memset(&req, 0, sizeof(req));
+  memset (&req, 0, sizeof (req));
   req.host = "example.com";
   req.path = "/index.html";
   req.hdr_count = 2;
   req.hdrs = hdrs;
 
-  slice = grpc_httpcli_format_post_request(&req, body_bytes, body_len);
+  slice = grpc_httpcli_format_post_request (&req, body_bytes, body_len);
 
-  GPR_ASSERT(0 == gpr_slice_str_cmp(
-                      slice,
-                      "POST /index.html HTTP/1.0\r\n"
-                      "Host: example.com\r\n"
-                      "Connection: close\r\n"
-                      "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"
-                      "x-yz: abc\r\n"
-                      "Content-Type: application/x-www-form-urlencoded\r\n"
-                      "Content-Length: 11\r\n"
-                      "\r\n"
-                      "fake%20body"));
+  GPR_ASSERT (0 == gpr_slice_str_cmp (slice, "POST /index.html HTTP/1.0\r\n" "Host: example.com\r\n" "Connection: close\r\n" "User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n" "x-yz: abc\r\n" "Content-Type: application/x-www-form-urlencoded\r\n" "Content-Length: 11\r\n" "\r\n" "fake%20body"));
 
-  gpr_slice_unref(slice);
+  gpr_slice_unref (slice);
 }
 
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
+int
+main (int argc, char **argv)
+{
+  grpc_test_init (argc, argv);
 
-  test_format_get_request();
-  test_format_post_request();
-  test_format_post_request_no_body();
-  test_format_post_request_content_type_override();
+  test_format_get_request ();
+  test_format_post_request ();
+  test_format_post_request_no_body ();
+  test_format_post_request_content_type_override ();
 
   return 0;
 }

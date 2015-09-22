@@ -40,16 +40,16 @@
 
 typedef struct grpc_end2end_proxy grpc_end2end_proxy;
 
-typedef struct grpc_end2end_proxy_def {
-  grpc_server *(*create_server)(const char *port);
-  grpc_channel *(*create_client)(const char *target);
+typedef struct grpc_end2end_proxy_def
+{
+  grpc_server *(*create_server) (const char *port);
+  grpc_channel *(*create_client) (const char *target);
 } grpc_end2end_proxy_def;
 
-grpc_end2end_proxy *grpc_end2end_proxy_create(
-    const grpc_end2end_proxy_def *def);
-void grpc_end2end_proxy_destroy(grpc_end2end_proxy *proxy);
+grpc_end2end_proxy *grpc_end2end_proxy_create (const grpc_end2end_proxy_def * def);
+void grpc_end2end_proxy_destroy (grpc_end2end_proxy * proxy);
 
-const char *grpc_end2end_proxy_get_client_target(grpc_end2end_proxy *proxy);
-const char *grpc_end2end_proxy_get_server_port(grpc_end2end_proxy *proxy);
+const char *grpc_end2end_proxy_get_client_target (grpc_end2end_proxy * proxy);
+const char *grpc_end2end_proxy_get_server_port (grpc_end2end_proxy * proxy);
 
 #endif /* GRPC_TEST_CORE_END2END_FIXTURES_PROXY_H */

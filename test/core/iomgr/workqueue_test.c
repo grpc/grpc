@@ -40,56 +40,61 @@
 
 static grpc_pollset g_pollset;
 
-static void must_succeed(void *p, int success,
-                         grpc_closure_list *closure_list) {
-  GPR_ASSERT(success == 1);
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  *(int *)p = 1;
-  grpc_pollset_kick(&g_pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+static void
+must_succeed (void *p, int success, grpc_closure_list * closure_list)
+{
+  GPR_ASSERT (success == 1);
+  gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
+  *(int *) p = 1;
+  grpc_pollset_kick (&g_pollset, NULL);
+  gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
 }
 
-static void test_add_closure(void) {
+static void
+test_add_closure (void)
+{
   grpc_closure c;
   int done = 0;
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
-  grpc_workqueue *wq = grpc_workqueue_create(&closure_list);
-  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+  grpc_workqueue *wq = grpc_workqueue_create (&closure_list);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE (5);
   grpc_pollset_worker worker;
-  grpc_closure_init(&c, must_succeed, &done);
+  grpc_closure_init (&c, must_succeed, &done);
 
-  grpc_workqueue_push(wq, &c, 1);
-  grpc_workqueue_add_to_pollset(wq, &g_pollset, &closure_list);
+  grpc_workqueue_push (wq, &c, 1);
+  grpc_workqueue_add_to_pollset (wq, &g_pollset, &closure_list);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  GPR_ASSERT(!done);
-  grpc_pollset_work(&g_pollset, &worker, gpr_now(deadline.clock_type), deadline,
-                    &closure_list);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
-  grpc_closure_list_run(&closure_list);
-  GPR_ASSERT(done);
+  gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
+  GPR_ASSERT (!done);
+  grpc_pollset_work (&g_pollset, &worker, gpr_now (deadline.clock_type), deadline, &closure_list);
+  gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
+  grpc_closure_list_run (&closure_list);
+  GPR_ASSERT (done);
 
-  GRPC_WORKQUEUE_UNREF(wq, "destroy", &closure_list);
-  grpc_closure_list_run(&closure_list);
+  GRPC_WORKQUEUE_UNREF (wq, "destroy", &closure_list);
+  grpc_closure_list_run (&closure_list);
 }
 
-static void destroy_pollset(void *p, int success,
-                            grpc_closure_list *closure_list) {
-  grpc_pollset_destroy(p);
+static void
+destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+{
+  grpc_pollset_destroy (p);
 }
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
   grpc_closure destroyed;
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
-  grpc_test_init(argc, argv);
-  grpc_init();
-  grpc_pollset_init(&g_pollset);
+  grpc_test_init (argc, argv);
+  grpc_init ();
+  grpc_pollset_init (&g_pollset);
 
-  test_add_closure();
+  test_add_closure ();
 
-  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&g_pollset, &destroyed, &closure_list);
-  grpc_closure_list_run(&closure_list);
-  grpc_shutdown();
+  grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
+  grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
+  grpc_closure_list_run (&closure_list);
+  grpc_shutdown ();
   return 0;
 }

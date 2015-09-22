@@ -37,65 +37,78 @@
 
 #include <string.h>
 
-static void store_ensure_capacity(grpc_credentials_md_store *store) {
-  if (store->num_entries == store->allocated) {
-    store->allocated = (store->allocated == 0) ? 1 : store->allocated * 2;
-    store->entries = gpr_realloc(
-        store->entries, store->allocated * sizeof(grpc_credentials_md));
-  }
-}
-
-grpc_credentials_md_store *grpc_credentials_md_store_create(
-    size_t initial_capacity) {
-  grpc_credentials_md_store *store =
-      gpr_malloc(sizeof(grpc_credentials_md_store));
-  memset(store, 0, sizeof(grpc_credentials_md_store));
-  if (initial_capacity > 0) {
-    store->entries = gpr_malloc(initial_capacity * sizeof(grpc_credentials_md));
-    store->allocated = initial_capacity;
-  }
-  gpr_ref_init(&store->refcount, 1);
-  return store;
-}
-
-void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
-                                   gpr_slice key, gpr_slice value) {
-  if (store == NULL) return;
-  store_ensure_capacity(store);
-  store->entries[store->num_entries].key = gpr_slice_ref(key);
-  store->entries[store->num_entries].value = gpr_slice_ref(value);
-  store->num_entries++;
-}
-
-void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
-                                            const char *key,
-                                            const char *value) {
-  if (store == NULL) return;
-  store_ensure_capacity(store);
-  store->entries[store->num_entries].key = gpr_slice_from_copied_string(key);
-  store->entries[store->num_entries].value =
-      gpr_slice_from_copied_string(value);
-  store->num_entries++;
-}
-
-grpc_credentials_md_store *grpc_credentials_md_store_ref(
-    grpc_credentials_md_store *store) {
-  if (store == NULL) return NULL;
-  gpr_ref(&store->refcount);
-  return store;
-}
-
-void grpc_credentials_md_store_unref(grpc_credentials_md_store *store) {
-  if (store == NULL) return;
-  if (gpr_unref(&store->refcount)) {
-    if (store->entries != NULL) {
-      size_t i;
-      for (i = 0; i < store->num_entries; i++) {
-        gpr_slice_unref(store->entries[i].key);
-        gpr_slice_unref(store->entries[i].value);
-      }
-      gpr_free(store->entries);
+static void
+store_ensure_capacity (grpc_credentials_md_store * store)
+{
+  if (store->num_entries == store->allocated)
+    {
+      store->allocated = (store->allocated == 0) ? 1 : store->allocated * 2;
+      store->entries = gpr_realloc (store->entries, store->allocated * sizeof (grpc_credentials_md));
     }
-    gpr_free(store);
-  }
+}
+
+grpc_credentials_md_store *
+grpc_credentials_md_store_create (size_t initial_capacity)
+{
+  grpc_credentials_md_store *store = gpr_malloc (sizeof (grpc_credentials_md_store));
+  memset (store, 0, sizeof (grpc_credentials_md_store));
+  if (initial_capacity > 0)
+    {
+      store->entries = gpr_malloc (initial_capacity * sizeof (grpc_credentials_md));
+      store->allocated = initial_capacity;
+    }
+  gpr_ref_init (&store->refcount, 1);
+  return store;
+}
+
+void
+grpc_credentials_md_store_add (grpc_credentials_md_store * store, gpr_slice key, gpr_slice value)
+{
+  if (store == NULL)
+    return;
+  store_ensure_capacity (store);
+  store->entries[store->num_entries].key = gpr_slice_ref (key);
+  store->entries[store->num_entries].value = gpr_slice_ref (value);
+  store->num_entries++;
+}
+
+void
+grpc_credentials_md_store_add_cstrings (grpc_credentials_md_store * store, const char *key, const char *value)
+{
+  if (store == NULL)
+    return;
+  store_ensure_capacity (store);
+  store->entries[store->num_entries].key = gpr_slice_from_copied_string (key);
+  store->entries[store->num_entries].value = gpr_slice_from_copied_string (value);
+  store->num_entries++;
+}
+
+grpc_credentials_md_store *
+grpc_credentials_md_store_ref (grpc_credentials_md_store * store)
+{
+  if (store == NULL)
+    return NULL;
+  gpr_ref (&store->refcount);
+  return store;
+}
+
+void
+grpc_credentials_md_store_unref (grpc_credentials_md_store * store)
+{
+  if (store == NULL)
+    return;
+  if (gpr_unref (&store->refcount))
+    {
+      if (store->entries != NULL)
+	{
+	  size_t i;
+	  for (i = 0; i < store->num_entries; i++)
+	    {
+	      gpr_slice_unref (store->entries[i].key);
+	      gpr_slice_unref (store->entries[i].value);
+	    }
+	  gpr_free (store->entries);
+	}
+      gpr_free (store);
+    }
 }

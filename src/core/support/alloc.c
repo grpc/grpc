@@ -36,31 +36,47 @@
 #include <stdlib.h>
 #include <grpc/support/port_platform.h>
 
-void *gpr_malloc(size_t size) {
-  void *p = malloc(size);
-  if (!p) {
-    abort();
-  }
+void *
+gpr_malloc (size_t size)
+{
+  void *p = malloc (size);
+  if (!p)
+    {
+      abort ();
+    }
   return p;
 }
 
-void gpr_free(void *p) { free(p); }
+void
+gpr_free (void *p)
+{
+  free (p);
+}
 
-void *gpr_realloc(void *p, size_t size) {
-  p = realloc(p, size);
-  if (!p) {
-    abort();
-  }
+void *
+gpr_realloc (void *p, size_t size)
+{
+  p = realloc (p, size);
+  if (!p)
+    {
+      abort ();
+    }
   return p;
 }
 
-void *gpr_malloc_aligned(size_t size, size_t alignment_log) {
-  size_t alignment = ((size_t)1) << alignment_log;
-  size_t extra = alignment - 1 + sizeof(void *);
-  void *p = gpr_malloc(size + extra);
-  void **ret = (void **)(((gpr_uintptr)p + extra) & ~(alignment - 1));
+void *
+gpr_malloc_aligned (size_t size, size_t alignment_log)
+{
+  size_t alignment = ((size_t) 1) << alignment_log;
+  size_t extra = alignment - 1 + sizeof (void *);
+  void *p = gpr_malloc (size + extra);
+  void **ret = (void **) (((gpr_uintptr) p + extra) & ~(alignment - 1));
   ret[-1] = p;
-  return (void *)ret;
+  return (void *) ret;
 }
 
-void gpr_free_aligned(void *ptr) { free(((void **)ptr)[-1]); }
+void
+gpr_free_aligned (void *ptr)
+{
+  free (((void **) ptr)[-1]);
+}

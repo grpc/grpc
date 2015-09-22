@@ -40,14 +40,11 @@
     grpc_resolver */
 typedef struct grpc_client_config grpc_client_config;
 
-grpc_client_config *grpc_client_config_create();
-void grpc_client_config_ref(grpc_client_config *client_config);
-void grpc_client_config_unref(grpc_client_config *client_config,
-                              grpc_closure_list *closure_list);
+grpc_client_config *grpc_client_config_create ();
+void grpc_client_config_ref (grpc_client_config * client_config);
+void grpc_client_config_unref (grpc_client_config * client_config, grpc_closure_list * closure_list);
 
-void grpc_client_config_set_lb_policy(grpc_client_config *client_config,
-                                      grpc_lb_policy *lb_policy);
-grpc_lb_policy *grpc_client_config_get_lb_policy(
-    grpc_client_config *client_config);
+void grpc_client_config_set_lb_policy (grpc_client_config * client_config, grpc_lb_policy * lb_policy);
+grpc_lb_policy *grpc_client_config_get_lb_policy (grpc_client_config * client_config);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H */

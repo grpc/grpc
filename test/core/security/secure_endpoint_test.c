@@ -47,149 +47,158 @@
 
 static grpc_pollset g_pollset;
 
-static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
-    size_t slice_size, gpr_slice *leftover_slices, size_t leftover_nslices) {
+static grpc_endpoint_test_fixture
+secure_endpoint_create_fixture_tcp_socketpair (size_t slice_size, gpr_slice * leftover_slices, size_t leftover_nslices)
+{
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
-  tsi_frame_protector *fake_read_protector = tsi_create_fake_protector(NULL);
-  tsi_frame_protector *fake_write_protector = tsi_create_fake_protector(NULL);
+  tsi_frame_protector *fake_read_protector = tsi_create_fake_protector (NULL);
+  tsi_frame_protector *fake_write_protector = tsi_create_fake_protector (NULL);
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair tcp;
 
-  tcp = grpc_iomgr_create_endpoint_pair("fixture", slice_size);
-  grpc_endpoint_add_to_pollset(tcp.client, &g_pollset, &closure_list);
-  grpc_endpoint_add_to_pollset(tcp.server, &g_pollset, &closure_list);
+  tcp = grpc_iomgr_create_endpoint_pair ("fixture", slice_size);
+  grpc_endpoint_add_to_pollset (tcp.client, &g_pollset, &closure_list);
+  grpc_endpoint_add_to_pollset (tcp.server, &g_pollset, &closure_list);
 
-  if (leftover_nslices == 0) {
-    f.client_ep =
-        grpc_secure_endpoint_create(fake_read_protector, tcp.client, NULL, 0);
-  } else {
-    unsigned i;
-    tsi_result result;
-    size_t still_pending_size;
-    size_t total_buffer_size = 8192;
-    size_t buffer_size = total_buffer_size;
-    gpr_uint8 *encrypted_buffer = gpr_malloc(buffer_size);
-    gpr_uint8 *cur = encrypted_buffer;
-    gpr_slice encrypted_leftover;
-    for (i = 0; i < leftover_nslices; i++) {
-      gpr_slice plain = leftover_slices[i];
-      gpr_uint8 *message_bytes = GPR_SLICE_START_PTR(plain);
-      size_t message_size = GPR_SLICE_LENGTH(plain);
-      while (message_size > 0) {
-        size_t protected_buffer_size_to_send = buffer_size;
-        size_t processed_message_size = message_size;
-        result = tsi_frame_protector_protect(
-            fake_write_protector, message_bytes, &processed_message_size, cur,
-            &protected_buffer_size_to_send);
-        GPR_ASSERT(result == TSI_OK);
-        message_bytes += processed_message_size;
-        message_size -= processed_message_size;
-        cur += protected_buffer_size_to_send;
-        GPR_ASSERT(buffer_size >= protected_buffer_size_to_send);
-        buffer_size -= protected_buffer_size_to_send;
-      }
-      gpr_slice_unref(plain);
+  if (leftover_nslices == 0)
+    {
+      f.client_ep = grpc_secure_endpoint_create (fake_read_protector, tcp.client, NULL, 0);
     }
-    do {
-      size_t protected_buffer_size_to_send = buffer_size;
-      result = tsi_frame_protector_protect_flush(fake_write_protector, cur,
-                                                 &protected_buffer_size_to_send,
-                                                 &still_pending_size);
-      GPR_ASSERT(result == TSI_OK);
-      cur += protected_buffer_size_to_send;
-      GPR_ASSERT(buffer_size >= protected_buffer_size_to_send);
-      buffer_size -= protected_buffer_size_to_send;
-    } while (still_pending_size > 0);
-    encrypted_leftover = gpr_slice_from_copied_buffer(
-        (const char *)encrypted_buffer, total_buffer_size - buffer_size);
-    f.client_ep = grpc_secure_endpoint_create(fake_read_protector, tcp.client,
-                                              &encrypted_leftover, 1);
-    gpr_slice_unref(encrypted_leftover);
-    gpr_free(encrypted_buffer);
-  }
+  else
+    {
+      unsigned i;
+      tsi_result result;
+      size_t still_pending_size;
+      size_t total_buffer_size = 8192;
+      size_t buffer_size = total_buffer_size;
+      gpr_uint8 *encrypted_buffer = gpr_malloc (buffer_size);
+      gpr_uint8 *cur = encrypted_buffer;
+      gpr_slice encrypted_leftover;
+      for (i = 0; i < leftover_nslices; i++)
+	{
+	  gpr_slice plain = leftover_slices[i];
+	  gpr_uint8 *message_bytes = GPR_SLICE_START_PTR (plain);
+	  size_t message_size = GPR_SLICE_LENGTH (plain);
+	  while (message_size > 0)
+	    {
+	      size_t protected_buffer_size_to_send = buffer_size;
+	      size_t processed_message_size = message_size;
+	      result = tsi_frame_protector_protect (fake_write_protector, message_bytes, &processed_message_size, cur, &protected_buffer_size_to_send);
+	      GPR_ASSERT (result == TSI_OK);
+	      message_bytes += processed_message_size;
+	      message_size -= processed_message_size;
+	      cur += protected_buffer_size_to_send;
+	      GPR_ASSERT (buffer_size >= protected_buffer_size_to_send);
+	      buffer_size -= protected_buffer_size_to_send;
+	    }
+	  gpr_slice_unref (plain);
+	}
+      do
+	{
+	  size_t protected_buffer_size_to_send = buffer_size;
+	  result = tsi_frame_protector_protect_flush (fake_write_protector, cur, &protected_buffer_size_to_send, &still_pending_size);
+	  GPR_ASSERT (result == TSI_OK);
+	  cur += protected_buffer_size_to_send;
+	  GPR_ASSERT (buffer_size >= protected_buffer_size_to_send);
+	  buffer_size -= protected_buffer_size_to_send;
+	}
+      while (still_pending_size > 0);
+      encrypted_leftover = gpr_slice_from_copied_buffer ((const char *) encrypted_buffer, total_buffer_size - buffer_size);
+      f.client_ep = grpc_secure_endpoint_create (fake_read_protector, tcp.client, &encrypted_leftover, 1);
+      gpr_slice_unref (encrypted_leftover);
+      gpr_free (encrypted_buffer);
+    }
 
-  f.server_ep =
-      grpc_secure_endpoint_create(fake_write_protector, tcp.server, NULL, 0);
-  grpc_closure_list_run(&closure_list);
+  f.server_ep = grpc_secure_endpoint_create (fake_write_protector, tcp.server, NULL, 0);
+  grpc_closure_list_run (&closure_list);
   return f;
 }
 
 static grpc_endpoint_test_fixture
-secure_endpoint_create_fixture_tcp_socketpair_noleftover(size_t slice_size) {
-  return secure_endpoint_create_fixture_tcp_socketpair(slice_size, NULL, 0);
+secure_endpoint_create_fixture_tcp_socketpair_noleftover (size_t slice_size)
+{
+  return secure_endpoint_create_fixture_tcp_socketpair (slice_size, NULL, 0);
 }
 
 static grpc_endpoint_test_fixture
-secure_endpoint_create_fixture_tcp_socketpair_leftover(size_t slice_size) {
-  gpr_slice s =
-      gpr_slice_from_copied_string("hello world 12345678900987654321");
+secure_endpoint_create_fixture_tcp_socketpair_leftover (size_t slice_size)
+{
+  gpr_slice s = gpr_slice_from_copied_string ("hello world 12345678900987654321");
   grpc_endpoint_test_fixture f;
 
-  f = secure_endpoint_create_fixture_tcp_socketpair(slice_size, &s, 1);
+  f = secure_endpoint_create_fixture_tcp_socketpair (slice_size, &s, 1);
   return f;
 }
 
-static void clean_up(void) {}
-
-static grpc_endpoint_test_config configs[] = {
-    {"secure_ep/tcp_socketpair",
-     secure_endpoint_create_fixture_tcp_socketpair_noleftover, clean_up},
-    {"secure_ep/tcp_socketpair_leftover",
-     secure_endpoint_create_fixture_tcp_socketpair_leftover, clean_up},
-};
-
-static void inc_call_ctr(void *arg, int success,
-                         grpc_closure_list *closure_list) {
-  ++*(int *)arg;
+static void
+clean_up (void)
+{
 }
 
-static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
-  grpc_endpoint_test_fixture f = config.create_fixture(slice_size);
+static grpc_endpoint_test_config configs[] = {
+  {"secure_ep/tcp_socketpair",
+   secure_endpoint_create_fixture_tcp_socketpair_noleftover, clean_up},
+  {"secure_ep/tcp_socketpair_leftover",
+   secure_endpoint_create_fixture_tcp_socketpair_leftover, clean_up},
+};
+
+static void
+inc_call_ctr (void *arg, int success, grpc_closure_list * closure_list)
+{
+  ++*(int *) arg;
+}
+
+static void
+test_leftover (grpc_endpoint_test_config config, size_t slice_size)
+{
+  grpc_endpoint_test_fixture f = config.create_fixture (slice_size);
   gpr_slice_buffer incoming;
-  gpr_slice s =
-      gpr_slice_from_copied_string("hello world 12345678900987654321");
+  gpr_slice s = gpr_slice_from_copied_string ("hello world 12345678900987654321");
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   int n = 0;
   grpc_closure done_closure;
-  gpr_log(GPR_INFO, "Start test left over");
+  gpr_log (GPR_INFO, "Start test left over");
 
-  gpr_slice_buffer_init(&incoming);
-  grpc_closure_init(&done_closure, inc_call_ctr, &n);
-  grpc_endpoint_read(f.client_ep, &incoming, &done_closure, &closure_list);
-  grpc_closure_list_run(&closure_list);
-  GPR_ASSERT(n == 1);
-  GPR_ASSERT(incoming.count == 1);
-  GPR_ASSERT(0 == gpr_slice_cmp(s, incoming.slices[0]));
+  gpr_slice_buffer_init (&incoming);
+  grpc_closure_init (&done_closure, inc_call_ctr, &n);
+  grpc_endpoint_read (f.client_ep, &incoming, &done_closure, &closure_list);
+  grpc_closure_list_run (&closure_list);
+  GPR_ASSERT (n == 1);
+  GPR_ASSERT (incoming.count == 1);
+  GPR_ASSERT (0 == gpr_slice_cmp (s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown(f.client_ep, &closure_list);
-  grpc_endpoint_shutdown(f.server_ep, &closure_list);
-  grpc_endpoint_destroy(f.client_ep, &closure_list);
-  grpc_endpoint_destroy(f.server_ep, &closure_list);
-  grpc_closure_list_run(&closure_list);
-  gpr_slice_unref(s);
-  gpr_slice_buffer_destroy(&incoming);
+  grpc_endpoint_shutdown (f.client_ep, &closure_list);
+  grpc_endpoint_shutdown (f.server_ep, &closure_list);
+  grpc_endpoint_destroy (f.client_ep, &closure_list);
+  grpc_endpoint_destroy (f.server_ep, &closure_list);
+  grpc_closure_list_run (&closure_list);
+  gpr_slice_unref (s);
+  gpr_slice_buffer_destroy (&incoming);
 
-  clean_up();
+  clean_up ();
 }
 
-static void destroy_pollset(void *p, int success,
-                            grpc_closure_list *closure_list) {
-  grpc_pollset_destroy(p);
+static void
+destroy_pollset (void *p, int success, grpc_closure_list * closure_list)
+{
+  grpc_pollset_destroy (p);
 }
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
   grpc_closure destroyed;
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
-  grpc_test_init(argc, argv);
+  grpc_test_init (argc, argv);
 
-  grpc_init();
-  grpc_pollset_init(&g_pollset);
-  grpc_endpoint_tests(configs[0], &g_pollset);
-  test_leftover(configs[1], 1);
-  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
-  grpc_pollset_shutdown(&g_pollset, &destroyed, &closure_list);
-  grpc_closure_list_run(&closure_list);
-  grpc_shutdown();
+  grpc_init ();
+  grpc_pollset_init (&g_pollset);
+  grpc_endpoint_tests (configs[0], &g_pollset);
+  test_leftover (configs[1], 1);
+  grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
+  grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
+  grpc_closure_list_run (&closure_list);
+  grpc_shutdown ();
 
   return 0;
 }

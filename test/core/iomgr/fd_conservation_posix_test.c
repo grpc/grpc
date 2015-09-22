@@ -39,28 +39,31 @@
 #include "src/core/iomgr/endpoint_pair.h"
 #include "src/core/iomgr/iomgr.h"
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
   int i;
   struct rlimit rlim;
   grpc_endpoint_pair p;
 
-  grpc_test_init(argc, argv);
-  grpc_iomgr_init();
+  grpc_test_init (argc, argv);
+  grpc_iomgr_init ();
 
   /* set max # of file descriptors to a low value, and
      verify we can create and destroy many more than this number
      of descriptors */
   rlim.rlim_cur = rlim.rlim_max = 10;
-  GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
+  GPR_ASSERT (0 == setrlimit (RLIMIT_NOFILE, &rlim));
 
-  for (i = 0; i < 100; i++) {
-    grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
-    p = grpc_iomgr_create_endpoint_pair("test", 1);
-    grpc_endpoint_destroy(p.client, &closure_list);
-    grpc_endpoint_destroy(p.server, &closure_list);
-    grpc_closure_list_run(&closure_list);
-  }
+  for (i = 0; i < 100; i++)
+    {
+      grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+      p = grpc_iomgr_create_endpoint_pair ("test", 1);
+      grpc_endpoint_destroy (p.client, &closure_list);
+      grpc_endpoint_destroy (p.server, &closure_list);
+      grpc_closure_list_run (&closure_list);
+    }
 
-  grpc_iomgr_shutdown();
+  grpc_iomgr_shutdown ();
   return 0;
 }

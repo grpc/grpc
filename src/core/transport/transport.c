@@ -36,103 +36,115 @@
 #include <grpc/support/log.h>
 #include "src/core/transport/transport_impl.h"
 
-size_t grpc_transport_stream_size(grpc_transport *transport) {
+size_t
+grpc_transport_stream_size (grpc_transport * transport)
+{
   return transport->vtable->sizeof_stream;
 }
 
-void grpc_transport_destroy(grpc_transport *transport,
-                            grpc_closure_list *closure_list) {
-  transport->vtable->destroy(transport, closure_list);
+void
+grpc_transport_destroy (grpc_transport * transport, grpc_closure_list * closure_list)
+{
+  transport->vtable->destroy (transport, closure_list);
 }
 
-int grpc_transport_init_stream(grpc_transport *transport, grpc_stream *stream,
-                               const void *server_data,
-                               grpc_transport_stream_op *initial_op,
-                               grpc_closure_list *closure_list) {
-  return transport->vtable->init_stream(transport, stream, server_data,
-                                        initial_op, closure_list);
+int
+grpc_transport_init_stream (grpc_transport * transport, grpc_stream * stream, const void *server_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+{
+  return transport->vtable->init_stream (transport, stream, server_data, initial_op, closure_list);
 }
 
-void grpc_transport_perform_stream_op(grpc_transport *transport,
-                                      grpc_stream *stream,
-                                      grpc_transport_stream_op *op,
-                                      grpc_closure_list *closure_list) {
-  transport->vtable->perform_stream_op(transport, stream, op, closure_list);
+void
+grpc_transport_perform_stream_op (grpc_transport * transport, grpc_stream * stream, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+{
+  transport->vtable->perform_stream_op (transport, stream, op, closure_list);
 }
 
-void grpc_transport_perform_op(grpc_transport *transport, grpc_transport_op *op,
-                               grpc_closure_list *closure_list) {
-  transport->vtable->perform_op(transport, op, closure_list);
+void
+grpc_transport_perform_op (grpc_transport * transport, grpc_transport_op * op, grpc_closure_list * closure_list)
+{
+  transport->vtable->perform_op (transport, op, closure_list);
 }
 
-void grpc_transport_destroy_stream(grpc_transport *transport,
-                                   grpc_stream *stream,
-                                   grpc_closure_list *closure_list) {
-  transport->vtable->destroy_stream(transport, stream, closure_list);
+void
+grpc_transport_destroy_stream (grpc_transport * transport, grpc_stream * stream, grpc_closure_list * closure_list)
+{
+  transport->vtable->destroy_stream (transport, stream, closure_list);
 }
 
-char *grpc_transport_get_peer(grpc_transport *transport,
-                              grpc_closure_list *closure_list) {
-  return transport->vtable->get_peer(transport, closure_list);
+char *
+grpc_transport_get_peer (grpc_transport * transport, grpc_closure_list * closure_list)
+{
+  return transport->vtable->get_peer (transport, closure_list);
 }
 
-void grpc_transport_stream_op_finish_with_failure(
-    grpc_transport_stream_op *op, grpc_closure_list *closure_list) {
-  grpc_closure_list_add(closure_list, op->on_done_recv, 0);
-  grpc_closure_list_add(closure_list, op->on_done_send, 0);
-  grpc_closure_list_add(closure_list, op->on_consumed, 0);
+void
+grpc_transport_stream_op_finish_with_failure (grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+{
+  grpc_closure_list_add (closure_list, op->on_done_recv, 0);
+  grpc_closure_list_add (closure_list, op->on_done_send, 0);
+  grpc_closure_list_add (closure_list, op->on_consumed, 0);
 }
 
-void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
-                                               grpc_status_code status) {
-  GPR_ASSERT(status != GRPC_STATUS_OK);
-  if (op->cancel_with_status == GRPC_STATUS_OK) {
-    op->cancel_with_status = status;
-  }
-  if (op->close_with_status != GRPC_STATUS_OK) {
-    op->close_with_status = GRPC_STATUS_OK;
-    if (op->optional_close_message != NULL) {
-      gpr_slice_unref(*op->optional_close_message);
-      op->optional_close_message = NULL;
+void
+grpc_transport_stream_op_add_cancellation (grpc_transport_stream_op * op, grpc_status_code status)
+{
+  GPR_ASSERT (status != GRPC_STATUS_OK);
+  if (op->cancel_with_status == GRPC_STATUS_OK)
+    {
+      op->cancel_with_status = status;
     }
-  }
+  if (op->close_with_status != GRPC_STATUS_OK)
+    {
+      op->close_with_status = GRPC_STATUS_OK;
+      if (op->optional_close_message != NULL)
+	{
+	  gpr_slice_unref (*op->optional_close_message);
+	  op->optional_close_message = NULL;
+	}
+    }
 }
 
-typedef struct {
+typedef struct
+{
   gpr_slice message;
   grpc_closure *then_call;
   grpc_closure closure;
 } close_message_data;
 
-static void free_message(void *p, int iomgr_success,
-                         grpc_closure_list *closure_list) {
+static void
+free_message (void *p, int iomgr_success, grpc_closure_list * closure_list)
+{
   close_message_data *cmd = p;
-  gpr_slice_unref(cmd->message);
-  if (cmd->then_call != NULL) {
-    cmd->then_call->cb(cmd->then_call->cb_arg, iomgr_success, closure_list);
-  }
-  gpr_free(cmd);
+  gpr_slice_unref (cmd->message);
+  if (cmd->then_call != NULL)
+    {
+      cmd->then_call->cb (cmd->then_call->cb_arg, iomgr_success, closure_list);
+    }
+  gpr_free (cmd);
 }
 
-void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
-                                        grpc_status_code status,
-                                        gpr_slice *optional_message) {
+void
+grpc_transport_stream_op_add_close (grpc_transport_stream_op * op, grpc_status_code status, gpr_slice * optional_message)
+{
   close_message_data *cmd;
-  GPR_ASSERT(status != GRPC_STATUS_OK);
-  if (op->cancel_with_status != GRPC_STATUS_OK ||
-      op->close_with_status != GRPC_STATUS_OK) {
-    if (optional_message) {
-      gpr_slice_unref(*optional_message);
+  GPR_ASSERT (status != GRPC_STATUS_OK);
+  if (op->cancel_with_status != GRPC_STATUS_OK || op->close_with_status != GRPC_STATUS_OK)
+    {
+      if (optional_message)
+	{
+	  gpr_slice_unref (*optional_message);
+	}
+      return;
     }
-    return;
-  }
-  if (optional_message) {
-    cmd = gpr_malloc(sizeof(*cmd));
-    cmd->message = *optional_message;
-    cmd->then_call = op->on_consumed;
-    grpc_closure_init(&cmd->closure, free_message, cmd);
-    op->on_consumed = &cmd->closure;
-    op->optional_close_message = &cmd->message;
-  }
+  if (optional_message)
+    {
+      cmd = gpr_malloc (sizeof (*cmd));
+      cmd->message = *optional_message;
+      cmd->then_call = op->on_consumed;
+      grpc_closure_init (&cmd->closure, free_message, cmd);
+      op->on_consumed = &cmd->closure;
+      op->optional_close_message = &cmd->message;
+    }
   op->close_with_status = status;
 }

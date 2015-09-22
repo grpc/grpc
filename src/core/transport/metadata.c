@@ -62,7 +62,8 @@
 #define REF_MD_LOCKED(s) ref_md_locked((s))
 #endif
 
-typedef struct internal_string {
+typedef struct internal_string
+{
   /* must be byte compatible with grpc_mdstr */
   gpr_slice slice;
   gpr_uint32 hash;
@@ -79,7 +80,8 @@ typedef struct internal_string {
   struct internal_string *bucket_next;
 } internal_string;
 
-typedef struct internal_metadata {
+typedef struct internal_metadata
+{
   /* must be byte compatible with grpc_mdelem */
   internal_string *key;
   internal_string *value;
@@ -89,13 +91,14 @@ typedef struct internal_metadata {
   /* private only data */
   gpr_mu mu_user_data;
   void *user_data;
-  void (*destroy_user_data)(void *user_data);
+  void (*destroy_user_data) (void *user_data);
 
   grpc_mdctx *context;
   struct internal_metadata *bucket_next;
 } internal_metadata;
 
-struct grpc_mdctx {
+struct grpc_mdctx
+{
   gpr_uint32 hash_seed;
   int refs;
 
@@ -111,15 +114,21 @@ struct grpc_mdctx {
   size_t mdtab_capacity;
 };
 
-static void internal_string_ref(internal_string *s DEBUG_ARGS);
-static void internal_string_unref(internal_string *s DEBUG_ARGS);
-static void discard_metadata(grpc_mdctx *ctx);
-static void gc_mdtab(grpc_mdctx *ctx);
-static void metadata_context_destroy_locked(grpc_mdctx *ctx);
+static void internal_string_ref (internal_string * s DEBUG_ARGS);
+static void internal_string_unref (internal_string * s DEBUG_ARGS);
+static void discard_metadata (grpc_mdctx * ctx);
+static void gc_mdtab (grpc_mdctx * ctx);
+static void metadata_context_destroy_locked (grpc_mdctx * ctx);
 
-static void lock(grpc_mdctx *ctx) { gpr_mu_lock(&ctx->mu); }
+static void
+lock (grpc_mdctx * ctx)
+{
+  gpr_mu_lock (&ctx->mu);
+}
 
-static void unlock(grpc_mdctx *ctx) {
+static void
+unlock (grpc_mdctx * ctx)
+{
   /* If the context has been orphaned we'd like to delete it soon. We check
      conditions in unlock as it signals the end of mutations on a context.
 
@@ -132,49 +141,52 @@ static void unlock(grpc_mdctx *ctx) {
      mdelems on every unlock (instead of the usual 'I'm too loaded' trigger
      case), since otherwise we can be stuck waiting for a garbage collection
      that will never happen. */
-  if (ctx->refs == 0) {
+  if (ctx->refs == 0)
+    {
 /* uncomment if you're having trouble diagnosing an mdelem leak to make
    things clearer (slows down destruction a lot, however) */
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-    gc_mdtab(ctx);
+      gc_mdtab (ctx);
 #endif
-    if (ctx->mdtab_count && ctx->mdtab_count == ctx->mdtab_free) {
-      discard_metadata(ctx);
+      if (ctx->mdtab_count && ctx->mdtab_count == ctx->mdtab_free)
+	{
+	  discard_metadata (ctx);
+	}
+      if (ctx->strtab_count == 0)
+	{
+	  metadata_context_destroy_locked (ctx);
+	  return;
+	}
     }
-    if (ctx->strtab_count == 0) {
-      metadata_context_destroy_locked(ctx);
-      return;
-    }
-  }
-  gpr_mu_unlock(&ctx->mu);
+  gpr_mu_unlock (&ctx->mu);
 }
 
-static void ref_md_locked(internal_metadata *md DEBUG_ARGS) {
+static void
+ref_md_locked (internal_metadata * md DEBUG_ARGS)
+{
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "ELM   REF:%p:%d->%d: '%s' = '%s'", md,
-          gpr_atm_no_barrier_load(&md->refcnt),
-          gpr_atm_no_barrier_load(&md->refcnt) + 1,
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+  gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "ELM   REF:%p:%d->%d: '%s' = '%s'", md, gpr_atm_no_barrier_load (&md->refcnt), gpr_atm_no_barrier_load (&md->refcnt) + 1, grpc_mdstr_as_c_string ((grpc_mdstr *) md->key), grpc_mdstr_as_c_string ((grpc_mdstr *) md->value));
 #endif
-  if (0 == gpr_atm_no_barrier_fetch_add(&md->refcnt, 1)) {
-    md->context->mdtab_free--;
-  }
+  if (0 == gpr_atm_no_barrier_fetch_add (&md->refcnt, 1))
+    {
+      md->context->mdtab_free--;
+    }
 }
 
-grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed) {
-  grpc_mdctx *ctx = gpr_malloc(sizeof(grpc_mdctx));
+grpc_mdctx *
+grpc_mdctx_create_with_seed (gpr_uint32 seed)
+{
+  grpc_mdctx *ctx = gpr_malloc (sizeof (grpc_mdctx));
 
   ctx->refs = 1;
   ctx->hash_seed = seed;
-  gpr_mu_init(&ctx->mu);
-  ctx->strtab = gpr_malloc(sizeof(internal_string *) * INITIAL_STRTAB_CAPACITY);
-  memset(ctx->strtab, 0, sizeof(grpc_mdstr *) * INITIAL_STRTAB_CAPACITY);
+  gpr_mu_init (&ctx->mu);
+  ctx->strtab = gpr_malloc (sizeof (internal_string *) * INITIAL_STRTAB_CAPACITY);
+  memset (ctx->strtab, 0, sizeof (grpc_mdstr *) * INITIAL_STRTAB_CAPACITY);
   ctx->strtab_count = 0;
   ctx->strtab_capacity = INITIAL_STRTAB_CAPACITY;
-  ctx->mdtab = gpr_malloc(sizeof(internal_metadata *) * INITIAL_MDTAB_CAPACITY);
-  memset(ctx->mdtab, 0, sizeof(grpc_mdelem *) * INITIAL_MDTAB_CAPACITY);
+  ctx->mdtab = gpr_malloc (sizeof (internal_metadata *) * INITIAL_MDTAB_CAPACITY);
+  memset (ctx->mdtab, 0, sizeof (grpc_mdelem *) * INITIAL_MDTAB_CAPACITY);
   ctx->mdtab_count = 0;
   ctx->mdtab_capacity = INITIAL_MDTAB_CAPACITY;
   ctx->mdtab_free = 0;
@@ -182,218 +194,258 @@ grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed) {
   return ctx;
 }
 
-grpc_mdctx *grpc_mdctx_create(void) {
+grpc_mdctx *
+grpc_mdctx_create (void)
+{
   /* This seed is used to prevent remote connections from controlling hash table
    * collisions. It needs to be somewhat unpredictable to a remote connection.
    */
-  return grpc_mdctx_create_with_seed(
-      (gpr_uint32)gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
+  return grpc_mdctx_create_with_seed ((gpr_uint32) gpr_now (GPR_CLOCK_REALTIME).tv_nsec);
 }
 
-static void discard_metadata(grpc_mdctx *ctx) {
+static void
+discard_metadata (grpc_mdctx * ctx)
+{
   size_t i;
   internal_metadata *next, *cur;
 
-  for (i = 0; i < ctx->mdtab_capacity; i++) {
-    cur = ctx->mdtab[i];
-    while (cur) {
-      GPR_ASSERT(gpr_atm_acq_load(&cur->refcnt) == 0);
-      next = cur->bucket_next;
-      INTERNAL_STRING_UNREF(cur->key);
-      INTERNAL_STRING_UNREF(cur->value);
-      if (cur->user_data) {
-        cur->destroy_user_data(cur->user_data);
-      }
-      gpr_mu_destroy(&cur->mu_user_data);
-      gpr_free(cur);
-      cur = next;
-      ctx->mdtab_free--;
-      ctx->mdtab_count--;
+  for (i = 0; i < ctx->mdtab_capacity; i++)
+    {
+      cur = ctx->mdtab[i];
+      while (cur)
+	{
+	  GPR_ASSERT (gpr_atm_acq_load (&cur->refcnt) == 0);
+	  next = cur->bucket_next;
+	  INTERNAL_STRING_UNREF (cur->key);
+	  INTERNAL_STRING_UNREF (cur->value);
+	  if (cur->user_data)
+	    {
+	      cur->destroy_user_data (cur->user_data);
+	    }
+	  gpr_mu_destroy (&cur->mu_user_data);
+	  gpr_free (cur);
+	  cur = next;
+	  ctx->mdtab_free--;
+	  ctx->mdtab_count--;
+	}
+      ctx->mdtab[i] = NULL;
     }
-    ctx->mdtab[i] = NULL;
-  }
 }
 
-static void metadata_context_destroy_locked(grpc_mdctx *ctx) {
-  GPR_ASSERT(ctx->strtab_count == 0);
-  GPR_ASSERT(ctx->mdtab_count == 0);
-  GPR_ASSERT(ctx->mdtab_free == 0);
-  gpr_free(ctx->strtab);
-  gpr_free(ctx->mdtab);
-  gpr_mu_unlock(&ctx->mu);
-  gpr_mu_destroy(&ctx->mu);
-  gpr_free(ctx);
+static void
+metadata_context_destroy_locked (grpc_mdctx * ctx)
+{
+  GPR_ASSERT (ctx->strtab_count == 0);
+  GPR_ASSERT (ctx->mdtab_count == 0);
+  GPR_ASSERT (ctx->mdtab_free == 0);
+  gpr_free (ctx->strtab);
+  gpr_free (ctx->mdtab);
+  gpr_mu_unlock (&ctx->mu);
+  gpr_mu_destroy (&ctx->mu);
+  gpr_free (ctx);
 }
 
-void grpc_mdctx_ref(grpc_mdctx *ctx) {
-  lock(ctx);
-  GPR_ASSERT(ctx->refs > 0);
+void
+grpc_mdctx_ref (grpc_mdctx * ctx)
+{
+  lock (ctx);
+  GPR_ASSERT (ctx->refs > 0);
   ctx->refs++;
-  unlock(ctx);
+  unlock (ctx);
 }
 
-void grpc_mdctx_unref(grpc_mdctx *ctx) {
-  lock(ctx);
-  GPR_ASSERT(ctx->refs > 0);
+void
+grpc_mdctx_unref (grpc_mdctx * ctx)
+{
+  lock (ctx);
+  GPR_ASSERT (ctx->refs > 0);
   ctx->refs--;
-  unlock(ctx);
+  unlock (ctx);
 }
 
-static void grow_strtab(grpc_mdctx *ctx) {
+static void
+grow_strtab (grpc_mdctx * ctx)
+{
   size_t capacity = ctx->strtab_capacity * 2;
   size_t i;
-  internal_string **strtab = gpr_malloc(sizeof(internal_string *) * capacity);
+  internal_string **strtab = gpr_malloc (sizeof (internal_string *) * capacity);
   internal_string *s, *next;
-  memset(strtab, 0, sizeof(internal_string *) * capacity);
+  memset (strtab, 0, sizeof (internal_string *) * capacity);
 
-  for (i = 0; i < ctx->strtab_capacity; i++) {
-    for (s = ctx->strtab[i]; s; s = next) {
-      next = s->bucket_next;
-      s->bucket_next = strtab[s->hash % capacity];
-      strtab[s->hash % capacity] = s;
+  for (i = 0; i < ctx->strtab_capacity; i++)
+    {
+      for (s = ctx->strtab[i]; s; s = next)
+	{
+	  next = s->bucket_next;
+	  s->bucket_next = strtab[s->hash % capacity];
+	  strtab[s->hash % capacity] = s;
+	}
     }
-  }
 
-  gpr_free(ctx->strtab);
+  gpr_free (ctx->strtab);
   ctx->strtab = strtab;
   ctx->strtab_capacity = capacity;
 }
 
-static void internal_destroy_string(internal_string *is) {
+static void
+internal_destroy_string (internal_string * is)
+{
   internal_string **prev_next;
   internal_string *cur;
   grpc_mdctx *ctx = is->context;
-  if (is->has_base64_and_huffman_encoded) {
-    gpr_slice_unref(is->base64_and_huffman);
-  }
-  for (prev_next = &ctx->strtab[is->hash % ctx->strtab_capacity],
-      cur = *prev_next;
-       cur != is; prev_next = &cur->bucket_next, cur = cur->bucket_next)
+  if (is->has_base64_and_huffman_encoded)
+    {
+      gpr_slice_unref (is->base64_and_huffman);
+    }
+  for (prev_next = &ctx->strtab[is->hash % ctx->strtab_capacity], cur = *prev_next; cur != is; prev_next = &cur->bucket_next, cur = cur->bucket_next)
     ;
   *prev_next = cur->bucket_next;
   ctx->strtab_count--;
-  gpr_free(is);
+  gpr_free (is);
 }
 
-static void internal_string_ref(internal_string *s DEBUG_ARGS) {
+static void
+internal_string_ref (internal_string * s DEBUG_ARGS)
+{
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "STR   REF:%p:%d->%d: '%s'", s,
-          s->refs, s->refs + 1, grpc_mdstr_as_c_string((grpc_mdstr *)s));
+  gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "STR   REF:%p:%d->%d: '%s'", s, s->refs, s->refs + 1, grpc_mdstr_as_c_string ((grpc_mdstr *) s));
 #endif
   ++s->refs;
 }
 
-static void internal_string_unref(internal_string *s DEBUG_ARGS) {
+static void
+internal_string_unref (internal_string * s DEBUG_ARGS)
+{
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "STR UNREF:%p:%d->%d: '%s'", s,
-          s->refs, s->refs - 1, grpc_mdstr_as_c_string((grpc_mdstr *)s));
+  gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "STR UNREF:%p:%d->%d: '%s'", s, s->refs, s->refs - 1, grpc_mdstr_as_c_string ((grpc_mdstr *) s));
 #endif
-  GPR_ASSERT(s->refs > 0);
-  if (0 == --s->refs) {
-    internal_destroy_string(s);
-  }
-}
-
-static void slice_ref(void *p) {
-  internal_string *is =
-      (internal_string *)((char *)p - offsetof(internal_string, refcount));
-  grpc_mdctx *ctx = is->context;
-  lock(ctx);
-  INTERNAL_STRING_REF(is);
-  unlock(ctx);
-}
-
-static void slice_unref(void *p) {
-  internal_string *is =
-      (internal_string *)((char *)p - offsetof(internal_string, refcount));
-  grpc_mdctx *ctx = is->context;
-  lock(ctx);
-  INTERNAL_STRING_UNREF(is);
-  unlock(ctx);
-}
-
-grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str,
-                                   int canonicalize_key) {
-  if (canonicalize_key) {
-    size_t len;
-    size_t i;
-    int canonical = 1;
-
-    for (i = 0; str[i]; i++) {
-      if (str[i] >= 'A' && str[i] <= 'Z') {
-        canonical = 0;
-        /* Keep going in loop just to get string length */
-      }
+  GPR_ASSERT (s->refs > 0);
+  if (0 == --s->refs)
+    {
+      internal_destroy_string (s);
     }
-    len = i;
-
-    if (canonical) {
-      return grpc_mdstr_from_buffer(ctx, (const gpr_uint8 *)str, len);
-    } else {
-      char *copy = gpr_malloc(len);
-      grpc_mdstr *ret;
-      for (i = 0; i < len; i++) {
-        if (str[i] >= 'A' && str[i] <= 'Z') {
-          copy[i] = (char)(str[i] - 'A' + 'a');
-        } else {
-          copy[i] = str[i];
-        }
-      }
-      ret = grpc_mdstr_from_buffer(ctx, (const gpr_uint8 *)copy, len);
-      gpr_free(copy);
-      return ret;
-    }
-  }
-  return grpc_mdstr_from_buffer(ctx, (const gpr_uint8 *)str, strlen(str));
 }
 
-grpc_mdstr *grpc_mdstr_from_slice(grpc_mdctx *ctx, gpr_slice slice) {
-  grpc_mdstr *result = grpc_mdstr_from_buffer(ctx, GPR_SLICE_START_PTR(slice),
-                                              GPR_SLICE_LENGTH(slice));
-  gpr_slice_unref(slice);
+static void
+slice_ref (void *p)
+{
+  internal_string *is = (internal_string *) ((char *) p - offsetof (internal_string, refcount));
+  grpc_mdctx *ctx = is->context;
+  lock (ctx);
+  INTERNAL_STRING_REF (is);
+  unlock (ctx);
+}
+
+static void
+slice_unref (void *p)
+{
+  internal_string *is = (internal_string *) ((char *) p - offsetof (internal_string, refcount));
+  grpc_mdctx *ctx = is->context;
+  lock (ctx);
+  INTERNAL_STRING_UNREF (is);
+  unlock (ctx);
+}
+
+grpc_mdstr *
+grpc_mdstr_from_string (grpc_mdctx * ctx, const char *str, int canonicalize_key)
+{
+  if (canonicalize_key)
+    {
+      size_t len;
+      size_t i;
+      int canonical = 1;
+
+      for (i = 0; str[i]; i++)
+	{
+	  if (str[i] >= 'A' && str[i] <= 'Z')
+	    {
+	      canonical = 0;
+	      /* Keep going in loop just to get string length */
+	    }
+	}
+      len = i;
+
+      if (canonical)
+	{
+	  return grpc_mdstr_from_buffer (ctx, (const gpr_uint8 *) str, len);
+	}
+      else
+	{
+	  char *copy = gpr_malloc (len);
+	  grpc_mdstr *ret;
+	  for (i = 0; i < len; i++)
+	    {
+	      if (str[i] >= 'A' && str[i] <= 'Z')
+		{
+		  copy[i] = (char) (str[i] - 'A' + 'a');
+		}
+	      else
+		{
+		  copy[i] = str[i];
+		}
+	    }
+	  ret = grpc_mdstr_from_buffer (ctx, (const gpr_uint8 *) copy, len);
+	  gpr_free (copy);
+	  return ret;
+	}
+    }
+  return grpc_mdstr_from_buffer (ctx, (const gpr_uint8 *) str, strlen (str));
+}
+
+grpc_mdstr *
+grpc_mdstr_from_slice (grpc_mdctx * ctx, gpr_slice slice)
+{
+  grpc_mdstr *result = grpc_mdstr_from_buffer (ctx, GPR_SLICE_START_PTR (slice),
+					       GPR_SLICE_LENGTH (slice));
+  gpr_slice_unref (slice);
   return result;
 }
 
-grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *buf,
-                                   size_t length) {
-  gpr_uint32 hash = gpr_murmur_hash3(buf, length, ctx->hash_seed);
+grpc_mdstr *
+grpc_mdstr_from_buffer (grpc_mdctx * ctx, const gpr_uint8 * buf, size_t length)
+{
+  gpr_uint32 hash = gpr_murmur_hash3 (buf, length, ctx->hash_seed);
   internal_string *s;
 
-  lock(ctx);
+  lock (ctx);
 
   /* search for an existing string */
-  for (s = ctx->strtab[hash % ctx->strtab_capacity]; s; s = s->bucket_next) {
-    if (s->hash == hash && GPR_SLICE_LENGTH(s->slice) == length &&
-        0 == memcmp(buf, GPR_SLICE_START_PTR(s->slice), length)) {
-      INTERNAL_STRING_REF(s);
-      unlock(ctx);
-      return (grpc_mdstr *)s;
+  for (s = ctx->strtab[hash % ctx->strtab_capacity]; s; s = s->bucket_next)
+    {
+      if (s->hash == hash && GPR_SLICE_LENGTH (s->slice) == length && 0 == memcmp (buf, GPR_SLICE_START_PTR (s->slice), length))
+	{
+	  INTERNAL_STRING_REF (s);
+	  unlock (ctx);
+	  return (grpc_mdstr *) s;
+	}
     }
-  }
 
   /* not found: create a new string */
-  if (length + 1 < GPR_SLICE_INLINED_SIZE) {
-    /* string data goes directly into the slice */
-    s = gpr_malloc(sizeof(internal_string));
-    s->refs = 1;
-    s->slice.refcount = NULL;
-    memcpy(s->slice.data.inlined.bytes, buf, length);
-    s->slice.data.inlined.bytes[length] = 0;
-    s->slice.data.inlined.length = (gpr_uint8)length;
-  } else {
-    /* string data goes after the internal_string header, and we +1 for null
-       terminator */
-    s = gpr_malloc(sizeof(internal_string) + length + 1);
-    s->refs = 1;
-    s->refcount.ref = slice_ref;
-    s->refcount.unref = slice_unref;
-    s->slice.refcount = &s->refcount;
-    s->slice.data.refcounted.bytes = (gpr_uint8 *)(s + 1);
-    s->slice.data.refcounted.length = length;
-    memcpy(s->slice.data.refcounted.bytes, buf, length);
-    /* add a null terminator for cheap c string conversion when desired */
-    s->slice.data.refcounted.bytes[length] = 0;
-  }
+  if (length + 1 < GPR_SLICE_INLINED_SIZE)
+    {
+      /* string data goes directly into the slice */
+      s = gpr_malloc (sizeof (internal_string));
+      s->refs = 1;
+      s->slice.refcount = NULL;
+      memcpy (s->slice.data.inlined.bytes, buf, length);
+      s->slice.data.inlined.bytes[length] = 0;
+      s->slice.data.inlined.length = (gpr_uint8) length;
+    }
+  else
+    {
+      /* string data goes after the internal_string header, and we +1 for null
+         terminator */
+      s = gpr_malloc (sizeof (internal_string) + length + 1);
+      s->refs = 1;
+      s->refcount.ref = slice_ref;
+      s->refcount.unref = slice_unref;
+      s->slice.refcount = &s->refcount;
+      s->slice.data.refcounted.bytes = (gpr_uint8 *) (s + 1);
+      s->slice.data.refcounted.length = length;
+      memcpy (s->slice.data.refcounted.bytes, buf, length);
+      /* add a null terminator for cheap c string conversion when desired */
+      s->slice.data.refcounted.bytes[length] = 0;
+    }
   s->has_base64_and_huffman_encoded = 0;
   s->hash = hash;
   s->context = ctx;
@@ -402,316 +454,357 @@ grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *buf,
 
   ctx->strtab_count++;
 
-  if (ctx->strtab_count > ctx->strtab_capacity * 2) {
-    grow_strtab(ctx);
-  }
+  if (ctx->strtab_count > ctx->strtab_capacity * 2)
+    {
+      grow_strtab (ctx);
+    }
 
-  unlock(ctx);
+  unlock (ctx);
 
-  return (grpc_mdstr *)s;
+  return (grpc_mdstr *) s;
 }
 
-static void gc_mdtab(grpc_mdctx *ctx) {
+static void
+gc_mdtab (grpc_mdctx * ctx)
+{
   size_t i;
   internal_metadata **prev_next;
   internal_metadata *md, *next;
 
-  for (i = 0; i < ctx->mdtab_capacity; i++) {
-    prev_next = &ctx->mdtab[i];
-    for (md = ctx->mdtab[i]; md; md = next) {
-      next = md->bucket_next;
-      if (gpr_atm_acq_load(&md->refcnt) == 0) {
-        INTERNAL_STRING_UNREF(md->key);
-        INTERNAL_STRING_UNREF(md->value);
-        if (md->user_data) {
-          md->destroy_user_data(md->user_data);
-        }
-        gpr_free(md);
-        *prev_next = next;
-        ctx->mdtab_free--;
-        ctx->mdtab_count--;
-      } else {
-        prev_next = &md->bucket_next;
-      }
+  for (i = 0; i < ctx->mdtab_capacity; i++)
+    {
+      prev_next = &ctx->mdtab[i];
+      for (md = ctx->mdtab[i]; md; md = next)
+	{
+	  next = md->bucket_next;
+	  if (gpr_atm_acq_load (&md->refcnt) == 0)
+	    {
+	      INTERNAL_STRING_UNREF (md->key);
+	      INTERNAL_STRING_UNREF (md->value);
+	      if (md->user_data)
+		{
+		  md->destroy_user_data (md->user_data);
+		}
+	      gpr_free (md);
+	      *prev_next = next;
+	      ctx->mdtab_free--;
+	      ctx->mdtab_count--;
+	    }
+	  else
+	    {
+	      prev_next = &md->bucket_next;
+	    }
+	}
     }
-  }
 
-  GPR_ASSERT(ctx->mdtab_free == 0);
+  GPR_ASSERT (ctx->mdtab_free == 0);
 }
 
-static void grow_mdtab(grpc_mdctx *ctx) {
+static void
+grow_mdtab (grpc_mdctx * ctx)
+{
   size_t capacity = ctx->mdtab_capacity * 2;
   size_t i;
-  internal_metadata **mdtab =
-      gpr_malloc(sizeof(internal_metadata *) * capacity);
+  internal_metadata **mdtab = gpr_malloc (sizeof (internal_metadata *) * capacity);
   internal_metadata *md, *next;
   gpr_uint32 hash;
-  memset(mdtab, 0, sizeof(internal_metadata *) * capacity);
+  memset (mdtab, 0, sizeof (internal_metadata *) * capacity);
 
-  for (i = 0; i < ctx->mdtab_capacity; i++) {
-    for (md = ctx->mdtab[i]; md; md = next) {
-      hash = GRPC_MDSTR_KV_HASH(md->key->hash, md->value->hash);
-      next = md->bucket_next;
-      md->bucket_next = mdtab[hash % capacity];
-      mdtab[hash % capacity] = md;
+  for (i = 0; i < ctx->mdtab_capacity; i++)
+    {
+      for (md = ctx->mdtab[i]; md; md = next)
+	{
+	  hash = GRPC_MDSTR_KV_HASH (md->key->hash, md->value->hash);
+	  next = md->bucket_next;
+	  md->bucket_next = mdtab[hash % capacity];
+	  mdtab[hash % capacity] = md;
+	}
     }
-  }
 
-  gpr_free(ctx->mdtab);
+  gpr_free (ctx->mdtab);
   ctx->mdtab = mdtab;
   ctx->mdtab_capacity = capacity;
 }
 
-static void rehash_mdtab(grpc_mdctx *ctx) {
-  if (ctx->mdtab_free > ctx->mdtab_capacity / 4) {
-    gc_mdtab(ctx);
-  } else {
-    grow_mdtab(ctx);
-  }
+static void
+rehash_mdtab (grpc_mdctx * ctx)
+{
+  if (ctx->mdtab_free > ctx->mdtab_capacity / 4)
+    {
+      gc_mdtab (ctx);
+    }
+  else
+    {
+      grow_mdtab (ctx);
+    }
 }
 
-grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
-                                               grpc_mdstr *mkey,
-                                               grpc_mdstr *mvalue) {
-  internal_string *key = (internal_string *)mkey;
-  internal_string *value = (internal_string *)mvalue;
-  gpr_uint32 hash = GRPC_MDSTR_KV_HASH(mkey->hash, mvalue->hash);
+grpc_mdelem *
+grpc_mdelem_from_metadata_strings (grpc_mdctx * ctx, grpc_mdstr * mkey, grpc_mdstr * mvalue)
+{
+  internal_string *key = (internal_string *) mkey;
+  internal_string *value = (internal_string *) mvalue;
+  gpr_uint32 hash = GRPC_MDSTR_KV_HASH (mkey->hash, mvalue->hash);
   internal_metadata *md;
 
-  GPR_ASSERT(key->context == ctx);
-  GPR_ASSERT(value->context == ctx);
+  GPR_ASSERT (key->context == ctx);
+  GPR_ASSERT (value->context == ctx);
 
-  lock(ctx);
+  lock (ctx);
 
   /* search for an existing pair */
-  for (md = ctx->mdtab[hash % ctx->mdtab_capacity]; md; md = md->bucket_next) {
-    if (md->key == key && md->value == value) {
-      REF_MD_LOCKED(md);
-      INTERNAL_STRING_UNREF(key);
-      INTERNAL_STRING_UNREF(value);
-      unlock(ctx);
-      return (grpc_mdelem *)md;
+  for (md = ctx->mdtab[hash % ctx->mdtab_capacity]; md; md = md->bucket_next)
+    {
+      if (md->key == key && md->value == value)
+	{
+	  REF_MD_LOCKED (md);
+	  INTERNAL_STRING_UNREF (key);
+	  INTERNAL_STRING_UNREF (value);
+	  unlock (ctx);
+	  return (grpc_mdelem *) md;
+	}
     }
-  }
 
   /* not found: create a new pair */
-  md = gpr_malloc(sizeof(internal_metadata));
-  gpr_atm_rel_store(&md->refcnt, 1);
+  md = gpr_malloc (sizeof (internal_metadata));
+  gpr_atm_rel_store (&md->refcnt, 1);
   md->context = ctx;
   md->key = key;
   md->value = value;
   md->user_data = NULL;
   md->destroy_user_data = NULL;
   md->bucket_next = ctx->mdtab[hash % ctx->mdtab_capacity];
-  gpr_mu_init(&md->mu_user_data);
+  gpr_mu_init (&md->mu_user_data);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  gpr_log(GPR_DEBUG, "ELM   NEW:%p:%d: '%s' = '%s'", md,
-          gpr_atm_no_barrier_load(&md->refcnt),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+  gpr_log (GPR_DEBUG, "ELM   NEW:%p:%d: '%s' = '%s'", md, gpr_atm_no_barrier_load (&md->refcnt), grpc_mdstr_as_c_string ((grpc_mdstr *) md->key), grpc_mdstr_as_c_string ((grpc_mdstr *) md->value));
 #endif
   ctx->mdtab[hash % ctx->mdtab_capacity] = md;
   ctx->mdtab_count++;
 
-  if (ctx->mdtab_count > ctx->mdtab_capacity * 2) {
-    rehash_mdtab(ctx);
-  }
+  if (ctx->mdtab_count > ctx->mdtab_capacity * 2)
+    {
+      rehash_mdtab (ctx);
+    }
 
-  unlock(ctx);
+  unlock (ctx);
 
-  return (grpc_mdelem *)md;
+  return (grpc_mdelem *) md;
 }
 
-grpc_mdelem *grpc_mdelem_from_strings(grpc_mdctx *ctx, const char *key,
-                                      const char *value) {
-  return grpc_mdelem_from_metadata_strings(
-      ctx, grpc_mdstr_from_string(ctx, key, 0),
-      grpc_mdstr_from_string(ctx, value, 0));
+grpc_mdelem *
+grpc_mdelem_from_strings (grpc_mdctx * ctx, const char *key, const char *value)
+{
+  return grpc_mdelem_from_metadata_strings (ctx, grpc_mdstr_from_string (ctx, key, 0), grpc_mdstr_from_string (ctx, value, 0));
 }
 
-grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,
-                                     gpr_slice value) {
-  return grpc_mdelem_from_metadata_strings(ctx, grpc_mdstr_from_slice(ctx, key),
-                                           grpc_mdstr_from_slice(ctx, value));
+grpc_mdelem *
+grpc_mdelem_from_slices (grpc_mdctx * ctx, gpr_slice key, gpr_slice value)
+{
+  return grpc_mdelem_from_metadata_strings (ctx, grpc_mdstr_from_slice (ctx, key), grpc_mdstr_from_slice (ctx, value));
 }
 
-grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,
-                                                const char *key,
-                                                const gpr_uint8 *value,
-                                                size_t value_length,
-                                                int canonicalize_key) {
-  return grpc_mdelem_from_metadata_strings(
-      ctx, grpc_mdstr_from_string(ctx, key, canonicalize_key),
-      grpc_mdstr_from_buffer(ctx, value, value_length));
+grpc_mdelem *
+grpc_mdelem_from_string_and_buffer (grpc_mdctx * ctx, const char *key, const gpr_uint8 * value, size_t value_length, int canonicalize_key)
+{
+  return grpc_mdelem_from_metadata_strings (ctx, grpc_mdstr_from_string (ctx, key, canonicalize_key), grpc_mdstr_from_buffer (ctx, value, value_length));
 }
 
-grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
-  internal_metadata *md = (internal_metadata *)gmd;
+grpc_mdelem *
+grpc_mdelem_ref (grpc_mdelem * gmd DEBUG_ARGS)
+{
+  internal_metadata *md = (internal_metadata *) gmd;
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "ELM   REF:%p:%d->%d: '%s' = '%s'", md,
-          gpr_atm_no_barrier_load(&md->refcnt),
-          gpr_atm_no_barrier_load(&md->refcnt) + 1,
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+  gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "ELM   REF:%p:%d->%d: '%s' = '%s'", md, gpr_atm_no_barrier_load (&md->refcnt), gpr_atm_no_barrier_load (&md->refcnt) + 1, grpc_mdstr_as_c_string ((grpc_mdstr *) md->key), grpc_mdstr_as_c_string ((grpc_mdstr *) md->value));
 #endif
   /* we can assume the ref count is >= 1 as the application is calling
      this function - meaning that no adjustment to mdtab_free is necessary,
      simplifying the logic here to be just an atomic increment */
   /* use C assert to have this removed in opt builds */
-  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
-  gpr_atm_no_barrier_fetch_add(&md->refcnt, 1);
+  assert (gpr_atm_no_barrier_load (&md->refcnt) >= 1);
+  gpr_atm_no_barrier_fetch_add (&md->refcnt, 1);
   return gmd;
 }
 
-void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
-  internal_metadata *md = (internal_metadata *)gmd;
+void
+grpc_mdelem_unref (grpc_mdelem * gmd DEBUG_ARGS)
+{
+  internal_metadata *md = (internal_metadata *) gmd;
   grpc_mdctx *ctx = md->context;
-  lock(ctx);
+  lock (ctx);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "ELM UNREF:%p:%d->%d: '%s' = '%s'", md,
-          gpr_atm_no_barrier_load(&md->refcnt),
-          gpr_atm_no_barrier_load(&md->refcnt) - 1,
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
+  gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "ELM UNREF:%p:%d->%d: '%s' = '%s'", md, gpr_atm_no_barrier_load (&md->refcnt), gpr_atm_no_barrier_load (&md->refcnt) - 1, grpc_mdstr_as_c_string ((grpc_mdstr *) md->key), grpc_mdstr_as_c_string ((grpc_mdstr *) md->value));
 #endif
-  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
-  if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
-    ctx->mdtab_free++;
-  }
-  unlock(ctx);
+  assert (gpr_atm_no_barrier_load (&md->refcnt) >= 1);
+  if (1 == gpr_atm_full_fetch_add (&md->refcnt, -1))
+    {
+      ctx->mdtab_free++;
+    }
+  unlock (ctx);
 }
 
-const char *grpc_mdstr_as_c_string(grpc_mdstr *s) {
-  return (const char *)GPR_SLICE_START_PTR(s->slice);
+const char *
+grpc_mdstr_as_c_string (grpc_mdstr * s)
+{
+  return (const char *) GPR_SLICE_START_PTR (s->slice);
 }
 
-grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs DEBUG_ARGS) {
-  internal_string *s = (internal_string *)gs;
+grpc_mdstr *
+grpc_mdstr_ref (grpc_mdstr * gs DEBUG_ARGS)
+{
+  internal_string *s = (internal_string *) gs;
   grpc_mdctx *ctx = s->context;
-  lock(ctx);
-  internal_string_ref(s FWD_DEBUG_ARGS);
-  unlock(ctx);
+  lock (ctx);
+  internal_string_ref (s FWD_DEBUG_ARGS);
+  unlock (ctx);
   return gs;
 }
 
-void grpc_mdstr_unref(grpc_mdstr *gs DEBUG_ARGS) {
-  internal_string *s = (internal_string *)gs;
+void
+grpc_mdstr_unref (grpc_mdstr * gs DEBUG_ARGS)
+{
+  internal_string *s = (internal_string *) gs;
   grpc_mdctx *ctx = s->context;
-  lock(ctx);
-  internal_string_unref(s FWD_DEBUG_ARGS);
-  unlock(ctx);
+  lock (ctx);
+  internal_string_unref (s FWD_DEBUG_ARGS);
+  unlock (ctx);
 }
 
-size_t grpc_mdctx_get_mdtab_capacity_test_only(grpc_mdctx *ctx) {
+size_t
+grpc_mdctx_get_mdtab_capacity_test_only (grpc_mdctx * ctx)
+{
   return ctx->mdtab_capacity;
 }
 
-size_t grpc_mdctx_get_mdtab_count_test_only(grpc_mdctx *ctx) {
+size_t
+grpc_mdctx_get_mdtab_count_test_only (grpc_mdctx * ctx)
+{
   return ctx->mdtab_count;
 }
 
-size_t grpc_mdctx_get_mdtab_free_test_only(grpc_mdctx *ctx) {
+size_t
+grpc_mdctx_get_mdtab_free_test_only (grpc_mdctx * ctx)
+{
   return ctx->mdtab_free;
 }
 
-void *grpc_mdelem_get_user_data(grpc_mdelem *md,
-                                void (*if_destroy_func)(void *)) {
-  internal_metadata *im = (internal_metadata *)md;
+void *
+grpc_mdelem_get_user_data (grpc_mdelem * md, void (*if_destroy_func) (void *))
+{
+  internal_metadata *im = (internal_metadata *) md;
   void *result;
-  gpr_mu_lock(&im->mu_user_data);
+  gpr_mu_lock (&im->mu_user_data);
   result = im->destroy_user_data == if_destroy_func ? im->user_data : NULL;
-  gpr_mu_unlock(&im->mu_user_data);
+  gpr_mu_unlock (&im->mu_user_data);
   return result;
 }
 
-void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
-                               void *user_data) {
-  internal_metadata *im = (internal_metadata *)md;
-  GPR_ASSERT((user_data == NULL) == (destroy_func == NULL));
-  gpr_mu_lock(&im->mu_user_data);
-  if (im->destroy_user_data) {
-    /* user data can only be set once */
-    gpr_mu_unlock(&im->mu_user_data);
-    if (destroy_func != NULL) {
-      destroy_func(user_data);
+void
+grpc_mdelem_set_user_data (grpc_mdelem * md, void (*destroy_func) (void *), void *user_data)
+{
+  internal_metadata *im = (internal_metadata *) md;
+  GPR_ASSERT ((user_data == NULL) == (destroy_func == NULL));
+  gpr_mu_lock (&im->mu_user_data);
+  if (im->destroy_user_data)
+    {
+      /* user data can only be set once */
+      gpr_mu_unlock (&im->mu_user_data);
+      if (destroy_func != NULL)
+	{
+	  destroy_func (user_data);
+	}
+      return;
     }
-    return;
-  }
   im->destroy_user_data = destroy_func;
   im->user_data = user_data;
-  gpr_mu_unlock(&im->mu_user_data);
+  gpr_mu_unlock (&im->mu_user_data);
 }
 
-gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
-  internal_string *s = (internal_string *)gs;
+gpr_slice
+grpc_mdstr_as_base64_encoded_and_huffman_compressed (grpc_mdstr * gs)
+{
+  internal_string *s = (internal_string *) gs;
   gpr_slice slice;
   grpc_mdctx *ctx = s->context;
-  lock(ctx);
-  if (!s->has_base64_and_huffman_encoded) {
-    s->base64_and_huffman =
-        grpc_chttp2_base64_encode_and_huffman_compress(s->slice);
-    s->has_base64_and_huffman_encoded = 1;
-  }
+  lock (ctx);
+  if (!s->has_base64_and_huffman_encoded)
+    {
+      s->base64_and_huffman = grpc_chttp2_base64_encode_and_huffman_compress (s->slice);
+      s->has_base64_and_huffman_encoded = 1;
+    }
   slice = s->base64_and_huffman;
-  unlock(ctx);
+  unlock (ctx);
   return slice;
 }
 
-void grpc_mdctx_lock(grpc_mdctx *ctx) { lock(ctx); }
-
-void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx,
-                                    grpc_mdelem *gmd DEBUG_ARGS) {
-  internal_metadata *md = (internal_metadata *)gmd;
-  grpc_mdctx *elem_ctx = md->context;
-  GPR_ASSERT(ctx == elem_ctx);
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "ELM UNREF:%p:%d->%d: '%s' = '%s'", md,
-          gpr_atm_no_barrier_load(&md->refcnt),
-          gpr_atm_no_barrier_load(&md->refcnt) - 1,
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
-#endif
-  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
-  if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
-    ctx->mdtab_free++;
-  }
+void
+grpc_mdctx_lock (grpc_mdctx * ctx)
+{
+  lock (ctx);
 }
 
-void grpc_mdctx_unlock(grpc_mdctx *ctx) { unlock(ctx); }
+void
+grpc_mdctx_locked_mdelem_unref (grpc_mdctx * ctx, grpc_mdelem * gmd DEBUG_ARGS)
+{
+  internal_metadata *md = (internal_metadata *) gmd;
+  grpc_mdctx *elem_ctx = md->context;
+  GPR_ASSERT (ctx == elem_ctx);
+#ifdef GRPC_METADATA_REFCOUNT_DEBUG
+  gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "ELM UNREF:%p:%d->%d: '%s' = '%s'", md, gpr_atm_no_barrier_load (&md->refcnt), gpr_atm_no_barrier_load (&md->refcnt) - 1, grpc_mdstr_as_c_string ((grpc_mdstr *) md->key), grpc_mdstr_as_c_string ((grpc_mdstr *) md->value));
+#endif
+  assert (gpr_atm_no_barrier_load (&md->refcnt) >= 1);
+  if (1 == gpr_atm_full_fetch_add (&md->refcnt, -1))
+    {
+      ctx->mdtab_free++;
+    }
+}
 
-static int conforms_to(grpc_mdstr *s, const gpr_uint8 *legal_bits) {
-  const gpr_uint8 *p = GPR_SLICE_START_PTR(s->slice);
-  const gpr_uint8 *e = GPR_SLICE_END_PTR(s->slice);
-  for (; p != e; p++) {
-    int idx = *p;
-    int byte = idx / 8;
-    int bit = idx % 8;
-    if ((legal_bits[byte] & (1 << bit)) == 0) return 0;
-  }
+void
+grpc_mdctx_unlock (grpc_mdctx * ctx)
+{
+  unlock (ctx);
+}
+
+static int
+conforms_to (grpc_mdstr * s, const gpr_uint8 * legal_bits)
+{
+  const gpr_uint8 *p = GPR_SLICE_START_PTR (s->slice);
+  const gpr_uint8 *e = GPR_SLICE_END_PTR (s->slice);
+  for (; p != e; p++)
+    {
+      int idx = *p;
+      int byte = idx / 8;
+      int bit = idx % 8;
+      if ((legal_bits[byte] & (1 << bit)) == 0)
+	return 0;
+    }
   return 1;
 }
 
-int grpc_mdstr_is_legal_header(grpc_mdstr *s) {
+int
+grpc_mdstr_is_legal_header (grpc_mdstr * s)
+{
   static const gpr_uint8 legal_header_bits[256 / 8] = {
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0xff, 0x03, 0x00, 0x00, 0x00,
-      0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  return conforms_to(s, legal_header_bits);
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x20, 0xff, 0x03, 0x00, 0x00, 0x00,
+    0x80, 0xfe, 0xff, 0xff, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  };
+  return conforms_to (s, legal_header_bits);
 }
 
-int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s) {
+int
+grpc_mdstr_is_legal_nonbin_header (grpc_mdstr * s)
+{
   static const gpr_uint8 legal_header_bits[256 / 8] = {
-      0x00, 0x00, 0x00, 0x00, 0xff, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff,
-      0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  return conforms_to(s, legal_header_bits);
+    0x00, 0x00, 0x00, 0x00, 0xff, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  };
+  return conforms_to (s, legal_header_bits);
 }
 
-int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s) {
+int
+grpc_mdstr_is_bin_suffixed (grpc_mdstr * s)
+{
   /* TODO(ctiller): consider caching this */
-  return grpc_is_binary_header((const char *)GPR_SLICE_START_PTR(s->slice),
-                               GPR_SLICE_LENGTH(s->slice));
+  return grpc_is_binary_header ((const char *) GPR_SLICE_START_PTR (s->slice), GPR_SLICE_LENGTH (s->slice));
 }

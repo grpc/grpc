@@ -51,112 +51,127 @@ static gpr_cv g_rcv;
 static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 
-void grpc_kick_poller(void) {
+void
+grpc_kick_poller (void)
+{
   /* Empty. The background callback executor polls periodically. The activity
    * the kicker is trying to draw the executor's attention to will be picked up
    * either by one of the periodic wakeups or by one of the polling application
    * threads. */
 }
 
-void grpc_iomgr_init(void) {
+void
+grpc_iomgr_init (void)
+{
   g_shutdown = 0;
-  gpr_mu_init(&g_mu);
-  gpr_cv_init(&g_rcv);
-  grpc_alarm_list_init(gpr_now(GPR_CLOCK_MONOTONIC));
+  gpr_mu_init (&g_mu);
+  gpr_cv_init (&g_rcv);
+  grpc_alarm_list_init (gpr_now (GPR_CLOCK_MONOTONIC));
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = "root";
-  grpc_iomgr_platform_init();
+  grpc_iomgr_platform_init ();
 }
 
-static size_t count_objects(void) {
+static size_t
+count_objects (void)
+{
   grpc_iomgr_object *obj;
   size_t n = 0;
-  for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next) {
-    n++;
-  }
+  for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next)
+    {
+      n++;
+    }
   return n;
 }
 
-static void dump_objects(const char *kind) {
+static void
+dump_objects (const char *kind)
+{
   grpc_iomgr_object *obj;
-  for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next) {
-    gpr_log(GPR_DEBUG, "%s OBJECT: %s %p", kind, obj->name, obj);
-  }
+  for (obj = g_root_object.next; obj != &g_root_object; obj = obj->next)
+    {
+      gpr_log (GPR_DEBUG, "%s OBJECT: %s %p", kind, obj->name, obj);
+    }
 }
 
-void grpc_iomgr_shutdown(void) {
-  gpr_timespec shutdown_deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
-  gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
+void
+grpc_iomgr_shutdown (void)
+{
+  gpr_timespec shutdown_deadline = gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), gpr_time_from_seconds (10, GPR_TIMESPAN));
+  gpr_timespec last_warning_time = gpr_now (GPR_CLOCK_REALTIME);
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
-  gpr_mu_lock(&g_mu);
+  gpr_mu_lock (&g_mu);
   g_shutdown = 1;
-  while (g_root_object.next != &g_root_object) {
-    if (gpr_time_cmp(
-            gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
-            gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
-      if (g_root_object.next != &g_root_object) {
-        gpr_log(GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed",
-                count_objects());
-      }
-      last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
+  while (g_root_object.next != &g_root_object)
+    {
+      if (gpr_time_cmp (gpr_time_sub (gpr_now (GPR_CLOCK_REALTIME), last_warning_time), gpr_time_from_seconds (1, GPR_TIMESPAN)) >= 0)
+	{
+	  if (g_root_object.next != &g_root_object)
+	    {
+	      gpr_log (GPR_DEBUG, "Waiting for %d iomgr objects to be destroyed", count_objects ());
+	    }
+	  last_warning_time = gpr_now (GPR_CLOCK_REALTIME);
+	}
+      if (grpc_alarm_check (gpr_inf_future (GPR_CLOCK_MONOTONIC), NULL, &closure_list))
+	{
+	  gpr_mu_unlock (&g_mu);
+	  grpc_closure_list_run (&closure_list);
+	  gpr_mu_lock (&g_mu);
+	  continue;
+	}
+      if (g_root_object.next != &g_root_object)
+	{
+	  int timeout = 0;
+	  gpr_timespec short_deadline = gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), gpr_time_from_millis (100, GPR_TIMESPAN));
+	  if (gpr_cv_wait (&g_rcv, &g_mu, short_deadline))
+	    {
+	      if (gpr_time_cmp (gpr_now (GPR_CLOCK_REALTIME), shutdown_deadline) > 0)
+		{
+		  timeout = 1;
+		  break;
+		}
+	    }
+	  if (timeout && g_root_object.next != &g_root_object)
+	    {
+	      gpr_log (GPR_DEBUG, "Failed to free %d iomgr objects before shutdown deadline: " "memory leaks are likely", count_objects ());
+	      dump_objects ("LEAKED");
+	      break;
+	    }
+	}
     }
-    if (grpc_alarm_check(gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL,
-                         &closure_list)) {
-      gpr_mu_unlock(&g_mu);
-      grpc_closure_list_run(&closure_list);
-      gpr_mu_lock(&g_mu);
-      continue;
-    }
-    if (g_root_object.next != &g_root_object) {
-      int timeout = 0;
-      gpr_timespec short_deadline = gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
-      if (gpr_cv_wait(&g_rcv, &g_mu, short_deadline)) {
-        if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) > 0) {
-          timeout = 1;
-          break;
-        }
-      }
-      if (timeout && g_root_object.next != &g_root_object) {
-        gpr_log(GPR_DEBUG,
-                "Failed to free %d iomgr objects before shutdown deadline: "
-                "memory leaks are likely",
-                count_objects());
-        dump_objects("LEAKED");
-        break;
-      }
-    }
-  }
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock (&g_mu);
 
-  grpc_alarm_list_shutdown(&closure_list);
-  grpc_closure_list_run(&closure_list);
+  grpc_alarm_list_shutdown (&closure_list);
+  grpc_closure_list_run (&closure_list);
 
   /* ensure all threads have left g_mu */
-  gpr_mu_lock(&g_mu);
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_lock (&g_mu);
+  gpr_mu_unlock (&g_mu);
 
-  grpc_iomgr_platform_shutdown();
-  gpr_mu_destroy(&g_mu);
-  gpr_cv_destroy(&g_rcv);
+  grpc_iomgr_platform_shutdown ();
+  gpr_mu_destroy (&g_mu);
+  gpr_cv_destroy (&g_rcv);
 }
 
-void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name) {
-  obj->name = gpr_strdup(name);
-  gpr_mu_lock(&g_mu);
+void
+grpc_iomgr_register_object (grpc_iomgr_object * obj, const char *name)
+{
+  obj->name = gpr_strdup (name);
+  gpr_mu_lock (&g_mu);
   obj->next = &g_root_object;
   obj->prev = g_root_object.prev;
   obj->next->prev = obj->prev->next = obj;
-  gpr_mu_unlock(&g_mu);
+  gpr_mu_unlock (&g_mu);
 }
 
-void grpc_iomgr_unregister_object(grpc_iomgr_object *obj) {
-  gpr_mu_lock(&g_mu);
+void
+grpc_iomgr_unregister_object (grpc_iomgr_object * obj)
+{
+  gpr_mu_lock (&g_mu);
   obj->next->prev = obj->prev;
   obj->prev->next = obj->next;
-  gpr_cv_signal(&g_rcv);
-  gpr_mu_unlock(&g_mu);
-  gpr_free(obj->name);
+  gpr_cv_signal (&g_rcv);
+  gpr_mu_unlock (&g_mu);
+  gpr_free (obj->name);
 }

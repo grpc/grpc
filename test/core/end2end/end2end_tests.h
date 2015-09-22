@@ -45,25 +45,24 @@ typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
-struct grpc_end2end_test_fixture {
+struct grpc_end2end_test_fixture
+{
   grpc_completion_queue *cq;
   grpc_server *server;
   grpc_channel *client;
   void *fixture_data;
 };
 
-struct grpc_end2end_test_config {
+struct grpc_end2end_test_config
+{
   const char *name;
   gpr_uint32 feature_mask;
-  grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args *client_args,
-                                              grpc_channel_args *server_args);
-  void (*init_client)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *client_args);
-  void (*init_server)(grpc_end2end_test_fixture *f,
-                      grpc_channel_args *server_args);
-  void (*tear_down_data)(grpc_end2end_test_fixture *f);
+    grpc_end2end_test_fixture (*create_fixture) (grpc_channel_args * client_args, grpc_channel_args * server_args);
+  void (*init_client) (grpc_end2end_test_fixture * f, grpc_channel_args * client_args);
+  void (*init_server) (grpc_end2end_test_fixture * f, grpc_channel_args * server_args);
+  void (*tear_down_data) (grpc_end2end_test_fixture * f);
 };
 
-void grpc_end2end_tests(grpc_end2end_test_config config);
+void grpc_end2end_tests (grpc_end2end_test_config config);
 
 #endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */

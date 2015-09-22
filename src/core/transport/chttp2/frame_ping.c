@@ -39,9 +39,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-gpr_slice grpc_chttp2_ping_create(gpr_uint8 ack, gpr_uint8 *opaque_8bytes) {
-  gpr_slice slice = gpr_slice_malloc(9 + 8);
-  gpr_uint8 *p = GPR_SLICE_START_PTR(slice);
+gpr_slice
+grpc_chttp2_ping_create (gpr_uint8 ack, gpr_uint8 * opaque_8bytes)
+{
+  gpr_slice slice = gpr_slice_malloc (9 + 8);
+  gpr_uint8 *p = GPR_SLICE_START_PTR (slice);
 
   *p++ = 0;
   *p++ = 0;
@@ -52,55 +54,61 @@ gpr_slice grpc_chttp2_ping_create(gpr_uint8 ack, gpr_uint8 *opaque_8bytes) {
   *p++ = 0;
   *p++ = 0;
   *p++ = 0;
-  memcpy(p, opaque_8bytes, 8);
+  memcpy (p, opaque_8bytes, 8);
 
   return slice;
 }
 
-grpc_chttp2_parse_error grpc_chttp2_ping_parser_begin_frame(
-    grpc_chttp2_ping_parser *parser, gpr_uint32 length, gpr_uint8 flags) {
-  if (flags & 0xfe || length != 8) {
-    gpr_log(GPR_ERROR, "invalid ping: length=%d, flags=%02x", length, flags);
-    return GRPC_CHTTP2_CONNECTION_ERROR;
-  }
+grpc_chttp2_parse_error
+grpc_chttp2_ping_parser_begin_frame (grpc_chttp2_ping_parser * parser, gpr_uint32 length, gpr_uint8 flags)
+{
+  if (flags & 0xfe || length != 8)
+    {
+      gpr_log (GPR_ERROR, "invalid ping: length=%d, flags=%02x", length, flags);
+      return GRPC_CHTTP2_CONNECTION_ERROR;
+    }
   parser->byte = 0;
   parser->is_ack = flags;
   return GRPC_CHTTP2_PARSE_OK;
 }
 
-grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last,
-    grpc_closure_list *closure_list) {
-  gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
-  gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
+grpc_chttp2_parse_error
+grpc_chttp2_ping_parser_parse (void *parser, grpc_chttp2_transport_parsing * transport_parsing, grpc_chttp2_stream_parsing * stream_parsing, gpr_slice slice, int is_last, grpc_closure_list * closure_list)
+{
+  gpr_uint8 *const beg = GPR_SLICE_START_PTR (slice);
+  gpr_uint8 *const end = GPR_SLICE_END_PTR (slice);
   gpr_uint8 *cur = beg;
   grpc_chttp2_ping_parser *p = parser;
   grpc_chttp2_outstanding_ping *ping;
 
-  while (p->byte != 8 && cur != end) {
-    p->opaque_8bytes[p->byte] = *cur;
-    cur++;
-    p->byte++;
-  }
-
-  if (p->byte == 8) {
-    GPR_ASSERT(is_last);
-    if (p->is_ack) {
-      for (ping = transport_parsing->pings.next;
-           ping != &transport_parsing->pings; ping = ping->next) {
-        if (0 == memcmp(p->opaque_8bytes, ping->id, 8)) {
-          grpc_closure_list_add(closure_list, ping->on_recv, 1);
-        }
-        ping->next->prev = ping->prev;
-        ping->prev->next = ping->next;
-        gpr_free(ping);
-      }
-    } else {
-      gpr_slice_buffer_add(&transport_parsing->qbuf,
-                           grpc_chttp2_ping_create(1, p->opaque_8bytes));
+  while (p->byte != 8 && cur != end)
+    {
+      p->opaque_8bytes[p->byte] = *cur;
+      cur++;
+      p->byte++;
     }
-  }
+
+  if (p->byte == 8)
+    {
+      GPR_ASSERT (is_last);
+      if (p->is_ack)
+	{
+	  for (ping = transport_parsing->pings.next; ping != &transport_parsing->pings; ping = ping->next)
+	    {
+	      if (0 == memcmp (p->opaque_8bytes, ping->id, 8))
+		{
+		  grpc_closure_list_add (closure_list, ping->on_recv, 1);
+		}
+	      ping->next->prev = ping->prev;
+	      ping->prev->next = ping->next;
+	      gpr_free (ping);
+	    }
+	}
+      else
+	{
+	  gpr_slice_buffer_add (&transport_parsing->qbuf, grpc_chttp2_ping_create (1, p->opaque_8bytes));
+	}
+    }
 
   return GRPC_CHTTP2_PARSE_OK;
 }

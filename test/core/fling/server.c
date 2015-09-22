@@ -72,9 +72,14 @@ static int was_cancelled = 2;
 static grpc_op unary_ops[6];
 static int got_sigint = 0;
 
-static void *tag(gpr_intptr t) { return (void *)t; }
+static void *
+tag (gpr_intptr t)
+{
+  return (void *) t;
+}
 
-typedef enum {
+typedef enum
+{
   FLING_SERVER_NEW_REQUEST = 1,
   FLING_SERVER_READ_FOR_UNARY,
   FLING_SERVER_BATCH_OPS_FOR_UNARY,
@@ -84,22 +89,26 @@ typedef enum {
   FLING_SERVER_SEND_STATUS_FOR_STREAMING
 } fling_server_tags;
 
-typedef struct {
+typedef struct
+{
   gpr_refcount pending_ops;
   gpr_uint32 flags;
 } call_state;
 
-static void request_call(void) {
-  grpc_metadata_array_init(&request_metadata_recv);
-  grpc_server_request_call(server, &call, &call_details, &request_metadata_recv,
-                           cq, cq, tag(FLING_SERVER_NEW_REQUEST));
+static void
+request_call (void)
+{
+  grpc_metadata_array_init (&request_metadata_recv);
+  grpc_server_request_call (server, &call, &call_details, &request_metadata_recv, cq, cq, tag (FLING_SERVER_NEW_REQUEST));
 }
 
-static void handle_unary_method(void) {
+static void
+handle_unary_method (void)
+{
   grpc_op *op;
   grpc_call_error error;
 
-  grpc_metadata_array_init(&initial_metadata_send);
+  grpc_metadata_array_init (&initial_metadata_send);
 
   op = unary_ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -109,9 +118,10 @@ static void handle_unary_method(void) {
   op->data.recv_message = &terminal_buffer;
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
-  if (payload_buffer == NULL) {
-    gpr_log(GPR_INFO, "NULL payload buffer !!!");
-  }
+  if (payload_buffer == NULL)
+    {
+      gpr_log (GPR_INFO, "NULL payload buffer !!!");
+    }
   op->data.send_message = payload_buffer;
   op++;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
@@ -123,47 +133,55 @@ static void handle_unary_method(void) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  error = grpc_call_start_batch(call, unary_ops, (size_t)(op - unary_ops),
-                                tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  error = grpc_call_start_batch (call, unary_ops, (size_t) (op - unary_ops), tag (FLING_SERVER_BATCH_OPS_FOR_UNARY), NULL);
+  GPR_ASSERT (GRPC_CALL_OK == error);
 }
 
-static void send_initial_metadata(void) {
+static void
+send_initial_metadata (void)
+{
   grpc_call_error error;
-  void *tagarg = tag(FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING);
-  grpc_metadata_array_init(&initial_metadata_send);
+  void *tagarg = tag (FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING);
+  grpc_metadata_array_init (&initial_metadata_send);
   metadata_send_op.op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_send_op.data.send_initial_metadata.count = 0;
-  error = grpc_call_start_batch(call, &metadata_send_op, 1, tagarg, NULL);
+  error = grpc_call_start_batch (call, &metadata_send_op, 1, tagarg, NULL);
 
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  GPR_ASSERT (GRPC_CALL_OK == error);
 }
 
-static void start_read_op(int t) {
+static void
+start_read_op (int t)
+{
   grpc_call_error error;
   /* Starting read at server */
   read_op.op = GRPC_OP_RECV_MESSAGE;
   read_op.data.recv_message = &payload_buffer;
-  error = grpc_call_start_batch(call, &read_op, 1, tag(t), NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  error = grpc_call_start_batch (call, &read_op, 1, tag (t), NULL);
+  GPR_ASSERT (GRPC_CALL_OK == error);
 }
 
-static void start_write_op(void) {
+static void
+start_write_op (void)
+{
   grpc_call_error error;
-  void *tagarg = tag(FLING_SERVER_WRITE_FOR_STREAMING);
+  void *tagarg = tag (FLING_SERVER_WRITE_FOR_STREAMING);
   /* Starting write at server */
   write_op.op = GRPC_OP_SEND_MESSAGE;
-  if (payload_buffer == NULL) {
-    gpr_log(GPR_INFO, "NULL payload buffer !!!");
-  }
+  if (payload_buffer == NULL)
+    {
+      gpr_log (GPR_INFO, "NULL payload buffer !!!");
+    }
   write_op.data.send_message = payload_buffer;
-  error = grpc_call_start_batch(call, &write_op, 1, tagarg, NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  error = grpc_call_start_batch (call, &write_op, 1, tagarg, NULL);
+  GPR_ASSERT (GRPC_CALL_OK == error);
 }
 
-static void start_send_status(void) {
+static void
+start_send_status (void)
+{
   grpc_call_error error;
-  void *tagarg = tag(FLING_SERVER_SEND_STATUS_FOR_STREAMING);
+  void *tagarg = tag (FLING_SERVER_SEND_STATUS_FOR_STREAMING);
   status_op[0].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   status_op[0].data.send_status_from_server.status = GRPC_STATUS_OK;
   status_op[0].data.send_status_from_server.trailing_metadata_count = 0;
@@ -171,15 +189,21 @@ static void start_send_status(void) {
   status_op[1].op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   status_op[1].data.recv_close_on_server.cancelled = &was_cancelled;
 
-  error = grpc_call_start_batch(call, status_op, 2, tagarg, NULL);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  error = grpc_call_start_batch (call, status_op, 2, tagarg, NULL);
+  GPR_ASSERT (GRPC_CALL_OK == error);
 }
 
 /* We have some sort of deadlock, so let's not exit gracefully for now.
    When that is resolved, please remove the #include <unistd.h> above. */
-static void sigint_handler(int x) { _exit(0); }
+static void
+sigint_handler (int x)
+{
+  _exit (0);
+}
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
   grpc_event ev;
   call_state *s;
   char *addr_buf = NULL;
@@ -192,136 +216,149 @@ int main(int argc, char **argv) {
 
   char *fake_argv[1];
 
-  GPR_ASSERT(argc >= 1);
+  GPR_ASSERT (argc >= 1);
   fake_argv[0] = argv[0];
-  grpc_test_init(1, fake_argv);
+  grpc_test_init (1, fake_argv);
 
-  grpc_init();
-  srand((unsigned)clock());
+  grpc_init ();
+  srand ((unsigned) clock ());
 
-  cl = gpr_cmdline_create("fling server");
-  gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
-  gpr_cmdline_add_flag(cl, "secure", "Run with security?", &secure);
-  gpr_cmdline_parse(cl, argc, argv);
-  gpr_cmdline_destroy(cl);
+  cl = gpr_cmdline_create ("fling server");
+  gpr_cmdline_add_string (cl, "bind", "Bind host:port", &addr);
+  gpr_cmdline_add_flag (cl, "secure", "Run with security?", &secure);
+  gpr_cmdline_parse (cl, argc, argv);
+  gpr_cmdline_destroy (cl);
 
-  if (addr == NULL) {
-    gpr_join_host_port(&addr_buf, "::", grpc_pick_unused_port_or_die());
-    addr = addr_buf;
-  }
-  gpr_log(GPR_INFO, "creating server on: %s", addr);
+  if (addr == NULL)
+    {
+      gpr_join_host_port (&addr_buf, "::", grpc_pick_unused_port_or_die ());
+      addr = addr_buf;
+    }
+  gpr_log (GPR_INFO, "creating server on: %s", addr);
 
-  cq = grpc_completion_queue_create(NULL);
-  if (secure) {
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
-                                                    test_server1_cert};
-    grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create(
-        NULL, &pem_key_cert_pair, 1, 0, NULL);
-    server = grpc_server_create(NULL, NULL);
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
-    grpc_server_credentials_release(ssl_creds);
-  } else {
-    server = grpc_server_create(NULL, NULL);
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
-  }
-  grpc_server_register_completion_queue(server, cq, NULL);
-  grpc_server_start(server);
+  cq = grpc_completion_queue_create (NULL);
+  if (secure)
+    {
+      grpc_ssl_pem_key_cert_pair pem_key_cert_pair = { test_server1_key,
+	test_server1_cert
+      };
+      grpc_server_credentials *ssl_creds = grpc_ssl_server_credentials_create (NULL, &pem_key_cert_pair, 1, 0, NULL);
+      server = grpc_server_create (NULL, NULL);
+      GPR_ASSERT (grpc_server_add_secure_http2_port (server, addr, ssl_creds));
+      grpc_server_credentials_release (ssl_creds);
+    }
+  else
+    {
+      server = grpc_server_create (NULL, NULL);
+      GPR_ASSERT (grpc_server_add_insecure_http2_port (server, addr));
+    }
+  grpc_server_register_completion_queue (server, cq, NULL);
+  grpc_server_start (server);
 
-  gpr_free(addr_buf);
+  gpr_free (addr_buf);
   addr = addr_buf = NULL;
 
-  grpc_call_details_init(&call_details);
+  grpc_call_details_init (&call_details);
 
-  request_call();
+  request_call ();
 
-  grpc_profiler_start("server.prof");
-  signal(SIGINT, sigint_handler);
-  while (!shutdown_finished) {
-    if (got_sigint && !shutdown_started) {
-      gpr_log(GPR_INFO, "Shutting down due to SIGINT");
-      grpc_server_shutdown_and_notify(server, cq, tag(1000));
-      GPR_ASSERT(grpc_completion_queue_pluck(
-                     cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
-                     .type == GRPC_OP_COMPLETE);
-      grpc_completion_queue_shutdown(cq);
-      shutdown_started = 1;
+  grpc_profiler_start ("server.prof");
+  signal (SIGINT, sigint_handler);
+  while (!shutdown_finished)
+    {
+      if (got_sigint && !shutdown_started)
+	{
+	  gpr_log (GPR_INFO, "Shutting down due to SIGINT");
+	  grpc_server_shutdown_and_notify (server, cq, tag (1000));
+	  GPR_ASSERT (grpc_completion_queue_pluck (cq, tag (1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE (5), NULL).type == GRPC_OP_COMPLETE);
+	  grpc_completion_queue_shutdown (cq);
+	  shutdown_started = 1;
+	}
+      ev = grpc_completion_queue_next (cq, gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), gpr_time_from_micros (1000000, GPR_TIMESPAN)), NULL);
+      s = ev.tag;
+      switch (ev.type)
+	{
+	case GRPC_OP_COMPLETE:
+	  switch ((gpr_intptr) s)
+	    {
+	    case FLING_SERVER_NEW_REQUEST:
+	      if (call != NULL)
+		{
+		  if (0 == strcmp (call_details.method, "/Reflector/reflectStream"))
+		    {
+		      /* Received streaming call. Send metadata here. */
+		      start_read_op (FLING_SERVER_READ_FOR_STREAMING);
+		      send_initial_metadata ();
+		    }
+		  else
+		    {
+		      /* Received unary call. Can do all ops in one batch. */
+		      start_read_op (FLING_SERVER_READ_FOR_UNARY);
+		    }
+		}
+	      else
+		{
+		  GPR_ASSERT (shutdown_started);
+		}
+	      /*      request_call();
+	       */
+	      break;
+	    case FLING_SERVER_READ_FOR_STREAMING:
+	      if (payload_buffer != NULL)
+		{
+		  /* Received payload from client. */
+		  start_write_op ();
+		}
+	      else
+		{
+		  /* Received end of stream from client. */
+		  start_send_status ();
+		}
+	      break;
+	    case FLING_SERVER_WRITE_FOR_STREAMING:
+	      /* Write completed at server  */
+	      grpc_byte_buffer_destroy (payload_buffer);
+	      payload_buffer = NULL;
+	      start_read_op (FLING_SERVER_READ_FOR_STREAMING);
+	      break;
+	    case FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING:
+	      /* Metadata send completed at server */
+	      break;
+	    case FLING_SERVER_SEND_STATUS_FOR_STREAMING:
+	      /* Send status and close completed at server */
+	      grpc_call_destroy (call);
+	      if (!shutdown_started)
+		request_call ();
+	      break;
+	    case FLING_SERVER_READ_FOR_UNARY:
+	      /* Finished payload read for unary. Start all reamaining
+	       *  unary ops in a batch.
+	       */
+	      handle_unary_method ();
+	      break;
+	    case FLING_SERVER_BATCH_OPS_FOR_UNARY:
+	      /* Finished unary call. */
+	      grpc_byte_buffer_destroy (payload_buffer);
+	      payload_buffer = NULL;
+	      grpc_call_destroy (call);
+	      if (!shutdown_started)
+		request_call ();
+	      break;
+	    }
+	  break;
+	case GRPC_QUEUE_SHUTDOWN:
+	  GPR_ASSERT (shutdown_started);
+	  shutdown_finished = 1;
+	  break;
+	case GRPC_QUEUE_TIMEOUT:
+	  break;
+	}
     }
-    ev = grpc_completion_queue_next(
-        cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(1000000, GPR_TIMESPAN)),
-        NULL);
-    s = ev.tag;
-    switch (ev.type) {
-      case GRPC_OP_COMPLETE:
-        switch ((gpr_intptr)s) {
-          case FLING_SERVER_NEW_REQUEST:
-            if (call != NULL) {
-              if (0 ==
-                  strcmp(call_details.method, "/Reflector/reflectStream")) {
-                /* Received streaming call. Send metadata here. */
-                start_read_op(FLING_SERVER_READ_FOR_STREAMING);
-                send_initial_metadata();
-              } else {
-                /* Received unary call. Can do all ops in one batch. */
-                start_read_op(FLING_SERVER_READ_FOR_UNARY);
-              }
-            } else {
-              GPR_ASSERT(shutdown_started);
-            }
-            /*	    request_call();
-             */
-            break;
-          case FLING_SERVER_READ_FOR_STREAMING:
-            if (payload_buffer != NULL) {
-              /* Received payload from client. */
-              start_write_op();
-            } else {
-              /* Received end of stream from client. */
-              start_send_status();
-            }
-            break;
-          case FLING_SERVER_WRITE_FOR_STREAMING:
-            /* Write completed at server  */
-            grpc_byte_buffer_destroy(payload_buffer);
-            payload_buffer = NULL;
-            start_read_op(FLING_SERVER_READ_FOR_STREAMING);
-            break;
-          case FLING_SERVER_SEND_INIT_METADATA_FOR_STREAMING:
-            /* Metadata send completed at server */
-            break;
-          case FLING_SERVER_SEND_STATUS_FOR_STREAMING:
-            /* Send status and close completed at server */
-            grpc_call_destroy(call);
-            if (!shutdown_started) request_call();
-            break;
-          case FLING_SERVER_READ_FOR_UNARY:
-            /* Finished payload read for unary. Start all reamaining
-             *  unary ops in a batch.
-             */
-            handle_unary_method();
-            break;
-          case FLING_SERVER_BATCH_OPS_FOR_UNARY:
-            /* Finished unary call. */
-            grpc_byte_buffer_destroy(payload_buffer);
-            payload_buffer = NULL;
-            grpc_call_destroy(call);
-            if (!shutdown_started) request_call();
-            break;
-        }
-        break;
-      case GRPC_QUEUE_SHUTDOWN:
-        GPR_ASSERT(shutdown_started);
-        shutdown_finished = 1;
-        break;
-      case GRPC_QUEUE_TIMEOUT:
-        break;
-    }
-  }
-  grpc_profiler_stop();
-  grpc_call_details_destroy(&call_details);
+  grpc_profiler_stop ();
+  grpc_call_details_destroy (&call_details);
 
-  grpc_server_destroy(server);
-  grpc_completion_queue_destroy(cq);
-  grpc_shutdown();
+  grpc_server_destroy (server);
+  grpc_completion_queue_destroy (cq);
+  grpc_shutdown ();
   return 0;
 }

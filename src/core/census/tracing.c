@@ -35,11 +35,18 @@
 
 /* TODO(aveitch): These are all placeholder implementations. */
 
-int census_trace_mask(const census_context *context) {
+int
+census_trace_mask (const census_context * context)
+{
   return CENSUS_TRACE_MASK_NONE;
 }
 
-void census_set_trace_mask(int trace_mask) {}
+void
+census_set_trace_mask (int trace_mask)
+{
+}
 
-void census_trace_print(census_context *context, gpr_uint32 type,
-                        const char *buffer, size_t n) {}
+void
+census_trace_print (census_context * context, gpr_uint32 type, const char *buffer, size_t n)
+{
+}

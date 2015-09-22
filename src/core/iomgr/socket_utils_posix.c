@@ -43,27 +43,35 @@
 
 #include <grpc/support/log.h>
 
-int grpc_accept4(int sockfd, struct sockaddr *addr, socklen_t *addrlen,
-                 int nonblock, int cloexec) {
+int
+grpc_accept4 (int sockfd, struct sockaddr *addr, socklen_t * addrlen, int nonblock, int cloexec)
+{
   int fd, flags;
 
-  fd = accept(sockfd, addr, addrlen);
-  if (fd >= 0) {
-    if (nonblock) {
-      flags = fcntl(fd, F_GETFL, 0);
-      if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) goto close_and_error;
+  fd = accept (sockfd, addr, addrlen);
+  if (fd >= 0)
+    {
+      if (nonblock)
+	{
+	  flags = fcntl (fd, F_GETFL, 0);
+	  if (flags < 0)
+	    goto close_and_error;
+	  if (fcntl (fd, F_SETFL, flags | O_NONBLOCK) != 0)
+	    goto close_and_error;
+	}
+      if (cloexec)
+	{
+	  flags = fcntl (fd, F_GETFD, 0);
+	  if (flags < 0)
+	    goto close_and_error;
+	  if (fcntl (fd, F_SETFD, flags | FD_CLOEXEC) != 0)
+	    goto close_and_error;
+	}
     }
-    if (cloexec) {
-      flags = fcntl(fd, F_GETFD, 0);
-      if (flags < 0) goto close_and_error;
-      if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
-    }
-  }
   return fd;
 
 close_and_error:
-  close(fd);
+  close (fd);
   return -1;
 }
 

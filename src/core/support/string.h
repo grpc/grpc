@@ -41,7 +41,8 @@
 #include <grpc/support/slice.h>
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 /* String utility functions */
@@ -52,15 +53,14 @@ extern "C" {
 
 /* Converts array buf, of length len, into a C string  according to the flags.
    Result should be freed with gpr_free() */
-char *gpr_dump(const char *buf, size_t len, gpr_uint32 flags);
+  char *gpr_dump (const char *buf, size_t len, gpr_uint32 flags);
 
 /* Calls gpr_dump on a slice. */
-char *gpr_dump_slice(gpr_slice slice, gpr_uint32 flags);
+  char *gpr_dump_slice (gpr_slice slice, gpr_uint32 flags);
 
 /* Parses an array of bytes into an integer (base 10). Returns 1 on success,
    0 on failure. */
-int gpr_parse_bytes_to_uint32(const char *data, size_t length,
-                              gpr_uint32 *result);
+  int gpr_parse_bytes_to_uint32 (const char *data, size_t length, gpr_uint32 * result);
 
 /* Minimum buffer size for calling ltoa */
 #define GPR_LTOA_MIN_BUFSIZE (3 * sizeof(long))
@@ -68,44 +68,44 @@ int gpr_parse_bytes_to_uint32(const char *data, size_t length,
 /* Convert a long to a string in base 10; returns the length of the
    output string (or 0 on failure).
    output must be at least GPR_LTOA_MIN_BUFSIZE bytes long. */
-int gpr_ltoa(long value, char *output);
+  int gpr_ltoa (long value, char *output);
 
 /* Reverse a run of bytes */
-void gpr_reverse_bytes(char *str, int len);
+  void gpr_reverse_bytes (char *str, int len);
 
 /* Join a set of strings, returning the resulting string.
    Total combined length (excluding null terminator) is returned in total_length
    if it is non-null. */
-char *gpr_strjoin(const char **strs, size_t nstrs, size_t *total_length);
+  char *gpr_strjoin (const char **strs, size_t nstrs, size_t * total_length);
 
 /* Join a set of strings using a separator, returning the resulting string.
    Total combined length (excluding null terminator) is returned in total_length
    if it is non-null. */
-char *gpr_strjoin_sep(const char **strs, size_t nstrs, const char *sep,
-                      size_t *total_length);
+  char *gpr_strjoin_sep (const char **strs, size_t nstrs, const char *sep, size_t * total_length);
 
 /** Split \a str by the separator \a sep. Results are stored in \a dst, which
  * should be a properly initialized instance. */
-void gpr_slice_split(gpr_slice str, const char *sep, gpr_slice_buffer *dst);
+  void gpr_slice_split (gpr_slice str, const char *sep, gpr_slice_buffer * dst);
 
 /* A vector of strings... for building up a final string one piece at a time */
-typedef struct {
-  char **strs;
-  size_t count;
-  size_t capacity;
-} gpr_strvec;
+  typedef struct
+  {
+    char **strs;
+    size_t count;
+    size_t capacity;
+  } gpr_strvec;
 
 /* Initialize/destroy */
-void gpr_strvec_init(gpr_strvec *strs);
-void gpr_strvec_destroy(gpr_strvec *strs);
+  void gpr_strvec_init (gpr_strvec * strs);
+  void gpr_strvec_destroy (gpr_strvec * strs);
 /* Add a string to a strvec, takes ownership of the string */
-void gpr_strvec_add(gpr_strvec *strs, char *add);
+  void gpr_strvec_add (gpr_strvec * strs, char *add);
 /* Return a joined string with all added substrings, optionally setting
    total_length as per gpr_strjoin */
-char *gpr_strvec_flatten(gpr_strvec *strs, size_t *total_length);
+  char *gpr_strvec_flatten (gpr_strvec * strs, size_t * total_length);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* GRPC_INTERNAL_CORE_SUPPORT_STRING_H */
+#endif				/* GRPC_INTERNAL_CORE_SUPPORT_STRING_H */

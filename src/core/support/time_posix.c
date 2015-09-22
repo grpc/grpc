@@ -42,7 +42,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-static struct timespec timespec_from_gpr(gpr_timespec gts) {
+static struct timespec
+timespec_from_gpr (gpr_timespec gts)
+{
   struct timespec rv;
   rv.tv_sec = gts.tv_sec;
   rv.tv_nsec = gts.tv_nsec;
@@ -50,31 +52,40 @@ static struct timespec timespec_from_gpr(gpr_timespec gts) {
 }
 
 #if _POSIX_TIMERS > 0
-static gpr_timespec gpr_from_timespec(struct timespec ts,
-                                      gpr_clock_type clock) {
+static gpr_timespec
+gpr_from_timespec (struct timespec ts, gpr_clock_type clock)
+{
   gpr_timespec rv;
   rv.tv_sec = ts.tv_sec;
-  rv.tv_nsec = (int)ts.tv_nsec;
+  rv.tv_nsec = (int) ts.tv_nsec;
   rv.clock_type = clock;
   return rv;
 }
 
 /** maps gpr_clock_type --> clockid_t for clock_gettime */
-static clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC, CLOCK_REALTIME};
+static clockid_t clockid_for_gpr_clock[] = { CLOCK_MONOTONIC, CLOCK_REALTIME };
 
-void gpr_time_init(void) {}
+void
+gpr_time_init (void)
+{
+}
 
-gpr_timespec gpr_now(gpr_clock_type clock) {
+gpr_timespec
+gpr_now (gpr_clock_type clock)
+{
   struct timespec now;
-  GPR_ASSERT(clock != GPR_TIMESPAN);
-  if (clock == GPR_CLOCK_PRECISE) {
-    gpr_timespec ret;
-    gpr_precise_clock_now(&ret);
-    return ret;
-  } else {
-    clock_gettime(clockid_for_gpr_clock[clock], &now);
-    return gpr_from_timespec(now, clock);
-  }
+  GPR_ASSERT (clock != GPR_TIMESPAN);
+  if (clock == GPR_CLOCK_PRECISE)
+    {
+      gpr_timespec ret;
+      gpr_precise_clock_now (&ret);
+      return ret;
+    }
+  else
+    {
+      clock_gettime (clockid_for_gpr_clock[clock], &now);
+      return gpr_from_timespec (now, clock);
+    }
 }
 #else
 /* For some reason Apple's OSes haven't implemented clock_gettime. */
@@ -86,61 +97,71 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
 static double g_time_scale;
 static uint64_t g_time_start;
 
-void gpr_time_init(void) {
-  mach_timebase_info_data_t tb = {0, 1};
-  mach_timebase_info(&tb);
+void
+gpr_time_init (void)
+{
+  mach_timebase_info_data_t tb = { 0, 1 };
+  mach_timebase_info (&tb);
   g_time_scale = tb.numer;
   g_time_scale /= tb.denom;
-  g_time_start = mach_absolute_time();
+  g_time_start = mach_absolute_time ();
 }
 
-gpr_timespec gpr_now(gpr_clock_type clock) {
+gpr_timespec
+gpr_now (gpr_clock_type clock)
+{
   gpr_timespec now;
   struct timeval now_tv;
   double now_dbl;
 
   now.clock_type = clock;
-  switch (clock) {
+  switch (clock)
+    {
     case GPR_CLOCK_REALTIME:
-      gettimeofday(&now_tv, NULL);
+      gettimeofday (&now_tv, NULL);
       now.tv_sec = now_tv.tv_sec;
       now.tv_nsec = now_tv.tv_usec * 1000;
       break;
     case GPR_CLOCK_MONOTONIC:
-      now_dbl = (mach_absolute_time() - g_time_start) * g_time_scale;
-      now.tv_sec = (time_t)(now_dbl * 1e-9);
-      now.tv_nsec = (int)(now_dbl - ((double)now.tv_sec) * 1e9);
+      now_dbl = (mach_absolute_time () - g_time_start) * g_time_scale;
+      now.tv_sec = (time_t) (now_dbl * 1e-9);
+      now.tv_nsec = (int) (now_dbl - ((double) now.tv_sec) * 1e9);
       break;
     case GPR_CLOCK_PRECISE:
-      gpr_precise_clock_now(&now);
+      gpr_precise_clock_now (&now);
       break;
     case GPR_TIMESPAN:
-      abort();
-  }
+      abort ();
+    }
 
   return now;
 }
 #endif
 
-void gpr_sleep_until(gpr_timespec until) {
+void
+gpr_sleep_until (gpr_timespec until)
+{
   gpr_timespec now;
   gpr_timespec delta;
   struct timespec delta_ts;
 
-  for (;;) {
-    /* We could simplify by using clock_nanosleep instead, but it might be
-     * slightly less portable. */
-    now = gpr_now(until.clock_type);
-    if (gpr_time_cmp(until, now) <= 0) {
-      return;
-    }
+  for (;;)
+    {
+      /* We could simplify by using clock_nanosleep instead, but it might be
+       * slightly less portable. */
+      now = gpr_now (until.clock_type);
+      if (gpr_time_cmp (until, now) <= 0)
+	{
+	  return;
+	}
 
-    delta = gpr_time_sub(until, now);
-    delta_ts = timespec_from_gpr(delta);
-    if (nanosleep(&delta_ts, NULL) == 0) {
-      break;
+      delta = gpr_time_sub (until, now);
+      delta_ts = timespec_from_gpr (delta);
+      if (nanosleep (&delta_ts, NULL) == 0)
+	{
+	  break;
+	}
     }
-  }
 }
 
 #endif /* GPR_POSIX_TIME */

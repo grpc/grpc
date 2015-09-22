@@ -40,17 +40,13 @@
 typedef struct grpc_tcp_server grpc_tcp_server;
 
 /* Called for newly connected TCP connections. */
-typedef void (*grpc_tcp_server_cb)(void *arg, grpc_endpoint *ep,
-                                   grpc_closure_list *closure_list);
+typedef void (*grpc_tcp_server_cb) (void *arg, grpc_endpoint * ep, grpc_closure_list * closure_list);
 
 /* Create a server, initially not bound to any ports */
-grpc_tcp_server *grpc_tcp_server_create(void);
+grpc_tcp_server *grpc_tcp_server_create (void);
 
 /* Start listening to bound ports */
-void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset **pollsets,
-                           size_t pollset_count,
-                           grpc_tcp_server_cb on_accept_cb, void *cb_arg,
-                           grpc_closure_list *closure_list);
+void grpc_tcp_server_start (grpc_tcp_server * server, grpc_pollset ** pollsets, size_t pollset_count, grpc_tcp_server_cb on_accept_cb, void *cb_arg, grpc_closure_list * closure_list);
 
 /* Add a port to the server, returning port number on success, or negative
    on failure.
@@ -63,17 +59,15 @@ void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset **pollsets,
    For raw access to the underlying sockets, see grpc_tcp_server_get_fd(). */
 /* TODO(ctiller): deprecate this, and make grpc_tcp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
-                             size_t addr_len);
+int grpc_tcp_server_add_port (grpc_tcp_server * s, const void *addr, size_t addr_len);
 
 /* Returns the file descriptor of the Nth listening socket on this server,
    or -1 if the index is out of bounds.
 
    The file descriptor remains owned by the server, and will be cleaned
    up when grpc_tcp_server_destroy is called. */
-int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned index);
+int grpc_tcp_server_get_fd (grpc_tcp_server * s, unsigned index);
 
-void grpc_tcp_server_destroy(grpc_tcp_server *server, grpc_closure *closure,
-                             grpc_closure_list *closure_list);
+void grpc_tcp_server_destroy (grpc_tcp_server * server, grpc_closure * closure, grpc_closure_list * closure_list);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H */

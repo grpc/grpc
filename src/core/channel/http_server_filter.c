@@ -37,7 +37,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-typedef struct call_data {
+typedef struct call_data
+{
   gpr_uint8 got_initial_metadata;
   gpr_uint8 seen_path;
   gpr_uint8 seen_post;
@@ -57,7 +58,8 @@ typedef struct call_data {
   grpc_closure hs_on_recv;
 } call_data;
 
-typedef struct channel_data {
+typedef struct channel_data
+{
   grpc_mdelem *te_trailers;
   grpc_mdelem *method_post;
   grpc_mdelem *http_scheme;
@@ -74,236 +76,268 @@ typedef struct channel_data {
   grpc_mdctx *mdctx;
 } channel_data;
 
-typedef struct {
+typedef struct
+{
   grpc_call_element *elem;
   grpc_closure_list *closure_list;
 } server_filter_args;
 
-static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
+static grpc_mdelem *
+server_filter (void *user_data, grpc_mdelem * md)
+{
   server_filter_args *a = user_data;
   grpc_call_element *elem = a->elem;
   channel_data *channeld = elem->channel_data;
   call_data *calld = elem->call_data;
 
   /* Check if it is one of the headers we care about. */
-  if (md == channeld->te_trailers || md == channeld->method_post ||
-      md == channeld->http_scheme || md == channeld->https_scheme ||
-      md == channeld->grpc_scheme || md == channeld->content_type) {
-    /* swallow it */
-    if (md == channeld->method_post) {
-      calld->seen_post = 1;
-    } else if (md->key == channeld->http_scheme->key) {
-      calld->seen_scheme = 1;
-    } else if (md == channeld->te_trailers) {
-      calld->seen_te_trailers = 1;
-    }
-    /* TODO(klempner): Track that we've seen all the headers we should
-       require */
-    return NULL;
-  } else if (md->key == channeld->content_type->key) {
-    if (strncmp(grpc_mdstr_as_c_string(md->value), "application/grpc+", 17) ==
-        0) {
-      /* Although the C implementation doesn't (currently) generate them,
-         any custom +-suffix is explicitly valid. */
-      /* TODO(klempner): We should consider preallocating common values such
-         as +proto or +json, or at least stashing them if we see them. */
-      /* TODO(klempner): Should we be surfacing this to application code? */
-    } else {
-      /* TODO(klempner): We're currently allowing this, but we shouldn't
-         see it without a proxy so log for now. */
-      gpr_log(GPR_INFO, "Unexpected content-type %s",
-              channeld->content_type->key);
-    }
-    return NULL;
-  } else if (md->key == channeld->te_trailers->key ||
-             md->key == channeld->method_post->key ||
-             md->key == channeld->http_scheme->key) {
-    gpr_log(GPR_ERROR, "Invalid %s: header: '%s'",
-            grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
-    /* swallow it and error everything out. */
-    /* TODO(klempner): We ought to generate more descriptive error messages
-       on the wire here. */
-    grpc_call_element_send_cancel(elem, a->closure_list);
-    return NULL;
-  } else if (md->key == channeld->path_key) {
-    if (calld->seen_path) {
-      gpr_log(GPR_ERROR, "Received :path twice");
+  if (md == channeld->te_trailers || md == channeld->method_post || md == channeld->http_scheme || md == channeld->https_scheme || md == channeld->grpc_scheme || md == channeld->content_type)
+    {
+      /* swallow it */
+      if (md == channeld->method_post)
+	{
+	  calld->seen_post = 1;
+	}
+      else if (md->key == channeld->http_scheme->key)
+	{
+	  calld->seen_scheme = 1;
+	}
+      else if (md == channeld->te_trailers)
+	{
+	  calld->seen_te_trailers = 1;
+	}
+      /* TODO(klempner): Track that we've seen all the headers we should
+         require */
       return NULL;
     }
-    calld->seen_path = 1;
-    return md;
-  } else if (md->key == channeld->authority_key) {
-    calld->seen_authority = 1;
-    return md;
-  } else if (md->key == channeld->host_key) {
-    /* translate host to :authority since :authority may be
-       omitted */
-    grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
-        channeld->mdctx, GRPC_MDSTR_REF(channeld->authority_key),
-        GRPC_MDSTR_REF(md->value));
-    GRPC_MDELEM_UNREF(md);
-    calld->seen_authority = 1;
-    return authority;
-  } else {
-    return md;
-  }
+  else if (md->key == channeld->content_type->key)
+    {
+      if (strncmp (grpc_mdstr_as_c_string (md->value), "application/grpc+", 17) == 0)
+	{
+	  /* Although the C implementation doesn't (currently) generate them,
+	     any custom +-suffix is explicitly valid. */
+	  /* TODO(klempner): We should consider preallocating common values such
+	     as +proto or +json, or at least stashing them if we see them. */
+	  /* TODO(klempner): Should we be surfacing this to application code? */
+	}
+      else
+	{
+	  /* TODO(klempner): We're currently allowing this, but we shouldn't
+	     see it without a proxy so log for now. */
+	  gpr_log (GPR_INFO, "Unexpected content-type %s", channeld->content_type->key);
+	}
+      return NULL;
+    }
+  else if (md->key == channeld->te_trailers->key || md->key == channeld->method_post->key || md->key == channeld->http_scheme->key)
+    {
+      gpr_log (GPR_ERROR, "Invalid %s: header: '%s'", grpc_mdstr_as_c_string (md->key), grpc_mdstr_as_c_string (md->value));
+      /* swallow it and error everything out. */
+      /* TODO(klempner): We ought to generate more descriptive error messages
+         on the wire here. */
+      grpc_call_element_send_cancel (elem, a->closure_list);
+      return NULL;
+    }
+  else if (md->key == channeld->path_key)
+    {
+      if (calld->seen_path)
+	{
+	  gpr_log (GPR_ERROR, "Received :path twice");
+	  return NULL;
+	}
+      calld->seen_path = 1;
+      return md;
+    }
+  else if (md->key == channeld->authority_key)
+    {
+      calld->seen_authority = 1;
+      return md;
+    }
+  else if (md->key == channeld->host_key)
+    {
+      /* translate host to :authority since :authority may be
+         omitted */
+      grpc_mdelem *authority = grpc_mdelem_from_metadata_strings (channeld->mdctx, GRPC_MDSTR_REF (channeld->authority_key),
+								  GRPC_MDSTR_REF (md->value));
+      GRPC_MDELEM_UNREF (md);
+      calld->seen_authority = 1;
+      return authority;
+    }
+  else
+    {
+      return md;
+    }
 }
 
-static void hs_on_recv(void *user_data, int success,
-                       grpc_closure_list *closure_list) {
+static void
+hs_on_recv (void *user_data, int success, grpc_closure_list * closure_list)
+{
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  if (success) {
-    size_t i;
-    size_t nops = calld->recv_ops->nops;
-    grpc_stream_op *ops = calld->recv_ops->ops;
-    for (i = 0; i < nops; i++) {
-      grpc_stream_op *op = &ops[i];
-      server_filter_args a;
-      if (op->type != GRPC_OP_METADATA) continue;
-      calld->got_initial_metadata = 1;
-      a.elem = elem;
-      a.closure_list = closure_list;
-      grpc_metadata_batch_filter(&op->data.metadata, server_filter, &a);
-      /* Have we seen the required http2 transport headers?
-         (:method, :scheme, content-type, with :path and :authority covered
-         at the channel level right now) */
-      if (calld->seen_post && calld->seen_scheme && calld->seen_te_trailers &&
-          calld->seen_path && calld->seen_authority) {
-        /* do nothing */
-      } else {
-        if (!calld->seen_path) {
-          gpr_log(GPR_ERROR, "Missing :path header");
-        }
-        if (!calld->seen_authority) {
-          gpr_log(GPR_ERROR, "Missing :authority header");
-        }
-        if (!calld->seen_post) {
-          gpr_log(GPR_ERROR, "Missing :method header");
-        }
-        if (!calld->seen_scheme) {
-          gpr_log(GPR_ERROR, "Missing :scheme header");
-        }
-        if (!calld->seen_te_trailers) {
-          gpr_log(GPR_ERROR, "Missing te trailers header");
-        }
-        /* Error this call out */
-        success = 0;
-        grpc_call_element_send_cancel(elem, closure_list);
-      }
+  if (success)
+    {
+      size_t i;
+      size_t nops = calld->recv_ops->nops;
+      grpc_stream_op *ops = calld->recv_ops->ops;
+      for (i = 0; i < nops; i++)
+	{
+	  grpc_stream_op *op = &ops[i];
+	  server_filter_args a;
+	  if (op->type != GRPC_OP_METADATA)
+	    continue;
+	  calld->got_initial_metadata = 1;
+	  a.elem = elem;
+	  a.closure_list = closure_list;
+	  grpc_metadata_batch_filter (&op->data.metadata, server_filter, &a);
+	  /* Have we seen the required http2 transport headers?
+	     (:method, :scheme, content-type, with :path and :authority covered
+	     at the channel level right now) */
+	  if (calld->seen_post && calld->seen_scheme && calld->seen_te_trailers && calld->seen_path && calld->seen_authority)
+	    {
+	      /* do nothing */
+	    }
+	  else
+	    {
+	      if (!calld->seen_path)
+		{
+		  gpr_log (GPR_ERROR, "Missing :path header");
+		}
+	      if (!calld->seen_authority)
+		{
+		  gpr_log (GPR_ERROR, "Missing :authority header");
+		}
+	      if (!calld->seen_post)
+		{
+		  gpr_log (GPR_ERROR, "Missing :method header");
+		}
+	      if (!calld->seen_scheme)
+		{
+		  gpr_log (GPR_ERROR, "Missing :scheme header");
+		}
+	      if (!calld->seen_te_trailers)
+		{
+		  gpr_log (GPR_ERROR, "Missing te trailers header");
+		}
+	      /* Error this call out */
+	      success = 0;
+	      grpc_call_element_send_cancel (elem, closure_list);
+	    }
+	}
     }
-  }
-  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success, closure_list);
+  calld->on_done_recv->cb (calld->on_done_recv->cb_arg, success, closure_list);
 }
 
-static void hs_mutate_op(grpc_call_element *elem,
-                         grpc_transport_stream_op *op) {
+static void
+hs_mutate_op (grpc_call_element * elem, grpc_transport_stream_op * op)
+{
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
   size_t i;
 
-  if (op->send_ops && !calld->sent_status) {
-    size_t nops = op->send_ops->nops;
-    grpc_stream_op *ops = op->send_ops->ops;
-    for (i = 0; i < nops; i++) {
-      grpc_stream_op *op = &ops[i];
-      if (op->type != GRPC_OP_METADATA) continue;
-      calld->sent_status = 1;
-      grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
-                                   GRPC_MDELEM_REF(channeld->status_ok));
-      grpc_metadata_batch_add_tail(&op->data.metadata, &calld->content_type,
-                                   GRPC_MDELEM_REF(channeld->content_type));
-      break;
+  if (op->send_ops && !calld->sent_status)
+    {
+      size_t nops = op->send_ops->nops;
+      grpc_stream_op *ops = op->send_ops->ops;
+      for (i = 0; i < nops; i++)
+	{
+	  grpc_stream_op *op = &ops[i];
+	  if (op->type != GRPC_OP_METADATA)
+	    continue;
+	  calld->sent_status = 1;
+	  grpc_metadata_batch_add_head (&op->data.metadata, &calld->status, GRPC_MDELEM_REF (channeld->status_ok));
+	  grpc_metadata_batch_add_tail (&op->data.metadata, &calld->content_type, GRPC_MDELEM_REF (channeld->content_type));
+	  break;
+	}
     }
-  }
 
-  if (op->recv_ops && !calld->got_initial_metadata) {
-    /* substitute our callback for the higher callback */
-    calld->recv_ops = op->recv_ops;
-    calld->on_done_recv = op->on_done_recv;
-    op->on_done_recv = &calld->hs_on_recv;
-  }
+  if (op->recv_ops && !calld->got_initial_metadata)
+    {
+      /* substitute our callback for the higher callback */
+      calld->recv_ops = op->recv_ops;
+      calld->on_done_recv = op->on_done_recv;
+      op->on_done_recv = &calld->hs_on_recv;
+    }
 }
 
-static void hs_start_transport_op(grpc_call_element *elem,
-                                  grpc_transport_stream_op *op,
-                                  grpc_closure_list *closure_list) {
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
-  hs_mutate_op(elem, op);
-  grpc_call_next_op(elem, op, closure_list);
+static void
+hs_start_transport_op (grpc_call_element * elem, grpc_transport_stream_op * op, grpc_closure_list * closure_list)
+{
+  GRPC_CALL_LOG_OP (GPR_INFO, elem, op);
+  hs_mutate_op (elem, op);
+  grpc_call_next_op (elem, op, closure_list);
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_call_element *elem,
-                           const void *server_transport_data,
-                           grpc_transport_stream_op *initial_op,
-                           grpc_closure_list *closure_list) {
+static void
+init_call_elem (grpc_call_element * elem, const void *server_transport_data, grpc_transport_stream_op * initial_op, grpc_closure_list * closure_list)
+{
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   /* initialize members */
-  memset(calld, 0, sizeof(*calld));
-  grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
-  if (initial_op) hs_mutate_op(elem, initial_op);
+  memset (calld, 0, sizeof (*calld));
+  grpc_closure_init (&calld->hs_on_recv, hs_on_recv, elem);
+  if (initial_op)
+    hs_mutate_op (elem, initial_op);
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem,
-                              grpc_closure_list *closure_list) {}
+static void
+destroy_call_elem (grpc_call_element * elem, grpc_closure_list * closure_list)
+{
+}
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
-                              const grpc_channel_args *args, grpc_mdctx *mdctx,
-                              int is_first, int is_last,
-                              grpc_closure_list *closure_list) {
+static void
+init_channel_elem (grpc_channel_element * elem, grpc_channel * master, const grpc_channel_args * args, grpc_mdctx * mdctx, int is_first, int is_last, grpc_closure_list * closure_list)
+{
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
   /* The first and the last filters tend to be implemented differently to
      handle the case that there's no 'next' filter to call on the up or down
      path */
-  GPR_ASSERT(!is_first);
-  GPR_ASSERT(!is_last);
+  GPR_ASSERT (!is_first);
+  GPR_ASSERT (!is_last);
 
   /* initialize members */
-  channeld->te_trailers = grpc_mdelem_from_strings(mdctx, "te", "trailers");
-  channeld->status_ok = grpc_mdelem_from_strings(mdctx, ":status", "200");
-  channeld->status_not_found =
-      grpc_mdelem_from_strings(mdctx, ":status", "404");
-  channeld->method_post = grpc_mdelem_from_strings(mdctx, ":method", "POST");
-  channeld->http_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "http");
-  channeld->https_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "https");
-  channeld->grpc_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "grpc");
-  channeld->path_key = grpc_mdstr_from_string(mdctx, ":path", 0);
-  channeld->authority_key = grpc_mdstr_from_string(mdctx, ":authority", 0);
-  channeld->host_key = grpc_mdstr_from_string(mdctx, "host", 0);
-  channeld->content_type =
-      grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
+  channeld->te_trailers = grpc_mdelem_from_strings (mdctx, "te", "trailers");
+  channeld->status_ok = grpc_mdelem_from_strings (mdctx, ":status", "200");
+  channeld->status_not_found = grpc_mdelem_from_strings (mdctx, ":status", "404");
+  channeld->method_post = grpc_mdelem_from_strings (mdctx, ":method", "POST");
+  channeld->http_scheme = grpc_mdelem_from_strings (mdctx, ":scheme", "http");
+  channeld->https_scheme = grpc_mdelem_from_strings (mdctx, ":scheme", "https");
+  channeld->grpc_scheme = grpc_mdelem_from_strings (mdctx, ":scheme", "grpc");
+  channeld->path_key = grpc_mdstr_from_string (mdctx, ":path", 0);
+  channeld->authority_key = grpc_mdstr_from_string (mdctx, ":authority", 0);
+  channeld->host_key = grpc_mdstr_from_string (mdctx, "host", 0);
+  channeld->content_type = grpc_mdelem_from_strings (mdctx, "content-type", "application/grpc");
 
   channeld->mdctx = mdctx;
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element *elem,
-                                 grpc_closure_list *closure_list) {
+static void
+destroy_channel_elem (grpc_channel_element * elem, grpc_closure_list * closure_list)
+{
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
-  GRPC_MDELEM_UNREF(channeld->te_trailers);
-  GRPC_MDELEM_UNREF(channeld->status_ok);
-  GRPC_MDELEM_UNREF(channeld->status_not_found);
-  GRPC_MDELEM_UNREF(channeld->method_post);
-  GRPC_MDELEM_UNREF(channeld->http_scheme);
-  GRPC_MDELEM_UNREF(channeld->https_scheme);
-  GRPC_MDELEM_UNREF(channeld->grpc_scheme);
-  GRPC_MDELEM_UNREF(channeld->content_type);
-  GRPC_MDSTR_UNREF(channeld->path_key);
-  GRPC_MDSTR_UNREF(channeld->authority_key);
-  GRPC_MDSTR_UNREF(channeld->host_key);
+  GRPC_MDELEM_UNREF (channeld->te_trailers);
+  GRPC_MDELEM_UNREF (channeld->status_ok);
+  GRPC_MDELEM_UNREF (channeld->status_not_found);
+  GRPC_MDELEM_UNREF (channeld->method_post);
+  GRPC_MDELEM_UNREF (channeld->http_scheme);
+  GRPC_MDELEM_UNREF (channeld->https_scheme);
+  GRPC_MDELEM_UNREF (channeld->grpc_scheme);
+  GRPC_MDELEM_UNREF (channeld->content_type);
+  GRPC_MDSTR_UNREF (channeld->path_key);
+  GRPC_MDSTR_UNREF (channeld->authority_key);
+  GRPC_MDSTR_UNREF (channeld->host_key);
 }
 
 const grpc_channel_filter grpc_http_server_filter = {
-    hs_start_transport_op, grpc_channel_next_op, sizeof(call_data),
-    init_call_elem,        destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem,     destroy_channel_elem, grpc_call_next_get_peer,
-    "http-server"};
+  hs_start_transport_op, grpc_channel_next_op, sizeof (call_data),
+  init_call_elem, destroy_call_elem, sizeof (channel_data),
+  init_channel_elem, destroy_channel_elem, grpc_call_next_get_peer,
+  "http-server"
+};

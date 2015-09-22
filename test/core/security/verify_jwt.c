@@ -43,47 +43,53 @@
 #include <grpc/support/slice.h>
 #include <grpc/support/sync.h>
 
-typedef struct {
+typedef struct
+{
   grpc_pollset pollset;
   int is_done;
   int success;
 } synchronizer;
 
-static void print_usage_and_exit(gpr_cmdline *cl, const char *argv0) {
-  char *usage = gpr_cmdline_usage_string(cl, argv0);
-  fprintf(stderr, "%s", usage);
-  gpr_free(usage);
-  gpr_cmdline_destroy(cl);
-  exit(1);
+static void
+print_usage_and_exit (gpr_cmdline * cl, const char *argv0)
+{
+  char *usage = gpr_cmdline_usage_string (cl, argv0);
+  fprintf (stderr, "%s", usage);
+  gpr_free (usage);
+  gpr_cmdline_destroy (cl);
+  exit (1);
 }
 
-static void on_jwt_verification_done(void *user_data,
-                                     grpc_jwt_verifier_status status,
-                                     grpc_jwt_claims *claims) {
+static void
+on_jwt_verification_done (void *user_data, grpc_jwt_verifier_status status, grpc_jwt_claims * claims)
+{
   synchronizer *sync = user_data;
 
   sync->success = (status == GRPC_JWT_VERIFIER_OK);
-  if (sync->success) {
-    char *claims_str;
-    GPR_ASSERT(claims != NULL);
-    claims_str =
-        grpc_json_dump_to_string((grpc_json *)grpc_jwt_claims_json(claims), 2);
-    printf("Claims: \n\n%s\n", claims_str);
-    gpr_free(claims_str);
-    grpc_jwt_claims_destroy(claims);
-  } else {
-    GPR_ASSERT(claims == NULL);
-    fprintf(stderr, "Verification failed with error %s\n",
-            grpc_jwt_verifier_status_to_string(status));
-  }
+  if (sync->success)
+    {
+      char *claims_str;
+      GPR_ASSERT (claims != NULL);
+      claims_str = grpc_json_dump_to_string ((grpc_json *) grpc_jwt_claims_json (claims), 2);
+      printf ("Claims: \n\n%s\n", claims_str);
+      gpr_free (claims_str);
+      grpc_jwt_claims_destroy (claims);
+    }
+  else
+    {
+      GPR_ASSERT (claims == NULL);
+      fprintf (stderr, "Verification failed with error %s\n", grpc_jwt_verifier_status_to_string (status));
+    }
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&sync->pollset));
+  gpr_mu_lock (GRPC_POLLSET_MU (&sync->pollset));
   sync->is_done = 1;
-  grpc_pollset_kick(&sync->pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&sync->pollset));
+  grpc_pollset_kick (&sync->pollset, NULL);
+  gpr_mu_unlock (GRPC_POLLSET_MU (&sync->pollset));
 }
 
-int main(int argc, char **argv) {
+int
+main (int argc, char **argv)
+{
   synchronizer sync;
   grpc_jwt_verifier *verifier;
   gpr_cmdline *cl;
@@ -91,36 +97,36 @@ int main(int argc, char **argv) {
   char *aud = NULL;
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
-  cl = gpr_cmdline_create("JWT verifier tool");
-  gpr_cmdline_add_string(cl, "jwt", "JSON web token to verify", &jwt);
-  gpr_cmdline_add_string(cl, "aud", "Audience for the JWT", &aud);
-  gpr_cmdline_parse(cl, argc, argv);
-  if (jwt == NULL || aud == NULL) {
-    print_usage_and_exit(cl, argv[0]);
-  }
+  cl = gpr_cmdline_create ("JWT verifier tool");
+  gpr_cmdline_add_string (cl, "jwt", "JSON web token to verify", &jwt);
+  gpr_cmdline_add_string (cl, "aud", "Audience for the JWT", &aud);
+  gpr_cmdline_parse (cl, argc, argv);
+  if (jwt == NULL || aud == NULL)
+    {
+      print_usage_and_exit (cl, argv[0]);
+    }
 
-  verifier = grpc_jwt_verifier_create(NULL, 0);
+  verifier = grpc_jwt_verifier_create (NULL, 0);
 
-  grpc_init();
+  grpc_init ();
 
-  grpc_pollset_init(&sync.pollset);
+  grpc_pollset_init (&sync.pollset);
   sync.is_done = 0;
 
-  grpc_jwt_verifier_verify(verifier, &sync.pollset, jwt, aud,
-                           on_jwt_verification_done, &sync, &closure_list);
+  grpc_jwt_verifier_verify (verifier, &sync.pollset, jwt, aud, on_jwt_verification_done, &sync, &closure_list);
 
-  gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
-  while (!sync.is_done) {
-    grpc_pollset_worker worker;
-    grpc_pollset_work(&sync.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC), &closure_list);
-    gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
-    grpc_closure_list_run(&closure_list);
-    gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
-  }
-  gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
+  gpr_mu_lock (GRPC_POLLSET_MU (&sync.pollset));
+  while (!sync.is_done)
+    {
+      grpc_pollset_worker worker;
+      grpc_pollset_work (&sync.pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
+      gpr_mu_unlock (GRPC_POLLSET_MU (&sync.pollset));
+      grpc_closure_list_run (&closure_list);
+      gpr_mu_lock (GRPC_POLLSET_MU (&sync.pollset));
+    }
+  gpr_mu_unlock (GRPC_POLLSET_MU (&sync.pollset));
 
-  grpc_jwt_verifier_destroy(verifier);
-  gpr_cmdline_destroy(cl);
+  grpc_jwt_verifier_destroy (verifier);
+  gpr_cmdline_destroy (cl);
   return !sync.success;
 }

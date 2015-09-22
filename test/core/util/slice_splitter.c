@@ -38,101 +38,114 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/useful.h>
 
-const char *grpc_slice_split_mode_name(grpc_slice_split_mode mode) {
-  switch (mode) {
+const char *
+grpc_slice_split_mode_name (grpc_slice_split_mode mode)
+{
+  switch (mode)
+    {
     case GRPC_SLICE_SPLIT_IDENTITY:
       return "identity";
     case GRPC_SLICE_SPLIT_MERGE_ALL:
       return "merge_all";
     case GRPC_SLICE_SPLIT_ONE_BYTE:
       return "one_byte";
-  }
+    }
   return "error";
 }
 
-void grpc_split_slices(grpc_slice_split_mode mode, gpr_slice *src_slices,
-                       size_t src_slice_count, gpr_slice **dst_slices,
-                       size_t *dst_slice_count) {
+void
+grpc_split_slices (grpc_slice_split_mode mode, gpr_slice * src_slices, size_t src_slice_count, gpr_slice ** dst_slices, size_t * dst_slice_count)
+{
   size_t i, j;
   size_t length;
 
-  switch (mode) {
+  switch (mode)
+    {
     case GRPC_SLICE_SPLIT_IDENTITY:
       *dst_slice_count = src_slice_count;
-      *dst_slices = gpr_malloc(sizeof(gpr_slice) * src_slice_count);
-      for (i = 0; i < src_slice_count; i++) {
-        (*dst_slices)[i] = src_slices[i];
-        gpr_slice_ref((*dst_slices)[i]);
-      }
+      *dst_slices = gpr_malloc (sizeof (gpr_slice) * src_slice_count);
+      for (i = 0; i < src_slice_count; i++)
+	{
+	  (*dst_slices)[i] = src_slices[i];
+	  gpr_slice_ref ((*dst_slices)[i]);
+	}
       break;
     case GRPC_SLICE_SPLIT_MERGE_ALL:
       *dst_slice_count = 1;
       length = 0;
-      for (i = 0; i < src_slice_count; i++) {
-        length += GPR_SLICE_LENGTH(src_slices[i]);
-      }
-      *dst_slices = gpr_malloc(sizeof(gpr_slice));
-      **dst_slices = gpr_slice_malloc(length);
+      for (i = 0; i < src_slice_count; i++)
+	{
+	  length += GPR_SLICE_LENGTH (src_slices[i]);
+	}
+      *dst_slices = gpr_malloc (sizeof (gpr_slice));
+      **dst_slices = gpr_slice_malloc (length);
       length = 0;
-      for (i = 0; i < src_slice_count; i++) {
-        memcpy(GPR_SLICE_START_PTR(**dst_slices) + length,
-               GPR_SLICE_START_PTR(src_slices[i]),
-               GPR_SLICE_LENGTH(src_slices[i]));
-        length += GPR_SLICE_LENGTH(src_slices[i]);
-      }
+      for (i = 0; i < src_slice_count; i++)
+	{
+	  memcpy (GPR_SLICE_START_PTR (**dst_slices) + length, GPR_SLICE_START_PTR (src_slices[i]), GPR_SLICE_LENGTH (src_slices[i]));
+	  length += GPR_SLICE_LENGTH (src_slices[i]);
+	}
       break;
     case GRPC_SLICE_SPLIT_ONE_BYTE:
       length = 0;
-      for (i = 0; i < src_slice_count; i++) {
-        length += GPR_SLICE_LENGTH(src_slices[i]);
-      }
+      for (i = 0; i < src_slice_count; i++)
+	{
+	  length += GPR_SLICE_LENGTH (src_slices[i]);
+	}
       *dst_slice_count = length;
-      *dst_slices = gpr_malloc(sizeof(gpr_slice) * length);
+      *dst_slices = gpr_malloc (sizeof (gpr_slice) * length);
       length = 0;
-      for (i = 0; i < src_slice_count; i++) {
-        for (j = 0; j < GPR_SLICE_LENGTH(src_slices[i]); j++) {
-          (*dst_slices)[length] = gpr_slice_sub(src_slices[i], j, j + 1);
-          length++;
-        }
-      }
+      for (i = 0; i < src_slice_count; i++)
+	{
+	  for (j = 0; j < GPR_SLICE_LENGTH (src_slices[i]); j++)
+	    {
+	      (*dst_slices)[length] = gpr_slice_sub (src_slices[i], j, j + 1);
+	      length++;
+	    }
+	}
       break;
-  }
+    }
 }
 
-void grpc_split_slices_to_buffer(grpc_slice_split_mode mode,
-                                 gpr_slice *src_slices, size_t src_slice_count,
-                                 gpr_slice_buffer *dst) {
+void
+grpc_split_slices_to_buffer (grpc_slice_split_mode mode, gpr_slice * src_slices, size_t src_slice_count, gpr_slice_buffer * dst)
+{
   gpr_slice *slices;
   size_t nslices;
   size_t i;
-  grpc_split_slices(mode, src_slices, src_slice_count, &slices, &nslices);
-  for (i = 0; i < nslices; i++) {
-    /* add indexed to avoid re-merging split slices */
-    gpr_slice_buffer_add_indexed(dst, slices[i]);
-  }
-  gpr_free(slices);
+  grpc_split_slices (mode, src_slices, src_slice_count, &slices, &nslices);
+  for (i = 0; i < nslices; i++)
+    {
+      /* add indexed to avoid re-merging split slices */
+      gpr_slice_buffer_add_indexed (dst, slices[i]);
+    }
+  gpr_free (slices);
 }
 
-void grpc_split_slice_buffer(grpc_slice_split_mode mode, gpr_slice_buffer *src,
-                             gpr_slice_buffer *dst) {
-  grpc_split_slices_to_buffer(mode, src->slices, src->count, dst);
+void
+grpc_split_slice_buffer (grpc_slice_split_mode mode, gpr_slice_buffer * src, gpr_slice_buffer * dst)
+{
+  grpc_split_slices_to_buffer (mode, src->slices, src->count, dst);
 }
 
-gpr_slice grpc_slice_merge(gpr_slice *slices, size_t nslices) {
+gpr_slice
+grpc_slice_merge (gpr_slice * slices, size_t nslices)
+{
   gpr_uint8 *out = NULL;
   size_t length = 0;
   size_t capacity = 0;
   size_t i;
 
-  for (i = 0; i < nslices; i++) {
-    if (GPR_SLICE_LENGTH(slices[i]) + length > capacity) {
-      capacity = GPR_MAX(capacity * 2, GPR_SLICE_LENGTH(slices[i]) + length);
-      out = gpr_realloc(out, capacity);
+  for (i = 0; i < nslices; i++)
+    {
+      if (GPR_SLICE_LENGTH (slices[i]) + length > capacity)
+	{
+	  capacity = GPR_MAX (capacity * 2, GPR_SLICE_LENGTH (slices[i]) + length);
+	  out = gpr_realloc (out, capacity);
+	}
+      memcpy (out + length, GPR_SLICE_START_PTR (slices[i]), GPR_SLICE_LENGTH (slices[i]));
+      length += GPR_SLICE_LENGTH (slices[i]);
     }
-    memcpy(out + length, GPR_SLICE_START_PTR(slices[i]),
-           GPR_SLICE_LENGTH(slices[i]));
-    length += GPR_SLICE_LENGTH(slices[i]);
-  }
 
-  return gpr_slice_new(out, length, gpr_free);
+  return gpr_slice_new (out, length, gpr_free);
 }
