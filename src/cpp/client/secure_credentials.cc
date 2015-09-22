@@ -183,7 +183,7 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
                   0,
                   {{nullptr, nullptr, nullptr, nullptr}}});
   }
-  grpc_metadata* md_arr = md.empty() ? NULL : &md[0];
+  grpc_metadata* md_arr = md.empty() ? nullptr : &md[0];
   cb(user_data, md_arr, md.size(),
      static_cast<grpc_status_code>(status.error_code()),
      status.error_message().c_str());
