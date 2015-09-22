@@ -64,7 +64,7 @@ server_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx
   static grpc_channel_filter const *extra_filters[] = {
     &grpc_http_server_filter
   };
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_server_setup_transport (f->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (f->server), &closure_list);
   grpc_exec_ctx_finish (&exec_ctx);
 }
@@ -111,7 +111,7 @@ chttp2_create_fixture_socketpair (grpc_channel_args * client_args, grpc_channel_
 static void
 chttp2_init_client_socketpair (grpc_end2end_test_fixture * f, grpc_channel_args * client_args)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_pair *sfd = f->fixture_data;
   grpc_transport *transport;
   grpc_mdctx *mdctx = grpc_mdctx_create ();
@@ -128,7 +128,7 @@ chttp2_init_client_socketpair (grpc_end2end_test_fixture * f, grpc_channel_args 
 static void
 chttp2_init_server_socketpair (grpc_end2end_test_fixture * f, grpc_channel_args * server_args)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_pair *sfd = f->fixture_data;
   grpc_mdctx *mdctx = grpc_mdctx_create ();
   grpc_transport *transport;
@@ -159,7 +159,7 @@ int
 main (int argc, char **argv)
 {
   size_t i;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   /* force tracing on, with a value to force many
      code paths in trace.c to be taken */

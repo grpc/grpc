@@ -416,7 +416,7 @@ assert_channel_connectivity (grpc_channel * ch, size_t num_accepted_conn_states,
   grpc_channel_stack *client_stack;
   grpc_channel_element *client_channel_filter;
   grpc_connectivity_state actual_conn_state;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   va_list ap;
 
   client_stack = grpc_channel_get_channel_stack (ch);

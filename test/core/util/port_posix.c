@@ -101,7 +101,7 @@ free_port_using_server (char *server, int port)
   grpc_httpcli_request req;
   freereq pr;
   char *path;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure shutdown_closure;
 
   grpc_init ();
@@ -270,7 +270,7 @@ pick_port_using_server (char *server)
   grpc_httpcli_context context;
   grpc_httpcli_request req;
   portreq pr;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure shutdown_closure;
 
   grpc_init ();

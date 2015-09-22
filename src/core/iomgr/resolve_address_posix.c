@@ -160,7 +160,7 @@ static void
 do_request_thread (void *rp)
 {
   request *r = rp;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_resolved_addresses *resolved = grpc_blocking_resolve_address (r->name, r->default_port);
   void *arg = r->arg;
   grpc_resolve_cb cb = r->cb;

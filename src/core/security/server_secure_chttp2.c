@@ -234,7 +234,7 @@ grpc_server_add_secure_http2_port (grpc_server * server, const char *addr, grpc_
   int port_temp;
   grpc_security_status status = GRPC_SECURITY_ERROR;
   grpc_security_connector *sc = NULL;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   /* create security context */
   if (creds == NULL)

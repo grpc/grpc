@@ -258,7 +258,7 @@ grpc_secure_channel_create (grpc_credentials * creds, const char *target, const 
   subchannel_factory *f;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 0;
 
   GPR_ASSERT (reserved == NULL);

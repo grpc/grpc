@@ -85,7 +85,7 @@ char *
 grpc_test_fetch_oauth2_token_with_credentials (grpc_credentials * creds)
 {
   oauth2_request request;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure do_nothing_closure;
   grpc_pollset_init (&request.pollset);
   request.is_done = 0;

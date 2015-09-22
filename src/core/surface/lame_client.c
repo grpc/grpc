@@ -163,7 +163,7 @@ grpc_lame_client_channel_create (const char *target, grpc_status_code error_code
   grpc_channel *channel;
   grpc_channel_element *elem;
   channel_data *chand;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   static const grpc_channel_filter *filters[] = { &lame_filter };
   channel = grpc_channel_create_from_filters (target, filters, 1, NULL, grpc_mdctx_create (), 1, &closure_list);
   elem = grpc_channel_stack_element (grpc_channel_get_channel_stack (channel), 0);

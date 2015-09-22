@@ -130,7 +130,7 @@ reconnect_server_start (reconnect_server * server, int port)
 {
   struct sockaddr_in addr;
   int port_added;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   addr.sin_family = AF_INET;
   addr.sin_port = htons ((gpr_uint16) port);
@@ -152,7 +152,7 @@ reconnect_server_poll (reconnect_server * server, int seconds)
   grpc_pollset_worker worker;
   gpr_timespec deadline = gpr_time_add (gpr_now (GPR_CLOCK_MONOTONIC),
 					gpr_time_from_seconds (seconds, GPR_TIMESPAN));
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_mu_lock (GRPC_POLLSET_MU (&server->pollset));
   grpc_pollset_work (&server->pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline, &closure_list);
   gpr_mu_unlock (GRPC_POLLSET_MU (&server->pollset));
@@ -182,7 +182,7 @@ do_nothing (grpc_exec_ctx * exec_ctx, void *ignored, int success)
 void
 reconnect_server_destroy (reconnect_server * server)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure do_nothing_closure[2];
   grpc_closure_init (&do_nothing_closure[0], do_nothing, NULL);
   grpc_closure_init (&do_nothing_closure[1], do_nothing, NULL);

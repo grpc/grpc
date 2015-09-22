@@ -76,7 +76,7 @@ int
 main (int argc, char **argv)
 {
   int result = 0;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   synchronizer sync;
   grpc_credentials *creds = NULL;
   char *service_url = "https://test.foo.google.com/Foo";

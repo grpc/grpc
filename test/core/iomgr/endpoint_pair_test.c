@@ -52,7 +52,7 @@ clean_up (void)
 static grpc_endpoint_test_fixture
 create_fixture_endpoint_pair (size_t slice_size)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_test_fixture f;
   grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair ("test", slice_size);
 
@@ -79,7 +79,7 @@ int
 main (int argc, char **argv)
 {
   grpc_closure destroyed;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init (argc, argv);
   grpc_init ();
   grpc_pollset_init (&g_pollset);

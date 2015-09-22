@@ -75,7 +75,7 @@ test_get (int use_ssl, int port)
 {
   grpc_httpcli_request req;
   char *host;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   g_done = 0;
   gpr_log (GPR_INFO, "running %s with use_ssl=%d.", "test_get", use_ssl);
@@ -107,7 +107,7 @@ test_post (int use_ssl, int port)
 {
   grpc_httpcli_request req;
   char *host;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   g_done = 0;
   gpr_log (GPR_INFO, "running %s with use_ssl=%d.", "test_post", (int) use_ssl);
@@ -144,7 +144,7 @@ int
 main (int argc, char **argv)
 {
   grpc_closure destroyed;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_subprocess *server;
   char *me = argv[0];
   char *lslash = strrchr (me, '/');

@@ -55,7 +55,7 @@ add_test (void)
   gpr_timespec start = gpr_now (GPR_CLOCK_REALTIME);
   int i;
   grpc_alarm alarms[20];
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   grpc_alarm_list_init (start);
   memset (cb_called, 0, sizeof (cb_called));
@@ -122,7 +122,7 @@ void
 destruction_test (void)
 {
   grpc_alarm alarms[5];
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   grpc_alarm_list_init (gpr_time_0 (GPR_CLOCK_REALTIME));
   memset (cb_called, 0, sizeof (cb_called));

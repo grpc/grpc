@@ -221,7 +221,7 @@ on_verification_success (void *user_data, grpc_jwt_verifier_status status, grpc_
 static void
 test_jwt_verifier_google_email_issuer_success (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create (NULL, 0);
   char *jwt = NULL;
   char *key_str = json_key_str (json_key_str_part3_for_google_email_issuer);
@@ -254,7 +254,7 @@ httpcli_get_custom_keys_for_email (grpc_exec_ctx * exec_ctx, const grpc_httpcli_
 static void
 test_jwt_verifier_custom_email_issuer_success (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create (&custom_mapping, 1);
   char *jwt = NULL;
   char *key_str = json_key_str (json_key_str_part3_for_custom_email_issuer);
@@ -300,7 +300,7 @@ httpcli_get_openid_config (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request 
 static void
 test_jwt_verifier_url_issuer_success (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create (NULL, 0);
   char *jwt = NULL;
   char *key_str = json_key_str (json_key_str_part3_for_url_issuer);
@@ -339,7 +339,7 @@ httpcli_get_bad_json (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request * req
 static void
 test_jwt_verifier_url_issuer_bad_config (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create (NULL, 0);
   char *jwt = NULL;
   char *key_str = json_key_str (json_key_str_part3_for_url_issuer);
@@ -360,7 +360,7 @@ test_jwt_verifier_url_issuer_bad_config (void)
 static void
 test_jwt_verifier_bad_json_key (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create (NULL, 0);
   char *jwt = NULL;
   char *key_str = json_key_str (json_key_str_part3_for_google_email_issuer);
@@ -407,7 +407,7 @@ on_verification_bad_signature (void *user_data, grpc_jwt_verifier_status status,
 static void
 test_jwt_verifier_bad_signature (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create (NULL, 0);
   char *jwt = NULL;
   char *key_str = json_key_str (json_key_str_part3_for_url_issuer);
@@ -444,7 +444,7 @@ on_verification_bad_format (void *user_data, grpc_jwt_verifier_status status, gr
 static void
 test_jwt_verifier_bad_format (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create (NULL, 0);
   grpc_httpcli_set_override (httpcli_get_should_not_be_called, httpcli_post_should_not_be_called);
   grpc_jwt_verifier_verify (verifier, NULL, "bad jwt", expected_audience, on_verification_bad_format, (void *) expected_user_data, &closure_list);

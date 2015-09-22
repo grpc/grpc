@@ -95,7 +95,7 @@ main (int argc, char **argv)
   gpr_cmdline *cl;
   char *jwt = NULL;
   char *aud = NULL;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   cl = gpr_cmdline_create ("JWT verifier tool");
   gpr_cmdline_add_string (cl, "jwt", "JSON web token to verify", &jwt);

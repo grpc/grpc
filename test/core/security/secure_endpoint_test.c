@@ -50,7 +50,7 @@ static grpc_pollset g_pollset;
 static grpc_endpoint_test_fixture
 secure_endpoint_create_fixture_tcp_socketpair (size_t slice_size, gpr_slice * leftover_slices, size_t leftover_nslices)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   tsi_frame_protector *fake_read_protector = tsi_create_fake_protector (NULL);
   tsi_frame_protector *fake_write_protector = tsi_create_fake_protector (NULL);
   grpc_endpoint_test_fixture f;
@@ -154,7 +154,7 @@ test_leftover (grpc_endpoint_test_config config, size_t slice_size)
   grpc_endpoint_test_fixture f = config.create_fixture (slice_size);
   gpr_slice_buffer incoming;
   gpr_slice s = gpr_slice_from_copied_string ("hello world 12345678900987654321");
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   int n = 0;
   grpc_closure done_closure;
   gpr_log (GPR_INFO, "Start test left over");
@@ -188,7 +188,7 @@ int
 main (int argc, char **argv)
 {
   grpc_closure destroyed;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init (argc, argv);
 
   grpc_init ();

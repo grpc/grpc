@@ -197,7 +197,7 @@ grpc_insecure_channel_create (const char *target, const grpc_channel_args * args
   grpc_resolver *resolver;
   subchannel_factory *f;
   grpc_mdctx *mdctx = grpc_mdctx_create ();
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 0;
   GPR_ASSERT (!reserved);
   if (grpc_channel_args_is_census_enabled (args))

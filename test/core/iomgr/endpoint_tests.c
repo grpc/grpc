@@ -199,7 +199,7 @@ read_and_write_test (grpc_endpoint_test_config config, size_t num_bytes, size_t 
   struct read_and_write_test_state state;
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE (20);
   grpc_endpoint_test_fixture f = begin_test (config, "read_and_write_test", slice_size);
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_log (GPR_DEBUG, "num_bytes=%d write_size=%d slice_size=%d shutdown=%d", num_bytes, write_size, slice_size, shutdown);
 
   if (shutdown)

@@ -55,7 +55,7 @@ test_add_closure (void)
 {
   grpc_closure c;
   int done = 0;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_workqueue *wq = grpc_workqueue_create (&closure_list);
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE (5);
   grpc_pollset_worker worker;
@@ -85,7 +85,7 @@ int
 main (int argc, char **argv)
 {
   grpc_closure destroyed;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init (argc, argv);
   grpc_init ();
   grpc_pollset_init (&g_pollset);

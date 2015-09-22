@@ -57,7 +57,7 @@ main (int argc, char **argv)
 
   for (i = 0; i < 100; i++)
     {
-      grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
       p = grpc_iomgr_create_endpoint_pair ("test", 1);
       grpc_endpoint_destroy (p.client, &closure_list);
       grpc_endpoint_destroy (p.server, &closure_list);

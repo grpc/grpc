@@ -70,7 +70,7 @@ test_no_op (void)
 static void
 test_no_op_with_start (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_tcp_server *s = grpc_tcp_server_create ();
   LOG_TEST ("test_no_op_with_start");
   grpc_tcp_server_start (s, NULL, 0, on_connect, NULL, &closure_list);
@@ -81,7 +81,7 @@ test_no_op_with_start (void)
 static void
 test_no_op_with_port (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_tcp_server *s = grpc_tcp_server_create ();
   LOG_TEST ("test_no_op_with_port");
@@ -97,7 +97,7 @@ test_no_op_with_port (void)
 static void
 test_no_op_with_port_and_start (void)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_tcp_server *s = grpc_tcp_server_create ();
   LOG_TEST ("test_no_op_with_port_and_start");
@@ -115,7 +115,7 @@ test_no_op_with_port_and_start (void)
 static void
 test_connect (int n)
 {
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_storage addr;
   socklen_t addr_len = sizeof (addr);
   int svrfd, clifd;
@@ -182,7 +182,7 @@ int
 main (int argc, char **argv)
 {
   grpc_closure destroyed;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init (argc, argv);
   grpc_iomgr_init ();
   grpc_pollset_init (&g_pollset);

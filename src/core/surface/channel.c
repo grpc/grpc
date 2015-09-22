@@ -318,7 +318,7 @@ grpc_channel_destroy (grpc_channel * channel)
 {
   grpc_transport_op op;
   grpc_channel_element *elem;
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   memset (&op, 0, sizeof (op));
   op.disconnect = 1;
   elem = grpc_channel_stack_element (CHANNEL_STACK_FROM_CHANNEL (channel), 0);

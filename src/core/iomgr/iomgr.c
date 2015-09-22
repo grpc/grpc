@@ -99,7 +99,7 @@ grpc_iomgr_shutdown (void)
 {
   gpr_timespec shutdown_deadline = gpr_time_add (gpr_now (GPR_CLOCK_REALTIME), gpr_time_from_seconds (10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now (GPR_CLOCK_REALTIME);
-  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_mu_lock (&g_mu);
   g_shutdown = 1;
