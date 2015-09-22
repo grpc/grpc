@@ -74,7 +74,7 @@ noop_start_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * el
   noop_mutate_op (elem, op);
 
   /* pass control down the stack */
-  grpc_call_next_op (elem, op, closure_list);
+  grpc_call_next_op (exec_ctx, elem, op);
 }
 
 /* Constructor for call_data */

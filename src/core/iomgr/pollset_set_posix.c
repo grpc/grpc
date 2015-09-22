@@ -82,7 +82,7 @@ grpc_pollset_set_add_pollset (grpc_exec_ctx * exec_ctx, grpc_pollset_set * polls
 	}
       else
 	{
-	  grpc_pollset_add_fd (pollset, pollset_set->fds[i], closure_list);
+	  grpc_pollset_add_fd (exec_ctx, pollset, pollset_set->fds[i]);
 	  pollset_set->fds[j++] = pollset_set->fds[i];
 	}
     }
@@ -121,7 +121,7 @@ grpc_pollset_set_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset_set * pollset_se
   pollset_set->fds[pollset_set->fd_count++] = fd;
   for (i = 0; i < pollset_set->pollset_count; i++)
     {
-      grpc_pollset_add_fd (pollset_set->pollsets[i], fd, closure_list);
+      grpc_pollset_add_fd (exec_ctx, pollset_set->pollsets[i], fd);
     }
   gpr_mu_unlock (&pollset_set->mu);
 }

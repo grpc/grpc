@@ -370,7 +370,7 @@ set_ready (grpc_exec_ctx * exec_ctx, grpc_fd * fd, gpr_atm * st)
   /* only one set_ready can be active at once (but there may be a racing
      notify_on) */
   gpr_mu_lock (&fd->set_state_mu);
-  set_ready_locked (fd, st, closure_list);
+  set_ready_locked (exec_ctx, fd, st);
   gpr_mu_unlock (&fd->set_state_mu);
 }
 
@@ -380,21 +380,21 @@ grpc_fd_shutdown (grpc_exec_ctx * exec_ctx, grpc_fd * fd)
   gpr_mu_lock (&fd->set_state_mu);
   GPR_ASSERT (!gpr_atm_no_barrier_load (&fd->shutdown));
   gpr_atm_rel_store (&fd->shutdown, 1);
-  set_ready_locked (fd, &fd->readst, closure_list);
-  set_ready_locked (fd, &fd->writest, closure_list);
+  set_ready_locked (exec_ctx, fd, &fd->readst);
+  set_ready_locked (exec_ctx, fd, &fd->writest);
   gpr_mu_unlock (&fd->set_state_mu);
 }
 
 void
 grpc_fd_notify_on_read (grpc_exec_ctx * exec_ctx, grpc_fd * fd, grpc_closure * closure)
 {
-  notify_on (fd, &fd->readst, closure, closure_list);
+  notify_on (exec_ctx, fd, &fd->readst, closure);
 }
 
 void
 grpc_fd_notify_on_write (grpc_exec_ctx * exec_ctx, grpc_fd * fd, grpc_closure * closure)
 {
-  notify_on (fd, &fd->writest, closure, closure_list);
+  notify_on (exec_ctx, fd, &fd->writest, closure);
 }
 
 gpr_uint32
@@ -493,13 +493,13 @@ grpc_fd_end_poll (grpc_exec_ctx * exec_ctx, grpc_fd_watcher * watcher, int got_r
 void
 grpc_fd_become_readable (grpc_exec_ctx * exec_ctx, grpc_fd * fd)
 {
-  set_ready (fd, &fd->readst, closure_list);
+  set_ready (exec_ctx, fd, &fd->readst);
 }
 
 void
 grpc_fd_become_writable (grpc_exec_ctx * exec_ctx, grpc_fd * fd)
 {
-  set_ready (fd, &fd->writest, closure_list);
+  set_ready (exec_ctx, fd, &fd->writest);
 }
 
 #endif

@@ -176,7 +176,7 @@ read_cb (grpc_exec_ctx * exec_ctx, void *user_data, int success)
     }
   else
     {
-      grpc_endpoint_read (state->ep, &state->incoming, &state->read_cb, closure_list);
+      grpc_endpoint_read (exec_ctx, state->ep, &state->incoming, &state->read_cb);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
     }
 }

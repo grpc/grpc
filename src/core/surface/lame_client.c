@@ -65,7 +65,7 @@ lame_start_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * el
   if (op->send_ops != NULL)
     {
       grpc_stream_ops_unref_owned_objects (op->send_ops->ops, op->send_ops->nops);
-      op->on_done_send->cb (op->on_done_send->cb_arg, 0, closure_list);
+      op->on_done_send->cb (exec_ctx, op->on_done_send->cb_arg, 0);
     }
   if (op->recv_ops != NULL)
     {
@@ -83,11 +83,11 @@ lame_start_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * el
       mdb.deadline = gpr_inf_future (GPR_CLOCK_REALTIME);
       grpc_sopb_add_metadata (op->recv_ops, mdb);
       *op->recv_state = GRPC_STREAM_CLOSED;
-      op->on_done_recv->cb (op->on_done_recv->cb_arg, 1, closure_list);
+      op->on_done_recv->cb (exec_ctx, op->on_done_recv->cb_arg, 1);
     }
   if (op->on_consumed != NULL)
     {
-      op->on_consumed->cb (op->on_consumed->cb_arg, 0, closure_list);
+      op->on_consumed->cb (exec_ctx, op->on_consumed->cb_arg, 0);
     }
 }
 
@@ -105,11 +105,11 @@ lame_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_channel_element * elem, 
     {
       GPR_ASSERT (*op->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE);
       *op->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
-      op->on_connectivity_state_change->cb (op->on_connectivity_state_change->cb_arg, 1, closure_list);
+      op->on_connectivity_state_change->cb (exec_ctx, op->on_connectivity_state_change->cb_arg, 1);
     }
   if (op->on_consumed != NULL)
     {
-      op->on_consumed->cb (op->on_consumed->cb_arg, 1, closure_list);
+      op->on_consumed->cb (exec_ctx, op->on_consumed->cb_arg, 1);
     }
 }
 
@@ -118,7 +118,7 @@ init_call_elem (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, const void *
 {
   if (initial_op)
     {
-      grpc_transport_stream_op_finish_with_failure (initial_op, closure_list);
+      grpc_transport_stream_op_finish_with_failure (exec_ctx, initial_op);
     }
 }
 

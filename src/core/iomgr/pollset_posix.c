@@ -172,7 +172,7 @@ void
 grpc_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd)
 {
   gpr_mu_lock (&pollset->mu);
-  pollset->vtable->add_fd (pollset, fd, 1, closure_list);
+  pollset->vtable->add_fd (exec_ctx, pollset, fd, 1);
 /* the following (enabled only in debug) will reacquire and then release
    our lock - meaning that if the unlocking flag passed to del_fd above is
    not respected, the code will deadlock (in a way that we have a chance of
@@ -187,7 +187,7 @@ void
 grpc_pollset_del_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd * fd)
 {
   gpr_mu_lock (&pollset->mu);
-  pollset->vtable->del_fd (pollset, fd, 1, closure_list);
+  pollset->vtable->del_fd (exec_ctx, pollset, fd, 1);
 /* the following (enabled only in debug) will reacquire and then release
    our lock - meaning that if the unlocking flag passed to del_fd above is
    not respected, the code will deadlock (in a way that we have a chance of
@@ -217,10 +217,10 @@ grpc_pollset_work (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollse
   grpc_wakeup_fd_init (&worker->wakeup_fd);
   if (!grpc_pollset_has_workers (pollset) && !grpc_closure_list_empty (pollset->idle_jobs))
     {
-      grpc_closure_list_move (&pollset->idle_jobs, closure_list);
+      grpc_closure_list_move (exec_ctx, &pollset->idle_jobs);
       goto done;
     }
-  if (grpc_alarm_check (now, &deadline, closure_list))
+  if (grpc_alarm_check (exec_ctx, now, &deadline))
     {
       goto done;
     }
@@ -240,7 +240,7 @@ grpc_pollset_work (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_pollse
       push_front_worker (pollset, worker);
       added_worker = 1;
       gpr_tls_set (&g_current_thread_poller, (gpr_intptr) pollset);
-      pollset->vtable->maybe_work_and_unlock (pollset, worker, deadline, now, closure_list);
+      pollset->vtable->maybe_work_and_unlock (exec_ctx, pollset, worker, deadline, now);
       locked = 0;
       gpr_tls_set (&g_current_thread_poller, 0);
     }
@@ -270,7 +270,7 @@ done:
 	{
 	  pollset->called_shutdown = 1;
 	  gpr_mu_unlock (&pollset->mu);
-	  finish_shutdown (pollset, closure_list);
+	  finish_shutdown (exec_ctx, pollset);
 	  grpc_closure_list_run (closure_list);
 	  /* Continuing to access pollset here is safe -- it is the caller's
 	   * responsibility to not destroy when it has outstanding calls to
@@ -299,7 +299,7 @@ grpc_pollset_shutdown (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_cl
 
   if (call_shutdown)
     {
-      finish_shutdown (pollset, closure_list);
+      finish_shutdown (exec_ctx, pollset);
     }
 }
 
@@ -387,7 +387,7 @@ basic_do_promote (grpc_exec_ctx * exec_ctx, void *args, int success)
     }
   else if (pollset->vtable != original_vtable)
     {
-      pollset->vtable->add_fd (pollset, fd, 0, closure_list);
+      pollset->vtable->add_fd (exec_ctx, pollset, fd, 0);
     }
   else if (fd != pollset->data.ptr)
     {
@@ -397,7 +397,7 @@ basic_do_promote (grpc_exec_ctx * exec_ctx, void *args, int success)
 
       if (fds[0] && !grpc_fd_is_orphaned (fds[0]))
 	{
-	  grpc_platform_become_multipoller (pollset, fds, GPR_ARRAY_SIZE (fds), closure_list);
+	  grpc_platform_become_multipoller (pollset, fds, GPR_ARRAY_SIZE (exec_ctx, fds));
 	  GRPC_FD_UNREF (fds[0], "basicpoll");
 	}
       else
@@ -445,7 +445,7 @@ basic_pollset_add_fd (grpc_exec_ctx * exec_ctx, grpc_pollset * pollset, grpc_fd 
 	}
       else if (!grpc_fd_is_orphaned (fds[0]))
 	{
-	  grpc_platform_become_multipoller (pollset, fds, GPR_ARRAY_SIZE (fds), closure_list);
+	  grpc_platform_become_multipoller (pollset, fds, GPR_ARRAY_SIZE (exec_ctx, fds));
 	  GRPC_FD_UNREF (fds[0], "basicpoll");
 	}
       else
@@ -540,7 +540,7 @@ basic_pollset_maybe_work_and_unlock (grpc_exec_ctx * exec_ctx, grpc_pollset * po
 
   if (fd)
     {
-      grpc_fd_end_poll (&fd_watcher, pfd[1].revents & POLLIN, pfd[1].revents & POLLOUT, closure_list);
+      grpc_fd_end_poll (exec_ctx, &fd_watcher, pfd[1].revents & POLLIN, pfd[1].revents & POLLOUT);
     }
 
   if (r < 0)
@@ -564,11 +564,11 @@ basic_pollset_maybe_work_and_unlock (grpc_exec_ctx * exec_ctx, grpc_pollset * po
 	{
 	  if (pfd[1].revents & (POLLIN | POLLHUP | POLLERR))
 	    {
-	      grpc_fd_become_readable (fd, closure_list);
+	      grpc_fd_become_readable (exec_ctx, fd);
 	    }
 	  if (pfd[1].revents & (POLLOUT | POLLHUP | POLLERR))
 	    {
-	      grpc_fd_become_writable (fd, closure_list);
+	      grpc_fd_become_writable (exec_ctx, fd);
 	    }
 	}
     }

@@ -63,7 +63,7 @@ grpc_client_config_unref (grpc_exec_ctx * exec_ctx, grpc_client_config * c)
 {
   if (gpr_unref (&c->refs))
     {
-      GRPC_LB_POLICY_UNREF (c->lb_policy, "client_config", closure_list);
+      GRPC_LB_POLICY_UNREF (exec_ctx, c->lb_policy, "client_config");
       gpr_free (c);
     }
 }

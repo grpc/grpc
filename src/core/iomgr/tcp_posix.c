@@ -104,13 +104,13 @@ static void
 tcp_shutdown (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep)
 {
   grpc_tcp *tcp = (grpc_tcp *) ep;
-  grpc_fd_shutdown (tcp->em_fd, closure_list);
+  grpc_fd_shutdown (exec_ctx, tcp->em_fd);
 }
 
 static void
 tcp_free (grpc_exec_ctx * exec_ctx, grpc_tcp * tcp)
 {
-  grpc_fd_orphan (tcp->em_fd, NULL, "tcp_unref_orphan", closure_list);
+  grpc_fd_orphan (exec_ctx, tcp->em_fd, NULL, "tcp_unref_orphan");
   gpr_free (tcp->peer_string);
   gpr_free (tcp);
 }
@@ -126,7 +126,7 @@ tcp_unref (grpc_tcp * tcp, grpc_closure_list * closure_list, const char *reason,
   gpr_log (file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %d -> %d", tcp, reason, tcp->refcount.count, tcp->refcount.count - 1);
   if (gpr_unref (&tcp->refcount))
     {
-      tcp_free (tcp, closure_list);
+      tcp_free (exec_ctx, tcp);
     }
 }
 
@@ -144,7 +144,7 @@ tcp_unref (grpc_exec_ctx * exec_ctx, grpc_tcp * tcp)
 {
   if (gpr_unref (&tcp->refcount))
     {
-      tcp_free (tcp, closure_list);
+      tcp_free (exec_ctx, tcp);
     }
 }
 
@@ -159,7 +159,7 @@ static void
 tcp_destroy (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep)
 {
   grpc_tcp *tcp = (grpc_tcp *) ep;
-  TCP_UNREF (tcp, "destroy", closure_list);
+  TCP_UNREF (exec_ctx, tcp, "destroy");
 }
 
 static void
@@ -182,7 +182,7 @@ call_read_cb (grpc_exec_ctx * exec_ctx, grpc_tcp * tcp, int success)
 
   tcp->read_cb = NULL;
   tcp->incoming_buffer = NULL;
-  cb->cb (cb->cb_arg, success, closure_list);
+  cb->cb (exec_ctx, cb->cb_arg, success);
 }
 
 #define MAX_READ_IOVEC 4
@@ -236,22 +236,22 @@ tcp_continue_read (grpc_exec_ctx * exec_ctx, grpc_tcp * tcp)
 	      tcp->iov_size /= 2;
 	    }
 	  /* We've consumed the edge, request a new one */
-	  grpc_fd_notify_on_read (tcp->em_fd, &tcp->read_closure, closure_list);
+	  grpc_fd_notify_on_read (exec_ctx, tcp->em_fd, &tcp->read_closure);
 	}
       else
 	{
 	  /* TODO(klempner): Log interesting errors */
 	  gpr_slice_buffer_reset_and_unref (tcp->incoming_buffer);
-	  call_read_cb (tcp, 0, closure_list);
-	  TCP_UNREF (tcp, "read", closure_list);
+	  call_read_cb (exec_ctx, tcp, 0);
+	  TCP_UNREF (exec_ctx, tcp, "read");
 	}
     }
   else if (read_bytes == 0)
     {
       /* 0 read size ==> end of stream */
       gpr_slice_buffer_reset_and_unref (tcp->incoming_buffer);
-      call_read_cb (tcp, 0, closure_list);
-      TCP_UNREF (tcp, "read", closure_list);
+      call_read_cb (exec_ctx, tcp, 0);
+      TCP_UNREF (exec_ctx, tcp, "read");
     }
   else
     {
@@ -265,8 +265,8 @@ tcp_continue_read (grpc_exec_ctx * exec_ctx, grpc_tcp * tcp)
 	  ++tcp->iov_size;
 	}
       GPR_ASSERT ((size_t) read_bytes == tcp->incoming_buffer->length);
-      call_read_cb (tcp, 1, closure_list);
-      TCP_UNREF (tcp, "read", closure_list);
+      call_read_cb (exec_ctx, tcp, 1);
+      TCP_UNREF (exec_ctx, tcp, "read");
     }
 
   GRPC_TIMER_END (GRPC_PTAG_HANDLE_READ, 0);
@@ -282,12 +282,12 @@ tcp_handle_read (void *arg /* grpc_tcp */ , int success,
   if (!success)
     {
       gpr_slice_buffer_reset_and_unref (tcp->incoming_buffer);
-      call_read_cb (tcp, 0, closure_list);
-      TCP_UNREF (tcp, "read", closure_list);
+      call_read_cb (exec_ctx, tcp, 0);
+      TCP_UNREF (exec_ctx, tcp, "read");
     }
   else
     {
-      tcp_continue_read (tcp, closure_list);
+      tcp_continue_read (exec_ctx, tcp);
     }
 }
 
@@ -303,7 +303,7 @@ tcp_read (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, gpr_slice_buffer * incom
   if (tcp->finished_edge)
     {
       tcp->finished_edge = 0;
-      grpc_fd_notify_on_read (tcp->em_fd, &tcp->read_closure, closure_list);
+      grpc_fd_notify_on_read (exec_ctx, tcp->em_fd, &tcp->read_closure);
     }
   else
     {
@@ -412,8 +412,8 @@ tcp_handle_write (void *arg /* grpc_tcp */ , int success,
     {
       cb = tcp->write_cb;
       tcp->write_cb = NULL;
-      cb->cb (cb->cb_arg, 0, closure_list);
-      TCP_UNREF (tcp, "write", closure_list);
+      cb->cb (exec_ctx, cb->cb_arg, 0);
+      TCP_UNREF (exec_ctx, tcp, "write");
       return;
     }
 
@@ -421,14 +421,14 @@ tcp_handle_write (void *arg /* grpc_tcp */ , int success,
   status = tcp_flush (tcp);
   if (status == FLUSH_PENDING)
     {
-      grpc_fd_notify_on_write (tcp->em_fd, &tcp->write_closure, closure_list);
+      grpc_fd_notify_on_write (exec_ctx, tcp->em_fd, &tcp->write_closure);
     }
   else
     {
       cb = tcp->write_cb;
       tcp->write_cb = NULL;
-      cb->cb (cb->cb_arg, status == FLUSH_DONE, closure_list);
-      TCP_UNREF (tcp, "write", closure_list);
+      cb->cb (exec_ctx, cb->cb_arg, status == FLUSH_DONE);
+      TCP_UNREF (exec_ctx, tcp, "write");
     }
   GRPC_TIMER_END (GRPC_PTAG_TCP_CB_WRITE, 0);
 }
@@ -469,7 +469,7 @@ tcp_write (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, gpr_slice_buffer * buf,
     {
       TCP_REF (tcp, "write");
       tcp->write_cb = cb;
-      grpc_fd_notify_on_write (tcp->em_fd, &tcp->write_closure, closure_list);
+      grpc_fd_notify_on_write (exec_ctx, tcp->em_fd, &tcp->write_closure);
     }
   else
     {
@@ -483,14 +483,14 @@ static void
 tcp_add_to_pollset (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, grpc_pollset * pollset)
 {
   grpc_tcp *tcp = (grpc_tcp *) ep;
-  grpc_pollset_add_fd (pollset, tcp->em_fd, closure_list);
+  grpc_pollset_add_fd (exec_ctx, pollset, tcp->em_fd);
 }
 
 static void
 tcp_add_to_pollset_set (grpc_exec_ctx * exec_ctx, grpc_endpoint * ep, grpc_pollset_set * pollset_set)
 {
   grpc_tcp *tcp = (grpc_tcp *) ep;
-  grpc_pollset_set_add_fd (pollset_set, tcp->em_fd, closure_list);
+  grpc_pollset_set_add_fd (exec_ctx, pollset_set, tcp->em_fd);
 }
 
 static char *

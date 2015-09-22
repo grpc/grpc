@@ -108,7 +108,7 @@ void
 grpc_alarm_list_shutdown (grpc_closure_list * closure_list)
 {
   int i;
-  run_some_expired_alarms (gpr_inf_future (g_clock_type), NULL, 0, closure_list);
+  run_some_expired_alarms (gpr_inf_future (exec_ctx, g_clock_type), NULL, 0);
   for (i = 0; i < NUM_SHARDS; i++)
     {
       shard_type *shard = &g_shards[i];
@@ -346,7 +346,7 @@ run_some_expired_alarms (grpc_exec_ctx * exec_ctx, gpr_timespec now, gpr_timespe
 	  /* For efficiency, we pop as many available alarms as we can from the
 	     shard.  This may violate perfect alarm deadline ordering, but that
 	     shouldn't be a big deal because we don't make ordering guarantees. */
-	  n += pop_alarms (g_shard_queue[0], now, &new_min_deadline, success, closure_list);
+	  n += pop_alarms (exec_ctx, g_shard_queue[0], now, &new_min_deadline, success);
 
 	  /* An grpc_alarm_init() on the shard could intervene here, adding a new
 	     alarm that is earlier than new_min_deadline.  However,
@@ -373,7 +373,7 @@ int
 grpc_alarm_check (grpc_exec_ctx * exec_ctx, gpr_timespec now, gpr_timespec * next)
 {
   GPR_ASSERT (now.clock_type == g_clock_type);
-  return run_some_expired_alarms (now, next, gpr_time_cmp (now, gpr_inf_future (now.clock_type)) != 0, closure_list);
+  return run_some_expired_alarms (now, next, gpr_time_cmp (now, gpr_inf_future (exec_ctx, now.clock_type)) != 0);
 }
 
 gpr_timespec

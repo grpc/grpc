@@ -219,11 +219,11 @@ hs_on_recv (grpc_exec_ctx * exec_ctx, void *user_data, int success)
 		}
 	      /* Error this call out */
 	      success = 0;
-	      grpc_call_element_send_cancel (elem, closure_list);
+	      grpc_call_element_send_cancel (exec_ctx, elem);
 	    }
 	}
     }
-  calld->on_done_recv->cb (calld->on_done_recv->cb_arg, success, closure_list);
+  calld->on_done_recv->cb (exec_ctx, calld->on_done_recv->cb_arg, success);
 }
 
 static void
@@ -264,7 +264,7 @@ hs_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_
 {
   GRPC_CALL_LOG_OP (GPR_INFO, elem, op);
   hs_mutate_op (elem, op);
-  grpc_call_next_op (elem, op, closure_list);
+  grpc_call_next_op (exec_ctx, elem, op);
 }
 
 /* Constructor for call_data */

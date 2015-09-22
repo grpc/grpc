@@ -70,18 +70,18 @@ httpcli_ssl_do_handshake (grpc_exec_ctx * exec_ctx, grpc_security_connector * sc
   tsi_handshaker *handshaker;
   if (c->handshaker_factory == NULL)
     {
-      cb (user_data, GRPC_SECURITY_ERROR, nonsecure_endpoint, NULL, closure_list);
+      cb (exec_ctx, user_data, GRPC_SECURITY_ERROR, nonsecure_endpoint, NULL);
       return;
     }
   result = tsi_ssl_handshaker_factory_create_handshaker (c->handshaker_factory, c->secure_peer_name, &handshaker);
   if (result != TSI_OK)
     {
       gpr_log (GPR_ERROR, "Handshaker creation failed with error %s.", tsi_result_to_string (result));
-      cb (user_data, GRPC_SECURITY_ERROR, nonsecure_endpoint, NULL, closure_list);
+      cb (exec_ctx, user_data, GRPC_SECURITY_ERROR, nonsecure_endpoint, NULL);
     }
   else
     {
-      grpc_do_security_handshake (handshaker, sc, nonsecure_endpoint, cb, user_data, closure_list);
+      grpc_do_security_handshake (exec_ctx, handshaker, sc, nonsecure_endpoint, cb, user_data);
     }
 }
 
@@ -154,11 +154,11 @@ on_secure_transport_setup_done (grpc_exec_ctx * exec_ctx, void *rp, grpc_securit
   if (status != GRPC_SECURITY_OK)
     {
       gpr_log (GPR_ERROR, "Secure transport setup failed with error %d.", status);
-      c->func (c->arg, NULL, closure_list);
+      c->func (exec_ctx, c->arg, NULL);
     }
   else
     {
-      c->func (c->arg, secure_endpoint, closure_list);
+      c->func (exec_ctx, c->arg, secure_endpoint);
     }
   gpr_free (c);
 }
@@ -173,14 +173,14 @@ ssl_handshake (void *arg, grpc_endpoint * tcp, const char *host, void (*on_done)
   if (pem_root_certs == NULL || pem_root_certs_size == 0)
     {
       gpr_log (GPR_ERROR, "Could not get default pem root certs.");
-      on_done (arg, NULL, closure_list);
+      on_done (exec_ctx, arg, NULL);
       gpr_free (c);
       return;
     }
   c->func = on_done;
   c->arg = arg;
   GPR_ASSERT (httpcli_ssl_channel_security_connector_create (pem_root_certs, pem_root_certs_size, host, &sc) == GRPC_SECURITY_OK);
-  grpc_security_connector_do_handshake (&sc->base, tcp, on_secure_transport_setup_done, c, closure_list);
+  grpc_security_connector_do_handshake (exec_ctx, &sc->base, tcp, on_secure_transport_setup_done, c);
   GRPC_SECURITY_CONNECTOR_UNREF (&sc->base, "httpcli");
 }
 

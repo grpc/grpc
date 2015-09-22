@@ -461,7 +461,7 @@ compute_engine_httpcli_get_success_override (grpc_exec_ctx * exec_ctx, const grp
 {
   grpc_httpcli_response response = http_response (200, valid_oauth2_json_response);
   validate_compute_engine_http_request (request);
-  on_response (user_data, &response, closure_list);
+  on_response (exec_ctx, user_data, &response);
   return 1;
 }
 
@@ -470,7 +470,7 @@ compute_engine_httpcli_get_failure_override (grpc_exec_ctx * exec_ctx, const grp
 {
   grpc_httpcli_response response = http_response (403, "Not Authorized.");
   validate_compute_engine_http_request (request);
-  on_response (user_data, &response, closure_list);
+  on_response (exec_ctx, user_data, &response);
   return 1;
 }
 
@@ -548,7 +548,7 @@ refresh_token_httpcli_post_success (grpc_exec_ctx * exec_ctx, const grpc_httpcli
 {
   grpc_httpcli_response response = http_response (200, valid_oauth2_json_response);
   validate_refresh_token_http_request (request, body, body_size);
-  on_response (user_data, &response, closure_list);
+  on_response (exec_ctx, user_data, &response);
   return 1;
 }
 
@@ -557,7 +557,7 @@ refresh_token_httpcli_post_failure (grpc_exec_ctx * exec_ctx, const grpc_httpcli
 {
   grpc_httpcli_response response = http_response (403, "Not Authorized.");
   validate_refresh_token_http_request (request, body, body_size);
-  on_response (user_data, &response, closure_list);
+  on_response (exec_ctx, user_data, &response);
   return 1;
 }
 

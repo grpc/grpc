@@ -203,7 +203,7 @@ httpcli_get_google_keys_for_email (grpc_exec_ctx * exec_ctx, const grpc_httpcli_
   GPR_ASSERT (request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT (strcmp (request->host, "www.googleapis.com") == 0);
   GPR_ASSERT (strcmp (request->path, "/robot/v1/metadata/x509/" "777-abaslkan11hlb6nmim3bpspl31ud@developer." "gserviceaccount.com") == 0);
-  on_response (user_data, &response, closure_list);
+  on_response (exec_ctx, user_data, &response);
   gpr_free (response.body);
   return 1;
 }
@@ -246,7 +246,7 @@ httpcli_get_custom_keys_for_email (grpc_exec_ctx * exec_ctx, const grpc_httpcli_
   GPR_ASSERT (request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT (strcmp (request->host, "keys.bar.com") == 0);
   GPR_ASSERT (strcmp (request->path, "/jwk/foo@bar.com") == 0);
-  on_response (user_data, &response, closure_list);
+  on_response (exec_ctx, user_data, &response);
   gpr_free (response.body);
   return 1;
 }
@@ -279,7 +279,7 @@ httpcli_get_jwk_set (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request * requ
   GPR_ASSERT (request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT (strcmp (request->host, "www.googleapis.com") == 0);
   GPR_ASSERT (strcmp (request->path, "/oauth2/v3/certs") == 0);
-  on_response (user_data, &response, closure_list);
+  on_response (exec_ctx, user_data, &response);
   gpr_free (response.body);
   return 1;
 }
@@ -292,7 +292,7 @@ httpcli_get_openid_config (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request 
   GPR_ASSERT (strcmp (request->host, "accounts.google.com") == 0);
   GPR_ASSERT (strcmp (request->path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_httpcli_set_override (httpcli_get_jwk_set, httpcli_post_should_not_be_called);
-  on_response (user_data, &response, closure_list);
+  on_response (exec_ctx, user_data, &response);
   gpr_free (response.body);
   return 1;
 }
@@ -331,7 +331,7 @@ httpcli_get_bad_json (grpc_exec_ctx * exec_ctx, const grpc_httpcli_request * req
 {
   grpc_httpcli_response response = http_response (200, gpr_strdup ("{\"bad\": \"stuff\"}"));
   GPR_ASSERT (request->handshaker == &grpc_httpcli_ssl);
-  on_response (user_data, &response, closure_list);
+  on_response (exec_ctx, user_data, &response);
   gpr_free (response.body);
   return 1;
 }

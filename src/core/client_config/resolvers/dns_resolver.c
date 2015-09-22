@@ -128,7 +128,7 @@ dns_next (grpc_exec_ctx * exec_ctx, grpc_resolver * resolver, grpc_client_config
     }
   else
     {
-      dns_maybe_finish_next_locked (r, closure_list);
+      dns_maybe_finish_next_locked (exec_ctx, r);
     }
   gpr_mu_unlock (&r->mu);
 }
@@ -152,14 +152,14 @@ dns_on_resolved (grpc_exec_ctx * exec_ctx, void *arg, grpc_resolved_addresses * 
 	  memset (&args, 0, sizeof (args));
 	  args.addr = (struct sockaddr *) (addresses->addrs[i].addr);
 	  args.addr_len = (size_t) addresses->addrs[i].len;
-	  subchannels[i] = grpc_subchannel_factory_create_subchannel (r->subchannel_factory, &args, closure_list);
+	  subchannels[i] = grpc_subchannel_factory_create_subchannel (exec_ctx, r->subchannel_factory, &args);
 	}
       memset (&lb_policy_args, 0, sizeof (lb_policy_args));
       lb_policy_args.subchannels = subchannels;
       lb_policy_args.num_subchannels = addresses->naddrs;
       lb_policy = grpc_lb_policy_create (r->lb_policy_name, &lb_policy_args);
       grpc_client_config_set_lb_policy (config, lb_policy);
-      GRPC_LB_POLICY_UNREF (lb_policy, "construction", closure_list);
+      GRPC_LB_POLICY_UNREF (exec_ctx, lb_policy, "construction");
       grpc_resolved_addresses_destroy (addresses);
       gpr_free (subchannels);
     }
@@ -168,14 +168,14 @@ dns_on_resolved (grpc_exec_ctx * exec_ctx, void *arg, grpc_resolved_addresses * 
   r->resolving = 0;
   if (r->resolved_config)
     {
-      grpc_client_config_unref (r->resolved_config, closure_list);
+      grpc_client_config_unref (exec_ctx, r->resolved_config);
     }
   r->resolved_config = config;
   r->resolved_version++;
-  dns_maybe_finish_next_locked (r, closure_list);
+  dns_maybe_finish_next_locked (exec_ctx, r);
   gpr_mu_unlock (&r->mu);
 
-  GRPC_RESOLVER_UNREF (&r->base, "dns-resolving", closure_list);
+  GRPC_RESOLVER_UNREF (exec_ctx, &r->base, "dns-resolving");
 }
 
 static void
@@ -210,9 +210,9 @@ dns_destroy (grpc_exec_ctx * exec_ctx, grpc_resolver * gr)
   gpr_mu_destroy (&r->mu);
   if (r->resolved_config)
     {
-      grpc_client_config_unref (r->resolved_config, closure_list);
+      grpc_client_config_unref (exec_ctx, r->resolved_config);
     }
-  grpc_subchannel_factory_unref (r->subchannel_factory, closure_list);
+  grpc_subchannel_factory_unref (exec_ctx, r->subchannel_factory);
   gpr_free (r->name);
   gpr_free (r->default_port);
   gpr_free (r->lb_policy_name);

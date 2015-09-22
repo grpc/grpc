@@ -83,7 +83,7 @@ typedef struct
 static void
 delete_state_watcher (grpc_exec_ctx * exec_ctx, state_watcher * w)
 {
-  GRPC_CHANNEL_INTERNAL_UNREF (w->channel, "watch_connectivity", closure_list);
+  GRPC_CHANNEL_INTERNAL_UNREF (exec_ctx, w->channel, "watch_connectivity");
   gpr_mu_destroy (&w->mu);
   gpr_free (w);
 }
@@ -112,7 +112,7 @@ finished_completion (grpc_exec_ctx * exec_ctx, void *pw, grpc_cq_completion * ig
 
   if (delete)
     {
-      delete_state_watcher (w, closure_list);
+      delete_state_watcher (exec_ctx, w);
     }
 }
 
@@ -127,7 +127,7 @@ partly_done (grpc_exec_ctx * exec_ctx, state_watcher * w, int due_to_completion)
     {
       w->removed = 1;
       client_channel_elem = grpc_channel_stack_last_element (grpc_channel_get_channel_stack (w->channel));
-      grpc_client_channel_del_interested_party (client_channel_elem, grpc_cq_pollset (w->cq), closure_list);
+      grpc_client_channel_del_interested_party (client_channel_elem, grpc_cq_pollset (exec_ctx, w->cq));
     }
   gpr_mu_unlock (&w->mu);
   if (due_to_completion)
@@ -135,7 +135,7 @@ partly_done (grpc_exec_ctx * exec_ctx, state_watcher * w, int due_to_completion)
       gpr_mu_lock (&w->mu);
       w->success = 1;
       gpr_mu_unlock (&w->mu);
-      grpc_alarm_cancel (&w->alarm, closure_list);
+      grpc_alarm_cancel (exec_ctx, &w->alarm);
     }
 
   gpr_mu_lock (&w->mu);
@@ -143,7 +143,7 @@ partly_done (grpc_exec_ctx * exec_ctx, state_watcher * w, int due_to_completion)
     {
     case WAITING:
       w->phase = CALLING_BACK;
-      grpc_cq_end_op (w->cq, w->tag, w->success, finished_completion, w, &w->completion_storage, closure_list);
+      grpc_cq_end_op (exec_ctx, w->cq, w->tag, w->success, finished_completion, w, &w->completion_storage);
       break;
     case CALLING_BACK:
       w->phase = CALLING_BACK_AND_FINISHED;
@@ -160,20 +160,20 @@ partly_done (grpc_exec_ctx * exec_ctx, state_watcher * w, int due_to_completion)
 
   if (delete)
     {
-      delete_state_watcher (w, closure_list);
+      delete_state_watcher (exec_ctx, w);
     }
 }
 
 static void
 watch_complete (grpc_exec_ctx * exec_ctx, void *pw, int success)
 {
-  partly_done (pw, 1, closure_list);
+  partly_done (exec_ctx, pw, 1);
 }
 
 static void
 timeout_complete (grpc_exec_ctx * exec_ctx, void *pw, int success)
 {
-  partly_done (pw, 0, closure_list);
+  partly_done (exec_ctx, pw, 0);
 }
 
 void

@@ -69,7 +69,7 @@ grpc_closure_list_run (grpc_closure_list * closure_list)
       while (c != NULL)
 	{
 	  grpc_closure *next = c->next;
-	  c->cb (c->cb_arg, c->success, closure_list);
+	  c->cb (exec_ctx, c->cb_arg, c->success);
 	  c = next;
 	}
     }

@@ -129,10 +129,10 @@ session_shutdown_cb (void *arg,	/*session */
 {
   session *se = arg;
   server *sv = se->sv;
-  grpc_fd_orphan (se->em_fd, NULL, "a", closure_list);
+  grpc_fd_orphan (exec_ctx, se->em_fd, NULL, "a");
   gpr_free (se);
   /* Start to shutdown listen fd. */
-  grpc_fd_shutdown (sv->em_fd, closure_list);
+  grpc_fd_shutdown (exec_ctx, sv->em_fd);
 }
 
 /* Called when data become readable in a session. */
@@ -148,7 +148,7 @@ session_read_cb (void *arg,	/*session */
 
   if (!success)
     {
-      session_shutdown_cb (arg, 1, closure_list);
+      session_shutdown_cb (exec_ctx, arg, 1);
       return;
     }
 
@@ -167,7 +167,7 @@ session_read_cb (void *arg,	/*session */
      been drained, In such a case, read() returns -1 and set errno to EAGAIN. */
   if (read_once == 0)
     {
-      session_shutdown_cb (arg, 1, closure_list);
+      session_shutdown_cb (exec_ctx, arg, 1);
     }
   else if (read_once == -1)
     {
@@ -181,7 +181,7 @@ session_read_cb (void *arg,	/*session */
 	     TODO(chenw): in multi-threaded version, callback and polling can be
 	     run in different threads. polling may catch a persist read edge event
 	     before notify_on_read is called.  */
-	  grpc_fd_notify_on_read (se->em_fd, &se->session_read_closure, closure_list);
+	  grpc_fd_notify_on_read (exec_ctx, se->em_fd, &se->session_read_closure);
 	}
       else
 	{
@@ -199,7 +199,7 @@ listen_shutdown_cb (void *arg /*server */ , int success,
 {
   server *sv = arg;
 
-  grpc_fd_orphan (sv->em_fd, NULL, "b", closure_list);
+  grpc_fd_orphan (exec_ctx, sv->em_fd, NULL, "b");
 
   gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
   sv->done = 1;
@@ -222,7 +222,7 @@ listen_cb (void *arg,		 /*=sv_arg*/
 
   if (!success)
     {
-      listen_shutdown_cb (arg, 1, closure_list);
+      listen_shutdown_cb (exec_ctx, arg, 1);
       return;
     }
 
@@ -234,12 +234,12 @@ listen_cb (void *arg,		 /*=sv_arg*/
   se = gpr_malloc (sizeof (*se));
   se->sv = sv;
   se->em_fd = grpc_fd_create (fd, "listener");
-  grpc_pollset_add_fd (&g_pollset, se->em_fd, closure_list);
+  grpc_pollset_add_fd (exec_ctx, &g_pollset, se->em_fd);
   se->session_read_closure.cb = session_read_cb;
   se->session_read_closure.cb_arg = se;
-  grpc_fd_notify_on_read (se->em_fd, &se->session_read_closure, closure_list);
+  grpc_fd_notify_on_read (exec_ctx, se->em_fd, &se->session_read_closure);
 
-  grpc_fd_notify_on_read (listen_em_fd, &sv->listen_closure, closure_list);
+  grpc_fd_notify_on_read (exec_ctx, listen_em_fd, &sv->listen_closure);
 }
 
 /* Max number of connections pending to be accepted by listen(). */
@@ -265,11 +265,11 @@ server_start (grpc_exec_ctx * exec_ctx, server * sv)
   GPR_ASSERT (listen (fd, MAX_NUM_FD) == 0);
 
   sv->em_fd = grpc_fd_create (fd, "server");
-  grpc_pollset_add_fd (&g_pollset, sv->em_fd, closure_list);
+  grpc_pollset_add_fd (exec_ctx, &g_pollset, sv->em_fd);
   /* Register to be interested in reading from listen_fd. */
   sv->listen_closure.cb = listen_cb;
   sv->listen_closure.cb_arg = sv;
-  grpc_fd_notify_on_read (sv->em_fd, &sv->listen_closure, closure_list);
+  grpc_fd_notify_on_read (exec_ctx, sv->em_fd, &sv->listen_closure);
 
   return port;
 }
@@ -327,7 +327,7 @@ client_session_shutdown_cb (void *arg /*client */ , int success,
 			    grpc_closure_list * closure_list)
 {
   client *cl = arg;
-  grpc_fd_orphan (cl->em_fd, NULL, "c", closure_list);
+  grpc_fd_orphan (exec_ctx, cl->em_fd, NULL, "c");
   cl->done = 1;
   grpc_pollset_kick (&g_pollset, NULL);
 }
@@ -344,7 +344,7 @@ client_session_write (void *arg,	/*client */
   if (!success)
     {
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
-      client_session_shutdown_cb (arg, 1, closure_list);
+      client_session_shutdown_cb (exec_ctx, arg, 1);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
       return;
     }
@@ -364,12 +364,12 @@ client_session_write (void *arg,	/*client */
 	{
 	  cl->write_closure.cb = client_session_write;
 	  cl->write_closure.cb_arg = cl;
-	  grpc_fd_notify_on_write (cl->em_fd, &cl->write_closure, closure_list);
+	  grpc_fd_notify_on_write (exec_ctx, cl->em_fd, &cl->write_closure);
 	  cl->client_write_cnt++;
 	}
       else
 	{
-	  client_session_shutdown_cb (arg, 1, closure_list);
+	  client_session_shutdown_cb (exec_ctx, arg, 1);
 	}
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
     }
@@ -409,9 +409,9 @@ client_start (grpc_exec_ctx * exec_ctx, client * cl, int port)
     }
 
   cl->em_fd = grpc_fd_create (fd, "client");
-  grpc_pollset_add_fd (&g_pollset, cl->em_fd, closure_list);
+  grpc_pollset_add_fd (exec_ctx, &g_pollset, cl->em_fd);
 
-  client_session_write (cl, 1, closure_list);
+  client_session_write (exec_ctx, cl, 1);
 }
 
 /* Wait for the signal to shutdown a client. */

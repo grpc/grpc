@@ -99,7 +99,7 @@ static void
 client_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_transport_stream_op * op)
 {
   client_mutate_op (elem, op);
-  grpc_call_next_op (elem, op, closure_list);
+  grpc_call_next_op (exec_ctx, elem, op);
 }
 
 static void
@@ -112,7 +112,7 @@ server_on_done_recv (grpc_exec_ctx * exec_ctx, void *ptr, int success)
     {
       extract_and_annotate_method_tag (calld->recv_ops, calld, chand);
     }
-  calld->on_done_recv->cb (calld->on_done_recv->cb_arg, success, closure_list);
+  calld->on_done_recv->cb (exec_ctx, calld->on_done_recv->cb_arg, success);
 }
 
 static void
@@ -134,7 +134,7 @@ server_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, g
   call_data *calld = elem->call_data;
   GPR_ASSERT ((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
   server_mutate_op (elem, op);
-  grpc_call_next_op (elem, op, closure_list);
+  grpc_call_next_op (exec_ctx, elem, op);
 }
 
 static void

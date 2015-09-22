@@ -247,7 +247,7 @@ got_port_from_server (grpc_exec_ctx * exec_ctx, void *arg, const grpc_httpcli_re
       req.path = "/get";
       gpr_log (GPR_DEBUG, "failed port pick from server: retrying");
       sleep (1);
-      grpc_httpcli_get (pr->ctx, &pr->pollset, &req, GRPC_TIMEOUT_SECONDS_TO_DEADLINE (10), got_port_from_server, pr, closure_list);
+      grpc_httpcli_get (pr->ctx, &pr->pollset, &req, GRPC_TIMEOUT_SECONDS_TO_DEADLINE (exec_ctx, 10), got_port_from_server, pr);
       return;
     }
   GPR_ASSERT (response);

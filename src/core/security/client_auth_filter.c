@@ -94,7 +94,7 @@ bubble_up_error (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc_status
   call_data *calld = elem->call_data;
   gpr_log (GPR_ERROR, "Client side authentication failure: %s", error_msg);
   grpc_transport_stream_op_add_cancellation (&calld->op, status);
-  grpc_call_next_op (elem, &calld->op, closure_list);
+  grpc_call_next_op (exec_ctx, elem, &calld->op);
 }
 
 static void
@@ -109,7 +109,7 @@ on_credentials_metadata (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credent
   reset_service_url (calld);
   if (status != GRPC_CREDENTIALS_OK)
     {
-      bubble_up_error (elem, GRPC_STATUS_UNAUTHENTICATED, "Credentials failed to get metadata.", closure_list);
+      bubble_up_error (exec_ctx, elem, GRPC_STATUS_UNAUTHENTICATED, "Credentials failed to get metadata.");
       return;
     }
   GPR_ASSERT (num_md <= MAX_CREDENTIALS_METADATA_COUNT);
@@ -119,7 +119,7 @@ on_credentials_metadata (grpc_exec_ctx * exec_ctx, void *user_data, grpc_credent
     {
       grpc_metadata_batch_add_tail (mdb, &calld->md_links[i], grpc_mdelem_from_slices (chand->md_ctx, gpr_slice_ref (md_elems[i].key), gpr_slice_ref (md_elems[i].value)));
     }
-  grpc_call_next_op (elem, op, closure_list);
+  grpc_call_next_op (exec_ctx, elem, op);
 }
 
 void
@@ -161,7 +161,7 @@ send_security_metadata (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc
   if (!channel_creds_has_md && !call_creds_has_md)
     {
       /* Skip sending metadata altogether. */
-      grpc_call_next_op (elem, op, closure_list);
+      grpc_call_next_op (exec_ctx, elem, op);
       return;
     }
 
@@ -170,7 +170,7 @@ send_security_metadata (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc
       calld->creds = grpc_composite_credentials_create (channel_creds, ctx->creds, NULL);
       if (calld->creds == NULL)
 	{
-	  bubble_up_error (elem, GRPC_STATUS_INVALID_ARGUMENT, "Incompatible credentials set on channel and call.", closure_list);
+	  bubble_up_error (exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, "Incompatible credentials set on channel and call.");
 	  return;
 	}
     }
@@ -182,7 +182,7 @@ send_security_metadata (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grpc
   build_service_url (chand->security_connector->base.url_scheme, calld);
   calld->op = *op;		/* Copy op (originates from the caller's stack). */
   GPR_ASSERT (calld->pollset);
-  grpc_credentials_get_request_metadata (calld->creds, calld->pollset, calld->service_url, on_credentials_metadata, elem, closure_list);
+  grpc_credentials_get_request_metadata (exec_ctx, calld->creds, calld->pollset, calld->service_url, on_credentials_metadata, elem);
 }
 
 static void
@@ -193,13 +193,13 @@ on_host_checked (grpc_exec_ctx * exec_ctx, void *user_data, grpc_security_status
 
   if (status == GRPC_SECURITY_OK)
     {
-      send_security_metadata (elem, &calld->op, closure_list);
+      send_security_metadata (exec_ctx, elem, &calld->op);
     }
   else
     {
       char *error_msg;
       gpr_asprintf (&error_msg, "Invalid host %s set in :authority metadata.", grpc_mdstr_as_c_string (calld->host));
-      bubble_up_error (elem, GRPC_STATUS_INVALID_ARGUMENT, error_msg, closure_list);
+      bubble_up_error (exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, error_msg);
       gpr_free (error_msg);
     }
 }
@@ -272,26 +272,26 @@ auth_start_transport_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem, grp
 	      grpc_security_status status;
 	      const char *call_host = grpc_mdstr_as_c_string (calld->host);
 	      calld->op = *op;	/* Copy op (originates from the caller's stack). */
-	      status = grpc_channel_security_connector_check_call_host (chand->security_connector, call_host, on_host_checked, elem, closure_list);
+	      status = grpc_channel_security_connector_check_call_host (exec_ctx, chand->security_connector, call_host, on_host_checked, elem);
 	      if (status != GRPC_SECURITY_OK)
 		{
 		  if (status == GRPC_SECURITY_ERROR)
 		    {
 		      char *error_msg;
 		      gpr_asprintf (&error_msg, "Invalid host %s set in :authority metadata.", call_host);
-		      bubble_up_error (elem, GRPC_STATUS_INVALID_ARGUMENT, error_msg, closure_list);
+		      bubble_up_error (exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT, error_msg);
 		      gpr_free (error_msg);
 		    }
 		  return;	/* early exit */
 		}
 	    }
-	  send_security_metadata (elem, op, closure_list);
+	  send_security_metadata (exec_ctx, elem, op);
 	  return;		/* early exit */
 	}
     }
 
   /* pass control down the stack */
-  grpc_call_next_op (elem, op, closure_list);
+  grpc_call_next_op (exec_ctx, elem, op);
 }
 
 /* Constructor for call_data */

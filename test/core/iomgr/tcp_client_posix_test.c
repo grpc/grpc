@@ -72,8 +72,8 @@ must_succeed (grpc_exec_ctx * exec_ctx, void *arg, int success)
 {
   GPR_ASSERT (g_connecting != NULL);
   GPR_ASSERT (success);
-  grpc_endpoint_shutdown (g_connecting, closure_list);
-  grpc_endpoint_destroy (g_connecting, closure_list);
+  grpc_endpoint_shutdown (exec_ctx, g_connecting);
+  grpc_endpoint_destroy (exec_ctx, g_connecting);
   g_connecting = NULL;
   finish_connection ();
 }

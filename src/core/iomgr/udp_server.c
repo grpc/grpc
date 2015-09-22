@@ -162,7 +162,7 @@ destroyed_port (grpc_exec_ctx * exec_ctx, void *server, int success)
   if (s->destroyed_ports == s->nports)
     {
       gpr_mu_unlock (&s->mu);
-      finish_shutdown (s, closure_list);
+      finish_shutdown (exec_ctx, s);
     }
   else
     {
@@ -198,14 +198,14 @@ deactivated_all_ports (grpc_exec_ctx * exec_ctx, grpc_udp_server * s)
 	    }
 	  sp->destroyed_closure.cb = destroyed_port;
 	  sp->destroyed_closure.cb_arg = s;
-	  grpc_fd_orphan (sp->emfd, &sp->destroyed_closure, "udp_listener_shutdown", closure_list);
+	  grpc_fd_orphan (exec_ctx, sp->emfd, &sp->destroyed_closure, "udp_listener_shutdown");
 	}
       gpr_mu_unlock (&s->mu);
     }
   else
     {
       gpr_mu_unlock (&s->mu);
-      finish_shutdown (s, closure_list);
+      finish_shutdown (exec_ctx, s);
     }
 }
 
@@ -225,14 +225,14 @@ grpc_udp_server_destroy (grpc_exec_ctx * exec_ctx, grpc_udp_server * s, grpc_clo
     {
       for (i = 0; i < s->nports; i++)
 	{
-	  grpc_fd_shutdown (s->ports[i].emfd, closure_list);
+	  grpc_fd_shutdown (exec_ctx, s->ports[i].emfd);
 	}
       gpr_mu_unlock (&s->mu);
     }
   else
     {
       gpr_mu_unlock (&s->mu);
-      deactivated_all_ports (s, closure_list);
+      deactivated_all_ports (exec_ctx, s);
     }
 }
 
@@ -302,7 +302,7 @@ on_read (grpc_exec_ctx * exec_ctx, void *arg, int success)
       if (0 == --sp->server->active_ports)
 	{
 	  gpr_mu_unlock (&sp->server->mu);
-	  deactivated_all_ports (sp->server, closure_list);
+	  deactivated_all_ports (exec_ctx, sp->server);
 	}
       else
 	{
@@ -316,7 +316,7 @@ on_read (grpc_exec_ctx * exec_ctx, void *arg, int success)
   sp->read_cb (sp->fd);
 
   /* Re-arm the notification event so we get another chance to read. */
-  grpc_fd_notify_on_read (sp->emfd, &sp->read_closure, closure_list);
+  grpc_fd_notify_on_read (exec_ctx, sp->emfd, &sp->read_closure);
 }
 
 static int
@@ -461,11 +461,11 @@ grpc_udp_server_start (grpc_exec_ctx * exec_ctx, grpc_udp_server * s, grpc_polls
     {
       for (j = 0; j < pollset_count; j++)
 	{
-	  grpc_pollset_add_fd (pollsets[j], s->ports[i].emfd, closure_list);
+	  grpc_pollset_add_fd (exec_ctx, pollsets[j], s->ports[i].emfd);
 	}
       s->ports[i].read_closure.cb = on_read;
       s->ports[i].read_closure.cb_arg = &s->ports[i];
-      grpc_fd_notify_on_read (s->ports[i].emfd, &s->ports[i].read_closure, closure_list);
+      grpc_fd_notify_on_read (exec_ctx, s->ports[i].emfd, &s->ports[i].read_closure);
       s->active_ports++;
     }
   gpr_mu_unlock (&s->mu);
