@@ -285,7 +285,7 @@ server_wait_and_shutdown (server * sv)
       grpc_pollset_worker worker;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
@@ -425,7 +425,7 @@ client_wait_and_shutdown (client * cl)
       grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
@@ -446,7 +446,7 @@ test_grpc_fd (void)
   port = server_start (&sv, &closure_list);
   client_init (&cl);
   client_start (&cl, port, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   client_wait_and_shutdown (&cl);
   server_wait_and_shutdown (&sv);
   GPR_ASSERT (sv.read_bytes_total == cl.write_bytes_total);
@@ -540,7 +540,7 @@ test_grpc_fd_change (void)
       grpc_pollset_worker worker;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
   GPR_ASSERT (a.cb_that_ran == first_read_callback);
@@ -563,7 +563,7 @@ test_grpc_fd_change (void)
       grpc_pollset_worker worker;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
   /* Except now we verify that second_read_callback ran instead */
@@ -571,7 +571,7 @@ test_grpc_fd_change (void)
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
 
   grpc_fd_orphan (em_fd, NULL, "d", &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   destroy_change_data (&a);
   destroy_change_data (&b);
   close (sv[1]);
@@ -595,7 +595,7 @@ main (int argc, char **argv)
   test_grpc_fd_change ();
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
   grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_iomgr_shutdown ();
   return 0;
 }

@@ -147,7 +147,7 @@ on_md_processing_done (void *user_data, const grpc_metadata * consumed_md, size_
       grpc_call_next_op (elem, &calld->transport_op, &closure_list);
     }
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void

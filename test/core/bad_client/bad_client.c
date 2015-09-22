@@ -78,7 +78,7 @@ server_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx
   };
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_server_setup_transport (a->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (a->server), &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 void
@@ -119,7 +119,7 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
   transport = grpc_create_chttp2_transport (NULL, sfd.server, mdctx, 0, &closure_list);
   server_setup_transport (&a, transport, mdctx);
   grpc_chttp2_transport_start_reading (transport, NULL, 0, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   /* Bind everything into the same pollset */
   grpc_endpoint_add_to_pollset (sfd.client, grpc_cq_pollset (a.cq), &closure_list);
@@ -137,7 +137,7 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
 
   /* Write data */
   grpc_endpoint_write (sfd.client, &outgoing, &done_write_closure, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   /* Await completion */
   GPR_ASSERT (gpr_event_wait (&a.done_write, GRPC_TIMEOUT_SECONDS_TO_DEADLINE (5)));
@@ -146,7 +146,7 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
     {
       grpc_endpoint_shutdown (sfd.client, &closure_list);
       grpc_endpoint_destroy (sfd.client, &closure_list);
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       sfd.client = NULL;
     }
 
@@ -157,7 +157,7 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
     {
       grpc_endpoint_shutdown (sfd.client, &closure_list);
       grpc_endpoint_destroy (sfd.client, &closure_list);
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
     }
   grpc_server_shutdown_and_notify (a.server, a.cq, NULL);
   GPR_ASSERT (grpc_completion_queue_pluck (a.cq, NULL, GRPC_TIMEOUT_SECONDS_TO_DEADLINE (1), NULL).type == GRPC_OP_COMPLETE);
@@ -165,6 +165,6 @@ grpc_run_bad_client_test (grpc_bad_client_server_side_validator validator, const
   grpc_completion_queue_destroy (a.cq);
   gpr_slice_buffer_destroy (&outgoing);
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_shutdown ();
 }

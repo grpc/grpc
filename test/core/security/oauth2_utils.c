@@ -94,7 +94,7 @@ grpc_test_fetch_oauth2_token_with_credentials (grpc_credentials * creds)
 
   grpc_credentials_get_request_metadata (creds, &request.pollset, "", on_oauth2_response, &request, &closure_list);
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   gpr_mu_lock (GRPC_POLLSET_MU (&request.pollset));
   while (!request.is_done)
@@ -105,7 +105,7 @@ grpc_test_fetch_oauth2_token_with_credentials (grpc_credentials * creds)
   gpr_mu_unlock (GRPC_POLLSET_MU (&request.pollset));
 
   grpc_pollset_shutdown (&request.pollset, &do_nothing_closure, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_pollset_destroy (&request.pollset);
   return request.token;
 }

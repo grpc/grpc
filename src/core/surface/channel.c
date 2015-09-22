@@ -326,7 +326,7 @@ grpc_channel_destroy (grpc_channel * channel)
 
   GRPC_CHANNEL_INTERNAL_UNREF (channel, "channel", &closure_list);
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 grpc_channel_stack *

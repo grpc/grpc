@@ -309,7 +309,7 @@ test_google_iam_creds (void)
   GPR_ASSERT (grpc_credentials_has_request_metadata (creds));
   GPR_ASSERT (grpc_credentials_has_request_metadata_only (creds));
   grpc_credentials_get_request_metadata (creds, NULL, test_service_url, check_google_iam_metadata, creds, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -332,7 +332,7 @@ test_access_token_creds (void)
   GPR_ASSERT (grpc_credentials_has_request_metadata_only (creds));
   GPR_ASSERT (strcmp (creds->type, GRPC_CREDENTIALS_TYPE_OAUTH2) == 0);
   grpc_credentials_get_request_metadata (creds, NULL, test_service_url, check_access_token_metadata, creds, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -366,7 +366,7 @@ test_ssl_oauth2_composite_creds (void)
   GPR_ASSERT (strcmp (creds_array->creds_array[0]->type, GRPC_CREDENTIALS_TYPE_SSL) == 0);
   GPR_ASSERT (strcmp (creds_array->creds_array[1]->type, GRPC_CREDENTIALS_TYPE_OAUTH2) == 0);
   grpc_credentials_get_request_metadata (composite_creds, NULL, test_service_url, check_ssl_oauth2_composite_metadata, composite_creds, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 void
@@ -422,7 +422,7 @@ test_ssl_oauth2_google_iam_composite_creds (void)
   GPR_ASSERT (strcmp (creds_array->creds_array[1]->type, GRPC_CREDENTIALS_TYPE_OAUTH2) == 0);
   GPR_ASSERT (strcmp (creds_array->creds_array[2]->type, GRPC_CREDENTIALS_TYPE_IAM) == 0);
   grpc_credentials_get_request_metadata (composite_creds, NULL, test_service_url, check_ssl_oauth2_google_iam_composite_metadata, composite_creds, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -499,12 +499,12 @@ test_compute_engine_creds_success (void)
   /* First request: http get should be called. */
   grpc_httpcli_set_override (compute_engine_httpcli_get_success_override, httpcli_post_should_not_be_called);
   grpc_credentials_get_request_metadata (compute_engine_creds, NULL, test_service_url, on_oauth2_creds_get_metadata_success, (void *) test_user_data, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   /* Second request: the cached token should be served directly. */
   grpc_httpcli_set_override (httpcli_get_should_not_be_called, httpcli_post_should_not_be_called);
   grpc_credentials_get_request_metadata (compute_engine_creds, NULL, test_service_url, on_oauth2_creds_get_metadata_success, (void *) test_user_data, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   grpc_credentials_unref (compute_engine_creds);
   grpc_httpcli_set_override (NULL, NULL);
@@ -521,7 +521,7 @@ test_compute_engine_creds_failure (void)
   grpc_credentials_get_request_metadata (compute_engine_creds, NULL, test_service_url, on_oauth2_creds_get_metadata_failure, (void *) test_user_data, &closure_list);
   grpc_credentials_unref (compute_engine_creds);
   grpc_httpcli_set_override (NULL, NULL);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -573,16 +573,16 @@ test_refresh_token_creds_success (void)
   /* First request: http get should be called. */
   grpc_httpcli_set_override (httpcli_get_should_not_be_called, refresh_token_httpcli_post_success);
   grpc_credentials_get_request_metadata (refresh_token_creds, NULL, test_service_url, on_oauth2_creds_get_metadata_success, (void *) test_user_data, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   /* Second request: the cached token should be served directly. */
   grpc_httpcli_set_override (httpcli_get_should_not_be_called, httpcli_post_should_not_be_called);
   grpc_credentials_get_request_metadata (refresh_token_creds, NULL, test_service_url, on_oauth2_creds_get_metadata_success, (void *) test_user_data, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   grpc_credentials_unref (refresh_token_creds);
   grpc_httpcli_set_override (NULL, NULL);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -597,7 +597,7 @@ test_refresh_token_creds_failure (void)
   grpc_credentials_get_request_metadata (refresh_token_creds, NULL, test_service_url, on_oauth2_creds_get_metadata_failure, (void *) test_user_data, &closure_list);
   grpc_credentials_unref (refresh_token_creds);
   grpc_httpcli_set_override (NULL, NULL);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -670,18 +670,18 @@ test_jwt_creds_success (void)
   /* First request: jwt_encode_and_sign should be called. */
   grpc_jwt_encode_and_sign_set_override (encode_and_sign_jwt_success);
   grpc_credentials_get_request_metadata (jwt_creds, NULL, test_service_url, on_jwt_creds_get_metadata_success, (void *) test_user_data, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   /* Second request: the cached token should be served directly. */
   grpc_jwt_encode_and_sign_set_override (encode_and_sign_jwt_should_not_be_called);
   grpc_credentials_get_request_metadata (jwt_creds, NULL, test_service_url, on_jwt_creds_get_metadata_success, (void *) test_user_data, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   /* Third request: Different service url so jwt_encode_and_sign should be
      called again (no caching). */
   grpc_jwt_encode_and_sign_set_override (encode_and_sign_jwt_success);
   grpc_credentials_get_request_metadata (jwt_creds, NULL, other_test_service_url, on_jwt_creds_get_metadata_success, (void *) test_user_data, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   gpr_free (json_key_string);
   grpc_credentials_unref (jwt_creds);
@@ -703,7 +703,7 @@ test_jwt_creds_signing_failure (void)
   gpr_free (json_key_string);
   grpc_credentials_unref (jwt_creds);
   grpc_jwt_encode_and_sign_set_override (NULL);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -858,7 +858,7 @@ test_metadata_plugin_success (void)
   GPR_ASSERT (state == PLUGIN_GET_METADATA_CALLED_STATE);
   grpc_credentials_release (creds);
   GPR_ASSERT (state == PLUGIN_DESTROY_CALLED_STATE);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -879,7 +879,7 @@ test_metadata_plugin_failure (void)
   GPR_ASSERT (state == PLUGIN_GET_METADATA_CALLED_STATE);
   grpc_credentials_release (creds);
   GPR_ASSERT (state == PLUGIN_DESTROY_CALLED_STATE);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 int

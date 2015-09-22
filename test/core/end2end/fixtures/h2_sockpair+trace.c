@@ -66,7 +66,7 @@ server_setup_transport (void *ts, grpc_transport * transport, grpc_mdctx * mdctx
   };
   grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_server_setup_transport (f->server, transport, extra_filters, GPR_ARRAY_SIZE (extra_filters), mdctx, grpc_server_get_channel_args (f->server), &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 typedef struct
@@ -122,7 +122,7 @@ chttp2_init_client_socketpair (grpc_end2end_test_fixture * f, grpc_channel_args 
   client_setup_transport (&cs, transport, mdctx, &closure_list);
   GPR_ASSERT (f->client);
   grpc_chttp2_transport_start_reading (transport, NULL, 0, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -139,7 +139,7 @@ chttp2_init_server_socketpair (grpc_end2end_test_fixture * f, grpc_channel_args 
   transport = grpc_create_chttp2_transport (server_args, sfd->server, mdctx, 0, &closure_list);
   server_setup_transport (f, transport, mdctx);
   grpc_chttp2_transport_start_reading (transport, NULL, 0, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -172,7 +172,7 @@ main (int argc, char **argv)
 
   grpc_test_init (argc, argv);
   grpc_init ();
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   GPR_ASSERT (0 == grpc_tracer_set_enabled ("also-doesnt-exist", 0));
   GPR_ASSERT (1 == grpc_tracer_set_enabled ("http", 1));

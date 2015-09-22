@@ -143,7 +143,7 @@ reconnect_server_start (reconnect_server * server, int port)
   grpc_tcp_server_start (server->tcp_server, server->pollsets, 1, on_connect, server, &closure_list);
   gpr_log (GPR_INFO, "reconnect tcp server listening on 0.0.0.0:%d", port);
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 void
@@ -156,7 +156,7 @@ reconnect_server_poll (reconnect_server * server, int seconds)
   gpr_mu_lock (GRPC_POLLSET_MU (&server->pollset));
   grpc_pollset_work (&server->pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline, &closure_list);
   gpr_mu_unlock (GRPC_POLLSET_MU (&server->pollset));
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 void
@@ -189,7 +189,7 @@ reconnect_server_destroy (reconnect_server * server)
   grpc_tcp_server_destroy (server->tcp_server, &do_nothing_closure[0], &closure_list);
   reconnect_server_clear_timestamps (server);
   grpc_pollset_shutdown (&server->pollset, &do_nothing_closure[1], &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_pollset_destroy (&server->pollset);
   grpc_shutdown ();
 }

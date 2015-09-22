@@ -80,7 +80,7 @@ test_no_op_with_start (void)
   LOG_TEST ("test_no_op_with_start");
   grpc_udp_server_start (s, NULL, 0, &closure_list);
   grpc_udp_server_destroy (s, NULL, NULL);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -112,7 +112,7 @@ test_no_op_with_port_and_start (void)
   grpc_udp_server_start (s, NULL, 0, &closure_list);
 
   grpc_udp_server_destroy (s, NULL, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 static void
@@ -161,7 +161,7 @@ test_receive (int number_of_clients)
 	  grpc_pollset_worker worker;
 	  grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline, &closure_list);
 	  gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-	  grpc_closure_list_run (&closure_list);
+	  grpc_exec_ctx_finish (&exec_ctx);
 	  gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
 	}
       GPR_ASSERT (g_number_of_reads == number_of_reads_before + 1);
@@ -198,7 +198,7 @@ main (int argc, char **argv)
 
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
   grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_iomgr_shutdown ();
   return 0;
 }

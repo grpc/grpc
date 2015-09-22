@@ -126,9 +126,9 @@ free_port_using_server (char *server, int port)
   gpr_mu_unlock (GRPC_POLLSET_MU (&pr.pollset));
 
   grpc_httpcli_context_destroy (&context);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_pollset_shutdown (&pr.pollset, &shutdown_closure, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   gpr_free (path);
 }
 
@@ -288,7 +288,7 @@ pick_port_using_server (char *server)
 
   grpc_httpcli_context_init (&context);
   grpc_httpcli_get (&context, &pr.pollset, &req, GRPC_TIMEOUT_SECONDS_TO_DEADLINE (10), got_port_from_server, &pr, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   gpr_mu_lock (GRPC_POLLSET_MU (&pr.pollset));
   while (pr.port == -1)
     {
@@ -299,7 +299,7 @@ pick_port_using_server (char *server)
 
   grpc_httpcli_context_destroy (&context);
   grpc_pollset_shutdown (&pr.pollset, &shutdown_closure, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   return pr.port;
 }

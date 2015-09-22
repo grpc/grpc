@@ -105,7 +105,7 @@ main (int argc, char **argv)
       grpc_pollset_worker worker;
       grpc_pollset_work (&sync.pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), gpr_inf_future (GPR_CLOCK_MONOTONIC), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&sync.pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&sync.pollset));
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (&sync.pollset));

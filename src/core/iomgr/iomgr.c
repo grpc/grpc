@@ -116,7 +116,7 @@ grpc_iomgr_shutdown (void)
       if (grpc_alarm_check (gpr_inf_future (GPR_CLOCK_MONOTONIC), NULL, &closure_list))
 	{
 	  gpr_mu_unlock (&g_mu);
-	  grpc_closure_list_run (&closure_list);
+	  grpc_exec_ctx_finish (&exec_ctx);
 	  gpr_mu_lock (&g_mu);
 	  continue;
 	}
@@ -143,7 +143,7 @@ grpc_iomgr_shutdown (void)
   gpr_mu_unlock (&g_mu);
 
   grpc_alarm_list_shutdown (&closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   /* ensure all threads have left g_mu */
   gpr_mu_lock (&g_mu);

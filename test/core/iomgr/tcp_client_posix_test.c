@@ -134,7 +134,7 @@ test_succeeds (void)
       grpc_pollset_worker worker;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), GRPC_TIMEOUT_SECONDS_TO_DEADLINE (5), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
 
@@ -171,7 +171,7 @@ test_fails (void)
       grpc_pollset_worker worker;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), test_deadline (), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
 
@@ -257,7 +257,7 @@ test_times_out (void)
 	}
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), GRPC_TIMEOUT_MILLIS_TO_DEADLINE (10), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
@@ -285,7 +285,7 @@ main (int argc, char **argv)
   grpc_pollset_set_init (&g_pollset_set);
   grpc_pollset_init (&g_pollset);
   grpc_pollset_set_add_pollset (&g_pollset_set, &g_pollset, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   test_succeeds ();
   gpr_log (GPR_ERROR, "End of first test");
   test_fails ();
@@ -293,7 +293,7 @@ main (int argc, char **argv)
   grpc_pollset_set_destroy (&g_pollset_set);
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
   grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_shutdown ();
   return 0;
 }

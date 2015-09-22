@@ -313,7 +313,7 @@ grpc_secure_channel_create (grpc_credentials * creds, const char *target, const 
       grpc_channel_args_destroy (new_args_from_connector);
     }
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   return channel;
 }

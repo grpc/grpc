@@ -151,6 +151,6 @@ error:
   port_num = 0;
 
 done:
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   return port_num;
 }

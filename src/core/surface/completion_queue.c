@@ -237,7 +237,7 @@ grpc_completion_queue_next (grpc_completion_queue * cc, gpr_timespec deadline, v
     }
   GRPC_SURFACE_TRACE_RETURNED_EVENT (cc, &ret);
   GRPC_CQ_INTERNAL_UNREF (cc, "next");
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   return ret;
 }
 
@@ -341,7 +341,7 @@ grpc_completion_queue_pluck (grpc_completion_queue * cc, void *tag, gpr_timespec
 done:
   GRPC_SURFACE_TRACE_RETURNED_EVENT (cc, &ret);
   GRPC_CQ_INTERNAL_UNREF (cc, "pluck");
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   return ret;
 }
 
@@ -368,7 +368,7 @@ grpc_completion_queue_shutdown (grpc_completion_queue * cc)
       gpr_mu_unlock (GRPC_POLLSET_MU (&cc->pollset));
       grpc_pollset_shutdown (&cc->pollset, &cc->pollset_destroy_done, &closure_list);
     }
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 void

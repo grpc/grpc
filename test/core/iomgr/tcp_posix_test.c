@@ -216,7 +216,7 @@ read_test (size_t num_bytes, size_t slice_size)
       grpc_pollset_worker worker;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline, &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
   GPR_ASSERT (state.read_bytes == state.target_read_bytes);
@@ -224,7 +224,7 @@ read_test (size_t num_bytes, size_t slice_size)
 
   gpr_slice_buffer_destroy (&state.incoming);
   grpc_endpoint_destroy (ep, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 /* Write to a socket until it fills up, then read from it using the grpc_tcp
@@ -263,7 +263,7 @@ large_read_test (size_t slice_size)
       grpc_pollset_worker worker;
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline, &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
   GPR_ASSERT (state.read_bytes == state.target_read_bytes);
@@ -271,7 +271,7 @@ large_read_test (size_t slice_size)
 
   gpr_slice_buffer_destroy (&state.incoming);
   grpc_endpoint_destroy (ep, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 struct write_socket_state
@@ -338,7 +338,7 @@ drain_socket_blocking (int fd, size_t num_bytes, size_t read_size)
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), GRPC_TIMEOUT_MILLIS_TO_DEADLINE (10), &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       do
 	{
 	  bytes_read = read (fd, buf, bytes_left > read_size ? read_size : bytes_left);
@@ -405,7 +405,7 @@ write_test (size_t num_bytes, size_t slice_size)
 	}
       grpc_pollset_work (&g_pollset, &worker, gpr_now (GPR_CLOCK_MONOTONIC), deadline, &closure_list);
       gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
-      grpc_closure_list_run (&closure_list);
+      grpc_exec_ctx_finish (&exec_ctx);
       gpr_mu_lock (GRPC_POLLSET_MU (&g_pollset));
     }
   gpr_mu_unlock (GRPC_POLLSET_MU (&g_pollset));
@@ -413,7 +413,7 @@ write_test (size_t num_bytes, size_t slice_size)
   gpr_slice_buffer_destroy (&outgoing);
   grpc_endpoint_destroy (ep, &closure_list);
   gpr_free (slices);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 }
 
 void
@@ -458,7 +458,7 @@ create_fixture_tcp_socketpair (size_t slice_size)
   grpc_endpoint_add_to_pollset (f.client_ep, &g_pollset, &closure_list);
   grpc_endpoint_add_to_pollset (f.server_ep, &g_pollset, &closure_list);
 
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
 
   return f;
 }
@@ -485,7 +485,7 @@ main (int argc, char **argv)
   grpc_endpoint_tests (configs[0], &g_pollset);
   grpc_closure_init (&destroyed, destroy_pollset, &g_pollset);
   grpc_pollset_shutdown (&g_pollset, &destroyed, &closure_list);
-  grpc_closure_list_run (&closure_list);
+  grpc_exec_ctx_finish (&exec_ctx);
   grpc_shutdown ();
 
   return 0;
