@@ -124,7 +124,7 @@ def get_c_tests(travis, test_lang) :
   out = []
   platforms_str = 'ci_platforms' if travis else 'platforms'
   with open('tools/run_tests/tests.json') as f:
-    js = json.load(f);
+    js = json.load(f)
     binaries = [tgt
                 for tgt in js
                 if tgt['language'] == test_lang and
