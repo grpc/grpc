@@ -597,7 +597,7 @@ static void publish_transport(grpc_subchannel *c, grpc_call_list *call_list) {
   gpr_mu_unlock(&c->mu);
 
   while (w4c != NULL) {
-    waiting_for_connect *next = w4c;
+    waiting_for_connect *next = w4c->next;
     grpc_call_list_add(call_list, &w4c->continuation, 1);
     w4c = next;
   }
