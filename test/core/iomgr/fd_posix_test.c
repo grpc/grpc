@@ -117,8 +117,8 @@ typedef struct {
 
 /* Called when an upload session can be safely shutdown.
    Close session FD and start to shutdown listen FD. */
-static void session_shutdown_cb(void *arg, /*session */
-                                int success, grpc_closure_list *closure_list) {
+static void session_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
+                                int success) {
   session *se = arg;
   server *sv = se->sv;
   grpc_fd_orphan(exec_ctx, se->em_fd, NULL, "a");
@@ -128,8 +128,8 @@ static void session_shutdown_cb(void *arg, /*session */
 }
 
 /* Called when data become readable in a session. */
-static void session_read_cb(void *arg, /*session */
-                            int success, grpc_closure_list *closure_list) {
+static void session_read_cb(grpc_exec_ctx *exec_ctx, void *arg, /*session */
+                            int success) {
   session *se = arg;
   int fd = se->em_fd->fd;
 
@@ -173,8 +173,8 @@ static void session_read_cb(void *arg, /*session */
 
 /* Called when the listen FD can be safely shutdown.
    Close listen FD and signal that server can be shutdown. */
-static void listen_shutdown_cb(void *arg /*server */, int success,
-                               grpc_closure_list *closure_list) {
+static void listen_shutdown_cb(grpc_exec_ctx *exec_ctx, void *arg /*server */,
+                               int success) {
   server *sv = arg;
 
   grpc_fd_orphan(exec_ctx, sv->em_fd, NULL, "b");
@@ -186,8 +186,8 @@ static void listen_shutdown_cb(void *arg /*server */, int success,
 }
 
 /* Called when a new TCP connection request arrives in the listening port. */
-static void listen_cb(void *arg, /*=sv_arg*/
-                      int success, grpc_closure_list *closure_list) {
+static void listen_cb(grpc_exec_ctx *exec_ctx, void *arg, /*=sv_arg*/
+                      int success) {
   server *sv = arg;
   int fd;
   int flags;
@@ -253,8 +253,9 @@ static void server_wait_and_shutdown(server *sv) {
   while (!sv->done) {
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
     grpc_pollset_worker worker;
-    grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(&exec_ctx, GPR_CLOCK_MONOTONIC));
+    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -290,8 +291,8 @@ static void client_init(client *cl) {
 }
 
 /* Called when a client upload session is ready to shutdown. */
-static void client_session_shutdown_cb(void *arg /*client */, int success,
-                                       grpc_closure_list *closure_list) {
+static void client_session_shutdown_cb(grpc_exec_ctx *exec_ctx,
+                                       void *arg /*client */, int success) {
   client *cl = arg;
   grpc_fd_orphan(exec_ctx, cl->em_fd, NULL, "c");
   cl->done = 1;
@@ -299,8 +300,8 @@ static void client_session_shutdown_cb(void *arg /*client */, int success,
 }
 
 /* Write as much as possible, then register notify_on_write. */
-static void client_session_write(void *arg, /*client */
-                                 int success, grpc_closure_list *closure_list) {
+static void client_session_write(grpc_exec_ctx *exec_ctx, void *arg, /*client */
+                                 int success) {
   client *cl = arg;
   int fd = cl->em_fd->fd;
   ssize_t write_once = 0;
@@ -367,8 +368,9 @@ static void client_wait_and_shutdown(client *cl) {
   while (!cl->done) {
     grpc_pollset_worker worker;
     grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(&exec_ctx, GPR_CLOCK_MONOTONIC));
+    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -404,8 +406,8 @@ void init_change_data(fd_change_data *fdc) { fdc->cb_that_ran = NULL; }
 
 void destroy_change_data(fd_change_data *fdc) {}
 
-static void first_read_callback(void *arg /* fd_change_data */, int success,
-                                grpc_closure_list *closure_list) {
+static void first_read_callback(grpc_exec_ctx *exec_ctx,
+                                void *arg /* fd_change_data */, int success) {
   fd_change_data *fdc = arg;
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -414,8 +416,8 @@ static void first_read_callback(void *arg /* fd_change_data */, int success,
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
-static void second_read_callback(void *arg /* fd_change_data */, int success,
-                                 grpc_closure_list *closure_list) {
+static void second_read_callback(grpc_exec_ctx *exec_ctx,
+                                 void *arg /* fd_change_data */, int success) {
   fd_change_data *fdc = arg;
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -466,8 +468,9 @@ static void test_grpc_fd_change(void) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (a.cb_that_ran == NULL) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(&exec_ctx, GPR_CLOCK_MONOTONIC));
+    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -489,8 +492,9 @@ static void test_grpc_fd_change(void) {
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (b.cb_that_ran == NULL) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(&exec_ctx, GPR_CLOCK_MONOTONIC));
+    grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC));
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
     grpc_exec_ctx_finish(&exec_ctx);
     gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));

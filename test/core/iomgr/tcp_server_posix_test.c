@@ -59,8 +59,10 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp) {
 }
 
 static void test_no_op(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_tcp_server *s = grpc_tcp_server_create();
-  grpc_tcp_server_destroy(s, NULL, NULL);
+  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op_with_start(void) {
@@ -68,7 +70,7 @@ static void test_no_op_with_start(void) {
   grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST("test_no_op_with_start");
   grpc_tcp_server_start(&exec_ctx, s, NULL, 0, on_connect, NULL);
-  grpc_tcp_server_destroy(s, NULL, NULL);
+  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -144,8 +146,8 @@ static void test_connect(int n) {
     while (g_nconnects == nconnects_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
       grpc_pollset_worker worker;
-      grpc_pollset_work(&g_pollset, &worker,
-                        gpr_now(&exec_ctx, GPR_CLOCK_MONOTONIC), deadline);
+      grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                        gpr_now(GPR_CLOCK_MONOTONIC), deadline);
       gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
       grpc_exec_ctx_finish(&exec_ctx);
       gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));

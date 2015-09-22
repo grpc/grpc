@@ -138,7 +138,7 @@ static void test_create_channel_stack(void) {
 
   grpc_mdctx_unref(metadata_context);
 
-  GPR_ASSERT(grpc_closure_list_empty(closure_list));
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {
