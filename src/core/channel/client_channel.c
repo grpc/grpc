@@ -482,10 +482,10 @@ cc_start_transport_stream_op (grpc_exec_ctx * exec_ctx, grpc_call_element * elem
   perform_transport_stream_op (exec_ctx, elem, op, 0);
 }
 
-static void watch_lb_policy (channel_data * chand, grpc_lb_policy * lb_policy, grpc_connectivity_state current_state, grpc_closure_list * cl);
+static void watch_lb_policy (grpc_exec_ctx * exec_ctx, channel_data * chand, grpc_lb_policy * lb_policy, grpc_connectivity_state current_state);
 
 static void
-on_lb_policy_state_changed_locked (lb_policy_connectivity_watcher * w, grpc_closure_list * cl)
+on_lb_policy_state_changed_locked (grpc_exec_ctx * exec_ctx, lb_policy_connectivity_watcher * w)
 {
   /* check if the notification is for a stale policy */
   if (w->lb_policy != w->chand->lb_policy)
