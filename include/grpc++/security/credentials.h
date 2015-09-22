@@ -180,7 +180,7 @@ class MetadataCredentialsPlugin {
   // Gets the auth metatada produced by this plugin.
   virtual Status GetMetadata(
       grpc::string_ref service_url,
-      std::multimap<grpc::string, grpc::string_ref>* metadata) = 0;
+      std::multimap<grpc::string, grpc::string>* metadata) = 0;
 };
 
 std::shared_ptr<Credentials> MetadataCredentialsFromPlugin(
