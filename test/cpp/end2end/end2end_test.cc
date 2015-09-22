@@ -1149,6 +1149,24 @@ TEST_F(End2endTest, ChannelState) {
   EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel_->GetState(false));
 }
 
+// Takes 10s.
+TEST_F(End2endTest, ChannelStateTimeout) {
+  int port = grpc_pick_unused_port_or_die();
+  std::ostringstream server_address;
+  server_address << "127.0.0.1:" << port;
+  // Channel to non-existing server
+  auto channel = CreateChannel(server_address.str(), InsecureCredentials());
+  // Start IDLE
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(true));
+
+  auto state = GRPC_CHANNEL_IDLE;
+  for (int i = 0; i < 10; i++) {
+    channel->WaitForStateChange(state, std::chrono::system_clock::now() +
+                                           std::chrono::seconds(1));
+    state = channel->GetState(false);
+  }
+}
+
 // Talking to a non-existing service.
 TEST_F(End2endTest, NonExistingService) {
   ResetChannel();
