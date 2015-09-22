@@ -907,7 +907,6 @@ void grpc_server_start(grpc_server *server) {
 void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
                                  grpc_channel_filter const **extra_filters,
                                  size_t num_extra_filters, grpc_mdctx *mdctx,
-                                 grpc_workqueue *workqueue,
                                  const grpc_channel_args *args,
                                  grpc_call_list *call_list) {
   size_t num_filters = s->channel_filter_count + num_extra_filters + 1;
@@ -943,7 +942,7 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
   }
 
   channel = grpc_channel_create_from_filters(NULL, filters, num_filters, args,
-                                             mdctx, workqueue, 0, call_list);
+                                             mdctx, 0, call_list);
   chand = (channel_data *)grpc_channel_stack_element(
               grpc_channel_get_channel_stack(channel), 0)
               ->channel_data;

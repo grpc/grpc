@@ -47,24 +47,6 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "alarm_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
     "name": "alpn_test", 
     "platforms": [
       "linux", 

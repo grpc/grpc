@@ -65,15 +65,14 @@ static void done_write(void *arg, int success, grpc_call_list *call_list) {
 }
 
 static void server_setup_transport(void *ts, grpc_transport *transport,
-                                   grpc_mdctx *mdctx,
-                                   grpc_workqueue *workqueue) {
+                                   grpc_mdctx *mdctx) {
   thd_args *a = ts;
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
   grpc_call_list call_list = GRPC_CALL_LIST_INIT;
   grpc_server_setup_transport(
       a->server, transport, extra_filters, GPR_ARRAY_SIZE(extra_filters), mdctx,
-      workqueue, grpc_server_get_channel_args(a->server), &call_list);
+      grpc_server_get_channel_args(a->server), &call_list);
   grpc_call_list_run(&call_list);
 }
 
@@ -90,7 +89,6 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
       gpr_slice_from_copied_buffer(client_payload, client_payload_length);
   gpr_slice_buffer outgoing;
   grpc_closure done_write_closure;
-  grpc_workqueue *workqueue;
   grpc_call_list call_list = GRPC_CALL_LIST_INIT;
 
   hex = gpr_dump(client_payload, client_payload_length,
@@ -103,9 +101,6 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   /* Init grpc */
   grpc_init();
-
-  workqueue = grpc_workqueue_create(&call_list);
-  grpc_call_list_run(&call_list);
 
   /* Create endpoints */
   sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);
@@ -120,7 +115,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   grpc_server_start(a.server);
   transport =
       grpc_create_chttp2_transport(NULL, sfd.server, mdctx, 0, &call_list);
-  server_setup_transport(&a, transport, mdctx, workqueue);
+  server_setup_transport(&a, transport, mdctx);
   grpc_chttp2_transport_start_reading(transport, NULL, 0, &call_list);
   grpc_call_list_run(&call_list);
 
@@ -169,7 +164,6 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   grpc_completion_queue_destroy(a.cq);
   gpr_slice_buffer_destroy(&outgoing);
 
-  GRPC_WORKQUEUE_UNREF(workqueue, "destroy", &call_list);
   grpc_call_list_run(&call_list);
   grpc_shutdown();
 }

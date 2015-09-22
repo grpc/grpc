@@ -36,7 +36,6 @@
 
 #include <grpc/grpc.h>
 #include "src/core/iomgr/iomgr.h"
-#include "src/core/iomgr/workqueue.h"
 
 typedef struct grpc_connectivity_state_watcher {
   /** we keep watchers in a linked list */

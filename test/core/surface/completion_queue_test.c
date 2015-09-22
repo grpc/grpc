@@ -220,6 +220,7 @@ static void producer_thread(void *arg) {
     grpc_cq_end_op(opt->cc, (void *)(gpr_intptr)1, 1, free_completion, NULL,
                    gpr_malloc(sizeof(grpc_cq_completion)), &call_list);
     opt->events_triggered++;
+    grpc_call_list_run(&call_list);
   }
 
   gpr_log(GPR_INFO, "producer %d phase 2 done", opt->id);

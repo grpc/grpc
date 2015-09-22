@@ -36,7 +36,6 @@
 
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/pollset.h"
-#include "src/core/iomgr/workqueue.h"
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>

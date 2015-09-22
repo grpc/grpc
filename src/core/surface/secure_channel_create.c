@@ -69,7 +69,6 @@ typedef struct {
   grpc_closure connected_closure;
 
   grpc_mdctx *mdctx;
-  grpc_workqueue *workqueue;
 } connector;
 
 static void connector_ref(grpc_connector *con) {
@@ -81,7 +80,6 @@ static void connector_unref(grpc_connector *con, grpc_call_list *call_list) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
     grpc_mdctx_unref(c->mdctx);
-    GRPC_WORKQUEUE_UNREF(c->workqueue, "connector", call_list);
     gpr_free(c);
   }
 }
@@ -214,11 +212,10 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   c->security_connector = f->security_connector;
   c->mdctx = f->mdctx;
   grpc_mdctx_ref(c->mdctx);
-  c->workqueue = grpc_channel_get_workqueue(f->master);
-  GRPC_WORKQUEUE_REF(c->workqueue, "connector");
   gpr_ref_init(&c->refs, 1);
   args->args = final_args;
   args->master = f->master;
+  args->mdctx = f->mdctx;
   s = grpc_subchannel_create(&c->base, args);
   grpc_connector_unref(&c->base, call_list);
   grpc_channel_args_destroy(final_args);
@@ -243,7 +240,6 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   grpc_channel_args *new_args_from_connector;
   grpc_channel_security_connector *connector;
   grpc_mdctx *mdctx;
-  grpc_workqueue *workqueue;
   grpc_resolver *resolver;
   subchannel_factory *f;
 #define MAX_FILTERS 3
@@ -267,7 +263,6 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
         "Failed to create security connector.");
   }
   mdctx = grpc_mdctx_create();
-  workqueue = grpc_workqueue_create(&call_list);
 
   connector_arg = grpc_security_connector_to_arg(&connector->base);
   args_copy = grpc_channel_args_copy_and_add(
@@ -281,7 +276,7 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   GPR_ASSERT(n <= MAX_FILTERS);
 
   channel = grpc_channel_create_from_filters(target, filters, n, args_copy,
-                                             mdctx, workqueue, 1, &call_list);
+                                             mdctx, 1, &call_list);
 
   f = gpr_malloc(sizeof(*f));
   f->base.vtable = &subchannel_factory_vtable;

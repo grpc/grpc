@@ -194,13 +194,14 @@ int grpc_call_list_empty(grpc_call_list call_list) {
 }
 
 void grpc_call_list_move(grpc_call_list *src, grpc_call_list *dst) {
-  if (dst->head == NULL) {
-    *dst = *src;
-    return;
-  }
   if (src->head == NULL) {
     return;
   }
-  dst->tail->next = src->head;
-  dst->tail = src->tail;
+  if (dst->head == NULL) {
+    *dst = *src;
+  } else {
+    dst->tail->next = src->head;
+    dst->tail = src->tail;
+  }
+  src->head = src->tail = NULL;
 }

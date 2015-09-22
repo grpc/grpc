@@ -87,8 +87,7 @@ static void state_unref(grpc_server_secure_state *state) {
 }
 
 static void setup_transport(void *statep, grpc_transport *transport,
-                            grpc_mdctx *mdctx, grpc_workqueue *workqueue,
-                            grpc_call_list *call_list) {
+                            grpc_mdctx *mdctx, grpc_call_list *call_list) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_server_auth_filter, &grpc_http_server_filter};
   grpc_server_secure_state *state = statep;
@@ -101,8 +100,8 @@ static void setup_transport(void *statep, grpc_transport *transport,
       grpc_server_get_channel_args(state->server), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
   grpc_server_setup_transport(state->server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters), mdctx, workqueue,
-                              args_copy, call_list);
+                              GPR_ARRAY_SIZE(extra_filters), mdctx, args_copy,
+                              call_list);
   grpc_channel_args_destroy(args_copy);
 }
 
@@ -135,17 +134,15 @@ static void on_secure_transport_setup_done(void *statep,
   grpc_server_secure_state *state = statep;
   grpc_transport *transport;
   grpc_mdctx *mdctx;
-  grpc_workqueue *workqueue;
   if (status == GRPC_SECURITY_OK) {
     gpr_mu_lock(&state->mu);
     remove_tcp_from_list_locked(state, wrapped_endpoint);
     if (!state->is_shutdown) {
       mdctx = grpc_mdctx_create();
-      workqueue = grpc_workqueue_create(call_list);
       transport = grpc_create_chttp2_transport(
           grpc_server_get_channel_args(state->server), secure_endpoint, mdctx,
           0, call_list);
-      setup_transport(state, transport, mdctx, workqueue, call_list);
+      setup_transport(state, transport, mdctx, call_list);
       grpc_chttp2_transport_start_reading(transport, NULL, 0, call_list);
     } else {
       /* We need to consume this here, because the server may already have gone

@@ -205,7 +205,7 @@ void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
     added_worker = 1;
     gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
     pollset->vtable->maybe_work_and_unlock(pollset, worker, deadline, now,
-                                           NULL);
+                                           call_list);
     locked = 0;
     gpr_tls_set(&g_current_thread_poller, 0);
   } else {
@@ -400,6 +400,7 @@ static void basic_pollset_add_fd(grpc_pollset *pollset, grpc_fd *fd,
   up_args = gpr_malloc(sizeof(*up_args));
   up_args->fd = fd;
   up_args->original_vtable = pollset->vtable;
+  up_args->pollset = pollset;
   up_args->promotion_closure.cb = basic_do_promote;
   up_args->promotion_closure.cb_arg = up_args;
 
