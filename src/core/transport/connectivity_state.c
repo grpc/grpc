@@ -87,6 +87,10 @@ void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker,
 
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker) {
+  if (grpc_connectivity_state_trace) {
+    gpr_log(GPR_DEBUG, "CONWATCH: %s: get %s", tracker->name,
+            grpc_connectivity_state_name(tracker->current_state));
+  }
   return tracker->current_state;
 }
 

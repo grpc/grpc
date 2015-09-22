@@ -74,6 +74,7 @@ static void test_no_op_with_start(void) {
 }
 
 static void test_no_op_with_port(void) {
+  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
   struct sockaddr_in addr;
   grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST("test_no_op_with_port");
@@ -83,7 +84,8 @@ static void test_no_op_with_port(void) {
   GPR_ASSERT(
       grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)));
 
-  grpc_tcp_server_destroy(s, NULL, NULL);
+  grpc_tcp_server_destroy(s, NULL, &call_list);
+  grpc_call_list_run(&call_list);
 }
 
 static void test_no_op_with_port_and_start(void) {
