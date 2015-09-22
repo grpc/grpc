@@ -90,7 +90,7 @@ static void on_connect(void *acp, int from_iocp) {
   grpc_winsocket_callback_info *info = &ac->socket->write_info;
   void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
-  
+
   grpc_alarm_cancel(&ac->alarm);
 
   gpr_mu_lock(&ac->mu);

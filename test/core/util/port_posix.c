@@ -127,7 +127,7 @@ static void free_port_using_server(char *server, int port) {
   gpr_free(path);
 }
 
-static void free_chosen_ports() { 
+static void free_chosen_ports() {
   char *env = gpr_getenv("GRPC_TEST_PORT_SERVER");
   if (env != NULL) {
     size_t i;
@@ -137,7 +137,7 @@ static void free_chosen_ports() {
     gpr_free(env);
   }
 
-  gpr_free(chosen_ports); 
+  gpr_free(chosen_ports);
 }
 
 static void chose_port(int port) {

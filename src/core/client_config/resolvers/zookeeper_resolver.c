@@ -202,8 +202,7 @@ static void zookeeper_on_resolved(void *arg,
     }
     lb_policy_args.subchannels = subchannels;
     lb_policy_args.num_subchannels = addresses->naddrs;
-    lb_policy =
-        grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
+    lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     grpc_client_config_set_lb_policy(config, lb_policy);
     GRPC_LB_POLICY_UNREF(lb_policy, "construction");
     grpc_resolved_addresses_destroy(addresses);

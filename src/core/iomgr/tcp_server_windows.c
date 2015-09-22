@@ -86,7 +86,7 @@ struct grpc_tcp_server {
   size_t port_capacity;
 
   /* shutdown callback */
-  void(*shutdown_complete)(void *);
+  void (*shutdown_complete)(void *);
   void *shutdown_complete_arg;
 };
 
@@ -132,8 +132,8 @@ void grpc_tcp_server_destroy(grpc_tcp_server *s,
   gpr_mu_lock(&s->mu);
 
   s->shutdown_complete = shutdown_complete
-    ? shutdown_complete
-    : dont_care_about_shutdown_completion;
+                             ? shutdown_complete
+                             : dont_care_about_shutdown_completion;
   s->shutdown_complete_arg = shutdown_complete_arg;
 
   /* First, shutdown all fd's. This will queue abortion calls for all
@@ -206,7 +206,8 @@ static void decrement_active_ports_and_notify(server_port *sp) {
   sp->shutting_down = 0;
   gpr_mu_lock(&sp->server->mu);
   GPR_ASSERT(sp->server->active_ports > 0);
-  if (0 == --sp->server->active_ports && sp->server->shutdown_complete != NULL) {
+  if (0 == --sp->server->active_ports &&
+      sp->server->shutdown_complete != NULL) {
     notify = 1;
   }
   gpr_mu_unlock(&sp->server->mu);

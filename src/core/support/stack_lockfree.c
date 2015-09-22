@@ -67,7 +67,7 @@ typedef union lockfree_node {
 #define ENTRY_ALIGNMENT_BITS 3 /* make sure that entries aligned to 8-bytes */
 #define INVALID_ENTRY_INDEX                        \
   ((1 << 16) - 1) /* reserve this entry as invalid \
-                        */
+                         */
 
 struct gpr_stack_lockfree {
   lockfree_node *entries;

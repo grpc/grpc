@@ -712,8 +712,7 @@ static void refresh_token_fetch_oauth2(
   gpr_free(body);
 }
 
-grpc_credentials *
-grpc_refresh_token_credentials_create_from_auth_refresh_token(
+grpc_credentials *grpc_refresh_token_credentials_create_from_auth_refresh_token(
     grpc_auth_refresh_token refresh_token) {
   grpc_google_refresh_token_credentials *c;
   if (!grpc_auth_refresh_token_is_valid(&refresh_token)) {

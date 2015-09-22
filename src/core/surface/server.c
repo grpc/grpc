@@ -1012,7 +1012,7 @@ void grpc_server_setup_transport(grpc_server *s, grpc_transport *transport,
 
 void done_published_shutdown(void *done_arg, grpc_cq_completion *storage,
                              grpc_closure_list *closure_list) {
-  (void) done_arg;
+  (void)done_arg;
   gpr_free(storage);
 }
 

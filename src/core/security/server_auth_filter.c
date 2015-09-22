@@ -136,8 +136,8 @@ static void on_md_processing_done(
     gpr_slice message;
     grpc_metadata_array_destroy(&calld->md);
     error_details = error_details != NULL
-                    ? error_details
-                    : "Authentication metadata processing failed.";
+                        ? error_details
+                        : "Authentication metadata processing failed.";
     message = gpr_slice_from_copied_string(error_details);
     grpc_sopb_reset(calld->recv_ops);
     grpc_transport_stream_op_add_close(&calld->transport_op, status, &message);
