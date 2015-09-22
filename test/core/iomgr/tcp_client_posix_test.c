@@ -223,8 +223,9 @@ void test_times_out(void) {
   for (;;) {
     grpc_pollset_worker worker;
     gpr_timespec now = gpr_now(connect_deadline.clock_type);
-    gpr_timespec continue_verifying_time = gpr_time_from_seconds(2, GPR_TIMESPAN);
-    gpr_timespec grace_time = gpr_time_from_seconds(1, GPR_TIMESPAN);
+    gpr_timespec continue_verifying_time =
+        gpr_time_from_seconds(5, GPR_TIMESPAN);
+    gpr_timespec grace_time = gpr_time_from_seconds(3, GPR_TIMESPAN);
     gpr_timespec finish_time = gpr_time_add(connect_deadline, continue_verifying_time);
     gpr_timespec restart_verifying_time = gpr_time_add(connect_deadline, grace_time);
     int is_after_deadline = gpr_time_cmp(now, connect_deadline) > 0;
@@ -244,7 +245,7 @@ void test_times_out(void) {
                       GRPC_TIMEOUT_MILLIS_TO_DEADLINE(10), &call_list);
     gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
     grpc_call_list_run(&call_list);
-    gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+    gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 

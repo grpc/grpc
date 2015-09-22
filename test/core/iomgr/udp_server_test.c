@@ -103,7 +103,7 @@ static void test_no_op_with_port_and_start(void) {
 
   grpc_udp_server_start(s, NULL, 0, &call_list);
 
-  grpc_udp_server_destroy(s, NULL, NULL);
+  grpc_udp_server_destroy(s, NULL, &call_list);
   grpc_call_list_run(&call_list);
 }
 
