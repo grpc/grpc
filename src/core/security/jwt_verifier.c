@@ -571,7 +571,7 @@ end:
 
 static void on_keys_retrieved(void *user_data,
                               const grpc_httpcli_response *response,
-                              grpc_call_list *call_list) {
+                              grpc_closure_list *closure_list) {
   grpc_json *json = json_from_http(response);
   verifier_cb_ctx *ctx = (verifier_cb_ctx *)user_data;
   EVP_PKEY *verification_key = NULL;
@@ -613,7 +613,7 @@ end:
 
 static void on_openid_config_retrieved(void *user_data,
                                        const grpc_httpcli_response *response,
-                                       grpc_call_list *call_list) {
+                                       grpc_closure_list *closure_list) {
   const grpc_json *cur;
   grpc_json *json = json_from_http(response);
   verifier_cb_ctx *ctx = (verifier_cb_ctx *)user_data;
@@ -645,7 +645,7 @@ static void on_openid_config_retrieved(void *user_data,
   grpc_httpcli_get(
       &ctx->verifier->http_ctx, ctx->pollset, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
-      on_keys_retrieved, ctx, call_list);
+      on_keys_retrieved, ctx, closure_list);
   grpc_json_destroy(json);
   gpr_free(req.host);
   return;
@@ -685,7 +685,7 @@ static void verifier_put_mapping(grpc_jwt_verifier *v, const char *email_domain,
 
 /* Takes ownership of ctx. */
 static void retrieve_key_and_verify(verifier_cb_ctx *ctx,
-                                    grpc_call_list *call_list) {
+                                    grpc_closure_list *closure_list) {
   const char *at_sign;
   grpc_httpcli_response_cb http_cb;
   char *path_prefix = NULL;
@@ -748,7 +748,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx *ctx,
   grpc_httpcli_get(
       &ctx->verifier->http_ctx, ctx->pollset, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
-      http_cb, ctx, call_list);
+      http_cb, ctx, closure_list);
   gpr_free(req.host);
   gpr_free(req.path);
   return;
@@ -762,7 +762,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier *verifier,
                               grpc_pollset *pollset, const char *jwt,
                               const char *audience,
                               grpc_jwt_verification_done_cb cb, void *user_data,
-                              grpc_call_list *call_list) {
+                              grpc_closure_list *closure_list) {
   const char *dot = NULL;
   grpc_json *json;
   jose_header *header = NULL;
@@ -796,7 +796,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier *verifier,
   retrieve_key_and_verify(
       verifier_cb_ctx_create(verifier, pollset, header, claims, audience,
                              signature, jwt, signed_jwt_len, user_data, cb),
-      call_list);
+      closure_list);
   return;
 
 error:

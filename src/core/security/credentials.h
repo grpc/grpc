@@ -128,7 +128,7 @@ typedef void (*grpc_credentials_metadata_cb)(void *user_data,
                                              grpc_credentials_md *md_elems,
                                              size_t num_md,
                                              grpc_credentials_status status,
-                                             grpc_call_list *call_list);
+                                             grpc_closure_list *closure_list);
 
 typedef struct {
   void (*destruct)(grpc_credentials *c);
@@ -137,7 +137,7 @@ typedef struct {
   void (*get_request_metadata)(grpc_credentials *c, grpc_pollset *pollset,
                                const char *service_url,
                                grpc_credentials_metadata_cb cb, void *user_data,
-                               grpc_call_list *call_list);
+                               grpc_closure_list *closure_list);
   grpc_security_status (*create_security_connector)(
       grpc_credentials *c, const char *target, const grpc_channel_args *args,
       grpc_credentials *request_metadata_creds,
@@ -159,7 +159,7 @@ void grpc_credentials_get_request_metadata(grpc_credentials *creds,
                                            const char *service_url,
                                            grpc_credentials_metadata_cb cb,
                                            void *user_data,
-                                           grpc_call_list *call_list);
+                                           grpc_closure_list *closure_list);
 
 /* Creates a security connector for the channel. May also create new channel
    args for the channel to be used in place of the passed in const args if
@@ -278,7 +278,7 @@ typedef void (*grpc_fetch_oauth2_func)(grpc_credentials_metadata_request *req,
                                        grpc_pollset *pollset,
                                        grpc_httpcli_response_cb response_cb,
                                        gpr_timespec deadline,
-                                       grpc_call_list *call_list);
+                                       grpc_closure_list *closure_list);
 
 typedef struct {
   grpc_credentials base;

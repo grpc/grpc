@@ -42,6 +42,7 @@ void grpc_do_security_handshake(tsi_handshaker *handshaker,
                                 grpc_security_connector *connector,
                                 grpc_endpoint *nonsecure_endpoint,
                                 grpc_security_handshake_done_cb cb,
-                                void *user_data, grpc_call_list *call_list);
+                                void *user_data,
+                                grpc_closure_list *closure_list);
 
 #endif /* GRPC_INTERNAL_CORE_SECURITY_HANDSHAKE_H */

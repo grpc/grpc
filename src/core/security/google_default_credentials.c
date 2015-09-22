@@ -64,7 +64,7 @@ typedef struct {
 
 static void on_compute_engine_detection_http_response(
     void *user_data, const grpc_httpcli_response *response,
-    grpc_call_list *call_list) {
+    grpc_closure_list *closure_list) {
   compute_engine_detector *detector = (compute_engine_detector *)user_data;
   if (response != NULL && response->status == 200 && response->hdr_count > 0) {
     /* Internet providers can return a generic response to all requests, so
@@ -85,7 +85,7 @@ static void on_compute_engine_detection_http_response(
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector->pollset));
 }
 
-static void destroy_pollset(void *p, int s, grpc_call_list *call_list) {
+static void destroy_pollset(void *p, int s, grpc_closure_list *closure_list) {
   grpc_pollset_destroy(p);
 }
 
@@ -93,7 +93,7 @@ static int is_stack_running_on_compute_engine(void) {
   compute_engine_detector detector;
   grpc_httpcli_request request;
   grpc_httpcli_context context;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_closure destroy_closure;
 
   /* The http call is local. If it takes more than one sec, it is for sure not
@@ -113,9 +113,9 @@ static int is_stack_running_on_compute_engine(void) {
   grpc_httpcli_get(
       &context, &detector.pollset, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
-      on_compute_engine_detection_http_response, &detector, &call_list);
+      on_compute_engine_detection_http_response, &detector, &closure_list);
 
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */
@@ -123,14 +123,14 @@ static int is_stack_running_on_compute_engine(void) {
   while (!detector.is_done) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&detector.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC), &call_list);
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC), &closure_list);
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 
   grpc_httpcli_context_destroy(&context);
   grpc_closure_init(&destroy_closure, destroy_pollset, &detector.pollset);
-  grpc_pollset_shutdown(&detector.pollset, &destroy_closure, &call_list);
-  grpc_call_list_run(&call_list);
+  grpc_pollset_shutdown(&detector.pollset, &destroy_closure, &closure_list);
+  grpc_closure_list_run(&closure_list);
 
   return detector.success;
 }

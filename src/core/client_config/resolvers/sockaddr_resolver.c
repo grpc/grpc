@@ -76,30 +76,32 @@ typedef struct {
   grpc_client_config **target_config;
 } sockaddr_resolver;
 
-static void sockaddr_destroy(grpc_resolver *r, grpc_call_list *call_list);
+static void sockaddr_destroy(grpc_resolver *r, grpc_closure_list *closure_list);
 
 static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r,
-                                              grpc_call_list *call_list);
+                                              grpc_closure_list *closure_list);
 
-static void sockaddr_shutdown(grpc_resolver *r, grpc_call_list *call_list);
+static void sockaddr_shutdown(grpc_resolver *r,
+                              grpc_closure_list *closure_list);
 static void sockaddr_channel_saw_error(grpc_resolver *r,
                                        struct sockaddr *failing_address,
                                        int failing_address_len,
-                                       grpc_call_list *call_list);
+                                       grpc_closure_list *closure_list);
 static void sockaddr_next(grpc_resolver *r, grpc_client_config **target_config,
-                          grpc_closure *on_complete, grpc_call_list *call_list);
+                          grpc_closure *on_complete,
+                          grpc_closure_list *closure_list);
 
 static const grpc_resolver_vtable sockaddr_resolver_vtable = {
     sockaddr_destroy, sockaddr_shutdown, sockaddr_channel_saw_error,
     sockaddr_next};
 
 static void sockaddr_shutdown(grpc_resolver *resolver,
-                              grpc_call_list *call_list) {
+                              grpc_closure_list *closure_list) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   if (r->next_completion != NULL) {
     *r->target_config = NULL;
-    grpc_call_list_add(call_list, r->next_completion, 1);
+    grpc_closure_list_add(closure_list, r->next_completion, 1);
     r->next_completion = NULL;
   }
   gpr_mu_unlock(&r->mu);
@@ -107,23 +109,23 @@ static void sockaddr_shutdown(grpc_resolver *resolver,
 
 static void sockaddr_channel_saw_error(grpc_resolver *resolver,
                                        struct sockaddr *sa, int len,
-                                       grpc_call_list *call_list) {}
+                                       grpc_closure_list *closure_list) {}
 
 static void sockaddr_next(grpc_resolver *resolver,
                           grpc_client_config **target_config,
                           grpc_closure *on_complete,
-                          grpc_call_list *call_list) {
+                          grpc_closure_list *closure_list) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   GPR_ASSERT(!r->next_completion);
   r->next_completion = on_complete;
   r->target_config = target_config;
-  sockaddr_maybe_finish_next_locked(r, call_list);
+  sockaddr_maybe_finish_next_locked(r, closure_list);
   gpr_mu_unlock(&r->mu);
 }
 
 static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r,
-                                              grpc_call_list *call_list) {
+                                              grpc_closure_list *closure_list) {
   grpc_client_config *cfg;
   grpc_lb_policy *lb_policy;
   grpc_lb_policy_args lb_policy_args;
@@ -139,7 +141,7 @@ static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r,
       args.addr = (struct sockaddr *)&r->addrs[i];
       args.addr_len = r->addrs_len[i];
       subchannels[i] = grpc_subchannel_factory_create_subchannel(
-          r->subchannel_factory, &args, call_list);
+          r->subchannel_factory, &args, closure_list);
     }
     memset(&lb_policy_args, 0, sizeof(lb_policy_args));
     lb_policy_args.subchannels = subchannels;
@@ -148,18 +150,19 @@ static void sockaddr_maybe_finish_next_locked(sockaddr_resolver *r,
         grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     gpr_free(subchannels);
     grpc_client_config_set_lb_policy(cfg, lb_policy);
-    GRPC_LB_POLICY_UNREF(lb_policy, "sockaddr", call_list);
+    GRPC_LB_POLICY_UNREF(lb_policy, "sockaddr", closure_list);
     r->published = 1;
     *r->target_config = cfg;
-    grpc_call_list_add(call_list, r->next_completion, 1);
+    grpc_closure_list_add(closure_list, r->next_completion, 1);
     r->next_completion = NULL;
   }
 }
 
-static void sockaddr_destroy(grpc_resolver *gr, grpc_call_list *call_list) {
+static void sockaddr_destroy(grpc_resolver *gr,
+                             grpc_closure_list *closure_list) {
   sockaddr_resolver *r = (sockaddr_resolver *)gr;
   gpr_mu_destroy(&r->mu);
-  grpc_subchannel_factory_unref(r->subchannel_factory, call_list);
+  grpc_subchannel_factory_unref(r->subchannel_factory, closure_list);
   gpr_free(r->addrs);
   gpr_free(r->addrs_len);
   gpr_free(r->lb_policy_name);

@@ -52,9 +52,9 @@ grpc_client_config *grpc_client_config_create() {
 void grpc_client_config_ref(grpc_client_config *c) { gpr_ref(&c->refs); }
 
 void grpc_client_config_unref(grpc_client_config *c,
-                              grpc_call_list *call_list) {
+                              grpc_closure_list *closure_list) {
   if (gpr_unref(&c->refs)) {
-    GRPC_LB_POLICY_UNREF(c->lb_policy, "client_config", call_list);
+    GRPC_LB_POLICY_UNREF(c->lb_policy, "client_config", closure_list);
     gpr_free(c);
   }
 }

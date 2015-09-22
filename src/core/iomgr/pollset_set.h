@@ -53,9 +53,9 @@ void grpc_pollset_set_init(grpc_pollset_set *pollset_set);
 void grpc_pollset_set_destroy(grpc_pollset_set *pollset_set);
 void grpc_pollset_set_add_pollset(grpc_pollset_set *pollset_set,
                                   grpc_pollset *pollset,
-                                  grpc_call_list *call_list);
+                                  grpc_closure_list *closure_list);
 void grpc_pollset_set_del_pollset(grpc_pollset_set *pollset_set,
                                   grpc_pollset *pollset,
-                                  grpc_call_list *call_list);
+                                  grpc_closure_list *closure_list);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */

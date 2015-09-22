@@ -127,7 +127,7 @@ struct read_and_write_test_state {
 };
 
 static void read_and_write_test_read_handler(void *data, int success,
-                                             grpc_call_list *call_list) {
+                                             grpc_closure_list *closure_list) {
   struct read_and_write_test_state *state = data;
 
   state->bytes_read += count_slices(
@@ -140,12 +140,12 @@ static void read_and_write_test_read_handler(void *data, int success,
     gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
   } else if (success) {
     grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read,
-                       call_list);
+                       closure_list);
   }
 }
 
 static void read_and_write_test_write_handler(void *data, int success,
-                                              grpc_call_list *call_list) {
+                                              grpc_closure_list *closure_list) {
   struct read_and_write_test_state *state = data;
   gpr_slice *slices = NULL;
   size_t nslices;
@@ -162,7 +162,7 @@ static void read_and_write_test_write_handler(void *data, int success,
       gpr_slice_buffer_reset_and_unref(&state->outgoing);
       gpr_slice_buffer_addn(&state->outgoing, slices, nslices);
       grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
-                          call_list);
+                          closure_list);
       free(slices);
       return;
     }
@@ -186,7 +186,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(20);
   grpc_endpoint_test_fixture f =
       begin_test(config, "read_and_write_test", slice_size);
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   gpr_log(GPR_DEBUG, "num_bytes=%d write_size=%d slice_size=%d shutdown=%d",
           num_bytes, write_size, slice_size, shutdown);
 
@@ -218,36 +218,36 @@ static void read_and_write_test(grpc_endpoint_test_config config,
      for the first iteration as for later iterations. It does the right thing
      even when bytes_written is unsigned. */
   state.bytes_written -= state.current_write_size;
-  read_and_write_test_write_handler(&state, 1, &call_list);
-  grpc_call_list_run(&call_list);
+  read_and_write_test_write_handler(&state, 1, &closure_list);
+  grpc_closure_list_run(&closure_list);
 
   grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read,
-                     &call_list);
+                     &closure_list);
 
   if (shutdown) {
     gpr_log(GPR_DEBUG, "shutdown read");
-    grpc_endpoint_shutdown(state.read_ep, &call_list);
+    grpc_endpoint_shutdown(state.read_ep, &closure_list);
     gpr_log(GPR_DEBUG, "shutdown write");
-    grpc_endpoint_shutdown(state.write_ep, &call_list);
+    grpc_endpoint_shutdown(state.write_ep, &closure_list);
   }
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 
   gpr_mu_lock(GRPC_POLLSET_MU(g_pollset));
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker worker;
     GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), deadline) < 0);
     grpc_pollset_work(g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      deadline, &call_list);
+                      deadline, &closure_list);
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(g_pollset));
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 
   end_test(config);
   gpr_slice_buffer_destroy(&state.outgoing);
   gpr_slice_buffer_destroy(&state.incoming);
-  grpc_endpoint_destroy(state.read_ep, &call_list);
-  grpc_endpoint_destroy(state.write_ep, &call_list);
-  grpc_call_list_run(&call_list);
+  grpc_endpoint_destroy(state.read_ep, &closure_list);
+  grpc_endpoint_destroy(state.write_ep, &closure_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 void grpc_endpoint_tests(grpc_endpoint_test_config config,

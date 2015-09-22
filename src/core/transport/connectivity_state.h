@@ -61,13 +61,14 @@ void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
                                   grpc_connectivity_state init_state,
                                   const char *name);
 void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker,
-                                     grpc_call_list *call_list);
+                                     grpc_closure_list *closure_list);
 
 /** Set connectivity state; not thread safe; access must be serialized with an
  * external lock */
 void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state,
-                                 const char *reason, grpc_call_list *call_list);
+                                 const char *reason,
+                                 grpc_closure_list *closure_list);
 
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker);
@@ -75,6 +76,6 @@ grpc_connectivity_state grpc_connectivity_state_check(
 /** Return 1 if the channel should start connecting, 0 otherwise */
 int grpc_connectivity_state_notify_on_state_change(
     grpc_connectivity_state_tracker *tracker, grpc_connectivity_state *current,
-    grpc_closure *notify, grpc_call_list *call_list);
+    grpc_closure *notify, grpc_closure_list *closure_list);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H */

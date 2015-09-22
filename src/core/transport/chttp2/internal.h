@@ -268,7 +268,7 @@ struct grpc_chttp2_transport_parsing {
   grpc_chttp2_parse_error (*parser)(
       void *parser_user_data, grpc_chttp2_transport_parsing *transport_parsing,
       grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last,
-      grpc_call_list *call_list);
+      grpc_closure_list *closure_list);
 
   /* received settings */
   gpr_uint32 settings[GRPC_CHTTP2_NUM_SETTINGS];
@@ -469,22 +469,22 @@ int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_global *global,
                                        grpc_chttp2_transport_writing *writing);
 void grpc_chttp2_perform_writes(
     grpc_chttp2_transport_writing *transport_writing, grpc_endpoint *endpoint,
-    grpc_call_list *call_list);
+    grpc_closure_list *closure_list);
 void grpc_chttp2_terminate_writing(void *transport_writing, int success,
-                                   grpc_call_list *call_list);
+                                   grpc_closure_list *closure_list);
 void grpc_chttp2_cleanup_writing(grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_writing *writing,
-                                 grpc_call_list *call_list);
+                                 grpc_closure_list *closure_list);
 
 void grpc_chttp2_prepare_to_read(grpc_chttp2_transport_global *global,
                                  grpc_chttp2_transport_parsing *parsing);
 /** Process one slice of incoming data; return 1 if the connection is still
     viable after reading, or 0 if the connection should be torn down */
 int grpc_chttp2_perform_read(grpc_chttp2_transport_parsing *transport_parsing,
-                             gpr_slice slice, grpc_call_list *call_list);
+                             gpr_slice slice, grpc_closure_list *closure_list);
 void grpc_chttp2_publish_reads(grpc_chttp2_transport_global *global,
                                grpc_chttp2_transport_parsing *parsing,
-                               grpc_call_list *call_list);
+                               grpc_closure_list *closure_list);
 
 /** Get a writable stream
     returns non-zero if there was a stream available */
@@ -577,7 +577,7 @@ grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
 
 void grpc_chttp2_add_incoming_goaway(
     grpc_chttp2_transport_global *transport_global, gpr_uint32 goaway_error,
-    gpr_slice goaway_text, grpc_call_list *call_list);
+    gpr_slice goaway_text, grpc_closure_list *closure_list);
 
 void grpc_chttp2_register_stream(grpc_chttp2_transport *t,
                                  grpc_chttp2_stream *s);

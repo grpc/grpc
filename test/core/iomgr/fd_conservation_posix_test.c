@@ -54,11 +54,11 @@ int main(int argc, char **argv) {
   GPR_ASSERT(0 == setrlimit(RLIMIT_NOFILE, &rlim));
 
   for (i = 0; i < 100; i++) {
-    grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+    grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
     p = grpc_iomgr_create_endpoint_pair("test", 1);
-    grpc_endpoint_destroy(p.client, &call_list);
-    grpc_endpoint_destroy(p.server, &call_list);
-    grpc_call_list_run(&call_list);
+    grpc_endpoint_destroy(p.client, &closure_list);
+    grpc_endpoint_destroy(p.server, &closure_list);
+    grpc_closure_list_run(&closure_list);
   }
 
   grpc_iomgr_shutdown();

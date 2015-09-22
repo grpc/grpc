@@ -49,9 +49,9 @@
    at any time slice. */
 
 int grpc_alarm_check(gpr_timespec now, gpr_timespec *next,
-                     grpc_call_list *call_list);
+                     grpc_closure_list *closure_list);
 void grpc_alarm_list_init(gpr_timespec now);
-void grpc_alarm_list_shutdown(grpc_call_list *call_list);
+void grpc_alarm_list_shutdown(grpc_closure_list *closure_list);
 
 gpr_timespec grpc_alarm_list_next_timeout(void);
 

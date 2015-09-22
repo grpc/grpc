@@ -124,7 +124,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier *verifier,
                               grpc_pollset *pollset, const char *jwt,
                               const char *audience,
                               grpc_jwt_verification_done_cb cb, void *user_data,
-                              grpc_call_list *call_list);
+                              grpc_closure_list *closure_list);
 
 /* --- TESTING ONLY exposed functions. --- */
 

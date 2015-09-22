@@ -51,7 +51,7 @@ typedef struct {
 
 static void on_metadata_response(void *user_data, grpc_credentials_md *md_elems,
                                  size_t num_md, grpc_credentials_status status,
-                                 grpc_call_list *call_list) {
+                                 grpc_closure_list *closure_list) {
   synchronizer *sync = user_data;
   if (status == GRPC_CREDENTIALS_ERROR) {
     fprintf(stderr, "Fetching token failed.\n");
@@ -70,7 +70,7 @@ static void on_metadata_response(void *user_data, grpc_credentials_md *md_elems,
 
 int main(int argc, char **argv) {
   int result = 0;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   synchronizer sync;
   grpc_credentials *creds = NULL;
   char *service_url = "https://test.foo.google.com/Foo";
@@ -93,15 +93,15 @@ int main(int argc, char **argv) {
 
   grpc_credentials_get_request_metadata(creds, &sync.pollset, service_url,
                                         on_metadata_response, &sync,
-                                        &call_list);
+                                        &closure_list);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   while (!sync.is_done) {
     grpc_pollset_worker worker;
     grpc_pollset_work(&sync.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                      gpr_inf_future(GPR_CLOCK_MONOTONIC), &call_list);
+                      gpr_inf_future(GPR_CLOCK_MONOTONIC), &closure_list);
     gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
-    grpc_call_list_run(&call_list);
+    grpc_closure_list_run(&closure_list);
     gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));

@@ -56,13 +56,13 @@ typedef struct {
 
 static void lame_start_transport_stream_op(grpc_call_element *elem,
                                            grpc_transport_stream_op *op,
-                                           grpc_call_list *call_list) {
+                                           grpc_closure_list *closure_list) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   if (op->send_ops != NULL) {
     grpc_stream_ops_unref_owned_objects(op->send_ops->ops, op->send_ops->nops);
-    op->on_done_send->cb(op->on_done_send->cb_arg, 0, call_list);
+    op->on_done_send->cb(op->on_done_send->cb_arg, 0, closure_list);
   }
   if (op->recv_ops != NULL) {
     char tmp[GPR_LTOA_MIN_BUFSIZE];
@@ -81,48 +81,49 @@ static void lame_start_transport_stream_op(grpc_call_element *elem,
     mdb.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     grpc_sopb_add_metadata(op->recv_ops, mdb);
     *op->recv_state = GRPC_STREAM_CLOSED;
-    op->on_done_recv->cb(op->on_done_recv->cb_arg, 1, call_list);
+    op->on_done_recv->cb(op->on_done_recv->cb_arg, 1, closure_list);
   }
   if (op->on_consumed != NULL) {
-    op->on_consumed->cb(op->on_consumed->cb_arg, 0, call_list);
+    op->on_consumed->cb(op->on_consumed->cb_arg, 0, closure_list);
   }
 }
 
-static char *lame_get_peer(grpc_call_element *elem, grpc_call_list *call_list) {
+static char *lame_get_peer(grpc_call_element *elem,
+                           grpc_closure_list *closure_list) {
   channel_data *chand = elem->channel_data;
   return grpc_channel_get_target(chand->master);
 }
 
 static void lame_start_transport_op(grpc_channel_element *elem,
                                     grpc_transport_op *op,
-                                    grpc_call_list *call_list) {
+                                    grpc_closure_list *closure_list) {
   if (op->on_connectivity_state_change) {
     GPR_ASSERT(*op->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE);
     *op->connectivity_state = GRPC_CHANNEL_FATAL_FAILURE;
     op->on_connectivity_state_change->cb(
-        op->on_connectivity_state_change->cb_arg, 1, call_list);
+        op->on_connectivity_state_change->cb_arg, 1, closure_list);
   }
   if (op->on_consumed != NULL) {
-    op->on_consumed->cb(op->on_consumed->cb_arg, 1, call_list);
+    op->on_consumed->cb(op->on_consumed->cb_arg, 1, closure_list);
   }
 }
 
 static void init_call_elem(grpc_call_element *elem,
                            const void *transport_server_data,
                            grpc_transport_stream_op *initial_op,
-                           grpc_call_list *call_list) {
+                           grpc_closure_list *closure_list) {
   if (initial_op) {
-    grpc_transport_stream_op_finish_with_failure(initial_op, call_list);
+    grpc_transport_stream_op_finish_with_failure(initial_op, closure_list);
   }
 }
 
 static void destroy_call_elem(grpc_call_element *elem,
-                              grpc_call_list *call_list) {}
+                              grpc_closure_list *closure_list) {}
 
 static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last,
-                              grpc_call_list *call_list) {
+                              grpc_closure_list *closure_list) {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(is_first);
   GPR_ASSERT(is_last);
@@ -131,7 +132,7 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
 }
 
 static void destroy_channel_elem(grpc_channel_element *elem,
-                                 grpc_call_list *call_list) {}
+                                 grpc_closure_list *closure_list) {}
 
 static const grpc_channel_filter lame_filter = {
     lame_start_transport_stream_op,
@@ -154,15 +155,15 @@ grpc_channel *grpc_lame_client_channel_create(const char *target,
   grpc_channel *channel;
   grpc_channel_element *elem;
   channel_data *chand;
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   static const grpc_channel_filter *filters[] = {&lame_filter};
   channel = grpc_channel_create_from_filters(
-      target, filters, 1, NULL, grpc_mdctx_create(), 1, &call_list);
+      target, filters, 1, NULL, grpc_mdctx_create(), 1, &closure_list);
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   GPR_ASSERT(elem->filter == &lame_filter);
   chand = (channel_data *)elem->channel_data;
   chand->error_code = error_code;
   chand->error_message = error_message;
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
   return channel;
 }

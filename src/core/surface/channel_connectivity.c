@@ -45,7 +45,7 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   /* forward through to the underlying client channel */
   grpc_channel_element *client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_connectivity_state state;
   if (client_channel_elem->filter != &grpc_client_channel_filter) {
     gpr_log(GPR_ERROR,
@@ -55,8 +55,8 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
     return GRPC_CHANNEL_FATAL_FAILURE;
   }
   state = grpc_client_channel_check_connectivity_state(
-      client_channel_elem, try_to_connect, &call_list);
-  grpc_call_list_run(&call_list);
+      client_channel_elem, try_to_connect, &closure_list);
+  grpc_closure_list_run(&closure_list);
   return state;
 }
 
@@ -81,14 +81,15 @@ typedef struct {
   void *tag;
 } state_watcher;
 
-static void delete_state_watcher(state_watcher *w, grpc_call_list *call_list) {
-  GRPC_CHANNEL_INTERNAL_UNREF(w->channel, "watch_connectivity", call_list);
+static void delete_state_watcher(state_watcher *w,
+                                 grpc_closure_list *closure_list) {
+  GRPC_CHANNEL_INTERNAL_UNREF(w->channel, "watch_connectivity", closure_list);
   gpr_mu_destroy(&w->mu);
   gpr_free(w);
 }
 
 static void finished_completion(void *pw, grpc_cq_completion *ignored,
-                                grpc_call_list *call_list) {
+                                grpc_closure_list *closure_list) {
   int delete = 0;
   state_watcher *w = pw;
   gpr_mu_lock(&w->mu);
@@ -108,12 +109,12 @@ static void finished_completion(void *pw, grpc_cq_completion *ignored,
   gpr_mu_unlock(&w->mu);
 
   if (delete) {
-    delete_state_watcher(w, call_list);
+    delete_state_watcher(w, closure_list);
   }
 }
 
 static void partly_done(state_watcher *w, int due_to_completion,
-                        grpc_call_list *call_list) {
+                        grpc_closure_list *closure_list) {
   int delete = 0;
   grpc_channel_element *client_channel_elem = NULL;
 
@@ -122,15 +123,15 @@ static void partly_done(state_watcher *w, int due_to_completion,
     w->removed = 1;
     client_channel_elem = grpc_channel_stack_last_element(
         grpc_channel_get_channel_stack(w->channel));
-    grpc_client_channel_del_interested_party(client_channel_elem,
-                                             grpc_cq_pollset(w->cq), call_list);
+    grpc_client_channel_del_interested_party(
+        client_channel_elem, grpc_cq_pollset(w->cq), closure_list);
   }
   gpr_mu_unlock(&w->mu);
   if (due_to_completion) {
     gpr_mu_lock(&w->mu);
     w->success = 1;
     gpr_mu_unlock(&w->mu);
-    grpc_alarm_cancel(&w->alarm, call_list);
+    grpc_alarm_cancel(&w->alarm, closure_list);
   }
 
   gpr_mu_lock(&w->mu);
@@ -138,7 +139,7 @@ static void partly_done(state_watcher *w, int due_to_completion,
     case WAITING:
       w->phase = CALLING_BACK;
       grpc_cq_end_op(w->cq, w->tag, w->success, finished_completion, w,
-                     &w->completion_storage, call_list);
+                     &w->completion_storage, closure_list);
       break;
     case CALLING_BACK:
       w->phase = CALLING_BACK_AND_FINISHED;
@@ -154,16 +155,18 @@ static void partly_done(state_watcher *w, int due_to_completion,
   gpr_mu_unlock(&w->mu);
 
   if (delete) {
-    delete_state_watcher(w, call_list);
+    delete_state_watcher(w, closure_list);
   }
 }
 
-static void watch_complete(void *pw, int success, grpc_call_list *call_list) {
-  partly_done(pw, 1, call_list);
+static void watch_complete(void *pw, int success,
+                           grpc_closure_list *closure_list) {
+  partly_done(pw, 1, closure_list);
 }
 
-static void timeout_complete(void *pw, int success, grpc_call_list *call_list) {
-  partly_done(pw, 0, call_list);
+static void timeout_complete(void *pw, int success,
+                             grpc_closure_list *closure_list) {
+  partly_done(pw, 0, closure_list);
 }
 
 void grpc_channel_watch_connectivity_state(
@@ -171,7 +174,7 @@ void grpc_channel_watch_connectivity_state(
     gpr_timespec deadline, grpc_completion_queue *cq, void *tag) {
   grpc_channel_element *client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   state_watcher *w = gpr_malloc(sizeof(*w));
 
   grpc_cq_begin_op(cq);
@@ -188,21 +191,21 @@ void grpc_channel_watch_connectivity_state(
 
   grpc_alarm_init(
       &w->alarm, gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
-      timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC), &call_list);
+      timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC), &closure_list);
 
   if (client_channel_elem->filter != &grpc_client_channel_filter) {
     gpr_log(GPR_ERROR,
             "grpc_channel_watch_connectivity_state called on something that is "
             "not a client channel, but '%s'",
             client_channel_elem->filter->name);
-    grpc_call_list_add(&call_list, &w->on_complete, 1);
+    grpc_closure_list_add(&closure_list, &w->on_complete, 1);
   } else {
     GRPC_CHANNEL_INTERNAL_REF(channel, "watch_connectivity");
-    grpc_client_channel_add_interested_party(client_channel_elem,
-                                             grpc_cq_pollset(cq), &call_list);
-    grpc_client_channel_watch_connectivity_state(client_channel_elem, &w->state,
-                                                 &w->on_complete, &call_list);
+    grpc_client_channel_add_interested_party(
+        client_channel_elem, grpc_cq_pollset(cq), &closure_list);
+    grpc_client_channel_watch_connectivity_state(
+        client_channel_elem, &w->state, &w->on_complete, &closure_list);
   }
 
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 }

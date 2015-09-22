@@ -54,7 +54,7 @@ typedef struct {
    grpc_resolved_addresses_destroy when it's done with them
    On failure: addresses is NULL */
 typedef void (*grpc_resolve_cb)(void *arg, grpc_resolved_addresses *addresses,
-                                grpc_call_list *call_list);
+                                grpc_closure_list *closure_list);
 /* Asynchronously resolve addr. Use default_port if a port isn't designated
    in addr, otherwise use the port in addr. */
 /* TODO(ctiller): add a timeout here */

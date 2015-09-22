@@ -43,7 +43,7 @@
 
 static int cb_called[MAX_CB][2];
 
-static void cb(void *arg, int success, grpc_call_list *call_list) {
+static void cb(void *arg, int success, grpc_closure_list *closure_list) {
   cb_called[(gpr_intptr)arg][success]++;
 }
 
@@ -51,7 +51,7 @@ static void add_test(void) {
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   int i;
   grpc_alarm alarms[20];
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
   grpc_alarm_list_init(start);
   memset(cb_called, 0, sizeof(cb_called));
@@ -60,21 +60,21 @@ static void add_test(void) {
   for (i = 0; i < 10; i++) {
     grpc_alarm_init(&alarms[i],
                     gpr_time_add(start, gpr_time_from_millis(10, GPR_TIMESPAN)),
-                    cb, (void *)(gpr_intptr)i, start, &call_list);
+                    cb, (void *)(gpr_intptr)i, start, &closure_list);
   }
 
   /* 1010 ms alarms.  will expire in the next epoch */
   for (i = 10; i < 20; i++) {
     grpc_alarm_init(&alarms[i], gpr_time_add(start, gpr_time_from_millis(
                                                         1010, GPR_TIMESPAN)),
-                    cb, (void *)(gpr_intptr)i, start, &call_list);
+                    cb, (void *)(gpr_intptr)i, start, &closure_list);
   }
 
   /* collect alarms.  Only the first batch should be ready. */
   GPR_ASSERT(10 == grpc_alarm_check(gpr_time_add(start, gpr_time_from_millis(
                                                             500, GPR_TIMESPAN)),
-                                    NULL, &call_list));
-  grpc_call_list_run(&call_list);
+                                    NULL, &closure_list));
+  grpc_closure_list_run(&closure_list);
   for (i = 0; i < 20; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 10));
     GPR_ASSERT(cb_called[i][0] == 0);
@@ -82,8 +82,8 @@ static void add_test(void) {
 
   GPR_ASSERT(0 == grpc_alarm_check(gpr_time_add(start, gpr_time_from_millis(
                                                            600, GPR_TIMESPAN)),
-                                   NULL, &call_list));
-  grpc_call_list_run(&call_list);
+                                   NULL, &closure_list));
+  grpc_closure_list_run(&closure_list);
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 10));
     GPR_ASSERT(cb_called[i][0] == 0);
@@ -93,8 +93,8 @@ static void add_test(void) {
   GPR_ASSERT(10 ==
              grpc_alarm_check(
                  gpr_time_add(start, gpr_time_from_millis(1500, GPR_TIMESPAN)),
-                 NULL, &call_list));
-  grpc_call_list_run(&call_list);
+                 NULL, &closure_list));
+  grpc_closure_list_run(&closure_list);
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
     GPR_ASSERT(cb_called[i][0] == 0);
@@ -102,14 +102,14 @@ static void add_test(void) {
 
   GPR_ASSERT(0 == grpc_alarm_check(gpr_time_add(start, gpr_time_from_millis(
                                                            1600, GPR_TIMESPAN)),
-                                   NULL, &call_list));
+                                   NULL, &closure_list));
   for (i = 0; i < 30; i++) {
     GPR_ASSERT(cb_called[i][1] == (i < 20));
     GPR_ASSERT(cb_called[i][0] == 0);
   }
 
-  grpc_alarm_list_shutdown(&call_list);
-  grpc_call_list_run(&call_list);
+  grpc_alarm_list_shutdown(&closure_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 static gpr_timespec tfm(int m) {
@@ -121,32 +121,32 @@ static gpr_timespec tfm(int m) {
 /* Cleaning up a list with pending alarms. */
 void destruction_test(void) {
   grpc_alarm alarms[5];
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
 
   grpc_alarm_list_init(gpr_time_0(GPR_CLOCK_REALTIME));
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_alarm_init(&alarms[0], tfm(100), cb, (void *)(gpr_intptr)0,
-                  gpr_time_0(GPR_CLOCK_REALTIME), &call_list);
+                  gpr_time_0(GPR_CLOCK_REALTIME), &closure_list);
   grpc_alarm_init(&alarms[1], tfm(3), cb, (void *)(gpr_intptr)1,
-                  gpr_time_0(GPR_CLOCK_REALTIME), &call_list);
+                  gpr_time_0(GPR_CLOCK_REALTIME), &closure_list);
   grpc_alarm_init(&alarms[2], tfm(100), cb, (void *)(gpr_intptr)2,
-                  gpr_time_0(GPR_CLOCK_REALTIME), &call_list);
+                  gpr_time_0(GPR_CLOCK_REALTIME), &closure_list);
   grpc_alarm_init(&alarms[3], tfm(3), cb, (void *)(gpr_intptr)3,
-                  gpr_time_0(GPR_CLOCK_REALTIME), &call_list);
+                  gpr_time_0(GPR_CLOCK_REALTIME), &closure_list);
   grpc_alarm_init(&alarms[4], tfm(1), cb, (void *)(gpr_intptr)4,
-                  gpr_time_0(GPR_CLOCK_REALTIME), &call_list);
-  GPR_ASSERT(1 == grpc_alarm_check(tfm(2), NULL, &call_list));
-  grpc_call_list_run(&call_list);
+                  gpr_time_0(GPR_CLOCK_REALTIME), &closure_list);
+  GPR_ASSERT(1 == grpc_alarm_check(tfm(2), NULL, &closure_list));
+  grpc_closure_list_run(&closure_list);
   GPR_ASSERT(1 == cb_called[4][1]);
-  grpc_alarm_cancel(&alarms[0], &call_list);
-  grpc_alarm_cancel(&alarms[3], &call_list);
-  grpc_call_list_run(&call_list);
+  grpc_alarm_cancel(&alarms[0], &closure_list);
+  grpc_alarm_cancel(&alarms[3], &closure_list);
+  grpc_closure_list_run(&closure_list);
   GPR_ASSERT(1 == cb_called[0][0]);
   GPR_ASSERT(1 == cb_called[3][0]);
 
-  grpc_alarm_list_shutdown(&call_list);
-  grpc_call_list_run(&call_list);
+  grpc_alarm_list_shutdown(&closure_list);
+  grpc_closure_list_run(&closure_list);
   GPR_ASSERT(1 == cb_called[1][0]);
   GPR_ASSERT(1 == cb_called[2][0]);
 }

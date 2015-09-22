@@ -62,21 +62,20 @@ typedef struct grpc_security_connector grpc_security_connector;
 
 typedef void (*grpc_security_check_cb)(void *user_data,
                                        grpc_security_status status,
-                                       grpc_call_list *call_list);
+                                       grpc_closure_list *closure_list);
 
 /* Ownership of the secure_endpoint is transfered. */
-typedef void (*grpc_security_handshake_done_cb)(void *user_data,
-                                                grpc_security_status status,
-                                                grpc_endpoint *wrapped_endpoint,
-                                                grpc_endpoint *secure_endpoint,
-                                                grpc_call_list *call_list);
+typedef void (*grpc_security_handshake_done_cb)(
+    void *user_data, grpc_security_status status,
+    grpc_endpoint *wrapped_endpoint, grpc_endpoint *secure_endpoint,
+    grpc_closure_list *closure_list);
 
 typedef struct {
   void (*destroy)(grpc_security_connector *sc);
   void (*do_handshake)(grpc_security_connector *sc,
                        grpc_endpoint *nonsecure_endpoint,
                        grpc_security_handshake_done_cb cb, void *user_data,
-                       grpc_call_list *call_list);
+                       grpc_closure_list *closure_list);
   grpc_security_status (*check_peer)(grpc_security_connector *sc, tsi_peer peer,
                                      grpc_security_check_cb cb,
                                      void *user_data);
@@ -115,7 +114,7 @@ void grpc_security_connector_do_handshake(grpc_security_connector *connector,
                                           grpc_endpoint *nonsecure_endpoint,
                                           grpc_security_handshake_done_cb cb,
                                           void *user_data,
-                                          grpc_call_list *call_list);
+                                          grpc_closure_list *closure_list);
 
 /* Check the peer.
    Implementations can choose to check the peer either synchronously or
@@ -152,7 +151,7 @@ struct grpc_channel_security_connector {
                                           const char *host,
                                           grpc_security_check_cb cb,
                                           void *user_data,
-                                          grpc_call_list *call_list);
+                                          grpc_closure_list *closure_list);
 };
 
 /* Checks that the host that will be set for a call is acceptable.
@@ -162,7 +161,8 @@ struct grpc_channel_security_connector {
    GRPC_SECURITY_PENDING unless an error is detected early on. */
 grpc_security_status grpc_channel_security_connector_check_call_host(
     grpc_channel_security_connector *sc, const char *host,
-    grpc_security_check_cb cb, void *user_data, grpc_call_list *call_list);
+    grpc_security_check_cb cb, void *user_data,
+    grpc_closure_list *closure_list);
 
 /* --- Creation security connectors. --- */
 

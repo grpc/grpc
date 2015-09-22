@@ -110,6 +110,6 @@ int grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser *p,
 grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
     void *hpack_parser, grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last,
-    grpc_call_list *call_list);
+    grpc_closure_list *closure_list);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_PARSER_H */

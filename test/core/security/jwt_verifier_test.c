@@ -277,7 +277,7 @@ static int httpcli_post_should_not_be_called(
     const grpc_httpcli_request *request, const char *body_bytes,
     size_t body_size, gpr_timespec deadline,
     grpc_httpcli_response_cb on_response, void *user_data,
-    grpc_call_list *call_list) {
+    grpc_closure_list *closure_list) {
   GPR_ASSERT("HTTP POST should not be called" == NULL);
   return 1;
 }
@@ -285,7 +285,7 @@ static int httpcli_post_should_not_be_called(
 static int httpcli_get_google_keys_for_email(
     const grpc_httpcli_request *request, gpr_timespec deadline,
     grpc_httpcli_response_cb on_response, void *user_data,
-    grpc_call_list *call_list) {
+    grpc_closure_list *closure_list) {
   grpc_httpcli_response response = http_response(200, good_google_email_keys());
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
@@ -293,7 +293,7 @@ static int httpcli_get_google_keys_for_email(
                     "/robot/v1/metadata/x509/"
                     "777-abaslkan11hlb6nmim3bpspl31ud@developer."
                     "gserviceaccount.com") == 0);
-  on_response(user_data, &response, call_list);
+  on_response(user_data, &response, closure_list);
   gpr_free(response.body);
   return 1;
 }
@@ -309,7 +309,7 @@ static void on_verification_success(void *user_data,
 }
 
 static void test_jwt_verifier_google_email_issuer_success(void) {
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(NULL, 0);
   char *jwt = NULL;
   char *key_str = json_key_str(json_key_str_part3_for_google_email_issuer);
@@ -324,28 +324,28 @@ static void test_jwt_verifier_google_email_issuer_success(void) {
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
                            on_verification_success, (void *)expected_user_data,
-                           &call_list);
+                           &closure_list);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 static int httpcli_get_custom_keys_for_email(
     const grpc_httpcli_request *request, gpr_timespec deadline,
     grpc_httpcli_response_cb on_response, void *user_data,
-    grpc_call_list *call_list) {
+    grpc_closure_list *closure_list) {
   grpc_httpcli_response response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "keys.bar.com") == 0);
   GPR_ASSERT(strcmp(request->path, "/jwk/foo@bar.com") == 0);
-  on_response(user_data, &response, call_list);
+  on_response(user_data, &response, closure_list);
   gpr_free(response.body);
   return 1;
 }
 
 static void test_jwt_verifier_custom_email_issuer_success(void) {
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(&custom_mapping, 1);
   char *jwt = NULL;
   char *key_str = json_key_str(json_key_str_part3_for_custom_email_issuer);
@@ -360,22 +360,23 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
                            on_verification_success, (void *)expected_user_data,
-                           &call_list);
+                           &closure_list);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 static int httpcli_get_jwk_set(const grpc_httpcli_request *request,
                                gpr_timespec deadline,
                                grpc_httpcli_response_cb on_response,
-                               void *user_data, grpc_call_list *call_list) {
+                               void *user_data,
+                               grpc_closure_list *closure_list) {
   grpc_httpcli_response response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
   GPR_ASSERT(strcmp(request->host, "www.googleapis.com") == 0);
   GPR_ASSERT(strcmp(request->path, "/oauth2/v3/certs") == 0);
-  on_response(user_data, &response, call_list);
+  on_response(user_data, &response, closure_list);
   gpr_free(response.body);
   return 1;
 }
@@ -384,7 +385,7 @@ static int httpcli_get_openid_config(const grpc_httpcli_request *request,
                                      gpr_timespec deadline,
                                      grpc_httpcli_response_cb on_response,
                                      void *user_data,
-                                     grpc_call_list *call_list) {
+                                     grpc_closure_list *closure_list) {
   grpc_httpcli_response response =
       http_response(200, gpr_strdup(good_openid_config));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
@@ -392,13 +393,13 @@ static int httpcli_get_openid_config(const grpc_httpcli_request *request,
   GPR_ASSERT(strcmp(request->path, GRPC_OPENID_CONFIG_URL_SUFFIX) == 0);
   grpc_httpcli_set_override(httpcli_get_jwk_set,
                             httpcli_post_should_not_be_called);
-  on_response(user_data, &response, call_list);
+  on_response(user_data, &response, closure_list);
   gpr_free(response.body);
   return 1;
 }
 
 static void test_jwt_verifier_url_issuer_success(void) {
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(NULL, 0);
   char *jwt = NULL;
   char *key_str = json_key_str(json_key_str_part3_for_url_issuer);
@@ -413,11 +414,11 @@ static void test_jwt_verifier_url_issuer_success(void) {
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
                            on_verification_success, (void *)expected_user_data,
-                           &call_list);
+                           &closure_list);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 static void on_verification_key_retrieval_error(void *user_data,
@@ -431,17 +432,18 @@ static void on_verification_key_retrieval_error(void *user_data,
 static int httpcli_get_bad_json(const grpc_httpcli_request *request,
                                 gpr_timespec deadline,
                                 grpc_httpcli_response_cb on_response,
-                                void *user_data, grpc_call_list *call_list) {
+                                void *user_data,
+                                grpc_closure_list *closure_list) {
   grpc_httpcli_response response =
       http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
-  on_response(user_data, &response, call_list);
+  on_response(user_data, &response, closure_list);
   gpr_free(response.body);
   return 1;
 }
 
 static void test_jwt_verifier_url_issuer_bad_config(void) {
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(NULL, 0);
   char *jwt = NULL;
   char *key_str = json_key_str(json_key_str_part3_for_url_issuer);
@@ -456,15 +458,15 @@ static void test_jwt_verifier_url_issuer_bad_config(void) {
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
                            on_verification_key_retrieval_error,
-                           (void *)expected_user_data, &call_list);
+                           (void *)expected_user_data, &closure_list);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 static void test_jwt_verifier_bad_json_key(void) {
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(NULL, 0);
   char *jwt = NULL;
   char *key_str = json_key_str(json_key_str_part3_for_google_email_issuer);
@@ -479,11 +481,11 @@ static void test_jwt_verifier_bad_json_key(void) {
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
                            on_verification_key_retrieval_error,
-                           (void *)expected_user_data, &call_list);
+                           (void *)expected_user_data, &closure_list);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 static void corrupt_jwt_sig(char *jwt) {
@@ -512,7 +514,7 @@ static void on_verification_bad_signature(void *user_data,
 }
 
 static void test_jwt_verifier_bad_signature(void) {
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(NULL, 0);
   char *jwt = NULL;
   char *key_str = json_key_str(json_key_str_part3_for_url_issuer);
@@ -528,17 +530,17 @@ static void test_jwt_verifier_bad_signature(void) {
   GPR_ASSERT(jwt != NULL);
   grpc_jwt_verifier_verify(verifier, NULL, jwt, expected_audience,
                            on_verification_bad_signature,
-                           (void *)expected_user_data, &call_list);
+                           (void *)expected_user_data, &closure_list);
   gpr_free(jwt);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 static int httpcli_get_should_not_be_called(
     const grpc_httpcli_request *request, gpr_timespec deadline,
     grpc_httpcli_response_cb on_response, void *user_data,
-    grpc_call_list *call_list) {
+    grpc_closure_list *closure_list) {
   GPR_ASSERT(0);
   return 1;
 }
@@ -552,16 +554,16 @@ static void on_verification_bad_format(void *user_data,
 }
 
 static void test_jwt_verifier_bad_format(void) {
-  grpc_call_list call_list = GRPC_CALL_LIST_INIT;
+  grpc_closure_list closure_list = GRPC_CLOSURE_LIST_INIT;
   grpc_jwt_verifier *verifier = grpc_jwt_verifier_create(NULL, 0);
   grpc_httpcli_set_override(httpcli_get_should_not_be_called,
                             httpcli_post_should_not_be_called);
   grpc_jwt_verifier_verify(verifier, NULL, "bad jwt", expected_audience,
                            on_verification_bad_format,
-                           (void *)expected_user_data, &call_list);
+                           (void *)expected_user_data, &closure_list);
   grpc_jwt_verifier_destroy(verifier);
   grpc_httpcli_set_override(NULL, NULL);
-  grpc_call_list_run(&call_list);
+  grpc_closure_list_run(&closure_list);
 }
 
 /* find verification key: bad jks, cannot find key in jks */

@@ -67,12 +67,12 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 void grpc_subchannel_ref(
     grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_unref(grpc_subchannel *channel,
-                           grpc_call_list *call_list
+                           grpc_closure_list *closure_list
                                GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_ref(
     grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_unref(grpc_subchannel_call *call,
-                                grpc_call_list *call_list
+                                grpc_closure_list *closure_list
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
 /** construct a call (possibly asynchronously) */
@@ -80,12 +80,12 @@ void grpc_subchannel_create_call(grpc_subchannel *subchannel,
                                  grpc_pollset *pollset,
                                  grpc_subchannel_call **target,
                                  grpc_closure *notify,
-                                 grpc_call_list *call_list);
+                                 grpc_closure_list *closure_list);
 
 /** process a transport level op */
 void grpc_subchannel_process_transport_op(grpc_subchannel *subchannel,
                                           grpc_transport_op *op,
-                                          grpc_call_list *call_list);
+                                          grpc_closure_list *closure_list);
 
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
@@ -96,25 +96,25 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(
 void grpc_subchannel_notify_on_state_change(grpc_subchannel *channel,
                                             grpc_connectivity_state *state,
                                             grpc_closure *notify,
-                                            grpc_call_list *call_list);
+                                            grpc_closure_list *closure_list);
 
 /** express interest in \a channel's activities through \a pollset. */
 void grpc_subchannel_add_interested_party(grpc_subchannel *channel,
                                           grpc_pollset *pollset,
-                                          grpc_call_list *call_list);
+                                          grpc_closure_list *closure_list);
 /** stop following \a channel's activity through \a pollset. */
 void grpc_subchannel_del_interested_party(grpc_subchannel *channel,
                                           grpc_pollset *pollset,
-                                          grpc_call_list *call_list);
+                                          grpc_closure_list *closure_list);
 
 /** continue processing a transport op */
 void grpc_subchannel_call_process_op(grpc_subchannel_call *subchannel_call,
                                      grpc_transport_stream_op *op,
-                                     grpc_call_list *call_list);
+                                     grpc_closure_list *closure_list);
 
 /** continue querying for peer */
 char *grpc_subchannel_call_get_peer(grpc_subchannel_call *subchannel_call,
-                                    grpc_call_list *call_list);
+                                    grpc_closure_list *closure_list);
 
 struct grpc_subchannel_args {
   /** Channel filters for this channel - wrapped factories will likely
