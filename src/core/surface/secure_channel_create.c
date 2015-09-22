@@ -209,6 +209,7 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   c->base.vtable = &connector_vtable;
   c->security_connector = f->security_connector;
   c->mdctx = f->mdctx;
+  gpr_mu_init(&c->mu);
   grpc_mdctx_ref(c->mdctx);
   gpr_ref_init(&c->refs, 1);
   args->args = final_args;
