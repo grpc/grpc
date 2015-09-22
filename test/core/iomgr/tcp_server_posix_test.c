@@ -101,7 +101,7 @@ static void test_no_op_with_port_and_start(void) {
 
   grpc_tcp_server_start(s, NULL, 0, on_connect, NULL, &call_list);
 
-  grpc_tcp_server_destroy(s, NULL, NULL);
+  grpc_tcp_server_destroy(s, NULL, &call_list);
   grpc_call_list_run(&call_list);
 }
 
