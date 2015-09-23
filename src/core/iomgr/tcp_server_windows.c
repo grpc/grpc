@@ -152,7 +152,7 @@ void grpc_tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
 
 /* Prepare (bind) a recently-created socket for listening. */
 static int prepare_socket(SOCKET sock, const struct sockaddr *addr,
-                          int addr_len) {
+                          size_t addr_len) {
   struct sockaddr_storage sockname_temp;
   socklen_t sockname_len;
 
@@ -165,7 +165,7 @@ static int prepare_socket(SOCKET sock, const struct sockaddr *addr,
     goto error;
   }
 
-  if (bind(sock, addr, addr_len) == SOCKET_ERROR) {
+  if (bind(sock, addr, (int)addr_len) == SOCKET_ERROR) {
     char *addr_str;
     char *utf8_message = gpr_format_message(WSAGetLastError());
     grpc_sockaddr_to_string(&addr_str, addr, 0);
@@ -349,7 +349,7 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, int from_iocp) {
 }
 
 static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
-                                const struct sockaddr *addr, int addr_len) {
+                                const struct sockaddr *addr, size_t addr_len) {
   server_port *sp;
   int port;
   int status;

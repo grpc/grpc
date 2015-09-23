@@ -121,7 +121,7 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
   bool IsBlocking() const GRPC_OVERRIDE { return is_blocking_; }
 
   Status GetMetadata(grpc::string_ref service_url,
-                     std::multimap<grpc::string, grpc::string_ref>* metadata)
+                     std::multimap<grpc::string, grpc::string>* metadata)
       GRPC_OVERRIDE {
     EXPECT_GT(service_url.length(), 0UL);
     EXPECT_TRUE(metadata != nullptr);
@@ -175,9 +175,9 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
     if (auth_md_value == kGoodGuy) {
       context->AddProperty(kIdentityPropName, kGoodGuy);
       context->SetPeerIdentityPropertyName(kIdentityPropName);
-      consumed_auth_metadata->insert(
-          std::make_pair(string(auth_md->first.data(), auth_md->first.length()),
-                         auth_md->second));
+      consumed_auth_metadata->insert(std::make_pair(
+          string(auth_md->first.data(), auth_md->first.length()),
+          string(auth_md->second.data(), auth_md->second.length())));
       return Status::OK;
     } else {
       return Status(StatusCode::UNAUTHENTICATED,
