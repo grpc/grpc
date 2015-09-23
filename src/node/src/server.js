@@ -276,6 +276,7 @@ function ServerWritableStream(call, serialize) {
 function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
+  var self = this;
   if (!this.call.metadataSent) {
     batch[grpc.opType.SEND_INITIAL_METADATA] =
         (new Metadata())._getCoreRepresentation();
@@ -290,7 +291,7 @@ function _write(chunk, encoding, callback) {
   batch[grpc.opType.SEND_MESSAGE] = message;
   this.call.startBatch(batch, function(err, value) {
     if (err) {
-      this.emit('error', err);
+      self.emit('error', err);
       return;
     }
     callback();
@@ -305,6 +306,7 @@ ServerWritableStream.prototype._write = _write;
  */
 function sendMetadata(responseMetadata) {
   /* jshint validthis: true */
+  var self = this;
   if (!this.call.metadataSent) {
     this.call.metadataSent = true;
     var batch = [];
@@ -312,7 +314,7 @@ function sendMetadata(responseMetadata) {
         responseMetadata._getCoreRepresentation();
     this.call.startBatch(batch, function(err) {
       if (err) {
-        this.emit('error', err);
+        self.emit('error', err);
         return;
       }
     });

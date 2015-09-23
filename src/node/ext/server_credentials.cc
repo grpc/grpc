@@ -41,22 +41,28 @@
 namespace grpc {
 namespace node {
 
+using Nan::Callback;
+using Nan::EscapableHandleScope;
+using Nan::HandleScope;
+using Nan::Maybe;
+using Nan::MaybeLocal;
+using Nan::ObjectWrap;
+using Nan::Persistent;
+using Nan::Utf8String;
+
 using v8::Array;
 using v8::Exception;
 using v8::External;
 using v8::Function;
 using v8::FunctionTemplate;
-using v8::Handle;
-using v8::HandleScope;
 using v8::Integer;
 using v8::Local;
 using v8::Object;
 using v8::ObjectTemplate;
-using v8::Persistent;
 using v8::String;
 using v8::Value;
 
-NanCallback *ServerCredentials::constructor;
+Nan::Callback *ServerCredentials::constructor;
 Persistent<FunctionTemplate> ServerCredentials::fun_tpl;
 
 ServerCredentials::ServerCredentials(grpc_server_credentials *credentials)
@@ -66,33 +72,41 @@ ServerCredentials::~ServerCredentials() {
   grpc_server_credentials_release(wrapped_credentials);
 }
 
-void ServerCredentials::Init(Handle<Object> exports) {
-  NanScope();
-  Local<FunctionTemplate> tpl = NanNew<FunctionTemplate>(New);
-  tpl->SetClassName(NanNew("ServerCredentials"));
+void ServerCredentials::Init(Local<Object> exports) {
+  Nan::HandleScope scope;
+  Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
+  tpl->SetClassName(Nan::New("ServerCredentials").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
-  NanAssignPersistent(fun_tpl, tpl);
-  Handle<Function> ctr = tpl->GetFunction();
-  ctr->Set(NanNew("createSsl"),
-           NanNew<FunctionTemplate>(CreateSsl)->GetFunction());
-  ctr->Set(NanNew("createInsecure"),
-           NanNew<FunctionTemplate>(CreateInsecure)->GetFunction());
-  constructor = new NanCallback(ctr);
-  exports->Set(NanNew("ServerCredentials"), ctr);
+  Local<Function> ctr = tpl->GetFunction();
+  Nan::Set(ctr, Nan::New("createSsl").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(CreateSsl)).ToLocalChecked());
+  Nan::Set(ctr, Nan::New("createInsecure").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(CreateInsecure)).ToLocalChecked());
+  fun_tpl.Reset(tpl);
+  constructor = new Nan::Callback(ctr);
+  Nan::Set(exports, Nan::New("ServerCredentials").ToLocalChecked(), ctr);
 }
 
-bool ServerCredentials::HasInstance(Handle<Value> val) {
-  NanScope();
-  return NanHasInstance(fun_tpl, val);
+bool ServerCredentials::HasInstance(Local<Value> val) {
+  Nan::HandleScope scope;
+  return Nan::New(fun_tpl)->HasInstance(val);
 }
 
-Handle<Value> ServerCredentials::WrapStruct(
+Local<Value> ServerCredentials::WrapStruct(
     grpc_server_credentials *credentials) {
-  NanEscapableScope();
+  Nan::EscapableHandleScope scope;
   const int argc = 1;
-  Handle<Value> argv[argc] = {
-    NanNew<External>(reinterpret_cast<void *>(credentials))};
-  return NanEscapeScope(constructor->GetFunction()->NewInstance(argc, argv));
+  Local<Value> argv[argc] = {
+    Nan::New<External>(reinterpret_cast<void *>(credentials))};
+  MaybeLocal<Object> maybe_instance = Nan::NewInstance(
+      constructor->GetFunction(), argc, argv);
+  if (maybe_instance.IsEmpty()) {
+    return scope.Escape(Nan::Null());
+  } else {
+    return scope.Escape(maybe_instance.ToLocalChecked());
+  }
 }
 
 grpc_server_credentials *ServerCredentials::GetWrappedServerCredentials() {
@@ -100,96 +114,103 @@ grpc_server_credentials *ServerCredentials::GetWrappedServerCredentials() {
 }
 
 NAN_METHOD(ServerCredentials::New) {
-  NanScope();
-
-  if (args.IsConstructCall()) {
-    if (!args[0]->IsExternal()) {
-      return NanThrowTypeError(
+  if (info.IsConstructCall()) {
+    if (!info[0]->IsExternal()) {
+      return Nan::ThrowTypeError(
           "ServerCredentials can only be created with the provide functions");
     }
-    Handle<External> ext = args[0].As<External>();
+    Local<External> ext = info[0].As<External>();
     grpc_server_credentials *creds_value =
         reinterpret_cast<grpc_server_credentials *>(ext->Value());
     ServerCredentials *credentials = new ServerCredentials(creds_value);
-    credentials->Wrap(args.This());
-    NanReturnValue(args.This());
+    credentials->Wrap(info.This());
+    info.GetReturnValue().Set(info.This());
   } else {
     const int argc = 1;
-    Local<Value> argv[argc] = {args[0]};
-    NanReturnValue(constructor->GetFunction()->NewInstance(argc, argv));
+    Local<Value> argv[argc] = {info[0]};
+    MaybeLocal<Object> maybe_instance = constructor->GetFunction()->NewInstance(
+        argc, argv);
+    if (maybe_instance.IsEmpty()) {
+      // There's probably a pending exception
+      return;
+    } else {
+      info.GetReturnValue().Set(maybe_instance.ToLocalChecked());
+    }
   }
 }
 
 NAN_METHOD(ServerCredentials::CreateSsl) {
-  // TODO: have the node API support multiple key/cert pairs.
-  NanScope();
+  Nan::HandleScope scope;
   char *root_certs = NULL;
-  if (::node::Buffer::HasInstance(args[0])) {
-    root_certs = ::node::Buffer::Data(args[0]);
-  } else if (!(args[0]->IsNull() || args[0]->IsUndefined())) {
-    return NanThrowTypeError(
+  if (::node::Buffer::HasInstance(info[0])) {
+    root_certs = ::node::Buffer::Data(info[0]);
+  } else if (!(info[0]->IsNull() || info[0]->IsUndefined())) {
+    return Nan::ThrowTypeError(
         "createSSl's first argument must be a Buffer if provided");
   }
-  if (!args[1]->IsArray()) {
-    return NanThrowTypeError(
+  if (!info[1]->IsArray()) {
+    return Nan::ThrowTypeError(
         "createSsl's second argument must be a list of objects");
   }
   int force_client_auth = 0;
-  if (args[2]->IsBoolean()) {
-    force_client_auth = (int)args[2]->BooleanValue();
-  } else if (!(args[2]->IsUndefined() || args[2]->IsNull())) {
-    return NanThrowTypeError(
+  if (info[2]->IsBoolean()) {
+    force_client_auth = (int)Nan::To<bool>(info[2]).FromJust();
+  } else if (!(info[2]->IsUndefined() || info[2]->IsNull())) {
+    return Nan::ThrowTypeError(
         "createSsl's third argument must be a boolean if provided");
   }
-  Handle<Array> pair_list = Local<Array>::Cast(args[1]);
+  Local<Array> pair_list = Local<Array>::Cast(info[1]);
   uint32_t key_cert_pair_count = pair_list->Length();
   grpc_ssl_pem_key_cert_pair *key_cert_pairs = new grpc_ssl_pem_key_cert_pair[
       key_cert_pair_count];
 
-  Handle<String> key_key = NanNew("private_key");
-  Handle<String> cert_key = NanNew("cert_chain");
+  Local<String> key_key = Nan::New("private_key").ToLocalChecked();
+  Local<String> cert_key = Nan::New("cert_chain").ToLocalChecked();
 
   for(uint32_t i = 0; i < key_cert_pair_count; i++) {
-    if (!pair_list->Get(i)->IsObject()) {
+    Local<Value> pair_val = Nan::Get(pair_list, i).ToLocalChecked();
+    if (!pair_val->IsObject()) {
       delete key_cert_pairs;
-      return NanThrowTypeError("Key/cert pairs must be objects");
+      return Nan::ThrowTypeError("Key/cert pairs must be objects");
     }
-    Handle<Object> pair_obj = pair_list->Get(i)->ToObject();
-    if (!pair_obj->HasOwnProperty(key_key)) {
+    Local<Object> pair_obj = Nan::To<Object>(pair_val).ToLocalChecked();
+    MaybeLocal<Value> maybe_key = Nan::Get(pair_obj, key_key);
+    if (maybe_key.IsEmpty()) {
       delete key_cert_pairs;
-      return NanThrowTypeError(
+      return Nan::ThrowTypeError(
           "Key/cert pairs must have a private_key and a cert_chain");
     }
-    if (!pair_obj->HasOwnProperty(cert_key)) {
+    MaybeLocal<Value> maybe_cert = Nan::Get(pair_obj, cert_key);
+    if (maybe_cert.IsEmpty()) {
       delete key_cert_pairs;
-      return NanThrowTypeError(
+      return Nan::ThrowTypeError(
           "Key/cert pairs must have a private_key and a cert_chain");
     }
-    if (!::node::Buffer::HasInstance(pair_obj->Get(key_key))) {
+    if (!::node::Buffer::HasInstance(maybe_key.ToLocalChecked())) {
       delete key_cert_pairs;
-      return NanThrowTypeError("private_key must be a Buffer");
+      return Nan::ThrowTypeError("private_key must be a Buffer");
     }
-    if (!::node::Buffer::HasInstance(pair_obj->Get(cert_key))) {
+    if (!::node::Buffer::HasInstance(maybe_cert.ToLocalChecked())) {
       delete key_cert_pairs;
-      return NanThrowTypeError("cert_chain must be a Buffer");
+      return Nan::ThrowTypeError("cert_chain must be a Buffer");
     }
     key_cert_pairs[i].private_key = ::node::Buffer::Data(
-        pair_obj->Get(key_key));
+        maybe_key.ToLocalChecked());
     key_cert_pairs[i].cert_chain = ::node::Buffer::Data(
-        pair_obj->Get(cert_key));
+        maybe_cert.ToLocalChecked());
   }
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create(
       root_certs, key_cert_pairs, key_cert_pair_count, force_client_auth, NULL);
   delete key_cert_pairs;
   if (creds == NULL) {
-    NanReturnNull();
+    info.GetReturnValue().SetNull();
+  } else {
+    info.GetReturnValue().Set(WrapStruct(creds));
   }
-  NanReturnValue(WrapStruct(creds));
 }
 
 NAN_METHOD(ServerCredentials::CreateInsecure) {
-  NanScope();
-  NanReturnValue(WrapStruct(NULL));
+  info.GetReturnValue().Set(WrapStruct(NULL));
 }
 
 }  // namespace node

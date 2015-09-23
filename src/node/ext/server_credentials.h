@@ -43,12 +43,12 @@ namespace grpc {
 namespace node {
 
 /* Wrapper class for grpc_server_credentials structs */
-class ServerCredentials : public ::node::ObjectWrap {
+class ServerCredentials : public Nan::ObjectWrap {
  public:
-  static void Init(v8::Handle<v8::Object> exports);
-  static bool HasInstance(v8::Handle<v8::Value> val);
+  static void Init(v8::Local<v8::Object> exports);
+  static bool HasInstance(v8::Local<v8::Value> val);
   /* Wrap a grpc_server_credentials struct in a javascript object */
-  static v8::Handle<v8::Value> WrapStruct(grpc_server_credentials *credentials);
+  static v8::Local<v8::Value> WrapStruct(grpc_server_credentials *credentials);
 
   /* Returns the grpc_server_credentials struct that this object wraps */
   grpc_server_credentials *GetWrappedServerCredentials();
@@ -64,9 +64,9 @@ class ServerCredentials : public ::node::ObjectWrap {
   static NAN_METHOD(New);
   static NAN_METHOD(CreateSsl);
   static NAN_METHOD(CreateInsecure);
-  static NanCallback *constructor;
+  static Nan::Callback *constructor;
   // Used for typechecking instances of this javascript class
-  static v8::Persistent<v8::FunctionTemplate> fun_tpl;
+  static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
   grpc_server_credentials *wrapped_credentials;
 };
