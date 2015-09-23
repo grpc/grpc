@@ -1231,6 +1231,7 @@ static void plugin_md_request_metadata_ready(void *request,
     }
   }
   gpr_free(r);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void plugin_get_request_metadata(
