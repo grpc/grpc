@@ -43,6 +43,7 @@ RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
   git \
+  gyp \
   libc6 \
   libc6-dbg \
   libc6-dev \
