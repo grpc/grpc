@@ -205,9 +205,11 @@
         'src/core/httpcli/parser.c',
         'src/core/iomgr/alarm.c',
         'src/core/iomgr/alarm_heap.c',
+        'src/core/iomgr/closure.c',
         'src/core/iomgr/endpoint.c',
         'src/core/iomgr/endpoint_pair_posix.c',
         'src/core/iomgr/endpoint_pair_windows.c',
+        'src/core/iomgr/exec_ctx.c',
         'src/core/iomgr/fd_posix.c',
         'src/core/iomgr/iocp_windows.c',
         'src/core/iomgr/iomgr.c',
@@ -238,6 +240,8 @@
         'src/core/iomgr/wakeup_fd_nospecial.c',
         'src/core/iomgr/wakeup_fd_pipe.c',
         'src/core/iomgr/wakeup_fd_posix.c',
+        'src/core/iomgr/workqueue_posix.c',
+        'src/core/iomgr/workqueue_windows.c',
         'src/core/json/json.c',
         'src/core/json/json_reader.c',
         'src/core/json/json_string.c',
@@ -387,9 +391,11 @@
         'src/core/httpcli/parser.c',
         'src/core/iomgr/alarm.c',
         'src/core/iomgr/alarm_heap.c',
+        'src/core/iomgr/closure.c',
         'src/core/iomgr/endpoint.c',
         'src/core/iomgr/endpoint_pair_posix.c',
         'src/core/iomgr/endpoint_pair_windows.c',
+        'src/core/iomgr/exec_ctx.c',
         'src/core/iomgr/fd_posix.c',
         'src/core/iomgr/iocp_windows.c',
         'src/core/iomgr/iomgr.c',
@@ -420,6 +426,8 @@
         'src/core/iomgr/wakeup_fd_nospecial.c',
         'src/core/iomgr/wakeup_fd_pipe.c',
         'src/core/iomgr/wakeup_fd_posix.c',
+        'src/core/iomgr/workqueue_posix.c',
+        'src/core/iomgr/workqueue_windows.c',
         'src/core/json/json.c',
         'src/core/json/json_reader.c',
         'src/core/json/json_string.c',
@@ -1279,19 +1287,6 @@
       ],
       'sources': [
         'test/core/iomgr/alarm_list_test.c',
-      ]
-    },
-    {
-      'target_name': 'alarm_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_test_util',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/core/iomgr/alarm_test.c',
       ]
     },
     {
@@ -2227,6 +2222,19 @@
       ],
       'sources': [
         'test/core/client_config/uri_parser_test.c',
+      ]
+    },
+    {
+      'target_name': 'workqueue_test',
+      'type': 'executable',
+      'dependencies': [
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+        'test/core/iomgr/workqueue_test.c',
       ]
     },
     {
