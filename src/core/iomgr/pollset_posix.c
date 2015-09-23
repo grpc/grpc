@@ -54,7 +54,6 @@
 #include <grpc/support/useful.h>
 
 GPR_TLS_DECL(g_current_thread_poller);
-GPR_TLS_DECL(g_current_thread_worker);
 
 grpc_poll_function_type grpc_poll_function = poll;
 
@@ -99,9 +98,6 @@ void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
         grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
       }
       p->kicked_without_pollers = 1;
-    } else if (gpr_tls_get(&g_current_thread_worker) !=
-               (gpr_intptr)specific_worker) {
-      grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
     }
   } else if (gpr_tls_get(&g_current_thread_poller) != (gpr_intptr)p) {
     specific_worker = pop_front_worker(p);
