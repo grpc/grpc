@@ -204,10 +204,12 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     push_front_worker(pollset, worker);
     added_worker = 1;
     gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
+    gpr_tls_set(&g_current_thread_worker, (gpr_intptr)worker);
     pollset->vtable->maybe_work_and_unlock(exec_ctx, pollset, worker, deadline,
                                            now);
     locked = 0;
     gpr_tls_set(&g_current_thread_poller, 0);
+    gpr_tls_set(&g_current_thread_worker, 0);
   } else {
     pollset->kicked_without_pollers = 0;
   }
