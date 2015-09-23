@@ -49,7 +49,7 @@ SYSTEM = MINGW32
 endif
 
 
-MAKEFILE_PATH = $(abspath $(lastword $(MAKEFILE_LIST)))
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 ifndef BUILDDIR
 BUILDDIR_ABSOLUTE = $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
 else
