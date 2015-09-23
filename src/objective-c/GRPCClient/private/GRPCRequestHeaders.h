@@ -34,7 +34,7 @@
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
 
-#import "GRPCCall.h"
+@class GRPCCall.h;
 
 @interface GRPCRequestHeaders : NSObject<GRPCRequestHeaders>
 
