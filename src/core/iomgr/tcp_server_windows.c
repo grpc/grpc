@@ -198,7 +198,8 @@ error:
   return -1;
 }
 
-static void decrement_active_ports_and_notify(grpc_exec_ctx *exec_ctx, server_port *sp) {
+static void decrement_active_ports_and_notify(grpc_exec_ctx *exec_ctx,
+                                              server_port *sp) {
   int notify = 0;
   sp->shutting_down = 0;
   gpr_mu_lock(&sp->server->mu);
@@ -458,9 +459,8 @@ grpc_tcp_server_get_socket(grpc_tcp_server *s, unsigned index) {
   return (index < s->nports) ? s->ports[index].socket->socket : INVALID_SOCKET;
 }
 
-void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s, 
-                           grpc_pollset **pollset,
-                           size_t pollset_count,
+void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
+                           grpc_pollset **pollset, size_t pollset_count,
                            grpc_tcp_server_cb on_accept_cb,
                            void *on_accept_cb_arg) {
   size_t i;

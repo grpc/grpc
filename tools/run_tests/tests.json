@@ -1151,6 +1151,8 @@
   }, 
   {
     "ci_platforms": [
+      "linux", 
+      "mac", 
       "posix"
     ], 
     "exclude_configs": [], 
@@ -1158,6 +1160,8 @@
     "language": "c", 
     "name": "udp_server_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix"
     ]
   }, 
@@ -1183,8 +1187,7 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "exclude_configs": [], 
     "flaky": false, 
@@ -1193,8 +1196,7 @@
     "platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ]
   }, 
   {

@@ -151,7 +151,8 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(GRPC_POLLSET_MU(&pr->pollset));
 }
 
-static void destroy_pollset_and_shutdown(grpc_exec_ctx *exec_ctx, void *p, int success) {
+static void destroy_pollset_and_shutdown(grpc_exec_ctx *exec_ctx, void *p,
+                                         int success) {
   grpc_pollset_destroy(p);
   grpc_shutdown();
 }
@@ -180,7 +181,8 @@ static int pick_port_using_server(char *server) {
   gpr_mu_lock(GRPC_POLLSET_MU(&pr.pollset));
   while (pr.port == -1) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&exec_ctx, &pr.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+    grpc_pollset_work(&exec_ctx, &pr.pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
                       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
     gpr_mu_unlock(GRPC_POLLSET_MU(&pr.pollset));
     grpc_exec_ctx_flush(&exec_ctx);
@@ -189,7 +191,8 @@ static int pick_port_using_server(char *server) {
   gpr_mu_unlock(GRPC_POLLSET_MU(&pr.pollset));
 
   grpc_httpcli_context_destroy(&context);
-  grpc_closure_init(&destroy_pollset_closure, destroy_pollset_and_shutdown, &pr.pollset);
+  grpc_closure_init(&destroy_pollset_closure, destroy_pollset_and_shutdown,
+                    &pr.pollset);
   grpc_pollset_shutdown(&exec_ctx, &pr.pollset, &destroy_pollset_closure);
 
   grpc_exec_ctx_finish(&exec_ctx);

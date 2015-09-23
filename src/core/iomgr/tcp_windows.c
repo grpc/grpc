@@ -176,10 +176,8 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *tcpp, int success) {
   }
 }
 
-static void win_read(grpc_exec_ctx *exec_ctx,
-                     grpc_endpoint *ep,
-                     gpr_slice_buffer *read_slices,
-                     grpc_closure *cb) {
+static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                     gpr_slice_buffer *read_slices, grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_winsocket *handle = tcp->socket;
   grpc_winsocket_callback_info *info = &handle->read_info;
@@ -264,10 +262,8 @@ static void on_write(grpc_exec_ctx *exec_ctx, void *tcpp, int success) {
 }
 
 /* Initiates a write. */
-static void win_write(grpc_exec_ctx *exec_ctx, 
-                      grpc_endpoint *ep,
-                      gpr_slice_buffer *slices,
-                      grpc_closure *cb) {
+static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                      gpr_slice_buffer *slices, grpc_closure *cb) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
   grpc_winsocket *socket = tcp->socket;
   grpc_winsocket_callback_info *info = &socket->write_info;
@@ -344,14 +340,16 @@ static void win_write(grpc_exec_ctx *exec_ctx,
   grpc_socket_notify_on_write(exec_ctx, socket, &tcp->on_write);
 }
 
-static void win_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep, grpc_pollset *ps) {
+static void win_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                               grpc_pollset *ps) {
   grpc_tcp *tcp;
   (void)ps;
   tcp = (grpc_tcp *)ep;
   grpc_iocp_add_socket(tcp->socket);
 }
 
-static void win_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep, grpc_pollset_set *pss) {
+static void win_add_to_pollset_set(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                                   grpc_pollset_set *pss) {
   grpc_tcp *tcp;
   (void)pss;
   tcp = (grpc_tcp *)ep;
