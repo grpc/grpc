@@ -54,6 +54,8 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+extern int grpc_tcp_trace;
+
 typedef struct {
   void (*cb)(void *arg, grpc_endpoint *tcp);
   void *cb_arg;
@@ -92,6 +94,10 @@ error:
 static void tc_on_alarm(void *acp, int success) {
   int done;
   async_connect *ac = acp;
+  if (grpc_tcp_trace) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: success=%d", ac->addr_str,
+            success);
+  }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
     grpc_fd_shutdown(ac->fd);
@@ -115,6 +121,11 @@ static void on_writable(void *acp, int success) {
   void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
   void *cb_arg = ac->cb_arg;
   grpc_fd *fd;
+
+  if (grpc_tcp_trace) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: success=%d",
+            ac->addr_str, success);
+  }
 
   gpr_mu_lock(&ac->mu);
   GPR_ASSERT(ac->fd);
@@ -195,7 +206,7 @@ finish:
 
 void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
                              void *arg, grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, int addr_len,
+                             const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline) {
   int fd;
   grpc_dualstack_mode dsmode;
@@ -229,7 +240,8 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   }
 
   do {
-    err = connect(fd, addr, addr_len);
+    GPR_ASSERT(addr_len < ~(socklen_t)0);
+    err = connect(fd, addr, (socklen_t)addr_len);
   } while (err < 0 && errno == EINTR);
 
   addr_str = grpc_sockaddr_to_uri(addr);
@@ -262,6 +274,11 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->refs = 2;
   ac->write_closure.cb = on_writable;
   ac->write_closure.cb_arg = ac;
+
+  if (grpc_tcp_trace) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
+            ac->addr_str);
+  }
 
   gpr_mu_lock(&ac->mu);
   grpc_alarm_init(&ac->alarm,

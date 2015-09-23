@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -149,8 +149,10 @@ Functions</h2></td></tr>
 <tr class="memdesc:abb2ba4bcf7187525c26d3cc25a3a3776"><td class="mdescLeft">&#160;</td><td class="mdescRight">call notify when the connectivity state of a channel changes from *state.  <a href="#abb2ba4bcf7187525c26d3cc25a3a3776">More...</a><br/></td></tr>
 <tr class="separator:abb2ba4bcf7187525c26d3cc25a3a3776"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca094f578fdc81ffc9ec8ea80b9c5579"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subchannel_8h.html#aca094f578fdc81ffc9ec8ea80b9c5579">grpc_subchannel_add_interested_party</a> (<a class="el" href="structgrpc__subchannel.html">grpc_subchannel</a> *channel, <a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset)</td></tr>
+<tr class="memdesc:aca094f578fdc81ffc9ec8ea80b9c5579"><td class="mdescLeft">&#160;</td><td class="mdescRight">express interest in <em>channel's</em> activities through <em>pollset</em>.  <a href="#aca094f578fdc81ffc9ec8ea80b9c5579">More...</a><br/></td></tr>
 <tr class="separator:aca094f578fdc81ffc9ec8ea80b9c5579"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa8ea5c658e34de467db80c269231e676"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subchannel_8h.html#aa8ea5c658e34de467db80c269231e676">grpc_subchannel_del_interested_party</a> (<a class="el" href="structgrpc__subchannel.html">grpc_subchannel</a> *channel, <a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *pollset)</td></tr>
+<tr class="memdesc:aa8ea5c658e34de467db80c269231e676"><td class="mdescLeft">&#160;</td><td class="mdescRight">stop following <em>channel's</em> activity through <em>pollset</em>.  <a href="#aa8ea5c658e34de467db80c269231e676">More...</a><br/></td></tr>
 <tr class="separator:aa8ea5c658e34de467db80c269231e676"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a30ba75352b07c1e77a4253585c03f1ad"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="subchannel_8h.html#a30ba75352b07c1e77a4253585c03f1ad">grpc_subchannel_call_process_op</a> (<a class="el" href="structgrpc__subchannel__call.html">grpc_subchannel_call</a> *subchannel_call, <a class="el" href="structgrpc__transport__stream__op.html">grpc_transport_stream_op</a> *op)</td></tr>
 <tr class="memdesc:a30ba75352b07c1e77a4253585c03f1ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">continue processing a transport op  <a href="#a30ba75352b07c1e77a4253585c03f1ad">More...</a><br/></td></tr>
@@ -344,6 +346,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>express interest in <em>channel's</em> activities through <em>pollset</em>. </p>
+
 </div>
 </div>
 <a class="anchor" id="ac07bb9b75d7587847d5792ed6ad7e616"></a>
@@ -534,6 +538,8 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
+<p>stop following <em>channel's</em> activity through <em>pollset</em>. </p>
+
 </div>
 </div>
 <a class="anchor" id="abb2ba4bcf7187525c26d3cc25a3a3776"></a>
@@ -634,7 +640,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:13 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

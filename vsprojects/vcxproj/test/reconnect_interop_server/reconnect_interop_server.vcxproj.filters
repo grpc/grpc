@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\proto\empty.proto">
+      <Filter>test\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\proto\messages.proto">
+      <Filter>test\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\proto\test.proto">
+      <Filter>test\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\cpp\interop\reconnect_interop_server.cc">
+      <Filter>test\cpp\interop</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{3b344672-cac7-682c-aa96-4c737cdbd4c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{ac1d2bea-3ff0-3d89-98b2-295c5554cf14}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\interop">
+      <UniqueIdentifier>{058c3798-9fdd-84e5-9ce8-71184a49e468}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\proto">
+      <UniqueIdentifier>{4f3bfec8-02f3-5a7b-c235-2b0f937d0394}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

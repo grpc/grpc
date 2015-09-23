@@ -187,6 +187,12 @@ void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
   if (pollset->shutting_down) {
     goto done;
   }
+  if (pollset->in_flight_cbs) {
+    /* Give do_promote priority so we don't starve it out */
+    gpr_mu_unlock(&pollset->mu);
+    gpr_mu_lock(&pollset->mu);
+    goto done;
+  }
   if (!pollset->kicked_without_pollers) {
     push_front_worker(pollset, worker);
     added_worker = 1;
@@ -420,14 +426,8 @@ static void basic_pollset_maybe_work(grpc_pollset *pollset,
   grpc_fd_watcher fd_watcher;
   int timeout;
   int r;
-  int nfds;
+  nfds_t nfds;
 
-  if (pollset->in_flight_cbs) {
-    /* Give do_promote priority so we don't starve it out */
-    gpr_mu_unlock(&pollset->mu);
-    gpr_mu_lock(&pollset->mu);
-    return;
-  }
   fd = pollset->data.ptr;
   if (fd && grpc_fd_is_orphaned(fd)) {
     GRPC_FD_UNREF(fd, "basicpoll");
@@ -443,7 +443,7 @@ static void basic_pollset_maybe_work(grpc_pollset *pollset,
     pfd[1].revents = 0;
     gpr_mu_unlock(&pollset->mu);
     pfd[1].events =
-        grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
+        (short)grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
     if (pfd[1].events != 0) {
       nfds++;
     }

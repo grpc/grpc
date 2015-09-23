@@ -47,14 +47,14 @@ gpr_slice grpc_chttp2_rst_stream_create(gpr_uint32 id, gpr_uint32 code) {
   *p++ = 4;
   *p++ = GRPC_CHTTP2_FRAME_RST_STREAM;
   *p++ = 0;
-  *p++ = id >> 24;
-  *p++ = id >> 16;
-  *p++ = id >> 8;
-  *p++ = id;
-  *p++ = code >> 24;
-  *p++ = code >> 16;
-  *p++ = code >> 8;
-  *p++ = code;
+  *p++ = (gpr_uint8)(id >> 24);
+  *p++ = (gpr_uint8)(id >> 16);
+  *p++ = (gpr_uint8)(id >> 8);
+  *p++ = (gpr_uint8)(id);
+  *p++ = (gpr_uint8)(code >> 24);
+  *p++ = (gpr_uint8)(code >> 16);
+  *p++ = (gpr_uint8)(code >> 8);
+  *p++ = (gpr_uint8)(code);
 
   return slice;
 }

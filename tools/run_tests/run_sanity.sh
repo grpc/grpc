@@ -36,13 +36,11 @@ export TEST=true
 
 cd `dirname $0`/../..
 
-./tools/buildgen/generate_projects.sh
+submodules=`mktemp /tmp/submXXXXXX`
+want_submodules=`mktemp /tmp/submXXXXXX`
 
-submodules=`mktemp`
-
-git submodule > $submodules
-
-diff -u $submodules - << EOF
+git submodule | awk '{ print $1 }' | sort > $submodules
+cat << EOF | awk '{ print $1 }' | sort > $want_submodules
  05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
  c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
  33dd08320648ac71d7d9d732be774ed3818dccc5 third_party/openssl (OpenSSL_1_0_2d)
@@ -50,7 +48,13 @@ diff -u $submodules - << EOF
  50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
 EOF
 
+diff -u $submodules $want_submodules
+
+rm $submodules $want_submodules
+
 if [ -f cache.mk ] ; then
   echo "Please don't commit cache.mk"
   exit 1
 fi
+
+./tools/buildgen/generate_projects.sh

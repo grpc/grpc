@@ -29,7 +29,7 @@
 
 syntax = "proto3";
 
-package examples;
+package routeguide;
 
 option objc_class_prefix = "RGD";
 

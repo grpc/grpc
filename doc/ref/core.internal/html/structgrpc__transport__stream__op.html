@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -112,7 +112,13 @@ Data Fields</h2></td></tr>
 <tr class="memitem:a8d6fc4a4607cb5e19255328c69dbbbc4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__pollset.html">grpc_pollset</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__transport__stream__op.html#a8d6fc4a4607cb5e19255328c69dbbbc4">bind_pollset</a></td></tr>
 <tr class="separator:a8d6fc4a4607cb5e19255328c69dbbbc4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb409a2d4224410aec876a3a7e5443bf"><td class="memItemLeft" align="right" valign="top"><a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__transport__stream__op.html#aeb409a2d4224410aec876a3a7e5443bf">cancel_with_status</a></td></tr>
+<tr class="memdesc:aeb409a2d4224410aec876a3a7e5443bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">If != GRPC_STATUS_OK, cancel this stream.  <a href="#aeb409a2d4224410aec876a3a7e5443bf">More...</a><br/></td></tr>
 <tr class="separator:aeb409a2d4224410aec876a3a7e5443bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2cd5f6463111e103b252c7e47b82e031"><td class="memItemLeft" align="right" valign="top"><a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__transport__stream__op.html#a2cd5f6463111e103b252c7e47b82e031">close_with_status</a></td></tr>
+<tr class="memdesc:a2cd5f6463111e103b252c7e47b82e031"><td class="mdescLeft">&#160;</td><td class="mdescRight">If != GRPC_STATUS_OK, send grpc-status, grpc-message, and close this stream for both reading and writing.  <a href="#a2cd5f6463111e103b252c7e47b82e031">More...</a><br/></td></tr>
+<tr class="separator:a2cd5f6463111e103b252c7e47b82e031"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aad62c923655220b0bd48aacc8182c480"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgpr__slice.html">gpr_slice</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__transport__stream__op.html#aad62c923655220b0bd48aacc8182c480">optional_close_message</a></td></tr>
+<tr class="separator:aad62c923655220b0bd48aacc8182c480"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0d81e12c698cc0a088a0b48eb2250cae"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__call__context__element.html">grpc_call_context_element</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__transport__stream__op.html#a0d81e12c698cc0a088a0b48eb2250cae">context</a></td></tr>
 <tr class="separator:a0d81e12c698cc0a088a0b48eb2250cae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -138,6 +144,22 @@ Data Fields</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>If != GRPC_STATUS_OK, cancel this stream. </p>
+
+</div>
+</div>
+<a class="anchor" id="a2cd5f6463111e103b252c7e47b82e031"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> grpc_transport_stream_op::close_with_status</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If != GRPC_STATUS_OK, send grpc-status, grpc-message, and close this stream for both reading and writing. </p>
 
 </div>
 </div>
@@ -216,6 +238,18 @@ Data Fields</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="aad62c923655220b0bd48aacc8182c480"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="structgpr__slice.html">gpr_slice</a>* grpc_transport_stream_op::optional_close_message</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a class="anchor" id="abd84b0fc93fa58092d4803c4c46e5991"></a>
 <div class="memitem">
 <div class="memproto">
@@ -258,7 +292,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:07 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 3 2015 09:44:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>

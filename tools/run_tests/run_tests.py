@@ -141,7 +141,8 @@ class CLanguage(object):
       if travis and target['flaky']:
         continue
       if self.platform == 'windows':
-        binary = 'vsprojects/test_bin/%s.exe' % (target['name'])
+        binary = 'vsprojects/%s/%s.exe' % (
+            _WINDOWS_CONFIG[config.build_config], target['name'])
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
       if os.path.isfile(binary):
@@ -151,6 +152,9 @@ class CLanguage(object):
     return sorted(out)
 
   def make_targets(self):
+    if platform_string() == 'windows':
+      # don't build tools on windows just yet
+      return ['buildtests_%s' % self.make_target]
     return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
   def build_steps(self):
@@ -281,7 +285,10 @@ class CSharpLanguage(object):
   def make_targets(self):
     # For Windows, this target doesn't really build anything,
     # everything is build by buildall script later.
-    return ['grpc_csharp_ext']
+    if self.platform == 'windows':
+      return []
+    else:
+      return ['grpc_csharp_ext']
 
   def build_steps(self):
     if self.platform == 'windows':
@@ -385,12 +392,11 @@ _LANGUAGES = {
     'build': Build(),
     }
 
-# parse command line
-argp = argparse.ArgumentParser(description='Run grpc tests.')
-argp.add_argument('-c', '--config',
-                  choices=['all'] + sorted(_CONFIGS.keys()),
-                  nargs='+',
-                  default=_DEFAULT)
+_WINDOWS_CONFIG = {
+    'dbg': 'Debug',
+    'opt': 'Release',
+    }
+
 
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
@@ -411,6 +417,13 @@ def runs_per_test_type(arg_str):
     except:
         msg = "'{}' isn't a positive integer or 'inf'".format(arg_str)
         raise argparse.ArgumentTypeError(msg)
+
+# parse command line
+argp = argparse.ArgumentParser(description='Run grpc tests.')
+argp.add_argument('-c', '--config',
+                  choices=['all'] + sorted(_CONFIGS.keys()),
+                  nargs='+',
+                  default=_DEFAULT)
 argp.add_argument('-n', '--runs_per_test', default=1, type=runs_per_test_type,
         help='A positive integer or "inf". If "inf", all tests will run in an '
              'infinite loop. Especially useful in combination with "-f"')
@@ -437,10 +450,47 @@ argp.add_argument('-S', '--stop_on_failure',
                   default=False,
                   action='store_const',
                   const=True)
+argp.add_argument('--use_docker',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help="Run all the tests under docker. That provides " +
+                  "additional isolation and prevents the need to installs " +
+                  "language specific prerequisites. Only available on Linux.")
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
 args = argp.parse_args()
+
+if args.use_docker:
+  if not args.travis:
+    print 'Seen --use_docker flag, will run tests under docker.'
+    print
+    print 'IMPORTANT: The changes you are testing need to be locally committed'
+    print 'because only the committed changes in the current branch will be'
+    print 'copied to the docker environment.'
+    time.sleep(5)
+
+  child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
+  run_tests_cmd = 'tools/run_tests/run_tests.py %s' % " ".join(child_argv[1:])
+
+  # TODO(jtattermusch): revisit if we need special handling for arch here
+  # set arch command prefix in case we are working with different arch.
+  arch_env = os.getenv('arch')
+  if arch_env:
+    run_test_cmd = 'arch %s %s' % (arch_env, run_test_cmd)
+
+  env = os.environ.copy()
+  env['RUN_TESTS_COMMAND'] = run_tests_cmd
+  if args.xml_report:
+    env['XML_REPORT'] = args.xml_report
+  if not args.travis:
+    env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
+
+  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
+                        shell=True,
+                        env=env)
+  sys.exit(0)
 
 # grab config
 run_configs = set(_CONFIGS[cfg]
@@ -452,7 +502,6 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 if args.travis:
   _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'surface,batch'}
 
-make_targets = []
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
                       _LANGUAGES.iterkeys() if x == 'all' else [x]
@@ -466,22 +515,33 @@ if len(build_configs) > 1:
 
 if platform.system() == 'Windows':
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec(['make.bat', 'CONFIG=%s' % cfg] + targets,
-                          cwd='vsprojects', shell=True, 
-                          timeout_seconds=30*60)
+    extra_args = []
+    # better do parallel compilation
+    extra_args.extend(["/m"])
+    # disable PDB generation: it's broken, and we don't need it during CI
+    extra_args.extend(["/p:GenerateDebugInformation=false", "/p:DebugInformationFormat=None"])
+    return [
+      jobset.JobSpec(['vsprojects\\build.bat', 
+                      'vsprojects\\%s.sln' % target, 
+                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
+                      extra_args,
+                      shell=True, timeout_seconds=90*60)
+      for target in targets]
 else:
   def make_jobspec(cfg, targets):
-    return jobset.JobSpec([os.getenv('MAKE', 'make'),
-                           '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                           'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
-                               args.slowdown,
-                           'CONFIG=%s' % cfg] + targets,
-                          timeout_seconds=30*60)
+    return [jobset.JobSpec([os.getenv('MAKE', 'make'),
+                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
+                                args.slowdown,
+                            'CONFIG=%s' % cfg] + targets,
+                           timeout_seconds=30*60)]
 
-build_steps = [make_jobspec(cfg,
-                            list(set(itertools.chain.from_iterable(
-                                         l.make_targets() for l in languages))))
-               for cfg in build_configs]
+make_targets = list(set(itertools.chain.from_iterable(
+                                         l.make_targets() for l in languages)))
+build_steps = []
+if make_targets:
+  make_commands = itertools.chain.from_iterable(make_jobspec(cfg, make_targets) for cfg in build_configs)
+  build_steps.extend(set(make_commands))
 build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
                    for cfg in build_configs

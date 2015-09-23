@@ -448,7 +448,7 @@ grpc_dockerfile_install() {
   }
 
   # TODO(temiola): maybe make cache/no-cache a func option?
-  sudo docker build $cache_opt -t $image_label $dockerfile_dir || {
+  sudo docker build --force-rm=true $cache_opt -t $image_label $dockerfile_dir || {
     echo "$FUNCNAME:: build of $image_label <- $dockerfile_dir"
     return 1
   }
@@ -552,8 +552,8 @@ grpc_docker_sync_service_account() {
   local gcs_admin_root=$(dirname $gs_dockerfile_root)
 
   # cp the file from gsutil to a known local area
-  local gcs_acct_path=$gcs_admin_root/service_account/stubbyCloudTestingTest-7dd63462c60c.json
-  local local_acct_path=$target_dir/stubbyCloudTestingTest-7dd63462c60c.json
+  local gcs_acct_path=$gcs_admin_root/service_account/stubbyCloudTestingTest-ee3fce360ac5.json
+  local local_acct_path=$target_dir/stubbyCloudTestingTest-ee3fce360ac5.json
   mkdir -p $target_dir || {
     echo "$FUNCNAME: could not create dir: $target_dir" 1>&2
     return 1

@@ -149,7 +149,7 @@ static gpr_slice create_test_value(test_value id) {
 static void test_bad_data(void) {
   gpr_slice_buffer input;
   gpr_slice_buffer output;
-  int i;
+  grpc_compression_algorithm i;
 
   gpr_slice_buffer_init(&input);
   gpr_slice_buffer_init(&output);

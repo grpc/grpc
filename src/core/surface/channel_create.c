@@ -88,6 +88,8 @@ static void connected(void *arg, grpc_endpoint *tcp) {
   grpc_iomgr_add_callback(notify);
 }
 
+static void connector_shutdown(grpc_connector *con) {}
+
 static void connector_connect(grpc_connector *con,
                               const grpc_connect_in_args *args,
                               grpc_connect_out_args *result,
@@ -103,7 +105,7 @@ static void connector_connect(grpc_connector *con,
 }
 
 static const grpc_connector_vtable connector_vtable = {
-    connector_ref, connector_unref, connector_connect};
+    connector_ref, connector_unref, connector_shutdown, connector_connect};
 
 typedef struct {
   grpc_subchannel_factory base;
@@ -164,7 +166,7 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   grpc_resolver *resolver;
   subchannel_factory *f;
   grpc_mdctx *mdctx = grpc_mdctx_create();
-  int n = 0;
+  size_t n = 0;
   GPR_ASSERT(!reserved);
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
