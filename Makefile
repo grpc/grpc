@@ -49,8 +49,11 @@ SYSTEM = MINGW32
 endif
 
 
+MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 ifndef BUILDDIR
-BUILDDIR = .
+BUILDDIR_ABSOLUTE = $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
+else
+BUILDDIR_ABSOLUTE = $(abspath $(BUILDDIR))
 endif
 
 HAS_GCC = $(shell which gcc > /dev/null 2> /dev/null && echo true || echo false)
@@ -76,10 +79,10 @@ endif
 endif
 
 
-BINDIR = $(BUILDDIR)/bins
-OBJDIR = $(BUILDDIR)/objs
-LIBDIR = $(BUILDDIR)/libs
-GENDIR = $(BUILDDIR)/gens
+BINDIR = $(BUILDDIR_ABSOLUTE)/bins
+OBJDIR = $(BUILDDIR_ABSOLUTE)/objs
+LIBDIR = $(BUILDDIR_ABSOLUTE)/libs
+GENDIR = $(BUILDDIR_ABSOLUTE)/gens
 
 # Configurations
 
@@ -4189,13 +4192,13 @@ $(LIBDIR)/$(CONFIG)/libgrpc.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(LIBGRPC_OBJS)
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a
 	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBGRPC_OBJS)
-	$(Q) rm -rf tmp-merge-grpc
-	$(Q) mkdir tmp-merge-grpc
-	$(Q) ( cd tmp-merge-grpc ; $(AR) x ../$(LIBDIR)/$(CONFIG)/libgrpc.a )
-	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge-grpc ; ar x ../$${l} ) ; done
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a tmp-merge-grpc/__.SYMDEF*
-	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/libgrpc.a tmp-merge-grpc/*
-	$(Q) rm -rf tmp-merge-grpc
+	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc
+	$(Q) mkdir $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc
+	$(Q) ( cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc ; $(AR) x $(LIBDIR)/$(CONFIG)/libgrpc.a )
+	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc ; ar x $${l} ) ; done
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/__.SYMDEF*
+	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/libgrpc.a $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc/*
+	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-grpc
 ifeq ($(SYSTEM),Darwin)
 	$(Q) ranlib $(LIBDIR)/$(CONFIG)/libgrpc.a
 endif
