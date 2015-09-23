@@ -3,4 +3,4 @@
 
 source 'https://rubygems.org/'
 
-gem 'grpc', :git => 'https://github.com/grpc/grpc.git', :submodules => true, glob: 'src/ruby/*.gemspec'
+gemspec
