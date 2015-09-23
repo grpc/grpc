@@ -44,11 +44,11 @@ void grpc_iocp_shutdown(void);
 void grpc_iocp_add_socket(grpc_winsocket *);
 
 void grpc_socket_notify_on_write(grpc_exec_ctx *exec_ctx,
-                                 grpc_winsocket *winsocket, 
+                                 grpc_winsocket *winsocket,
                                  grpc_closure *closure);
 
 void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx,
-                                grpc_winsocket *winsocket, 
+                                grpc_winsocket *winsocket,
                                 grpc_closure *closure);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_IOCP_WINDOWS_H */
