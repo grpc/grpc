@@ -718,6 +718,7 @@ static char *encode_and_sign_jwt_should_not_be_called(
     const grpc_auth_json_key *json_key, const char *audience,
     gpr_timespec token_lifetime, const char *scope) {
   GPR_ASSERT("grpc_jwt_encode_and_sign should not be called" == NULL);
+  return NULL;
 }
 
 static void on_jwt_creds_get_metadata_success(grpc_exec_ctx *exec_ctx,
