@@ -448,7 +448,7 @@ grpc_dockerfile_install() {
   }
 
   # TODO(temiola): maybe make cache/no-cache a func option?
-  sudo docker build $cache_opt -t $image_label $dockerfile_dir || {
+  sudo docker build --force-rm=true $cache_opt -t $image_label $dockerfile_dir || {
     echo "$FUNCNAME:: build of $image_label <- $dockerfile_dir"
     return 1
   }
