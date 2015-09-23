@@ -183,7 +183,7 @@ typedef struct {
 
 struct grpc_server {
   size_t channel_filter_count;
-  const grpc_channel_filter **channel_filters;
+  grpc_channel_filter const**channel_filters;
   grpc_channel_args *channel_args;
 
   grpc_completion_queue **cqs;
@@ -356,7 +356,7 @@ static void server_delete(grpc_exec_ctx *exec_ctx, grpc_server *server) {
   grpc_channel_args_destroy(server->channel_args);
   gpr_mu_destroy(&server->mu_global);
   gpr_mu_destroy(&server->mu_call);
-  gpr_free(server->channel_filters);
+  gpr_free((void*)server->channel_filters);
   while ((rm = server->registered_methods) != NULL) {
     server->registered_methods = rm->next;
     request_matcher_destroy(&rm->request_matcher);
@@ -988,7 +988,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   chand->next->prev = chand->prev->next = chand;
   gpr_mu_unlock(&s->mu_global);
 
-  gpr_free(filters);
+  gpr_free((void*)filters);
 
   GRPC_CHANNEL_INTERNAL_REF(channel, "connectivity");
   memset(&op, 0, sizeof(op));
