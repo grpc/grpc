@@ -648,12 +648,12 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     goto error;
   }
   *sc = &c->base;
-  gpr_free(alpn_protocol_strings);
+  gpr_free((void*)alpn_protocol_strings);
   gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_OK;
 
 error:
-  gpr_free(alpn_protocol_strings);
+  gpr_free((void*)alpn_protocol_strings);
   gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_ERROR;
 }
@@ -703,12 +703,12 @@ grpc_security_status grpc_ssl_server_security_connector_create(
     goto error;
   }
   *sc = &c->base;
-  gpr_free(alpn_protocol_strings);
+  gpr_free((void*)alpn_protocol_strings);
   gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_OK;
 
 error:
-  gpr_free(alpn_protocol_strings);
+  gpr_free((void*)alpn_protocol_strings);
   gpr_free(alpn_protocol_string_lengths);
   return GRPC_SECURITY_ERROR;
 }

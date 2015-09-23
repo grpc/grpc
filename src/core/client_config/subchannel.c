@@ -258,7 +258,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   if (c->active != NULL) {
     connection_destroy(exec_ctx, c->active);
   }
-  gpr_free(c->filters);
+  gpr_free((void*)c->filters);
   grpc_channel_args_destroy(c->args);
   gpr_free(c->addr);
   grpc_mdctx_unref(c->mdctx);
@@ -294,7 +294,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   grpc_connector_ref(c->connector);
   c->num_filters = args->filter_count;
   c->filters = gpr_malloc(sizeof(grpc_channel_filter *) * c->num_filters);
-  memcpy(c->filters, args->filters,
+  memcpy((void*)c->filters, args->filters,
          sizeof(grpc_channel_filter *) * c->num_filters);
   c->addr = gpr_malloc(args->addr_len);
   memcpy(c->addr, args->addr, args->addr_len);
@@ -531,8 +531,8 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   /* build final filter list */
   num_filters = c->num_filters + c->connecting_result.num_filters + 1;
   filters = gpr_malloc(sizeof(*filters) * num_filters);
-  memcpy(filters, c->filters, sizeof(*filters) * c->num_filters);
-  memcpy(filters + c->num_filters, c->connecting_result.filters,
+  memcpy((void*)filters, c->filters, sizeof(*filters) * c->num_filters);
+  memcpy((void*)(filters + c->num_filters), c->connecting_result.filters,
          sizeof(*filters) * c->connecting_result.num_filters);
   filters[num_filters - 1] = &grpc_connected_channel_filter;
 
@@ -545,7 +545,7 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_channel_stack_init(exec_ctx, filters, num_filters, c->master, c->args,
                           c->mdctx, stk);
   grpc_connected_channel_bind_transport(stk, c->connecting_result.transport);
-  gpr_free(c->connecting_result.filters);
+  gpr_free((void*)c->connecting_result.filters);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
 
   /* initialize state watcher */
@@ -559,7 +559,7 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   if (c->disconnected) {
     gpr_mu_unlock(&c->mu);
     gpr_free(sw);
-    gpr_free(filters);
+    gpr_free((void*)filters);
     grpc_channel_stack_destroy(exec_ctx, stk);
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->master, "connecting");
     GRPC_SUBCHANNEL_UNREF(exec_ctx, c, "connecting");
@@ -601,7 +601,7 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
     w4c = next;
   }
 
-  gpr_free(filters);
+  gpr_free((void*)filters);
 
   if (destroy_connection != NULL) {
     connection_destroy(exec_ctx, destroy_connection);

@@ -41,6 +41,7 @@
 #include <grpc/support/atm.h>
 
 #include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/exec_ctx.h"
 
 /* This holds the data for an outstanding read or write on a socket.
    The mutex to protect the concurrent access to that data is the one
@@ -54,8 +55,7 @@ typedef struct grpc_winsocket_callback_info {
   OVERLAPPED overlapped;
   /* The callback information for the pending operation. May be empty if the
      caller hasn't registered a callback yet. */
-  void (*cb)(void *opaque, int success);
-  void *opaque;
+  grpc_closure *closure;
   /* A boolean to describe if the IO Completion Port got a notification for
      that operation. This will happen if the operation completed before the
      called had time to register a callback. We could avoid that behavior
