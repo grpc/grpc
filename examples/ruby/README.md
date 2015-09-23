@@ -3,7 +3,7 @@ gRPC in 3 minutes (Ruby)
 
 BACKGROUND
 -------------
-For this sample, we've already generated the server and client stubs from [../protos/helloworld.proto][]
+For this sample, we've already generated the server and client stubs from [helloworld.proto][]
 
 PREREQUISITES
 -------------
