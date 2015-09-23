@@ -43,171 +43,194 @@
 #include "credentials.h"
 #include "server_credentials.h"
 
-using v8::Handle;
+using v8::Local;
 using v8::Value;
 using v8::Object;
 using v8::Uint32;
 using v8::String;
 
-void InitStatusConstants(Handle<Object> exports) {
-  NanScope();
-  Handle<Object> status = NanNew<Object>();
-  exports->Set(NanNew("status"), status);
-  Handle<Value> OK(NanNew<Uint32, uint32_t>(GRPC_STATUS_OK));
-  status->Set(NanNew("OK"), OK);
-  Handle<Value> CANCELLED(NanNew<Uint32, uint32_t>(GRPC_STATUS_CANCELLED));
-  status->Set(NanNew("CANCELLED"), CANCELLED);
-  Handle<Value> UNKNOWN(NanNew<Uint32, uint32_t>(GRPC_STATUS_UNKNOWN));
-  status->Set(NanNew("UNKNOWN"), UNKNOWN);
-  Handle<Value> INVALID_ARGUMENT(
-      NanNew<Uint32, uint32_t>(GRPC_STATUS_INVALID_ARGUMENT));
-  status->Set(NanNew("INVALID_ARGUMENT"), INVALID_ARGUMENT);
-  Handle<Value> DEADLINE_EXCEEDED(
-      NanNew<Uint32, uint32_t>(GRPC_STATUS_DEADLINE_EXCEEDED));
-  status->Set(NanNew("DEADLINE_EXCEEDED"), DEADLINE_EXCEEDED);
-  Handle<Value> NOT_FOUND(NanNew<Uint32, uint32_t>(GRPC_STATUS_NOT_FOUND));
-  status->Set(NanNew("NOT_FOUND"), NOT_FOUND);
-  Handle<Value> ALREADY_EXISTS(
-      NanNew<Uint32, uint32_t>(GRPC_STATUS_ALREADY_EXISTS));
-  status->Set(NanNew("ALREADY_EXISTS"), ALREADY_EXISTS);
-  Handle<Value> PERMISSION_DENIED(
-      NanNew<Uint32, uint32_t>(GRPC_STATUS_PERMISSION_DENIED));
-  status->Set(NanNew("PERMISSION_DENIED"), PERMISSION_DENIED);
-  Handle<Value> UNAUTHENTICATED(
-      NanNew<Uint32, uint32_t>(GRPC_STATUS_UNAUTHENTICATED));
-  status->Set(NanNew("UNAUTHENTICATED"), UNAUTHENTICATED);
-  Handle<Value> RESOURCE_EXHAUSTED(
-      NanNew<Uint32, uint32_t>(GRPC_STATUS_RESOURCE_EXHAUSTED));
-  status->Set(NanNew("RESOURCE_EXHAUSTED"), RESOURCE_EXHAUSTED);
-  Handle<Value> FAILED_PRECONDITION(
-      NanNew<Uint32, uint32_t>(GRPC_STATUS_FAILED_PRECONDITION));
-  status->Set(NanNew("FAILED_PRECONDITION"), FAILED_PRECONDITION);
-  Handle<Value> ABORTED(NanNew<Uint32, uint32_t>(GRPC_STATUS_ABORTED));
-  status->Set(NanNew("ABORTED"), ABORTED);
-  Handle<Value> OUT_OF_RANGE(
-      NanNew<Uint32, uint32_t>(GRPC_STATUS_OUT_OF_RANGE));
-  status->Set(NanNew("OUT_OF_RANGE"), OUT_OF_RANGE);
-  Handle<Value> UNIMPLEMENTED(
-      NanNew<Uint32, uint32_t>(GRPC_STATUS_UNIMPLEMENTED));
-  status->Set(NanNew("UNIMPLEMENTED"), UNIMPLEMENTED);
-  Handle<Value> INTERNAL(NanNew<Uint32, uint32_t>(GRPC_STATUS_INTERNAL));
-  status->Set(NanNew("INTERNAL"), INTERNAL);
-  Handle<Value> UNAVAILABLE(NanNew<Uint32, uint32_t>(GRPC_STATUS_UNAVAILABLE));
-  status->Set(NanNew("UNAVAILABLE"), UNAVAILABLE);
-  Handle<Value> DATA_LOSS(NanNew<Uint32, uint32_t>(GRPC_STATUS_DATA_LOSS));
-  status->Set(NanNew("DATA_LOSS"), DATA_LOSS);
+void InitStatusConstants(Local<Object> exports) {
+  Nan::HandleScope scope;
+  Local<Object> status = Nan::New<Object>();
+  Nan::Set(exports, Nan::New("status").ToLocalChecked(), status);
+  Local<Value> OK(Nan::New<Uint32, uint32_t>(GRPC_STATUS_OK));
+  Nan::Set(status, Nan::New("OK").ToLocalChecked(), OK);
+  Local<Value> CANCELLED(Nan::New<Uint32, uint32_t>(GRPC_STATUS_CANCELLED));
+  Nan::Set(status, Nan::New("CANCELLED").ToLocalChecked(), CANCELLED);
+  Local<Value> UNKNOWN(Nan::New<Uint32, uint32_t>(GRPC_STATUS_UNKNOWN));
+  Nan::Set(status, Nan::New("UNKNOWN").ToLocalChecked(), UNKNOWN);
+  Local<Value> INVALID_ARGUMENT(
+      Nan::New<Uint32, uint32_t>(GRPC_STATUS_INVALID_ARGUMENT));
+  Nan::Set(status, Nan::New("INVALID_ARGUMENT").ToLocalChecked(),
+           INVALID_ARGUMENT);
+  Local<Value> DEADLINE_EXCEEDED(
+      Nan::New<Uint32, uint32_t>(GRPC_STATUS_DEADLINE_EXCEEDED));
+  Nan::Set(status, Nan::New("DEADLINE_EXCEEDED").ToLocalChecked(),
+           DEADLINE_EXCEEDED);
+  Local<Value> NOT_FOUND(Nan::New<Uint32, uint32_t>(GRPC_STATUS_NOT_FOUND));
+  Nan::Set(status, Nan::New("NOT_FOUND").ToLocalChecked(), NOT_FOUND);
+  Local<Value> ALREADY_EXISTS(
+      Nan::New<Uint32, uint32_t>(GRPC_STATUS_ALREADY_EXISTS));
+  Nan::Set(status, Nan::New("ALREADY_EXISTS").ToLocalChecked(), ALREADY_EXISTS);
+  Local<Value> PERMISSION_DENIED(
+      Nan::New<Uint32, uint32_t>(GRPC_STATUS_PERMISSION_DENIED));
+  Nan::Set(status, Nan::New("PERMISSION_DENIED").ToLocalChecked(),
+           PERMISSION_DENIED);
+  Local<Value> UNAUTHENTICATED(
+      Nan::New<Uint32, uint32_t>(GRPC_STATUS_UNAUTHENTICATED));
+  Nan::Set(status, Nan::New("UNAUTHENTICATED").ToLocalChecked(),
+           UNAUTHENTICATED);
+  Local<Value> RESOURCE_EXHAUSTED(
+      Nan::New<Uint32, uint32_t>(GRPC_STATUS_RESOURCE_EXHAUSTED));
+  Nan::Set(status, Nan::New("RESOURCE_EXHAUSTED").ToLocalChecked(),
+           RESOURCE_EXHAUSTED);
+  Local<Value> FAILED_PRECONDITION(
+      Nan::New<Uint32, uint32_t>(GRPC_STATUS_FAILED_PRECONDITION));
+  Nan::Set(status, Nan::New("FAILED_PRECONDITION").ToLocalChecked(),
+           FAILED_PRECONDITION);
+  Local<Value> ABORTED(Nan::New<Uint32, uint32_t>(GRPC_STATUS_ABORTED));
+  Nan::Set(status, Nan::New("ABORTED").ToLocalChecked(), ABORTED);
+  Local<Value> OUT_OF_RANGE(
+      Nan::New<Uint32, uint32_t>(GRPC_STATUS_OUT_OF_RANGE));
+  Nan::Set(status, Nan::New("OUT_OF_RANGE").ToLocalChecked(), OUT_OF_RANGE);
+  Local<Value> UNIMPLEMENTED(
+      Nan::New<Uint32, uint32_t>(GRPC_STATUS_UNIMPLEMENTED));
+  Nan::Set(status, Nan::New("UNIMPLEMENTED").ToLocalChecked(), UNIMPLEMENTED);
+  Local<Value> INTERNAL(Nan::New<Uint32, uint32_t>(GRPC_STATUS_INTERNAL));
+  Nan::Set(status, Nan::New("INTERNAL").ToLocalChecked(), INTERNAL);
+  Local<Value> UNAVAILABLE(Nan::New<Uint32, uint32_t>(GRPC_STATUS_UNAVAILABLE));
+  Nan::Set(status, Nan::New("UNAVAILABLE").ToLocalChecked(), UNAVAILABLE);
+  Local<Value> DATA_LOSS(Nan::New<Uint32, uint32_t>(GRPC_STATUS_DATA_LOSS));
+  Nan::Set(status, Nan::New("DATA_LOSS").ToLocalChecked(), DATA_LOSS);
 }
 
-void InitCallErrorConstants(Handle<Object> exports) {
-  NanScope();
-  Handle<Object> call_error = NanNew<Object>();
-  exports->Set(NanNew("callError"), call_error);
-  Handle<Value> OK(NanNew<Uint32, uint32_t>(GRPC_CALL_OK));
-  call_error->Set(NanNew("OK"), OK);
-  Handle<Value> ERROR(NanNew<Uint32, uint32_t>(GRPC_CALL_ERROR));
-  call_error->Set(NanNew("ERROR"), ERROR);
-  Handle<Value> NOT_ON_SERVER(
-      NanNew<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_ON_SERVER));
-  call_error->Set(NanNew("NOT_ON_SERVER"), NOT_ON_SERVER);
-  Handle<Value> NOT_ON_CLIENT(
-      NanNew<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_ON_CLIENT));
-  call_error->Set(NanNew("NOT_ON_CLIENT"), NOT_ON_CLIENT);
-  Handle<Value> ALREADY_INVOKED(
-      NanNew<Uint32, uint32_t>(GRPC_CALL_ERROR_ALREADY_INVOKED));
-  call_error->Set(NanNew("ALREADY_INVOKED"), ALREADY_INVOKED);
-  Handle<Value> NOT_INVOKED(
-      NanNew<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_INVOKED));
-  call_error->Set(NanNew("NOT_INVOKED"), NOT_INVOKED);
-  Handle<Value> ALREADY_FINISHED(
-      NanNew<Uint32, uint32_t>(GRPC_CALL_ERROR_ALREADY_FINISHED));
-  call_error->Set(NanNew("ALREADY_FINISHED"), ALREADY_FINISHED);
-  Handle<Value> TOO_MANY_OPERATIONS(
-      NanNew<Uint32, uint32_t>(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS));
-  call_error->Set(NanNew("TOO_MANY_OPERATIONS"), TOO_MANY_OPERATIONS);
-  Handle<Value> INVALID_FLAGS(
-      NanNew<Uint32, uint32_t>(GRPC_CALL_ERROR_INVALID_FLAGS));
-  call_error->Set(NanNew("INVALID_FLAGS"), INVALID_FLAGS);
+void InitCallErrorConstants(Local<Object> exports) {
+  Nan::HandleScope scope;
+  Local<Object> call_error = Nan::New<Object>();
+  Nan::Set(exports, Nan::New("callError").ToLocalChecked(), call_error);
+  Local<Value> OK(Nan::New<Uint32, uint32_t>(GRPC_CALL_OK));
+  Nan::Set(call_error, Nan::New("OK").ToLocalChecked(), OK);
+  Local<Value> ERROR(Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR));
+  Nan::Set(call_error, Nan::New("ERROR").ToLocalChecked(), ERROR);
+  Local<Value> NOT_ON_SERVER(
+      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_ON_SERVER));
+  Nan::Set(call_error, Nan::New("NOT_ON_SERVER").ToLocalChecked(),
+           NOT_ON_SERVER);
+  Local<Value> NOT_ON_CLIENT(
+      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_ON_CLIENT));
+  Nan::Set(call_error, Nan::New("NOT_ON_CLIENT").ToLocalChecked(),
+           NOT_ON_CLIENT);
+  Local<Value> ALREADY_INVOKED(
+      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_ALREADY_INVOKED));
+  Nan::Set(call_error, Nan::New("ALREADY_INVOKED").ToLocalChecked(),
+           ALREADY_INVOKED);
+  Local<Value> NOT_INVOKED(
+      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_NOT_INVOKED));
+  Nan::Set(call_error, Nan::New("NOT_INVOKED").ToLocalChecked(), NOT_INVOKED);
+  Local<Value> ALREADY_FINISHED(
+      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_ALREADY_FINISHED));
+  Nan::Set(call_error, Nan::New("ALREADY_FINISHED").ToLocalChecked(),
+           ALREADY_FINISHED);
+  Local<Value> TOO_MANY_OPERATIONS(
+      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_TOO_MANY_OPERATIONS));
+  Nan::Set(call_error, Nan::New("TOO_MANY_OPERATIONS").ToLocalChecked(),
+           TOO_MANY_OPERATIONS);
+  Local<Value> INVALID_FLAGS(
+      Nan::New<Uint32, uint32_t>(GRPC_CALL_ERROR_INVALID_FLAGS));
+  Nan::Set(call_error, Nan::New("INVALID_FLAGS").ToLocalChecked(),
+           INVALID_FLAGS);
 }
 
-void InitOpTypeConstants(Handle<Object> exports) {
-  NanScope();
-  Handle<Object> op_type = NanNew<Object>();
-  exports->Set(NanNew("opType"), op_type);
-  Handle<Value> SEND_INITIAL_METADATA(
-      NanNew<Uint32, uint32_t>(GRPC_OP_SEND_INITIAL_METADATA));
-  op_type->Set(NanNew("SEND_INITIAL_METADATA"), SEND_INITIAL_METADATA);
-  Handle<Value> SEND_MESSAGE(
-      NanNew<Uint32, uint32_t>(GRPC_OP_SEND_MESSAGE));
-  op_type->Set(NanNew("SEND_MESSAGE"), SEND_MESSAGE);
-  Handle<Value> SEND_CLOSE_FROM_CLIENT(
-      NanNew<Uint32, uint32_t>(GRPC_OP_SEND_CLOSE_FROM_CLIENT));
-  op_type->Set(NanNew("SEND_CLOSE_FROM_CLIENT"), SEND_CLOSE_FROM_CLIENT);
-  Handle<Value> SEND_STATUS_FROM_SERVER(
-      NanNew<Uint32, uint32_t>(GRPC_OP_SEND_STATUS_FROM_SERVER));
-  op_type->Set(NanNew("SEND_STATUS_FROM_SERVER"), SEND_STATUS_FROM_SERVER);
-  Handle<Value> RECV_INITIAL_METADATA(
-      NanNew<Uint32, uint32_t>(GRPC_OP_RECV_INITIAL_METADATA));
-  op_type->Set(NanNew("RECV_INITIAL_METADATA"), RECV_INITIAL_METADATA);
-  Handle<Value> RECV_MESSAGE(
-      NanNew<Uint32, uint32_t>(GRPC_OP_RECV_MESSAGE));
-  op_type->Set(NanNew("RECV_MESSAGE"), RECV_MESSAGE);
-  Handle<Value> RECV_STATUS_ON_CLIENT(
-      NanNew<Uint32, uint32_t>(GRPC_OP_RECV_STATUS_ON_CLIENT));
-  op_type->Set(NanNew("RECV_STATUS_ON_CLIENT"), RECV_STATUS_ON_CLIENT);
-  Handle<Value> RECV_CLOSE_ON_SERVER(
-      NanNew<Uint32, uint32_t>(GRPC_OP_RECV_CLOSE_ON_SERVER));
-  op_type->Set(NanNew("RECV_CLOSE_ON_SERVER"), RECV_CLOSE_ON_SERVER);
+void InitOpTypeConstants(Local<Object> exports) {
+  Nan::HandleScope scope;
+  Local<Object> op_type = Nan::New<Object>();
+  Nan::Set(exports, Nan::New("opType").ToLocalChecked(), op_type);
+  Local<Value> SEND_INITIAL_METADATA(
+      Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_INITIAL_METADATA));
+  Nan::Set(op_type, Nan::New("SEND_INITIAL_METADATA").ToLocalChecked(),
+           SEND_INITIAL_METADATA);
+  Local<Value> SEND_MESSAGE(
+      Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_MESSAGE));
+  Nan::Set(op_type, Nan::New("SEND_MESSAGE").ToLocalChecked(), SEND_MESSAGE);
+  Local<Value> SEND_CLOSE_FROM_CLIENT(
+      Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_CLOSE_FROM_CLIENT));
+  Nan::Set(op_type, Nan::New("SEND_CLOSE_FROM_CLIENT").ToLocalChecked(),
+           SEND_CLOSE_FROM_CLIENT);
+  Local<Value> SEND_STATUS_FROM_SERVER(
+      Nan::New<Uint32, uint32_t>(GRPC_OP_SEND_STATUS_FROM_SERVER));
+  Nan::Set(op_type, Nan::New("SEND_STATUS_FROM_SERVER").ToLocalChecked(),
+           SEND_STATUS_FROM_SERVER);
+  Local<Value> RECV_INITIAL_METADATA(
+      Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_INITIAL_METADATA));
+  Nan::Set(op_type, Nan::New("RECV_INITIAL_METADATA").ToLocalChecked(),
+           RECV_INITIAL_METADATA);
+  Local<Value> RECV_MESSAGE(
+      Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_MESSAGE));
+  Nan::Set(op_type, Nan::New("RECV_MESSAGE").ToLocalChecked(), RECV_MESSAGE);
+  Local<Value> RECV_STATUS_ON_CLIENT(
+      Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_STATUS_ON_CLIENT));
+  Nan::Set(op_type, Nan::New("RECV_STATUS_ON_CLIENT").ToLocalChecked(),
+           RECV_STATUS_ON_CLIENT);
+  Local<Value> RECV_CLOSE_ON_SERVER(
+      Nan::New<Uint32, uint32_t>(GRPC_OP_RECV_CLOSE_ON_SERVER));
+  Nan::Set(op_type, Nan::New("RECV_CLOSE_ON_SERVER").ToLocalChecked(),
+           RECV_CLOSE_ON_SERVER);
 }
 
-void InitPropagateConstants(Handle<Object> exports) {
-  NanScope();
-  Handle<Object> propagate = NanNew<Object>();
-  exports->Set(NanNew("propagate"), propagate);
-  Handle<Value> DEADLINE(NanNew<Uint32, uint32_t>(GRPC_PROPAGATE_DEADLINE));
-  propagate->Set(NanNew("DEADLINE"), DEADLINE);
-  Handle<Value> CENSUS_STATS_CONTEXT(
-      NanNew<Uint32, uint32_t>(GRPC_PROPAGATE_CENSUS_STATS_CONTEXT));
-  propagate->Set(NanNew("CENSUS_STATS_CONTEXT"), CENSUS_STATS_CONTEXT);
-  Handle<Value> CENSUS_TRACING_CONTEXT(
-      NanNew<Uint32, uint32_t>(GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT));
-  propagate->Set(NanNew("CENSUS_TRACING_CONTEXT"), CENSUS_TRACING_CONTEXT);
-  Handle<Value> CANCELLATION(
-      NanNew<Uint32, uint32_t>(GRPC_PROPAGATE_CANCELLATION));
-  propagate->Set(NanNew("CANCELLATION"), CANCELLATION);
-  Handle<Value> DEFAULTS(NanNew<Uint32, uint32_t>(GRPC_PROPAGATE_DEFAULTS));
-  propagate->Set(NanNew("DEFAULTS"), DEFAULTS);
+void InitPropagateConstants(Local<Object> exports) {
+  Nan::HandleScope scope;
+  Local<Object> propagate = Nan::New<Object>();
+  Nan::Set(exports, Nan::New("propagate").ToLocalChecked(), propagate);
+  Local<Value> DEADLINE(Nan::New<Uint32, uint32_t>(GRPC_PROPAGATE_DEADLINE));
+  Nan::Set(propagate, Nan::New("DEADLINE").ToLocalChecked(), DEADLINE);
+  Local<Value> CENSUS_STATS_CONTEXT(
+      Nan::New<Uint32, uint32_t>(GRPC_PROPAGATE_CENSUS_STATS_CONTEXT));
+  Nan::Set(propagate, Nan::New("CENSUS_STATS_CONTEXT").ToLocalChecked(),
+           CENSUS_STATS_CONTEXT);
+  Local<Value> CENSUS_TRACING_CONTEXT(
+      Nan::New<Uint32, uint32_t>(GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT));
+  Nan::Set(propagate, Nan::New("CENSUS_TRACING_CONTEXT").ToLocalChecked(),
+           CENSUS_TRACING_CONTEXT);
+  Local<Value> CANCELLATION(
+      Nan::New<Uint32, uint32_t>(GRPC_PROPAGATE_CANCELLATION));
+  Nan::Set(propagate, Nan::New("CANCELLATION").ToLocalChecked(), CANCELLATION);
+  Local<Value> DEFAULTS(Nan::New<Uint32, uint32_t>(GRPC_PROPAGATE_DEFAULTS));
+  Nan::Set(propagate, Nan::New("DEFAULTS").ToLocalChecked(), DEFAULTS);
 }
 
-void InitConnectivityStateConstants(Handle<Object> exports) {
-  NanScope();
-  Handle<Object> channel_state = NanNew<Object>();
-  exports->Set(NanNew("connectivityState"), channel_state);
-  Handle<Value> IDLE(NanNew<Uint32, uint32_t>(GRPC_CHANNEL_IDLE));
-  channel_state->Set(NanNew("IDLE"), IDLE);
-  Handle<Value> CONNECTING(NanNew<Uint32, uint32_t>(GRPC_CHANNEL_CONNECTING));
-  channel_state->Set(NanNew("CONNECTING"), CONNECTING);
-  Handle<Value> READY(NanNew<Uint32, uint32_t>(GRPC_CHANNEL_READY));
-  channel_state->Set(NanNew("READY"), READY);
-  Handle<Value> TRANSIENT_FAILURE(
-      NanNew<Uint32, uint32_t>(GRPC_CHANNEL_TRANSIENT_FAILURE));
-  channel_state->Set(NanNew("TRANSIENT_FAILURE"), TRANSIENT_FAILURE);
-  Handle<Value> FATAL_FAILURE(
-      NanNew<Uint32, uint32_t>(GRPC_CHANNEL_FATAL_FAILURE));
-  channel_state->Set(NanNew("FATAL_FAILURE"), FATAL_FAILURE);
+void InitConnectivityStateConstants(Local<Object> exports) {
+  Nan::HandleScope scope;
+  Local<Object> channel_state = Nan::New<Object>();
+  Nan::Set(exports, Nan::New("connectivityState").ToLocalChecked(),
+           channel_state);
+  Local<Value> IDLE(Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_IDLE));
+  Nan::Set(channel_state, Nan::New("IDLE").ToLocalChecked(), IDLE);
+  Local<Value> CONNECTING(Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_CONNECTING));
+  Nan::Set(channel_state, Nan::New("CONNECTING").ToLocalChecked(), CONNECTING);
+  Local<Value> READY(Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_READY));
+  Nan::Set(channel_state, Nan::New("READY").ToLocalChecked(), READY);
+  Local<Value> TRANSIENT_FAILURE(
+      Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_TRANSIENT_FAILURE));
+  Nan::Set(channel_state, Nan::New("TRANSIENT_FAILURE").ToLocalChecked(),
+           TRANSIENT_FAILURE);
+  Local<Value> FATAL_FAILURE(
+      Nan::New<Uint32, uint32_t>(GRPC_CHANNEL_FATAL_FAILURE));
+  Nan::Set(channel_state, Nan::New("FATAL_FAILURE").ToLocalChecked(),
+           FATAL_FAILURE);
 }
 
-void InitWriteFlags(Handle<Object> exports) {
-  NanScope();
-  Handle<Object> write_flags = NanNew<Object>();
-  exports->Set(NanNew("writeFlags"), write_flags);
-  Handle<Value> BUFFER_HINT(NanNew<Uint32, uint32_t>(GRPC_WRITE_BUFFER_HINT));
-  write_flags->Set(NanNew("BUFFER_HINT"), BUFFER_HINT);
-  Handle<Value> NO_COMPRESS(NanNew<Uint32, uint32_t>(GRPC_WRITE_NO_COMPRESS));
-  write_flags->Set(NanNew("NO_COMPRESS"), NO_COMPRESS);
+void InitWriteFlags(Local<Object> exports) {
+  Nan::HandleScope scope;
+  Local<Object> write_flags = Nan::New<Object>();
+  Nan::Set(exports, Nan::New("writeFlags").ToLocalChecked(), write_flags);
+  Local<Value> BUFFER_HINT(Nan::New<Uint32, uint32_t>(GRPC_WRITE_BUFFER_HINT));
+  Nan::Set(write_flags, Nan::New("BUFFER_HINT").ToLocalChecked(), BUFFER_HINT);
+  Local<Value> NO_COMPRESS(Nan::New<Uint32, uint32_t>(GRPC_WRITE_NO_COMPRESS));
+  Nan::Set(write_flags, Nan::New("NO_COMPRESS").ToLocalChecked(), NO_COMPRESS);
 }
 
-void init(Handle<Object> exports) {
-  NanScope();
+void init(Local<Object> exports) {
+  Nan::HandleScope scope;
   grpc_init();
   InitStatusConstants(exports);
   InitCallErrorConstants(exports);

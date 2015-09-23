@@ -72,6 +72,8 @@ _SETUP_REQUIRES = (
 _INSTALL_REQUIRES = (
     'oauth2client>=1.4.7',
     'grpcio>=0.11.0b0',
+    # TODO(issue 3321): Unpin protobuf dependency.
+    'protobuf==3.0.0a3',
 )
 
 _COMMAND_CLASS = {
