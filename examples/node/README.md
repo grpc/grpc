@@ -5,21 +5,11 @@ PREREQUISITES
 -------------
 
 - `node`: This requires Node 10.x or greater.
-- [homebrew][] on Mac OS X, [linuxbrew][] on Linux.  These simplify the installation of the gRPC C core.
+- [homebrew][] on Mac OS X.  This simplifies the.
 
 INSTALL
 -------
- - On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][]. Run the following command to install gRPC Node.js.
-
-  ```sh
-  $ curl -fsSL https://goo.gl/getgrpc | bash -s nodejs
-  ```
-  This will download and run the [gRPC install script][], then install the latest version of gRPC Nodejs npm package.
- - Clone this repository
-
-   ```sh
-   $ git clone https://github.com/grpc/grpc.git
-   ```
+ - [Install gRPC Core][]
 
  - Install this package's dependencies
 
@@ -55,6 +45,5 @@ TUTORIAL
 You can find a more detailed tutorial in [gRPC Basics: Node.js][]
 
 [homebrew]:http://brew.sh
-[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
-[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
-[gRPC Basics: Node.js]:https://github.com/grpc/grpc/blob/master/examples/node/route_guide/README.md
+[Install gRPC Core]:../../INSTALL
+[gRPC Basics: Node.js]:http://www.grpc.io/docs/tutorials/basic/node.html
