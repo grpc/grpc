@@ -33,6 +33,8 @@
 
 #include "src/core/iomgr/exec_ctx.h"
 
+#include <grpc/support/log.h>
+
 void grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   while (!grpc_closure_list_empty(exec_ctx->closure_list)) {
     grpc_closure *c = exec_ctx->closure_list.head;
