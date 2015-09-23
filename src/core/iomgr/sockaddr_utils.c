@@ -160,7 +160,8 @@ int grpc_sockaddr_to_string(char **out, const struct sockaddr *addr,
   }
   /* Windows inet_ntop wants a mutable ip pointer */
   if (ip != NULL &&
-      inet_ntop(addr->sa_family, (void*)ip, ntop_buf, sizeof(ntop_buf)) != NULL) {
+      inet_ntop(addr->sa_family, (void *)ip, ntop_buf, sizeof(ntop_buf)) !=
+          NULL) {
     ret = gpr_join_host_port(out, ntop_buf, port);
   } else {
     ret = gpr_asprintf(out, "(sockaddr family=%d)", addr->sa_family);

@@ -38,7 +38,7 @@
 
 /** Execution context.
  *  A bag of data that collects information along a callstack.
- *  Generally created at public API entry points, and passed down as 
+ *  Generally created at public API entry points, and passed down as
  *  pointer to child functions that manipulate it.
  *
  *  Specific responsibilities (this may grow in the future):
@@ -48,7 +48,7 @@
  *
  *  CONVENTIONS:
  *  Instance of this must ALWAYS be constructed on the stack, never
- *  heap allocated. Instances and pointers to them must always be called 
+ *  heap allocated. Instances and pointers to them must always be called
  *  exec_ctx. Instances are always passed as the first argument
  *  to a function that takes it, and always as a pointer (grpc_exec_ctx
  *  is never copied).

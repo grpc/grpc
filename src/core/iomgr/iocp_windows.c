@@ -169,8 +169,7 @@ void grpc_iocp_add_socket(grpc_winsocket *socket) {
    the callback now.
    -) The IOCP hasn't completed yet, and we're queuing it for later. */
 static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
-                                  grpc_winsocket *socket,
-                                  grpc_closure *closure,
+                                  grpc_winsocket *socket, grpc_closure *closure,
                                   grpc_winsocket_callback_info *info) {
   int run_now = 0;
   GPR_ASSERT(info->closure == NULL);
@@ -191,8 +190,7 @@ void grpc_socket_notify_on_write(grpc_exec_ctx *exec_ctx,
   socket_notify_on_iocp(exec_ctx, socket, closure, &socket->write_info);
 }
 
-void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx,
-                                grpc_winsocket *socket,
+void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
                                 grpc_closure *closure) {
   socket_notify_on_iocp(exec_ctx, socket, closure, &socket->read_info);
 }

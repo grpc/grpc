@@ -120,7 +120,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, int from_iocp) {
 /* Tries to issue one async connection, then schedules both an IOCP
    notification request for the connection, and one timeout alert. */
 void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
-                             grpc_endpoint **endpoint, 
+                             grpc_endpoint **endpoint,
                              grpc_pollset_set *interested_parties,
                              const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline) {
@@ -179,7 +179,8 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
 
   socket = grpc_winsocket_create(sock, "client");
   info = &socket->write_info;
-  success = ConnectEx(sock, addr, (int)addr_len, NULL, 0, NULL, &info->overlapped);
+  success =
+      ConnectEx(sock, addr, (int)addr_len, NULL, 0, NULL, &info->overlapped);
 
   /* It wouldn't be unusual to get a success immediately. But we'll still get
      an IOCP notification, so let's ignore it. */
