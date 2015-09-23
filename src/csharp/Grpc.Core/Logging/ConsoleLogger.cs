@@ -79,48 +79,72 @@ namespace Grpc.Core.Logging
         }
 
         /// <summary>Logs a message with severity Debug.</summary>
-        public void Debug(string message, params object[] formatArgs)
+        public void Debug(string message)
         {
-            Log("D", message, formatArgs);
+            Log("D", message);
+        }
+
+        /// <summary>Logs a formatted message with severity Debug.</summary>
+        public void Debug(string format, params object[] formatArgs)
+        {
+            Debug(string.Format(format, formatArgs));
         }
 
         /// <summary>Logs a message with severity Info.</summary>
-        public void Info(string message, params object[] formatArgs)
+        public void Info(string message)
         {
-            Log("I", message, formatArgs);
+            Log("I", message);
+        }
+
+        /// <summary>Logs a formatted message with severity Info.</summary>
+        public void Info(string format, params object[] formatArgs)
+        {
+            Info(string.Format(format, formatArgs));
         }
 
         /// <summary>Logs a message with severity Warning.</summary>
-        public void Warning(string message, params object[] formatArgs)
+        public void Warning(string message)
         {
-            Log("W", message, formatArgs);
+            Log("W", message);
+        }
+
+        /// <summary>Logs a formatted message with severity Warning.</summary>
+        public void Warning(string format, params object[] formatArgs)
+        {
+            Warning(string.Format(format, formatArgs));
         }
 
         /// <summary>Logs a message and an associated exception with severity Warning.</summary>
-        public void Warning(Exception exception, string message, params object[] formatArgs)
+        public void Warning(Exception exception, string message)
         {
-            Log("W", message + " " + exception, formatArgs);
+            Warning(message + " " + exception);
         }
 
         /// <summary>Logs a message with severity Error.</summary>
-        public void Error(string message, params object[] formatArgs)
+        public void Error(string message)
         {
-            Log("E", message, formatArgs);
+            Log("E", message);
+        }
+
+        /// <summary>Logs a formatted message with severity Error.</summary>
+        public void Error(string format, params object[] formatArgs)
+        {
+            Error(string.Format(format, formatArgs));
         }
 
         /// <summary>Logs a message and an associated exception with severity Error.</summary>
-        public void Error(Exception exception, string message, params object[] formatArgs)
+        public void Error(Exception exception, string message)
         {
-            Log("E", message + " " + exception, formatArgs);
+            Error(message + " " + exception);
         }
 
-        private void Log(string severityString, string message, object[] formatArgs)
+        private void Log(string severityString, string message)
         {
             Console.Error.WriteLine("{0}{1} {2}{3}",
                 severityString,
                 DateTime.Now,
                 forTypeString,
-                string.Format(message, formatArgs));
+                message);
         }
     }
 }
