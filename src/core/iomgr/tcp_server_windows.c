@@ -380,8 +380,9 @@ static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
     GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
     /* append it to the list under a lock */
     if (s->nports == s->port_capacity) {
-      s->port_capacity *= 2;
-      s->ports = gpr_realloc(s->ports, sizeof(server_port) * s->port_capacity);
+      /* too many ports, and we need to store their address in a closure */
+      /* TODO(ctiller): make server_port a linked list */
+      abort(); 
     }
     sp = &s->ports[s->nports++];
     sp->server = s;
@@ -389,6 +390,7 @@ static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
     sp->shutting_down = 0;
     sp->AcceptEx = AcceptEx;
     sp->new_socket = INVALID_SOCKET;
+    grpc_closure_init(&sp->on_accept, on_accept, sp);
     GPR_ASSERT(sp->socket);
     gpr_mu_unlock(&s->mu);
   }

@@ -64,6 +64,7 @@ static void do_iocp_work(grpc_exec_ctx *exec_ctx) {
   LPOVERLAPPED overlapped;
   grpc_winsocket *socket;
   grpc_winsocket_callback_info *info;
+  grpc_closure *closure = NULL;
   success = GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key,
                                       &overlapped, INFINITE);
   /* success = 0 and overlapped = NULL means the deadline got attained.
@@ -97,12 +98,15 @@ static void do_iocp_work(grpc_exec_ctx *exec_ctx) {
   GPR_ASSERT(!info->has_pending_iocp);
   gpr_mu_lock(&socket->state_mu);
   if (info->closure) {
-    grpc_exec_ctx_enqueue(exec_ctx, info->closure, 1);
+    closure = info->closure;
     info->closure = NULL;
   } else {
     info->has_pending_iocp = 1;
   }
   gpr_mu_unlock(&socket->state_mu);
+  if (closure) {
+    closure->cb(exec_ctx, closure->cb_arg, 1);
+  }
 }
 
 static void iocp_loop(void *p) {

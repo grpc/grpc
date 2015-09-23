@@ -394,7 +394,7 @@ grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   gpr_mu_init(&tcp->mu);
   gpr_ref_init(&tcp->refcount, 1);
   grpc_closure_init(&tcp->on_read, on_read, tcp);
-  grpc_closure_init(&tcp->on_read, on_write, tcp);
+  grpc_closure_init(&tcp->on_write, on_write, tcp);
   tcp->peer_string = gpr_strdup(peer_string);
   return &tcp->base;
 }

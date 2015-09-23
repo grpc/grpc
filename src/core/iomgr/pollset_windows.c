@@ -115,6 +115,11 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     pollset->kicked_without_pollers = 0;
   }
 done:
+  if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
+    gpr_mu_unlock(&pollset->mu);
+    grpc_exec_ctx_flush(exec_ctx);
+    gpr_mu_lock(&pollset->mu);
+  }
   gpr_cv_destroy(&worker->cv);
   if (added_worker) {
     remove_worker(pollset, worker);
