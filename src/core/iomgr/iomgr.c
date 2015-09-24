@@ -105,27 +105,24 @@ void grpc_iomgr_shutdown(void) {
     if (grpc_alarm_check(&exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC),
                          NULL)) {
       gpr_mu_unlock(&g_mu);
-      grpc_exec_ctx_finish(&exec_ctx);
+      grpc_exec_ctx_flush(&exec_ctx);
       gpr_mu_lock(&g_mu);
       continue;
     }
     if (g_root_object.next != &g_root_object) {
-      int timeout = 0;
       gpr_timespec short_deadline = gpr_time_add(
           gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(100, GPR_TIMESPAN));
       if (gpr_cv_wait(&g_rcv, &g_mu, short_deadline)) {
         if (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), shutdown_deadline) > 0) {
-          timeout = 1;
+          if (g_root_object.next != &g_root_object) {
+            gpr_log(GPR_DEBUG,
+                    "Failed to free %d iomgr objects before shutdown deadline: "
+                    "memory leaks are likely",
+                    count_objects());
+            dump_objects("LEAKED");
+          }
           break;
         }
-      }
-      if (timeout && g_root_object.next != &g_root_object) {
-        gpr_log(GPR_DEBUG,
-                "Failed to free %d iomgr objects before shutdown deadline: "
-                "memory leaks are likely",
-                count_objects());
-        dump_objects("LEAKED");
-        break;
       }
     }
   }
