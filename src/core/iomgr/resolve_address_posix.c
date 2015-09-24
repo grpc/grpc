@@ -51,6 +51,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
 
 typedef struct {
   char *name;
@@ -110,8 +111,8 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
   if (s != 0) {
     /* Retry if well-known service name is recognized */
     char *svc[][2] = {{"http", "80"}, {"https", "443"}};
-    int i;
-    for (i = 0; i < (int)(sizeof(svc) / sizeof(svc[0])); i++) {
+    size_t i;
+    for (i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
       if (strcmp(port, svc[i][0]) == 0) {
         GRPC_IOMGR_START_BLOCKING_REGION;
         s = getaddrinfo(host, svc[i][1], &hints, &result);
