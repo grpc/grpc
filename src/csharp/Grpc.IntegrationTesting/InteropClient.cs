@@ -116,6 +116,24 @@ namespace Grpc.IntegrationTesting
 
         private async Task Run()
         {
+            var credentials = await CreateCredentialsAsync();
+            
+            List<ChannelOption> channelOptions = null;
+            if (!string.IsNullOrEmpty(options.ServerHostOverride))
+            {
+                channelOptions = new List<ChannelOption>
+                {
+                    new ChannelOption(ChannelOptions.SslTargetNameOverride, options.ServerHostOverride)
+                };
+            }
+            var channel = new Channel(options.ServerHost, options.ServerPort, credentials, channelOptions);
+            TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
+            await RunTestCaseAsync(client, options);
+            await channel.ShutdownAsync();
+        }
+
+        private async Task<Credentials> CreateCredentialsAsync()
+        {
             var credentials = options.UseTls ? TestCredentials.CreateTestClientCredentials(options.UseTestCa) : Credentials.Insecure;
 
             if (options.TestCase == "jwt_token_creds")
@@ -131,19 +149,7 @@ namespace Grpc.IntegrationTesting
                 Assert.IsFalse(googleCredential.IsCreateScopedRequired);
                 credentials = CompositeCredentials.Create(googleCredential.ToGrpcCredentials(), credentials);
             }
-            
-            List<ChannelOption> channelOptions = null;
-            if (!string.IsNullOrEmpty(options.ServerHostOverride))
-            {
-                channelOptions = new List<ChannelOption>
-                {
-                    new ChannelOption(ChannelOptions.SslTargetNameOverride, options.ServerHostOverride)
-                };
-            }
-            var channel = new Channel(options.ServerHost, options.ServerPort, credentials, channelOptions);
-            TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
-            await RunTestCaseAsync(client, options);
-            await channel.ShutdownAsync();
+            return credentials;
         }
 
         private async Task RunTestCaseAsync(TestService.TestServiceClient client, ClientOptions options)
