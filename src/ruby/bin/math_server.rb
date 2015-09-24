@@ -195,7 +195,7 @@ def main
     s.add_http2_port(options['host'], test_server_creds)
     GRPC.logger.info("... running securely on #{options['host']}")
   else
-    s.add_http2_port(options['host'])
+    s.add_http2_port(options['host'], :this_port_is_insecure)
     GRPC.logger.info("... running insecurely on #{options['host']}")
   end
 
