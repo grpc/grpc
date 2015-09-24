@@ -1003,6 +1003,7 @@ targets:
   deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
 - name: zookeeper_test
   build: test
+  run: false
   language: c++
   src: [test/cpp/end2end/zookeeper_test.cc]
   deps: [grpc++_test_util, grpc_test_util, grpc++, grpc_zookeeper, grpc, gpr_test_util,
