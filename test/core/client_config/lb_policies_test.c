@@ -609,26 +609,57 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
                                        const int *actual_connection_sequence,
                                        const size_t num_iters) {
   int *expected_connection_sequence;
-  size_t i;
+  size_t i, j, unique_seq_last_idx, unique_seq_first_idx;
   const size_t expected_seq_length = f->num_servers;
+  uint8_t *seen_elements;
 
   /* verify conn. seq. expectation */
-  /* get the first sequence of "num_servers" elements */
+  /* get the first unique run of length "num_servers". */
   expected_connection_sequence = gpr_malloc(sizeof(int) * expected_seq_length);
-  memcpy(expected_connection_sequence, actual_connection_sequence + 4,
+  seen_elements = gpr_malloc(sizeof(int) * expected_seq_length);
+
+  unique_seq_last_idx = ~(size_t)0;
+
+  memset(seen_elements, 0, sizeof(uint8_t) * expected_seq_length);
+  for (i = 0; i < num_iters; i++) {
+    if (actual_connection_sequence[i] < 0 ||
+        seen_elements[actual_connection_sequence[i]] != 0) {
+      /* if anything breaks the uniqueness of the run, back to square zero */
+      memset(seen_elements, 0, sizeof(uint8_t) * expected_seq_length);
+      continue;
+    }
+    seen_elements[actual_connection_sequence[i]] = 1;
+    for (j = 0; j < expected_seq_length; j++) {
+      if (seen_elements[j] == 0) break;
+    }
+    if (j == expected_seq_length) { /* seen all the elements */
+      unique_seq_last_idx = i;
+      break;
+    }
+  }
+  /* make sure we found a valid run */
+  for (j = 0; j < expected_seq_length; j++) {
+    GPR_ASSERT(seen_elements[j] != 0);
+  }
+
+  GPR_ASSERT(unique_seq_last_idx != ~(size_t)0);
+
+  unique_seq_first_idx = (unique_seq_last_idx - expected_seq_length + 1);
+  memcpy(expected_connection_sequence,
+         actual_connection_sequence + unique_seq_first_idx,
          sizeof(int) * expected_seq_length);
 
   /* first iteration succeeds */
   GPR_ASSERT(actual_connection_sequence[0] != -1);
+  /* then we fail for a while... */
+  GPR_ASSERT(actual_connection_sequence[1] == -1);
+  /* ... but should be up at "unique_seq_first_idx" */
+  GPR_ASSERT(actual_connection_sequence[unique_seq_first_idx] != -1);
 
-  /* back up on the third (or maybe fourth) iteration */
-  i = 3;
-  if (actual_connection_sequence[i] == -1) {
-    i = 4;
-  }
-  for (; i < num_iters; i++) {
+  for (j = 0, i = unique_seq_first_idx; i < num_iters; i++) {
     const int actual = actual_connection_sequence[i];
-    const int expected = expected_connection_sequence[i % expected_seq_length];
+    const int expected =
+        expected_connection_sequence[j++ % expected_seq_length];
     if (actual != expected) {
       gpr_log(GPR_ERROR, "FAILURE: expected %d, actual %d at iter %d", expected,
               actual, i);
@@ -642,6 +673,7 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   /* things are fine once the servers are brought back up */
   assert_channel_connectivity(client, 1, GRPC_CHANNEL_READY);
   gpr_free(expected_connection_sequence);
+  gpr_free(seen_elements);
 }
 
 int main(int argc, char **argv) {
