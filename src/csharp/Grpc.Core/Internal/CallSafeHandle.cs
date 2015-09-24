@@ -99,6 +99,9 @@ namespace Grpc.Core.Internal
             BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern GRPCCallError grpcsharp_call_set_credentials(CallSafeHandle call, CredentialsSafeHandle credentials);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern CStringSafeHandle grpcsharp_call_get_peer(CallSafeHandle call);
 
         [DllImport("grpc_csharp_ext.dll")]
@@ -111,6 +114,11 @@ namespace Grpc.Core.Internal
         public void SetCompletionRegistry(CompletionRegistry completionRegistry)
         {
             this.completionRegistry = completionRegistry;
+        }
+
+        public void SetCredentials(CredentialsSafeHandle credentials)
+        {
+            grpcsharp_call_set_credentials(this, credentials).CheckOk();
         }
 
         public void StartUnary(UnaryResponseClientHandler callback, byte[] payload, MetadataArraySafeHandle metadataArray, WriteFlags writeFlags)

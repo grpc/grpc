@@ -54,9 +54,7 @@ namespace Grpc.IntegrationTesting
         [TestFixtureSetUp]
         public void Init()
         {
-            var serverCredentials = new SslServerCredentials(new[] { new KeyCertificatePair(
-                File.ReadAllText(TestCredentials.ServerCertChainPath),
-                File.ReadAllText(TestCredentials.ServerPrivateKeyPath)) });
+            var serverCredentials = new SslServerCredentials(new[] { new KeyCertificatePair(File.ReadAllText(TestCredentials.ServerCertChainPath), File.ReadAllText(TestCredentials.ServerPrivateKeyPath)) });
             server = new Server
             {
                 Services = { TestService.BindService(new TestServiceImpl()) },
@@ -77,8 +75,7 @@ namespace Grpc.IntegrationTesting
 
             var clientCredentials = CompositeCredentials.Create(
                 new SslCredentials(File.ReadAllText(TestCredentials.ClientCertAuthorityPath)),
-                new MetadataCredentials(asyncAuthInterceptor)
-            );
+                new MetadataCredentials(asyncAuthInterceptor));
             channel = new Channel(Host, server.Ports.Single().BoundPort, clientCredentials, options);
             client = TestService.NewClient(channel);
         }

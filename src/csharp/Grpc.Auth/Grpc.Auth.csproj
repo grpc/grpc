@@ -78,6 +78,7 @@
     <Compile Include="..\Grpc.Core\Version.cs">
       <Link>Version.cs</Link>
     </Compile>
+    <Compile Include="GrpcCredentials.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="AuthInterceptors.cs" />
   </ItemGroup>

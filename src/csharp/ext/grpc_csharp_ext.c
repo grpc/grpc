@@ -785,6 +785,11 @@ grpcsharp_call_send_initial_metadata(grpc_call *call,
                                NULL);
 }
 
+GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_set_credentials(grpc_call *call,
+                                                            grpc_credentials *creds) {
+	return grpc_call_set_credentials(call, creds);
+}
+
 /* Server */
 
 GPR_EXPORT grpc_server *GPR_CALLTYPE
