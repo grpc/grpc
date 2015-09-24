@@ -144,7 +144,7 @@ static int on_read(grpc_tcp *tcp, int success) {
   int do_abort = 0;
 
   if (success) {
-    if (socket->read_info.wsa_error != 0) {
+    if (socket->read_info.wsa_error != 0 && !tcp->shutting_down) {
       if (socket->read_info.wsa_error != WSAECONNRESET) {
         char *utf8_message = gpr_format_message(info->wsa_error);
         gpr_log(GPR_ERROR, "ReadFile overlapped error: %s", utf8_message);
@@ -153,7 +153,7 @@ static int on_read(grpc_tcp *tcp, int success) {
       success = 0;
       gpr_slice_unref(tcp->read_slice);
     } else {
-      if (info->bytes_transfered != 0) {
+      if (info->bytes_transfered != 0 && !tcp->shutting_down) {
         sub = gpr_slice_sub_no_ref(tcp->read_slice, 0, info->bytes_transfered);
         gpr_slice_buffer_add(tcp->read_slices, sub);
         success = 1;
