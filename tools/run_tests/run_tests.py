@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -120,6 +120,18 @@ class ValgrindConfig(object):
                           hash_targets=None)
 
 
+def get_c_tests(travis, test_lang) :
+  out = []
+  platforms_str = 'ci_platforms' if travis else 'platforms'
+  with open('tools/run_tests/tests.json') as f:
+    js = json.load(f)
+    return [tgt
+            for tgt in js
+            if tgt['language'] == test_lang and
+                platform_string() in tgt[platforms_str] and
+                not (travis and tgt['flaky'])]
+
+
 class CLanguage(object):
 
   def __init__(self, make_target, test_lang):
@@ -129,16 +141,9 @@ class CLanguage(object):
 
   def test_specs(self, config, travis):
     out = []
-    with open('tools/run_tests/tests.json') as f:
-      js = json.load(f)
-      platforms_str = 'ci_platforms' if travis else 'platforms'
-      binaries = [tgt
-                  for tgt in js
-                  if tgt['language'] == self.test_lang and
-                      config.build_config not in tgt['exclude_configs'] and
-                      platform_string() in tgt[platforms_str]]
+    binaries = get_c_tests(travis, self.test_lang)
     for target in binaries:
-      if travis and target['flaky']:
+      if config.build_config in target['exclude_configs']:
         continue
       if self.platform == 'windows':
         binary = 'vsprojects/%s/%s.exe' % (
@@ -157,8 +162,14 @@ class CLanguage(object):
       return ['buildtests_%s' % self.make_target]
     return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
+  def pre_build_steps(self):
+    return []
+
   def build_steps(self):
     return []
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return True
@@ -167,17 +178,61 @@ class CLanguage(object):
     return self.make_target
 
 
+def gyp_test_paths(travis, config=None):
+  binaries = get_c_tests(travis, 'c')
+  out = []
+  for target in binaries:
+    if config is not None and config.build_config in target['exclude_configs']:
+        continue
+    binary = 'out/Debug/%s' % target['name']
+    out.append(binary)
+  return sorted(out)
+
+
+class GYPCLanguage(object):
+
+  def test_specs(self, config, travis):
+    return [config.job_spec([binary], [binary])
+            for binary in gyp_test_paths(travis, config)]
+
+  def pre_build_steps(self):
+    return [['gyp', '--depth=.', '--suffix=-gyp', 'grpc.gyp']]
+
+  def make_targets(self):
+    # HACK(ctiller): force fling_client and fling_server to be built, as fling_test
+    # needs these
+    return gyp_test_paths(False) + ['fling_client', 'fling_server']
+
+  def build_steps(self):
+    return []
+
+  def makefile_name(self):
+    return 'Makefile-gyp'
+
+  def supports_multi_config(self):
+    return False
+
+  def __str__(self):
+    return 'gyp'
+
+
 class NodeLanguage(object):
 
   def test_specs(self, config, travis):
     return [config.job_spec(['tools/run_tests/run_node.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     return ['static_c', 'shared_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return False
@@ -192,11 +247,17 @@ class PhpLanguage(object):
     return [config.job_spec(['src/php/bin/run_tests.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     return ['static_c', 'shared_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return False
@@ -221,6 +282,9 @@ class PythonLanguage(object):
         shortname='py.test',
     )]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
 
@@ -238,6 +302,9 @@ class PythonLanguage(object):
                        do_newline=True)
     return commands
 
+  def makefile_name(self):
+    return 'Makefile'
+
   def supports_multi_config(self):
     return False
 
@@ -251,11 +318,17 @@ class RubyLanguage(object):
     return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return False
@@ -282,6 +355,9 @@ class CSharpLanguage(object):
             environ=_FORCE_ENVIRON_FOR_WRAPPERS)
             for assembly in assemblies]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     # For Windows, this target doesn't really build anything,
     # everything is build by buildall script later.
@@ -296,6 +372,9 @@ class CSharpLanguage(object):
     else:
       return [['tools/run_tests/build_csharp.sh']]
 
+  def makefile_name(self):
+    return 'Makefile'
+
   def supports_multi_config(self):
     return False
 
@@ -309,11 +388,17 @@ class ObjCLanguage(object):
     return [config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     return ['grpc_objective_c_plugin', 'interop_server']
 
   def build_steps(self):
     return [['src/objective-c/tests/build_tests.sh']]
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return False
@@ -328,11 +413,17 @@ class Sanity(object):
     return [config.job_spec('tools/run_tests/run_sanity.sh', None),
             config.job_spec('tools/run_tests/check_sources_and_headers.py', None)]
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     return ['run_dep_checks']
 
   def build_steps(self):
     return []
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return False
@@ -346,11 +437,17 @@ class Build(object):
   def test_specs(self, config, travis):
     return []
 
+  def pre_build_steps(self):
+    return []
+
   def make_targets(self):
     return ['static']
 
   def build_steps(self):
     return []
+
+  def makefile_name(self):
+    return 'Makefile'
 
   def supports_multi_config(self):
     return True
@@ -382,6 +479,7 @@ _DEFAULT = ['opt']
 _LANGUAGES = {
     'c++': CLanguage('cxx', 'c++'),
     'c': CLanguage('c', 'c'),
+    'gyp': GYPCLanguage(),
     'node': NodeLanguage(),
     'php': PhpLanguage(),
     'python': PythonLanguage(),
@@ -397,12 +495,6 @@ _WINDOWS_CONFIG = {
     'opt': 'Release',
     }
 
-# parse command line
-argp = argparse.ArgumentParser(description='Run grpc tests.')
-argp.add_argument('-c', '--config',
-                  choices=['all'] + sorted(_CONFIGS.keys()),
-                  nargs='+',
-                  default=_DEFAULT)
 
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
@@ -423,6 +515,13 @@ def runs_per_test_type(arg_str):
     except:
         msg = "'{}' isn't a positive integer or 'inf'".format(arg_str)
         raise argparse.ArgumentTypeError(msg)
+
+# parse command line
+argp = argparse.ArgumentParser(description='Run grpc tests.')
+argp.add_argument('-c', '--config',
+                  choices=['all'] + sorted(_CONFIGS.keys()),
+                  nargs='+',
+                  default=_DEFAULT)
 argp.add_argument('-n', '--runs_per_test', default=1, type=runs_per_test_type,
         help='A positive integer or "inf". If "inf", all tests will run in an '
              'infinite loop. Especially useful in combination with "-f"')
@@ -449,10 +548,47 @@ argp.add_argument('-S', '--stop_on_failure',
                   default=False,
                   action='store_const',
                   const=True)
+argp.add_argument('--use_docker',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help="Run all the tests under docker. That provides " +
+                  "additional isolation and prevents the need to installs " +
+                  "language specific prerequisites. Only available on Linux.")
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
 args = argp.parse_args()
+
+if args.use_docker:
+  if not args.travis:
+    print 'Seen --use_docker flag, will run tests under docker.'
+    print
+    print 'IMPORTANT: The changes you are testing need to be locally committed'
+    print 'because only the committed changes in the current branch will be'
+    print 'copied to the docker environment.'
+    time.sleep(5)
+
+  child_argv = [ arg for arg in sys.argv if not arg == '--use_docker' ]
+  run_tests_cmd = 'tools/run_tests/run_tests.py %s' % " ".join(child_argv[1:])
+
+  # TODO(jtattermusch): revisit if we need special handling for arch here
+  # set arch command prefix in case we are working with different arch.
+  arch_env = os.getenv('arch')
+  if arch_env:
+    run_test_cmd = 'arch %s %s' % (arch_env, run_test_cmd)
+
+  env = os.environ.copy()
+  env['RUN_TESTS_COMMAND'] = run_tests_cmd
+  if args.xml_report:
+    env['XML_REPORT'] = args.xml_report
+  if not args.travis:
+    env['TTY_FLAG'] = '-t'  # enables Ctrl-C when not on Jenkins.
+
+  subprocess.check_call(['tools/jenkins/build_docker_and_run_tests.sh'],
+                        shell=True,
+                        env=env)
+  sys.exit(0)
 
 # grab config
 run_configs = set(_CONFIGS[cfg]
@@ -476,33 +612,41 @@ if len(build_configs) > 1:
       sys.exit(1)
 
 if platform.system() == 'Windows':
-  def make_jobspec(cfg, targets):
+  def make_jobspec(cfg, targets, makefile='Makefile'):
     extra_args = []
     # better do parallel compilation
     extra_args.extend(["/m"])
     # disable PDB generation: it's broken, and we don't need it during CI
     extra_args.extend(["/p:GenerateDebugInformation=false", "/p:DebugInformationFormat=None"])
     return [
-      jobset.JobSpec(['vsprojects\\build.bat', 
-                      'vsprojects\\%s.sln' % target, 
+      jobset.JobSpec(['vsprojects\\build.bat',
+                      'vsprojects\\%s.sln' % target,
                       '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
                       extra_args,
                       shell=True, timeout_seconds=90*60)
       for target in targets]
 else:
-  def make_jobspec(cfg, targets):
+  def make_jobspec(cfg, targets, makefile='Makefile'):
     return [jobset.JobSpec([os.getenv('MAKE', 'make'),
+                            '-f', makefile,
                             '-j', '%d' % (multiprocessing.cpu_count() + 1),
                             'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
                                 args.slowdown,
                             'CONFIG=%s' % cfg] + targets,
                            timeout_seconds=30*60)]
+make_targets = {}
+for l in languages:
+  makefile = l.makefile_name()
+  make_targets[makefile] = make_targets.get(makefile, set()).union(
+      set(l.make_targets()))
 
-make_targets = list(set(itertools.chain.from_iterable(
-                                         l.make_targets() for l in languages)))
-build_steps = []
+build_steps = list(set(
+                   jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
+                   for cfg in build_configs
+                   for l in languages
+                   for cmdline in l.pre_build_steps()))
 if make_targets:
-  make_commands = itertools.chain.from_iterable(make_jobspec(cfg, make_targets) for cfg in build_configs)
+  make_commands = itertools.chain.from_iterable(make_jobspec(cfg, list(targets), makefile) for cfg in build_configs for (makefile, targets) in make_targets.iteritems())
   build_steps.extend(set(make_commands))
 build_steps.extend(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg})

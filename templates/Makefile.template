@@ -65,8 +65,11 @@
   endif
 
 
+  MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
   ifndef BUILDDIR
-  BUILDDIR = .
+  BUILDDIR_ABSOLUTE = $(patsubst %/,%,$(dir $(MAKEFILE_PATH)))
+  else
+  BUILDDIR_ABSOLUTE = $(abspath $(BUILDDIR))
   endif
 
   HAS_GCC = $(shell which gcc > /dev/null 2> /dev/null && echo true || echo false)
@@ -92,10 +95,10 @@
   endif
 
 
-  BINDIR = $(BUILDDIR)/bins
-  OBJDIR = $(BUILDDIR)/objs
-  LIBDIR = $(BUILDDIR)/libs
-  GENDIR = $(BUILDDIR)/gens
+  BINDIR = $(BUILDDIR_ABSOLUTE)/bins
+  OBJDIR = $(BUILDDIR_ABSOLUTE)/objs
+  LIBDIR = $(BUILDDIR_ABSOLUTE)/libs
+  GENDIR = $(BUILDDIR_ABSOLUTE)/gens
 
   # Configurations
 
@@ -1599,13 +1602,13 @@
   	$(Q) $(AR) rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(LIB${lib.name.upper()}_OBJS)
   % if lib.get('baselib', False):
   % if lib.get('secure', 'check') == True:
-  	$(Q) rm -rf tmp-merge-${lib.name}
-  	$(Q) mkdir tmp-merge-${lib.name}
-  	$(Q) ( cd tmp-merge-${lib.name} ; $(AR) x ../$(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
-  	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd tmp-merge-${lib.name} ; <%text>ar x ../$${l}</%text> ) ; done
-  	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge-${lib.name}/__.SYMDEF*
-  	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a tmp-merge-${lib.name}/*
-  	$(Q) rm -rf tmp-merge-${lib.name}
+  	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
+  	$(Q) mkdir $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
+  	$(Q) ( cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name} ; $(AR) x $(LIBDIR)/$(CONFIG)/lib${lib.name}.a )
+  	$(Q) for l in $(OPENSSL_MERGE_LIBS) ; do ( cd $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name} ; <%text>ar x $${l}</%text> ) ; done
+  	$(Q) rm -f $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/__.SYMDEF*
+  	$(Q) ar rcs $(LIBDIR)/$(CONFIG)/lib${lib.name}.a $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}/*
+  	$(Q) rm -rf $(BUILDDIR_ABSOLUTE)/tmp-merge-${lib.name}
   % endif
   % endif
   ifeq ($(SYSTEM),Darwin)

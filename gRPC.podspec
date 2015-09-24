@@ -36,17 +36,17 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  s.version  = '0.7.0'
+  s.version  = '0.11.0'
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'http://www.grpc.io'
   s.license  = 'New BSD'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   # s.source = { :git => 'https://github.com/grpc/grpc.git',
-  #              :tag => 'release-0_10_0-objectivec-0.6.0' }
+  #              :tag => 'release-0_11_0-objectivec-0.11.0' }
 
-  s.ios.deployment_target = '6.0'
-  s.osx.deployment_target = '10.8'
+  s.ios.deployment_target = '7.1'
+  s.osx.deployment_target = '10.9'
   s.requires_arc = true
 
   objc_dir = 'src/objective-c'
@@ -136,10 +136,10 @@ Pod::Spec.new do |s|
                       'src/core/security/auth_filters.h',
                       'src/core/security/base64.h',
                       'src/core/security/credentials.h',
+                      'src/core/security/handshake.h',
                       'src/core/security/json_token.h',
                       'src/core/security/jwt_verifier.h',
                       'src/core/security/secure_endpoint.h',
-                      'src/core/security/secure_transport_setup.h',
                       'src/core/security/security_connector.h',
                       'src/core/security/security_context.h',
                       'src/core/tsi/fake_transport_security.h',
@@ -159,7 +159,10 @@ Pod::Spec.new do |s|
                       'src/core/client_config/client_config.h',
                       'src/core/client_config/connector.h',
                       'src/core/client_config/lb_policies/pick_first.h',
+                      'src/core/client_config/lb_policies/round_robin.h',
                       'src/core/client_config/lb_policy.h',
+                      'src/core/client_config/lb_policy_factory.h',
+                      'src/core/client_config/lb_policy_registry.h',
                       'src/core/client_config/resolver.h',
                       'src/core/client_config/resolver_factory.h',
                       'src/core/client_config/resolver_registry.h',
@@ -265,10 +268,10 @@ Pod::Spec.new do |s|
                       'src/core/security/credentials_posix.c',
                       'src/core/security/credentials_win32.c',
                       'src/core/security/google_default_credentials.c',
+                      'src/core/security/handshake.c',
                       'src/core/security/json_token.c',
                       'src/core/security/jwt_verifier.c',
                       'src/core/security/secure_endpoint.c',
-                      'src/core/security/secure_transport_setup.c',
                       'src/core/security/security_connector.c',
                       'src/core/security/security_context.c',
                       'src/core/security/server_auth_filter.c',
@@ -291,7 +294,10 @@ Pod::Spec.new do |s|
                       'src/core/client_config/client_config.c',
                       'src/core/client_config/connector.c',
                       'src/core/client_config/lb_policies/pick_first.c',
+                      'src/core/client_config/lb_policies/round_robin.c',
                       'src/core/client_config/lb_policy.c',
+                      'src/core/client_config/lb_policy_factory.c',
+                      'src/core/client_config/lb_policy_registry.c',
                       'src/core/client_config/resolver.c',
                       'src/core/client_config/resolver_factory.c',
                       'src/core/client_config/resolver_registry.c',
@@ -410,10 +416,10 @@ Pod::Spec.new do |s|
                               'src/core/security/auth_filters.h',
                               'src/core/security/base64.h',
                               'src/core/security/credentials.h',
+                              'src/core/security/handshake.h',
                               'src/core/security/json_token.h',
                               'src/core/security/jwt_verifier.h',
                               'src/core/security/secure_endpoint.h',
-                              'src/core/security/secure_transport_setup.h',
                               'src/core/security/security_connector.h',
                               'src/core/security/security_context.h',
                               'src/core/tsi/fake_transport_security.h',
@@ -433,7 +439,10 @@ Pod::Spec.new do |s|
                               'src/core/client_config/client_config.h',
                               'src/core/client_config/connector.h',
                               'src/core/client_config/lb_policies/pick_first.h',
+                              'src/core/client_config/lb_policies/round_robin.h',
                               'src/core/client_config/lb_policy.h',
+                              'src/core/client_config/lb_policy_factory.h',
+                              'src/core/client_config/lb_policy_registry.h',
                               'src/core/client_config/resolver.h',
                               'src/core/client_config/resolver_factory.h',
                               'src/core/client_config/resolver_registry.h',
@@ -585,6 +594,6 @@ Pod::Spec.new do |s|
 
     ss.dependency 'gRPC/GRPCClient'
     ss.dependency 'gRPC/RxLibrary'
-    ss.dependency 'Protobuf', '~> 3.0.0-alpha-3'
+    ss.dependency 'Protobuf', '~> 3.0.0-alpha-4'
   end
 end

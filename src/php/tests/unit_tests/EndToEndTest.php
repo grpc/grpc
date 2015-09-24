@@ -204,11 +204,11 @@ class EndToEndTest extends PHPUnit_Framework_TestCase{
   }
 
   public function testWatchConnectivityStateFailed() {
-    $idle_state = $this->channel->getConnectivityState(true);
+    $idle_state = $this->channel->getConnectivityState();
     $this->assertTrue($idle_state == Grpc\CHANNEL_IDLE);
 
     $now = Grpc\Timeval::now();
-    $delta = new Grpc\Timeval(1);
+    $delta = new Grpc\Timeval(500000); // should timeout
     $deadline = $now->add($delta);
 
     $this->assertFalse($this->channel->watchConnectivityState(
