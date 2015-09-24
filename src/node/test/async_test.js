@@ -38,6 +38,7 @@ var assert = require('assert');
 var grpc = require('..');
 var math = grpc.load(__dirname + '/../examples/math.proto').math;
 
+
 /**
  * Client to use to make requests to a running server.
  */
@@ -50,7 +51,7 @@ var getServer = require('../examples/math_server.js');
 
 var server = getServer();
 
-describe('Math client', function() {
+describe('Async functionality', function() {
   before(function(done) {
     var port_num = server.bind('0.0.0.0:0',
                                grpc.ServerCredentials.createInsecure());
@@ -62,78 +63,35 @@ describe('Math client', function() {
   after(function() {
     server.forceShutdown();
   });
-  it('should handle a single request', function(done) {
-    var arg = {dividend: 7, divisor: 4};
-    math_client.div(arg, function handleDivResult(err, value) {
-      assert.ifError(err);
-      assert.equal(value.quotient, 1);
-      assert.equal(value.remainder, 3);
-      done();
-    });
-  });
-  it('should handle an error from a unary request', function(done) {
-    var arg = {dividend: 7, divisor: 0};
-    math_client.div(arg, function handleDivResult(err, value) {
-      assert(err);
-      done();
-    });
-  });
-  it('should handle a server streaming request', function(done) {
-    var call = math_client.fib({limit: 7});
-    var expected_results = [1, 1, 2, 3, 5, 8, 13];
-    var next_expected = 0;
-    call.on('data', function checkResponse(value) {
-      assert.equal(value.num, expected_results[next_expected]);
-      next_expected += 1;
-    });
-    call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, grpc.status.OK);
-      done();
-    });
-  });
-  it('should handle a client streaming request', function(done) {
+  it('should not hang', function(done) {
+    var chunkCount=0;
     var call = math_client.sum(function handleSumResult(err, value) {
       assert.ifError(err);
-      assert.equal(value.num, 21);
+      assert.equal(value.num, chunkCount);
     });
-    for (var i = 0; i < 7; i++) {
-      call.write({'num': i});
-    }
-    call.end();
+
+    var path = require('path');
+    var fs = require('fs');
+    var fileToRead = path.join(__dirname, 'numbers.txt');
+    var readStream = fs.createReadStream(fileToRead);
+
+    readStream.once('readable', function () {
+      readStream.on('data', function (chunk) {
+        call.write({'num': 1});
+        chunkCount += 1;
+      });
+
+      readStream.on('end', function () {
+        call.end();
+      });
+
+      readStream.on('error', function (error) {
+        console.log(error);
+      });
+    });
+
     call.on('status', function checkStatus(status) {
       assert.strictEqual(status.code, grpc.status.OK);
-      done();
-    });
-  });
-  it('should handle a bidirectional streaming request', function(done) {
-    function checkResponse(index, value) {
-      assert.equal(value.quotient, index);
-      assert.equal(value.remainder, 1);
-    }
-    var call = math_client.divMany();
-    var response_index = 0;
-    call.on('data', function(value) {
-      checkResponse(response_index, value);
-      response_index += 1;
-    });
-    for (var i = 0; i < 7; i++) {
-      call.write({dividend: 2 * i + 1, divisor: 2});
-    }
-    call.end();
-    call.on('status', function checkStatus(status) {
-      assert.strictEqual(status.code, grpc.status.OK);
-      done();
-    });
-  });
-  it('should handle an error from a bidi request', function(done) {
-    var call = math_client.divMany();
-    call.on('data', function(value) {
-      assert.fail(value, undefined, 'Unexpected data response on failing call',
-                  '!=');
-    });
-    call.write({dividend: 7, divisor: 0});
-    call.end();
-    call.on('error', function checkStatus(status) {
       done();
     });
   });
