@@ -42,7 +42,7 @@ require 'grpc'
 require 'multi_json'
 require 'route_guide_services'
 
-include Examples
+include Routeguide
 COORD_FACTOR = 1e7
 RADIUS = 637_100
 
@@ -202,10 +202,10 @@ def main
   feature_db = Hash[raw_data.map { |x| [x['location'], x['name']] }]
   port = '0.0.0.0:50051'
   s = GRPC::RpcServer.new
-  s.add_http2_port(port)
+  s.add_http2_port(port, :this_port_is_insecure)
   GRPC.logger.info("... running insecurely on #{port}")
   s.handle(ServerImpl.new(feature_db))
-  s.run
+  s.run_till_terminated
 end
 
 main
