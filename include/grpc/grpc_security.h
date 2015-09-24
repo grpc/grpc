@@ -123,8 +123,8 @@ grpc_credentials *grpc_google_refresh_token_credentials_create(
 
 /* Creates an Oauth2 Access Token credentials with an access token that was
    aquired by an out of band mechanism. */
-grpc_credentials *grpc_access_token_credentials_create(
-    const char *access_token, void *reserved);
+grpc_credentials *grpc_access_token_credentials_create(const char *access_token,
+                                                       void *reserved);
 
 /* Creates an IAM credentials object for connecting to Google. */
 grpc_credentials *grpc_google_iam_credentials_create(

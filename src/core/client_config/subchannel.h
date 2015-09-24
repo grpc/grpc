@@ -62,14 +62,14 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 #define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
 #endif
 
-void grpc_subchannel_ref(
-    grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_unref(
-    grpc_subchannel *channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_call_ref(
-    grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_call_unref(
-    grpc_subchannel_call *call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_ref(grpc_subchannel *channel
+                             GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_unref(grpc_subchannel *channel
+                               GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_call_ref(grpc_subchannel_call *call
+                                  GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_call_unref(grpc_subchannel_call *call
+                                    GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
 /** construct a call (possibly asynchronously) */
 void grpc_subchannel_create_call(grpc_subchannel *subchannel,

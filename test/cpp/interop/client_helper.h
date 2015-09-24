@@ -53,7 +53,7 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
 class InteropClientContextInspector {
  public:
   InteropClientContextInspector(const ::grpc::ClientContext& context)
-    : context_(context) {}
+      : context_(context) {}
 
   // Inspector methods, able to peek inside ClientContext, follow.
   grpc_compression_algorithm GetCallCompressionAlgorithm() const {
