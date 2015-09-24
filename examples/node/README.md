@@ -9,7 +9,7 @@ PREREQUISITES
 
 INSTALL
 -------
- - [Install gRPC Core][]
+ - [Install gRPC Node][]
 
  - Install this package's dependencies
 
@@ -45,5 +45,5 @@ TUTORIAL
 You can find a more detailed tutorial in [gRPC Basics: Node.js][]
 
 [homebrew]:http://brew.sh
-[Install gRPC Core]:../../INSTALL
+[Install gRPC Core]:../../src/node
 [gRPC Basics: Node.js]:http://www.grpc.io/docs/tutorials/basic/node.html
