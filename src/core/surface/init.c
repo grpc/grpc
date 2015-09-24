@@ -40,6 +40,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 #include "src/core/channel/channel_stack.h"
+#include "src/core/client_config/lb_policy_registry.h"
+#include "src/core/client_config/lb_policies/pick_first.h"
+#include "src/core/client_config/lb_policies/round_robin.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/client_config/resolvers/dns_resolver.h"
 #include "src/core/client_config/resolvers/sockaddr_resolver.h"
@@ -85,6 +88,9 @@ void grpc_init(void) {
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
     gpr_time_init();
+    grpc_lb_policy_registry_init(grpc_pick_first_lb_factory_create());
+    grpc_register_lb_policy(grpc_pick_first_lb_factory_create());
+    grpc_register_lb_policy(grpc_round_robin_lb_factory_create());
     grpc_resolver_registry_init("dns:///");
     grpc_register_resolver_type(grpc_dns_resolver_factory_create());
     grpc_register_resolver_type(grpc_ipv4_resolver_factory_create());

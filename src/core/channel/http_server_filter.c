@@ -46,6 +46,7 @@ typedef struct call_data {
   gpr_uint8 seen_te_trailers;
   gpr_uint8 seen_authority;
   grpc_linked_mdelem status;
+  grpc_linked_mdelem content_type;
 
   grpc_stream_op_buffer *recv_ops;
   /** Closure to call when finished with the hs_on_recv hook */
@@ -110,8 +111,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     return NULL;
   } else if (md->key == channeld->te_trailers->key ||
              md->key == channeld->method_post->key ||
-             md->key == channeld->http_scheme->key ||
-             md->key == channeld->content_type->key) {
+             md->key == channeld->http_scheme->key) {
     gpr_log(GPR_ERROR, "Invalid %s: header: '%s'",
             grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
     /* swallow it and error everything out. */
@@ -202,6 +202,8 @@ static void hs_mutate_op(grpc_call_element *elem,
       calld->sent_status = 1;
       grpc_metadata_batch_add_head(&stream_op->data.metadata, &calld->status,
                                    GRPC_MDELEM_REF(channeld->status_ok));
+      grpc_metadata_batch_add_tail(&op->data.metadata, &calld->content_type,
+                                   GRPC_MDELEM_REF(channeld->content_type));
       break;
     }
   }

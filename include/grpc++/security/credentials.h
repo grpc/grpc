@@ -34,10 +34,13 @@
 #ifndef GRPCXX_CREDENTIALS_H
 #define GRPCXX_CREDENTIALS_H
 
+#include <map>
 #include <memory>
 
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/support/config.h>
+#include <grpc++/support/status.h>
+#include <grpc++/support/string_ref.h>
 
 namespace grpc {
 class ChannelArguments;
@@ -164,6 +167,24 @@ std::shared_ptr<Credentials> CompositeCredentials(
 
 /// Credentials for an unencrypted, unauthenticated channel
 std::shared_ptr<Credentials> InsecureCredentials();
+
+// User defined metadata credentials.
+class MetadataCredentialsPlugin {
+ public:
+  virtual ~MetadataCredentialsPlugin() {}
+
+  // If this method returns true, the Process function will be scheduled in
+  // a different thread from the one processing the call.
+  virtual bool IsBlocking() const { return true; }
+
+  // Gets the auth metatada produced by this plugin.
+  virtual Status GetMetadata(
+      grpc::string_ref service_url,
+      std::multimap<grpc::string, grpc::string>* metadata) = 0;
+};
+
+std::shared_ptr<Credentials> MetadataCredentialsFromPlugin(
+    std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
 }  // namespace grpc
 

@@ -31,23 +31,43 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_SECURITY_SECURE_TRANSPORT_SETUP_H
-#define GRPC_INTERNAL_CORE_SECURITY_SECURE_TRANSPORT_SETUP_H
+#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
+#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_LB_POLICY_FACTORY_H
 
-#include "src/core/iomgr/endpoint.h"
-#include "src/core/security/security_connector.h"
+#include "src/core/client_config/lb_policy.h"
+#include "src/core/client_config/subchannel.h"
 
-/* --- Secure transport setup --- */
+typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
+typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
 
-/* Ownership of the secure_endpoint is transfered. */
-typedef void (*grpc_secure_transport_setup_done_cb)(
-    void *user_data, grpc_security_status status,
-    grpc_endpoint *wrapped_endpoint, grpc_endpoint *secure_endpoint);
+/** grpc_lb_policy provides grpc_client_config objects to grpc_channel
+    objects */
+struct grpc_lb_policy_factory {
+  const grpc_lb_policy_factory_vtable *vtable;
+};
 
-/* Calls the callback upon completion. */
-void grpc_setup_secure_transport(grpc_security_connector *connector,
-                                 grpc_endpoint *nonsecure_endpoint,
-                                 grpc_secure_transport_setup_done_cb cb,
-                                 void *user_data);
+typedef struct grpc_lb_policy_args {
+  grpc_subchannel **subchannels;
+  size_t num_subchannels;
+} grpc_lb_policy_args;
 
-#endif /* GRPC_INTERNAL_CORE_SECURITY_SECURE_TRANSPORT_SETUP_H */
+struct grpc_lb_policy_factory_vtable {
+  void (*ref)(grpc_lb_policy_factory *factory);
+  void (*unref)(grpc_lb_policy_factory *factory);
+
+  /** Implementation of grpc_lb_policy_factory_create_lb_policy */
+  grpc_lb_policy *(*create_lb_policy)(grpc_lb_policy_factory *factory,
+                                      grpc_lb_policy_args *args);
+
+  /** Name for the LB policy this factory implements */
+  const char *name;
+};
+
+void grpc_lb_policy_factory_ref(grpc_lb_policy_factory *factory);
+void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory);
+
+/** Create a lb_policy instance. */
+grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
+    grpc_lb_policy_factory *factory, grpc_lb_policy_args *args);
+
+#endif /* GRPC_INTERNAL_CORE_CONFIG_LB_POLICY_FACTORY_H */

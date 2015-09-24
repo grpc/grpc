@@ -39,7 +39,7 @@
 #include <grpc/support/host_port.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/client_config/lb_policies/pick_first.h"
+#include "src/core/client_config/lb_policy_registry.h"
 #include "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/support/string.h"
@@ -55,9 +55,8 @@ typedef struct {
   char *default_port;
   /** subchannel factory */
   grpc_subchannel_factory *subchannel_factory;
-  /** load balancing policy factory */
-  grpc_lb_policy *(*lb_policy_factory)(grpc_subchannel **subchannels,
-                                       size_t num_subchannels);
+  /** load balancing policy name */
+  char *lb_policy_name;
 
   /** mutex guarding the rest of the state */
   gpr_mu mu;
@@ -135,6 +134,7 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
   grpc_lb_policy *lb_policy;
   size_t i;
   if (addresses) {
+    grpc_lb_policy_args lb_policy_args;
     config = grpc_client_config_create();
     subchannels = gpr_malloc(sizeof(grpc_subchannel *) * addresses->naddrs);
     for (i = 0; i < addresses->naddrs; i++) {
@@ -144,7 +144,9 @@ static void dns_on_resolved(void *arg, grpc_resolved_addresses *addresses) {
       subchannels[i] = grpc_subchannel_factory_create_subchannel(
           r->subchannel_factory, &args);
     }
-    lb_policy = r->lb_policy_factory(subchannels, addresses->naddrs);
+    lb_policy_args.subchannels = subchannels;
+    lb_policy_args.num_subchannels = addresses->naddrs;
+    lb_policy = grpc_lb_policy_create(r->lb_policy_name, &lb_policy_args);
     grpc_client_config_set_lb_policy(config, lb_policy);
     GRPC_LB_POLICY_UNREF(lb_policy, "construction");
     grpc_resolved_addresses_destroy(addresses);
@@ -193,13 +195,13 @@ static void dns_destroy(grpc_resolver *gr) {
   grpc_subchannel_factory_unref(r->subchannel_factory);
   gpr_free(r->name);
   gpr_free(r->default_port);
+  gpr_free(r->lb_policy_name);
   gpr_free(r);
 }
 
 static grpc_resolver *dns_create(
     grpc_uri *uri, const char *default_port,
-    grpc_lb_policy *(*lb_policy_factory)(grpc_subchannel **subchannels,
-                                         size_t num_subchannels),
+    const char* lb_policy_name,
     grpc_subchannel_factory *subchannel_factory) {
   dns_resolver *r;
   const char *path = uri->path;
@@ -220,7 +222,7 @@ static grpc_resolver *dns_create(
   r->default_port = gpr_strdup(default_port);
   r->subchannel_factory = subchannel_factory;
   grpc_subchannel_factory_ref(subchannel_factory);
-  r->lb_policy_factory = lb_policy_factory;
+  r->lb_policy_name = gpr_strdup(lb_policy_name);
   return &r->base;
 }
 
@@ -235,8 +237,7 @@ static void dns_factory_unref(grpc_resolver_factory *factory) {}
 static grpc_resolver *dns_factory_create_resolver(
     grpc_resolver_factory *factory, grpc_uri *uri,
     grpc_subchannel_factory *subchannel_factory) {
-  return dns_create(uri, "https", grpc_create_pick_first_lb_policy,
-                    subchannel_factory);
+  return dns_create(uri, "https", "pick_first", subchannel_factory);
 }
 
 char *dns_factory_get_default_host_name(grpc_resolver_factory *factory,

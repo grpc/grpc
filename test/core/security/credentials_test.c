@@ -833,6 +833,109 @@ static void test_google_default_creds_access_token(void) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
+typedef enum {
+  PLUGIN_INITIAL_STATE,
+  PLUGIN_GET_METADATA_CALLED_STATE,
+  PLUGIN_DESTROY_CALLED_STATE
+} plugin_state;
+
+typedef struct {
+  const char *key;
+  const char *value;
+} plugin_metadata;
+
+static const plugin_metadata plugin_md[] = {{"foo", "bar"}, {"hi", "there"}};
+
+static void plugin_get_metadata_success(void *state, const char *service_url,
+                                        grpc_credentials_plugin_metadata_cb cb,
+                                        void *user_data) {
+  size_t i;
+  grpc_metadata md[GPR_ARRAY_SIZE(plugin_md)];
+  plugin_state *s = (plugin_state *)state;
+  GPR_ASSERT(strcmp(service_url, test_service_url) == 0);
+  *s = PLUGIN_GET_METADATA_CALLED_STATE;
+  for (i = 0; i < GPR_ARRAY_SIZE(plugin_md); i++) {
+    memset(&md[i], 0, sizeof(grpc_metadata));
+    md[i].key = plugin_md[i].key;
+    md[i].value = plugin_md[i].value;
+    md[i].value_length = strlen(plugin_md[i].value);
+  }
+  cb(user_data, md, GPR_ARRAY_SIZE(md), GRPC_STATUS_OK, NULL);
+}
+
+static void plugin_get_metadata_failure(void *state, const char *service_url,
+                                        grpc_credentials_plugin_metadata_cb cb,
+                                        void *user_data) {
+  plugin_state *s = (plugin_state *)state;
+  GPR_ASSERT(strcmp(service_url, test_service_url) == 0);
+  *s = PLUGIN_GET_METADATA_CALLED_STATE;
+  cb(user_data, NULL, 0, GRPC_STATUS_UNAUTHENTICATED,
+     "Could not get metadata for plugin.");
+}
+
+static void on_plugin_metadata_received_success(
+    void *user_data, grpc_credentials_md *md_elems, size_t num_md,
+    grpc_credentials_status status) {
+  size_t i = 0;
+  GPR_ASSERT(user_data == NULL);
+  GPR_ASSERT(md_elems != NULL);
+  GPR_ASSERT(num_md == GPR_ARRAY_SIZE(plugin_md));
+  for (i = 0; i < num_md; i++) {
+    GPR_ASSERT(gpr_slice_str_cmp(md_elems[i].key, plugin_md[i].key) == 0);
+    GPR_ASSERT(gpr_slice_str_cmp(md_elems[i].value, plugin_md[i].value) == 0);
+  }
+}
+
+static void on_plugin_metadata_received_failure(
+    void *user_data, grpc_credentials_md *md_elems, size_t num_md,
+    grpc_credentials_status status) {
+  GPR_ASSERT(user_data == NULL);
+  GPR_ASSERT(md_elems == NULL);
+  GPR_ASSERT(num_md == 0);
+  GPR_ASSERT(status == GRPC_CREDENTIALS_ERROR);
+}
+
+static void plugin_destroy(void *state) {
+  plugin_state *s = (plugin_state *)state;
+  *s = PLUGIN_DESTROY_CALLED_STATE;
+}
+
+static void test_metadata_plugin_success(void) {
+  grpc_credentials *creds;
+  plugin_state state = PLUGIN_INITIAL_STATE;
+  grpc_metadata_credentials_plugin plugin;
+
+  plugin.state = &state;
+  plugin.get_metadata = plugin_get_metadata_success;
+  plugin.destroy = plugin_destroy;
+
+  creds = grpc_metadata_credentials_create_from_plugin(plugin, NULL);
+  GPR_ASSERT(state == PLUGIN_INITIAL_STATE);
+  grpc_credentials_get_request_metadata(
+      creds, NULL, test_service_url, on_plugin_metadata_received_success, NULL);
+  GPR_ASSERT(state == PLUGIN_GET_METADATA_CALLED_STATE);
+  grpc_credentials_release(creds);
+  GPR_ASSERT(state == PLUGIN_DESTROY_CALLED_STATE);
+}
+
+static void test_metadata_plugin_failure(void) {
+  grpc_credentials *creds;
+  plugin_state state = PLUGIN_INITIAL_STATE;
+  grpc_metadata_credentials_plugin plugin;
+
+  plugin.state = &state;
+  plugin.get_metadata = plugin_get_metadata_failure;
+  plugin.destroy = plugin_destroy;
+
+  creds = grpc_metadata_credentials_create_from_plugin(plugin, NULL);
+  GPR_ASSERT(state == PLUGIN_INITIAL_STATE);
+  grpc_credentials_get_request_metadata(
+      creds, NULL, test_service_url, on_plugin_metadata_received_failure, NULL);
+  GPR_ASSERT(state == PLUGIN_GET_METADATA_CALLED_STATE);
+  grpc_credentials_release(creds);
+  GPR_ASSERT(state == PLUGIN_DESTROY_CALLED_STATE);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_empty_md_store();
@@ -860,5 +963,7 @@ int main(int argc, char **argv) {
   test_jwt_creds_signing_failure();
   test_google_default_creds_auth_key();
   test_google_default_creds_access_token();
+  test_metadata_plugin_success();
+  test_metadata_plugin_failure();
   return 0;
 }

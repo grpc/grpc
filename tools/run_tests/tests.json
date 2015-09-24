@@ -879,6 +879,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "lb_policies_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "message_compress_test", 
     "platforms": [
       "linux", 
@@ -1627,18 +1645,6 @@
       "mac", 
       "posix", 
       "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "zookeeper_test", 
-    "platforms": [
-      "linux"
     ]
   }, 
   {
