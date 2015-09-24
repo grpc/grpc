@@ -66,6 +66,9 @@ inline v8::Local<v8::Value> nanErrorWithCode(const char *msg,
     return scope.Escape(err);
 }
 
+bool CreateMetadataArray(Local<Object> metadata, grpc_metadata_array *array,
+                         shared_ptr<Resources> resources);
+
 v8::Local<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
 
 struct Resources {
