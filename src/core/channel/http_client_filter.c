@@ -123,21 +123,21 @@ static void hc_mutate_op(grpc_call_element *elem,
     size_t nops = op->send_ops->nops;
     grpc_stream_op *ops = op->send_ops->ops;
     for (i = 0; i < nops; i++) {
-      grpc_stream_op *op = &ops[i];
-      if (op->type != GRPC_OP_METADATA) continue;
+      grpc_stream_op *stream_op = &ops[i];
+      if (stream_op->type != GRPC_OP_METADATA) continue;
       calld->sent_initial_metadata = 1;
-      grpc_metadata_batch_filter(&op->data.metadata, client_strip_filter, elem);
+      grpc_metadata_batch_filter(&stream_op->data.metadata, client_strip_filter, elem);
       /* Send : prefixed headers, which have to be before any application
          layer headers. */
-      grpc_metadata_batch_add_head(&op->data.metadata, &calld->method,
+      grpc_metadata_batch_add_head(&stream_op->data.metadata, &calld->method,
                                    GRPC_MDELEM_REF(channeld->method));
-      grpc_metadata_batch_add_head(&op->data.metadata, &calld->scheme,
+      grpc_metadata_batch_add_head(&stream_op->data.metadata, &calld->scheme,
                                    GRPC_MDELEM_REF(channeld->scheme));
-      grpc_metadata_batch_add_tail(&op->data.metadata, &calld->te_trailers,
+      grpc_metadata_batch_add_tail(&stream_op->data.metadata, &calld->te_trailers,
                                    GRPC_MDELEM_REF(channeld->te_trailers));
-      grpc_metadata_batch_add_tail(&op->data.metadata, &calld->content_type,
+      grpc_metadata_batch_add_tail(&stream_op->data.metadata, &calld->content_type,
                                    GRPC_MDELEM_REF(channeld->content_type));
-      grpc_metadata_batch_add_tail(&op->data.metadata, &calld->user_agent,
+      grpc_metadata_batch_add_tail(&stream_op->data.metadata, &calld->user_agent,
                                    GRPC_MDELEM_REF(channeld->user_agent));
       break;
     }

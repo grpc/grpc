@@ -223,7 +223,7 @@ static grpc_security_status ssl_create_security_connector(
   grpc_security_status status = GRPC_SECURITY_OK;
   size_t i = 0;
   const char *overridden_target_name = NULL;
-  grpc_arg arg;
+  grpc_arg new_arg;
 
   for (i = 0; args && i < args->num_args; i++) {
     grpc_arg *arg = &args->args[i];
@@ -238,10 +238,10 @@ static grpc_security_status ssl_create_security_connector(
   if (status != GRPC_SECURITY_OK) {
     return status;
   }
-  arg.type = GRPC_ARG_STRING;
-  arg.key = GRPC_ARG_HTTP2_SCHEME;
-  arg.value.string = "https";
-  *new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  new_arg.type = GRPC_ARG_STRING;
+  new_arg.key = GRPC_ARG_HTTP2_SCHEME;
+  new_arg.value.string = "https";
+  *new_args = grpc_channel_args_copy_and_add(args, &new_arg, 1);
   return status;
 }
 
