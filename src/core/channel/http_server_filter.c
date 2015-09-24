@@ -202,7 +202,7 @@ static void hs_mutate_op(grpc_call_element *elem,
       calld->sent_status = 1;
       grpc_metadata_batch_add_head(&stream_op->data.metadata, &calld->status,
                                    GRPC_MDELEM_REF(channeld->status_ok));
-      grpc_metadata_batch_add_tail(&op->data.metadata, &calld->content_type,
+      grpc_metadata_batch_add_tail(&stream_op->data.metadata, &calld->content_type,
                                    GRPC_MDELEM_REF(channeld->content_type));
       break;
     }
