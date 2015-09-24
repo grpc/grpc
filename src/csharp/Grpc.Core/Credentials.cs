@@ -40,9 +40,6 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
-    // TODO: rename
-    public delegate Task AsyncAuthInterceptor(string authUri, Metadata metadata);
-
     /// <summary>
     /// Client-side credentials. Used for creation of a secure channel.
     /// </summary>
@@ -69,11 +66,25 @@ namespace Grpc.Core
         /// <returns>The native credentials.</returns>
         internal abstract CredentialsSafeHandle ToNativeCredentials();
 
+        /// <summary>
+        /// Returns <c>true</c> if this credential type allows being composed by <c>CompositeCredentials</c>.
+        /// </summary>
+        internal virtual bool IsComposable
+        {
+            get { return true; }
+        }
+
         private sealed class InsecureCredentialsImpl : Credentials
         {
             internal override CredentialsSafeHandle ToNativeCredentials()
             {
                 return null;
+            }
+
+            // Composing insecure credentials makes no sense.
+            internal override bool IsComposable
+            {
+                get { return false; }
             }
         }
     }
@@ -144,12 +155,25 @@ namespace Grpc.Core
     }
 
     /// <summary>
+    /// Asynchronous authentication interceptor for <see cref="MetadataCredentials"/>.
+    /// </summary>
+    /// <param name="authUri">URL of a service to which current remote call needs to authenticate</param>
+    /// <param name="metadata">Metadata to populate with entries that will be added to outgoing call's headers.</param>
+    /// <returns></returns>
+    public delegate Task AsyncAuthInterceptor(string authUri, Metadata metadata);
+
+    /// <summary>
     /// Client-side credentials that delegate metadata based auth to an interceptor.
+    /// The interceptor is automatically invoked for each remote call that uses <c>MetadataCredentials.</c>
     /// </summary>
     public partial class MetadataCredentials : Credentials
     {
         readonly AsyncAuthInterceptor interceptor;
 
+        /// <summary>
+        /// Initializes a new instance of <c>MetadataCredentials</c> class.
+        /// </summary>
+        /// <param name="interceptor">authentication interceptor</param>
         public MetadataCredentials(AsyncAuthInterceptor interceptor)
         {
             this.interceptor = interceptor;
@@ -162,16 +186,34 @@ namespace Grpc.Core
         }
     }
 
+    /// <summary>
+    /// Credentials that allow composing multiple credentials objects into one <see cref="Credentials"/> object.
+    /// </summary>
     public sealed class CompositeCredentials : Credentials
     {
         readonly List<Credentials> credentials;
 
+        /// <summary>
+        /// Initializes a new instance of <c>CompositeCredentials</c> class.
+        /// The resulting credentials object will be composite of all the credentials specified as parameters.
+        /// </summary>
+        /// <param name="credentials">credentials to compose</param>
         public CompositeCredentials(params Credentials[] credentials)
         {
             Preconditions.CheckArgument(credentials.Length >= 2, "Composite credentials object can only be created from 2 or more credentials.");
+            foreach (var cred in credentials)
+            {
+                Preconditions.CheckArgument(cred.IsComposable, "Cannot create composite credentials: one or more credential objects do not allow composition.");
+            }
             this.credentials = new List<Credentials>(credentials);
         }
 
+        /// <summary>
+        /// Creates a new instance of <c>CompositeCredentials</c> class by composing
+        /// multiple <c>Credentials</c> objects.
+        /// </summary>
+        /// <param name="credentials">credentials to compose</param>
+        /// <returns>The new <c>CompositeCredentials</c></returns>
         public static CompositeCredentials Create(params Credentials[] credentials)
         {
             return new CompositeCredentials(credentials);
@@ -179,12 +221,28 @@ namespace Grpc.Core
 
         internal override CredentialsSafeHandle ToNativeCredentials()
         {
-            var nativeComposite = credentials[0].ToNativeCredentials();
-            for (int i = 1; i < credentials.Count; i++)
+            return ToNativeRecursive(0);
+        }
+
+        // Recursive descent makes managing lifetime of intermediate CredentialSafeHandle instances easier.
+        // In practice, we won't usually see composites from more than two credentials anyway.
+        private CredentialsSafeHandle ToNativeRecursive(int startIndex)
+        {
+            if (startIndex == credentials.Count - 1)
             {
-                nativeComposite = CredentialsSafeHandle.CreateComposite(nativeComposite, credentials[i].ToNativeCredentials());
+                return credentials[startIndex].ToNativeCredentials();
             }
-            return nativeComposite;
+
+            using (var cred1 = credentials[startIndex].ToNativeCredentials())
+            using (var cred2 = ToNativeRecursive(startIndex + 1))
+            {
+                var nativeComposite = CredentialsSafeHandle.CreateComposite(cred1, cred2);
+                if (nativeComposite.IsInvalid)
+                {
+                    throw new ArgumentException("Error creating native composite credentials. Likely, this is because you are trying to compose incompatible credentials.");
+                }
+                return nativeComposite;
+            }
         }
     }
 }
