@@ -40,28 +40,12 @@ RUN make install_c -j12 -C /var/local/git/grpc
 
 # Build Python GRPC
 RUN cd /var/local/git/grpc \
-  && pip install src/python/src \
-  && pip install src/python/interop
+  && pip install src/python/grpcio \
+  && pip install src/python/grpcio_test
 
 # Run Python GRPC's tests
-# TODO(nathaniel): It would be nice for these to be auto-discoverable?
 RUN cd /var/local/git/grpc \
-  && python2.7 -B -m grpc._adapter._blocking_invocation_inline_service_test \
-  && python2.7 -B -m grpc._adapter._c_test \
-  && python2.7 -B -m grpc._adapter._event_invocation_synchronous_event_service_test \
-  && python2.7 -B -m grpc._adapter._future_invocation_asynchronous_event_service_test \
-  && python2.7 -B -m grpc._adapter._links_test \
-  && python2.7 -B -m grpc._adapter._lonely_rear_link_test \
-  && python2.7 -B -m grpc._adapter._low_test \
-  && python2.7 -B -m grpc.early_adopter.implementations_test \
-  && python2.7 -B -m grpc.framework.base.implementations_test \
-  && python2.7 -B -m grpc.framework.face.blocking_invocation_inline_service_test \
-  && python2.7 -B -m grpc.framework.face.event_invocation_synchronous_event_service_test \
-  && python2.7 -B -m grpc.framework.face.future_invocation_asynchronous_event_service_test \
-  && python2.7 -B -m grpc.framework.foundation._later_test \
-  && python2.7 -B -m grpc.framework.foundation._logging_pool_test \
-  && python2.7 -B -m interop._insecure_interop_test \
-  && python2.7 -B -m interop._secure_interop_test
+  && python2.7 -B src/python/grpcio_test/setup.py test
 
 # Add a cacerts directory containing the Google root pem file, allowing the interop client to access the production test instance
 ADD cacerts cacerts
