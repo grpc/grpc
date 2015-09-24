@@ -616,6 +616,8 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   expected_connection_sequence = gpr_malloc(sizeof(int) * expected_seq_length);
   seen_elements = gpr_malloc(sizeof(int) * expected_seq_length);
 
+  unique_seq_last_idx = ~(size_t)0;
+
   memset(seen_elements, 0, sizeof(uint8_t) * expected_seq_length);
   for (i = 0; i < num_iters; i++) {
     if (actual_connection_sequence[i] < 0 ||
@@ -635,8 +637,10 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   }
   /* make sure we found a valid run */
   for (j = 0; j < expected_seq_length; j++) {
-      GPR_ASSERT (seen_elements[j] != 0);
+    GPR_ASSERT(seen_elements[j] != 0);
   }
+
+  GPR_ASSERT(unique_seq_last_idx != ~(size_t)0);
 
   unique_seq_first_idx = (unique_seq_last_idx - expected_seq_length + 1);
   memcpy(expected_connection_sequence,
