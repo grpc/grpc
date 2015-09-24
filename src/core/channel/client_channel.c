@@ -380,18 +380,18 @@ static void perform_transport_stream_op(grpc_call_element *elem,
           gpr_mu_lock(&chand->mu_config);
           lb_policy = chand->lb_policy;
           if (lb_policy) {
-            grpc_transport_stream_op *op = &calld->waiting_op;
-            grpc_pollset *bind_pollset = op->bind_pollset;
+            grpc_transport_stream_op *waiting_op = &calld->waiting_op;
+            grpc_pollset *bind_pollset = waiting_op->bind_pollset;
             grpc_metadata_batch *initial_metadata =
-                &op->send_ops->ops[0].data.metadata;
+                &waiting_op->send_ops->ops[0].data.metadata;
             GRPC_LB_POLICY_REF(lb_policy, "pick");
             gpr_mu_unlock(&chand->mu_config);
             calld->state = CALL_WAITING_FOR_PICK;
 
-            GPR_ASSERT(op->bind_pollset);
-            GPR_ASSERT(op->send_ops);
-            GPR_ASSERT(op->send_ops->nops >= 1);
-            GPR_ASSERT(op->send_ops->ops[0].type == GRPC_OP_METADATA);
+            GPR_ASSERT(waiting_op->bind_pollset);
+            GPR_ASSERT(waiting_op->send_ops);
+            GPR_ASSERT(waiting_op->send_ops->nops >= 1);
+            GPR_ASSERT(waiting_op->send_ops->ops[0].type == GRPC_OP_METADATA);
             gpr_mu_unlock(&calld->mu_state);
 
             grpc_iomgr_closure_init(&calld->async_setup_task, picked_target,
