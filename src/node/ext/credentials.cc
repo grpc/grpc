@@ -242,5 +242,34 @@ NAN_METHOD(Credentials::CreateInsecure) {
   info.GetReturnValue().Set(WrapStruct(NULL));
 }
 
+NAN_METHOD(Credentials::CreateFromPlugin) {
+  if (!info[0]->IsFunction()) {
+    return Nan::ThrowTypeError(
+        "createFromPlugin's argument must be a function");
+  }
+  grpc_metadata_credentials_plugin plugin;
+  plugin_state *state = new plugin_state;
+  state->callback = new Nan::Callback(info[0].As<Function>());
+  plugin.get_metadata = plugin_get_metadata;
+  plugin.destroy = plugin_destroy_state;
+  plugin.state = reinterpret_cast<void*>(state);
+  grpc_credentials *creds = grpc_metadata_credentials_create_from_plugin(plugin,
+                                                                         NULL);
+  if (creds == NULL) {
+    info.GetReturnValue().SetNull();
+  } else {
+    info.GetReturnValue().Set(WrapStruct(creds()));
+  }
+}
+
+void plugin_get_metadata(void *state, const char *service_url,
+                         grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data) {
+  uv_async_t *async = new uv_async_t;
+  uv_async_init(uv_default_loop(),
+                async,
+                PluginCallback);
+}
+
 }  // namespace node
 }  // namespace grpc
