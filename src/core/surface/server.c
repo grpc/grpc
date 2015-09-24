@@ -1046,12 +1046,13 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
 
   channel_broadcaster_init(server, &broadcaster);
 
+  gpr_atm_rel_store(&server->shutdown_flag, 1);
+
   /* collect all unregistered then registered calls */
   gpr_mu_lock(&server->mu_call);
   kill_pending_work_locked(&exec_ctx, server);
   gpr_mu_unlock(&server->mu_call);
 
-  gpr_atm_rel_store(&server->shutdown_flag, 1);
   maybe_finish_shutdown(&exec_ctx, server);
   gpr_mu_unlock(&server->mu_global);
 
