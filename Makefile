@@ -3374,8 +3374,6 @@ flaky_test_cxx: buildtests_cxx
 
 ifeq ($(HAS_ZOOKEEPER),true)
 test_zookeeper: buildtests_zookeeper
-	$(E) "[RUN]     Testing zookeeper_test"
-	$(Q) $(BINDIR)/$(CONFIG)/zookeeper_test || ( echo test zookeeper_test failed ; exit 1 )
 
 
 flaky_test_zookeeper: buildtests_zookeeper
