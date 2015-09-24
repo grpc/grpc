@@ -1649,18 +1649,6 @@
   }, 
   {
     "ci_platforms": [
-      "linux"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "zookeeper_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "ci_platforms": [
       "linux", 
       "mac", 
       "posix", 
