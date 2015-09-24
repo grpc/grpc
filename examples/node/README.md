@@ -5,7 +5,7 @@ PREREQUISITES
 -------------
 
 - `node`: This requires Node 10.x or greater.
-- [homebrew][] on Mac OS X.  This simplifies the.
+- [homebrew][] on Mac OS X.  This simplifies the installation of the gRPC C core.
 
 INSTALL
 -------
