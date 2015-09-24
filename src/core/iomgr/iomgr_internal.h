@@ -43,6 +43,9 @@ typedef struct grpc_iomgr_object {
   struct grpc_iomgr_object *prev;
 } grpc_iomgr_object;
 
+void grpc_pollset_global_init(void);
+void grpc_pollset_global_shutdown(void);
+
 void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name);
 void grpc_iomgr_unregister_object(grpc_iomgr_object *obj);
 
