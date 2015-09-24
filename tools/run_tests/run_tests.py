@@ -727,7 +727,10 @@ def _start_port_server(port_server_port):
     while True:
       if waits > 10:
         port_server.kill()
+      if port_server.poll() is not None:
         print "port_server failed to start"
+        port_log = open('portlog.txt', 'r').read()
+        print port_log
         sys.exit(1)
       try:
         urllib2.urlopen('http://localhost:%d/get' % port_server_port,

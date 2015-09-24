@@ -1473,18 +1473,18 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
 
   is_trailing = call->read_state >= READ_STATE_GOT_INITIAL_METADATA;
   for (l = md->list.head; l != NULL; l = l->next) {
-    grpc_mdelem *md = l->md;
-    grpc_mdstr *key = md->key;
+    grpc_mdelem *mdel = l->md;
+    grpc_mdstr *key = mdel->key;
     if (key == grpc_channel_get_status_string(call->channel)) {
-      set_status_code(call, STATUS_FROM_WIRE, decode_status(md));
+      set_status_code(call, STATUS_FROM_WIRE, decode_status(mdel));
     } else if (key == grpc_channel_get_message_string(call->channel)) {
-      set_status_details(call, STATUS_FROM_WIRE, GRPC_MDSTR_REF(md->value));
+      set_status_details(call, STATUS_FROM_WIRE, GRPC_MDSTR_REF(mdel->value));
     } else if (key ==
                grpc_channel_get_compression_algorithm_string(call->channel)) {
-      set_compression_algorithm(call, decode_compression(md));
+      set_compression_algorithm(call, decode_compression(mdel));
     } else if (key == grpc_channel_get_encodings_accepted_by_peer_string(
                           call->channel)) {
-      set_encodings_accepted_by_peer(call, md->value->slice);
+      set_encodings_accepted_by_peer(call, mdel->value->slice);
     } else {
       dest = &call->buffered_metadata[is_trailing];
       if (dest->count == dest->capacity) {
@@ -1493,9 +1493,9 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
             gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity);
       }
       mdusr = &dest->metadata[dest->count++];
-      mdusr->key = grpc_mdstr_as_c_string(md->key);
-      mdusr->value = grpc_mdstr_as_c_string(md->value);
-      mdusr->value_length = GPR_SLICE_LENGTH(md->value->slice);
+      mdusr->key = grpc_mdstr_as_c_string(mdel->key);
+      mdusr->value = grpc_mdstr_as_c_string(mdel->value);
+      mdusr->value_length = GPR_SLICE_LENGTH(mdel->value->slice);
       if (call->owned_metadata_count == call->owned_metadata_capacity) {
         call->owned_metadata_capacity =
             GPR_MAX(call->owned_metadata_capacity + 8,
@@ -1504,8 +1504,8 @@ static void recv_metadata(grpc_call *call, grpc_metadata_batch *md) {
             gpr_realloc(call->owned_metadata,
                         sizeof(grpc_mdelem *) * call->owned_metadata_capacity);
       }
-      call->owned_metadata[call->owned_metadata_count++] = md;
-      l->md = 0;
+      call->owned_metadata[call->owned_metadata_count++] = mdel;
+      l->md = NULL;
     }
   }
   if (gpr_time_cmp(md->deadline, gpr_inf_future(md->deadline.clock_type)) !=
