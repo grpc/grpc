@@ -45,5 +45,5 @@ TUTORIAL
 You can find a more detailed tutorial in [gRPC Basics: Node.js][]
 
 [homebrew]:http://brew.sh
-[Install gRPC Core]:../../src/node
+[Install gRPC Node]:../../src/node
 [gRPC Basics: Node.js]:http://www.grpc.io/docs/tutorials/basic/node.html
