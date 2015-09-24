@@ -83,12 +83,36 @@ typedef struct plugin_state {
   Nan::Callback *callback;
 } plugin_state;
 
+typedef struct plugin_callback_data {
+  plugin_state *state;
+  const char *service_url;
+  grpc_credentials_plugin_metadata_cb cb;
+  void *user_data;
+} plugin_callback_data;
+
 void plugin_get_metadata(void *state, const char *service_url,
-                         grpc_credentials_plugin_metadata_cb cb, void *user_data);
+                         grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data);
 
 void plugin_destroy_state(void *state);
 
 static NAN_METHOD(PluginCallback);
+
+NAN_INLINE NAUV_WORK_CB(SendPluginCallback) {
+  Nan::HandleScope scope;
+  plugin_callback_data *data = reinterpret_cast<plugin_callback_data>(
+      async->data);
+  v8::Local<v8::Function> plugin_callback = Nan::GetFunction(
+      Nan::New<v8::FunctionTemplate>(PluginCallback).ToLocalChecked());
+  // Attach cb and user_data to plugin_callback so that it can access them later
+  const int argc = 2;
+  v8::Local<v8::Value> argv = {Nan::New(data->service_url).ToLocalChecked(),
+                               plugin_callback};
+  NanCallback *callback = static_cast<NanCallback*>(async->data);
+  callback->Call(argc, argv);
+  uv_unref((uv_handle_t *)async);
+  delete async;
+}
 
 }  // namespace node
 }  // namespace grpc
