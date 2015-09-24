@@ -216,7 +216,6 @@ typedef struct {
       grpc_server_credentials *c, grpc_security_connector **sc);
 } grpc_server_credentials_vtable;
 
-
 /* TODO(jboeuf): Add a refcount. */
 struct grpc_server_credentials {
   const grpc_server_credentials_vtable *vtable;

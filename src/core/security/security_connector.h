@@ -63,11 +63,11 @@ typedef struct grpc_security_connector grpc_security_connector;
 typedef void (*grpc_security_check_cb)(void *user_data,
                                        grpc_security_status status);
 
-
 /* Ownership of the secure_endpoint is transfered. */
-typedef void (*grpc_security_handshake_done_cb)(
-    void *user_data, grpc_security_status status,
-    grpc_endpoint *wrapped_endpoint, grpc_endpoint *secure_endpoint);
+typedef void (*grpc_security_handshake_done_cb)(void *user_data,
+                                                grpc_security_status status,
+                                                grpc_endpoint *wrapped_endpoint,
+                                                grpc_endpoint *secure_endpoint);
 
 typedef struct {
   void (*destroy)(grpc_security_connector *sc);
