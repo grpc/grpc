@@ -42,10 +42,10 @@ namespace grpc {
 namespace node {
 
 /* Wrapper class for grpc_channel structs */
-class Channel : public ::node::ObjectWrap {
+class Channel : public Nan::ObjectWrap {
  public:
-  static void Init(v8::Handle<v8::Object> exports);
-  static bool HasInstance(v8::Handle<v8::Value> val);
+  static void Init(v8::Local<v8::Object> exports);
+  static bool HasInstance(v8::Local<v8::Value> val);
   /* This is used to typecheck javascript objects before converting them to
      this type */
   static v8::Persistent<v8::Value> prototype;
@@ -66,8 +66,8 @@ class Channel : public ::node::ObjectWrap {
   static NAN_METHOD(GetTarget);
   static NAN_METHOD(GetConnectivityState);
   static NAN_METHOD(WatchConnectivityState);
-  static NanCallback *constructor;
-  static v8::Persistent<v8::FunctionTemplate> fun_tpl;
+  static Nan::Callback *constructor;
+  static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
   grpc_channel *wrapped_channel;
 };

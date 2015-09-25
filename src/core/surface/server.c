@@ -303,26 +303,25 @@ static void channel_broadcaster_shutdown(grpc_exec_ctx *exec_ctx,
  * request_matcher
  */
 
-static void request_matcher_init(request_matcher *request_matcher,
-                                 size_t entries) {
-  memset(request_matcher, 0, sizeof(*request_matcher));
-  request_matcher->requests = gpr_stack_lockfree_create(entries);
+static void request_matcher_init(request_matcher *rm, size_t entries) {
+  memset(rm, 0, sizeof(*rm));
+  rm->requests = gpr_stack_lockfree_create(entries);
 }
 
-static void request_matcher_destroy(request_matcher *request_matcher) {
-  GPR_ASSERT(gpr_stack_lockfree_pop(request_matcher->requests) == -1);
-  gpr_stack_lockfree_destroy(request_matcher->requests);
+static void request_matcher_destroy(request_matcher *rm) {
+  GPR_ASSERT(gpr_stack_lockfree_pop(rm->requests) == -1);
+  gpr_stack_lockfree_destroy(rm->requests);
 }
 
 static void kill_zombie(grpc_exec_ctx *exec_ctx, void *elem, int success) {
   grpc_call_destroy(grpc_call_from_top_element(elem));
 }
 
-static void request_matcher_zombify_all_pending_calls(
-    grpc_exec_ctx *exec_ctx, request_matcher *request_matcher) {
-  while (request_matcher->pending_head) {
-    call_data *calld = request_matcher->pending_head;
-    request_matcher->pending_head = calld->pending_next;
+static void request_matcher_zombify_all_pending_calls(grpc_exec_ctx *exec_ctx,
+                                                      request_matcher *rm) {
+  while (rm->pending_head) {
+    call_data *calld = rm->pending_head;
+    rm->pending_head = calld->pending_next;
     gpr_mu_lock(&calld->mu_state);
     calld->state = ZOMBIED;
     gpr_mu_unlock(&calld->mu_state);
@@ -413,8 +412,7 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, channel_data *chand) {
 }
 
 static void finish_start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_server *server,
-                                 grpc_call_element *elem,
-                                 request_matcher *request_matcher) {
+                                 grpc_call_element *elem, request_matcher *rm) {
   call_data *calld = elem->call_data;
   int request_id;
 
@@ -427,17 +425,17 @@ static void finish_start_new_rpc(grpc_exec_ctx *exec_ctx, grpc_server *server,
     return;
   }
 
-  request_id = gpr_stack_lockfree_pop(request_matcher->requests);
+  request_id = gpr_stack_lockfree_pop(rm->requests);
   if (request_id == -1) {
     gpr_mu_lock(&server->mu_call);
     gpr_mu_lock(&calld->mu_state);
     calld->state = PENDING;
     gpr_mu_unlock(&calld->mu_state);
-    if (request_matcher->pending_head == NULL) {
-      request_matcher->pending_tail = request_matcher->pending_head = calld;
+    if (rm->pending_head == NULL) {
+      rm->pending_tail = rm->pending_head = calld;
     } else {
-      request_matcher->pending_tail->pending_next = calld;
-      request_matcher->pending_tail = calld;
+      rm->pending_tail->pending_next = calld;
+      rm->pending_tail = calld;
     }
     calld->pending_next = NULL;
     gpr_mu_unlock(&server->mu_call);
@@ -1048,12 +1046,13 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
 
   channel_broadcaster_init(server, &broadcaster);
 
+  gpr_atm_rel_store(&server->shutdown_flag, 1);
+
   /* collect all unregistered then registered calls */
   gpr_mu_lock(&server->mu_call);
   kill_pending_work_locked(&exec_ctx, server);
   gpr_mu_unlock(&server->mu_call);
 
-  gpr_atm_rel_store(&server->shutdown_flag, 1);
   maybe_finish_shutdown(&exec_ctx, server);
   gpr_mu_unlock(&server->mu_global);
 
@@ -1119,7 +1118,7 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
                                           grpc_server *server,
                                           requested_call *rc) {
   call_data *calld = NULL;
-  request_matcher *request_matcher = NULL;
+  request_matcher *rm = NULL;
   int request_id;
   if (gpr_atm_acq_load(&server->shutdown_flag)) {
     fail_call(exec_ctx, server, rc);
@@ -1133,22 +1132,22 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
   }
   switch (rc->type) {
     case BATCH_CALL:
-      request_matcher = &server->unregistered_request_matcher;
+      rm = &server->unregistered_request_matcher;
       break;
     case REGISTERED_CALL:
-      request_matcher = &rc->data.registered.registered_method->request_matcher;
+      rm = &rc->data.registered.registered_method->request_matcher;
       break;
   }
   server->requested_calls[request_id] = *rc;
   gpr_free(rc);
-  if (gpr_stack_lockfree_push(request_matcher->requests, request_id)) {
+  if (gpr_stack_lockfree_push(rm->requests, request_id)) {
     /* this was the first queued request: we need to lock and start
        matching calls */
     gpr_mu_lock(&server->mu_call);
-    while ((calld = request_matcher->pending_head) != NULL) {
-      request_id = gpr_stack_lockfree_pop(request_matcher->requests);
+    while ((calld = rm->pending_head) != NULL) {
+      request_id = gpr_stack_lockfree_pop(rm->requests);
       if (request_id == -1) break;
-      request_matcher->pending_head = calld->pending_next;
+      rm->pending_head = calld->pending_next;
       gpr_mu_unlock(&server->mu_call);
       gpr_mu_lock(&calld->mu_state);
       if (calld->state == ZOMBIED) {
@@ -1204,14 +1203,14 @@ done:
 }
 
 grpc_call_error grpc_server_request_registered_call(
-    grpc_server *server, void *rm, grpc_call **call, gpr_timespec *deadline,
+    grpc_server *server, void *rmp, grpc_call **call, gpr_timespec *deadline,
     grpc_metadata_array *initial_metadata, grpc_byte_buffer **optional_payload,
     grpc_completion_queue *cq_bound_to_call,
     grpc_completion_queue *cq_for_notification, void *tag) {
   grpc_call_error error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   requested_call *rc = gpr_malloc(sizeof(*rc));
-  registered_method *registered_method = rm;
+  registered_method *rm = rmp;
   if (!grpc_cq_is_server_cq(cq_for_notification)) {
     gpr_free(rc);
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
@@ -1224,7 +1223,7 @@ grpc_call_error grpc_server_request_registered_call(
   rc->cq_bound_to_call = cq_bound_to_call;
   rc->cq_for_notification = cq_for_notification;
   rc->call = call;
-  rc->data.registered.registered_method = registered_method;
+  rc->data.registered.registered_method = rm;
   rc->data.registered.deadline = deadline;
   rc->data.registered.initial_metadata = initial_metadata;
   rc->data.registered.optional_payload = optional_payload;

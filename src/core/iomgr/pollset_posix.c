@@ -169,6 +169,7 @@ void grpc_pollset_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset) {
+  GPR_ASSERT(grpc_closure_list_empty(pollset->idle_jobs));
   pollset->vtable->finish_shutdown(pollset);
   grpc_exec_ctx_enqueue(exec_ctx, pollset->shutdown_done, 1);
 }
@@ -236,6 +237,11 @@ done:
        * grpc_pollset_work.
        * TODO(dklempner): Can we refactor the shutdown logic to avoid this? */
       gpr_mu_lock(&pollset->mu);
+    } else if (!grpc_closure_list_empty(pollset->idle_jobs)) {
+      gpr_mu_unlock(&pollset->mu);
+      grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs);
+      grpc_exec_ctx_flush(exec_ctx);
+      gpr_mu_lock(&pollset->mu);
     }
   }
 }
@@ -250,6 +256,9 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       !grpc_pollset_has_workers(pollset)) {
     pollset->called_shutdown = 1;
     call_shutdown = 1;
+  }
+  if (!grpc_pollset_has_workers(pollset)) {
+    grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs);
   }
   pollset->shutdown_done = closure;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
@@ -326,9 +335,7 @@ static void basic_do_promote(grpc_exec_ctx *exec_ctx, void *args, int success) {
   if (pollset->shutting_down) {
     /* We don't care about this pollset anymore. */
     if (pollset->in_flight_cbs == 0 && !pollset->called_shutdown) {
-      GPR_ASSERT(!grpc_pollset_has_workers(pollset));
-      pollset->called_shutdown = 1;
-      grpc_exec_ctx_enqueue(exec_ctx, pollset->shutdown_done, 1);
+      finish_shutdown(exec_ctx, pollset);
     }
   } else if (grpc_fd_is_orphaned(fd)) {
     /* Don't try to add it to anything, we'll drop our ref on it below */

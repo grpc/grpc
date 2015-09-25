@@ -7,7 +7,7 @@ using pb = global::Google.Protobuf;
 using pbc = global::Google.Protobuf.Collections;
 using pbr = global::Google.Protobuf.Reflection;
 using scg = global::System.Collections.Generic;
-namespace Examples {
+namespace Routeguide {
 
   namespace Proto {
 
@@ -23,29 +23,29 @@ namespace Examples {
       static RouteGuide() {
         byte[] descriptorData = global::System.Convert.FromBase64String(
             string.Concat(
-              "ChFyb3V0ZV9ndWlkZS5wcm90bxIIZXhhbXBsZXMiLAoFUG9pbnQSEAoIbGF0", 
-              "aXR1ZGUYASABKAUSEQoJbG9uZ2l0dWRlGAIgASgFIkUKCVJlY3RhbmdsZRIb", 
-              "CgJsbxgBIAEoCzIPLmV4YW1wbGVzLlBvaW50EhsKAmhpGAIgASgLMg8uZXhh", 
-              "bXBsZXMuUG9pbnQiOgoHRmVhdHVyZRIMCgRuYW1lGAEgASgJEiEKCGxvY2F0", 
-              "aW9uGAIgASgLMg8uZXhhbXBsZXMuUG9pbnQiPwoJUm91dGVOb3RlEiEKCGxv", 
-              "Y2F0aW9uGAEgASgLMg8uZXhhbXBsZXMuUG9pbnQSDwoHbWVzc2FnZRgCIAEo", 
-              "CSJiCgxSb3V0ZVN1bW1hcnkSEwoLcG9pbnRfY291bnQYASABKAUSFQoNZmVh", 
-              "dHVyZV9jb3VudBgCIAEoBRIQCghkaXN0YW5jZRgDIAEoBRIUCgxlbGFwc2Vk", 
-              "X3RpbWUYBCABKAUy9QEKClJvdXRlR3VpZGUSMgoKR2V0RmVhdHVyZRIPLmV4", 
-              "YW1wbGVzLlBvaW50GhEuZXhhbXBsZXMuRmVhdHVyZSIAEjoKDExpc3RGZWF0", 
-              "dXJlcxITLmV4YW1wbGVzLlJlY3RhbmdsZRoRLmV4YW1wbGVzLkZlYXR1cmUi", 
-              "ADABEjoKC1JlY29yZFJvdXRlEg8uZXhhbXBsZXMuUG9pbnQaFi5leGFtcGxl", 
-              "cy5Sb3V0ZVN1bW1hcnkiACgBEjsKCVJvdXRlQ2hhdBITLmV4YW1wbGVzLlJv", 
-              "dXRlTm90ZRoTLmV4YW1wbGVzLlJvdXRlTm90ZSIAKAEwAUIPCgdleC5ncnBj", 
-              "ogIDUlRHYgZwcm90bzM="));
+              "ChFyb3V0ZV9ndWlkZS5wcm90bxIKcm91dGVndWlkZSIsCgVQb2ludBIQCghs", 
+              "YXRpdHVkZRgBIAEoBRIRCglsb25naXR1ZGUYAiABKAUiSQoJUmVjdGFuZ2xl", 
+              "Eh0KAmxvGAEgASgLMhEucm91dGVndWlkZS5Qb2ludBIdCgJoaRgCIAEoCzIR", 
+              "LnJvdXRlZ3VpZGUuUG9pbnQiPAoHRmVhdHVyZRIMCgRuYW1lGAEgASgJEiMK", 
+              "CGxvY2F0aW9uGAIgASgLMhEucm91dGVndWlkZS5Qb2ludCJBCglSb3V0ZU5v", 
+              "dGUSIwoIbG9jYXRpb24YASABKAsyES5yb3V0ZWd1aWRlLlBvaW50Eg8KB21l", 
+              "c3NhZ2UYAiABKAkiYgoMUm91dGVTdW1tYXJ5EhMKC3BvaW50X2NvdW50GAEg", 
+              "ASgFEhUKDWZlYXR1cmVfY291bnQYAiABKAUSEAoIZGlzdGFuY2UYAyABKAUS", 
+              "FAoMZWxhcHNlZF90aW1lGAQgASgFMoUCCgpSb3V0ZUd1aWRlEjYKCkdldEZl", 
+              "YXR1cmUSES5yb3V0ZWd1aWRlLlBvaW50GhMucm91dGVndWlkZS5GZWF0dXJl", 
+              "IgASPgoMTGlzdEZlYXR1cmVzEhUucm91dGVndWlkZS5SZWN0YW5nbGUaEy5y", 
+              "b3V0ZWd1aWRlLkZlYXR1cmUiADABEj4KC1JlY29yZFJvdXRlEhEucm91dGVn", 
+              "dWlkZS5Qb2ludBoYLnJvdXRlZ3VpZGUuUm91dGVTdW1tYXJ5IgAoARI/CglS", 
+              "b3V0ZUNoYXQSFS5yb3V0ZWd1aWRlLlJvdXRlTm90ZRoVLnJvdXRlZ3VpZGUu", 
+              "Um91dGVOb3RlIgAoATABQg8KB2V4LmdycGOiAgNSVEdiBnByb3RvMw=="));
         descriptor = pbr::FileDescriptor.InternalBuildGeneratedFileFrom(descriptorData,
             new pbr::FileDescriptor[] { },
             new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
-              new pbr::GeneratedCodeInfo(typeof(global::Examples.Point), new[]{ "Latitude", "Longitude" }, null, null, null),
-              new pbr::GeneratedCodeInfo(typeof(global::Examples.Rectangle), new[]{ "Lo", "Hi" }, null, null, null),
-              new pbr::GeneratedCodeInfo(typeof(global::Examples.Feature), new[]{ "Name", "Location" }, null, null, null),
-              new pbr::GeneratedCodeInfo(typeof(global::Examples.RouteNote), new[]{ "Location", "Message" }, null, null, null),
-              new pbr::GeneratedCodeInfo(typeof(global::Examples.RouteSummary), new[]{ "PointCount", "FeatureCount", "Distance", "ElapsedTime" }, null, null, null)
+              new pbr::GeneratedCodeInfo(typeof(global::Routeguide.Point), new[]{ "Latitude", "Longitude" }, null, null, null),
+              new pbr::GeneratedCodeInfo(typeof(global::Routeguide.Rectangle), new[]{ "Lo", "Hi" }, null, null, null),
+              new pbr::GeneratedCodeInfo(typeof(global::Routeguide.Feature), new[]{ "Name", "Location" }, null, null, null),
+              new pbr::GeneratedCodeInfo(typeof(global::Routeguide.RouteNote), new[]{ "Location", "Message" }, null, null, null),
+              new pbr::GeneratedCodeInfo(typeof(global::Routeguide.RouteSummary), new[]{ "PointCount", "FeatureCount", "Distance", "ElapsedTime" }, null, null, null)
             }));
       }
       #endregion
@@ -59,7 +59,7 @@ namespace Examples {
     public static pb::MessageParser<Point> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Examples.Proto.RouteGuide.Descriptor.MessageTypes[0]; }
+      get { return global::Routeguide.Proto.RouteGuide.Descriptor.MessageTypes[0]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -187,7 +187,7 @@ namespace Examples {
     public static pb::MessageParser<Rectangle> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Examples.Proto.RouteGuide.Descriptor.MessageTypes[1]; }
+      get { return global::Routeguide.Proto.RouteGuide.Descriptor.MessageTypes[1]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -210,8 +210,8 @@ namespace Examples {
     }
 
     public const int LoFieldNumber = 1;
-    private global::Examples.Point lo_;
-    public global::Examples.Point Lo {
+    private global::Routeguide.Point lo_;
+    public global::Routeguide.Point Lo {
       get { return lo_; }
       set {
         lo_ = value;
@@ -219,8 +219,8 @@ namespace Examples {
     }
 
     public const int HiFieldNumber = 2;
-    private global::Examples.Point hi_;
-    public global::Examples.Point Hi {
+    private global::Routeguide.Point hi_;
+    public global::Routeguide.Point Hi {
       get { return hi_; }
       set {
         hi_ = value;
@@ -282,13 +282,13 @@ namespace Examples {
       }
       if (other.lo_ != null) {
         if (lo_ == null) {
-          lo_ = new global::Examples.Point();
+          lo_ = new global::Routeguide.Point();
         }
         Lo.MergeFrom(other.Lo);
       }
       if (other.hi_ != null) {
         if (hi_ == null) {
-          hi_ = new global::Examples.Point();
+          hi_ = new global::Routeguide.Point();
         }
         Hi.MergeFrom(other.Hi);
       }
@@ -303,14 +303,14 @@ namespace Examples {
             break;
           case 10: {
             if (lo_ == null) {
-              lo_ = new global::Examples.Point();
+              lo_ = new global::Routeguide.Point();
             }
             input.ReadMessage(lo_);
             break;
           }
           case 18: {
             if (hi_ == null) {
-              hi_ = new global::Examples.Point();
+              hi_ = new global::Routeguide.Point();
             }
             input.ReadMessage(hi_);
             break;
@@ -327,7 +327,7 @@ namespace Examples {
     public static pb::MessageParser<Feature> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Examples.Proto.RouteGuide.Descriptor.MessageTypes[2]; }
+      get { return global::Routeguide.Proto.RouteGuide.Descriptor.MessageTypes[2]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -359,8 +359,8 @@ namespace Examples {
     }
 
     public const int LocationFieldNumber = 2;
-    private global::Examples.Point location_;
-    public global::Examples.Point Location {
+    private global::Routeguide.Point location_;
+    public global::Routeguide.Point Location {
       get { return location_; }
       set {
         location_ = value;
@@ -425,7 +425,7 @@ namespace Examples {
       }
       if (other.location_ != null) {
         if (location_ == null) {
-          location_ = new global::Examples.Point();
+          location_ = new global::Routeguide.Point();
         }
         Location.MergeFrom(other.Location);
       }
@@ -444,7 +444,7 @@ namespace Examples {
           }
           case 18: {
             if (location_ == null) {
-              location_ = new global::Examples.Point();
+              location_ = new global::Routeguide.Point();
             }
             input.ReadMessage(location_);
             break;
@@ -461,7 +461,7 @@ namespace Examples {
     public static pb::MessageParser<RouteNote> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Examples.Proto.RouteGuide.Descriptor.MessageTypes[3]; }
+      get { return global::Routeguide.Proto.RouteGuide.Descriptor.MessageTypes[3]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -484,8 +484,8 @@ namespace Examples {
     }
 
     public const int LocationFieldNumber = 1;
-    private global::Examples.Point location_;
-    public global::Examples.Point Location {
+    private global::Routeguide.Point location_;
+    public global::Routeguide.Point Location {
       get { return location_; }
       set {
         location_ = value;
@@ -556,7 +556,7 @@ namespace Examples {
       }
       if (other.location_ != null) {
         if (location_ == null) {
-          location_ = new global::Examples.Point();
+          location_ = new global::Routeguide.Point();
         }
         Location.MergeFrom(other.Location);
       }
@@ -574,7 +574,7 @@ namespace Examples {
             break;
           case 10: {
             if (location_ == null) {
-              location_ = new global::Examples.Point();
+              location_ = new global::Routeguide.Point();
             }
             input.ReadMessage(location_);
             break;
@@ -595,7 +595,7 @@ namespace Examples {
     public static pb::MessageParser<RouteSummary> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Examples.Proto.RouteGuide.Descriptor.MessageTypes[4]; }
+      get { return global::Routeguide.Proto.RouteGuide.Descriptor.MessageTypes[4]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
