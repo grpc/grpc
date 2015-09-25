@@ -24,7 +24,7 @@ HOW TO USE
 
 - Add NuGet package `Grpc` as a dependency (Project options -> Manage NuGet Packages).
   That will also pull all the transitive dependencies (including the native libraries that
-  gRPC C# is internally using).
+  gRPC C# is using internally).
 
 **Linux (Debian)**
 
@@ -48,7 +48,7 @@ HOW TO USE
   and install it using `dpkg`.
 
   ```sh
-  # choose version corresponding to libgrpc you've installed.
+  # choose version corresponding to the version of libgrpc you've installed.
   wget https://github.com/grpc/grpc/releases/download/release-0_11_0/libgrpc-csharp-ext0_0.11.0.0-1_amd64.deb
   dpkg -i libgrpc-csharp-ext0_0.11.0.0-1_amd64.deb
   ```
@@ -64,9 +64,15 @@ HOW TO USE
   with Xamarin Studio on MacOS will not be great, as you won't be able to run your
   code directly from Xamarin Studio (which requires 32bit version of Mono).
 
-- Install Homebrew and gRPC C Core using instructions in https://github.com/grpc/homebrew-grpc
+- Install [homebrew][]. Run the following command to install gRPC C# native dependencies.
 
-- Install 64-bit version of mono with command `brew install mono` (assumes you've already installed Homebrew).
+  ```sh
+  $ curl -fsSL https://goo.gl/getgrpc | bash -
+  ```
+  This will download and run the [gRPC install script][], then install the latest version of gRPC C core and native C# extension.
+  It also installs Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for ruby.
+
+- Install 64-bit version of mono with command `brew install mono`.
 
 - Open Xamarin Studio and start a new project/solution.
 
@@ -146,7 +152,7 @@ tools/run_tests/run_tests.py -l csharp
 DOCUMENTATION
 -------------
 - the gRPC C# reference documentation is available online at [grpc.io][]
-- Helloworld project example can be found in https://github.com/grpc/grpc/tree/master/examples/csharp/helloworld.
+- [Helloworld example][]
 
 CONTENTS
 --------
@@ -185,3 +191,9 @@ Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes
   Installation on a machine where your application is going to be deployed is no different.
 
 - Possible cause for the problem is that the `grpc_csharp_ext` library is installed, but it has different bitness (32/64bit) than your C# runtime (in case you are using mono) or C# application.
+
+[homebrew]:http://brew.sh
+[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
+[grpc.io]: http://www.grpc.io/docs/installation/csharp.html
+[Debian jessie-backports]:http://backports.debian.org/Instructions/
+[Helloworld example]:../../examples/csharp/helloworld
