@@ -3,49 +3,52 @@ gRPC in 3 minutes (C#)
 
 BACKGROUND
 -------------
-For this sample, we've already generated the server and client stubs from `helloworld.proto`. 
-Example projects depend on NuGet packages `Grpc` and `Google.ProtocolBuffers` which have been already added to the project for you.
+For this sample, we've already generated the server and client stubs from [helloworld.proto][].
+
+Example projects depend on the [Grpc](https://www.nuget.org/packages/Grpc/)
+and [Google.Protobuf](https://www.nuget.org/packages/Google.Protobuf/) NuGet packages
+which have been already added to the project for you.
 
 PREREQUISITES
 -------------
 **Windows**
 - .NET 4.5+
-- VS 2013 (with NuGet plugin installed)
+- Visual Studio 2013 or 2015
 
-**Linux (Mono)**
+**Linux**
 - Mono
-- Monodevelop 5.9 with NuGet Add-in installed (older versions might work)
+- Monodevelop 5.9 with NuGet Add-in installed
 
-**MacOS (Mono)**
+**Mac OS X**
 - Xamarin Studio (with NuGet plugin installed)
+- [homebrew][]
 
 BUILD
 -------
 
 **Windows**
-- Clone this repository.
 
 - Open solution `Greeter.sln` with Visual Studio
 
 - Build the solution (this will automatically download NuGet dependencies)
 
-**Linux (Mono)**
-- Clone this repository.
+**Linux (Debian)**
 
-- Install gRPC C Core using instructions in https://github.com/grpc/homebrew-grpc
+- Install gRPC C core and C# native extension using [How to use gRPC C#][] instructions
 
-- gRPC C# depends on native shared library `libgrpc_csharp_ext.so`. To make it visible
-  to Mono runtime, follow instructions in [Using gRPC C# on Linux](https://github.com/grpc/grpc/tree/master/src/csharp#usage-linux-mono)
+- Open solution `Greeter.sln` in MonoDevelop.
 
-- Open solution `Greeter.sln` in MonoDevelop (you need to manually restore dependencies by using `mono nuget.exe restore` if you don't have NuGet add-in)
+- Build the solution (you need to manually restore dependencies by using `mono nuget.exe restore` if you don't have NuGet add-in)
 
-- Build the solution.
+**Mac OS X**
 
-**MacOS (Mono)**
-- See [Using gRPC C# on MacOS](https://github.com/grpc/grpc/tree/master/src/csharp#usage-macos-mono) for more info
-  on MacOS support.
+- Install gRPC C core and C# native extension using [How to use gRPC C#][] instructions
 
-Try it! 
+- Open solution `Greeter.sln` with Xamarin Studio
+
+- Build the solution (this will automatically download NuGet dependencies)
+
+Try it!
 -------
 
 - Run the server
@@ -69,4 +72,9 @@ On Linux or Mac, use `mono GreeterServer.exe` and `mono GreeterClient.exe` to ru
 Tutorial
 --------
 
-You can find a more detailed tutorial in [gRPC Basics: C#](route_guide/README.md)
+You can find a more detailed tutorial in [gRPC Basics: C#][]
+
+[homebrew]:http://brew.sh
+[helloworld.proto]:../../protos/helloworld.proto
+[How to use gRPC C#]:../../../src/csharp#how-to-use
+[gRPC Basics: C#]:http://www.grpc.io/docs/tutorials/basic/csharp.html
