@@ -42,8 +42,8 @@ int tsi_tracing_enabled = 0;
 
 /* --- Utils. --- */
 
-char* tsi_strdup(const char* src) {
-  char* dst;
+char *tsi_strdup(const char *src) {
+  char *dst;
   size_t len;
   if (!src) return NULL;
   len = strlen(src) + 1;
@@ -55,7 +55,7 @@ char* tsi_strdup(const char* src) {
 
 /* --- tsi_result common implementation. --- */
 
-const char* tsi_result_to_string(tsi_result result) {
+const char *tsi_result_to_string(tsi_result result) {
   switch (result) {
     case TSI_OK:
       return "TSI_OK";
@@ -92,11 +92,11 @@ const char* tsi_result_to_string(tsi_result result) {
 
    Calls specific implementation after state/input validation. */
 
-tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
-                                       const unsigned char* unprotected_bytes,
-                                       size_t* unprotected_bytes_size,
-                                       unsigned char* protected_output_frames,
-                                       size_t* protected_output_frames_size) {
+tsi_result tsi_frame_protector_protect(tsi_frame_protector *self,
+                                       const unsigned char *unprotected_bytes,
+                                       size_t *unprotected_bytes_size,
+                                       unsigned char *protected_output_frames,
+                                       size_t *protected_output_frames_size) {
   if (self == NULL || unprotected_bytes == NULL ||
       unprotected_bytes_size == NULL || protected_output_frames == NULL ||
       protected_output_frames_size == NULL) {
@@ -108,8 +108,8 @@ tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
 }
 
 tsi_result tsi_frame_protector_protect_flush(
-    tsi_frame_protector* self, unsigned char* protected_output_frames,
-    size_t* protected_output_frames_size, size_t* still_pending_size) {
+    tsi_frame_protector *self, unsigned char *protected_output_frames,
+    size_t *protected_output_frames_size, size_t *still_pending_size) {
   if (self == NULL || protected_output_frames == NULL ||
       protected_output_frames == NULL || still_pending_size == NULL) {
     return TSI_INVALID_ARGUMENT;
@@ -120,9 +120,9 @@ tsi_result tsi_frame_protector_protect_flush(
 }
 
 tsi_result tsi_frame_protector_unprotect(
-    tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
-    size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
-    size_t* unprotected_bytes_size) {
+    tsi_frame_protector *self, const unsigned char *protected_frames_bytes,
+    size_t *protected_frames_bytes_size, unsigned char *unprotected_bytes,
+    size_t *unprotected_bytes_size) {
   if (self == NULL || protected_frames_bytes == NULL ||
       protected_frames_bytes_size == NULL || unprotected_bytes == NULL ||
       unprotected_bytes_size == NULL) {
@@ -133,7 +133,7 @@ tsi_result tsi_frame_protector_unprotect(
                                  unprotected_bytes_size);
 }
 
-void tsi_frame_protector_destroy(tsi_frame_protector* self) {
+void tsi_frame_protector_destroy(tsi_frame_protector *self) {
   if (self == NULL) return;
   self->vtable->destroy(self);
 }
@@ -142,29 +142,29 @@ void tsi_frame_protector_destroy(tsi_frame_protector* self) {
 
    Calls specific implementation after state/input validation. */
 
-tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
-                                                    unsigned char* bytes,
-                                                    size_t* bytes_size) {
+tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker *self,
+                                                    unsigned char *bytes,
+                                                    size_t *bytes_size) {
   if (self == NULL) return TSI_INVALID_ARGUMENT;
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   return self->vtable->get_bytes_to_send_to_peer(self, bytes, bytes_size);
 }
 
-tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker* self,
-                                                  const unsigned char* bytes,
-                                                  size_t* bytes_size) {
+tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker *self,
+                                                  const unsigned char *bytes,
+                                                  size_t *bytes_size) {
   if (self == NULL) return TSI_INVALID_ARGUMENT;
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   return self->vtable->process_bytes_from_peer(self, bytes, bytes_size);
 }
 
-tsi_result tsi_handshaker_get_result(tsi_handshaker* self) {
+tsi_result tsi_handshaker_get_result(tsi_handshaker *self) {
   if (self == NULL) return TSI_INVALID_ARGUMENT;
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   return self->vtable->get_result(self);
 }
 
-tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer) {
+tsi_result tsi_handshaker_extract_peer(tsi_handshaker *self, tsi_peer *peer) {
   if (self == NULL || peer == NULL) return TSI_INVALID_ARGUMENT;
   memset(peer, 0, sizeof(tsi_peer));
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
@@ -175,8 +175,8 @@ tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer) {
 }
 
 tsi_result tsi_handshaker_create_frame_protector(
-    tsi_handshaker* self, size_t* max_protected_frame_size,
-    tsi_frame_protector** protector) {
+    tsi_handshaker *self, size_t *max_protected_frame_size,
+    tsi_frame_protector **protector) {
   tsi_result result;
   if (self == NULL || protector == NULL) return TSI_INVALID_ARGUMENT;
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
@@ -191,7 +191,7 @@ tsi_result tsi_handshaker_create_frame_protector(
   return result;
 }
 
-void tsi_handshaker_destroy(tsi_handshaker* self) {
+void tsi_handshaker_destroy(tsi_handshaker *self) {
   if (self == NULL) return;
   self->vtable->destroy(self);
 }
@@ -204,7 +204,7 @@ tsi_peer_property tsi_init_peer_property(void) {
   return property;
 }
 
-static void tsi_peer_destroy_list_property(tsi_peer_property* children,
+static void tsi_peer_destroy_list_property(tsi_peer_property *children,
                                            size_t child_count) {
   size_t i;
   for (i = 0; i < child_count; i++) {
@@ -213,7 +213,7 @@ static void tsi_peer_destroy_list_property(tsi_peer_property* children,
   free(children);
 }
 
-void tsi_peer_property_destruct(tsi_peer_property* property) {
+void tsi_peer_property_destruct(tsi_peer_property *property) {
   if (property->name != NULL) {
     free(property->name);
   }
@@ -223,7 +223,7 @@ void tsi_peer_property_destruct(tsi_peer_property* property) {
   *property = tsi_init_peer_property(); /* Reset everything to 0. */
 }
 
-void tsi_peer_destruct(tsi_peer* self) {
+void tsi_peer_destruct(tsi_peer *self) {
   if (self == NULL) return;
   if (self->properties != NULL) {
     tsi_peer_destroy_list_property(self->properties, self->property_count);
@@ -233,7 +233,7 @@ void tsi_peer_destruct(tsi_peer* self) {
 }
 
 tsi_result tsi_construct_allocated_string_peer_property(
-    const char* name, size_t value_length, tsi_peer_property* property) {
+    const char *name, size_t value_length, tsi_peer_property *property) {
   *property = tsi_init_peer_property();
   if (name != NULL) {
     property->name = tsi_strdup(name);
@@ -251,15 +251,15 @@ tsi_result tsi_construct_allocated_string_peer_property(
 }
 
 tsi_result tsi_construct_string_peer_property_from_cstring(
-    const char* name, const char* value, tsi_peer_property* property) {
+    const char *name, const char *value, tsi_peer_property *property) {
   return tsi_construct_string_peer_property(name, value, strlen(value),
                                             property);
 }
 
-tsi_result tsi_construct_string_peer_property(const char* name,
-                                              const char* value,
+tsi_result tsi_construct_string_peer_property(const char *name,
+                                              const char *value,
                                               size_t value_length,
-                                              tsi_peer_property* property) {
+                                              tsi_peer_property *property) {
   tsi_result result = tsi_construct_allocated_string_peer_property(
       name, value_length, property);
   if (result != TSI_OK) return result;
@@ -269,7 +269,7 @@ tsi_result tsi_construct_string_peer_property(const char* name,
   return TSI_OK;
 }
 
-tsi_result tsi_construct_peer(size_t property_count, tsi_peer* peer) {
+tsi_result tsi_construct_peer(size_t property_count, tsi_peer *peer) {
   memset(peer, 0, sizeof(tsi_peer));
   if (property_count > 0) {
     peer->properties = calloc(property_count, sizeof(tsi_peer_property));

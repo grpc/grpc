@@ -49,8 +49,8 @@ typedef struct {
   int is_done;
 } synchronizer;
 
-static void on_metadata_response(void *user_data, grpc_credentials_md *md_elems,
-                                 size_t num_md,
+static void on_metadata_response(grpc_exec_ctx *exec_ctx, void *user_data,
+                                 grpc_credentials_md *md_elems, size_t num_md,
                                  grpc_credentials_status status) {
   synchronizer *sync = user_data;
   if (status == GRPC_CREDENTIALS_ERROR) {
@@ -70,6 +70,7 @@ static void on_metadata_response(void *user_data, grpc_credentials_md *md_elems,
 
 int main(int argc, char **argv) {
   int result = 0;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   synchronizer sync;
   grpc_credentials *creds = NULL;
   char *service_url = "https://test.foo.google.com/Foo";
@@ -90,14 +91,19 @@ int main(int argc, char **argv) {
   grpc_pollset_init(&sync.pollset);
   sync.is_done = 0;
 
-  grpc_credentials_get_request_metadata(creds, &sync.pollset, service_url,
-                                        on_metadata_response, &sync);
+  grpc_credentials_get_request_metadata(&exec_ctx, creds, &sync.pollset,
+                                        service_url, on_metadata_response,
+                                        &sync);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   while (!sync.is_done) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&sync.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+    grpc_pollset_work(&exec_ctx, &sync.pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
+    grpc_exec_ctx_finish(&exec_ctx);
+    gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
 

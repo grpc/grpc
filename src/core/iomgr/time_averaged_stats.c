@@ -33,7 +33,7 @@
 
 #include "src/core/iomgr/time_averaged_stats.h"
 
-void grpc_time_averaged_stats_init(grpc_time_averaged_stats *stats,
+void grpc_time_averaged_stats_init(grpc_time_averaged_stats* stats,
                                    double init_avg, double regress_weight,
                                    double persistence_factor) {
   stats->init_avg = init_avg;
@@ -45,14 +45,14 @@ void grpc_time_averaged_stats_init(grpc_time_averaged_stats *stats,
   stats->aggregate_weighted_avg = init_avg;
 }
 
-void grpc_time_averaged_stats_add_sample(grpc_time_averaged_stats *stats,
+void grpc_time_averaged_stats_add_sample(grpc_time_averaged_stats* stats,
                                          double value) {
   stats->batch_total_value += value;
   ++stats->batch_num_samples;
 }
 
 double grpc_time_averaged_stats_update_average(
-    grpc_time_averaged_stats *stats) {
+    grpc_time_averaged_stats* stats) {
   /* Start with the current batch: */
   double weighted_sum = stats->batch_total_value;
   double total_weight = stats->batch_num_samples;

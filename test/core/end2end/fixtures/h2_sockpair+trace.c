@@ -62,9 +62,11 @@ static void server_setup_transport(void *ts, grpc_transport *transport,
   grpc_end2end_test_fixture *f = ts;
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
-  grpc_server_setup_transport(f->server, transport, extra_filters,
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_server_setup_transport(&exec_ctx, f->server, transport, extra_filters,
                               GPR_ARRAY_SIZE(extra_filters), mdctx,
                               grpc_server_get_channel_args(f->server));
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 typedef struct {
@@ -72,7 +74,8 @@ typedef struct {
   grpc_channel_args *client_args;
 } sp_client_setup;
 
-static void client_setup_transport(void *ts, grpc_transport *transport,
+static void client_setup_transport(grpc_exec_ctx *exec_ctx, void *ts,
+                                   grpc_transport *transport,
                                    grpc_mdctx *mdctx) {
   sp_client_setup *cs = ts;
 
@@ -80,8 +83,9 @@ static void client_setup_transport(void *ts, grpc_transport *transport,
                                           &grpc_compress_filter,
                                           &grpc_connected_channel_filter};
   size_t nfilters = sizeof(filters) / sizeof(*filters);
-  grpc_channel *channel = grpc_channel_create_from_filters(
-      "socketpair-target", filters, nfilters, cs->client_args, mdctx, 1);
+  grpc_channel *channel =
+      grpc_channel_create_from_filters(exec_ctx, "socketpair-target", filters,
+                                       nfilters, cs->client_args, mdctx, 1);
 
   cs->f->client = channel;
 
@@ -105,20 +109,24 @@ static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
 
 static void chttp2_init_client_socketpair(grpc_end2end_test_fixture *f,
                                           grpc_channel_args *client_args) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_pair *sfd = f->fixture_data;
   grpc_transport *transport;
   grpc_mdctx *mdctx = grpc_mdctx_create();
   sp_client_setup cs;
   cs.client_args = client_args;
   cs.f = f;
-  transport = grpc_create_chttp2_transport(client_args, sfd->client, mdctx, 1);
-  client_setup_transport(&cs, transport, mdctx);
+  transport = grpc_create_chttp2_transport(&exec_ctx, client_args, sfd->client,
+                                           mdctx, 1);
+  client_setup_transport(&exec_ctx, &cs, transport, mdctx);
   GPR_ASSERT(f->client);
-  grpc_chttp2_transport_start_reading(transport, NULL, 0);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
                                           grpc_channel_args *server_args) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_endpoint_pair *sfd = f->fixture_data;
   grpc_mdctx *mdctx = grpc_mdctx_create();
   grpc_transport *transport;
@@ -126,9 +134,11 @@ static void chttp2_init_server_socketpair(grpc_end2end_test_fixture *f,
   f->server = grpc_server_create_from_filters(NULL, 0, server_args);
   grpc_server_register_completion_queue(f->server, f->cq, NULL);
   grpc_server_start(f->server);
-  transport = grpc_create_chttp2_transport(server_args, sfd->server, mdctx, 0);
+  transport = grpc_create_chttp2_transport(&exec_ctx, server_args, sfd->server,
+                                           mdctx, 0);
   server_setup_transport(f, transport, mdctx);
-  grpc_chttp2_transport_start_reading(transport, NULL, 0);
+  grpc_chttp2_transport_start_reading(&exec_ctx, transport, NULL, 0);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture *f) {
@@ -144,6 +154,7 @@ static grpc_end2end_test_config configs[] = {
 
 int main(int argc, char **argv) {
   size_t i;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   /* force tracing on, with a value to force many
      code paths in trace.c to be taken */
@@ -156,6 +167,7 @@ int main(int argc, char **argv) {
 
   grpc_test_init(argc, argv);
   grpc_init();
+  grpc_exec_ctx_finish(&exec_ctx);
 
   GPR_ASSERT(0 == grpc_tracer_set_enabled("also-doesnt-exist", 0));
   GPR_ASSERT(1 == grpc_tracer_set_enabled("http", 1));

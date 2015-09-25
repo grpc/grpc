@@ -1161,8 +1161,8 @@ TEST_F(End2endTest, ChannelStateTimeout) {
 
   auto state = GRPC_CHANNEL_IDLE;
   for (int i = 0; i < 10; i++) {
-    channel->WaitForStateChange(state, std::chrono::system_clock::now() +
-                                           std::chrono::seconds(1));
+    channel->WaitForStateChange(
+        state, std::chrono::system_clock::now() + std::chrono::seconds(1));
     state = channel->GetState(false);
   }
 }
