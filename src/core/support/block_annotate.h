@@ -31,14 +31,14 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_BLOCK_ANNOTATE_H
-#define GRPC_INTERNAL_CORE_IOMGR_BLOCK_ANNOTATE_H
+#ifndef GRPC_INTERNAL_CORE_SUPPORT_BLOCK_ANNOTATE_H
+#define GRPC_INTERNAL_CORE_SUPPORT_BLOCK_ANNOTATE_H
 
 /* These annotations identify the beginning and end of regions where
    the code may block for reasons other than synchronization functions.
    These include poll, epoll, and getaddrinfo. */
 
-#define GRPC_IOMGR_START_BLOCKING_REGION do {} while (0)
-#define GRPC_IOMGR_END_BLOCKING_REGION do {} while (0)
+#define GRPC_SCHEDULING_START_BLOCKING_REGION do {} while (0)
+#define GRPC_SCHEDULING_END_BLOCKING_REGION do {} while (0)
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_BLOCK_ANNOTATE_H */
+#endif /* GRPC_INTERNAL_CORE_SUPPORT_BLOCK_ANNOTATE_H */

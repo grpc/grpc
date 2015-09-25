@@ -40,7 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/iomgr/block_annotate.h"
+#include "src/core/support/block_annotate.h"
 #include "src/core/support/string.h"
 
 gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
@@ -52,7 +52,7 @@ gpr_slice gpr_load_file(const char *filename, int add_null_terminator,
   FILE *file;
   size_t bytes_read = 0;
 
-  GRPC_IOMGR_START_BLOCKING_REGION;
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
   file = fopen(filename, "rb");
   if (file == NULL) {
     gpr_asprintf(&error_msg, "Could not open file %s (error = %s).", filename,
@@ -86,6 +86,6 @@ end:
     if (success != NULL) *success = 0;
   }
   if (file != NULL) fclose(file);
-  GRPC_IOMGR_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
   return result;
 }

@@ -42,9 +42,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/iomgr/block_annotate.h"
 #include "src/core/iomgr/fd_posix.h"
 #include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/support/block_annotate.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
@@ -146,9 +146,9 @@ static void multipoll_with_poll_pollset_maybe_work(
                                                POLLOUT, &watchers[i]);
   }
 
-  GRPC_IOMGR_START_BLOCKING_REGION;
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
   r = grpc_poll_function(pfds, pfd_count, timeout);
-  GRPC_IOMGR_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
 
   for (i = 1; i < pfd_count; i++) {
     grpc_fd_end_poll(&watchers[i], pfds[i].revents & POLLIN,
