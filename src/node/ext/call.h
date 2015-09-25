@@ -66,15 +66,16 @@ inline v8::Local<v8::Value> nanErrorWithCode(const char *msg,
     return scope.Escape(err);
 }
 
-bool CreateMetadataArray(Local<Object> metadata, grpc_metadata_array *array,
-                         shared_ptr<Resources> resources);
-
 v8::Local<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
 
 struct Resources {
   std::vector<unique_ptr<Nan::Utf8String> > strings;
   std::vector<unique_ptr<PersistentValue> > handles;
 };
+
+bool CreateMetadataArray(v8::Local<v8::Object> metadata,
+                         grpc_metadata_array *array,
+                         shared_ptr<Resources> resources);
 
 class Op {
  public:
@@ -125,6 +126,7 @@ class Call : public Nan::ObjectWrap {
   static NAN_METHOD(Cancel);
   static NAN_METHOD(CancelWithStatus);
   static NAN_METHOD(GetPeer);
+  static NAN_METHOD(SetCredentials);
   static Nan::Callback *constructor;
   // Used for typechecking instances of this javascript class
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;

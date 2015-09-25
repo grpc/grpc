@@ -39,7 +39,7 @@ var examples = grpc.load(__dirname + '/stock.proto').examples;
  *
  * var StockClient = require('stock_client.js');
  * var stockClient = new StockClient(server_address,
- *                                   grpc.Credentials.createInsecure());
+ *                                   grpc.credentials.createInsecure());
  * stockClient.getLastTradePrice({symbol: 'GOOG'}, function(error, response) {
  *   console.log(error || response);
  * });

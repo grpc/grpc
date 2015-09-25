@@ -96,27 +96,9 @@ void plugin_get_metadata(void *state, const char *service_url,
 
 void plugin_destroy_state(void *state);
 
-static NAN_METHOD(PluginCallback);
+NAN_METHOD(PluginCallback);
 
-NAN_INLINE NAUV_WORK_CB(SendPluginCallback) {
-  Nan::HandleScope scope;
-  plugin_callback_data *data = reinterpret_cast<plugin_callback_data>(
-      async->data);
-  // Attach cb and user_data to plugin_callback so that it can access them later
-  v8::Local<v8::Function> plugin_callback = Nan::GetFunction(
-      Nan::New<v8::FunctionTemplate>(PluginCallback).ToLocalChecked());
-  Nan::Set(plugin_callback, Nan::New("cb").ToLocalChecked(),
-           Nan::New<v8::External>(reinterpret_cast<void*>(data->cb)));
-  Nan::Set(plugin_callback, Nan::New("user_data").ToLocalChecked(),
-           Nan::New<v8::External>(data->user_data));
-  const int argc = 2;
-  v8::Local<v8::Value> argv = {Nan::New(data->service_url).ToLocalChecked(),
-                               plugin_callback};
-  NanCallback *callback = static_cast<NanCallback*>(async->data);
-  callback->Call(argc, argv);
-  uv_unref((uv_handle_t *)async);
-  delete async;
-}
+NAUV_WORK_CB(SendPluginCallback);
 
 }  // namespace node
 }  // namespace grpc

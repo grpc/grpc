@@ -39,12 +39,14 @@
 
 #include "grpc/support/log.h"
 #include "grpc/grpc.h"
+#include "grpc/grpc_security.h"
 #include "grpc/support/alloc.h"
 #include "grpc/support/time.h"
 #include "byte_buffer.h"
 #include "call.h"
 #include "channel.h"
 #include "completion_queue_async_worker.h"
+#include "credentials.h"
 #include "timeval.h"
 
 using std::unique_ptr;
@@ -501,6 +503,7 @@ void Call::Init(Local<Object> exports) {
   Nan::SetPrototypeMethod(tpl, "cancel", Cancel);
   Nan::SetPrototypeMethod(tpl, "cancelWithStatus", CancelWithStatus);
   Nan::SetPrototypeMethod(tpl, "getPeer", GetPeer);
+  Nan::SetPrototypeMethod(tpl, "setCredentials", SetCredentials);
   fun_tpl.Reset(tpl);
   Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
   Nan::Set(exports, Nan::New("Call").ToLocalChecked(), ctr);
@@ -722,6 +725,23 @@ NAN_METHOD(Call::GetPeer) {
   Local<Value> peer_value = Nan::New(peer).ToLocalChecked();
   gpr_free(peer);
   info.GetReturnValue().Set(peer_value);
+}
+
+NAN_METHOD(Call::SetCredentials) {
+  Nan::HandleScope scope;
+  if (!Credentials::HasInstance(info[0])) {
+    return Nan::ThrowTypeError(
+        "setCredentials' first argument must be a credential");
+  }
+  Call *call = ObjectWrap::Unwrap<Call>(info.This());
+  Credentials *creds_object = ObjectWrap::Unwrap<Credentials>(
+      Nan::To<Object>(info[1]).ToLocalChecked());
+  grpc_credentials *creds = creds_object->GetWrappedCredentials();
+  grpc_call_error error = GRPC_CALL_ERROR;
+  if (creds) {
+    error = grpc_call_set_credentials(call->wrapped_call, creds);
+  }
+  info.GetReturnValue().Set(Nan::New<Uint32>(error));
 }
 
 }  // namespace node
