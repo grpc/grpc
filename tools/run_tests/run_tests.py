@@ -736,6 +736,10 @@ def _start_port_server(port_server_port):
         urllib2.urlopen('http://localhost:%d/get' % port_server_port,
                         timeout=1).read()
         break
+      except socket.timeout:
+        print "waiting for port_server"
+        time.sleep(0.5)
+        waits += 1
       except urllib2.URLError:
         print "waiting for port_server"
         time.sleep(0.5)
