@@ -43,9 +43,6 @@ typedef struct grpc_iomgr_object {
   struct grpc_iomgr_object *prev;
 } grpc_iomgr_object;
 
-int grpc_maybe_call_delayed_callbacks(gpr_mu *drop_mu, int success);
-void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *iocb, int success);
-
 void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name);
 void grpc_iomgr_unregister_object(grpc_iomgr_object *obj);
 

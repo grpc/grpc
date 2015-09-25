@@ -120,7 +120,8 @@ typedef void (*grpc_jwt_verification_done_cb)(void *user_data,
                                               grpc_jwt_claims *claims);
 
 /* Verifies for the JWT for the given expected audience. */
-void grpc_jwt_verifier_verify(grpc_jwt_verifier *verifier,
+void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
+                              grpc_jwt_verifier *verifier,
                               grpc_pollset *pollset, const char *jwt,
                               const char *audience,
                               grpc_jwt_verification_done_cb cb,

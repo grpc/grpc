@@ -85,29 +85,26 @@ void grpc_pollset_init(grpc_pollset *pollset) {
   pollset->kicked_without_pollers = 0;
 }
 
-void grpc_pollset_shutdown(grpc_pollset *pollset,
-                           void (*shutdown_done)(void *arg),
-                           void *shutdown_done_arg) {
+void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                           grpc_closure *closure) {
   gpr_mu_lock(&pollset->mu);
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   gpr_mu_unlock(&pollset->mu);
-  shutdown_done(shutdown_done_arg);
+  grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
 }
 
 void grpc_pollset_destroy(grpc_pollset *pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker, 
-                       gpr_timespec now, gpr_timespec deadline) {
+void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                       grpc_pollset_worker *worker, gpr_timespec now,
+                       gpr_timespec deadline) {
   int added_worker = 0;
   worker->next = worker->prev = NULL;
   gpr_cv_init(&worker->cv);
-  if (grpc_maybe_call_delayed_callbacks(&pollset->mu, 1 /* GPR_TRUE */)) {
-    goto done;
-  }
-  if (grpc_alarm_check(&pollset->mu, now, &deadline)) {
+  if (grpc_alarm_check(exec_ctx, now, &deadline)) {
     goto done;
   }
   if (!pollset->kicked_without_pollers && !pollset->shutting_down) {
@@ -118,6 +115,11 @@ void grpc_pollset_work(grpc_pollset *pollset, grpc_pollset_worker *worker,
     pollset->kicked_without_pollers = 0;
   }
 done:
+  if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
+    gpr_mu_unlock(&pollset->mu);
+    grpc_exec_ctx_flush(exec_ctx);
+    gpr_mu_lock(&pollset->mu);
+  }
   gpr_cv_destroy(&worker->cv);
   if (added_worker) {
     remove_worker(pollset, worker);
