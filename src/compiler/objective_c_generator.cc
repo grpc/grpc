@@ -241,7 +241,6 @@ void PrintMethodImplementations(Printer *printer,
     printer.Print("                 serviceName:(NSString *)serviceName {\n");
     printer.Print("  return [self initWithHost:host];\n");
     printer.Print("}\n\n");
-    printer.Print("// Class factory method\n");
     printer.Print("+ (instancetype)serviceWithHost:(NSString *)host {\n");
     printer.Print("  return [[self alloc] initWithHost:host];\n");
     printer.Print("}\n\n\n");
