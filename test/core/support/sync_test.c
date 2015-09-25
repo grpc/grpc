@@ -53,9 +53,9 @@ typedef struct queue {
   gpr_cv non_empty; /* Signalled when length becomes non-zero. */
   gpr_cv non_full;  /* Signalled when length becomes non-N. */
   gpr_mu mu;        /* Protects all fields below.
-                 (That is, except during initialization or
-                 destruction, the fields below should be accessed
-                 only by a thread that holds mu.) */
+                       (That is, except during initialization or
+                       destruction, the fields below should be accessed
+                       only by a thread that holds mu.) */
   int head;         /* Index of head of queue 0..N-1. */
   int length;       /* Number of valid elements in queue 0..N. */
   int elem[N];      /* elem[head .. head+length-1] are queue elements. */

@@ -48,8 +48,8 @@ typedef struct call_data {
   gpr_slice_buffer slices; /**< Buffers up input slices to be compressed */
   grpc_linked_mdelem compression_algorithm_storage;
   grpc_linked_mdelem accept_encoding_storage;
-  gpr_uint32
-      remaining_slice_bytes; /**< Input data to be read, as per BEGIN_MESSAGE */
+  gpr_uint32 remaining_slice_bytes;
+  /**< Input data to be read, as per BEGIN_MESSAGE */
   int written_initial_metadata; /**< Already processed initial md? */
   /** Compression algorithm we'll try to use. It may be given by incoming
    * metadata, or by the channel's default compression settings. */
@@ -268,18 +268,19 @@ static void process_send_ops(grpc_call_element *elem,
      - a network event (or similar) from below, to receive something
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
-static void compress_start_transport_stream_op(grpc_call_element *elem,
+static void compress_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
+                                               grpc_call_element *elem,
                                                grpc_transport_stream_op *op) {
   if (op->send_ops && op->send_ops->nops > 0) {
     process_send_ops(elem, op->send_ops);
   }
 
   /* pass control down the stack */
-  grpc_call_next_op(elem, op);
+  grpc_call_next_op(exec_ctx, elem, op);
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_call_element *elem,
+static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            const void *server_transport_data,
                            grpc_transport_stream_op *initial_op) {
   /* grab pointers to our data from the call element */
@@ -298,14 +299,16 @@ static void init_call_elem(grpc_call_element *elem,
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem) {
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_call_element *elem) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   gpr_slice_buffer_destroy(&calld->slices);
 }
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
+static void init_channel_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   channel_data *channeld = elem->channel_data;
@@ -369,7 +372,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element *elem) {
+static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_element *elem) {
   channel_data *channeld = elem->channel_data;
   grpc_compression_algorithm algo_idx;
 

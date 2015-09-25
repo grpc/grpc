@@ -83,8 +83,8 @@ static void gpr_precise_clock_now(gpr_timespec *clk) {
   clk->tv_nsec = counter % cycles_per_second;
 }
 
-#else /* GRPC_TIMERS_RDTSC */
-static void gpr_precise_clock_now(gpr_timespec *clk) {
+#else  /* GRPC_TIMERS_RDTSC */
+static void gpr_precise_clock_now(gpr_timespec* clk) {
   *clk = gpr_now(GPR_CLOCK_REALTIME);
   clk->clock_type = GPR_CLOCK_PRECISE;
 }

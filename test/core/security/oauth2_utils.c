@@ -50,8 +50,9 @@ typedef struct {
   char *token;
 } oauth2_request;
 
-static void on_oauth2_response(void *user_data, grpc_credentials_md *md_elems,
-                               size_t num_md, grpc_credentials_status status) {
+static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *user_data,
+                               grpc_credentials_md *md_elems, size_t num_md,
+                               grpc_credentials_status status) {
   oauth2_request *request = user_data;
   char *token = NULL;
   gpr_slice token_slice;
@@ -72,25 +73,33 @@ static void on_oauth2_response(void *user_data, grpc_credentials_md *md_elems,
   gpr_mu_unlock(GRPC_POLLSET_MU(&request->pollset));
 }
 
-static void do_nothing(void *unused) {}
+static void do_nothing(grpc_exec_ctx *exec_ctx, void *unused, int success) {}
 
 char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds) {
   oauth2_request request;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_closure do_nothing_closure;
   grpc_pollset_init(&request.pollset);
   request.is_done = 0;
 
-  grpc_credentials_get_request_metadata(creds, &request.pollset, "",
+  grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
+
+  grpc_credentials_get_request_metadata(&exec_ctx, creds, &request.pollset, "",
                                         on_oauth2_response, &request);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&request.pollset));
   while (!request.is_done) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&request.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+    grpc_pollset_work(&exec_ctx, &request.pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&request.pollset));
 
-  grpc_pollset_shutdown(&request.pollset, do_nothing, NULL);
+  grpc_pollset_shutdown(&exec_ctx, &request.pollset, &do_nothing_closure);
+  grpc_exec_ctx_finish(&exec_ctx);
   grpc_pollset_destroy(&request.pollset);
   return request.token;
 }

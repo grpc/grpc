@@ -120,13 +120,13 @@ typedef struct census_window_stats_stat_info {
   size_t stat_size;
   /* Function to initialize a user-defined statistics object. If this is set
    * to NULL, then the object will be zero-initialized. */
-  void (*stat_initialize)(void* stat);
+  void (*stat_initialize)(void *stat);
   /* Function to add one user-defined statistics object ('addme') to 'base' */
-  void (*stat_add)(void* base, const void* addme);
+  void (*stat_add)(void *base, const void *addme);
   /* As for previous function, but only add a proportion 'p'. This API will
      currently only use 'p' values in the range [0,1], but other values are
      possible in the future, and should be supported. */
-  void (*stat_add_proportion)(double p, void* base, const void* addme);
+  void (*stat_add_proportion)(double p, void *base, const void *addme);
 } census_window_stats_stat_info;
 
 /* Create a new window_stats object. 'nintervals' is the number of
@@ -138,29 +138,29 @@ typedef struct census_window_stats_stat_info {
    years will be treated as essentially infinite in size. This function will
    GPR_ASSERT() if the object cannot be created or any of the parameters have
    invalid values. This function is thread-safe. */
-struct census_window_stats* census_window_stats_create(
+struct census_window_stats *census_window_stats_create(
     int nintervals, const gpr_timespec intervals[], int granularity,
-    const census_window_stats_stat_info* stat_info);
+    const census_window_stats_stat_info *stat_info);
 
 /* Add a new measurement (in 'stat_value'), as of a given time ('when').
    This function is thread-compatible. */
-void census_window_stats_add(struct census_window_stats* wstats,
-                             const gpr_timespec when, const void* stat_value);
+void census_window_stats_add(struct census_window_stats *wstats,
+                             const gpr_timespec when, const void *stat_value);
 
 /* Structure used to record a single intervals sum for a given statistic */
 typedef struct census_window_stats_sum {
   /* Total count of samples. Note that because some internal interpolation
-   is performed, the count of samples returned for each interval may not be an
-   integral value. */
+     is performed, the count of samples returned for each interval may not be an
+     integral value. */
   double count;
   /* Sum for statistic */
-  void* statistic;
+  void *statistic;
 } census_window_stats_sums;
 
 /* Retrieve a set of all values stored in a window_stats object 'wstats'. The
    number of 'sums' MUST be the same as the number 'nintervals' used in
    census_window_stats_create(). This function is thread-compatible. */
-void census_window_stats_get_sums(const struct census_window_stats* wstats,
+void census_window_stats_get_sums(const struct census_window_stats *wstats,
                                   const gpr_timespec when,
                                   struct census_window_stats_sum sums[]);
 
@@ -168,6 +168,6 @@ void census_window_stats_get_sums(const struct census_window_stats* wstats,
    object will no longer be usable from any of the above functions (and
    calling them will most likely result in a NULL-pointer dereference or
    assertion failure). This function is thread-compatible. */
-void census_window_stats_destroy(struct census_window_stats* wstats);
+void census_window_stats_destroy(struct census_window_stats *wstats);
 
 #endif /* GRPC_INTERNAL_CORE_STATISTICS_WINDOW_STATS_H */

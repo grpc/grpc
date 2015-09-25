@@ -49,7 +49,9 @@ typedef struct grpc_pollset_set {
   grpc_fd **fds;
 } grpc_pollset_set;
 
-void grpc_pollset_set_add_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
-void grpc_pollset_set_del_fd(grpc_pollset_set *pollset_set, grpc_fd *fd);
+void grpc_pollset_set_add_fd(grpc_exec_ctx *exec_ctx,
+                             grpc_pollset_set *pollset_set, grpc_fd *fd);
+void grpc_pollset_set_del_fd(grpc_exec_ctx *exec_ctx,
+                             grpc_pollset_set *pollset_set, grpc_fd *fd);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
