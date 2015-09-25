@@ -63,7 +63,8 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_exec_ctx *exec_ctx, void *parser,
+    grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
@@ -137,7 +138,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_DEBUG:
       memcpy(p->debug_data + p->debug_pos, cur, (size_t)(end - cur));
-      GPR_ASSERT(end - cur < GPR_UINT32_MAX - p->debug_pos);
+      GPR_ASSERT((size_t)(end - cur) < GPR_UINT32_MAX - p->debug_pos);
       p->debug_pos += (gpr_uint32)(end - cur);
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {

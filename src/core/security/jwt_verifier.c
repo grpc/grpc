@@ -145,7 +145,7 @@ static jose_header *jose_header_from_json(grpc_json *json, gpr_slice buffer) {
       /* We only support RSA-1.5 signatures for now.
          Beware of this if we add HMAC support:
          https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
-      */
+       */
       if (cur->type != GRPC_JSON_STRING || strncmp(cur->value, "RS", 2) ||
           evp_md_from_alg(cur->value) == NULL) {
         gpr_log(GPR_ERROR, "Invalid alg field [%s]", cur->value);
@@ -494,7 +494,7 @@ static EVP_PKEY *find_verification_key(const grpc_json *json,
   jwk_keys = find_property_by_name(json, "keys");
   if (jwk_keys == NULL) {
     /* Use the google proprietary format which is:
-      { <kid1>: <x5091>, <kid2>: <x5092>, ... } */
+       { <kid1>: <x5091>, <kid2>: <x5092>, ... } */
     const grpc_json *cur = find_property_by_name(json, header_kid);
     if (cur == NULL) return NULL;
     return extract_pkey_from_x509(cur->value);
@@ -569,7 +569,7 @@ end:
   return result;
 }
 
-static void on_keys_retrieved(void *user_data,
+static void on_keys_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
                               const grpc_httpcli_response *response) {
   grpc_json *json = json_from_http(response);
   verifier_cb_ctx *ctx = (verifier_cb_ctx *)user_data;
@@ -610,7 +610,7 @@ end:
   verifier_cb_ctx_destroy(ctx);
 }
 
-static void on_openid_config_retrieved(void *user_data,
+static void on_openid_config_retrieved(grpc_exec_ctx *exec_ctx, void *user_data,
                                        const grpc_httpcli_response *response) {
   const grpc_json *cur;
   grpc_json *json = json_from_http(response);
@@ -618,7 +618,7 @@ static void on_openid_config_retrieved(void *user_data,
   grpc_httpcli_request req;
   const char *jwks_uri;
 
-  /* TODO(jboeuf): Cache the jwks_uri in order to avoid this hop next time.*/
+  /* TODO(jboeuf): Cache the jwks_uri in order to avoid this hop next time. */
   if (json == NULL) goto error;
   cur = find_property_by_name(json, "jwks_uri");
   if (cur == NULL) {
@@ -641,7 +641,7 @@ static void on_openid_config_retrieved(void *user_data,
     *(req.host + (req.path - jwks_uri)) = '\0';
   }
   grpc_httpcli_get(
-      &ctx->verifier->http_ctx, ctx->pollset, &req,
+      exec_ctx, &ctx->verifier->http_ctx, ctx->pollset, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       on_keys_retrieved, ctx);
   grpc_json_destroy(json);
@@ -682,7 +682,8 @@ static void verifier_put_mapping(grpc_jwt_verifier *v, const char *email_domain,
 }
 
 /* Takes ownership of ctx. */
-static void retrieve_key_and_verify(verifier_cb_ctx *ctx) {
+static void retrieve_key_and_verify(grpc_exec_ctx *exec_ctx,
+                                    verifier_cb_ctx *ctx) {
   const char *at_sign;
   grpc_httpcli_response_cb http_cb;
   char *path_prefix = NULL;
@@ -743,7 +744,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx *ctx) {
   }
 
   grpc_httpcli_get(
-      &ctx->verifier->http_ctx, ctx->pollset, &req,
+      exec_ctx, &ctx->verifier->http_ctx, ctx->pollset, &req,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_max_delay),
       http_cb, ctx);
   gpr_free(req.host);
@@ -755,7 +756,8 @@ error:
   verifier_cb_ctx_destroy(ctx);
 }
 
-void grpc_jwt_verifier_verify(grpc_jwt_verifier *verifier,
+void grpc_jwt_verifier_verify(grpc_exec_ctx *exec_ctx,
+                              grpc_jwt_verifier *verifier,
                               grpc_pollset *pollset, const char *jwt,
                               const char *audience,
                               grpc_jwt_verification_done_cb cb,
@@ -791,6 +793,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier *verifier,
   signature = grpc_base64_decode(cur, 1);
   if (GPR_SLICE_IS_EMPTY(signature)) goto error;
   retrieve_key_and_verify(
+      exec_ctx,
       verifier_cb_ctx_create(verifier, pollset, header, claims, audience,
                              signature, jwt, signed_jwt_len, user_data, cb));
   return;

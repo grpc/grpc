@@ -34,47 +34,10 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_IOMGR_H
 #define GRPC_INTERNAL_CORE_IOMGR_IOMGR_H
 
-/** gRPC Callback definition.
- *
- * \param arg Arbitrary input.
- * \param success An indication on the state of the iomgr. On false, cleanup
- * actions should be taken (eg, shutdown). */
-typedef void (*grpc_iomgr_cb_func)(void *arg, int success);
-
-/** A closure over a grpc_iomgr_cb_func. */
-typedef struct grpc_iomgr_closure {
-  /** Bound callback. */
-  grpc_iomgr_cb_func cb;
-
-  /** Arguments to be passed to "cb". */
-  void *cb_arg;
-
-  /** Internal. A boolean indication to "cb" on the state of the iomgr.
-   * For instance, closures created during a shutdown would have this field set
-   * to false. */
-  int success;
-
-  /**< Internal. Do not touch */
-  struct grpc_iomgr_closure *next;
-} grpc_iomgr_closure;
-
-/** Initializes \a closure with \a cb and \a cb_arg. */
-void grpc_iomgr_closure_init(grpc_iomgr_closure *closure, grpc_iomgr_cb_func cb,
-                             void *cb_arg);
-
 /** Initializes the iomgr. */
 void grpc_iomgr_init(void);
 
 /** Signals the intention to shutdown the iomgr. */
 void grpc_iomgr_shutdown(void);
-
-/** Registers a closure to be invoked at some point in the future.
- *
- * Can be called from within a callback or from anywhere else */
-void grpc_iomgr_add_callback(grpc_iomgr_closure *closure);
-
-/** As per grpc_iomgr_add_callback, with the ability to set the success
-    argument. */
-void grpc_iomgr_add_delayed_callback(grpc_iomgr_closure *iocb, int success);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_H */

@@ -82,7 +82,8 @@ void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
     DisconnectEx(winsocket->socket, NULL, 0, 0);
   } else {
     char *utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_ERROR, "Unable to retrieve DisconnectEx pointer : %s", utf8_message);
+    gpr_log(GPR_ERROR, "Unable to retrieve DisconnectEx pointer : %s",
+            utf8_message);
     gpr_free(utf8_message);
   }
   closesocket(winsocket->socket);

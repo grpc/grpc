@@ -51,7 +51,7 @@ static unsigned seed(void) { return _getpid(); }
 #endif
 
 #if GPR_WINDOWS_CRASH_HANDLER
-LONG crash_handler(struct _EXCEPTION_POINTERS* ex_info) {
+LONG crash_handler(struct _EXCEPTION_POINTERS *ex_info) {
   gpr_log(GPR_DEBUG, "Exception handler called, dumping information");
   while (ex_info->ExceptionRecord) {
     DWORD code = ex_info->ExceptionRecord->ExceptionCode;
@@ -87,7 +87,7 @@ static void install_crash_handler() {
 static void install_crash_handler() {}
 #endif
 
-void grpc_test_init(int argc, char** argv) {
+void grpc_test_init(int argc, char **argv) {
   install_crash_handler();
   gpr_log(GPR_DEBUG, "test slowdown: machine=%f build=%f total=%f",
           (double)GRPC_TEST_SLOWDOWN_MACHINE_FACTOR,

@@ -174,6 +174,7 @@ class Job(object):
     for k, v in add_env.iteritems():
       env[k] = v
     self._start = time.time()
+    message('START', spec.shortname, do_newline=travis)
     self._process = subprocess.Popen(args=spec.cmdline,
                                      stderr=subprocess.STDOUT,
                                      stdout=self._tempfile,
@@ -185,7 +186,6 @@ class Job(object):
     self._travis = travis
     self._xml_test = ET.SubElement(xml_report, 'testcase',
                                    name=self._spec.shortname) if xml_report is not None else None
-    message('START', spec.shortname, do_newline=self._travis)
 
   def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
