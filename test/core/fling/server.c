@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
             } else {
               GPR_ASSERT(shutdown_started);
             }
-            /*	    request_call();
+            /*      request_call();
              */
             break;
           case FLING_SERVER_READ_FOR_STREAMING:

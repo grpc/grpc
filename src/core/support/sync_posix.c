@@ -41,15 +41,15 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-void gpr_mu_init(gpr_mu *mu) { GPR_ASSERT(pthread_mutex_init(mu, NULL) == 0); }
+void gpr_mu_init(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_init(mu, NULL) == 0); }
 
-void gpr_mu_destroy(gpr_mu *mu) { GPR_ASSERT(pthread_mutex_destroy(mu) == 0); }
+void gpr_mu_destroy(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_destroy(mu) == 0); }
 
-void gpr_mu_lock(gpr_mu *mu) { GPR_ASSERT(pthread_mutex_lock(mu) == 0); }
+void gpr_mu_lock(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_lock(mu) == 0); }
 
-void gpr_mu_unlock(gpr_mu *mu) { GPR_ASSERT(pthread_mutex_unlock(mu) == 0); }
+void gpr_mu_unlock(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_unlock(mu) == 0); }
 
-int gpr_mu_trylock(gpr_mu *mu) {
+int gpr_mu_trylock(gpr_mu* mu) {
   int err = pthread_mutex_trylock(mu);
   GPR_ASSERT(err == 0 || err == EBUSY);
   return err == 0;
@@ -57,11 +57,11 @@ int gpr_mu_trylock(gpr_mu *mu) {
 
 /*----------------------------------------*/
 
-void gpr_cv_init(gpr_cv *cv) { GPR_ASSERT(pthread_cond_init(cv, NULL) == 0); }
+void gpr_cv_init(gpr_cv* cv) { GPR_ASSERT(pthread_cond_init(cv, NULL) == 0); }
 
-void gpr_cv_destroy(gpr_cv *cv) { GPR_ASSERT(pthread_cond_destroy(cv) == 0); }
+void gpr_cv_destroy(gpr_cv* cv) { GPR_ASSERT(pthread_cond_destroy(cv) == 0); }
 
-int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
+int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
   int err = 0;
   if (gpr_time_cmp(abs_deadline, gpr_inf_future(abs_deadline.clock_type)) ==
       0) {
@@ -77,15 +77,15 @@ int gpr_cv_wait(gpr_cv *cv, gpr_mu *mu, gpr_timespec abs_deadline) {
   return err == ETIMEDOUT;
 }
 
-void gpr_cv_signal(gpr_cv *cv) { GPR_ASSERT(pthread_cond_signal(cv) == 0); }
+void gpr_cv_signal(gpr_cv* cv) { GPR_ASSERT(pthread_cond_signal(cv) == 0); }
 
-void gpr_cv_broadcast(gpr_cv *cv) {
+void gpr_cv_broadcast(gpr_cv* cv) {
   GPR_ASSERT(pthread_cond_broadcast(cv) == 0);
 }
 
 /*----------------------------------------*/
 
-void gpr_once_init(gpr_once *once, void (*init_function)(void)) {
+void gpr_once_init(gpr_once* once, void (*init_function)(void)) {
   GPR_ASSERT(pthread_once(once, init_function) == 0);
 }
 

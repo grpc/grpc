@@ -63,6 +63,7 @@ static void drain_cq(grpc_completion_queue *cq) {
 }
 
 static void do_nothing(void *ignored) {}
+
 void test_connect(const char *server_host, const char *client_host, int port,
                   int expect_ok) {
   char *client_hostport;
@@ -125,7 +126,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
         gpr_slice_new((char *)client_host, strlen(client_host), do_nothing);
     gpr_slice_buffer_init(&uri_parts);
     gpr_slice_split(uri_slice, ",", &uri_parts);
-    hosts_with_port = gpr_malloc(sizeof(char*) * uri_parts.count);
+    hosts_with_port = gpr_malloc(sizeof(char *) * uri_parts.count);
     for (i = 0; i < uri_parts.count; i++) {
       char *uri_part_str = gpr_dump_slice(uri_parts.slices[i], GPR_DUMP_ASCII);
       gpr_asprintf(&hosts_with_port[i], "%s:%d", uri_part_str, port);
@@ -322,19 +323,19 @@ int main(int argc, char **argv) {
     if (!external_dns_works("loopback46.unittest.grpc.io")) {
       gpr_log(GPR_INFO, "Skipping tests that depend on *.unittest.grpc.io.");
     } else {
-      test_connect("loopback46.unittest.grpc.io",
-                   "loopback4.unittest.grpc.io", 0, 1);
-      test_connect("loopback4.unittest.grpc.io",
-                   "loopback46.unittest.grpc.io", 0, 1);
+      test_connect("loopback46.unittest.grpc.io", "loopback4.unittest.grpc.io",
+                   0, 1);
+      test_connect("loopback4.unittest.grpc.io", "loopback46.unittest.grpc.io",
+                   0, 1);
       if (do_ipv6) {
         test_connect("loopback46.unittest.grpc.io",
                      "loopback6.unittest.grpc.io", 0, 1);
         test_connect("loopback6.unittest.grpc.io",
                      "loopback46.unittest.grpc.io", 0, 1);
-        test_connect("loopback4.unittest.grpc.io",
-                     "loopback6.unittest.grpc.io", 0, 0);
-        test_connect("loopback6.unittest.grpc.io",
-                     "loopback4.unittest.grpc.io", 0, 0);
+        test_connect("loopback4.unittest.grpc.io", "loopback6.unittest.grpc.io",
+                     0, 0);
+        test_connect("loopback6.unittest.grpc.io", "loopback4.unittest.grpc.io",
+                     0, 0);
       }
     }
   }
