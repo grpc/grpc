@@ -67,9 +67,7 @@ static const grpc_metadata *find_metadata(const grpc_metadata *md,
   return NULL;
 }
 
-typedef struct {
-  size_t pseudo_refcount;
-} test_processor_state;
+typedef struct { size_t pseudo_refcount; } test_processor_state;
 
 static void process_oauth2_success(void *state, grpc_auth_context *ctx,
                                    const grpc_metadata *md, size_t md_count,

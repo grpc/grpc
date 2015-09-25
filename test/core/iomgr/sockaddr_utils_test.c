@@ -63,9 +63,11 @@ static struct sockaddr_in6 make_addr6(const gpr_uint8 *data, size_t data_len) {
 
 static const gpr_uint8 kMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
                                     0, 0, 0xff, 0xff, 192, 0, 2, 1};
+
 static const gpr_uint8 kNotQuiteMapped[] = {0, 0, 0,    0,    0,   0, 0, 0,
                                             0, 0, 0xff, 0xfe, 192, 0, 2, 99};
 static const gpr_uint8 kIPv4[] = {192, 0, 2, 1};
+
 static const gpr_uint8 kIPv6[] = {0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
                                   0,    0,    0,    0,    0, 0, 0, 1};
 
