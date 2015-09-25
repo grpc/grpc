@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include "src/core/iomgr/block_annotate.h"
 
 static struct timespec timespec_from_gpr(gpr_timespec gts) {
   struct timespec rv;
@@ -126,6 +127,7 @@ void gpr_sleep_until(gpr_timespec until) {
   gpr_timespec now;
   gpr_timespec delta;
   struct timespec delta_ts;
+  int ns_result;
 
   for (;;) {
     /* We could simplify by using clock_nanosleep instead, but it might be
@@ -137,7 +139,10 @@ void gpr_sleep_until(gpr_timespec until) {
 
     delta = gpr_time_sub(until, now);
     delta_ts = timespec_from_gpr(delta);
-    if (nanosleep(&delta_ts, NULL) == 0) {
+    GRPC_IOMGR_START_BLOCKING_REGION;
+    ns_result = nanosleep(&delta_ts, NULL);
+    GRPC_IOMGR_END_BLOCKING_REGION;
+    if (ns_result == 0) {
       break;
     }
   }
