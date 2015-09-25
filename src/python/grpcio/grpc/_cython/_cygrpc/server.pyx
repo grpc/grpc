@@ -32,6 +32,7 @@ cimport cpython
 from grpc._cython._cygrpc cimport call
 from grpc._cython._cygrpc cimport completion_queue
 from grpc._cython._cygrpc cimport credentials
+from grpc._cython._cygrpc cimport grpc
 from grpc._cython._cygrpc cimport records
 
 import time
@@ -46,7 +47,7 @@ cdef class Server:
     if arguments is not None:
       c_arguments = &arguments.c_args
       self.references.append(arguments)
-    self.c_server = grpc.grpc_server_create(c_arguments)
+    self.c_server = grpc.grpc_server_create(c_arguments, NULL)
     self.is_started = False
     self.is_shutting_down = False
     self.is_shutdown = False
@@ -78,7 +79,7 @@ cdef class Server:
     if self.is_started:
       raise ValueError("cannot register completion queues after start")
     grpc.grpc_server_register_completion_queue(
-        self.c_server, queue.c_completion_queue)
+        self.c_server, queue.c_completion_queue, NULL)
     self.registered_completion_queues.append(queue)
 
   def start(self):
@@ -103,7 +104,7 @@ cdef class Server:
       return grpc.grpc_server_add_secure_http2_port(
           self.c_server, address, server_credentials.c_credentials)
     else:
-      return grpc.grpc_server_add_http2_port(self.c_server, address)
+      return grpc.grpc_server_add_insecure_http2_port(self.c_server, address)
 
   def shutdown(self, completion_queue.CompletionQueue queue not None, tag):
     cdef records.OperationTag operation_tag
