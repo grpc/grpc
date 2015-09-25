@@ -79,8 +79,8 @@ typedef struct {
     struct sockaddr_un un;
   } addr;
   size_t addr_len;
-  grpc_iomgr_closure read_closure;
-  grpc_iomgr_closure destroyed_closure;
+  grpc_closure read_closure;
+  grpc_closure destroyed_closure;
   grpc_udp_server_read_cb read_cb;
 } server_port;
 
@@ -111,13 +111,14 @@ struct grpc_udp_server {
   size_t port_capacity;
 
   /* shutdown callback */
-  void (*shutdown_complete)(void *);
-  void *shutdown_complete_arg;
+  grpc_closure *shutdown_complete;
 
   /* all pollsets interested in new connections */
   grpc_pollset **pollsets;
   /* number of pollsets in the pollsets array */
   size_t pollset_count;
+  /* The parent grpc server */
+  grpc_server* grpc_server;
 };
 
 grpc_udp_server *grpc_udp_server_create(void) {
@@ -134,8 +135,8 @@ grpc_udp_server *grpc_udp_server_create(void) {
   return s;
 }
 
-static void finish_shutdown(grpc_udp_server *s) {
-  s->shutdown_complete(s->shutdown_complete_arg);
+static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
+  grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1);
 
   gpr_mu_destroy(&s->mu);
   gpr_cv_destroy(&s->cv);
@@ -144,24 +145,22 @@ static void finish_shutdown(grpc_udp_server *s) {
   gpr_free(s);
 }
 
-static void destroyed_port(void *server, int success) {
+static void destroyed_port(grpc_exec_ctx *exec_ctx, void *server, int success) {
   grpc_udp_server *s = server;
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
   if (s->destroyed_ports == s->nports) {
     gpr_mu_unlock(&s->mu);
-    finish_shutdown(s);
+    finish_shutdown(exec_ctx, s);
   } else {
     gpr_mu_unlock(&s->mu);
   }
 }
 
-static void dont_care_about_shutdown_completion(void *ignored) {}
-
 /* called when all listening endpoints have been shutdown, so no further
    events will be received on them - at this point it's safe to destroy
    things */
-static void deactivated_all_ports(grpc_udp_server *s) {
+static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
   size_t i;
 
   /* delete ALL the things */
@@ -180,38 +179,35 @@ static void deactivated_all_ports(grpc_udp_server *s) {
       }
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
-      grpc_fd_orphan(sp->emfd, &sp->destroyed_closure, "udp_listener_shutdown");
+      grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure,
+                     "udp_listener_shutdown");
     }
     gpr_mu_unlock(&s->mu);
   } else {
     gpr_mu_unlock(&s->mu);
-    finish_shutdown(s);
+    finish_shutdown(exec_ctx, s);
   }
 }
 
-void grpc_udp_server_destroy(
-    grpc_udp_server *s, void (*shutdown_complete)(void *shutdown_complete_arg),
-    void *shutdown_complete_arg) {
+void grpc_udp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
+                             grpc_closure *on_done) {
   size_t i;
   gpr_mu_lock(&s->mu);
 
   GPR_ASSERT(!s->shutdown);
   s->shutdown = 1;
 
-  s->shutdown_complete = shutdown_complete
-                             ? shutdown_complete
-                             : dont_care_about_shutdown_completion;
-  s->shutdown_complete_arg = shutdown_complete_arg;
+  s->shutdown_complete = on_done;
 
   /* shutdown all fd's */
   if (s->active_ports) {
     for (i = 0; i < s->nports; i++) {
-      grpc_fd_shutdown(s->ports[i].emfd);
+      grpc_fd_shutdown(exec_ctx, s->ports[i].emfd);
     }
     gpr_mu_unlock(&s->mu);
   } else {
     gpr_mu_unlock(&s->mu);
-    deactivated_all_ports(s);
+    deactivated_all_ports(exec_ctx, s);
   }
 }
 
@@ -266,14 +262,14 @@ error:
 }
 
 /* event manager callback when reads are ready */
-static void on_read(void *arg, int success) {
+static void on_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   server_port *sp = arg;
 
   if (success == 0) {
     gpr_mu_lock(&sp->server->mu);
     if (0 == --sp->server->active_ports) {
       gpr_mu_unlock(&sp->server->mu);
-      deactivated_all_ports(sp->server);
+      deactivated_all_ports(exec_ctx, sp->server);
     } else {
       gpr_mu_unlock(&sp->server->mu);
     }
@@ -282,10 +278,10 @@ static void on_read(void *arg, int success) {
 
   /* Tell the registered callback that data is available to read. */
   GPR_ASSERT(sp->read_cb);
-  sp->read_cb(sp->fd);
+  sp->read_cb(sp->fd, sp->server->grpc_server);
 
   /* Re-arm the notification event so we get another chance to read. */
-  grpc_fd_notify_on_read(sp->emfd, &sp->read_closure);
+  grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
 }
 
 static int add_socket_to_server(grpc_udp_server *s, int fd,
@@ -300,6 +296,7 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
   if (port >= 0) {
     grpc_sockaddr_to_string(&addr_str, (struct sockaddr *)&addr, 1);
     gpr_asprintf(&name, "udp-server-listener:%s", addr_str);
+    gpr_free(addr_str);
     gpr_mu_lock(&s->mu);
     /* append it to the list under a lock */
     if (s->nports == s->port_capacity) {
@@ -315,6 +312,7 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
     sp->read_cb = read_cb;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
+    gpr_free(name);
   }
 
   return port;
@@ -405,19 +403,22 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index) {
   return (index < s->nports) ? s->ports[index].fd : -1;
 }
 
-void grpc_udp_server_start(grpc_udp_server *s, grpc_pollset **pollsets,
-                           size_t pollset_count) {
+void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
+                           grpc_pollset **pollsets, size_t pollset_count,
+                           grpc_server *server) {
   size_t i, j;
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(s->active_ports == 0);
   s->pollsets = pollsets;
+  s->grpc_server = server;
   for (i = 0; i < s->nports; i++) {
     for (j = 0; j < pollset_count; j++) {
-      grpc_pollset_add_fd(pollsets[j], s->ports[i].emfd);
+      grpc_pollset_add_fd(exec_ctx, pollsets[j], s->ports[i].emfd);
     }
     s->ports[i].read_closure.cb = on_read;
     s->ports[i].read_closure.cb_arg = &s->ports[i];
-    grpc_fd_notify_on_read(s->ports[i].emfd, &s->ports[i].read_closure);
+    grpc_fd_notify_on_read(exec_ctx, s->ports[i].emfd,
+                           &s->ports[i].read_closure);
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);

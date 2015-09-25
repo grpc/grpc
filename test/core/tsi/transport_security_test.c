@@ -73,8 +73,8 @@ const cert_name_test_entry cert_name_test_entries[] = {
     {1, "www.test.fr", "common.name",
      "*.test.com,*.test.co.uk,*.test.de,*.test.fr"},
     /*
-    {1, "wwW.tESt.fr", "common.name", ",*.*,*.test.de,*.test.FR,www"},
-    */
+       {1, "wwW.tESt.fr", "common.name", ",*.*,*.test.de,*.test.FR,www"},
+     */
     {0, "f.uk", ".uk", NULL},
     {0, "w.bar.foo.com", "?.bar.foo.com", NULL},
     {0, "www.foo.com", "(www|ftp).foo.com", NULL},
@@ -90,9 +90,9 @@ const cert_name_test_entry cert_name_test_entries[] = {
     {0, "WALLY.bar.foo.com", "wa*.bar.foo.com", NULL},
     {0, "wally.bar.foo.com", "*Ly.bar.foo.com", NULL},
     /*
-    {1, "ww%57.foo.com", "", "www.foo.com"},
-    {1, "www&.foo.com", "www%26.foo.com", NULL},
-    */
+       {1, "ww%57.foo.com", "", "www.foo.com"},
+       {1, "www&.foo.com", "www%26.foo.com", NULL},
+     */
 
     /* Common name must not be used if subject alternative name was provided. */
     {0, "www.test.co.jp", "www.test.co.jp",
@@ -111,8 +111,8 @@ const cert_name_test_entry cert_name_test_entries[] = {
 
     /* The following are adapted from the  examples quoted from
        http://tools.ietf.org/html/rfc6125#section-6.4.3
-        (e.g., *.example.com would match foo.example.com but
-         not bar.foo.example.com or example.com). */
+       (e.g., *.example.com would match foo.example.com but
+       not bar.foo.example.com or example.com). */
     {1, "foo.example.com", "*.example.com", NULL},
     {0, "bar.foo.example.com", "*.example.com", NULL},
     {0, "example.com", "*.example.com", NULL},
@@ -133,8 +133,8 @@ const cert_name_test_entry cert_name_test_entries[] = {
     {1, "test.example.co.uk", "*.example.co.uk", NULL},
     {0, "test.example", "*.example", NULL},
     /*
-    {0, "example.co.uk", "*.co.uk", NULL},
-    */
+       {0, "example.co.uk", "*.co.uk", NULL},
+     */
     {0, "foo.com", "*.com", NULL},
     {0, "foo.us", "*.us", NULL},
     {0, "foo", "*", NULL},
@@ -143,8 +143,8 @@ const cert_name_test_entry cert_name_test_entries[] = {
     {1, "www.xn--poema-9qae5a.com.br", "*.xn--poema-9qae5a.com.br", NULL},
     {1, "test.example.xn--mgbaam7a8h", "*.example.xn--mgbaam7a8h", NULL},
     /*
-    {0, "xn--poema-9qae5a.com.br", "*.com.br", NULL},
-    */
+       {0, "xn--poema-9qae5a.com.br", "*.com.br", NULL},
+     */
     {0, "example.xn--mgbaam7a8h", "*.xn--mgbaam7a8h", NULL},
 
     /* Wildcards should be permissible for 'private' registry controlled
@@ -175,9 +175,9 @@ const cert_name_test_entry cert_name_test_entries[] = {
     {0, "foo.", "*.", NULL},
     {0, "foo", "*.", NULL},
     /*
-    {0, "foo.co.uk", "*.co.uk.", NULL},
-    {0, "foo.co.uk.", "*.co.uk.", NULL},
-    */
+       {0, "foo.co.uk", "*.co.uk.", NULL},
+       {0, "foo.co.uk.", "*.co.uk.", NULL},
+     */
 
     /* An empty CN is OK. */
     {1, "test.foo.com", "", "test.foo.com"},

@@ -42,16 +42,18 @@ static gpr_timespec test_deadline(void) {
   return GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100);
 }
 
-static void must_succeed(void* evp, grpc_resolved_addresses* p) {
+static void must_succeed(grpc_exec_ctx *exec_ctx, void *evp,
+                         grpc_resolved_addresses *p) {
   GPR_ASSERT(p);
   GPR_ASSERT(p->naddrs >= 1);
   grpc_resolved_addresses_destroy(p);
-  gpr_event_set(evp, (void*)1);
+  gpr_event_set(evp, (void *)1);
 }
 
-static void must_fail(void* evp, grpc_resolved_addresses* p) {
+static void must_fail(grpc_exec_ctx *exec_ctx, void *evp,
+                      grpc_resolved_addresses *p) {
   GPR_ASSERT(!p);
-  gpr_event_set(evp, (void*)1);
+  gpr_event_set(evp, (void *)1);
 }
 
 static void test_localhost(void) {
@@ -83,7 +85,7 @@ static void test_ipv6_with_port(void) {
 }
 
 static void test_ipv6_without_port(void) {
-  const char* const kCases[] = {
+  const char *const kCases[] = {
       "2001:db8::1", "2001:db8::1.2.3.4", "[2001:db8::1]",
   };
   unsigned i;
@@ -96,7 +98,7 @@ static void test_ipv6_without_port(void) {
 }
 
 static void test_invalid_ip_addresses(void) {
-  const char* const kCases[] = {
+  const char *const kCases[] = {
       "293.283.1238.3:1", "[2001:db8::11111]:1",
   };
   unsigned i;
@@ -109,7 +111,7 @@ static void test_invalid_ip_addresses(void) {
 }
 
 static void test_unparseable_hostports(void) {
-  const char* const kCases[] = {
+  const char *const kCases[] = {
       "[", "[::1", "[::1]bad", "[1.2.3.4]", "[localhost]", "[localhost]:1",
   };
   unsigned i;
@@ -121,7 +123,7 @@ static void test_unparseable_hostports(void) {
   }
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
   test_localhost();

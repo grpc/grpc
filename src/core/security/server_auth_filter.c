@@ -44,11 +44,11 @@ typedef struct call_data {
   gpr_uint8 got_client_metadata;
   grpc_stream_op_buffer *recv_ops;
   /* Closure to call when finished with the auth_on_recv hook. */
-  grpc_iomgr_closure *on_done_recv;
+  grpc_closure *on_done_recv;
   /* Receive closures are chained: we inject this closure as the on_done_recv
      up-call on transport_op, and remember to call our on_done_recv member after
      handling it. */
-  grpc_iomgr_closure auth_on_recv;
+  grpc_closure auth_on_recv;
   grpc_transport_stream_op transport_op;
   grpc_metadata_array md;
   const grpc_metadata *consumed_md;
@@ -109,12 +109,14 @@ static grpc_mdelem *remove_consumed_md(void *user_data, grpc_mdelem *md) {
   return md;
 }
 
+/* called from application code */
 static void on_md_processing_done(
     void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
     const grpc_metadata *response_md, size_t num_response_md,
     grpc_status_code status, const char *error_details) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != NULL && num_response_md > 0) {
@@ -129,21 +131,24 @@ static void on_md_processing_done(
     grpc_metadata_batch_filter(&calld->md_op->data.metadata, remove_consumed_md,
                                elem);
     grpc_metadata_array_destroy(&calld->md);
-    calld->on_done_recv->cb(calld->on_done_recv->cb_arg, 1);
+    calld->on_done_recv->cb(&exec_ctx, calld->on_done_recv->cb_arg, 1);
   } else {
     gpr_slice message;
     grpc_metadata_array_destroy(&calld->md);
     error_details = error_details != NULL
-                    ? error_details
-                    : "Authentication metadata processing failed.";
+                        ? error_details
+                        : "Authentication metadata processing failed.";
     message = gpr_slice_from_copied_string(error_details);
     grpc_sopb_reset(calld->recv_ops);
     grpc_transport_stream_op_add_close(&calld->transport_op, status, &message);
-    grpc_call_next_op(elem, &calld->transport_op);
+    grpc_call_next_op(&exec_ctx, elem, &calld->transport_op);
   }
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void auth_on_recv(void *user_data, int success) {
+static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
+                         int success) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -164,7 +169,7 @@ static void auth_on_recv(void *user_data, int success) {
       return;
     }
   }
-  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
+  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, success);
 }
 
 static void set_recv_ops_md_callbacks(grpc_call_element *elem,
@@ -185,14 +190,15 @@ static void set_recv_ops_md_callbacks(grpc_call_element *elem,
      - a network event (or similar) from below, to receive something
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
-static void auth_start_transport_op(grpc_call_element *elem,
+static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
+                                    grpc_call_element *elem,
                                     grpc_transport_stream_op *op) {
   set_recv_ops_md_callbacks(elem, op);
-  grpc_call_next_op(elem, op);
+  grpc_call_next_op(exec_ctx, elem, op);
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_call_element *elem,
+static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            const void *server_transport_data,
                            grpc_transport_stream_op *initial_op) {
   /* grab pointers to our data from the call element */
@@ -202,7 +208,7 @@ static void init_call_elem(grpc_call_element *elem,
 
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
-  grpc_iomgr_closure_init(&calld->auth_on_recv, auth_on_recv, elem);
+  grpc_closure_init(&calld->auth_on_recv, auth_on_recv, elem);
 
   GPR_ASSERT(initial_op && initial_op->context != NULL &&
              initial_op->context[GRPC_CONTEXT_SECURITY].value == NULL);
@@ -227,10 +233,12 @@ static void init_call_elem(grpc_call_element *elem,
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem) {}
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_call_element *elem) {}
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
+static void init_channel_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   grpc_security_connector *sc = grpc_find_security_connector_in_args(args);
@@ -256,7 +264,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element *elem) {
+static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
   GRPC_SECURITY_CONNECTOR_UNREF(chand->security_connector,

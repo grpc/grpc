@@ -76,8 +76,8 @@ enum grpc_profiling_tags {
   GRPC_PTAG_HTTP2_UNLOCK_CLEANUP = 402 + GRPC_PTAG_IGNORE_THRESHOLD,
 
   /* > 1024 Unassigned reserved. For any miscellaneous use.
-  * Use addition to generate tags from this base or take advantage of the 10
-  * zero'd bits for OR-ing. */
+   * Use addition to generate tags from this base or take advantage of the 10
+   * zero'd bits for OR-ing. */
   GRPC_PTAG_OTHER_BASE = 1024
 };
 

@@ -48,14 +48,14 @@ typedef struct census_window_stats_sum cws_sum;
    entries and a single statistic */
 typedef struct census_window_stats_bucket {
   gpr_int64 count;
-  void* statistic;
+  void *statistic;
 } cws_bucket;
 
 /* Each interval has a set of buckets, and the variables needed to keep
    track of their current state */
 typedef struct census_window_stats_interval_stats {
   /* The buckets. There will be 'granularity' + 1 of these. */
-  cws_bucket* buckets;
+  cws_bucket *buckets;
   /* Index of the bucket containing the smallest time interval. */
   int bottom_bucket;
   /* The smallest time storable in the current window. */
@@ -74,7 +74,7 @@ typedef struct census_window_stats {
   /* Record of stat_info. */
   cws_stat_info stat_info;
   /* Stats for each interval. */
-  cws_interval_stats* interval_stats;
+  cws_interval_stats *interval_stats;
   /* The time the newset stat was recorded. */
   gpr_int64 newest_time;
 } window_stats;
@@ -97,8 +97,8 @@ static gpr_int64 timespec_to_ns(const gpr_timespec ts) {
   return (gpr_int64)ts.tv_sec * GPR_NS_PER_SEC + ts.tv_nsec;
 }
 
-static void cws_initialize_statistic(void* statistic,
-                                     const cws_stat_info* stat_info) {
+static void cws_initialize_statistic(void *statistic,
+                                     const cws_stat_info *stat_info) {
   if (stat_info->stat_initialize == NULL) {
     memset(statistic, 0, stat_info->stat_size);
   } else {
@@ -107,17 +107,17 @@ static void cws_initialize_statistic(void* statistic,
 }
 
 /* Create and initialize a statistic */
-static void* cws_create_statistic(const cws_stat_info* stat_info) {
-  void* stat = gpr_malloc(stat_info->stat_size);
+static void *cws_create_statistic(const cws_stat_info *stat_info) {
+  void *stat = gpr_malloc(stat_info->stat_size);
   cws_initialize_statistic(stat, stat_info);
   return stat;
 }
 
-window_stats* census_window_stats_create(int nintervals,
+window_stats *census_window_stats_create(int nintervals,
                                          const gpr_timespec intervals[],
                                          int granularity,
-                                         const cws_stat_info* stat_info) {
-  window_stats* ret;
+                                         const cws_stat_info *stat_info) {
+  window_stats *ret;
   int i;
   /* validate inputs */
   GPR_ASSERT(nintervals > 0 && granularity > 2 && intervals != NULL &&
@@ -129,17 +129,17 @@ window_stats* census_window_stats_create(int nintervals,
                granularity * 10 <= ns);
   }
   /* Allocate and initialize relevant data structures */
-  ret = (window_stats*)gpr_malloc(sizeof(window_stats));
+  ret = (window_stats *)gpr_malloc(sizeof(window_stats));
   ret->nintervals = nintervals;
   ret->nbuckets = granularity + 1;
   ret->stat_info = *stat_info;
   ret->interval_stats =
-      (cws_interval_stats*)gpr_malloc(nintervals * sizeof(cws_interval_stats));
+      (cws_interval_stats *)gpr_malloc(nintervals * sizeof(cws_interval_stats));
   for (i = 0; i < nintervals; i++) {
     gpr_int64 size_ns = timespec_to_ns(intervals[i]);
-    cws_interval_stats* is = ret->interval_stats + i;
-    cws_bucket* buckets = is->buckets =
-        (cws_bucket*)gpr_malloc(ret->nbuckets * sizeof(cws_bucket));
+    cws_interval_stats *is = ret->interval_stats + i;
+    cws_bucket *buckets = is->buckets =
+        (cws_bucket *)gpr_malloc(ret->nbuckets * sizeof(cws_bucket));
     int b;
     for (b = 0; b < ret->nbuckets; b++) {
       buckets[b].statistic = cws_create_statistic(stat_info);
@@ -168,8 +168,8 @@ window_stats* census_window_stats_create(int nintervals,
 
 /* When we try adding a measurement above the current interval range, we
    need to "shift" the buckets sufficiently to cover the new range. */
-static void cws_shift_buckets(const window_stats* wstats,
-                              cws_interval_stats* is, gpr_int64 when_ns) {
+static void cws_shift_buckets(const window_stats *wstats,
+                              cws_interval_stats *is, gpr_int64 when_ns) {
   int i;
   /* number of bucket time widths to "shift" */
   int shift;
@@ -191,14 +191,14 @@ static void cws_shift_buckets(const window_stats* wstats,
   is->bottom += shift * is->width;
 }
 
-void census_window_stats_add(window_stats* wstats, const gpr_timespec when,
-                             const void* stat_value) {
+void census_window_stats_add(window_stats *wstats, const gpr_timespec when,
+                             const void *stat_value) {
   int i;
   gpr_int64 when_ns = timespec_to_ns(when);
   GPR_ASSERT(wstats->interval_stats != NULL);
   for (i = 0; i < wstats->nintervals; i++) {
-    cws_interval_stats* is = wstats->interval_stats + i;
-    cws_bucket* bucket;
+    cws_interval_stats *is = wstats->interval_stats + i;
+    cws_bucket *bucket;
     if (when_ns < is->bottom) { /* Below smallest time in interval: drop */
       continue;
     }
@@ -218,21 +218,21 @@ void census_window_stats_add(window_stats* wstats, const gpr_timespec when,
 }
 
 /* Add a specific bucket contents to an accumulating total. */
-static void cws_add_bucket_to_sum(cws_sum* sum, const cws_bucket* bucket,
-                                  const cws_stat_info* stat_info) {
+static void cws_add_bucket_to_sum(cws_sum *sum, const cws_bucket *bucket,
+                                  const cws_stat_info *stat_info) {
   sum->count += bucket->count;
   stat_info->stat_add(sum->statistic, bucket->statistic);
 }
 
 /* Add a proportion to an accumulating sum. */
-static void cws_add_proportion_to_sum(double p, cws_sum* sum,
-                                      const cws_bucket* bucket,
-                                      const cws_stat_info* stat_info) {
+static void cws_add_proportion_to_sum(double p, cws_sum *sum,
+                                      const cws_bucket *bucket,
+                                      const cws_stat_info *stat_info) {
   sum->count += p * bucket->count;
   stat_info->stat_add_proportion(p, sum->statistic, bucket->statistic);
 }
 
-void census_window_stats_get_sums(const window_stats* wstats,
+void census_window_stats_get_sums(const window_stats *wstats,
                                   const gpr_timespec when, cws_sum sums[]) {
   int i;
   gpr_int64 when_ns = timespec_to_ns(when);
@@ -242,8 +242,8 @@ void census_window_stats_get_sums(const window_stats* wstats,
     int new_bucket;
     double last_proportion = 1.0;
     double bottom_proportion;
-    cws_interval_stats* is = wstats->interval_stats + i;
-    cws_sum* sum = sums + i;
+    cws_interval_stats *is = wstats->interval_stats + i;
+    cws_sum *sum = sums + i;
     sum->count = 0;
     cws_initialize_statistic(sum->statistic, &wstats->stat_info);
     if (when_ns < is->bottom) {
@@ -255,12 +255,12 @@ void census_window_stats_get_sums(const window_stats* wstats,
     /* Calculating the appropriate amount of which buckets to use can get
        complicated. Essentially there are two cases:
        1) if the "top" bucket (new_bucket, where the newest additions to the
-          stats recorded are entered) corresponds to 'when', then we need
-          to take a proportion of it - (if when < newest_time) or the full
-          thing. We also (possibly) need to take a corresponding
-          proportion of the bottom bucket.
+       stats recorded are entered) corresponds to 'when', then we need
+       to take a proportion of it - (if when < newest_time) or the full
+       thing. We also (possibly) need to take a corresponding
+       proportion of the bottom bucket.
        2) Other cases, we just take a straight proportion.
-    */
+     */
     when_bucket = (when_ns - is->bottom) / is->width;
     new_bucket = (wstats->newest_time - is->bottom) / is->width;
     if (new_bucket == when_bucket) {
@@ -300,7 +300,7 @@ void census_window_stats_get_sums(const window_stats* wstats,
   }
 }
 
-void census_window_stats_destroy(window_stats* wstats) {
+void census_window_stats_destroy(window_stats *wstats) {
   int i;
   GPR_ASSERT(wstats->interval_stats != NULL);
   for (i = 0; i < wstats->nintervals; i++) {

@@ -42,6 +42,7 @@
 
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/support/block_annotate.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -88,7 +89,9 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (s != 0) {
     gpr_log(GPR_ERROR, "getaddrinfo: %s", gai_strerror(s));
     goto done;
@@ -128,6 +131,7 @@ done:
 
 /* Thread function to asynch-ify grpc_blocking_resolve_address */
 static void do_request(void *rp) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   request *r = rp;
   grpc_resolved_addresses *resolved =
       grpc_blocking_resolve_address(r->name, r->default_port);
@@ -137,7 +141,8 @@ static void do_request(void *rp) {
   gpr_free(r->default_port);
   grpc_iomgr_unregister_object(&r->iomgr_object);
   gpr_free(r);
-  cb(arg, resolved);
+  cb(&exec_ctx, arg, resolved);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
@@ -149,7 +154,7 @@ void grpc_resolve_address(const char *name, const char *default_port,
                           grpc_resolve_cb cb, void *arg) {
   request *r = gpr_malloc(sizeof(request));
   gpr_thd_id id;
-  const char *label;
+  char *label;
   gpr_asprintf(&label, "resolve:%s", name);
   grpc_iomgr_register_object(&r->iomgr_object, label);
   gpr_free(label);
