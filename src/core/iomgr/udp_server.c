@@ -405,12 +405,12 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index) {
 
 void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
                            grpc_pollset **pollsets, size_t pollset_count,
-                           grpc_server *grpc_server) {
+                           grpc_server *server) {
   size_t i, j;
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(s->active_ports == 0);
   s->pollsets = pollsets;
-  s->grpc_server = grpc_server;
+  s->grpc_server = server;
   for (i = 0; i < s->nports; i++) {
     for (j = 0; j < pollset_count; j++) {
       grpc_pollset_add_fd(exec_ctx, pollsets[j], s->ports[i].emfd);
