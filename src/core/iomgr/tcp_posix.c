@@ -78,6 +78,9 @@ typedef struct {
   size_t slice_size;
   gpr_refcount refcount;
 
+  /* garbage after the last read */
+  gpr_slice_buffer last_read_buffer;
+
   gpr_slice_buffer *incoming_buffer;
   gpr_slice_buffer *outgoing_buffer;
   /** slice within outgoing_buffer to write next */
@@ -106,6 +109,7 @@ static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   grpc_fd_orphan(exec_ctx, tcp->em_fd, NULL, "tcp_unref_orphan");
+  gpr_slice_buffer_destroy(&tcp->last_read_buffer);
   gpr_free(tcp->peer_string);
   gpr_free(tcp);
 }
@@ -226,7 +230,8 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
     if ((size_t)read_bytes < tcp->incoming_buffer->length) {
       gpr_slice_buffer_trim_end(
           tcp->incoming_buffer,
-          tcp->incoming_buffer->length - (size_t)read_bytes);
+          tcp->incoming_buffer->length - (size_t)read_bytes,
+          &tcp->last_read_buffer);
     } else if (tcp->iov_size < MAX_READ_IOVEC) {
       ++tcp->iov_size;
     }
@@ -259,6 +264,7 @@ static void tcp_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   tcp->read_cb = cb;
   tcp->incoming_buffer = incoming_buffer;
   gpr_slice_buffer_reset_and_unref(incoming_buffer);
+  gpr_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
   if (tcp->finished_edge) {
     tcp->finished_edge = 0;
@@ -457,6 +463,7 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   tcp->read_closure.cb_arg = tcp;
   tcp->write_closure.cb = tcp_handle_write;
   tcp->write_closure.cb_arg = tcp;
+  gpr_slice_buffer_init(&tcp->last_read_buffer);
 
   return &tcp->base;
 }
