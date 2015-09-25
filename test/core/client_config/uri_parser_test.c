@@ -41,7 +41,7 @@
 
 static void test_succeeds(const char *uri_text, const char *scheme,
                           const char *authority, const char *path,
-                          const char *query, const char* fragment) {
+                          const char *query, const char *fragment) {
   grpc_uri *uri = grpc_uri_parse(uri_text, 0);
   GPR_ASSERT(uri);
   GPR_ASSERT(0 == strcmp(scheme, uri->scheme));

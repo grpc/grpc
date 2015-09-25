@@ -126,11 +126,11 @@ class WriteOptions {
   }
 
  private:
-  void SetBit(const gpr_int32 mask) { flags_ |= mask; }
+  void SetBit(const gpr_uint32 mask) { flags_ |= mask; }
 
-  void ClearBit(const gpr_int32 mask) { flags_ &= ~mask; }
+  void ClearBit(const gpr_uint32 mask) { flags_ &= ~mask; }
 
-  bool GetBit(const gpr_int32 mask) const { return flags_ & mask; }
+  bool GetBit(const gpr_uint32 mask) const { return (flags_ & mask) != 0; }
 
   gpr_uint32 flags_;
 };

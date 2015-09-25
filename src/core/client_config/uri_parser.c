@@ -79,12 +79,11 @@ static size_t parse_pchar(const char *uri_text, size_t i) {
    * unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
    * pct-encoded = "%" HEXDIG HEXDIG
    * sub-delims = "!" / "$" / "&" / "'" / "(" / ")"
-                / "*" / "+" / "," / ";" / "=" */
+   / "*" / "+" / "," / ";" / "=" */
   char c = uri_text[i];
   if (((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z')) ||
       ((c >= '0') && (c <= '9')) ||
       (c == '-' || c == '.' || c == '_' || c == '~') || /* unreserved */
-
       (c == '!' || c == '$' || c == '&' || c == '\'' || c == '$' || c == '&' ||
        c == '(' || c == ')' || c == '*' || c == '+' || c == ',' || c == ';' ||
        c == '=') /* sub-delims */) {

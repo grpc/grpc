@@ -41,9 +41,9 @@
 struct census_context {
   gpr_uint64 op_id;    /* Operation identifier - unique per-context */
   gpr_uint64 trace_id; /* Globally unique trace identifier */
-  /* TODO(aveitch) Add census tags:
-  const census_tag_set *tags;
-  */
+                       /* TODO(aveitch) Add census tags:
+                          const census_tag_set *tags;
+                        */
 };
 
 #endif /* GRPC_INTERNAL_CORE_CENSUS_CONTEXT_H */
