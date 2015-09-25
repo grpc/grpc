@@ -34,6 +34,7 @@ import os.path
 import sys
 
 from distutils import core as _core
+from distutils import extension as _extension
 import setuptools
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -59,6 +60,18 @@ _C_EXTENSION_SOURCES = (
     'grpc/_adapter/_c/types/server.c',
 )
 
+_CYTHON_EXTENSION_PACKAGE_NAMES = ()
+
+_CYTHON_EXTENSION_MODULE_NAMES = (
+    'grpc._cython.cygrpc',
+    'grpc._cython._cygrpc.call',
+    'grpc._cython._cygrpc.channel',
+    'grpc._cython._cygrpc.completion_queue',
+    'grpc._cython._cygrpc.credentials',
+    'grpc._cython._cygrpc.records',
+    'grpc._cython._cygrpc.server',
+)
+
 _EXTENSION_INCLUDE_DIRECTORIES = (
     '.',
 )
@@ -78,9 +91,30 @@ _C_EXTENSION_MODULE = _core.Extension(
 )
 _EXTENSION_MODULES = [_C_EXTENSION_MODULE]
 
-_PACKAGES = (
-    setuptools.find_packages('.', exclude=['*._cython', '*._cython.*'])
-)
+
+def cython_extensions(package_names, module_names, include_dirs, libraries,
+                      build_with_cython=False):
+  file_extension = 'pyx' if build_with_cython else 'c'
+  module_files = [name.replace('.', '/') + '.' + file_extension
+                  for name in module_names]
+  extensions = [
+      _extension.Extension(
+          name=module_name, sources=[module_file],
+          include_dirs=include_dirs, libraries=libraries
+      ) for (module_name, module_file) in zip(module_names, module_files)
+  ]
+  if build_with_cython:
+    import Cython.Build
+    return Cython.Build.cythonize(extensions)
+  else:
+    return extensions
+
+_CYTHON_EXTENSION_MODULES = cython_extensions(
+    list(_CYTHON_EXTENSION_PACKAGE_NAMES), list(_CYTHON_EXTENSION_MODULE_NAMES),
+    list(_EXTENSION_INCLUDE_DIRECTORIES), list(_EXTENSION_LIBRARIES),
+    bool(_BUILD_WITH_CYTHON))
+
+_PACKAGES = setuptools.find_packages('.')
 
 _PACKAGE_DIRECTORIES = {
     '': '.',
@@ -104,7 +138,7 @@ _COMMAND_CLASS = {
 setuptools.setup(
     name='grpcio',
     version='0.11.0b1',
-    ext_modules=_EXTENSION_MODULES,
+    ext_modules=_EXTENSION_MODULES + _CYTHON_EXTENSION_MODULES,
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,
     install_requires=_INSTALL_REQUIRES,
