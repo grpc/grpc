@@ -72,6 +72,7 @@ _COLORS = {
     'yellow': [ 33, 0 ],
     'lightgray': [ 37, 0],
     'gray': [ 30, 1 ],
+    'purple': [ 35, 0 ],
     }
 
 
@@ -81,7 +82,7 @@ _CLEAR_LINE = '\x1b[2K'
 
 _TAG_COLOR = {
     'FAILED': 'red',
-    'FLAKE': 'red',
+    'FLAKE': 'purple',
     'WARNING': 'yellow',
     'TIMEOUT': 'red',
     'PASSED': 'green',
