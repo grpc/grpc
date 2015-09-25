@@ -49,7 +49,7 @@ static grpc_pollset g_pollset;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
 
-static void on_read(int fd) {
+static void on_read(int fd, grpc_server *grpc_server) {
   char read_buffer[512];
   ssize_t byte_count;
 
@@ -74,7 +74,7 @@ static void test_no_op_with_start(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_udp_server *s = grpc_udp_server_create();
   LOG_TEST("test_no_op_with_start");
-  grpc_udp_server_start(&exec_ctx, s, NULL, 0);
+  grpc_udp_server_start(&exec_ctx, s, NULL, 0, NULL);
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
 }
@@ -105,7 +105,7 @@ static void test_no_op_with_port_and_start(void) {
   GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
                                       on_read));
 
-  grpc_udp_server_start(&exec_ctx, s, NULL, 0);
+  grpc_udp_server_start(&exec_ctx, s, NULL, 0, NULL);
 
   grpc_udp_server_destroy(&exec_ctx, s, NULL);
   grpc_exec_ctx_finish(&exec_ctx);
@@ -137,7 +137,7 @@ static void test_receive(int number_of_clients) {
   GPR_ASSERT(addr_len <= sizeof(addr));
 
   pollsets[0] = &g_pollset;
-  grpc_udp_server_start(&exec_ctx, s, pollsets, 1);
+  grpc_udp_server_start(&exec_ctx, s, pollsets, 1, NULL);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
 

@@ -117,6 +117,8 @@ struct grpc_udp_server {
   grpc_pollset **pollsets;
   /* number of pollsets in the pollsets array */
   size_t pollset_count;
+  /* The parent grpc server */
+  grpc_server* grpc_server;
 };
 
 grpc_udp_server *grpc_udp_server_create(void) {
@@ -276,7 +278,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
 
   /* Tell the registered callback that data is available to read. */
   GPR_ASSERT(sp->read_cb);
-  sp->read_cb(sp->fd);
+  sp->read_cb(sp->fd, sp->server->grpc_server);
 
   /* Re-arm the notification event so we get another chance to read. */
   grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
@@ -402,11 +404,13 @@ int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index) {
 }
 
 void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,
-                           grpc_pollset **pollsets, size_t pollset_count) {
+                           grpc_pollset **pollsets, size_t pollset_count,
+                           grpc_server *grpc_server) {
   size_t i, j;
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(s->active_ports == 0);
   s->pollsets = pollsets;
+  s->grpc_server = grpc_server;
   for (i = 0; i < s->nports; i++) {
     for (j = 0; j < pollset_count; j++) {
       grpc_pollset_add_fd(exec_ctx, pollsets[j], s->ports[i].emfd);
