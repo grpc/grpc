@@ -46,10 +46,11 @@
 #define NOMINMAX
 #endif /* NOMINMAX */
 
-#if defined(_WIN32_WINNT)
-#if _WIN32_WINNT < 0x0600
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
+#ifndef _WIN32_WINNT
+#error "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
+#else /* !defined(_WIN32_WINNT) */
+#if (_WIN32_WINNT < 0x0600)
+#error "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* defined(_WIN32_WINNT) */
 
