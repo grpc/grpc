@@ -280,33 +280,26 @@ function timeoutOnSleepingServer(client, done) {
  *     primarily for use with mocha
  */
 function authTest(expected_user, scope, client, done) {
-  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
+  var arg = {
+    response_type: 'COMPRESSABLE',
+    response_size: 314159,
+    payload: {
+      body: zeroBuffer(271828)
+    },
+    fill_username: true,
+    fill_oauth_scope: true
+  };
+  client.unaryCall(arg, function(err, resp) {
     assert.ifError(err);
-    if (credential.createScopedRequired() && scope) {
-      credential = credential.createScoped(scope);
+    assert.strictEqual(resp.payload.type, 'COMPRESSABLE');
+    assert.strictEqual(resp.payload.body.length, 314159);
+    assert.strictEqual(resp.username, expected_user);
+    if (scope) {
+      assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
     }
-    client.$updateMetadata = grpc.getGoogleAuthDelegate(credential);
-    var arg = {
-      response_type: 'COMPRESSABLE',
-      response_size: 314159,
-      payload: {
-        body: zeroBuffer(271828)
-      },
-      fill_username: true,
-      fill_oauth_scope: true
-    };
-    client.unaryCall(arg, function(err, resp) {
-      assert.ifError(err);
-      assert.strictEqual(resp.payload.type, 'COMPRESSABLE');
-      assert.strictEqual(resp.payload.body.length, 314159);
-      assert.strictEqual(resp.username, expected_user);
-      if (scope) {
-        assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
-      }
-      if (done) {
-        done();
-      }
-    });
+    if (done) {
+      done();
+    }
   });
 }
 
@@ -345,24 +338,83 @@ function oauth2Test(expected_user, scope, per_rpc, client, done) {
   });
 }
 
+function perRpcAuthTest(expected_user, scope, per_rpc, client, done) {
+  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
+    assert.ifError(err);
+    var arg = {
+      fill_username: true,
+      fill_oauth_scope: true
+    };
+    credential = credential.createScoped(scope);
+    var creds = grpc.credentials.createFromGoogleCredential(credential);
+    client.unaryCall(arg, function(err, resp) {
+      assert.ifError(err);
+      assert.strictEqual(resp.username, expected_user);
+      assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+      if (done) {
+        done();
+      }
+    }, null, {credentials: creds});
+  });
+}
+
+function getApplicationCreds(scope, callback) {
+  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    if (credential.createScopedRequired() && scope) {
+      credential = credential.createScoped(scope);
+    }
+    callback(null, grpc.credentials.createFromGoogleCredential(credential));
+  });
+}
+
+function getOauth2Creds(scope, callback) {
+  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
+    if (err) {
+      callback(err);
+      return;
+    }
+    credential = credential.createScoped(scope);
+    credential.getAccessToken(function(err, token) {
+      if (err) {
+        callback(err);
+        return;
+      }
+      var updateMd = function(service_url, callback) {
+        var metadata = new grpc.Metadata();
+        metadata.add('authorization', 'Bearer ' + token);
+        callback(null, metadata);
+      };
+      callback(null, grpc.credentials.createFromMetadataGenerator(updateMd));
+    });
+  });
+}
+
 /**
  * Map from test case names to test functions
  */
 var test_cases = {
-  empty_unary: emptyUnary,
-  large_unary: largeUnary,
-  client_streaming: clientStreaming,
-  server_streaming: serverStreaming,
-  ping_pong: pingPong,
-  empty_stream: emptyStream,
-  cancel_after_begin: cancelAfterBegin,
-  cancel_after_first_response: cancelAfterFirstResponse,
-  timeout_on_sleeping_server: timeoutOnSleepingServer,
-  compute_engine_creds: _.partial(authTest, COMPUTE_ENGINE_USER, null),
-  service_account_creds: _.partial(authTest, AUTH_USER, AUTH_SCOPE),
-  jwt_token_creds: _.partial(authTest, AUTH_USER, null),
-  oauth2_auth_token: _.partial(oauth2Test, AUTH_USER, AUTH_SCOPE, false),
-  per_rpc_creds: _.partial(oauth2Test, AUTH_USER, AUTH_SCOPE, true)
+  empty_unary: {run: emptyUnary},
+  large_unary: {run: largeUnary},
+  client_streaming: {run: clientStreaming},
+  server_streaming: {run: serverStreaming},
+  ping_pong: {run: pingPong},
+  empty_stream: {run: emptyStream},
+  cancel_after_begin: {run: cancelAfterBegin},
+  cancel_after_first_response: {run: cancelAfterFirstResponse},
+  timeout_on_sleeping_server: {run: timeoutOnSleepingServer},
+  compute_engine_creds: {run: _.partial(authTest, COMPUTE_ENGINE_USER, null),
+                         getCreds: _.partial(getApplicationCreds, null)},
+  service_account_creds: {run: _.partial(authTest, AUTH_USER, AUTH_SCOPE),
+                          getCreds: _.partial(getApplicationCreds, AUTH_SCOPE)},
+  jwt_token_creds: {run: _.partial(authTest, AUTH_USER, null),
+                    getCreds: _.partial(getApplicationCreds, null)},
+  oauth2_auth_token: {run: _.partial(oauth2Test, AUTH_USER, AUTH_SCOPE, false),
+                      getCreds: _.partial(getOauth2Creds, AUTH_SCOPE)},
+  per_rpc_creds: {run: _.partial(perRpcAuthTest, AUTH_USER, AUTH_SCOPE, true)}
 };
 
 /**
@@ -388,17 +440,29 @@ function runTest(address, host_override, test_case, tls, test_ca, done) {
       ca_path = process.env.SSL_CERT_FILE;
     }
     var ca_data = fs.readFileSync(ca_path);
-    creds = grpc.Credentials.createSsl(ca_data);
+    creds = grpc.credentials.createSsl(ca_data);
     if (host_override) {
       options['grpc.ssl_target_name_override'] = host_override;
       options['grpc.default_authority'] = host_override;
     }
   } else {
-    creds = grpc.Credentials.createInsecure();
+    creds = grpc.credentials.createInsecure();
   }
-  var client = new testProto.TestService(address, creds, options);
+  var test = test_cases[test_case];
 
-  test_cases[test_case](client, done);
+  var execute = function(err, creds) {
+    assert.ifError(err);
+    var client = new testProto.TestService(address, creds, options);
+    test.run(client, done);
+  };
+
+  if (test.getCreds) {
+    test.getCreds(function(err, new_creds) {
+      execute(err, grpc.credentials.combineCredentials(creds, new_creds));
+    });
+  } else {
+    execute(null, creds);
+  }
 }
 
 if (require.main === module) {

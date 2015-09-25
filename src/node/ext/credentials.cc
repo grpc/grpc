@@ -96,6 +96,9 @@ void Credentials::Init(Local<Object> exports) {
   Nan::Set(ctr, Nan::New("createInsecure").ToLocalChecked(),
            Nan::GetFunction(
                Nan::New<FunctionTemplate>(CreateInsecure)).ToLocalChecked());
+  Nan::Set(ctr, Nan::New("createFromPlugin").ToLocalChecked(),
+           Nan::GetFunction(
+               Nan::New<FunctionTemplate>(CreateFromPlugin)).ToLocalChecked());
   Nan::Set(exports, Nan::New("Credentials").ToLocalChecked(), ctr);
   constructor = new Nan::Callback(ctr);
 }
@@ -198,12 +201,20 @@ NAN_METHOD(Credentials::CreateComposite) {
     return Nan::ThrowTypeError(
         "createComposite's second argument must be a Credentials object");
   }
-  Credentials *creds1 = ObjectWrap::Unwrap<Credentials>(
+  Credentials *creds0 = ObjectWrap::Unwrap<Credentials>(
       Nan::To<Object>(info[0]).ToLocalChecked());
-  Credentials *creds2 = ObjectWrap::Unwrap<Credentials>(
+  Credentials *creds1 = ObjectWrap::Unwrap<Credentials>(
       Nan::To<Object>(info[1]).ToLocalChecked());
+  if (creds0->wrapped_credentials == NULL) {
+    info.GetReturnValue().Set(info[1]);
+    return;
+  }
+  if (creds1->wrapped_credentials == NULL) {
+    info.GetReturnValue().Set(info[0]);
+    return;
+  }
   grpc_credentials *creds = grpc_composite_credentials_create(
-      creds1->wrapped_credentials, creds2->wrapped_credentials, NULL);
+      creds0->wrapped_credentials, creds1->wrapped_credentials, NULL);
   if (creds == NULL) {
     info.GetReturnValue().SetNull();
   } else {
@@ -259,7 +270,7 @@ NAN_METHOD(Credentials::CreateFromPlugin) {
   if (creds == NULL) {
     info.GetReturnValue().SetNull();
   } else {
-    info.GetReturnValue().Set(WrapStruct(creds()));
+    info.GetReturnValue().Set(WrapStruct(creds));
   }
 }
 
@@ -287,13 +298,38 @@ NAN_METHOD(PluginCallback) {
   }
   grpc_credentials_plugin_metadata_cb cb =
       reinterpret_cast<grpc_credentials_plugin_metadata_cb>(
-          Nan::To<External>(
-              Nan::Get(info.Callee, "cb").ToLocalChecked()
-                            ).ToLocalChecked()->Value());
-  void *user_data = Nan::To<External>(
-      Nan::Get(info.Callee, "user_data").ToLocalChecked()
-                                      ).ToLocalChecked()->Value();
+          Nan::Get(info.Callee(),
+                   Nan::New("cb").ToLocalChecked()
+                   ).ToLocalChecked().As<External>()->Value());
+  void *user_data =
+      Nan::Get(info.Callee(),
+               Nan::New("user_data").ToLocalChecked()
+               ).ToLocalChecked().As<External>()->Value();
+  gpr_log(GPR_DEBUG, "Calling plugin metadata callback");
   cb(user_data, array.metadata, array.count, code, details);
+}
+
+NAUV_WORK_CB(SendPluginCallback) {
+  Nan::HandleScope scope;
+  plugin_callback_data *data = reinterpret_cast<plugin_callback_data*>(
+      async->data);
+  // Attach cb and user_data to plugin_callback so that it can access them later
+  v8::Local<v8::Function> plugin_callback = Nan::GetFunction(
+      Nan::New<v8::FunctionTemplate>(PluginCallback)).ToLocalChecked();
+  Nan::Set(plugin_callback, Nan::New("cb").ToLocalChecked(),
+           Nan::New<v8::External>(reinterpret_cast<void*>(data->cb)));
+  Nan::Set(plugin_callback, Nan::New("user_data").ToLocalChecked(),
+           Nan::New<v8::External>(data->user_data));
+  const int argc = 2;
+  v8::Local<v8::Value> argv[argc] = {
+    Nan::New(data->service_url).ToLocalChecked(),
+    plugin_callback
+  };
+  Nan::Callback *callback = data->state->callback;
+  callback->Call(argc, argv);
+  delete data;
+  uv_unref((uv_handle_t *)async);
+  delete async;
 }
 
 void plugin_get_metadata(void *state, const char *service_url,
@@ -302,7 +338,19 @@ void plugin_get_metadata(void *state, const char *service_url,
   uv_async_t *async = new uv_async_t;
   uv_async_init(uv_default_loop(),
                 async,
-                PluginCallback);
+                SendPluginCallback);
+  plugin_callback_data *data = new plugin_callback_data;
+  data->state = reinterpret_cast<plugin_state*>(state);
+  data->service_url = service_url;
+  data->cb = cb;
+  data->user_data = user_data;
+  async->data = data;
+  uv_async_send(async);
+}
+
+void plugin_destroy_state(void *ptr) {
+  plugin_state *state = reinterpret_cast<plugin_state *>(ptr);
+  delete state->callback;
 }
 
 }  // namespace node
