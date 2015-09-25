@@ -41,12 +41,12 @@
    On success, appends compressed slices to output and returns 1.
    On failure, appends uncompressed slices to output and returns 0. */
 int grpc_msg_compress(grpc_compression_algorithm algorithm,
-                      gpr_slice_buffer *input, gpr_slice_buffer *output);
+                      gpr_slice_buffer* input, gpr_slice_buffer* output);
 
 /* decompress 'input' to 'output' using 'algorithm'.
    On success, appends slices to output and returns 1.
    On failure, output is unchanged, and returns 0. */
 int grpc_msg_decompress(grpc_compression_algorithm algorithm,
-                        gpr_slice_buffer *input, gpr_slice_buffer *output);
+                        gpr_slice_buffer* input, gpr_slice_buffer* output);
 
 #endif /* GRPC_INTERNAL_CORE_COMPRESSION_MESSAGE_COMPRESS_H */

@@ -77,7 +77,6 @@ struct grpc_channel {
 
   gpr_mu registered_call_mu;
   registered_call *registered_calls;
-  grpc_iomgr_closure destroy_closure;
   char *target;
 };
 
@@ -91,7 +90,8 @@ struct grpc_channel {
 #define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
 
 grpc_channel *grpc_channel_create_from_filters(
-    const char *target, const grpc_channel_filter **filters, size_t num_filters,
+    grpc_exec_ctx *exec_ctx, const char *target,
+    const grpc_channel_filter **filters, size_t num_filters,
     const grpc_channel_args *args, grpc_mdctx *mdctx, int is_client) {
   size_t i;
   size_t size =
@@ -177,7 +177,7 @@ grpc_channel *grpc_channel_create_from_filters(
     gpr_free(default_authority);
   }
 
-  grpc_channel_stack_init(filters, num_filters, channel, args,
+  grpc_channel_stack_init(exec_ctx, filters, num_filters, channel, args,
                           channel->metadata_context,
                           CHANNEL_STACK_FROM_CHANNEL(channel));
 
@@ -270,10 +270,9 @@ void grpc_channel_internal_ref(grpc_channel *c) {
   gpr_ref(&c->refs);
 }
 
-static void destroy_channel(void *p, int ok) {
-  grpc_channel *channel = p;
+static void destroy_channel(grpc_exec_ctx *exec_ctx, grpc_channel *channel) {
   size_t i;
-  grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
+  grpc_channel_stack_destroy(exec_ctx, CHANNEL_STACK_FROM_CHANNEL(channel));
   for (i = 0; i < NUM_CACHED_STATUS_ELEMS; i++) {
     GRPC_MDELEM_UNREF(channel->grpc_status_elem[i]);
   }
@@ -302,28 +301,31 @@ static void destroy_channel(void *p, int ok) {
 }
 
 #ifdef GRPC_CHANNEL_REF_COUNT_DEBUG
-void grpc_channel_internal_unref(grpc_channel *channel, const char *reason) {
+void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx, grpc_channel *channel,
+                                 const char *reason) {
   gpr_log(GPR_DEBUG, "CHANNEL: unref %p %d -> %d [%s]", channel,
           channel->refs.count, channel->refs.count - 1, reason);
 #else
-void grpc_channel_internal_unref(grpc_channel *channel) {
+void grpc_channel_internal_unref(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel *channel) {
 #endif
   if (gpr_unref(&channel->refs)) {
-    channel->destroy_closure.cb = destroy_channel;
-    channel->destroy_closure.cb_arg = channel;
-    grpc_iomgr_add_callback(&channel->destroy_closure);
+    destroy_channel(exec_ctx, channel);
   }
 }
 
 void grpc_channel_destroy(grpc_channel *channel) {
   grpc_transport_op op;
   grpc_channel_element *elem;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   memset(&op, 0, sizeof(op));
   op.disconnect = 1;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
-  elem->filter->start_transport_op(elem, &op);
+  elem->filter->start_transport_op(&exec_ctx, elem, &op);
 
-  GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
+  GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, channel, "channel");
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel) {

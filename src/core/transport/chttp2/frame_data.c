@@ -70,7 +70,8 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_exec_ctx *exec_ctx, void *parser,
+    grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
@@ -161,7 +162,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
         grpc_sopb_add_slice(
             &p->incoming_sopb,
             gpr_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
-        GPR_ASSERT(end - cur <= p->frame_size);
+        GPR_ASSERT((size_t)(end - cur) <= p->frame_size);
         p->frame_size -= (gpr_uint32)(end - cur);
         return GRPC_CHTTP2_PARSE_OK;
       }

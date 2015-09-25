@@ -48,9 +48,9 @@
 static grpc_pollset g_pollset;
 static int g_nconnects = 0;
 
-static void on_connect(void *arg, grpc_endpoint *tcp) {
-  grpc_endpoint_shutdown(tcp);
-  grpc_endpoint_destroy(tcp);
+static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp) {
+  grpc_endpoint_shutdown(exec_ctx, tcp);
+  grpc_endpoint_destroy(exec_ctx, tcp);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   g_nconnects++;
@@ -59,18 +59,23 @@ static void on_connect(void *arg, grpc_endpoint *tcp) {
 }
 
 static void test_no_op(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_tcp_server *s = grpc_tcp_server_create();
-  grpc_tcp_server_destroy(s, NULL, NULL);
+  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op_with_start(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST("test_no_op_with_start");
-  grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
-  grpc_tcp_server_destroy(s, NULL, NULL);
+  grpc_tcp_server_start(&exec_ctx, s, NULL, 0, on_connect, NULL);
+  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op_with_port(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST("test_no_op_with_port");
@@ -80,10 +85,12 @@ static void test_no_op_with_port(void) {
   GPR_ASSERT(
       grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)));
 
-  grpc_tcp_server_destroy(s, NULL, NULL);
+  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op_with_port_and_start(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_tcp_server *s = grpc_tcp_server_create();
   LOG_TEST("test_no_op_with_port_and_start");
@@ -93,12 +100,14 @@ static void test_no_op_with_port_and_start(void) {
   GPR_ASSERT(
       grpc_tcp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr)));
 
-  grpc_tcp_server_start(s, NULL, 0, on_connect, NULL);
+  grpc_tcp_server_start(&exec_ctx, s, NULL, 0, on_connect, NULL);
 
-  grpc_tcp_server_destroy(s, NULL, NULL);
+  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_connect(int n) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_storage addr;
   socklen_t addr_len = sizeof(addr);
   int svrfd, clifd;
@@ -120,7 +129,7 @@ static void test_connect(int n) {
   GPR_ASSERT(addr_len <= sizeof(addr));
 
   pollsets[0] = &g_pollset;
-  grpc_tcp_server_start(s, pollsets, 1, on_connect, NULL);
+  grpc_tcp_server_start(&exec_ctx, s, pollsets, 1, on_connect, NULL);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
 
@@ -137,8 +146,11 @@ static void test_connect(int n) {
     while (g_nconnects == nconnects_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
       grpc_pollset_worker worker;
-      grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                        deadline);
+      grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                        gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+      gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+      grpc_exec_ctx_finish(&exec_ctx);
+      gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
     }
     gpr_log(GPR_DEBUG, "wait done");
 
@@ -148,12 +160,17 @@ static void test_connect(int n) {
 
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
-  grpc_tcp_server_destroy(s, NULL, NULL);
+  grpc_tcp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
+  grpc_pollset_destroy(p);
+}
 
 int main(int argc, char **argv) {
+  grpc_closure destroyed;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
   grpc_pollset_init(&g_pollset);
@@ -165,7 +182,9 @@ int main(int argc, char **argv) {
   test_connect(1);
   test_connect(10);
 
-  grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
+  grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
+  grpc_exec_ctx_finish(&exec_ctx);
   grpc_iomgr_shutdown();
   return 0;
 }
