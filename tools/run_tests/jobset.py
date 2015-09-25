@@ -83,6 +83,7 @@ _CLEAR_LINE = '\x1b[2K'
 _TAG_COLOR = {
     'FAILED': 'red',
     'FLAKE': 'purple',
+    'TIMEOUT_FLAKE': 'purple',
     'WARNING': 'yellow',
     'TIMEOUT': 'red',
     'PASSED': 'green',
@@ -231,11 +232,17 @@ class Job(object):
       self._tempfile.seek(0)
       stdout = self._tempfile.read()
       filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))
-      message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
-      self.kill()
-      if self._xml_test is not None:
-        ET.SubElement(self._xml_test, 'system-out').text = filtered_stdout
-        ET.SubElement(self._xml_test, 'error', message='Timeout')
+      if self._retries < self._spec.flake_retries:
+        message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
+        self._retries += 1
+        self._process.terminate()
+        self.start()
+      else:
+        message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
+        self.kill()
+        if self._xml_test is not None:
+          ET.SubElement(self._xml_test, 'system-out').text = filtered_stdout
+          ET.SubElement(self._xml_test, 'error', message='Timeout')
     return self._state
 
   def kill(self):
