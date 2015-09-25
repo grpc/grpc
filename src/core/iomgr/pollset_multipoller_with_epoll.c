@@ -41,8 +41,8 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/block_annotate.h"
 #include "src/core/iomgr/fd_posix.h"
+#include "src/core/support/block_annotate.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -181,9 +181,9 @@ static void multipoll_with_epoll_pollset_maybe_work(
   pfds[1].events = POLLIN;
   pfds[1].revents = 0;
 
-  GRPC_IOMGR_START_BLOCKING_REGION;
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
   poll_rv = grpc_poll_function(pfds, 2, timeout_ms);
-  GRPC_IOMGR_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
 
   if (poll_rv < 0) {
     if (errno != EINTR) {
@@ -197,9 +197,9 @@ static void multipoll_with_epoll_pollset_maybe_work(
     }
     if (pfds[1].revents) {
       do {
-        GRPC_IOMGR_START_BLOCKING_REGION;
+        GRPC_SCHEDULING_START_BLOCKING_REGION;
         ep_rv = epoll_wait(h->epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
-        GRPC_IOMGR_END_BLOCKING_REGION;
+        GRPC_SCHEDULING_END_BLOCKING_REGION;
         if (ep_rv < 0) {
           if (errno != EINTR) {
             gpr_log(GPR_ERROR, "epoll_wait() failed: %s", strerror(errno));

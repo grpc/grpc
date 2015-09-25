@@ -43,11 +43,11 @@
 #include <unistd.h>
 
 #include "src/core/iomgr/alarm_internal.h"
-#include "src/core/iomgr/block_annotate.h"
 #include "src/core/iomgr/fd_posix.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 #include "src/core/profiling/timers.h"
+#include "src/core/support/block_annotate.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
@@ -454,9 +454,9 @@ static void basic_pollset_maybe_work(grpc_pollset *pollset,
 
   /* poll fd count (argument 2) is shortened by one if we have no events
      to poll on - such that it only includes the kicker */
-  GRPC_IOMGR_START_BLOCKING_REGION;
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
   r = grpc_poll_function(pfd, nfds, timeout);
-  GRPC_IOMGR_END_BLOCKING_REGION;
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
   GRPC_TIMER_MARK(GRPC_PTAG_POLL_FINISHED, r);
 
   if (fd) {
