@@ -197,9 +197,8 @@ static void multipoll_with_epoll_pollset_maybe_work(
     }
     if (pfds[1].revents) {
       do {
-        GRPC_SCHEDULING_START_BLOCKING_REGION;
+	/* The following epoll_wait never blocks; it has a timeout of 0 */
         ep_rv = epoll_wait(h->epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
-        GRPC_SCHEDULING_END_BLOCKING_REGION;
         if (ep_rv < 0) {
           if (errno != EINTR) {
             gpr_log(GPR_ERROR, "epoll_wait() failed: %s", strerror(errno));
