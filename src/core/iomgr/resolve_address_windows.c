@@ -42,6 +42,7 @@
 
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/support/block_annotate.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -88,7 +89,9 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (s != 0) {
     gpr_log(GPR_ERROR, "getaddrinfo: %s", gai_strerror(s));
     goto done;
