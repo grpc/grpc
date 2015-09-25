@@ -152,9 +152,9 @@ libs:
     include/grpc/support/sync_posix.h, include/grpc/support/sync_win32.h, include/grpc/support/thd.h,
     include/grpc/support/time.h, include/grpc/support/tls.h, include/grpc/support/tls_gcc.h,
     include/grpc/support/tls_msvc.h, include/grpc/support/tls_pthread.h, include/grpc/support/useful.h]
-  headers: [src/core/support/env.h, src/core/support/file.h, src/core/support/murmur_hash.h,
-    src/core/support/stack_lockfree.h, src/core/support/string.h, src/core/support/string_win32.h,
-    src/core/support/thd_internal.h, src/core/support/time_precise.h]
+  headers: [src/core/support/block_annotate.h, src/core/support/env.h, src/core/support/file.h,
+    src/core/support/murmur_hash.h, src/core/support/stack_lockfree.h, src/core/support/string.h,
+    src/core/support/string_win32.h, src/core/support/thd_internal.h, src/core/support/time_precise.h]
   src: [src/core/support/alloc.c, src/core/support/cmdline.c, src/core/support/cpu_iphone.c,
     src/core/support/cpu_linux.c, src/core/support/cpu_posix.c, src/core/support/cpu_windows.c,
     src/core/support/env_linux.c, src/core/support/env_posix.c, src/core/support/env_win32.c,

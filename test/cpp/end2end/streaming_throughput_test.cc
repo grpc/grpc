@@ -103,6 +103,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
     EchoResponse response;
     response.set_message(kLargeString);
     while (!should_exit->load()) {
+      // TODO(vpai): Decide if the below requires blocking annotation
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
       stream->Write(response);
     }
@@ -117,6 +118,7 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
     std::thread sender(std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
 
     while (stream->Read(&request)) {
+      // TODO(vpai): Decide if the below requires blocking annotation
       std::this_thread::sleep_for(std::chrono::milliseconds(3));
     }
     should_exit.store(true);
