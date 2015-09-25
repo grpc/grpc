@@ -387,13 +387,15 @@ static void assert_channel_connectivity(
   grpc_channel_stack *client_stack;
   grpc_channel_element *client_channel_filter;
   grpc_connectivity_state actual_conn_state;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   va_list ap;
 
   client_stack = grpc_channel_get_channel_stack(ch);
   client_channel_filter = grpc_channel_stack_last_element(client_stack);
 
   actual_conn_state = grpc_client_channel_check_connectivity_state(
-      client_channel_filter, 0 /* don't try to connect */);
+      &exec_ctx, client_channel_filter, 0 /* don't try to connect */);
+  grpc_exec_ctx_finish(&exec_ctx);
   va_start(ap, accepted_conn_state);
   for (i = 0; i < num_accepted_conn_states; i++) {
     if (actual_conn_state == accepted_conn_state) {
@@ -616,6 +618,8 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   expected_connection_sequence = gpr_malloc(sizeof(int) * expected_seq_length);
   seen_elements = gpr_malloc(sizeof(int) * expected_seq_length);
 
+  unique_seq_last_idx = ~(size_t)0;
+
   memset(seen_elements, 0, sizeof(uint8_t) * expected_seq_length);
   for (i = 0; i < num_iters; i++) {
     if (actual_connection_sequence[i] < 0 ||
@@ -635,8 +639,10 @@ static void verify_rebirth_round_robin(const servers_fixture *f,
   }
   /* make sure we found a valid run */
   for (j = 0; j < expected_seq_length; j++) {
-      GPR_ASSERT (seen_elements[j] != 0);
+    GPR_ASSERT(seen_elements[j] != 0);
   }
+
+  GPR_ASSERT(unique_seq_last_idx != ~(size_t)0);
 
   unique_seq_first_idx = (unique_seq_last_idx - expected_seq_length + 1);
   memcpy(expected_connection_sequence,

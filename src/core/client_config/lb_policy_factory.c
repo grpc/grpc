@@ -33,15 +33,16 @@
 
 #include "src/core/client_config/lb_policy_factory.h"
 
-void grpc_lb_policy_factory_ref(grpc_lb_policy_factory *factory) {
+void grpc_lb_policy_factory_ref(grpc_lb_policy_factory* factory) {
   factory->vtable->ref(factory);
 }
-void grpc_lb_policy_factory_unref(grpc_lb_policy_factory *factory) {
+
+void grpc_lb_policy_factory_unref(grpc_lb_policy_factory* factory) {
   factory->vtable->unref(factory);
 }
 
-grpc_lb_policy *grpc_lb_policy_factory_create_lb_policy(
-    grpc_lb_policy_factory *factory, grpc_lb_policy_args *args) {
+grpc_lb_policy* grpc_lb_policy_factory_create_lb_policy(
+    grpc_lb_policy_factory* factory, grpc_lb_policy_args* args) {
   if (factory == NULL) return NULL;
   return factory->vtable->create_lb_policy(factory, args);
 }
