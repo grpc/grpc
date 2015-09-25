@@ -294,6 +294,7 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
   if (port >= 0) {
     grpc_sockaddr_to_string(&addr_str, (struct sockaddr *)&addr, 1);
     gpr_asprintf(&name, "udp-server-listener:%s", addr_str);
+    gpr_free(addr_str);
     gpr_mu_lock(&s->mu);
     /* append it to the list under a lock */
     if (s->nports == s->port_capacity) {
@@ -309,6 +310,7 @@ static int add_socket_to_server(grpc_udp_server *s, int fd,
     sp->read_cb = read_cb;
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
+    gpr_free(name);
   }
 
   return port;
