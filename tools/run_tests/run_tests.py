@@ -617,7 +617,7 @@ if platform.system() == 'Windows':
     # better do parallel compilation
     extra_args.extend(["/m"])
     # disable PDB generation: it's broken, and we don't need it during CI
-    extra_args.extend(["/p:GenerateDebugInformation=false", "/p:DebugInformationFormat=None"])
+    extra_args.extend(["/p:Jenkins=true"])
     return [
       jobset.JobSpec(['vsprojects\\build.bat',
                       'vsprojects\\%s.sln' % target,
