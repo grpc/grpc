@@ -95,7 +95,7 @@ void grpc_compression_options_init(grpc_compression_options *opts);
 
 /** Mark \a algorithm as enabled in \a opts. */
 void grpc_compression_options_enable_algorithm(
-     grpc_compression_options *opts, grpc_compression_algorithm algorithm);
+    grpc_compression_options *opts, grpc_compression_algorithm algorithm);
 
 /** Mark \a algorithm as disabled in \a opts. */
 void grpc_compression_options_disable_algorithm(
