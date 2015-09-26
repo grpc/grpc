@@ -38,7 +38,11 @@
    the code may block for reasons other than synchronization functions.
    These include poll, epoll, and getaddrinfo. */
 
-#define GRPC_SCHEDULING_START_BLOCKING_REGION do {} while (0)
-#define GRPC_SCHEDULING_END_BLOCKING_REGION do {} while (0)
+#define GRPC_SCHEDULING_START_BLOCKING_REGION \
+  do {                                        \
+  } while (0)
+#define GRPC_SCHEDULING_END_BLOCKING_REGION \
+  do {                                      \
+  } while (0)
 
 #endif /* GRPC_INTERNAL_CORE_SUPPORT_BLOCK_ANNOTATE_H */
