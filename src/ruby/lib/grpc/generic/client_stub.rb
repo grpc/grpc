@@ -170,7 +170,7 @@ module GRPC
                          deadline: nil,
                          timeout: nil,
                          return_op: false,
-                         parent: parent,
+                         parent: nil,
                          **kw)
       c = new_active_call(method, marshal, unmarshal,
                           deadline: deadline,
