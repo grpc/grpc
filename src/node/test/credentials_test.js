@@ -39,7 +39,28 @@ var path = require('path');
 
 var grpc = require('..');
 
-describe('client credentials', function() {
+/**
+ * This is used for testing functions with multiple asynchronous calls that
+ * can happen in different orders. This should be passed the number of async
+ * function invocations that can occur last, and each of those should call this
+ * function's return value
+ * @param {function()} done The function that should be called when a test is
+ *     complete.
+ * @param {number} count The number of calls to the resulting function if the
+ *     test passes.
+ * @return {function()} The function that should be called at the end of each
+ *     sequence of asynchronous functions.
+ */
+function multiDone(done, count) {
+  return function() {
+    count -= 1;
+    if (count <= 0) {
+      done();
+    }
+  };
+}
+
+describe.only('client credentials', function() {
   var Client;
   var server;
   var port;
@@ -94,7 +115,15 @@ describe('client credentials', function() {
   after(function() {
     server.forceShutdown();
   });
-  it.only('Should update metadata with SSL creds', function(done) {
+  it('Should accept SSL creds for a client', function(done) {
+    var client = new Client('localhost:' + port, client_ssl_creds,
+                            client_options);
+    client.unary({}, function(err, data) {
+      assert.ifError(err);
+      done();
+    });
+  });
+  it('Should update metadata with SSL creds', function(done) {
     var metadataUpdater = function(service_url, callback) {
       var metadata = new grpc.Metadata();
       metadata.set('plugin_key', 'plugin_value');
@@ -103,16 +132,92 @@ describe('client credentials', function() {
     var creds = grpc.credentials.createFromMetadataGenerator(metadataUpdater);
     var combined_creds = grpc.credentials.combineCredentials(client_ssl_creds,
                                                              creds);
-    //combined_creds = grpc.credentials.createInsecure();
     var client = new Client('localhost:' + port, combined_creds,
                             client_options);
     var call = client.unary({}, function(err, data) {
       assert.ifError(err);
-      console.log('Received response');
     });
     call.on('metadata', function(metadata) {
       assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
       done();
+    });
+  });
+  it('Should update metadata for two simultaneous calls', function(done) {
+    done = multiDone(done, 2);
+    var metadataUpdater = function(service_url, callback) {
+      var metadata = new grpc.Metadata();
+      metadata.set('plugin_key', 'plugin_value');
+      callback(null, metadata);
+    };
+    var creds = grpc.credentials.createFromMetadataGenerator(metadataUpdater);
+    var combined_creds = grpc.credentials.combineCredentials(client_ssl_creds,
+                                                             creds);
+    var client = new Client('localhost:' + port, combined_creds,
+                            client_options);
+    var call = client.unary({}, function(err, data) {
+      assert.ifError(err);
+    });
+    call.on('metadata', function(metadata) {
+      assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
+      done();
+    });
+    var call2 = client.unary({}, function(err, data) {
+      assert.ifError(err);
+    });
+    call2.on('metadata', function(metadata) {
+      assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
+      done();
+    });
+  });
+  describe('Per-rpc creds', function() {
+    var client;
+    var updater_creds;
+    before(function() {
+      client = new Client('localhost:' + port, client_ssl_creds,
+                          client_options);
+      var metadataUpdater = function(service_url, callback) {
+        var metadata = new grpc.Metadata();
+        metadata.set('plugin_key', 'plugin_value');
+        callback(null, metadata);
+      };
+      updater_creds = grpc.credentials.createFromMetadataGenerator(
+          metadataUpdater);
+    });
+    it('Should update metadata on a unary call', function(done) {
+      var call = client.unary({}, function(err, data) {
+        assert.ifError(err);
+      }, null, {credentials: updater_creds});
+      call.on('metadata', function(metadata) {
+        assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
+        done();
+      });
+    });
+    it('should update metadata on a client streaming call', function(done) {
+      var call = client.clientStream(function(err, data) {
+        assert.ifError(err);
+      }, null, {credentials: updater_creds});
+      call.on('metadata', function(metadata) {
+        assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
+        done();
+      });
+      call.end();
+    });
+    it('should update metadata on a server streaming call', function(done) {
+      var call = client.serverStream({}, null, {credentials: updater_creds});
+      call.on('data', function() {});
+      call.on('metadata', function(metadata) {
+        assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
+        done();
+      });
+    });
+    it('should update metadata on a bidi streaming call', function(done) {
+      var call = client.bidiStream(null, {credentials: updater_creds});
+      call.on('data', function() {});
+      call.on('metadata', function(metadata) {
+        assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
+        done();
+      });
+      call.end();
     });
   });
 });

@@ -345,7 +345,9 @@ function perRpcAuthTest(expected_user, scope, per_rpc, client, done) {
       fill_username: true,
       fill_oauth_scope: true
     };
-    credential = credential.createScoped(scope);
+    if (credential.createScopedRequired() && scope) {
+      credential = credential.createScoped(scope);
+    }
     var creds = grpc.credentials.createFromGoogleCredential(credential);
     client.unaryCall(arg, function(err, resp) {
       assert.ifError(err);

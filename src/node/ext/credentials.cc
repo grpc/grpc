@@ -288,12 +288,16 @@ NAN_METHOD(PluginCallback) {
     return Nan::ThrowTypeError(
         "The callback's third argument must be an object");
   }
+  shared_ptr<Resources> resources(new Resources);
   grpc_status_code code = static_cast<grpc_status_code>(
       Nan::To<uint32_t>(info[0]).FromJust());
-  char *details = *Nan::Utf8String(info[1]);
+  //Utf8String details_str(info[1]);
+  //char *details = static_cast<char*>(calloc(details_str.length(), sizeof(char)));
+  //memcpy(details, *details_str, details_str.length());
+  char *details = *Utf8String(info[1]);
   grpc_metadata_array array;
   if (!CreateMetadataArray(Nan::To<Object>(info[2]).ToLocalChecked(),
-                           &array, shared_ptr<Resources>(new Resources))){
+                           &array, resources)){
     return Nan::ThrowError("Failed to parse metadata");
   }
   grpc_credentials_plugin_metadata_cb cb =
@@ -305,7 +309,6 @@ NAN_METHOD(PluginCallback) {
       Nan::Get(info.Callee(),
                Nan::New("user_data").ToLocalChecked()
                ).ToLocalChecked().As<External>()->Value();
-  gpr_log(GPR_DEBUG, "Calling plugin metadata callback");
   cb(user_data, array.metadata, array.count, code, details);
 }
 
@@ -329,13 +332,13 @@ NAUV_WORK_CB(SendPluginCallback) {
   callback->Call(argc, argv);
   delete data;
   uv_unref((uv_handle_t *)async);
-  delete async;
+  uv_close((uv_handle_t *)async, (uv_close_cb)free);
 }
 
 void plugin_get_metadata(void *state, const char *service_url,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data) {
-  uv_async_t *async = new uv_async_t;
+  uv_async_t *async = static_cast<uv_async_t*>(malloc(sizeof(uv_async_t)));
   uv_async_init(uv_default_loop(),
                 async,
                 SendPluginCallback);
@@ -345,6 +348,8 @@ void plugin_get_metadata(void *state, const char *service_url,
   data->cb = cb;
   data->user_data = user_data;
   async->data = data;
+  /* libuv says that it will coalesce calls to uv_async_send. If there is ever a
+   * problem with a callback not getting called, that is probably the reason */
   uv_async_send(async);
 }
 

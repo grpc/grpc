@@ -729,13 +729,17 @@ NAN_METHOD(Call::GetPeer) {
 
 NAN_METHOD(Call::SetCredentials) {
   Nan::HandleScope scope;
+  if (!HasInstance(info.This())) {
+    return Nan::ThrowTypeError(
+        "setCredentials can only be called on Call objects");
+  }
   if (!Credentials::HasInstance(info[0])) {
     return Nan::ThrowTypeError(
         "setCredentials' first argument must be a credential");
   }
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
   Credentials *creds_object = ObjectWrap::Unwrap<Credentials>(
-      Nan::To<Object>(info[1]).ToLocalChecked());
+      Nan::To<Object>(info[0]).ToLocalChecked());
   grpc_credentials *creds = creds_object->GetWrappedCredentials();
   grpc_call_error error = GRPC_CALL_ERROR;
   if (creds) {
