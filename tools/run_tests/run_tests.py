@@ -100,7 +100,8 @@ class SimpleConfig(object):
                           environ=actual_environ,
                           timeout_seconds=self.timeout_seconds,
                           hash_targets=hash_targets
-                              if self.allow_hashing else None)
+                              if self.allow_hashing else None,
+                          flake_retries=5 if args.allow_flakes else 0)
 
 
 # ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
@@ -118,7 +119,8 @@ class ValgrindConfig(object):
     return jobset.JobSpec(cmdline=['valgrind', '--tool=%s' % self.tool] +
                           self.args + cmdline,
                           shortname='valgrind %s' % cmdline[0],
-                          hash_targets=None)
+                          hash_targets=None,
+                          flake_retries=5 if args.allow_flakes else 0)
 
 
 def get_c_tests(travis, test_lang) :
@@ -556,6 +558,11 @@ argp.add_argument('--use_docker',
                   help="Run all the tests under docker. That provides " +
                   "additional isolation and prevents the need to installs " +
                   "language specific prerequisites. Only available on Linux.")
+argp.add_argument('--allow_flakes',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help="Allow flaky tests to show as passing (re-runs failed tests up to five times)")
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
