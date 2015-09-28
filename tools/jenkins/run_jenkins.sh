@@ -85,7 +85,7 @@ elif [ "$platform" == "interop" ]
 then
   echo "building interop tests for language $language"
 
-  ./tools/run_tests/run_interop_tests.py --use_docker -t -l $language --cloud_to_prod --server all $@ || true
+  ./tools/run_tests/run_interop_tests.py --use_docker -t -l $language --cloud_to_prod --server all || true
 else
   echo "Unknown platform $platform"
   exit 1
