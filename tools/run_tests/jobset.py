@@ -155,7 +155,7 @@ class JobSpec(object):
     self.shell = shell
     self.timeout_seconds = timeout_seconds
     self.flake_retries = flake_retries
-    self.timeout_retries = 0
+    self.timeout_retries = timeout_retries
 
   def identity(self):
     return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
