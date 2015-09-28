@@ -78,21 +78,12 @@ void Credentials::Init(Local<Object> exports) {
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
   fun_tpl.Reset(tpl);
   Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
-  Nan::Set(ctr, Nan::New("createDefault").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateDefault)).ToLocalChecked());
   Nan::Set(ctr, Nan::New("createSsl").ToLocalChecked(),
            Nan::GetFunction(
                Nan::New<FunctionTemplate>(CreateSsl)).ToLocalChecked());
   Nan::Set(ctr, Nan::New("createComposite").ToLocalChecked(),
            Nan::GetFunction(
                Nan::New<FunctionTemplate>(CreateComposite)).ToLocalChecked());
-  Nan::Set(ctr, Nan::New("createGce").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateGce)).ToLocalChecked());
-  Nan::Set(ctr, Nan::New("createIam").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateIam)).ToLocalChecked());
   Nan::Set(ctr, Nan::New("createInsecure").ToLocalChecked(),
            Nan::GetFunction(
                Nan::New<FunctionTemplate>(CreateInsecure)).ToLocalChecked());
@@ -153,15 +144,6 @@ NAN_METHOD(Credentials::New) {
   }
 }
 
-NAN_METHOD(Credentials::CreateDefault) {
-  grpc_credentials *creds = grpc_google_default_credentials_create();
-  if (creds == NULL) {
-    info.GetReturnValue().SetNull();
-  } else {
-    info.GetReturnValue().Set(WrapStruct(creds));
-  }
-}
-
 NAN_METHOD(Credentials::CreateSsl) {
   char *root_certs = NULL;
   grpc_ssl_pem_key_cert_pair key_cert_pair = {NULL, NULL};
@@ -215,34 +197,6 @@ NAN_METHOD(Credentials::CreateComposite) {
   }
   grpc_credentials *creds = grpc_composite_credentials_create(
       creds0->wrapped_credentials, creds1->wrapped_credentials, NULL);
-  if (creds == NULL) {
-    info.GetReturnValue().SetNull();
-  } else {
-    info.GetReturnValue().Set(WrapStruct(creds));
-  }
-}
-
-NAN_METHOD(Credentials::CreateGce) {
-  Nan::HandleScope scope;
-  grpc_credentials *creds = grpc_google_compute_engine_credentials_create(NULL);
-  if (creds == NULL) {
-    info.GetReturnValue().SetNull();
-  } else {
-    info.GetReturnValue().Set(WrapStruct(creds));
-  }
-}
-
-NAN_METHOD(Credentials::CreateIam) {
-  if (!info[0]->IsString()) {
-    return Nan::ThrowTypeError("createIam's first argument must be a string");
-  }
-  if (!info[1]->IsString()) {
-    return Nan::ThrowTypeError("createIam's second argument must be a string");
-  }
-  Utf8String auth_token(info[0]);
-  Utf8String auth_selector(info[1]);
-  grpc_credentials *creds =
-      grpc_google_iam_credentials_create(*auth_token, *auth_selector, NULL);
   if (creds == NULL) {
     info.GetReturnValue().SetNull();
   } else {

@@ -60,7 +60,7 @@ function multiDone(done, count) {
   };
 }
 
-describe.only('client credentials', function() {
+describe('client credentials', function() {
   var Client;
   var server;
   var port;

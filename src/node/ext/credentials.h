@@ -62,12 +62,8 @@ class Credentials : public Nan::ObjectWrap {
   Credentials &operator=(const Credentials &);
 
   static NAN_METHOD(New);
-  static NAN_METHOD(CreateDefault);
   static NAN_METHOD(CreateSsl);
   static NAN_METHOD(CreateComposite);
-  static NAN_METHOD(CreateGce);
-  static NAN_METHOD(CreateFake);
-  static NAN_METHOD(CreateIam);
   static NAN_METHOD(CreateInsecure);
   static NAN_METHOD(CreateFromPlugin);
   static Nan::Callback *constructor;
