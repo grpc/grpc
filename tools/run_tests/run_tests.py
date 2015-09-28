@@ -120,7 +120,8 @@ class ValgrindConfig(object):
                           self.args + cmdline,
                           shortname='valgrind %s' % cmdline[0],
                           hash_targets=None,
-                          flake_retries=5 if args.allow_flakes else 0)
+                          flake_retries=5 if args.allow_flakes else 0,
+                          timeout_retries=2 if args.allow_flakes else 0)
 
 
 def get_c_tests(travis, test_lang) :

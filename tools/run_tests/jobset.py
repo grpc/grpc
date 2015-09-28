@@ -134,7 +134,8 @@ class JobSpec(object):
   """Specifies what to run for a job."""
 
   def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
-               cwd=None, shell=False, timeout_seconds=5*60, flake_retries=0):
+               cwd=None, shell=False, timeout_seconds=5*60, flake_retries=0,
+               timeout_retries=0):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
@@ -154,6 +155,7 @@ class JobSpec(object):
     self.shell = shell
     self.timeout_seconds = timeout_seconds
     self.flake_retries = flake_retries
+    self.timeout_retries = 0
 
   def identity(self):
     return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
@@ -177,6 +179,7 @@ class Job(object):
     self._xml_test = ET.SubElement(xml_report, 'testcase',
                                    name=self._spec.shortname) if xml_report is not None else None
     self._retries = 0
+    self._timeout_retries = 0
     message('START', spec.shortname, do_newline=self._travis)
     self.start()
 
@@ -224,17 +227,18 @@ class Job(object):
             ET.SubElement(self._xml_test, 'failure', message='Failure').text
       else:
         self._state = _SUCCESS
-        message('PASSED', '%s [time=%.1fsec; retries=%d]' % (self._spec.shortname, elapsed, self._retries),
-                do_newline=self._newline_on_success or self._travis)
+        message('PASSED', '%s [time=%.1fsec; retries=%d;%d]' % (
+                    self._spec.shortname, elapsed, self._retries, self._timeout_retries),
+            do_newline=self._newline_on_success or self._travis)
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
       self._tempfile.seek(0)
       stdout = self._tempfile.read()
       filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))
-      if self._retries < self._spec.flake_retries:
+      if self._timeout_retries < self._spec.timeout_retries:
         message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
-        self._retries += 1
+        self._timeout_retries += 1
         self._process.terminate()
         self.start()
       else:
