@@ -125,7 +125,6 @@ static void install_crash_handler() {
   GPR_ASSERT(sigaction(SIGABRT, &sa, NULL) == 0);
   GPR_ASSERT(sigaction(SIGBUS, &sa, NULL) == 0);
   GPR_ASSERT(sigaction(SIGSEGV, &sa, NULL) == 0);
-  GPR_ASSERT(sigaction(SIGSTKFLT, &sa, NULL) == 0);
 }
 #else
 static void install_crash_handler() {}
