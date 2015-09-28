@@ -124,6 +124,7 @@
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_HAVE_MSG_NOSIGNAL 1
 #elif defined(__linux__)
+#define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_PLATFORM_STRING "linux"
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
@@ -191,6 +192,7 @@
 #define GPR_PLATFORM_STRING "osx"
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_TLS 1
+#define GPR_POSIX_CRASH_HANDLER 1
 #endif
 #define GPR_GCC_ATOMIC 1
 #define GPR_POSIX_LOG 1
