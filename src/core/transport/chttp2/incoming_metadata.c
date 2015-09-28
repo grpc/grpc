@@ -171,7 +171,7 @@ void grpc_chttp2_incoming_metadata_buffer_postprocess_sopb_and_begin_live_op(
       size_t copy_bytes = sizeof(*buffer->elems) * new_count;
       GPR_ASSERT(mdidx < buffer->count);
       buffer->elems = gpr_malloc(copy_bytes);
-      memcpy(live_op_buffer->elems + mdidx, buffer->elems, copy_bytes);
+      memcpy(buffer->elems, live_op_buffer->elems + mdidx, copy_bytes);
       buffer->count = buffer->capacity = new_count;
     } else {
       buffer->elems = NULL;
