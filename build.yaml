@@ -391,6 +391,7 @@ libs:
   - include/grpc/support/tls_pthread.h
   - include/grpc/support/useful.h
   headers:
+  - src/core/support/block_annotate.h
   - src/core/support/env.h
   - src/core/support/file.h
   - src/core/support/murmur_hash.h

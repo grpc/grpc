@@ -248,8 +248,7 @@ class CallOpRecvMessage {
       if (*status) {
         got_message = true;
         *status = SerializationTraits<R>::Deserialize(recv_buf_, message_,
-                                                      max_message_size)
-                      .ok();
+                                                      max_message_size).ok();
       } else {
         got_message = false;
         grpc_byte_buffer_destroy(recv_buf_);
