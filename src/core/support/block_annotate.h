@@ -31,44 +31,18 @@
  *
  */
 
-#ifndef GRPC_TEST_CPP_INTEROP_CLIENT_HELPER_H
-#define GRPC_TEST_CPP_INTEROP_CLIENT_HELPER_H
+#ifndef GRPC_INTERNAL_CORE_SUPPORT_BLOCK_ANNOTATE_H
+#define GRPC_INTERNAL_CORE_SUPPORT_BLOCK_ANNOTATE_H
 
-#include <memory>
+/* These annotations identify the beginning and end of regions where
+   the code may block for reasons other than synchronization functions.
+   These include poll, epoll, and getaddrinfo. */
 
-#include <grpc++/channel.h>
+#define GRPC_SCHEDULING_START_BLOCKING_REGION \
+  do {                                        \
+  } while (0)
+#define GRPC_SCHEDULING_END_BLOCKING_REGION \
+  do {                                      \
+  } while (0)
 
-#include "src/core/surface/call.h"
-
-namespace grpc {
-namespace testing {
-
-grpc::string GetServiceAccountJsonKey();
-
-grpc::string GetOauth2AccessToken();
-
-std::shared_ptr<Channel> CreateChannelForTestCase(
-    const grpc::string& test_case);
-
-class InteropClientContextInspector {
- public:
-  InteropClientContextInspector(const ::grpc::ClientContext& context)
-      : context_(context) {}
-
-  // Inspector methods, able to peek inside ClientContext, follow.
-  grpc_compression_algorithm GetCallCompressionAlgorithm() const {
-    return grpc_call_get_compression_algorithm(context_.call_);
-  }
-
-  gpr_uint32 GetMessageFlags() const {
-    return grpc_call_get_message_flags(context_.call_);
-  }
-
- private:
-  const ::grpc::ClientContext& context_;
-};
-
-}  // namespace testing
-}  // namespace grpc
-
-#endif  // GRPC_TEST_CPP_INTEROP_CLIENT_HELPER_H
+#endif /* GRPC_INTERNAL_CORE_SUPPORT_BLOCK_ANNOTATE_H */

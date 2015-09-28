@@ -60,6 +60,8 @@ docker run \
   -i $TTY_FLAG \
   -v "$git_root:/var/local/jenkins/grpc" \
   -v /tmp/ccache:/tmp/ccache \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $(which docker):/bin/docker \
   -w /var/local/git/grpc \
   --cidfile=docker.cid \
   $DOCKER_IMAGE_NAME \
