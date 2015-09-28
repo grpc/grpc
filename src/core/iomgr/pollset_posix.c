@@ -119,11 +119,13 @@ void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
 
 void grpc_pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_poller);
+  gpr_tls_init(&g_current_thread_worker);
   grpc_wakeup_fd_global_init();
 }
 
 void grpc_pollset_global_shutdown(void) {
   gpr_tls_destroy(&g_current_thread_poller);
+  gpr_tls_destroy(&g_current_thread_worker);
   grpc_wakeup_fd_global_destroy();
 }
 
