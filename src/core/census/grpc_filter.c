@@ -168,7 +168,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               int is_first, int is_last) {
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
-  chand->path_str = grpc_mdstr_from_string(mdctx, ":path", 0);
+  chand->path_str = grpc_mdstr_from_string(mdctx, ":path");
 }
 
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
