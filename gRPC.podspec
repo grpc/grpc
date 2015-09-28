@@ -61,7 +61,8 @@ Pod::Spec.new do |s|
 
   # Core cross-platform gRPC library, written in C.
   s.subspec 'C-Core' do |ss|
-    ss.source_files = 'src/core/support/env.h',
+    ss.source_files = 'src/core/support/block_annotate.h',
+                      'src/core/support/env.h',
                       'src/core/support/file.h',
                       'src/core/support/murmur_hash.h',
                       'src/core/support/stack_lockfree.h',
@@ -414,7 +415,8 @@ Pod::Spec.new do |s|
                       'src/core/census/operation.c',
                       'src/core/census/tracing.c'
 
-    ss.private_header_files = 'src/core/support/env.h',
+    ss.private_header_files = 'src/core/support/block_annotate.h',
+                              'src/core/support/env.h',
                               'src/core/support/file.h',
                               'src/core/support/murmur_hash.h',
                               'src/core/support/stack_lockfree.h',

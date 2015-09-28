@@ -197,6 +197,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\core\support\block_annotate.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\support\env.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
