@@ -44,7 +44,7 @@ namespace grpc {
 
 ServerBuilder::ServerBuilder()
     : max_message_size_(-1), generic_service_(nullptr), thread_pool_(nullptr) {
-      grpc_compression_options_init(&compression_options_);
+  grpc_compression_options_init(&compression_options_);
 }
 
 std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue() {

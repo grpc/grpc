@@ -38,9 +38,9 @@
 
 static void verifier(grpc_server *server, grpc_completion_queue *cq) {
   while (grpc_server_has_open_connections(server)) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20), NULL)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    GPR_ASSERT(grpc_completion_queue_next(cq,
+                                          GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20),
+                                          NULL).type == GRPC_QUEUE_TIMEOUT);
   }
 }
 

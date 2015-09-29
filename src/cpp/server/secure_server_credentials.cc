@@ -35,7 +35,6 @@
 #include <map>
 #include <memory>
 
-
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
@@ -43,7 +42,7 @@
 
 namespace grpc {
 
-void AuthMetadataProcessorAyncWrapper::Destroy(void *wrapper) {
+void AuthMetadataProcessorAyncWrapper::Destroy(void* wrapper) {
   auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
   delete w;
 }
@@ -68,8 +67,7 @@ void AuthMetadataProcessorAyncWrapper::Process(
 }
 
 void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
-    grpc_auth_context* ctx,
-    const grpc_metadata* md, size_t num_md,
+    grpc_auth_context* ctx, const grpc_metadata* md, size_t num_md,
     grpc_process_auth_metadata_done_cb cb, void* user_data) {
   AuthMetadataProcessor::InputMetadata metadata;
   for (size_t i = 0; i < num_md; i++) {
@@ -115,7 +113,7 @@ int SecureServerCredentials::AddPortToServer(const grpc::string& addr,
 
 void SecureServerCredentials::SetAuthMetadataProcessor(
     const std::shared_ptr<AuthMetadataProcessor>& processor) {
-  auto *wrapper = new AuthMetadataProcessorAyncWrapper(processor);
+  auto* wrapper = new AuthMetadataProcessorAyncWrapper(processor);
   grpc_server_credentials_set_auth_metadata_processor(
       creds_, {AuthMetadataProcessorAyncWrapper::Process,
                AuthMetadataProcessorAyncWrapper::Destroy, wrapper});

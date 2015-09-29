@@ -292,7 +292,7 @@ static flush_result tcp_flush(grpc_tcp *tcp) {
     unwind_slice_idx = tcp->outgoing_slice_idx;
     unwind_byte_idx = tcp->outgoing_byte_idx;
     for (iov_size = 0; tcp->outgoing_slice_idx != tcp->outgoing_buffer->count &&
-                       iov_size != MAX_WRITE_IOVEC;
+                           iov_size != MAX_WRITE_IOVEC;
          iov_size++) {
       iov[iov_size].iov_base =
           GPR_SLICE_START_PTR(
@@ -441,7 +441,7 @@ static char *tcp_get_peer(grpc_endpoint *ep) {
 }
 
 static const grpc_endpoint_vtable vtable = {
-    tcp_read,     tcp_write,   tcp_add_to_pollset, tcp_add_to_pollset_set,
+    tcp_read, tcp_write, tcp_add_to_pollset, tcp_add_to_pollset_set,
     tcp_shutdown, tcp_destroy, tcp_get_peer};
 
 grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
