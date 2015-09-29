@@ -62,7 +62,6 @@ using std::chrono::system_clock;
 
 namespace grpc {
 namespace testing {
-
 namespace {
 
 const char* kServerCancelAfterReads = "cancel_after_reads";
@@ -693,7 +692,6 @@ TEST_P(End2endTest, RequestStreamServerEarlyCancelTest) {
   EXPECT_EQ(s.error_code(), StatusCode::CANCELLED);
 }
 
-namespace {
 void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
                       gpr_event* ev) {
   EchoResponse resp;
@@ -702,7 +700,6 @@ void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
     gpr_log(GPR_INFO, "Read message");
   }
 }
-}  // namespace
 
 // Run a Read and a WritesDone simultaneously.
 TEST_P(End2endTest, SimultaneousReadWritesDone) {
