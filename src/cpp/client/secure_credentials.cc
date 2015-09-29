@@ -154,10 +154,10 @@ void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
 void MetadataCredentialsPluginWrapper::GetMetadata(
     void* wrapper, const char* service_url,
     grpc_credentials_plugin_metadata_cb cb, void* user_data) {
-  GPR_ASSERT(wrapper != nullptr);
+  GPR_ASSERT(!wrapper);
   MetadataCredentialsPluginWrapper* w =
       reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
-  if (w->plugin_ == nullptr) {
+  if (!w->plugin_) {
     cb(user_data, NULL, 0, GRPC_STATUS_OK, NULL);
     return;
   }
@@ -177,11 +177,12 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
   Status status = plugin_->GetMetadata(service_url, &metadata);
   std::vector<grpc_metadata> md;
   for (auto it = metadata.begin(); it != metadata.end(); ++it) {
-    md.push_back({it->first.c_str(),
-                  it->second.data(),
-                  it->second.size(),
-                  0,
-                  {{nullptr, nullptr, nullptr, nullptr}}});
+    grpc_metadata md_entry;
+    md_entry.key = it->first.c_str();
+    md_entry.value = it->second.data();
+    md_entry.value_length = it->second.size();
+    md_entry.flags = 0;
+    md.push_back(md_entry);
   }
   cb(user_data, md.empty() ? nullptr : &md[0], md.size(),
      static_cast<grpc_status_code>(status.error_code()),
