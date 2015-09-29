@@ -248,7 +248,7 @@ static void epoll_become_multipoller(grpc_exec_ctx *exec_ctx,
                                      size_t nfds) {
   size_t i;
   pollset_hdr *h = gpr_malloc(sizeof(pollset_hdr));
-  epoll_event ev;
+  struct epoll_event ev;
   int err;
 
   pollset->vtable = &multipoll_with_epoll_pollset;
@@ -264,7 +264,7 @@ static void epoll_become_multipoller(grpc_exec_ctx *exec_ctx,
   ev.data.ptr = NULL;
   err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD, GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd), &ev);
   if (err < 0) {
-    gpr_log(GPR_ERROR, "epoll_ctl add for %d failed: %s", fd->fd,
+    gpr_log(GPR_ERROR, "epoll_ctl add for %d failed: %s", GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd),
             strerror(errno));
   }
 
