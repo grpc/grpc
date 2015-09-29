@@ -211,12 +211,12 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
             /* TODO(klempner): We might want to consider making err and pri
              * separate events */
             int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
-            int read = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
-            int write = ep_ev[i].events & EPOLLOUT;
-            if (read || cancel) {
+            int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
+            int write_ev = ep_ev[i].events & EPOLLOUT;
+            if (read_ev || cancel) {
               grpc_fd_become_readable(exec_ctx, fd);
             }
-            if (write || cancel) {
+            if (write_ev || cancel) {
               grpc_fd_become_writable(exec_ctx, fd);
             }
           }
