@@ -354,9 +354,8 @@ static char *endpoint_get_peer(grpc_endpoint *secure_ep) {
 }
 
 static const grpc_endpoint_vtable vtable = {
-    endpoint_read,           endpoint_write,
-    endpoint_add_to_pollset, endpoint_add_to_pollset_set,
-    endpoint_shutdown,       endpoint_destroy,
+    endpoint_read, endpoint_write, endpoint_add_to_pollset,
+    endpoint_add_to_pollset_set, endpoint_shutdown, endpoint_destroy,
     endpoint_get_peer};
 
 grpc_endpoint *grpc_secure_endpoint_create(

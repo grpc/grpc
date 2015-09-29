@@ -130,16 +130,9 @@ static char *con_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
 }
 
 const grpc_channel_filter grpc_connected_channel_filter = {
-    con_start_transport_stream_op,
-    con_start_transport_op,
-    sizeof(call_data),
-    init_call_elem,
-    destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    con_get_peer,
-    "connected",
+    con_start_transport_stream_op, con_start_transport_op, sizeof(call_data),
+    init_call_elem, destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, con_get_peer, "connected",
 };
 
 void grpc_connected_channel_bind_transport(grpc_channel_stack *channel_stack,
