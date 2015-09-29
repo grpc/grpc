@@ -167,6 +167,15 @@ class JobSpec(object):
     return self.identity() == other.identity()
 
 
+
+
+
+
+
+
+
+
+
 class Job(object):
   """Manages one job."""
 
