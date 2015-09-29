@@ -51,13 +51,6 @@ static gpr_cv g_rcv;
 static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 
-void grpc_kick_poller(void) {
-  /* Empty. The background callback executor polls periodically. The activity
-   * the kicker is trying to draw the executor's attention to will be picked up
-   * either by one of the periodic wakeups or by one of the polling application
-   * threads. */
-}
-
 void grpc_iomgr_init(void) {
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
