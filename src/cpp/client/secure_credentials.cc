@@ -154,7 +154,7 @@ void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
 void MetadataCredentialsPluginWrapper::GetMetadata(
     void* wrapper, const char* service_url,
     grpc_credentials_plugin_metadata_cb cb, void* user_data) {
-  GPR_ASSERT(!wrapper);
+  GPR_ASSERT(wrapper);
   MetadataCredentialsPluginWrapper* w =
       reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   if (!w->plugin_) {
