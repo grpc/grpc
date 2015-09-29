@@ -44,6 +44,7 @@ package(default_visibility = ["//visibility:public"])
 cc_library(
   name = "gpr",
   srcs = [
+    "src/core/support/block_annotate.h",
     "src/core/support/env.h",
     "src/core/support/file.h",
     "src/core/support/murmur_hash.h",
@@ -1023,6 +1024,7 @@ objc_library(
     "include/grpc/support/tls_msvc.h",
     "include/grpc/support/tls_pthread.h",
     "include/grpc/support/useful.h",
+    "src/core/support/block_annotate.h",
     "src/core/support/env.h",
     "src/core/support/file.h",
     "src/core/support/murmur_hash.h",

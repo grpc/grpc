@@ -595,8 +595,8 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
 void grpc_call_destroy(grpc_call *call);
 
 /** Request notification of a new call.
-    Once a call is received, a notification tagged with \a tag_new is added to 
-    \a cq_for_notification. \a call, \a details and \a request_metadata are 
+    Once a call is received, a notification tagged with \a tag_new is added to
+    \a cq_for_notification. \a call, \a details and \a request_metadata are
     updated with the appropriate call information. \a cq_bound_to_call is bound
     to \a call, and batch operation notifications for that call will be posted
     to \a cq_bound_to_call.
