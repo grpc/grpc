@@ -149,4 +149,8 @@ void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
   }
 }
 
+void grpc_kick_poller(void) {
+  grpc_iocp_kick();
+}
+
 #endif /* GPR_WINSOCK_SOCKET */
