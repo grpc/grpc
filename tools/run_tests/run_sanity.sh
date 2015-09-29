@@ -58,3 +58,5 @@ if [ -f cache.mk ] ; then
 fi
 
 ./tools/buildgen/generate_projects.sh
+./tools/distrib/clang_format_code.sh
+
