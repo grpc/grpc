@@ -129,5 +129,6 @@ int grpc_pollset_has_workers(grpc_pollset *pollset);
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
+extern grpc_wakeup_fd grpc_global_wakeup_fd;
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */
