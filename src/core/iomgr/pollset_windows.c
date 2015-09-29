@@ -137,6 +137,8 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   int added_worker = 0;
   worker->links[GRPC_POLLSET_WORKER_LINK_POLLSET].next = 
     worker->links[GRPC_POLLSET_WORKER_LINK_POLLSET].prev = 
+    worker->links[GRPC_POLLSET_WORKER_LINK_GLOBAL].next =
+    worker->links[GRPC_POLLSET_WORKER_LINK_GLOBAL].prev =
     NULL;
   gpr_cv_init(&worker->cv);
   if (grpc_alarm_check(exec_ctx, now, &deadline)) {
@@ -182,11 +184,11 @@ done:
     grpc_exec_ctx_flush(exec_ctx);
     gpr_mu_lock(&pollset->mu);
   }
-  gpr_cv_destroy(&worker->cv);
   if (added_worker) {
     remove_worker(worker, GRPC_POLLSET_WORKER_LINK_GLOBAL);
     remove_worker(worker, GRPC_POLLSET_WORKER_LINK_POLLSET);
   }
+  gpr_cv_destroy(&worker->cv);
 }
 
 void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
