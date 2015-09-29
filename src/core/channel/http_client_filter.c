@@ -239,7 +239,7 @@ static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
 
   tmp = gpr_strvec_flatten(&v, NULL);
   gpr_strvec_destroy(&v);
-  result = grpc_mdstr_from_string(mdctx, tmp, 0);
+  result = grpc_mdstr_from_string(mdctx, tmp);
   gpr_free(tmp);
 
   return result;
@@ -267,7 +267,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
   channeld->status = grpc_mdelem_from_strings(mdctx, ":status", "200");
   channeld->user_agent = grpc_mdelem_from_metadata_strings(
-      mdctx, grpc_mdstr_from_string(mdctx, "user-agent", 0),
+      mdctx, grpc_mdstr_from_string(mdctx, "user-agent"),
       user_agent_from_args(mdctx, channel_args));
 }
 
