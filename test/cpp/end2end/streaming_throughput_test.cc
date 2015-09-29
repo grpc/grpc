@@ -31,9 +31,9 @@
  *
  */
 
-#include <atomic>
 #include <mutex>
 #include <thread>
+#include <time.h>
 
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
@@ -44,6 +44,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
@@ -99,12 +100,17 @@ namespace testing {
 
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
  public:
-  static void BidiStream_Sender(ServerReaderWriter<EchoResponse, EchoRequest>* stream, std::atomic<bool>* should_exit) {
+  static void BidiStream_Sender(ServerReaderWriter<EchoResponse, EchoRequest>* stream, gpr_atm* should_exit) {
     EchoResponse response;
     response.set_message(kLargeString);
-    while (!should_exit->load()) {
-      // TODO(vpai): Decide if the below requires blocking annotation
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while (gpr_atm_acq_load(should_exit) == static_cast<gpr_atm>(0)) {
+      struct timespec tv = {0, 1000000}; // 1 ms
+      struct timespec rem;
+      // TODO (vpai): Mark this blocking
+      while (nanosleep(&tv, &rem) != 0) {
+	tv = rem;
+      };
+
       stream->Write(response);
     }
   }
@@ -114,14 +120,20 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE {
     EchoRequest request;
-    std::atomic<bool> should_exit(false);
+    gpr_atm should_exit;
+    gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
+
     std::thread sender(std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
 
     while (stream->Read(&request)) {
-      // TODO(vpai): Decide if the below requires blocking annotation
-      std::this_thread::sleep_for(std::chrono::milliseconds(3));
+      struct timespec tv = {0, 3000000}; // 3 ms
+      struct timespec rem;
+      // TODO (vpai): Mark this blocking
+      while (nanosleep(&tv, &rem) != 0) {
+	tv = rem;
+      };
     }
-    should_exit.store(true);
+    gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(1));
     sender.join();
     return Status::OK;
   }
