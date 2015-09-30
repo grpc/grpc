@@ -274,14 +274,14 @@ void grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
 }
 
 void grpc_metadata_batch_merge(grpc_metadata_batch *target,
-                               grpc_metadata_batch *add) {
+                               grpc_metadata_batch *to_add) {
   grpc_linked_mdelem *l;
   grpc_linked_mdelem *next;
-  for (l = add->list.head; l; l = next) {
+  for (l = to_add->list.head; l; l = next) {
     next = l->next;
     link_tail(&target->list, l);
   }
-  for (l = add->garbage.head; l; l = next) {
+  for (l = to_add->garbage.head; l; l = next) {
     next = l->next;
     link_tail(&target->garbage, l);
   }
