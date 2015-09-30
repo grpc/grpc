@@ -40,7 +40,9 @@
 
 var grpc = require('bindings')('grpc.node');
 
-var Credentials = grpc.Credentials;
+var CallCredentials = grpc.CallCredentials;
+
+var ChannelCredentials = grpc.ChannelCredentials;
 
 var Metadata = require('./metadata.js');
 
@@ -51,8 +53,9 @@ var Metadata = require('./metadata.js');
  * @param {Buffer=} private_key The client certificate private key, if
  *     applicable
  * @param {Buffer=} cert_chain The client certificate cert chain, if applicable
+ * @return {ChannelCredentials} The SSL Credentials object
  */
-exports.createSsl = Credentials.createSsl;
+exports.createSsl = ChannelCredentials.createSsl;
 
 /**
  * Create a gRPC credentials object from a metadata generation function. This
@@ -61,10 +64,10 @@ exports.createSsl = Credentials.createSsl;
  * which corresponds to a status code that this library uses.
  * @param {function(String, function(Error, Metadata))} metadata_generator The
  *     function that generates metadata
- * @return {Credentials} The credentials object
+ * @return {CallCredentials} The credentials object
  */
 exports.createFromMetadataGenerator = function(metadata_generator) {
-  return Credentials.createFromPlugin(function(service_url, callback) {
+  return CallCredentials.createFromPlugin(function(service_url, callback) {
     metadata_generator(service_url, function(error, metadata) {
       var code = grpc.status.OK;
       var message = '';
@@ -82,7 +85,7 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
 /**
  * Create a gRPC credential from a Google credential object.
  * @param {Object} google_credential The Google credential object to use
- * @return {Credentials} The resulting credentials object
+ * @return {CallCredentials} The resulting credentials object
  */
 exports.createFromGoogleCredential = function(google_credential) {
   return exports.createFromMetadataGenerator(function(service_url, callback) {
@@ -99,22 +102,39 @@ exports.createFromGoogleCredential = function(google_credential) {
 };
 
 /**
- * Combine any number of Credentials into a single credentials object
- * @param(...Credentials) credentials The Credentials to combine
- * @return Credentials A credentials object that combines all of the input
- *     credentials
+ * Combine a ChannelCredentials with any number of CallCredentials into a single
+ * ChannelCredentials object.
+ * @param {ChannelCredentials} channel_credential The ChannelCredentials to
+ *     start with
+ * @param {...CallCredentials} credentials The CallCredentials to compose
+ * @return ChannelCredentials A credentials object that combines all of the
+ *     input credentials
  */
-exports.combineCredentials = function() {
-  var current = arguments[0];
+exports.combineChannelCredentials = function(channel_credential) {
+  var current = channel_credential;
   for (var i = 1; i < arguments.length; i++) {
-    current = Credentials.createComposite(current, arguments[i]);
+    current = current.compose(arguments[i]);
   }
   return current;
 };
 
 /**
+ * Combine any number of CallCredentials into a single CallCredentials object
+ * @param {...CallCredentials} credentials the CallCredentials to compose
+ * @return CallCredentials A credentials object that combines all of the input
+ *     credentials
+ */
+exports.combineCallCredentials = function() {
+  var current = arguments[0];
+  for (var i = 1; i < arguments.length; i++) {
+    current = current.compose(arguments[i]);
+  }
+  return current;
+}
+
+/**
  * Create an insecure credentials object. This is used to create a channel that
  * does not use SSL.
- * @return Credentials The insecure credentials object
+ * @return {ChannelCredentials} The insecure credentials object
  */
-exports.createInsecure = Credentials.createInsecure;
+exports.createInsecure = ChannelCredentials.createInsecure;

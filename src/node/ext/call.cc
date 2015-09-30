@@ -46,7 +46,7 @@
 #include "call.h"
 #include "channel.h"
 #include "completion_queue_async_worker.h"
-#include "credentials.h"
+#include "call_credentials.h"
 #include "timeval.h"
 
 using std::unique_ptr;
@@ -733,12 +733,12 @@ NAN_METHOD(Call::SetCredentials) {
     return Nan::ThrowTypeError(
         "setCredentials can only be called on Call objects");
   }
-  if (!Credentials::HasInstance(info[0])) {
+  if (!CallCredentials::HasInstance(info[0])) {
     return Nan::ThrowTypeError(
-        "setCredentials' first argument must be a credential");
+        "setCredentials' first argument must be a CallCredentials");
   }
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
-  Credentials *creds_object = ObjectWrap::Unwrap<Credentials>(
+  CallCredentials *creds_object = ObjectWrap::Unwrap<CallCredentials>(
       Nan::To<Object>(info[0]).ToLocalChecked());
   grpc_credentials *creds = creds_object->GetWrappedCredentials();
   grpc_call_error error = GRPC_CALL_ERROR;

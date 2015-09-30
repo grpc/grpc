@@ -36,7 +36,7 @@
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 #include "grpc/support/log.h"
-#include "credentials.h"
+#include "call_credentials.h"
 #include "call.h"
 
 namespace grpc {
@@ -61,47 +61,42 @@ using v8::Object;
 using v8::ObjectTemplate;
 using v8::Value;
 
-Nan::Callback *Credentials::constructor;
-Persistent<FunctionTemplate> Credentials::fun_tpl;
+Nan::Callback *CallCredentials::constructor;
+Persistent<FunctionTemplate> CallCredentials::fun_tpl;
 
-Credentials::Credentials(grpc_credentials *credentials)
+CallCredentials::CallCredentials(grpc_credentials *credentials)
     : wrapped_credentials(credentials) {}
 
-Credentials::~Credentials() {
+CallCredentials::~CallCredentials() {
   grpc_credentials_release(wrapped_credentials);
 }
 
-void Credentials::Init(Local<Object> exports) {
+void CallCredentials::Init(Local<Object> exports) {
   HandleScope scope;
   Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
-  tpl->SetClassName(Nan::New("Credentials").ToLocalChecked());
+  tpl->SetClassName(Nan::New("CallCredentials").ToLocalChecked());
   tpl->InstanceTemplate()->SetInternalFieldCount(1);
+  Nan::SetPrototypeMethod(tpl, "compose", Compose);
   fun_tpl.Reset(tpl);
   Local<Function> ctr = Nan::GetFunction(tpl).ToLocalChecked();
-  Nan::Set(ctr, Nan::New("createSsl").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateSsl)).ToLocalChecked());
-  Nan::Set(ctr, Nan::New("createComposite").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateComposite)).ToLocalChecked());
-  Nan::Set(ctr, Nan::New("createInsecure").ToLocalChecked(),
-           Nan::GetFunction(
-               Nan::New<FunctionTemplate>(CreateInsecure)).ToLocalChecked());
   Nan::Set(ctr, Nan::New("createFromPlugin").ToLocalChecked(),
            Nan::GetFunction(
                Nan::New<FunctionTemplate>(CreateFromPlugin)).ToLocalChecked());
-  Nan::Set(exports, Nan::New("Credentials").ToLocalChecked(), ctr);
+  Nan::Set(exports, Nan::New("CallCredentials").ToLocalChecked(), ctr);
   constructor = new Nan::Callback(ctr);
 }
 
-bool Credentials::HasInstance(Local<Value> val) {
+bool CallCredentials::HasInstance(Local<Value> val) {
   HandleScope scope;
   return Nan::New(fun_tpl)->HasInstance(val);
 }
 
-Local<Value> Credentials::WrapStruct(grpc_credentials *credentials) {
+Local<Value> CallCredentials::WrapStruct(grpc_credentials *credentials) {
   EscapableHandleScope scope;
   const int argc = 1;
+  if (credentials == NULL) {
+    return scope.Escape(Nan::Null());
+  }
   Local<Value> argv[argc] = {
     Nan::New<External>(reinterpret_cast<void *>(credentials))};
   MaybeLocal<Object> maybe_instance = Nan::NewInstance(
@@ -113,20 +108,20 @@ Local<Value> Credentials::WrapStruct(grpc_credentials *credentials) {
   }
 }
 
-grpc_credentials *Credentials::GetWrappedCredentials() {
+grpc_credentials *CallCredentials::GetWrappedCredentials() {
   return wrapped_credentials;
 }
 
-NAN_METHOD(Credentials::New) {
+NAN_METHOD(CallCredentials::New) {
   if (info.IsConstructCall()) {
     if (!info[0]->IsExternal()) {
       return Nan::ThrowTypeError(
-          "Credentials can only be created with the provided functions");
+          "CallCredentials can only be created with the provided functions");
     }
     Local<External> ext = info[0].As<External>();
     grpc_credentials *creds_value =
         reinterpret_cast<grpc_credentials *>(ext->Value());
-    Credentials *credentials = new Credentials(creds_value);
+    CallCredentials *credentials = new CallCredentials(creds_value);
     credentials->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
     return;
@@ -144,71 +139,26 @@ NAN_METHOD(Credentials::New) {
   }
 }
 
-NAN_METHOD(Credentials::CreateSsl) {
-  char *root_certs = NULL;
-  grpc_ssl_pem_key_cert_pair key_cert_pair = {NULL, NULL};
-  if (::node::Buffer::HasInstance(info[0])) {
-    root_certs = ::node::Buffer::Data(info[0]);
-  } else if (!(info[0]->IsNull() || info[0]->IsUndefined())) {
-    return Nan::ThrowTypeError("createSsl's first argument must be a Buffer");
-  }
-  if (::node::Buffer::HasInstance(info[1])) {
-    key_cert_pair.private_key = ::node::Buffer::Data(info[1]);
-  } else if (!(info[1]->IsNull() || info[1]->IsUndefined())) {
+NAN_METHOD(CallCredentials::Compose) {
+  if (!CallCredentials::HasInstance(info.This())) {
     return Nan::ThrowTypeError(
-        "createSSl's second argument must be a Buffer if provided");
+        "compose can only be called on CallCredentials objects");
   }
-  if (::node::Buffer::HasInstance(info[2])) {
-    key_cert_pair.cert_chain = ::node::Buffer::Data(info[2]);
-  } else if (!(info[2]->IsNull() || info[2]->IsUndefined())) {
+  if (!CallCredentials::HasInstance(info[0])) {
     return Nan::ThrowTypeError(
-        "createSSl's third argument must be a Buffer if provided");
+        "compose's first argument must be a CallCredentials object");
   }
-  grpc_credentials *creds = grpc_ssl_credentials_create(
-      root_certs, key_cert_pair.private_key == NULL ? NULL : &key_cert_pair,
-      NULL);
-  if (creds == NULL) {
-    info.GetReturnValue().SetNull();
-  } else {
-    info.GetReturnValue().Set(WrapStruct(creds));
-  }
-}
-
-NAN_METHOD(Credentials::CreateComposite) {
-  if (!HasInstance(info[0])) {
-    return Nan::ThrowTypeError(
-        "createComposite's first argument must be a Credentials object");
-  }
-  if (!HasInstance(info[1])) {
-    return Nan::ThrowTypeError(
-        "createComposite's second argument must be a Credentials object");
-  }
-  Credentials *creds0 = ObjectWrap::Unwrap<Credentials>(
+  CallCredentials *self = ObjectWrap::Unwrap<CallCredentials>(info.This());
+  CallCredentials *other = ObjectWrap::Unwrap<CallCredentials>(
       Nan::To<Object>(info[0]).ToLocalChecked());
-  Credentials *creds1 = ObjectWrap::Unwrap<Credentials>(
-      Nan::To<Object>(info[1]).ToLocalChecked());
-  if (creds0->wrapped_credentials == NULL) {
-    info.GetReturnValue().Set(info[1]);
-    return;
-  }
-  if (creds1->wrapped_credentials == NULL) {
-    info.GetReturnValue().Set(info[0]);
-    return;
-  }
   grpc_credentials *creds = grpc_composite_credentials_create(
-      creds0->wrapped_credentials, creds1->wrapped_credentials, NULL);
-  if (creds == NULL) {
-    info.GetReturnValue().SetNull();
-  } else {
-    info.GetReturnValue().Set(WrapStruct(creds));
-  }
+      self->wrapped_credentials, other->wrapped_credentials, NULL);
+  info.GetReturnValue().Set(WrapStruct(creds));
 }
 
-NAN_METHOD(Credentials::CreateInsecure) {
-  info.GetReturnValue().Set(WrapStruct(NULL));
-}
 
-NAN_METHOD(Credentials::CreateFromPlugin) {
+
+NAN_METHOD(CallCredentials::CreateFromPlugin) {
   if (!info[0]->IsFunction()) {
     return Nan::ThrowTypeError(
         "createFromPlugin's argument must be a function");
@@ -221,11 +171,7 @@ NAN_METHOD(Credentials::CreateFromPlugin) {
   plugin.state = reinterpret_cast<void*>(state);
   grpc_credentials *creds = grpc_metadata_credentials_create_from_plugin(plugin,
                                                                          NULL);
-  if (creds == NULL) {
-    info.GetReturnValue().SetNull();
-  } else {
-    info.GetReturnValue().Set(WrapStruct(creds));
-  }
+  info.GetReturnValue().Set(WrapStruct(creds));
 }
 
 NAN_METHOD(PluginCallback) {
@@ -245,9 +191,6 @@ NAN_METHOD(PluginCallback) {
   shared_ptr<Resources> resources(new Resources);
   grpc_status_code code = static_cast<grpc_status_code>(
       Nan::To<uint32_t>(info[0]).FromJust());
-  //Utf8String details_str(info[1]);
-  //char *details = static_cast<char*>(calloc(details_str.length(), sizeof(char)));
-  //memcpy(details, *details_str, details_str.length());
   char *details = *Utf8String(info[1]);
   grpc_metadata_array array;
   if (!CreateMetadataArray(Nan::To<Object>(info[2]).ToLocalChecked(),

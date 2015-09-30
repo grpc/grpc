@@ -460,7 +460,8 @@ function runTest(address, host_override, test_case, tls, test_ca, done) {
 
   if (test.getCreds) {
     test.getCreds(function(err, new_creds) {
-      execute(err, grpc.credentials.combineCredentials(creds, new_creds));
+      execute(err, grpc.credentials.combineChannelCredentials(
+          creds, new_creds));
     });
   } else {
     execute(null, creds);

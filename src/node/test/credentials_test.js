@@ -219,5 +219,25 @@ describe('client credentials', function() {
       });
       call.end();
     });
+    it('should be able to use multiple plugin credentials', function(done) {
+      var altMetadataUpdater = function(service_url, callback) {
+        var metadata = new grpc.Metadata();
+        metadata.set('other_plugin_key', 'other_plugin_value');
+        callback(null, metadata);
+      };
+      var alt_updater_creds = grpc.credentials.createFromMetadataGenerator(
+          altMetadataUpdater);
+      var combined_updater = grpc.credentials.combineCallCredentials(
+          updater_creds, alt_updater_creds);
+      var call = client.unary({}, function(err, data) {
+        assert.ifError(err);
+      }, null, {credentials: updater_creds});
+      call.on('metadata', function(metadata) {
+        assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
+        assert.deepEqual(metadata.get('other_plugin_key'),
+                         ['other_plugin_value']);
+        done();
+      });
+    });
   });
 });
