@@ -413,6 +413,17 @@ void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
   }
 }
 
+int grpc_subchannel_state_change_unsubscribe(grpc_exec_ctx *exec_ctx,
+                                             grpc_subchannel *c,
+                                             grpc_closure *subscribed_notify) {
+  int success;
+  gpr_mu_lock(&c->mu);
+  success = grpc_connectivity_state_change_unsubscribe(
+      exec_ctx, &c->state_tracker, subscribed_notify);
+  gpr_mu_unlock(&c->mu);
+  return success;
+}
+
 void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
                                           grpc_subchannel *c,
                                           grpc_transport_op *op) {
