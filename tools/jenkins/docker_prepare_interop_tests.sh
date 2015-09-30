@@ -28,18 +28,52 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script is invoked by build_docker_and_run_tests.sh inside a docker
-# container. You should never need to call this script on your own.
-
+# This script is invoked by run_jekins.sh. It contains the test logic
+# that should run inside a docker container.
 set -e
-
-export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
 
 mkdir -p /var/local/git
 git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
+cd /var/local/git/grpc
 nvm use 0.12
 rvm use ruby-2.1
 
-$RUN_TESTS_COMMAND
+# TODO(jtattermusch): use cleaner way to install root certs
+mkdir -p /usr/local/share/grpc
+cp etc/roots.pem /usr/local/share/grpc/
+
+# build C++ interop client & server
+make interop_client interop_server
+
+# build C# interop client & server
+make install_grpc_csharp_ext
+(cd src/csharp && mono /var/local/NuGet.exe restore Grpc.sln)
+(cd src/csharp && xbuild Grpc.sln)
+
+# build Node interop client & server
+npm install -g node-gyp
+make install_c -C /var/local/git/grpc
+(cd src/node && npm install && node-gyp rebuild)
+
+# build Ruby interop client and server
+(cd src/ruby && gem update bundler && bundle && rake compile:grpc)
+
+# TODO(jtattermusch): add python
+
+# build PHP interop client
+# TODO(jtattermusch): prerequisites for PHP should be installed sooner than here.
+# Install composer
+curl -sS https://getcomposer.org/installer | php
+mv composer.phar /usr/local/bin/composer
+# Download the patched PHP protobuf so that PHP gRPC clients can be generated
+# from proto3 schemas.
+git clone https://github.com/stanley-cheung/Protobuf-PHP.git /var/local/git/protobuf-php
+(cd src/php/ext/grpc && phpize && ./configure && make)
+rvm all do gem install ronn rake
+(cd third_party/protobuf && make install)
+(cd /var/local/git/protobuf-php \
+  && rvm all do rake pear:package version=1.0 \
+  && pear install Protobuf-1.0.tgz)
+(cd src/php && composer install)
+(cd src/php && protoc-gen-php -i tests/interop/ -o tests/interop/ tests/interop/test.proto)
