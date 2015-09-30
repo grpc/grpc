@@ -56,7 +56,7 @@ function multiDone(done, count) {
     }
   };
 }
-var insecureCreds = grpc.Credentials.createInsecure();
+var insecureCreds = grpc.ChannelCredentials.createInsecure();
 
 describe('channel', function() {
   describe('constructor', function() {
