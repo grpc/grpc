@@ -57,7 +57,14 @@
 GPR_TLS_DECL(g_current_thread_poller);
 GPR_TLS_DECL(g_current_thread_worker);
 
+/** Default poll() function - a pointer so that it can be overridden by some
+ *  tests */
 grpc_poll_function_type grpc_poll_function = poll;
+
+/** The alarm system needs to be able to wakeup 'some poller' sometimes
+ *  (specifically when a new alarm needs to be triggered earlier than the next
+ *  alarm 'epoch').
+ *  This wakeup_fd gives us something to alert on when such a case occurs. */
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
 static void remove_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
