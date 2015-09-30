@@ -114,8 +114,6 @@ static void output_num(long num) {
 static void crash_handler(int signum, siginfo_t *info, void *data) {
   void *addrlist[MAX_FRAMES + 1];
   int addrlen;
-  int i;
-  char **symlist;
 
   output_string("\n\n\n*******************************\nCaught signal ");
   output_num(signum);
@@ -126,13 +124,7 @@ static void crash_handler(int signum, siginfo_t *info, void *data) {
   if (addrlen == 0) {
     output_string("  no backtrace\n");
   } else {
-    symlist = backtrace_symbols(addrlist, addrlen);
-    for (i = 0; i < addrlen; i++) {
-      output_string("  ");
-      output_string(symlist[i]);
-      output_string("\n");
-    }
-    free(symlist);
+    backtrace_symbols_fd(addrlist, addrlen, STDERR_FILENO);
   }
 
   raise(signum);
