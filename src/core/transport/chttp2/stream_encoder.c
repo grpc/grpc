@@ -274,10 +274,11 @@ static grpc_mdelem *add_elem(grpc_chttp2_hpack_compressor *c,
   return elem_to_unref;
 }
 
-static void emit_indexed(grpc_chttp2_hpack_compressor *c, gpr_uint32 index,
+static void emit_indexed(grpc_chttp2_hpack_compressor *c, gpr_uint32 elem_index,
                          framer_state *st) {
-  gpr_uint32 len = GRPC_CHTTP2_VARINT_LENGTH(index, 1);
-  GRPC_CHTTP2_WRITE_VARINT(index, 1, 0x80, add_tiny_header_data(st, len), len);
+  gpr_uint32 len = GRPC_CHTTP2_VARINT_LENGTH(elem_index, 1);
+  GRPC_CHTTP2_WRITE_VARINT(elem_index, 1, 0x80, add_tiny_header_data(st, len),
+			   len);
 }
 
 static gpr_slice get_wire_value(grpc_mdelem *elem, gpr_uint8 *huffman_prefix) {
@@ -363,9 +364,10 @@ static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor *c,
   add_header_data(st, gpr_slice_ref(value_slice));
 }
 
-static gpr_uint32 dynidx(grpc_chttp2_hpack_compressor *c, gpr_uint32 index) {
+static gpr_uint32 dynidx(grpc_chttp2_hpack_compressor *c,
+			 gpr_uint32 elem_index) {
   return 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY + c->tail_remote_index +
-         c->table_elems - index;
+         c->table_elems - elem_index;
 }
 
 /* encode an mdelem; returns metadata element to unref */
@@ -466,7 +468,7 @@ static void deadline_enc(grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
       gpr_time_sub(deadline, gpr_now(deadline.clock_type)), timeout_str);
   mdelem = grpc_mdelem_from_metadata_strings(
       c->mdctx, GRPC_MDSTR_REF(c->timeout_key_str),
-      grpc_mdstr_from_string(c->mdctx, timeout_str, 0));
+      grpc_mdstr_from_string(c->mdctx, timeout_str));
   mdelem = hpack_enc(c, mdelem, st);
   if (mdelem) GRPC_MDELEM_UNREF(mdelem);
 }
@@ -481,7 +483,7 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
                                        grpc_mdctx *ctx) {
   memset(c, 0, sizeof(*c));
   c->mdctx = ctx;
-  c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout", 0);
+  c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout");
 }
 
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c) {

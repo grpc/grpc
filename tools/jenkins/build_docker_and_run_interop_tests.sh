@@ -28,8 +28,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script is invoked by run_tests.py to accommodate "test under docker"
-# scenario. You should never need to call this script on your own.
+# This script is invoked by run_interop_tests.py to accommodate
+# "interop tests under docker" scenario. You should never need to call this
+# script on your own.
 
 set -ex
 
@@ -39,45 +40,72 @@ cd -
 
 mkdir -p /tmp/ccache
 
-# Create a local branch so the child Docker script won't complain
-git branch -f jenkins-docker
-
 # Use image name based on Dockerfile checksum
 DOCKER_IMAGE_NAME=grpc_jenkins_slave${docker_suffix}_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
 
 # Make sure docker image has been built. Should be instantaneous if so.
 docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave$docker_suffix
 
-# Make sure the CID file is gone.
-rm -f docker.cid
+# Create a local branch so the child Docker script won't complain
+git branch -f jenkins-docker
 
-# Run tests inside docker
+# Make sure the CID files are gone.
+rm -f prepare.cid server.cid client.cid
+
+# Prepare image for interop tests
 docker run \
-  -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
-  -e "config=$config" \
-  -e "arch=$arch" \
   -e CCACHE_DIR=/tmp/ccache \
   -i $TTY_FLAG \
   -v "$git_root:/var/local/jenkins/grpc" \
   -v /tmp/ccache:/tmp/ccache \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $(which docker):/bin/docker \
-  -w /var/local/git/grpc \
-  --cidfile=docker.cid \
+  --cidfile=prepare.cid \
   $DOCKER_IMAGE_NAME \
-  bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_tests.sh || DOCKER_FAILED="true"
+  bash -l /var/local/jenkins/grpc/tools/jenkins/docker_prepare_interop_tests.sh || DOCKER_FAILED="true"
 
-DOCKER_CID=`cat docker.cid`
+PREPARE_CID=`cat prepare.cid`
 
-if [ "$XML_REPORT" != "" ]
-then
-  docker cp "$DOCKER_CID:/var/local/git/grpc/$XML_REPORT" $git_root
-fi
+# Create image from the container, we will spawn one docker for clients
+# and one for servers.
+INTEROP_IMAGE=interop_`uuidgen`
+docker commit $PREPARE_CID $INTEROP_IMAGE
+# remove container, possibly killing it first
+docker rm -f $PREPARE_CID || true
+echo "Successfully built image $INTEROP_IMAGE"
 
-# remove the container, possibly killing it first
-docker rm -f $DOCKER_CID || true
+# run interop servers under docker in the background
+docker run \
+  -d -i \
+  $SERVERS_DOCKER_EXTRA_ARGS \
+  --cidfile=server.cid \
+  $INTEROP_IMAGE bash -l /var/local/git/grpc/tools/jenkins/docker_run_interop_servers.sh
 
-if [ "$DOCKER_FAILED" != "" ] && [ "$XML_REPORT" == "" ]
-then
-  exit 1
-fi
+SERVER_CID=`cat server.cid`
+
+SERVER_PORTS=""
+for tuple in $SERVER_PORT_TUPLES
+do
+  # lookup under which port docker exposes given internal port
+  exposed_port=`docker port $SERVER_CID ${tuple#*:} | awk -F ":" '{print $NF}'`
+
+  # override the port for corresponding cloud_to_cloud server
+  SERVER_PORTS+=" --override_server ${tuple%:*}=localhost:$exposed_port"
+  echo "${tuple%:*} server is exposed under port $exposed_port"
+done
+
+# run interop clients
+docker run \
+  -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND $SERVER_PORTS" \
+  -w /var/local/git/grpc \
+  -i $TTY_FLAG \
+  --net=host \
+  --cidfile=client.cid \
+  $INTEROP_IMAGE bash -l /var/local/git/grpc/tools/jenkins/docker_run_interop_tests.sh || DOCKER_FAILED="true"
+
+CLIENT_CID=`cat client.cid`
+
+echo "killing and removing server container $SERVER_CID"
+docker rm -f $SERVER_CID || true
+
+docker cp $CLIENT_CID:/var/local/git/grpc/report.xml $git_root
+docker rm -f $CLIENT_CID || true
+docker rmi -f $DOCKER_IMAGE_NAME || true

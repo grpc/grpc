@@ -729,9 +729,8 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!is_last);
   chand->server = NULL;
   chand->channel = NULL;
-  chand->path_key = grpc_mdstr_from_string(metadata_context, ":path", 0);
-  chand->authority_key =
-      grpc_mdstr_from_string(metadata_context, ":authority", 0);
+  chand->path_key = grpc_mdstr_from_string(metadata_context, ":path");
+  chand->authority_key = grpc_mdstr_from_string(metadata_context, ":authority");
   chand->next = chand->prev = chand;
   chand->registered_methods = NULL;
   chand->connectivity_state = GRPC_CHANNEL_IDLE;
@@ -959,8 +958,8 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
     chand->registered_methods = gpr_malloc(alloc);
     memset(chand->registered_methods, 0, alloc);
     for (rm = s->registered_methods; rm; rm = rm->next) {
-      host = rm->host ? grpc_mdstr_from_string(mdctx, rm->host, 0) : NULL;
-      method = grpc_mdstr_from_string(mdctx, rm->method, 0);
+      host = rm->host ? grpc_mdstr_from_string(mdctx, rm->host) : NULL;
+      method = grpc_mdstr_from_string(mdctx, rm->method);
       hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
                            .server_registered_method != NULL;

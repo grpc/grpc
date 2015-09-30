@@ -119,11 +119,13 @@ void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
 
 void grpc_pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_poller);
+  gpr_tls_init(&g_current_thread_worker);
   grpc_wakeup_fd_global_init();
 }
 
 void grpc_pollset_global_shutdown(void) {
   gpr_tls_destroy(&g_current_thread_poller);
+  gpr_tls_destroy(&g_current_thread_worker);
   grpc_wakeup_fd_global_destroy();
 }
 
@@ -467,6 +469,8 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
     gpr_mu_unlock(&pollset->mu);
   }
 
+  /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
+     even going into the blocking annotation if possible */
   /* poll fd count (argument 2) is shortened by one if we have no events
      to poll on - such that it only includes the kicker */
   GRPC_SCHEDULING_START_BLOCKING_REGION;

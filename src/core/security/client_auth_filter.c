@@ -326,12 +326,10 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
       (grpc_channel_security_connector *)GRPC_SECURITY_CONNECTOR_REF(
           sc, "client_auth_filter");
   chand->md_ctx = metadata_context;
-  chand->authority_string =
-      grpc_mdstr_from_string(chand->md_ctx, ":authority", 0);
-  chand->path_string = grpc_mdstr_from_string(chand->md_ctx, ":path", 0);
-  chand->error_msg_key =
-      grpc_mdstr_from_string(chand->md_ctx, "grpc-message", 0);
-  chand->status_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-status", 0);
+  chand->authority_string = grpc_mdstr_from_string(chand->md_ctx, ":authority");
+  chand->path_string = grpc_mdstr_from_string(chand->md_ctx, ":path");
+  chand->error_msg_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-message");
+  chand->status_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-status");
 }
 
 /* Destructor for channel data */

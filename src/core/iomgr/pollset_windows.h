@@ -43,19 +43,37 @@
    used to synchronize with the IOCP, and workers are condition variables
    used to block threads until work is ready. */
 
-typedef struct grpc_pollset_worker {
-  gpr_cv cv;
+typedef enum {
+  GRPC_POLLSET_WORKER_LINK_POLLSET = 0,
+  GRPC_POLLSET_WORKER_LINK_GLOBAL,
+  GRPC_POLLSET_WORKER_LINK_TYPES
+} grpc_pollset_worker_link_type;
+
+typedef struct grpc_pollset_worker_link {
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
+} grpc_pollset_worker_link;
+
+struct grpc_pollset;
+typedef struct grpc_pollset grpc_pollset;
+
+typedef struct grpc_pollset_worker {
+  gpr_cv cv;
+  int kicked;
+  struct grpc_pollset *pollset;
+  grpc_pollset_worker_link links[GRPC_POLLSET_WORKER_LINK_TYPES];
 } grpc_pollset_worker;
 
-typedef struct grpc_pollset {
-  gpr_mu mu;
+struct grpc_pollset {
   int shutting_down;
   int kicked_without_pollers;
+  int is_iocp_worker;
   grpc_pollset_worker root_worker;
-} grpc_pollset;
+  grpc_closure *on_shutdown;
+};
 
-#define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
+extern gpr_mu grpc_polling_mu;
+
+#define GRPC_POLLSET_MU(pollset) (&grpc_polling_mu)
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */

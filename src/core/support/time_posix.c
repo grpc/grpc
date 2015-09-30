@@ -52,11 +52,11 @@ static struct timespec timespec_from_gpr(gpr_timespec gts) {
 
 #if _POSIX_TIMERS > 0
 static gpr_timespec gpr_from_timespec(struct timespec ts,
-                                      gpr_clock_type clock) {
+                                      gpr_clock_type clock_type) {
   gpr_timespec rv;
   rv.tv_sec = ts.tv_sec;
   rv.tv_nsec = (int)ts.tv_nsec;
-  rv.clock_type = clock;
+  rv.clock_type = clock_type;
   return rv;
 }
 
@@ -65,16 +65,16 @@ static clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC, CLOCK_REALTIME};
 
 void gpr_time_init(void) {}
 
-gpr_timespec gpr_now(gpr_clock_type clock) {
+gpr_timespec gpr_now(gpr_clock_type clock_type) {
   struct timespec now;
-  GPR_ASSERT(clock != GPR_TIMESPAN);
-  if (clock == GPR_CLOCK_PRECISE) {
+  GPR_ASSERT(clock_type != GPR_TIMESPAN);
+  if (clock_type == GPR_CLOCK_PRECISE) {
     gpr_timespec ret;
     gpr_precise_clock_now(&ret);
     return ret;
   } else {
-    clock_gettime(clockid_for_gpr_clock[clock], &now);
-    return gpr_from_timespec(now, clock);
+    clock_gettime(clockid_for_gpr_clock[clock_type], &now);
+    return gpr_from_timespec(now, clock_type);
   }
 }
 #else

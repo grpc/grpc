@@ -158,10 +158,19 @@ namespace grpc {
 
 Status SerializeProto(const grpc::protobuf::Message& msg,
                       grpc_byte_buffer** bp) {
-  GrpcBufferWriter writer(bp);
-  return msg.SerializeToZeroCopyStream(&writer)
-             ? Status::OK
-             : Status(StatusCode::INTERNAL, "Failed to serialize message");
+  int byte_size = msg.ByteSize();
+  if (byte_size <= kMaxBufferLength) {
+    gpr_slice slice = gpr_slice_malloc(byte_size);
+    GPR_ASSERT(GPR_SLICE_END_PTR(slice) == msg.SerializeWithCachedSizesToArray(GPR_SLICE_START_PTR(slice)));
+    *bp = grpc_raw_byte_buffer_create(&slice, 1);
+    gpr_slice_unref(slice);
+    return Status::OK;
+  } else {
+    GrpcBufferWriter writer(bp);
+    return msg.SerializeToZeroCopyStream(&writer)
+               ? Status::OK
+               : Status(StatusCode::INTERNAL, "Failed to serialize message");
+  }
 }
 
 Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,

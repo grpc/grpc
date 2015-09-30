@@ -54,7 +54,7 @@ if [ "$platform" == "linux" ]; then
     docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_linuxbrew
 
     # run per-language homebrew installation script
-    docker run $DOCKER_IMAGE_NAME bash -l \
+    docker run --rm=true $DOCKER_IMAGE_NAME bash -l \
       -c "nvm use 0.12; \
           npm set unsafe-perm true; \
           rvm use ruby-2.1; \
