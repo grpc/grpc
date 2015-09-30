@@ -123,13 +123,17 @@ static void crash_handler(int signum, siginfo_t *info, void *data) {
 
   addrlen = backtrace(addrlist, GPR_ARRAY_SIZE(addrlist));
 
-  symlist = backtrace_symbols(addrlist, addrlen);
-  for (i = 0; i < addrlen; i++) {
-    output_string("  ");
-    output_string(symlist[i]);
-    output_string("\n");
+  if (addrlen == 0) {
+    output_string("  no backtrace\n");
+  } else {
+    symlist = backtrace_symbols(addrlist, addrlen);
+    for (i = 0; i < addrlen; i++) {
+      output_string("  ");
+      output_string(symlist[i]);
+      output_string("\n");
+    }
+    free(symlist);
   }
-  free(symlist);
 
   raise(signum);
 }
