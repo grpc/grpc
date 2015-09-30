@@ -141,7 +141,7 @@ void grpc_iocp_flush(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   
   do {
-    grpc_iocp_work(&exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    grpc_iocp_work(&exec_ctx, gpr_inf_past(GPR_CLOCK_MONOTONIC));
   } while (grpc_exec_ctx_flush(&exec_ctx));
 }
 
