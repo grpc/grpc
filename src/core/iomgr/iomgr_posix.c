@@ -45,6 +45,9 @@ void grpc_iomgr_platform_init(void) {
   grpc_register_tracer("tcp", &grpc_tcp_trace);
 }
 
+void grpc_iomgr_platform_flush(void) {
+}
+
 void grpc_iomgr_platform_shutdown(void) {
   grpc_fd_global_shutdown();
 }

@@ -478,8 +478,8 @@ done:
   return allocated_port1 >= 0 ? allocated_port1 : allocated_port2;
 }
 
-int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned index) {
-  return (index < s->nports) ? s->ports[index].fd : -1;
+int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned port_index) {
+  return (port_index < s->nports) ? s->ports[port_index].fd : -1;
 }
 
 void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
