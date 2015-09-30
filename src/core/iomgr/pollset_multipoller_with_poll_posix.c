@@ -151,6 +151,8 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
                                                POLLOUT, &watchers[i]);
   }
 
+  /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
+     even going into the blocking annotation if possible */
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   r = grpc_poll_function(pfds, pfd_count, timeout);
   GRPC_SCHEDULING_END_BLOCKING_REGION;

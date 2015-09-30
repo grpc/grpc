@@ -180,6 +180,8 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
   pfds[1].events = POLLIN;
   pfds[1].revents = 0;
 
+  /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
+     even going into the blocking annotation if possible */
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   poll_rv = grpc_poll_function(pfds, 2, timeout_ms);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
@@ -209,15 +211,15 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
             /* TODO(klempner): We might want to consider making err and pri
              * separate events */
             int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
-            int read = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
-            int write = ep_ev[i].events & EPOLLOUT;
+            int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
+            int write_ev = ep_ev[i].events & EPOLLOUT;
             if (fd == NULL) {
               grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
             } else {
-              if (read || cancel) {
+              if (read_ev || cancel) {
                 grpc_fd_become_readable(exec_ctx, fd);
               }
-              if (write || cancel) {
+              if (write_ev || cancel) {
                 grpc_fd_become_writable(exec_ctx, fd);
               }
             }

@@ -193,15 +193,15 @@ void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl *tbl) {
 }
 
 grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
-                                      gpr_uint32 index) {
+                                      gpr_uint32 tbl_index) {
   /* Static table comes first, just return an entry from it */
-  if (index <= GRPC_CHTTP2_LAST_STATIC_ENTRY) {
-    return tbl->static_ents[index - 1];
+  if (tbl_index <= GRPC_CHTTP2_LAST_STATIC_ENTRY) {
+    return tbl->static_ents[tbl_index - 1];
   }
   /* Otherwise, find the value in the list of valid entries */
-  index -= (GRPC_CHTTP2_LAST_STATIC_ENTRY + 1);
-  if (index < tbl->num_ents) {
-    gpr_uint32 offset = (tbl->num_ents - 1u - index + tbl->first_ent) %
+  tbl_index -= (GRPC_CHTTP2_LAST_STATIC_ENTRY + 1);
+  if (tbl_index < tbl->num_ents) {
+    gpr_uint32 offset = (tbl->num_ents - 1u - tbl_index + tbl->first_ent) %
                         GRPC_CHTTP2_MAX_TABLE_COUNT;
     return tbl->ents[offset];
   }

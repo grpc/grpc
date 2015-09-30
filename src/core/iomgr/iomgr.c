@@ -84,6 +84,8 @@ void grpc_iomgr_shutdown(void) {
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
+  grpc_iomgr_platform_flush();
+
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;
   while (g_root_object.next != &g_root_object) {

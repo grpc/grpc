@@ -50,6 +50,9 @@ void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name);
 void grpc_iomgr_unregister_object(grpc_iomgr_object *obj);
 
 void grpc_iomgr_platform_init(void);
+/** flush any globally queued work from iomgr */
+void grpc_iomgr_platform_flush(void);
+/** tear down all platform specific global iomgr structures */
 void grpc_iomgr_platform_shutdown(void);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_IOMGR_INTERNAL_H */

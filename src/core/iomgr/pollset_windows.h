@@ -54,20 +54,26 @@ typedef struct grpc_pollset_worker_link {
   struct grpc_pollset_worker *prev;
 } grpc_pollset_worker_link;
 
+struct grpc_pollset;
+typedef struct grpc_pollset grpc_pollset;
+
 typedef struct grpc_pollset_worker {
   gpr_cv cv;
+  int kicked;
+  struct grpc_pollset *pollset;
   grpc_pollset_worker_link links[GRPC_POLLSET_WORKER_LINK_TYPES];
 } grpc_pollset_worker;
 
-typedef struct grpc_pollset {
-  gpr_mu mu;
+struct grpc_pollset {
   int shutting_down;
   int kicked_without_pollers;
   int is_iocp_worker;
   grpc_pollset_worker root_worker;
   grpc_closure *on_shutdown;
-} grpc_pollset;
+};
 
-#define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
+extern gpr_mu grpc_polling_mu;
+
+#define GRPC_POLLSET_MU(pollset) (&grpc_polling_mu)
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_WINDOWS_H */
