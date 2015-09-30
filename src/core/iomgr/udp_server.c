@@ -278,7 +278,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
 
   /* Tell the registered callback that data is available to read. */
   GPR_ASSERT(sp->read_cb);
-  sp->read_cb(sp->fd, sp->server->grpc_server);
+  sp->read_cb(sp->emfd, sp->server->grpc_server);
 
   /* Re-arm the notification event so we get another chance to read. */
   grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
@@ -399,8 +399,8 @@ done:
   return allocated_port1 >= 0 ? allocated_port1 : allocated_port2;
 }
 
-int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned index) {
-  return (index < s->nports) ? s->ports[index].fd : -1;
+int grpc_udp_server_get_fd(grpc_udp_server *s, unsigned port_index) {
+  return (port_index < s->nports) ? s->ports[port_index].fd : -1;
 }
 
 void grpc_udp_server_start(grpc_exec_ctx *exec_ctx, grpc_udp_server *s,

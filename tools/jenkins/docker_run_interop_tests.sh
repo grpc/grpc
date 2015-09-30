@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,27 +27,13 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-language=$1
-test_case=$2
-
+#
+# This script is invoked by build_docker_and_run_interop_tests.sh inside
+# a docker container. You should never need to call this script on your own.
 set -e
-if [ "$language" = "c++" ]
-then
-  sudo docker run grpc/cxx /var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots --server_host_override=grpc-test.sandbox.google.com --server_host=grpc-test.sandbox.google.com --server_port=443 --test_case=$test_case
-elif [ "$language" = "node" ]
-then
-  sudo docker run grpc/node /usr/bin/nodejs /var/local/git/grpc/src/node/interop/interop_client.js --use_tls=true --use_test_ca=true --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
-elif [ "$language" = "ruby" ]
-then
-  cmd_prefix="SSL_CERT_FILE=/cacerts/roots.pem ruby /var/local/git/grpc/src/ruby/bin/interop/interop_client.rb --use_tls --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com "
-  cmd="$cmd_prefix --test_case=$test_case"
-  sudo docker run grpc/ruby bin/bash -l -c '$cmd'
-elif [ "$language" = "php" ]
-then
-  sudo docker run -e SSL_CERT_FILE=/cacerts/roots.pem grpc/php /var/local/git/grpc/src/php/bin/interop_client.sh --server_port=443 --server_host=grpc-test.sandbox.google.com --server_host_override=grpc-test.sandbox.google.com --test_case=$test_case
-else
-  echo "interop testss not added for $language"
-  exit 1
-fi
 
+nvm use 0.12
+rvm use ruby-2.1
+
+# run the cloud-to-prod interop tests
+$RUN_TESTS_COMMAND

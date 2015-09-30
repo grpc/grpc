@@ -50,13 +50,28 @@
 static ULONG g_iocp_kick_token;
 static OVERLAPPED g_iocp_custom_overlap;
 
-static gpr_event g_shutdown_iocp;
-static gpr_event g_iocp_done;
 static gpr_atm g_custom_events = 0;
 
 static HANDLE g_iocp;
 
-static void do_iocp_work(grpc_exec_ctx *exec_ctx) {
+static DWORD deadline_to_millis_timeout(gpr_timespec deadline,
+                                        gpr_timespec now) {
+  gpr_timespec timeout;
+  static const int max_spin_polling_us = 10;
+  if (gpr_time_cmp(deadline, gpr_inf_future(deadline.clock_type)) == 0) {
+    return INFINITE;
+  }
+  if (gpr_time_cmp(deadline, gpr_time_add(now, gpr_time_from_micros(
+    max_spin_polling_us,
+    GPR_TIMESPAN))) <= 0) {
+    return 0;
+  }
+  timeout = gpr_time_sub(deadline, now);
+  return gpr_time_to_millis(gpr_time_add(
+    timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
+}
+
+void grpc_iocp_work(grpc_exec_ctx *exec_ctx, gpr_timespec deadline) {
   BOOL success;
   DWORD bytes = 0;
   DWORD flags = 0;
@@ -66,10 +81,10 @@ static void do_iocp_work(grpc_exec_ctx *exec_ctx) {
   grpc_winsocket_callback_info *info;
   grpc_closure *closure = NULL;
   success = GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key,
-                                      &overlapped, INFINITE);
-  /* success = 0 and overlapped = NULL means the deadline got attained.
-     Which is impossible. since our wait time is +inf */
-  GPR_ASSERT(success || overlapped);
+                                      &overlapped, deadline_to_millis_timeout(deadline, gpr_now(deadline.clock_type)));
+  if (success == 0 && overlapped == NULL) {
+    return;
+  }
   GPR_ASSERT(completion_key && overlapped);
   if (overlapped == &g_iocp_custom_overlap) {
     gpr_atm_full_fetch_add(&g_custom_events, -1);
@@ -104,34 +119,13 @@ static void do_iocp_work(grpc_exec_ctx *exec_ctx) {
     info->has_pending_iocp = 1;
   }
   gpr_mu_unlock(&socket->state_mu);
-  if (closure) {
-    closure->cb(exec_ctx, closure->cb_arg, 1);
-  }
-}
-
-static void iocp_loop(void *p) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-
-  while (gpr_atm_acq_load(&g_custom_events) ||
-         !gpr_event_get(&g_shutdown_iocp)) {
-    do_iocp_work(&exec_ctx);
-    grpc_exec_ctx_flush(&exec_ctx);
-  }
-  grpc_exec_ctx_finish(&exec_ctx);
-
-  gpr_event_set(&g_iocp_done, (void *)1);
+  grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
 }
 
 void grpc_iocp_init(void) {
-  gpr_thd_id id;
-
   g_iocp =
       CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, (ULONG_PTR)NULL, 0);
   GPR_ASSERT(g_iocp);
-
-  gpr_event_init(&g_iocp_done);
-  gpr_event_init(&g_shutdown_iocp);
-  gpr_thd_new(&id, iocp_loop, NULL, NULL);
 }
 
 void grpc_iocp_kick(void) {
@@ -143,13 +137,22 @@ void grpc_iocp_kick(void) {
   GPR_ASSERT(success);
 }
 
+void grpc_iocp_flush(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  
+  do {
+    grpc_iocp_work(&exec_ctx, gpr_inf_past(GPR_CLOCK_MONOTONIC));
+  } while (grpc_exec_ctx_flush(&exec_ctx));
+}
+
 void grpc_iocp_shutdown(void) {
-  BOOL success;
-  gpr_event_set(&g_shutdown_iocp, (void *)1);
-  grpc_iocp_kick();
-  gpr_event_wait(&g_iocp_done, gpr_inf_future(GPR_CLOCK_REALTIME));
-  success = CloseHandle(g_iocp);
-  GPR_ASSERT(success);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  while (gpr_atm_acq_load(&g_custom_events)) {
+    grpc_iocp_work(&exec_ctx, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    grpc_exec_ctx_flush(&exec_ctx);
+  }
+  grpc_exec_ctx_finish(&exec_ctx);
+  GPR_ASSERT(CloseHandle(g_iocp));
 }
 
 void grpc_iocp_add_socket(grpc_winsocket *socket) {

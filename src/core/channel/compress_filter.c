@@ -331,13 +331,13 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
       channeld->default_compression_algorithm;
 
   channeld->mdstr_request_compression_algorithm_key =
-      grpc_mdstr_from_string(mdctx, GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, 0);
+      grpc_mdstr_from_string(mdctx, GRPC_COMPRESS_REQUEST_ALGORITHM_KEY);
 
   channeld->mdstr_outgoing_compression_algorithm_key =
-      grpc_mdstr_from_string(mdctx, "grpc-encoding", 0);
+      grpc_mdstr_from_string(mdctx, "grpc-encoding");
 
   channeld->mdstr_compression_capabilities_key =
-      grpc_mdstr_from_string(mdctx, "grpc-accept-encoding", 0);
+      grpc_mdstr_from_string(mdctx, "grpc-accept-encoding");
 
   for (algo_idx = 0; algo_idx < GRPC_COMPRESS_ALGORITHMS_COUNT; ++algo_idx) {
     char *algorithm_name;
@@ -351,7 +351,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
         grpc_mdelem_from_metadata_strings(
             mdctx,
             GRPC_MDSTR_REF(channeld->mdstr_outgoing_compression_algorithm_key),
-            grpc_mdstr_from_string(mdctx, algorithm_name, 0));
+            grpc_mdstr_from_string(mdctx, algorithm_name));
     if (algo_idx > 0) {
       supported_algorithms_names[supported_algorithms_idx++] = algorithm_name;
     }
@@ -365,7 +365,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
 
   channeld->mdelem_accept_encoding = grpc_mdelem_from_metadata_strings(
       mdctx, GRPC_MDSTR_REF(channeld->mdstr_compression_capabilities_key),
-      grpc_mdstr_from_string(mdctx, accept_encoding_str, 0));
+      grpc_mdstr_from_string(mdctx, accept_encoding_str));
   gpr_free(accept_encoding_str);
 
   GPR_ASSERT(!is_last);
