@@ -152,6 +152,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       g_active_poller = worker;
       gpr_mu_unlock(&grpc_polling_mu);
       grpc_iocp_work(exec_ctx, deadline);
+      grpc_exec_ctx_flush(exec_ctx);
       gpr_mu_lock(&grpc_polling_mu);
       pollset->is_iocp_worker = 0;
       g_active_poller = NULL;
