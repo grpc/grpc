@@ -89,7 +89,7 @@ static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.google.com";
 }
 
 - (void)setUp {
-  _service = [[RMTTestService alloc] initWithHost:self.class.host];
+  _service = [RMTTestService serviceWithHost:self.class.host];
 }
 
 - (void)testEmptyUnaryRPC {
@@ -274,17 +274,17 @@ static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.google.com";
 
 - (void)testCancelAfterFirstResponseRPC {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"CancelAfterFirstResponse"];
-  
+
   // A buffered pipe to which we write a single value but never close
   GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
-  
+
   __block BOOL receivedResponse = NO;
-  
+
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@21782
                                                requestedResponseSize:@31415];
-  
+
   [requestsBuffer writeValue:request];
-  
+
   __block ProtoRPC *call =
       [_service RPCToFullDuplexCallWithRequestsWriter:requestsBuffer
                                          eventHandler:^(BOOL done,
