@@ -147,8 +147,8 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
   gpr_mu_unlock(&pollset->mu);
 
   for (i = 2; i < pfd_count; i++) {
-    pfds[i].events = (short)grpc_fd_begin_poll(watchers[i].fd, pollset, POLLIN,
-                                               POLLOUT, &watchers[i]);
+    pfds[i].events = (short)grpc_fd_begin_poll(watchers[i].fd, pollset, worker,
+                                               POLLIN, POLLOUT, &watchers[i]);
   }
 
   /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid

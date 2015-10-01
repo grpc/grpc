@@ -339,8 +339,8 @@ void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 }
 
 gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
-                              gpr_uint32 read_mask, gpr_uint32 write_mask,
-                              grpc_fd_watcher *watcher) {
+                              grpc_pollset_worker *worker, gpr_uint32 read_mask,
+                              gpr_uint32 write_mask, grpc_fd_watcher *watcher) {
   gpr_uint32 mask = 0;
   /* keep track of pollers that have requested our events, in case they change
    */
@@ -351,6 +351,7 @@ gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
   if (gpr_atm_no_barrier_load(&fd->shutdown)) {
     watcher->fd = NULL;
     watcher->pollset = NULL;
+    watcher->worker = NULL;
     gpr_mu_unlock(&fd->watcher_mu);
     GRPC_FD_UNREF(fd, "poll");
     return 0;
@@ -369,12 +370,13 @@ gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
     mask |= write_mask;
   }
   /* if not polling, remember this watcher in case we need someone to later */
-  if (mask == 0) {
+  if (mask == 0 && worker != NULL) {
     watcher->next = &fd->inactive_watcher_root;
     watcher->prev = watcher->next->prev;
     watcher->next->prev = watcher->prev->next = watcher;
   }
   watcher->pollset = pollset;
+  watcher->worker = worker;
   watcher->fd = fd;
   gpr_mu_unlock(&fd->watcher_mu);
 
@@ -404,7 +406,7 @@ void grpc_fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
     kick = kick || !got_write;
     fd->write_watcher = NULL;
   }
-  if (!was_polling) {
+  if (!was_polling && watcher->worker != NULL) {
     /* remove from inactive list */
     watcher->next->prev = watcher->prev;
     watcher->prev->next = watcher->next;
