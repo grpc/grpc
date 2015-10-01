@@ -91,7 +91,7 @@
     'targets': [
       % for lib in libs:
       # TODO: Add C++ targets
-      % if lib.language == 'c':
+      % if lib.name == 'gpr' or lib.name == 'grpc':
       {
         'target_name': '${lib.name}',
         'product_prefix': 'lib',
@@ -106,24 +106,6 @@
           '${source}',
           % endfor
         ],
-      },
-      % endif
-      % endfor
-      % for tgt in targets:
-      % if tgt.language == 'c':
-      {
-        'target_name': '${tgt.name}',
-        'type': 'executable',
-        'dependencies': [
-          % for dep in getattr(tgt, 'deps', []):
-          '${dep}',
-          % endfor
-        ],
-        'sources': [
-          % for source in tgt.src:
-          '${source}',
-          % endfor
-        ]
       },
       % endif
       % endfor
