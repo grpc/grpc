@@ -173,19 +173,19 @@ int grpc_fd_is_orphaned(grpc_fd *fd) {
   return (gpr_atm_acq_load(&fd->refst) & 1) == 0;
 }
 
-static void pollset_kick_locked(grpc_pollset *pollset) {
-  gpr_mu_lock(GRPC_POLLSET_MU(pollset));
-  grpc_pollset_kick(pollset, NULL);
-  gpr_mu_unlock(GRPC_POLLSET_MU(pollset));
+static void pollset_kick_locked(grpc_fd_watcher *watcher) {
+  gpr_mu_lock(GRPC_POLLSET_MU(watcher->pollset));
+  grpc_pollset_kick_ex(watcher->pollset, watcher->worker, GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
+  gpr_mu_unlock(GRPC_POLLSET_MU(watcher->pollset));
 }
 
 static void maybe_wake_one_watcher_locked(grpc_fd *fd) {
   if (fd->inactive_watcher_root.next != &fd->inactive_watcher_root) {
-    pollset_kick_locked(fd->inactive_watcher_root.next->pollset);
+    pollset_kick_locked(fd->inactive_watcher_root.next);
   } else if (fd->read_watcher) {
-    pollset_kick_locked(fd->read_watcher->pollset);
+    pollset_kick_locked(fd->read_watcher);
   } else if (fd->write_watcher) {
-    pollset_kick_locked(fd->write_watcher->pollset);
+    pollset_kick_locked(fd->write_watcher);
   }
 }
 
@@ -199,13 +199,13 @@ static void wake_all_watchers_locked(grpc_fd *fd) {
   grpc_fd_watcher *watcher;
   for (watcher = fd->inactive_watcher_root.next;
        watcher != &fd->inactive_watcher_root; watcher = watcher->next) {
-    pollset_kick_locked(watcher->pollset);
+    pollset_kick_locked(watcher);
   }
   if (fd->read_watcher) {
-    pollset_kick_locked(fd->read_watcher->pollset);
+    pollset_kick_locked(fd->read_watcher);
   }
   if (fd->write_watcher && fd->write_watcher != fd->read_watcher) {
-    pollset_kick_locked(fd->write_watcher->pollset);
+    pollset_kick_locked(fd->write_watcher);
   }
 }
 
