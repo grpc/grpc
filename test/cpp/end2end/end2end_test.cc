@@ -734,7 +734,8 @@ TEST_P(End2endTest, ChannelState) {
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(true));
   EXPECT_TRUE(channel_->WaitForStateChange(GRPC_CHANNEL_IDLE,
                                            gpr_inf_future(GPR_CLOCK_REALTIME)));
-  EXPECT_EQ(GRPC_CHANNEL_CONNECTING, channel_->GetState(false));
+  auto state = channel_->GetState(false);
+  EXPECT_TRUE(state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_READY);
 }
 
 // Takes 10s.
