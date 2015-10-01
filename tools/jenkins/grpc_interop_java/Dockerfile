@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,13 +26,33 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+FROM debian:jessie
+
+# Install JDK 8 and Git
 #
-# This script is invoked by build_docker_and_run_interop_tests.sh inside
-# a docker container. You should never need to call this script on your own.
-set -e
+# TODO(temiola): simplify this if/when a simpler process is available.
+#
+RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | /usr/bin/debconf-set-selections && \
+  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list && \
+  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list && \
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886 && \
+  apt-get update && \
+  apt-get -y install \
+      git \
+      libapr1 \
+      oracle-java8-installer \
+      && \
+  apt-get clean && rm -r /var/cache/oracle-jdk8-installer/
 
-nvm use 0.12
-rvm use ruby-2.1
+ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
+ENV PATH $PATH:$JAVA_HOME/bin
 
-# run the cloud-to-prod interop tests
-$RUN_TESTS_COMMAND
+# Trigger download of as many Gradle artifacts as possible.
+RUN git clone --recursive --depth 1 https://github.com/grpc/grpc-java.git && \
+  cd grpc-java && \
+  ./gradlew build -PskipCodegen=true && \
+  rm -r "$(pwd)"
+
+# Define the default command.
+CMD ["bash"]
