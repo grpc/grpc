@@ -98,29 +98,57 @@ static void push_front_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
   worker->prev->next = worker->next->prev = worker;
 }
 
-void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
+void grpc_pollset_kick_ex(grpc_pollset *p, grpc_pollset_worker *specific_worker, gpr_uint32 flags) {
   /* pollset->mu already held */
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
+      GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
       for (specific_worker = p->root_worker.next;
            specific_worker != &p->root_worker;
            specific_worker = specific_worker->next) {
         grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
       }
       p->kicked_without_pollers = 1;
+      return;
     } else if (gpr_tls_get(&g_current_thread_worker) !=
                (gpr_intptr)specific_worker) {
+      if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
+        specific_worker->reevaluate_polling_on_wakeup = 1;
+      }
       grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
+      return;
+    } else if ((flags & GRPC_POLLSET_CAN_KICK_SELF) != 0) {
+      if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
+        specific_worker->reevaluate_polling_on_wakeup = 1;
+      }
+      grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
+      return;
     }
   } else if (gpr_tls_get(&g_current_thread_poller) != (gpr_intptr)p) {
+    GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
     specific_worker = pop_front_worker(p);
     if (specific_worker != NULL) {
+      if (gpr_tls_get(&g_current_thread_worker) == (gpr_intptr)specific_worker) {
+        push_back_worker(p, specific_worker);
+        specific_worker = pop_front_worker(p);
+        if ((flags & GRPC_POLLSET_CAN_KICK_SELF) == 0 && 
+            gpr_tls_get(&g_current_thread_worker) == (gpr_intptr)specific_worker) {
+          push_back_worker(p, specific_worker);
+          return;
+        }
+      }
       push_back_worker(p, specific_worker);
       grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
+      return;
     } else {
       p->kicked_without_pollers = 1;
+      return;
     }
   }
+}
+
+void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
+  grpc_pollset_kick_ex(p, specific_worker, 0);
 }
 
 /* global state management */
