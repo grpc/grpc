@@ -26,31 +26,31 @@ of shared C core library [src/core] (src/core).
    * PHP source code: [src/php] (src/php)
    * C# source code: [src/csharp] (src/csharp)
    * Objective-C source code: [src/objective-c] (src/objective-c)
-   
-Java source code is in [grpc-java] (http://github.com/grpc/grpc-java) repository. 
+
+Java source code is in [grpc-java] (http://github.com/grpc/grpc-java) repository.
 Go source code is in [grpc-go] (http://github.com/grpc/grpc-go) repository.
 
 #Current Status of libraries
 
 Libraries in different languages are in different state of development. We are seeking contributions for all of these libraries.
 
-   * shared C core library [src/core] (src/core) : Early adopter ready - Alpha.
-   * C++ Library: [src/cpp] (src/cpp) : Early adopter ready - Alpha.
-   * Ruby Library: [src/ruby] (src/ruby) : Early adopter ready - Alpha.
-   * NodeJS Library: [src/node] (src/node) : Early adopter ready - Alpha.
-   * Python Library: [src/python] (src/python) : Early adopter ready - Alpha.
-   * C# Library: [src/csharp] (src/csharp) : Beta.
-   * Objective-C Library: [src/objective-c] (src/objective-c): Early adopter ready - Alpha.
-   * PHP Library: [src/php] (src/php) : Pre-Alpha.
+   * shared C core library [src/core] (src/core) : Beta - the surface API is stable
+   * C++ Library: [src/cpp] (src/cpp) : Beta - the surface API is stable
+   * Ruby Library: [src/ruby] (src/ruby) : Beta - the surface API is stable
+   * NodeJS Library: [src/node] (src/node) : Beta - the surface API is stable
+   * Python Library: [src/python] (src/python) : Beta - the surface API is stable
+   * C# Library: [src/csharp] (src/csharp) : Beta - the surface API is stable
+   * Objective-C Library: [src/objective-c] (src/objective-c): Beta - the surface API is stable
+   * PHP Library: [src/php] (src/php) : Beta - the surface API is stable
 
 #Overview
 
 
-Remote Procedure Calls (RPCs) provide a useful abstraction for building 
+Remote Procedure Calls (RPCs) provide a useful abstraction for building
 distributed applications and services. The libraries in this repository
 provide a concrete implementation of the gRPC protocol, layered over HTTP/2.
 These libraries enable communication between clients and servers using any
-combination of the supported languages. 
+combination of the supported languages.
 
 
 ##Interface
@@ -62,12 +62,12 @@ which they use on the client-side and implement on the server side.
 
 By default, gRPC uses [Protocol Buffers](https://github.com/google/protobuf) as the
 Interface Definition Language (IDL) for describing both the service interface
-and the structure of the payload messages. It is possible to use other 
+and the structure of the payload messages. It is possible to use other
 alternatives if desired.
 
 ###Surface API
 Starting from an interface definition in a .proto file, gRPC provides
-Protocol Compiler plugins that generate Client- and Server-side APIs. 
+Protocol Compiler plugins that generate Client- and Server-side APIs.
 gRPC users typically call into these APIs on the Client side and implement
 the corresponding API on the server side.
 
@@ -76,9 +76,9 @@ Synchronous RPC calls, that block until a response arrives from the server, are
 the closest approximation to the abstraction of a procedure call that RPC
 aspires to.
 
-On the other hand, networks are inherently asynchronous and in many scenarios,  
+On the other hand, networks are inherently asynchronous and in many scenarios,
 it is desirable to have the ability to start RPCs without blocking the current
-thread. 
+thread.
 
 The gRPC programming surface in most languages comes in both synchronous and
 asynchronous flavors.
@@ -87,8 +87,8 @@ asynchronous flavors.
 ## Streaming
 
 gRPC supports streaming semantics, where either the client or the server (or both)
-send a stream of messages on a single RPC call. The most general case is 
-Bidirectional Streaming where a single gRPC call establishes a stream where both 
+send a stream of messages on a single RPC call. The most general case is
+Bidirectional Streaming where a single gRPC call establishes a stream where both
 the client and the server can send a stream of messages to each other. The streamed
 messages are delivered in the order they were sent.
 
@@ -103,7 +103,7 @@ fleshing out the details of each of the required operations.
 A gRPC RPC comprises of a bidirectional stream of messages, initiated by the client. In the client-to-server direction, this stream begins with a mandatory `Call Header`, followed by optional `Initial-Metadata`, followed by zero or more `Payload Messages`. The server-to-client direction contains an optional `Initial-Metadata`, followed by zero or more `Payload Messages` terminated with a mandatory `Status` and optional `Status-Metadata` (a.k.a.,`Trailing-Metadata`).
 
 ## Implementation over HTTP/2
-The abstract protocol defined above is implemented over [HTTP/2](https://http2.github.io/). gRPC bidirectional streams are mapped to HTTP/2 streams. The contents of `Call Header` and `Initial Metadata` are sent as HTTP/2 headers and subject to HPACK compression. `Payload Messages` are serialized into a byte stream of length prefixed gRPC frames which are then fragmented into HTTP/2 frames at the sender and reassembled at the receiver. `Status` and `Trailing-Metadata` are sent as HTTP/2 trailing headers (a.k.a., trailers).     
+The abstract protocol defined above is implemented over [HTTP/2](https://http2.github.io/). gRPC bidirectional streams are mapped to HTTP/2 streams. The contents of `Call Header` and `Initial Metadata` are sent as HTTP/2 headers and subject to HPACK compression. `Payload Messages` are serialized into a byte stream of length prefixed gRPC frames which are then fragmented into HTTP/2 frames at the sender and reassembled at the receiver. `Status` and `Trailing-Metadata` are sent as HTTP/2 trailing headers (a.k.a., trailers).
 
 ## Flow Control
 gRPC inherits the flow control mechanisms in HTTP/2 and uses them to enable fine-grained control of the amount of memory used for buffering in-flight messages.
