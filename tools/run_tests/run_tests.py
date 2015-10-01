@@ -557,7 +557,7 @@ argp.add_argument('--use_docker',
                   action='store_const',
                   const=True,
                   help="Run all the tests under docker. That provides " +
-                  "additional isolation and prevents the need to installs " +
+                  "additional isolation and prevents the need to install " +
                   "language specific prerequisites. Only available on Linux.")
 argp.add_argument('--allow_flakes',
                   default=False,

@@ -27,29 +27,24 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# This script is invoked by run_jekins.sh. It contains the test logic
+# that should run inside a docker container.
+set -e
 
-set -ex
+cd /var/local/git/grpc
+nvm use 0.12
+rvm use ruby-2.1
 
-CONFIG=${CONFIG:-opt}
+# If port env variable is set, run corresponding interop server on given port in background.
+# TODO(jtattermusch): ideally, run_interop_tests.py would generate the commands to run servers.
 
-# change to grpc repo root
-cd $(dirname $0)/../..
+[ -z "${SERVER_PORT_cxx}" ] || bins/opt/interop_server --enable_ssl --port=${SERVER_PORT_cxx} &
 
-root=`pwd`
+[ -z "${SERVER_PORT_node}" ] || node src/node/interop/interop_server.js --use_tls=true --port=${SERVER_PORT_node} &
 
-cd $root/src/node
+[ -z "${SERVER_PORT_ruby}" ] || ruby src/ruby/bin/interop/interop_server.rb --use_tls --port=${SERVER_PORT_ruby} &
 
-export LD_LIBRARY_PATH=$root/libs/$CONFIG
+[ -z "${SERVER_PORT_csharp}" ] || (cd src/csharp/Grpc.IntegrationTesting.Server/bin/Debug && mono Grpc.IntegrationTesting.Server.exe --use_tls --port=${SERVER_PORT_csharp}) &
 
-if [ "$CONFIG" = "gcov" ]
-then
-  ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- \
-    --timeout 8000
-  cd build
-  gcov Release/obj.target/grpc/ext/*.o
-  lcov --base-directory . --directory . -c -o coverage.info
-  genhtml -o ../ext_coverage --num-spaces 2 -t 'Node gRPC test coverage' \
-    coverage.info
-else
-  ./node_modules/mocha/bin/mocha --timeout 8000
-fi
+sleep infinity

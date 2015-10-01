@@ -126,8 +126,6 @@ namespace Grpc.IntegrationTesting
                     new ChannelOption(ChannelOptions.SslTargetNameOverride, options.ServerHostOverride)
                 };
             }
-            Console.WriteLine(options.ServerHost);
-            Console.WriteLine(options.ServerPort);
             var channel = new Channel(options.ServerHost, options.ServerPort, credentials, channelOptions);
             TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
             await RunTestCaseAsync(client, options);

@@ -51,7 +51,7 @@ void AuthMetadataProcessorAyncWrapper::Process(
     void* wrapper, grpc_auth_context* context, const grpc_metadata* md,
     size_t num_md, grpc_process_auth_metadata_done_cb cb, void* user_data) {
   auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
-  if (w->processor_ == nullptr) {
+  if (!w->processor_) {
     // Early exit.
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_OK, nullptr);
     return;
@@ -84,20 +84,22 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
   std::vector<grpc_metadata> consumed_md;
   for (auto it = consumed_metadata.begin(); it != consumed_metadata.end();
        ++it) {
-    consumed_md.push_back({it->first.c_str(),
-                           it->second.data(),
-                           it->second.size(),
-                           0,
-                           {{nullptr, nullptr, nullptr, nullptr}}});
+    grpc_metadata md_entry;
+    md_entry.key = it->first.c_str();
+    md_entry.value = it->second.data();
+    md_entry.value_length = it->second.size();
+    md_entry.flags = 0;
+    consumed_md.push_back(md_entry);
   }
   std::vector<grpc_metadata> response_md;
   for (auto it = response_metadata.begin(); it != response_metadata.end();
        ++it) {
-    response_md.push_back({it->first.c_str(),
-                           it->second.data(),
-                           it->second.size(),
-                           0,
-                           {{nullptr, nullptr, nullptr, nullptr}}});
+    grpc_metadata md_entry;
+    md_entry.key = it->first.c_str();
+    md_entry.value = it->second.data();
+    md_entry.value_length = it->second.size();
+    md_entry.flags = 0;
+    response_md.push_back(md_entry);
   }
   auto consumed_md_data = consumed_md.empty() ? nullptr : &consumed_md[0];
   auto response_md_data = response_md.empty() ? nullptr : &response_md[0];

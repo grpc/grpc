@@ -57,7 +57,14 @@
 GPR_TLS_DECL(g_current_thread_poller);
 GPR_TLS_DECL(g_current_thread_worker);
 
+/** Default poll() function - a pointer so that it can be overridden by some
+ *  tests */
 grpc_poll_function_type grpc_poll_function = poll;
+
+/** The alarm system needs to be able to wakeup 'some poller' sometimes
+ *  (specifically when a new alarm needs to be triggered earlier than the next
+ *  alarm 'epoch').
+ *  This wakeup_fd gives us something to alert on when such a case occurs. */
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
 static void remove_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
@@ -479,6 +486,8 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
     gpr_mu_unlock(&pollset->mu);
   }
 
+  /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
+     even going into the blocking annotation if possible */
   /* poll fd count (argument 2) is shortened by one if we have no events
      to poll on - such that it only includes the kicker */
   GRPC_SCHEDULING_START_BLOCKING_REGION;
