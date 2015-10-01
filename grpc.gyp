@@ -78,7 +78,13 @@
       '-ldl',
       '-lpthread',
       '-lz'
-    ]
+    ],
+    'direct_dependent_settings': {
+      'include_dirs': [
+        '.',
+        'include'
+      ],
+    }
   },
   'targets': [
     # TODO: Add C++ targets
