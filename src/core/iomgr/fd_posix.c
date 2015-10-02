@@ -46,8 +46,8 @@
 #include <grpc/support/useful.h>
 #include <sys/syscall.h>
 
-#define CLOSURE_NOT_READY ((grpc_closure*)0)
-#define CLOSURE_READY ((grpc_closure*)1)
+#define CLOSURE_NOT_READY ((grpc_closure *)0)
+#define CLOSURE_READY ((grpc_closure *)1)
 
 /* We need to keep a freelist not because of any concerns of malloc performance
  * but instead so that implementations with multiple threads in (for example)
@@ -175,13 +175,16 @@ grpc_fd *grpc_fd_create(int fd, const char *name) {
 static int count_inactive(grpc_fd *fd) {
   int n = 0;
   grpc_fd_watcher *w;
-  for (w = fd->inactive_watcher_root.next; w != &fd->inactive_watcher_root; w = w->next) {
+  for (w = fd->inactive_watcher_root.next; w != &fd->inactive_watcher_root;
+       w = w->next) {
     n++;
   }
   return n;
 }
 
-static void fdev_add(fd_event_type type, grpc_fd *fd, grpc_pollset *pollset, grpc_pollset_worker *pollset_worker, grpc_fd_watcher *fd_watcher) {
+static void fdev_add(fd_event_type type, grpc_fd *fd, grpc_pollset *pollset,
+                     grpc_pollset_worker *pollset_worker,
+                     grpc_fd_watcher *fd_watcher) {
   fd_event *ev;
   if (fd->num_ev == fd->cap_ev) {
     fd->cap_ev = GPR_MAX(2 * fd->cap_ev, 32);
@@ -210,7 +213,8 @@ static void pollset_kick_locked(grpc_fd_watcher *watcher, fd_event_type type) {
   fdev_add(type, watcher->fd, watcher->pollset, watcher->worker, watcher);
   gpr_mu_lock(GRPC_POLLSET_MU(watcher->pollset));
   GPR_ASSERT(watcher->worker);
-  grpc_pollset_kick_ex(watcher->pollset, watcher->worker, GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
+  grpc_pollset_kick_ex(watcher->pollset, watcher->worker,
+                       GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
   gpr_mu_unlock(GRPC_POLLSET_MU(watcher->pollset));
   fdev_add(type + 1, watcher->fd, watcher->pollset, watcher->worker, watcher);
 }
@@ -277,8 +281,8 @@ void grpc_fd_ref(grpc_fd *fd) { ref_by(fd, 2); }
 void grpc_fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 #endif
 
-static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure **st,
-                      grpc_closure *closure) {
+static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                             grpc_closure **st, grpc_closure *closure) {
   if (*st == CLOSURE_NOT_READY) {
     *st = closure;
   } else if (*st == CLOSURE_READY) {
@@ -296,7 +300,7 @@ static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure 
 
 /* returns 1 if state becomes not ready */
 static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
-                             grpc_closure **st) {
+                            grpc_closure **st) {
   if (*st == CLOSURE_READY) {
     /* duplicate ready, ignore */
     return 0;
@@ -407,7 +411,8 @@ void grpc_fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
 
   gpr_mu_lock(&fd->mu);
 
-  fdev_add(FDEV_END_POLL, watcher->fd, watcher->pollset, watcher->worker, watcher);
+  fdev_add(FDEV_END_POLL, watcher->fd, watcher->pollset, watcher->worker,
+           watcher);
 
   if (watcher == fd->read_watcher) {
     /* remove read watcher, kick if we still need a read */
