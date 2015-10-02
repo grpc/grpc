@@ -88,9 +88,8 @@ int main(int argc, char **argv) {
   GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
 
   grpc_completion_queue_shutdown(cq);
-  while (
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
-          .type != GRPC_QUEUE_SHUTDOWN)
+  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    NULL).type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(cq);
   grpc_call_destroy(call);

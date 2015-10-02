@@ -208,7 +208,8 @@ void gpr_slice_buffer_move_into(gpr_slice_buffer *src, gpr_slice_buffer *dst) {
   src->length = 0;
 }
 
-void gpr_slice_buffer_trim_end(gpr_slice_buffer *sb, size_t n, gpr_slice_buffer *garbage) {
+void gpr_slice_buffer_trim_end(gpr_slice_buffer *sb, size_t n,
+                               gpr_slice_buffer *garbage) {
   GPR_ASSERT(n <= sb->length);
   sb->length -= n;
   for (;;) {
