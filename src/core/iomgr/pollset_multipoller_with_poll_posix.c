@@ -103,7 +103,7 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
     grpc_exec_ctx *exec_ctx, grpc_pollset *pollset, grpc_pollset_worker *worker,
     gpr_timespec deadline, gpr_timespec now) {
 #define POLLOUT_CHECK (POLLOUT | POLLHUP | POLLERR)
-#define POLLIN_CHECK  (POLLIN  | POLLHUP | POLLERR)
+#define POLLIN_CHECK (POLLIN | POLLHUP | POLLERR)
 
   int timeout;
   int r;

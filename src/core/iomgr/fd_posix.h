@@ -129,9 +129,8 @@ void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
    fd's current interest (such as epoll) do not need to call this function.
    MUST NOT be called with a pollset lock taken */
 gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
-  grpc_pollset_worker *worker,
-                              gpr_uint32 read_mask, gpr_uint32 write_mask,
-                              grpc_fd_watcher *rec);
+                              grpc_pollset_worker *worker, gpr_uint32 read_mask,
+                              gpr_uint32 write_mask, grpc_fd_watcher *rec);
 /* Complete polling previously started with grpc_fd_begin_poll
    MUST NOT be called with a pollset lock taken */
 void grpc_fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *rec,

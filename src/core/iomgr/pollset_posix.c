@@ -98,7 +98,8 @@ static void push_front_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
   worker->prev->next = worker->next->prev = worker;
 }
 
-void grpc_pollset_kick_ex(grpc_pollset *p, grpc_pollset_worker *specific_worker, gpr_uint32 flags) {
+void grpc_pollset_kick_ex(grpc_pollset *p, grpc_pollset_worker *specific_worker,
+                          gpr_uint32 flags) {
   /* pollset->mu already held */
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
@@ -128,11 +129,13 @@ void grpc_pollset_kick_ex(grpc_pollset *p, grpc_pollset_worker *specific_worker,
     GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
     specific_worker = pop_front_worker(p);
     if (specific_worker != NULL) {
-      if (gpr_tls_get(&g_current_thread_worker) == (gpr_intptr)specific_worker) {
+      if (gpr_tls_get(&g_current_thread_worker) ==
+          (gpr_intptr)specific_worker) {
         push_back_worker(p, specific_worker);
         specific_worker = pop_front_worker(p);
-        if ((flags & GRPC_POLLSET_CAN_KICK_SELF) == 0 && 
-            gpr_tls_get(&g_current_thread_worker) == (gpr_intptr)specific_worker) {
+        if ((flags & GRPC_POLLSET_CAN_KICK_SELF) == 0 &&
+            gpr_tls_get(&g_current_thread_worker) ==
+                (gpr_intptr)specific_worker) {
           push_back_worker(p, specific_worker);
           return;
         }
@@ -497,7 +500,7 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
                                                 gpr_timespec deadline,
                                                 gpr_timespec now) {
 #define POLLOUT_CHECK (POLLOUT | POLLHUP | POLLERR)
-#define POLLIN_CHECK  (POLLIN  | POLLHUP | POLLERR)
+#define POLLIN_CHECK (POLLIN | POLLHUP | POLLERR)
 
   struct pollfd pfd[3];
   grpc_fd *fd;
