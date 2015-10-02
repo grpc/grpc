@@ -35,6 +35,7 @@ import dockerjob
 import itertools
 import xml.etree.cElementTree as ET
 import jobset
+import multiprocessing
 import os
 import subprocess
 import sys
@@ -224,10 +225,11 @@ _LANGUAGES = {
 # TODO(jtattermusch): enable other languages as servers as well
 _SERVERS = ['c++', 'node', 'csharp', 'java']
 
+# TODO(jtattermusch): add empty_stream once PHP starts supporting it.
 # TODO(jtattermusch): add timeout_on_sleeping_server once java starts supporting it.
 # TODO(jtattermusch): add support for auth tests.
 _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
-               'empty_stream', 'client_streaming', 'server_streaming',
+               'client_streaming', 'server_streaming',
                'cancel_after_begin', 'cancel_after_first_response']
 
 
@@ -274,7 +276,7 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None):
           cwd=cwd,
           environ=environ,
           shortname="cloud_to_prod:%s:%s" % (language, test_case),
-          timeout_seconds=60,
+          timeout_seconds=2*60,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0)
   return test_job
@@ -299,7 +301,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
           cwd=cwd,
           shortname="cloud_to_cloud:%s:%s_server:%s" % (language, server_name,
                                                  test_case),
-          timeout_seconds=60,
+          timeout_seconds=2*60,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0)
   return test_job
@@ -346,7 +348,7 @@ argp.add_argument('-l', '--language',
                   nargs='+',
                   default=['all'],
                   help='Clients to run.')
-argp.add_argument('-j', '--jobs', default=24, type=int)
+argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
 argp.add_argument('--cloud_to_prod',
                   default=False,
                   action='store_const',
@@ -436,6 +438,7 @@ try:
     job = dockerjob.DockerJob(spec)
     server_jobs[lang] = job
     server_addresses[lang] = ('localhost', job.mapped_port(_DEFAULT_SERVER_PORT))
+
 
   jobs = []
   if args.cloud_to_prod:

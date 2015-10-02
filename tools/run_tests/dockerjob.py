@@ -44,7 +44,10 @@ def wait_for_file(filepath, timeout_seconds=15):
   while time.time() - started < timeout_seconds:
     if os.path.isfile(filepath):
       with open(filepath, 'r') as f:
-        return f.read()
+        content = f.read()
+        # make sure we don't return empty content
+        if content:
+          return content
     time.sleep(1)
   raise Exception('Failed to read file %s.' % filepath)
 
