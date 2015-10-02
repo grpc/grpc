@@ -645,11 +645,24 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
     iomgr_success = 0;
   }
   connectivity_state_changed_locked(exec_ctx, c, "alarm");
-  gpr_mu_unlock(&c->mu);
   if (iomgr_success) {
+    gpr_mu_unlock(&c->mu);
     update_reconnect_parameters(c);
     continue_connect(exec_ctx, c);
   } else {
+    waiting_for_connect *w4c;
+    w4c = c->waiting;
+    c->waiting = NULL;
+    gpr_mu_unlock(&c->mu);
+    while (w4c != NULL) {
+      waiting_for_connect *next = w4c->next;
+      grpc_subchannel_del_interested_party(exec_ctx, w4c->subchannel,
+                                           w4c->pollset);
+      w4c->notify->cb(exec_ctx, w4c->notify->cb_arg, 0);
+      GRPC_SUBCHANNEL_UNREF(exec_ctx, w4c->subchannel, "waiting_for_connect");
+      gpr_free(w4c);
+      w4c = next;
+    }
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->master, "connecting");
     GRPC_SUBCHANNEL_UNREF(exec_ctx, c, "connecting");
   }
