@@ -133,16 +133,9 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
 static const grpc_channel_filter lame_filter = {
-    lame_start_transport_stream_op,
-    lame_start_transport_op,
-    sizeof(call_data),
-    init_call_elem,
-    destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    lame_get_peer,
-    "lame-client",
+    lame_start_transport_stream_op, lame_start_transport_op, sizeof(call_data),
+    init_call_elem, destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, lame_get_peer, "lame-client",
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))

@@ -118,7 +118,7 @@ struct grpc_udp_server {
   /* number of pollsets in the pollsets array */
   size_t pollset_count;
   /* The parent grpc server */
-  grpc_server* grpc_server;
+  grpc_server *grpc_server;
 };
 
 grpc_udp_server *grpc_udp_server_create(void) {
