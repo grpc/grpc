@@ -112,8 +112,12 @@ void grpc_kick_drain(grpc_pollset *p);
 int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
                                          gpr_timespec now);
 
+/* Allow kick to wakeup the currently polling worker */
 #define GRPC_POLLSET_CAN_KICK_SELF 1
+/* Force the wakee to repoll when awoken */
 #define GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP 2
+/* As per grpc_pollset_kick, with an extended set of flags (defined above)
+   -- mostly for fd_posix's use. */
 void grpc_pollset_kick_ex(grpc_pollset *p, grpc_pollset_worker *specific_worker,
                           gpr_uint32 flags);
 
