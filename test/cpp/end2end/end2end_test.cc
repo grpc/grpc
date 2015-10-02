@@ -683,8 +683,12 @@ TEST_P(End2endTest, RequestStreamServerEarlyCancelTest) {
   auto stream = stub_->RequestStream(&context, &response);
   request.set_message("hello");
   int send_messages = 20;
-  while (send_messages > 0) {
+  while (send_messages > 10) {
     EXPECT_TRUE(stream->Write(request));
+    send_messages--;
+  }
+  while (send_messages > 0) {
+    stream->Write(request);
     send_messages--;
   }
   stream->WritesDone();
