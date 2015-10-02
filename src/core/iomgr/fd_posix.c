@@ -44,7 +44,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
-#include <sys/syscall.h>
 
 #define CLOSURE_NOT_READY ((grpc_closure *)0)
 #define CLOSURE_READY ((grpc_closure *)1)
@@ -69,8 +68,6 @@
 static grpc_fd *fd_freelist = NULL;
 static gpr_mu fd_freelist_mu;
 
-static long gettid(void) { return syscall(__NR_gettid); }
-
 static void freelist_fd(grpc_fd *fd) {
   gpr_mu_lock(&fd_freelist_mu);
   fd->freelist_next = fd_freelist;
@@ -90,8 +87,6 @@ static grpc_fd *alloc_fd(int fd) {
   if (r == NULL) {
     r = gpr_malloc(sizeof(grpc_fd));
     gpr_mu_init(&r->mu);
-    r->cap_ev = 0;
-    r->ev = NULL;
   }
 
   gpr_atm_rel_store(&r->refst, 1);
@@ -105,13 +100,11 @@ static grpc_fd *alloc_fd(int fd) {
   r->read_watcher = r->write_watcher = NULL;
   r->on_done_closure = NULL;
   r->closed = 0;
-  r->num_ev = 0;
   return r;
 }
 
 static void destroy(grpc_fd *fd) {
   gpr_mu_destroy(&fd->mu);
-  gpr_free(fd->ev);
   gpr_free(fd);
 }
 
@@ -172,60 +165,25 @@ grpc_fd *grpc_fd_create(int fd, const char *name) {
   return r;
 }
 
-static int count_inactive(grpc_fd *fd) {
-  int n = 0;
-  grpc_fd_watcher *w;
-  for (w = fd->inactive_watcher_root.next; w != &fd->inactive_watcher_root;
-       w = w->next) {
-    n++;
-  }
-  return n;
-}
-
-static void fdev_add(fd_event_type type, grpc_fd *fd, grpc_pollset *pollset,
-                     grpc_pollset_worker *pollset_worker,
-                     grpc_fd_watcher *fd_watcher) {
-  fd_event *ev;
-  if (fd->num_ev == fd->cap_ev) {
-    fd->cap_ev = GPR_MAX(2 * fd->cap_ev, 32);
-    fd->ev = gpr_realloc(fd->ev, sizeof(*fd->ev) * fd->cap_ev);
-  }
-  ev = &fd->ev[fd->num_ev++];
-  ev->thread = gettid();
-  ev->type = type;
-  ev->pollset = pollset;
-  ev->pollset_worker = pollset_worker;
-  ev->watcher = fd_watcher;
-  ev->shutdown = fd->shutdown;
-  ev->closed = fd->closed;
-  ev->read_closure = fd->read_closure;
-  ev->write_closure = fd->write_closure;
-  ev->read_watcher = fd->read_watcher;
-  ev->write_watcher = fd->write_watcher;
-  ev->num_inactive = count_inactive(fd);
-}
-
 int grpc_fd_is_orphaned(grpc_fd *fd) {
   return (gpr_atm_acq_load(&fd->refst) & 1) == 0;
 }
 
-static void pollset_kick_locked(grpc_fd_watcher *watcher, fd_event_type type) {
-  fdev_add(type, watcher->fd, watcher->pollset, watcher->worker, watcher);
+static void pollset_kick_locked(grpc_fd_watcher *watcher) {
   gpr_mu_lock(GRPC_POLLSET_MU(watcher->pollset));
   GPR_ASSERT(watcher->worker);
   grpc_pollset_kick_ex(watcher->pollset, watcher->worker,
                        GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
   gpr_mu_unlock(GRPC_POLLSET_MU(watcher->pollset));
-  fdev_add(type + 1, watcher->fd, watcher->pollset, watcher->worker, watcher);
 }
 
 static void maybe_wake_one_watcher_locked(grpc_fd *fd) {
   if (fd->inactive_watcher_root.next != &fd->inactive_watcher_root) {
-    pollset_kick_locked(fd->inactive_watcher_root.next, FDEV_KICK_INACTIVE);
+    pollset_kick_locked(fd->inactive_watcher_root.next);
   } else if (fd->read_watcher) {
-    pollset_kick_locked(fd->read_watcher, FDEV_KICK_READER);
+    pollset_kick_locked(fd->read_watcher);
   } else if (fd->write_watcher) {
-    pollset_kick_locked(fd->write_watcher, FDEV_KICK_WRITER);
+    pollset_kick_locked(fd->write_watcher);
   }
 }
 
@@ -233,13 +191,13 @@ static void wake_all_watchers_locked(grpc_fd *fd) {
   grpc_fd_watcher *watcher;
   for (watcher = fd->inactive_watcher_root.next;
        watcher != &fd->inactive_watcher_root; watcher = watcher->next) {
-    pollset_kick_locked(watcher, FDEV_KICK_INACTIVE);
+    pollset_kick_locked(watcher);
   }
   if (fd->read_watcher) {
-    pollset_kick_locked(fd->read_watcher, FDEV_KICK_READER);
+    pollset_kick_locked(fd->read_watcher);
   }
   if (fd->write_watcher && fd->write_watcher != fd->read_watcher) {
-    pollset_kick_locked(fd->write_watcher, FDEV_KICK_WRITER);
+    pollset_kick_locked(fd->write_watcher);
   }
 }
 
@@ -334,7 +292,6 @@ void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
 void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                             grpc_closure *closure) {
   gpr_mu_lock(&fd->mu);
-  fdev_add(FDEV_NOTIFY_ON_READ, fd, NULL, NULL, NULL);
   notify_on_locked(exec_ctx, fd, &fd->read_closure, closure);
   gpr_mu_unlock(&fd->mu);
 }
@@ -342,7 +299,6 @@ void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure *closure) {
   gpr_mu_lock(&fd->mu);
-  fdev_add(FDEV_NOTIFY_ON_WRITE, fd, NULL, NULL, NULL);
   notify_on_locked(exec_ctx, fd, &fd->write_closure, closure);
   gpr_mu_unlock(&fd->mu);
 }
@@ -358,7 +314,6 @@ gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
   GRPC_FD_REF(fd, "poll");
 
   gpr_mu_lock(&fd->mu);
-  fdev_add(FDEV_BEGIN_POLL, fd, pollset, worker, watcher);
 
   /* if we are shutdown, then don't add to the watcher set */
   if (gpr_atm_no_barrier_load(&fd->shutdown)) {
@@ -410,9 +365,6 @@ void grpc_fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
   }
 
   gpr_mu_lock(&fd->mu);
-
-  fdev_add(FDEV_END_POLL, watcher->fd, watcher->pollset, watcher->worker,
-           watcher);
 
   if (watcher == fd->read_watcher) {
     /* remove read watcher, kick if we still need a read */
