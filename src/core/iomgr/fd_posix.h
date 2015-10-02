@@ -97,10 +97,6 @@ struct grpc_fd {
   grpc_closure *on_done_closure;
 
   grpc_iomgr_object iomgr_object;
-
-  size_t num_ev;
-  size_t cap_ev;
-  fd_event *ev;
 };
 
 /* Create a wrapped file descriptor.
