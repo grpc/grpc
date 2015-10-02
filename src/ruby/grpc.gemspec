@@ -17,9 +17,10 @@ Gem::Specification.new do |s|
   s.requirements << 'libgrpc ~> 0.11.0 needs to be installed'
 
   s.files = %w( Rakefile )
-  s.files += Dir.glob('lib/**/*')
-  s.files += Dir.glob('ext/**/*')
   s.files += Dir.glob('bin/**/*')
+  s.files += Dir.glob('ext/**/*')
+  s.files += Dir.glob('lib/**/*')
+  s.files += Dir.glob('pb/**/*')
   s.test_files = Dir.glob('spec/**/*')
   %w(math noproto).each do |b|
     s.executables += ["#{b}_client.rb", "#{b}_server.rb"]

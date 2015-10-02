@@ -232,7 +232,7 @@ static int prepare_socket(int fd, const struct sockaddr *addr,
   rc = setsockopt(fd, IPPROTO_IP, IP_PKTINFO, &get_local_ip,
                   sizeof(get_local_ip));
   if (rc == 0 && addr->sa_family == AF_INET6) {
-#if !TARGET_OS_IPHONE
+#if !defined(__APPLE__)
     rc = setsockopt(fd, IPPROTO_IPV6, IPV6_RECVPKTINFO, &get_local_ip,
                     sizeof(get_local_ip));
 #endif
