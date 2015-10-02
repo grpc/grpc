@@ -153,8 +153,8 @@ static gpr_timespec compute_connect_deadline(grpc_subchannel *c);
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *subchannel,
                                  int iomgr_success);
 
-static void subchannel_ref_locked(
-    grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+static void subchannel_ref_locked(grpc_subchannel *c
+                                      GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 static int subchannel_unref_locked(
     grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) GRPC_MUST_USE_RESULT;
 static void connection_ref_locked(connection *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
@@ -203,8 +203,8 @@ static void connection_destroy(grpc_exec_ctx *exec_ctx, connection *c) {
   gpr_free(c);
 }
 
-static void connection_ref_locked(
-    connection *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+static void connection_ref_locked(connection *c
+                                      GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   REF_LOG("CONNECTION", c);
   subchannel_ref_locked(c->subchannel REF_PASS_ARGS);
   ++c->refs;
@@ -227,14 +227,14 @@ static grpc_subchannel *connection_unref_locked(
  * grpc_subchannel implementation
  */
 
-static void subchannel_ref_locked(
-    grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+static void subchannel_ref_locked(grpc_subchannel *c
+                                      GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   REF_LOG("SUBCHANNEL", c);
   ++c->refs;
 }
 
-static int subchannel_unref_locked(
-    grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+static int subchannel_unref_locked(grpc_subchannel *c
+                                       GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   UNREF_LOG("SUBCHANNEL", c);
   return --c->refs == 0;
 }
@@ -709,8 +709,8 @@ static void connectivity_state_changed_locked(grpc_exec_ctx *exec_ctx,
  * grpc_subchannel_call implementation
  */
 
-void grpc_subchannel_call_ref(
-    grpc_subchannel_call *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+void grpc_subchannel_call_ref(grpc_subchannel_call *c
+                                  GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_ref(&c->refs);
 }
 

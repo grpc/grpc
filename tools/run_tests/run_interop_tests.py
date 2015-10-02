@@ -60,7 +60,8 @@ _CLOUD_TO_CLOUD_BASE_ARGS = [
 # supported by C core SslCredentials instead.
 _SSL_CERT_ENV = { 'SSL_CERT_FILE':'/usr/local/share/grpc/roots.pem' }
 
-# TODO(jtatttermusch) unify usage of --enable_ssl, --use_tls and --use_tls=true
+# TODO(jtatttermusch) unify usage of --use_tls and --use_tls=true
+# TODO(jtatttermusch) unify usage of --use_prod_roots and --use_test_ca
 
 
 class CXXLanguage:
@@ -72,17 +73,17 @@ class CXXLanguage:
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
-            ['--enable_ssl','--use_prod_roots'])
+            ['--use_tls=true','--use_prod_roots'])
 
   def cloud_to_cloud_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--enable_ssl'])
+            ['--use_tls=true'])
 
   def cloud_to_prod_env(self):
     return None
 
   def server_args(self):
-    return ['bins/opt/interop_server', '--enable_ssl']
+    return ['bins/opt/interop_server', '--use_tls=true']
 
   def __str__(self):
     return 'c++'
@@ -223,11 +224,10 @@ _LANGUAGES = {
 # TODO(jtattermusch): enable other languages as servers as well
 _SERVERS = ['c++', 'node', 'csharp', 'java']
 
-# TODO(jtattermusch): add empty_stream once C++ starts supporting it.
 # TODO(jtattermusch): add timeout_on_sleeping_server once java starts supporting it.
 # TODO(jtattermusch): add support for auth tests.
 _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
-               'client_streaming', 'server_streaming',
+               'empty_stream', 'client_streaming', 'server_streaming',
                'cancel_after_begin', 'cancel_after_first_response']
 
 
