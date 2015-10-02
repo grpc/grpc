@@ -181,6 +181,10 @@ NAN_METHOD(ChannelCredentials::Compose) {
   }
   ChannelCredentials *self = ObjectWrap::Unwrap<ChannelCredentials>(
       info.This());
+  if (self->wrapped_credentials == NULL) {
+    return Nan::ThrowTypeError(
+        "Cannot compose insecure credential");
+  }
   CallCredentials *other = ObjectWrap::Unwrap<CallCredentials>(
       Nan::To<Object>(info[0]).ToLocalChecked());
   grpc_credentials *creds = grpc_composite_credentials_create(
