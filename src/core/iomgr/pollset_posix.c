@@ -274,6 +274,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     }
     if (worker->reevaluate_polling_on_wakeup) {
       worker->reevaluate_polling_on_wakeup = 0;
+      pollset->kicked_without_pollers = 0;
       if (queued_work) {
         deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
       }
@@ -497,6 +498,9 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
                                                 grpc_pollset_worker *worker,
                                                 gpr_timespec deadline,
                                                 gpr_timespec now) {
+#define POLLOUT_CHECK (POLLOUT | POLLHUP | POLLERR)
+#define POLLIN_CHECK  (POLLIN  | POLLHUP | POLLERR)
+
   struct pollfd pfd[3];
   grpc_fd *fd;
   grpc_fd_watcher fd_watcher;
@@ -539,31 +543,27 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   GRPC_TIMER_MARK(GRPC_PTAG_POLL_FINISHED, r);
 
-  if (fd) {
-    grpc_fd_end_poll(exec_ctx, &fd_watcher, pfd[2].revents & POLLIN,
-                     pfd[2].revents & POLLOUT);
-  }
-
   if (r < 0) {
-    if (errno != EINTR) {
-      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    if (fd) {
+      grpc_fd_end_poll(exec_ctx, &fd_watcher, 0, 0);
     }
   } else if (r == 0) {
-    /* do nothing */
+    if (fd) {
+      grpc_fd_end_poll(exec_ctx, &fd_watcher, 0, 0);
+    }
   } else {
-    if (pfd[0].revents & POLLIN) {
+    if (pfd[0].revents & POLLIN_CHECK) {
       grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
     }
-    if (pfd[1].revents & POLLIN) {
+    if (pfd[1].revents & POLLIN_CHECK) {
       grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd);
     }
     if (nfds > 2) {
-      if (pfd[2].revents & (POLLIN | POLLHUP | POLLERR)) {
-        grpc_fd_become_readable(exec_ctx, fd);
-      }
-      if (pfd[2].revents & (POLLOUT | POLLHUP | POLLERR)) {
-        grpc_fd_become_writable(exec_ctx, fd);
-      }
+      grpc_fd_end_poll(exec_ctx, &fd_watcher, pfd[2].revents & POLLIN_CHECK,
+                       pfd[2].revents & POLLOUT_CHECK);
+    } else if (fd) {
+      grpc_fd_end_poll(exec_ctx, &fd_watcher, 0, 0);
     }
   }
 }
