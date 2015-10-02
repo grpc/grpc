@@ -129,7 +129,7 @@ gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
                               gpr_uint32 write_mask, grpc_fd_watcher *rec);
 /* Complete polling previously started with grpc_fd_begin_poll
    MUST NOT be called with a pollset lock taken
-   if got_read or got_write are 1, also does the notify_on_{read,write} as
+   if got_read or got_write are 1, also does the become_{readable,writable} as
    appropriate. */
 void grpc_fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *rec,
                       int got_read, int got_write);
