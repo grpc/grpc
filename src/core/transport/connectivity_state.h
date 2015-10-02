@@ -78,4 +78,11 @@ int grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
     grpc_connectivity_state *current, grpc_closure *notify);
 
+/** Remove \a subscribed_notify from the list of closures to be called on a
+ * state change if present, returning 1. Otherwise, nothing is done and return
+ * 0. */
+int grpc_connectivity_state_change_unsubscribe(
+    grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
+    grpc_closure *subscribed_notify);
+
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H */
