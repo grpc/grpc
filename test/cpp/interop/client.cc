@@ -45,7 +45,7 @@
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_bool(enable_ssl, false, "Whether to use ssl/tls.");
+DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_bool(use_prod_roots, false, "True to use SSL roots for google");
 DEFINE_int32(server_port, 0, "Server port.");
 DEFINE_string(server_host, "127.0.0.1", "Server host to connect to");
@@ -143,7 +143,7 @@ int main(int argc, char** argv) {
     client.DoEmptyStream();
     client.DoStatusWithMessage();
     // service_account_creds and jwt_token_creds can only run with ssl.
-    if (FLAGS_enable_ssl) {
+    if (FLAGS_use_tls) {
       grpc::string json_key = GetServiceAccountJsonKey();
       client.DoJwtTokenCreds(json_key);
       client.DoOauth2AuthToken(FLAGS_default_service_account,
