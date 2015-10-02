@@ -146,8 +146,8 @@ int main(int argc, char** argv) {
     if (FLAGS_enable_ssl) {
       grpc::string json_key = GetServiceAccountJsonKey();
       client.DoJwtTokenCreds(json_key);
-      client.DoOauth2AuthToken(
-          FLAGS_default_service_account, FLAGS_oauth_scope);
+      client.DoOauth2AuthToken(FLAGS_default_service_account,
+                               FLAGS_oauth_scope);
       client.DoPerRpcCreds(json_key);
     }
     // compute_engine_creds only runs in GCE.

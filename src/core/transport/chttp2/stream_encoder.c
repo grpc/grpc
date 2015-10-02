@@ -278,7 +278,7 @@ static void emit_indexed(grpc_chttp2_hpack_compressor *c, gpr_uint32 elem_index,
                          framer_state *st) {
   gpr_uint32 len = GRPC_CHTTP2_VARINT_LENGTH(elem_index, 1);
   GRPC_CHTTP2_WRITE_VARINT(elem_index, 1, 0x80, add_tiny_header_data(st, len),
-			   len);
+                           len);
 }
 
 static gpr_slice get_wire_value(grpc_mdelem *elem, gpr_uint8 *huffman_prefix) {
@@ -365,7 +365,7 @@ static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor *c,
 }
 
 static gpr_uint32 dynidx(grpc_chttp2_hpack_compressor *c,
-			 gpr_uint32 elem_index) {
+                         gpr_uint32 elem_index) {
   return 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY + c->tail_remote_index +
          c->table_elems - elem_index;
 }

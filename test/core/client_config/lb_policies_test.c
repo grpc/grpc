@@ -134,9 +134,9 @@ static void kill_server(const servers_fixture *f, size_t i) {
   gpr_log(GPR_INFO, "KILLING SERVER %d", i);
   GPR_ASSERT(f->servers[i] != NULL);
   grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(10000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
-                 .type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                                         NULL).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->servers[i]);
   f->servers[i] = NULL;
 }
@@ -190,9 +190,9 @@ static void teardown_servers(servers_fixture *f) {
   for (i = 0; i < f->num_servers; i++) {
     if (f->servers[i] == NULL) continue;
     grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-    GPR_ASSERT(grpc_completion_queue_pluck(
-                   f->cq, tag(10000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
-                   .type == GRPC_OP_COMPLETE);
+    GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000),
+                                           GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                                           NULL).type == GRPC_OP_COMPLETE);
     grpc_server_destroy(f->servers[i]);
   }
   grpc_completion_queue_shutdown(f->cq);
@@ -307,8 +307,8 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
 
     s_idx = -1;
     while ((ev = grpc_completion_queue_next(
-                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL))
-               .type != GRPC_QUEUE_TIMEOUT) {
+                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)).type !=
+           GRPC_QUEUE_TIMEOUT) {
       read_tag = ((int)(gpr_intptr)ev.tag);
       gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%d",
               ev.success, ev.type, read_tag, iter_num);

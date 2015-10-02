@@ -976,10 +976,8 @@ static void ssl_handshaker_destroy(tsi_handshaker *self) {
 
 static const tsi_handshaker_vtable handshaker_vtable = {
     ssl_handshaker_get_bytes_to_send_to_peer,
-    ssl_handshaker_process_bytes_from_peer,
-    ssl_handshaker_get_result,
-    ssl_handshaker_extract_peer,
-    ssl_handshaker_create_frame_protector,
+    ssl_handshaker_process_bytes_from_peer, ssl_handshaker_get_result,
+    ssl_handshaker_extract_peer, ssl_handshaker_create_frame_protector,
     ssl_handshaker_destroy,
 };
 

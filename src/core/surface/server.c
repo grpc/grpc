@@ -767,16 +767,9 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 static const grpc_channel_filter server_surface_filter = {
-    server_start_transport_stream_op,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    init_call_elem,
-    destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    grpc_call_next_get_peer,
-    "server",
+    server_start_transport_stream_op, grpc_channel_next_op, sizeof(call_data),
+    init_call_elem, destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, grpc_call_next_get_peer, "server",
 };
 
 void grpc_server_register_completion_queue(grpc_server *server,
@@ -940,8 +933,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   channel = grpc_channel_create_from_filters(exec_ctx, NULL, filters,
                                              num_filters, args, mdctx, 0);
   chand = (channel_data *)grpc_channel_stack_element(
-              grpc_channel_get_channel_stack(channel), 0)
-              ->channel_data;
+              grpc_channel_get_channel_stack(channel), 0)->channel_data;
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
@@ -962,7 +954,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
       method = grpc_mdstr_from_string(mdctx, rm->method);
       hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
-                           .server_registered_method != NULL;
+                               .server_registered_method != NULL;
            probes++)
         ;
       if (probes > max_probes) max_probes = probes;
