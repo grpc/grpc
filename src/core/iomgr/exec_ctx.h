@@ -61,7 +61,7 @@ struct grpc_exec_ctx {
   { GRPC_CLOSURE_LIST_INIT }
 
 /** Flush any work that has been enqueued onto this grpc_exec_ctx.
- *  Caller must guarantee that no interfering locks are held. 
+ *  Caller must guarantee that no interfering locks are held.
  *  Returns 1 if work was performed, 0 otherwise. */
 int grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx);
 /** Finish any pending work for a grpc_exec_ctx. Must be called before

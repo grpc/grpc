@@ -382,7 +382,7 @@ static int add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
     if (s->nports == s->port_capacity) {
       /* too many ports, and we need to store their address in a closure */
       /* TODO(ctiller): make server_port a linked list */
-      abort(); 
+      abort();
     }
     sp = &s->ports[s->nports++];
     sp->server = s;

@@ -167,9 +167,7 @@ void grpc_pollset_global_shutdown(void) {
   gpr_tls_destroy(&g_current_thread_worker);
 }
 
-void grpc_kick_poller(void) {
-  grpc_wakeup_fd_wakeup(&grpc_global_wakeup_fd);
-}
+void grpc_kick_poller(void) { grpc_wakeup_fd_wakeup(&grpc_global_wakeup_fd); }
 
 /* main interface */
 
