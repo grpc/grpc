@@ -51,9 +51,10 @@ typedef struct {
 static void child_thread(void *arg) {
   child_events *ce = arg;
   grpc_event ev;
-  gpr_event_set(&ce->started, (void*)1);
+  gpr_event_set(&ce->started, (void *)1);
   gpr_log(GPR_DEBUG, "verifying");
-  ev = grpc_completion_queue_next(ce->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
+  ev = grpc_completion_queue_next(ce->cq, gpr_inf_future(GPR_CLOCK_MONOTONIC),
+                                  NULL);
   GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
   GPR_ASSERT(ev.tag == tag(1));
   GPR_ASSERT(ev.success == 0);
@@ -86,9 +87,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
 
   /* start watching for a change */
   gpr_log(GPR_DEBUG, "watching");
-  grpc_channel_watch_connectivity_state(f.client, GRPC_CHANNEL_IDLE,
-                                        gpr_now(GPR_CLOCK_MONOTONIC),
-                                        f.cq, tag(1));
+  grpc_channel_watch_connectivity_state(
+      f.client, GRPC_CHANNEL_IDLE, gpr_now(GPR_CLOCK_MONOTONIC), f.cq, tag(1));
 
   /* eventually the child thread completion should trigger */
   gpr_thd_join(thdid);

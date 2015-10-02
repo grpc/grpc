@@ -203,8 +203,7 @@ void InteropClient::DoOauth2AuthToken(const grpc::string& username,
 }
 
 void InteropClient::DoPerRpcCreds(const grpc::string& json_key) {
-  gpr_log(GPR_INFO,
-          "Sending a unary rpc with per-rpc JWT access token ...");
+  gpr_log(GPR_INFO, "Sending a unary rpc with per-rpc JWT access token ...");
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);

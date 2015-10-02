@@ -198,7 +198,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
     }
     if (pfds[1].revents) {
       do {
-	/* The following epoll_wait never blocks; it has a timeout of 0 */
+        /* The following epoll_wait never blocks; it has a timeout of 0 */
         ep_rv = epoll_wait(h->epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
         if (ep_rv < 0) {
           if (errno != EINTR) {
@@ -264,9 +264,11 @@ static void epoll_become_multipoller(grpc_exec_ctx *exec_ctx,
 
   ev.events = (uint32_t)(EPOLLIN | EPOLLET);
   ev.data.ptr = NULL;
-  err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD, GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd), &ev);
+  err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD,
+                  GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd), &ev);
   if (err < 0) {
-    gpr_log(GPR_ERROR, "epoll_ctl add for %d failed: %s", GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd),
+    gpr_log(GPR_ERROR, "epoll_ctl add for %d failed: %s",
+            GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd),
             strerror(errno));
   }
 
