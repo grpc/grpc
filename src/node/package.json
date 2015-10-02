@@ -54,6 +54,7 @@
     "cli",
     "examples",
     "ext",
+    "health_check",
     "interop",
     "src",
     "test"
