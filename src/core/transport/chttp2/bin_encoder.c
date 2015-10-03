@@ -185,8 +185,8 @@ gpr_slice grpc_chttp2_huffman_compress(gpr_slice input) {
   }
 
   if (temp_length) {
-    *out++ = (gpr_uint8)(temp << (8u - temp_length)) |
-             (gpr_uint8)(0xffu >> temp_length);
+    *out++ = (gpr_uint8)((gpr_uint8)(temp << (8u - temp_length)) |
+                         (gpr_uint8)(0xffu >> temp_length));
   }
 
   GPR_ASSERT(out == GPR_SLICE_END_PTR(output));
@@ -265,8 +265,8 @@ gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input) {
   }
 
   if (out.temp_length) {
-    *out.out++ = (gpr_uint8)(out.temp << (8u - out.temp_length)) |
-                 (gpr_uint8)(0xffu >> out.temp_length);
+    *out.out++ = (gpr_uint8)((gpr_uint8)(out.temp << (8u - out.temp_length)) |
+                             (gpr_uint8)(0xffu >> out.temp_length));
   }
 
   GPR_ASSERT(out.out <= GPR_SLICE_END_PTR(output));
