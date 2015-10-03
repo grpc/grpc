@@ -424,7 +424,8 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
     if (call->allocated_completions & (1u << i)) {
       continue;
     }
-    call->allocated_completions |= (gpr_uint8)(1u << i);
+    call->allocated_completions =
+        (gpr_uint8)(call->allocated_completions | (1u << i));
     gpr_mu_unlock(&call->completion_mu);
     return &call->completions[i];
   }
@@ -735,7 +736,7 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
   size_t i;
   /* ioreq is live: we need to do something */
   master = &call->masters[master_set];
-  master->complete_mask |= (gpr_uint16)(1u << op);
+  master->complete_mask = (gpr_uint16)(master->complete_mask | (1u << op));
   if (!success) {
     master->success = 0;
   }
@@ -1245,7 +1246,7 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                            GRPC_MDSTR_REF(reqs[i].data.send_status.details));
       }
     }
-    have_ops |= (gpr_uint16)(1u << op);
+    have_ops = (gpr_uint16)(have_ops | (1u << op));
 
     call->request_data[op] = data;
     call->request_flags[op] = reqs[i].flags;
@@ -1830,3 +1831,4 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem) {
 }
 
 gpr_uint8 grpc_call_is_client(grpc_call *call) { return call->is_client; }
+

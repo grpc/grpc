@@ -71,7 +71,7 @@ static unsigned char prefix_mask(unsigned char prefix_len) {
   unsigned char i;
   unsigned char out = 0;
   for (i = 0; i < prefix_len; i++) {
-    out |= (unsigned char)(1 << (7 - i));
+    out = (unsigned char)(out | (unsigned char)(1 << (7 - i)));
   }
   return out;
 }
@@ -92,7 +92,8 @@ static void generate_first_byte_lut(void) {
     chrspec = NULL;
     for (j = 0; j < num_fields; j++) {
       if ((prefix_mask(fields[j].prefix_length) & i) == fields[j].prefix) {
-        suffix = suffix_mask(fields[j].prefix_length) & (unsigned char)i;
+        suffix = (unsigned char)(suffix_mask(fields[j].prefix_length) &
+                                 (unsigned char)i);
         if (suffix == suffix_mask(fields[j].prefix_length)) {
           if (fields[j].index != 2) continue;
         } else if (suffix == 0) {
