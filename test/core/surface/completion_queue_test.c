@@ -102,6 +102,47 @@ static void test_cq_end_op(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+static void test_cq_alarm(void) {
+  grpc_completion_queue *cc;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
+  LOG_TEST("test_cq_alarm");
+  cc = grpc_completion_queue_create(NULL);
+  {
+      /* regular expiry */
+      grpc_event ev;
+      void *tag = create_test_tag();
+      grpc_cq_alarm *cq_alarm = grpc_cq_alarm_create(
+          &exec_ctx, cc, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), tag);
+
+      ev = grpc_completion_queue_next(cc, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2),
+                                      NULL);
+      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+      GPR_ASSERT(ev.tag == tag);
+      GPR_ASSERT(ev.success);
+      grpc_cq_alarm_destroy(&exec_ctx, cq_alarm);
+  }
+  {
+      /* cancellation */
+      grpc_event ev;
+      void *tag = create_test_tag();
+      grpc_cq_alarm *cq_alarm = grpc_cq_alarm_create(
+          &exec_ctx, cc, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2), tag);
+
+      grpc_cq_alarm_cancel(&exec_ctx, cq_alarm);
+      GPR_ASSERT(grpc_exec_ctx_flush(&exec_ctx) == 1);
+      ev = grpc_completion_queue_next(cc, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1),
+                                      NULL);
+      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+      GPR_ASSERT(ev.tag == tag);
+      GPR_ASSERT(ev.success == 0);
+      grpc_cq_alarm_destroy(&exec_ctx, cq_alarm);
+  }
+
+  shutdown_and_destroy(cc);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 static void test_shutdown_then_next_polling(void) {
   grpc_completion_queue *cc;
   grpc_event event;
@@ -343,6 +384,7 @@ int main(int argc, char **argv) {
   test_shutdown_then_next_with_timeout();
   test_cq_end_op();
   test_pluck();
+  test_cq_alarm();
   test_threading(1, 1);
   test_threading(1, 10);
   test_threading(10, 1);
