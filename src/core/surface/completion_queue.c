@@ -44,6 +44,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 typedef struct {
   grpc_pollset_worker *worker;
@@ -354,3 +355,37 @@ grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc) {
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc) { cc->is_server_cq = 1; }
 
 int grpc_cq_is_server_cq(grpc_completion_queue *cc) { return cc->is_server_cq; }
+
+static void do_nothing_end_completion(grpc_exec_ctx *exec_ctx, void *arg,
+                                      grpc_cq_completion *c) {}
+
+static void cq_alarm_cb(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+    grpc_cq_alarm *cq_alarm = arg;
+    grpc_cq_end_op(exec_ctx, cq_alarm->cq, cq_alarm->tag, success,
+            do_nothing_end_completion, NULL, &cq_alarm->completion);
+}
+
+grpc_cq_alarm *grpc_cq_alarm_create(grpc_exec_ctx *exec_ctx,
+                                    grpc_completion_queue *cq,
+                                    gpr_timespec deadline, void *tag) {
+    grpc_cq_alarm *cq_alarm = gpr_malloc(sizeof(grpc_cq_alarm));
+
+    GRPC_CQ_INTERNAL_REF(cq, "cq_alarm");
+    cq_alarm->cq = cq;
+    cq_alarm->tag = tag;
+
+    grpc_alarm_init(exec_ctx, &cq_alarm->alarm, deadline, cq_alarm_cb, cq_alarm,
+                    gpr_now(GPR_CLOCK_MONOTONIC));
+    grpc_cq_begin_op(cq);
+    return cq_alarm;
+}
+
+void grpc_cq_alarm_cancel(grpc_exec_ctx *exec_ctx, grpc_cq_alarm *cq_alarm) {
+    grpc_alarm_cancel(exec_ctx, &cq_alarm->alarm);
+}
+
+void grpc_cq_alarm_destroy(grpc_exec_ctx *exec_ctx, grpc_cq_alarm *cq_alarm) {
+    grpc_cq_alarm_cancel(exec_ctx, cq_alarm);
+    GRPC_CQ_INTERNAL_UNREF(cq_alarm->cq, "cq_alarm");
+    gpr_free(cq_alarm);
+}
