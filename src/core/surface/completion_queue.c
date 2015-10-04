@@ -365,27 +365,30 @@ static void cq_alarm_cb(grpc_exec_ctx *exec_ctx, void *arg, int success) {
             do_nothing_end_completion, NULL, &cq_alarm->completion);
 }
 
-grpc_cq_alarm *grpc_cq_alarm_create(grpc_exec_ctx *exec_ctx,
-                                    grpc_completion_queue *cq,
+grpc_cq_alarm *grpc_cq_alarm_create(grpc_completion_queue *cq,
                                     gpr_timespec deadline, void *tag) {
     grpc_cq_alarm *cq_alarm = gpr_malloc(sizeof(grpc_cq_alarm));
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
     GRPC_CQ_INTERNAL_REF(cq, "cq_alarm");
     cq_alarm->cq = cq;
     cq_alarm->tag = tag;
 
-    grpc_alarm_init(exec_ctx, &cq_alarm->alarm, deadline, cq_alarm_cb, cq_alarm,
+    grpc_alarm_init(&exec_ctx, &cq_alarm->alarm, deadline, cq_alarm_cb, cq_alarm,
                     gpr_now(GPR_CLOCK_MONOTONIC));
     grpc_cq_begin_op(cq);
+    grpc_exec_ctx_finish(&exec_ctx);
     return cq_alarm;
 }
 
-void grpc_cq_alarm_cancel(grpc_exec_ctx *exec_ctx, grpc_cq_alarm *cq_alarm) {
-    grpc_alarm_cancel(exec_ctx, &cq_alarm->alarm);
+void grpc_cq_alarm_cancel(grpc_cq_alarm *cq_alarm) {
+    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_alarm_cancel(&exec_ctx, &cq_alarm->alarm);
+    grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void grpc_cq_alarm_destroy(grpc_exec_ctx *exec_ctx, grpc_cq_alarm *cq_alarm) {
-    grpc_cq_alarm_cancel(exec_ctx, cq_alarm);
+void grpc_cq_alarm_destroy(grpc_cq_alarm *cq_alarm) {
+    grpc_cq_alarm_cancel(cq_alarm);
     GRPC_CQ_INTERNAL_UNREF(cq_alarm->cq, "cq_alarm");
     gpr_free(cq_alarm);
 }

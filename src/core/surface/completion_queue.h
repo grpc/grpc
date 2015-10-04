@@ -99,15 +99,14 @@ int grpc_cq_is_server_cq(grpc_completion_queue *cc);
  * Once the alarm expires (at \a deadline) or it's cancelled (see ...), an event
  * with tag \a tag will be added to \a cq. If the alarm expired, the event's
  * success bit will be true, false otherwise (ie, upon cancellation). */
-grpc_cq_alarm *grpc_cq_alarm_create(grpc_exec_ctx *exec_ctx,
-                                    grpc_completion_queue *cq,
+grpc_cq_alarm *grpc_cq_alarm_create(grpc_completion_queue *cq,
                                     gpr_timespec deadline, void *tag);
 
 /** Cancel a completion queue alarm. Calling this function ove an alarm that has
  * already run has no effect. */
-void grpc_cq_alarm_cancel(grpc_exec_ctx *exec_ctx, grpc_cq_alarm *cq_alarm);
+void grpc_cq_alarm_cancel(grpc_cq_alarm *cq_alarm);
 
 /** Destroy the given completion queue alarm, cancelling it in the process. */
-void grpc_cq_alarm_destroy(grpc_exec_ctx *exec_ctx, grpc_cq_alarm *cq_alarm);
+void grpc_cq_alarm_destroy(grpc_cq_alarm *cq_alarm);
 
 #endif /* GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H */
