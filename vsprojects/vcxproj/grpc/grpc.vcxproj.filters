@@ -758,6 +758,9 @@
     <ClInclude Include="..\..\..\src\core\surface\server.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\surface\surface_trace.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\chttp2\alpn.h">
       <Filter>src\core\transport\chttp2</Filter>
     </ClInclude>

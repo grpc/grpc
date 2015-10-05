@@ -328,6 +328,7 @@
     <ClInclude Include="..\..\..\src\core\surface\event_string.h" />
     <ClInclude Include="..\..\..\src\core\surface\init.h" />
     <ClInclude Include="..\..\..\src\core\surface\server.h" />
+    <ClInclude Include="..\..\..\src\core\surface\surface_trace.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\alpn.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\bin_encoder.h" />
     <ClInclude Include="..\..\..\src\core\transport\chttp2\frame.h" />
