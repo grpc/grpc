@@ -62,13 +62,13 @@ static DWORD deadline_to_millis_timeout(gpr_timespec deadline,
     return INFINITE;
   }
   if (gpr_time_cmp(deadline, gpr_time_add(now, gpr_time_from_micros(
-    max_spin_polling_us,
-    GPR_TIMESPAN))) <= 0) {
+                                                   max_spin_polling_us,
+                                                   GPR_TIMESPAN))) <= 0) {
     return 0;
   }
   timeout = gpr_time_sub(deadline, now);
   return gpr_time_to_millis(gpr_time_add(
-    timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
+      timeout, gpr_time_from_nanos(GPR_NS_PER_MS - 1, GPR_TIMESPAN)));
 }
 
 void grpc_iocp_work(grpc_exec_ctx *exec_ctx, gpr_timespec deadline) {
@@ -80,8 +80,9 @@ void grpc_iocp_work(grpc_exec_ctx *exec_ctx, gpr_timespec deadline) {
   grpc_winsocket *socket;
   grpc_winsocket_callback_info *info;
   grpc_closure *closure = NULL;
-  success = GetQueuedCompletionStatus(g_iocp, &bytes, &completion_key,
-                                      &overlapped, deadline_to_millis_timeout(deadline, gpr_now(deadline.clock_type)));
+  success = GetQueuedCompletionStatus(
+      g_iocp, &bytes, &completion_key, &overlapped,
+      deadline_to_millis_timeout(deadline, gpr_now(deadline.clock_type)));
   if (success == 0 && overlapped == NULL) {
     return;
   }
@@ -139,7 +140,7 @@ void grpc_iocp_kick(void) {
 
 void grpc_iocp_flush(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  
+
   do {
     grpc_iocp_work(&exec_ctx, gpr_inf_past(GPR_CLOCK_MONOTONIC));
   } while (grpc_exec_ctx_flush(&exec_ctx));

@@ -115,6 +115,27 @@ int grpc_connectivity_state_notify_on_state_change(
   return tracker->current_state == GRPC_CHANNEL_IDLE;
 }
 
+int grpc_connectivity_state_change_unsubscribe(
+    grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
+    grpc_closure *subscribed_notify) {
+  grpc_connectivity_state_watcher *w = tracker->watchers;
+  if (w != NULL && w->notify == subscribed_notify) {
+    tracker->watchers = w->next;
+    gpr_free(w);
+    return 1;
+  }
+  while (w != NULL) {
+    grpc_connectivity_state_watcher *rm_candidate = w->next;
+    if (rm_candidate != NULL && rm_candidate->notify == subscribed_notify) {
+      w->next = w->next->next;
+      gpr_free(rm_candidate);
+      return 1;
+    }
+    w = w->next;
+  }
+  return 0;
+}
+
 void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
                                  grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state,

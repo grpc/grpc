@@ -387,13 +387,6 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 const grpc_channel_filter grpc_compress_filter = {
-    compress_start_transport_stream_op,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    init_call_elem,
-    destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    grpc_call_next_get_peer,
-    "compress"};
+    compress_start_transport_stream_op, grpc_channel_next_op, sizeof(call_data),
+    init_call_elem, destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, grpc_call_next_get_peer, "compress"};
