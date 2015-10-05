@@ -690,120 +690,187 @@ describe('Other conditions', function() {
       });
     });
   });
-  describe('Call propagation', function() {
-    var proxy;
-    var proxy_impl;
-    beforeEach(function() {
-      proxy = new grpc.Server();
-      proxy_impl = {
-        unary: function(call) {},
-        clientStream: function(stream) {},
-        serverStream: function(stream) {},
-        bidiStream: function(stream) {}
-      };
+});
+describe('Call propagation', function() {
+  var proxy;
+  var proxy_impl;
+
+  var test_service;
+  var Client;
+  var client;
+  var server;
+  before(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    test_service = test_proto.lookup('TestService');
+    server = new grpc.Server();
+    server.addProtoService(test_service, {
+      unary: function(call) {},
+      clientStream: function(stream) {},
+      serverStream: function(stream) {},
+      bidiStream: function(stream) {}
     });
-    afterEach(function() {
-      console.log('Shutting down server');
-      proxy.forceShutdown();
-    });
-    describe('Cancellation', function() {
-      it('With a client stream call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.clientStream = function(parent, callback) {
-          client.clientStream(function(err, value) {
-            try {
-              assert(err);
-              assert.strictEqual(err.code, grpc.status.CANCELLED);
-            } finally {
-              callback(err, value);
-              done();
-            }
-          }, null, {parent: parent});
-          call.cancel();
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var call = proxy_client.clientStream(function(err, value) {
-          done();
-        });
-      });
-      it('With a bidi stream call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.bidiStream = function(parent) {
-          var child = client.bidiStream(null, {parent: parent});
-          child.on('error', function(err) {
+    var port = server.bind('localhost:0', server_insecure_creds);
+    Client = surface_client.makeProtobufClientConstructor(test_service);
+    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    server.start();
+  });
+  after(function() {
+    server.forceShutdown();
+  });
+  beforeEach(function() {
+    proxy = new grpc.Server();
+    proxy_impl = {
+      unary: function(call) {},
+      clientStream: function(stream) {},
+      serverStream: function(stream) {},
+      bidiStream: function(stream) {}
+    };
+  });
+  afterEach(function() {
+    proxy.forceShutdown();
+  });
+  describe('Cancellation', function() {
+    it('With a unary call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.unary = function(parent, callback) {
+        client.unary(parent.request, function(err, value) {
+          try {
             assert(err);
             assert.strictEqual(err.code, grpc.status.CANCELLED);
+          } finally {
+            callback(err, value);
             done();
-          });
-          call.cancel();
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var call = proxy_client.bidiStream();
-        call.on('error', function(err) {
-          done();
-        });
+          }
+        }, null, {parent: parent});
+        call.cancel();
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.Credentials.createInsecure());
+      var call = proxy_client.unary({}, function(err, value) {
+        done();
       });
     });
-    describe('Deadline', function() {
-      /* jshint bitwise:false */
-      var deadline_flags = (grpc.propagate.DEFAULTS &
-          ~grpc.propagate.CANCELLATION);
-      it('With a client stream call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.clientStream = function(parent, callback) {
-          client.clientStream(function(err, value) {
-            try {
-              assert(err);
-              assert(err.code === grpc.status.DEADLINE_EXCEEDED ||
-                  err.code === grpc.status.INTERNAL);
-            } finally {
-              callback(err, value);
-              done();
-            }
-          }, null, {parent: parent, propagate_flags: deadline_flags});
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var deadline = new Date();
-        deadline.setSeconds(deadline.getSeconds() + 1);
-        proxy_client.clientStream(function(err, value) {
-          done();
-        }, null, {deadline: deadline});
+    it('With a client stream call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.clientStream = function(parent, callback) {
+        client.clientStream(function(err, value) {
+          try {
+            assert(err);
+            assert.strictEqual(err.code, grpc.status.CANCELLED);
+          } finally {
+            callback(err, value);
+            done();
+          }
+        }, null, {parent: parent});
+        call.cancel();
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.Credentials.createInsecure());
+      var call = proxy_client.clientStream(function(err, value) {
+        done();
       });
-      it('With a bidi stream call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.bidiStream = function(parent) {
-          var child = client.bidiStream(
-              null, {parent: parent, propagate_flags: deadline_flags});
-          child.on('error', function(err) {
+    });
+    it('With a server stream call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.serverStream = function(parent) {
+        var child = client.serverStream(parent.request, null,
+                                        {parent: parent});
+        child.on('error', function(err) {
+          assert(err);
+          assert.strictEqual(err.code, grpc.status.CANCELLED);
+          done();
+        });
+        call.cancel();
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.Credentials.createInsecure());
+      var call = proxy_client.serverStream({});
+      call.on('error', function(err) {
+        done();
+      });
+    });
+    it('With a bidi stream call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.bidiStream = function(parent) {
+        var child = client.bidiStream(null, {parent: parent});
+        child.on('error', function(err) {
+          assert(err);
+          assert.strictEqual(err.code, grpc.status.CANCELLED);
+          done();
+        });
+        call.cancel();
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.Credentials.createInsecure());
+      var call = proxy_client.bidiStream();
+      call.on('error', function(err) {
+        done();
+      });
+    });
+  });
+  describe('Deadline', function() {
+    /* jshint bitwise:false */
+    var deadline_flags = (grpc.propagate.DEFAULTS &
+        ~grpc.propagate.CANCELLATION);
+    it('With a client stream call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.clientStream = function(parent, callback) {
+        client.clientStream(function(err, value) {
+          try {
             assert(err);
             assert(err.code === grpc.status.DEADLINE_EXCEEDED ||
                 err.code === grpc.status.INTERNAL);
+          } finally {
+            callback(err, value);
             done();
-          });
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var deadline = new Date();
-        deadline.setSeconds(deadline.getSeconds() + 1);
-        var call = proxy_client.bidiStream(null, {deadline: deadline});
-        call.on('error', function(err) {
+          }
+        }, null, {parent: parent, propagate_flags: deadline_flags});
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.Credentials.createInsecure());
+      var deadline = new Date();
+      deadline.setSeconds(deadline.getSeconds() + 1);
+      proxy_client.clientStream(function(err, value) {
+        done();
+      }, null, {deadline: deadline});
+    });
+    it('With a bidi stream call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.bidiStream = function(parent) {
+        var child = client.bidiStream(
+            null, {parent: parent, propagate_flags: deadline_flags});
+        child.on('error', function(err) {
+          assert(err);
+          assert(err.code === grpc.status.DEADLINE_EXCEEDED ||
+              err.code === grpc.status.INTERNAL);
           done();
         });
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.Credentials.createInsecure());
+      var deadline = new Date();
+      deadline.setSeconds(deadline.getSeconds() + 1);
+      var call = proxy_client.bidiStream(null, {deadline: deadline});
+      call.on('error', function(err) {
+        done();
       });
     });
   });
