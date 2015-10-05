@@ -36,7 +36,6 @@
 
 /* Internal API for completion queues */
 
-#include "src/core/iomgr/alarm.h"
 #include "src/core/iomgr/pollset.h"
 #include <grpc/grpc.h>
 
@@ -51,16 +50,6 @@ typedef struct grpc_cq_completion {
   /** next pointer; low bit is used to indicate success or not */
   gpr_uintptr next;
 } grpc_cq_completion;
-
-/** An alarm associated with a completion queue. */
-typedef struct grpc_cq_alarm {
-  grpc_alarm alarm;
-  grpc_cq_completion completion;
-  /** completion queue where events about this alarm will be posted */
-  grpc_completion_queue *cq;
-  /** user supplied tag */
-  void *tag;
-} grpc_cq_alarm;
 
 #ifdef GRPC_CQ_REF_COUNT_DEBUG
 void grpc_cq_internal_ref(grpc_completion_queue *cc, const char *reason,
@@ -93,20 +82,5 @@ grpc_pollset *grpc_cq_pollset(grpc_completion_queue *cc);
 
 void grpc_cq_mark_server_cq(grpc_completion_queue *cc);
 int grpc_cq_is_server_cq(grpc_completion_queue *cc);
-
-/** Create a completion queue alarm instance associated to \a cq.
- *
- * Once the alarm expires (at \a deadline) or it's cancelled (see ...), an event
- * with tag \a tag will be added to \a cq. If the alarm expired, the event's
- * success bit will be true, false otherwise (ie, upon cancellation). */
-grpc_cq_alarm *grpc_cq_alarm_create(grpc_completion_queue *cq,
-                                    gpr_timespec deadline, void *tag);
-
-/** Cancel a completion queue alarm. Calling this function ove an alarm that has
- * already run has no effect. */
-void grpc_cq_alarm_cancel(grpc_cq_alarm *cq_alarm);
-
-/** Destroy the given completion queue alarm, cancelling it in the process. */
-void grpc_cq_alarm_destroy(grpc_cq_alarm *cq_alarm);
 
 #endif /* GRPC_INTERNAL_CORE_SURFACE_COMPLETION_QUEUE_H */

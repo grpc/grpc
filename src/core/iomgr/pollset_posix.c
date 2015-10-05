@@ -42,7 +42,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/alarm_internal.h"
+#include "src/core/iomgr/timer_internal.h"
 #include "src/core/iomgr/fd_posix.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/socket_utils_posix.h"
@@ -204,7 +204,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs);
     goto done;
   }
-  if (grpc_alarm_check(exec_ctx, now, &deadline)) {
+  if (grpc_timer_check(exec_ctx, now, &deadline)) {
     gpr_mu_unlock(&pollset->mu);
     locked = 0;
     goto done;

@@ -46,6 +46,7 @@ Pod::Spec.new do |s|
   s.source = { :git => 'https://github.com/grpc/grpc.git',
                :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}" }
 
+
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
   s.requires_arc = true
@@ -180,9 +181,6 @@ Pod::Spec.new do |s|
                       'src/core/httpcli/format_request.h',
                       'src/core/httpcli/httpcli.h',
                       'src/core/httpcli/parser.h',
-                      'src/core/iomgr/alarm.h',
-                      'src/core/iomgr/alarm_heap.h',
-                      'src/core/iomgr/alarm_internal.h',
                       'src/core/iomgr/closure.h',
                       'src/core/iomgr/endpoint.h',
                       'src/core/iomgr/endpoint_pair.h',
@@ -210,6 +208,9 @@ Pod::Spec.new do |s|
                       'src/core/iomgr/tcp_server.h',
                       'src/core/iomgr/tcp_windows.h',
                       'src/core/iomgr/time_averaged_stats.h',
+                      'src/core/iomgr/timer.h',
+                      'src/core/iomgr/timer_heap.h',
+                      'src/core/iomgr/timer_internal.h',
                       'src/core/iomgr/udp_server.h',
                       'src/core/iomgr/wakeup_fd_pipe.h',
                       'src/core/iomgr/wakeup_fd_posix.h',
@@ -321,8 +322,6 @@ Pod::Spec.new do |s|
                       'src/core/httpcli/format_request.c',
                       'src/core/httpcli/httpcli.c',
                       'src/core/httpcli/parser.c',
-                      'src/core/iomgr/alarm.c',
-                      'src/core/iomgr/alarm_heap.c',
                       'src/core/iomgr/closure.c',
                       'src/core/iomgr/endpoint.c',
                       'src/core/iomgr/endpoint_pair_posix.c',
@@ -353,6 +352,8 @@ Pod::Spec.new do |s|
                       'src/core/iomgr/tcp_server_windows.c',
                       'src/core/iomgr/tcp_windows.c',
                       'src/core/iomgr/time_averaged_stats.c',
+                      'src/core/iomgr/timer.c',
+                      'src/core/iomgr/timer_heap.c',
                       'src/core/iomgr/udp_server.c',
                       'src/core/iomgr/wakeup_fd_eventfd.c',
                       'src/core/iomgr/wakeup_fd_nospecial.c',
@@ -366,6 +367,7 @@ Pod::Spec.new do |s|
                       'src/core/json/json_writer.c',
                       'src/core/profiling/basic_timers.c',
                       'src/core/profiling/stap_timers.c',
+                      'src/core/surface/alarm.c',
                       'src/core/surface/byte_buffer.c',
                       'src/core/surface/byte_buffer_queue.c',
                       'src/core/surface/byte_buffer_reader.c',
@@ -470,9 +472,6 @@ Pod::Spec.new do |s|
                               'src/core/httpcli/format_request.h',
                               'src/core/httpcli/httpcli.h',
                               'src/core/httpcli/parser.h',
-                              'src/core/iomgr/alarm.h',
-                              'src/core/iomgr/alarm_heap.h',
-                              'src/core/iomgr/alarm_internal.h',
                               'src/core/iomgr/closure.h',
                               'src/core/iomgr/endpoint.h',
                               'src/core/iomgr/endpoint_pair.h',
@@ -500,6 +499,9 @@ Pod::Spec.new do |s|
                               'src/core/iomgr/tcp_server.h',
                               'src/core/iomgr/tcp_windows.h',
                               'src/core/iomgr/time_averaged_stats.h',
+                              'src/core/iomgr/timer.h',
+                              'src/core/iomgr/timer_heap.h',
+                              'src/core/iomgr/timer_internal.h',
                               'src/core/iomgr/udp_server.h',
                               'src/core/iomgr/wakeup_fd_pipe.h',
                               'src/core/iomgr/wakeup_fd_posix.h',
