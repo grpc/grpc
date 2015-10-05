@@ -126,10 +126,11 @@ RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 RUN apt-get update && apt-get install -y \
     python-all-dev \
     python3-all-dev \
-    python-pip \
-    python-virtualenv
+    python-pip
 
 # Install Python packages from PyPI
+RUN pip install pip --upgrade
+RUN pip install virtualenv
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2
 
 # For sanity test

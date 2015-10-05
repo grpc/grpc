@@ -39,9 +39,6 @@ GRPCIO=$ROOT/src/python/grpcio
 GRPCIO_TEST=$ROOT/src/python/grpcio_test
 GRPCIO_HEALTH_CHECKING=$ROOT/src/python/grpcio_health_checking
 
-#
-# Dependency steps.
-#
 install_grpcio_deps() {
   cd $GRPCIO
   pip install -r requirements.txt
@@ -50,14 +47,7 @@ install_grpcio_test_deps() {
   cd $GRPCIO_TEST
   pip install -r requirements.txt
 }
-#
-# End dependency steps.
-#
 
-#
-# Install steps. Requires that the `pip` command is appropriate (i.e. that the
-# virtual environment has been activated).
-#
 install_grpcio() {
   CFLAGS="-I$ROOT/include -std=c89" LDFLAGS=-L$ROOT/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install $GRPCIO
 }
@@ -67,9 +57,6 @@ install_grpcio_test() {
 install_grpcio_health_checking() {
   pip install $GRPCIO_HEALTH_CHECKING
 }
-#
-# End install steps.
-#
 
 # Cleans the environment of previous installations
 clean_grpcio_all() {
