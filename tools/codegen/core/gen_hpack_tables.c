@@ -71,6 +71,11 @@ static unsigned char prefix_mask(unsigned char prefix_len) {
   unsigned char i;
   unsigned char out = 0;
   for (i = 0; i < prefix_len; i++) {
+    /* NB: the following integer arithmetic operation needs to be in its
+     * expanded form due to the "integral promotion" performed (see section
+     * 3.2.1.1 of the C89 draft standard), which in this case upcasts the result
+     * of the bitwise OR to "unsigned". A cast to the smaller container type is
+     * then required to avoid the compiler warning */
     out = (unsigned char)(out | (unsigned char)(1 << (7 - i)));
   }
   return out;
@@ -92,6 +97,11 @@ static void generate_first_byte_lut(void) {
     chrspec = NULL;
     for (j = 0; j < num_fields; j++) {
       if ((prefix_mask(fields[j].prefix_length) & i) == fields[j].prefix) {
+        /* NB: the following integer arithmetic operation needs to be in its
+         * expanded form due to the "integral promotion" performed (see section
+         * 3.2.1.1 of the C89 draft standard), which in this case upcasts the
+         * result of the bitwise AND to "unsigned". A cast to the smaller
+         * container type is then required to avoid the compiler warning */
         suffix = (unsigned char)(suffix_mask(fields[j].prefix_length) &
                                  (unsigned char)i);
         if (suffix == suffix_mask(fields[j].prefix_length)) {
