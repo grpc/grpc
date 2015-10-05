@@ -42,6 +42,7 @@
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/support/env.h"
 #include "src/core/support/file.h"
+#include "src/core/surface/api_trace.h"
 
 /* -- Constants. -- */
 
@@ -178,6 +179,9 @@ end:
 grpc_credentials *grpc_google_default_credentials_create(void) {
   grpc_credentials *result = NULL;
   int serving_cached_credentials = 0;
+
+  GRPC_API_TRACE("grpc_google_default_credentials_create(void)", 0, ());
+
   gpr_once_init(&g_once, init_default_credentials);
 
   gpr_mu_lock(&g_mu);
