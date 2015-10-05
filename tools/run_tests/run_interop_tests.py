@@ -61,8 +61,9 @@ _CLOUD_TO_CLOUD_BASE_ARGS = [
 # supported by C core SslCredentials instead.
 _SSL_CERT_ENV = { 'SSL_CERT_FILE':'/usr/local/share/grpc/roots.pem' }
 
-# TODO(jtatttermusch) unify usage of --use_tls and --use_tls=true
-# TODO(jtatttermusch) unify usage of --use_prod_roots and --use_test_ca
+# TODO(jtattermusch) unify usage of --use_tls and --use_tls=true
+# TODO(jtattermusch) unify usage of --use_prod_roots and --use_test_ca
+# TODO(jtattermusch) go uses --tls_ca_file instead of --use_test_ca
 
 
 class CXXLanguage:
@@ -140,6 +141,32 @@ class JavaLanguage:
     return 'java'
 
 
+class GoLanguage:
+
+  def __init__(self):
+    self.client_cmdline_base = ['go', 'run', 'client.go']
+    # TODO: this relies on running inside docker
+    self.client_cwd = '/go/src/google.golang.org/grpc/interop/client'
+    self.server_cwd = '/go/src/google.golang.org/grpc/interop/server'
+
+  def cloud_to_prod_args(self):
+    return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
+            ['--use_tls=true', '--tls_ca_file=""'])
+
+  def cloud_to_cloud_args(self):
+    return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
+            ['--use_tls=true'])
+
+  def cloud_to_prod_env(self):
+    return None
+
+  def server_args(self):
+    return ['go', 'run', 'server.go', '--use_tls=true']
+
+  def __str__(self):
+    return 'go'
+
+
 class NodeLanguage:
 
   def __init__(self):
@@ -215,6 +242,7 @@ class RubyLanguage:
 _LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
+    'go' : GoLanguage(),
     'java' : JavaLanguage(),
     'node' : NodeLanguage(),
     'php' :  PHPLanguage(),
@@ -223,7 +251,7 @@ _LANGUAGES = {
 
 # languages supported as cloud_to_cloud servers
 # TODO(jtattermusch): enable other languages as servers as well
-_SERVERS = ['c++', 'node', 'csharp', 'java']
+_SERVERS = ['c++', 'node', 'csharp', 'java', 'go']
 
 # TODO(jtattermusch): add empty_stream once PHP starts supporting it.
 # TODO(jtattermusch): add timeout_on_sleeping_server once java starts supporting it.
