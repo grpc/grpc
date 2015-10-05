@@ -90,7 +90,6 @@
     },
     'targets': [
       % for lib in libs:
-      # TODO: Add C++ targets
       % if lib.name == 'gpr' or lib.name == 'grpc':
       {
         'target_name': '${lib.name}',
