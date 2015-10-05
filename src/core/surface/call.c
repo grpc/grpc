@@ -1325,7 +1325,7 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   GRPC_API_TRACE(
       "grpc_call_cancel_with_status("
-        "c=%p, status=%d, description=%s, reserved=%p)",
+      "c=%p, status=%d, description=%s, reserved=%p)",
       4, (c, (int)status, description, reserved));
   GPR_ASSERT(reserved == NULL);
   lock(c);
