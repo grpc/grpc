@@ -39,6 +39,46 @@ GRPCIO=$ROOT/src/python/grpcio
 GRPCIO_TEST=$ROOT/src/python/grpcio_test
 GRPCIO_HEALTH_CHECKING=$ROOT/src/python/grpcio_health_checking
 
+#
+# Dependency steps.
+#
+install_grpcio_deps() {
+  cd $GRPCIO
+  pip install -r requirements.txt
+}
+install_grpcio_test_deps() {
+  cd $GRPCIO_TEST
+  pip install -r requirements.txt
+}
+#
+# End dependency steps.
+#
+
+#
+# Install steps. Requires that the `pip` command is appropriate (i.e. that the
+# virtual environment has been activated).
+#
+install_grpcio() {
+  CFLAGS="-I$ROOT/include -std=c89" LDFLAGS=-L$ROOT/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install $GRPCIO
+}
+install_grpcio_test() {
+  pip install $GRPCIO_TEST
+}
+install_grpcio_health_checking() {
+  pip install $GRPCIO_HEALTH_CHECKING
+}
+#
+# End install steps.
+#
+
+# Cleans the environment of previous installations
+clean_grpcio_all() {
+  (yes | pip uninstall grpcio) || true
+  (yes | pip uninstall grpcio_test) || true
+  (yes | pip uninstall grpcio_health_checking) || true
+}
+
+# Builds the testing environment.
 make_virtualenv() {
   virtualenv_name="python"$1"_virtual_environment"
   if [ ! -d $virtualenv_name ]
@@ -48,33 +88,29 @@ make_virtualenv() {
     source $virtualenv_name/bin/activate
 
     # Install grpcio
-    cd $GRPCIO
-    pip install -r requirements.txt
-    CFLAGS="-I$ROOT/include -std=c89" LDFLAGS=-L$ROOT/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install $GRPCIO
+    install_grpcio_deps
+    install_grpcio
 
     # Install grpcio_test
-    cd $GRPCIO_TEST
-    pip install -r requirements.txt
-    pip install $GRPCIO_TEST
+    install_grpcio_test_deps
+    install_grpcio_test
 
     # Install grpcio_health_checking
-    pip install $GRPCIO_HEALTH_CHECKING
+    install_grpcio_health_checking
   else
     source $virtualenv_name/bin/activate
     # Uninstall and re-install the packages we care about. Don't use
     # --force-reinstall or --ignore-installed to avoid propagating this
     # unnecessarily to dependencies. Don't use --no-deps to avoid missing
     # dependency upgrades.
-    (yes | pip uninstall grpcio) || true
-    (yes | pip uninstall grpcio_test) || true
-    (yes | pip uninstall grpcio_health_checking) || true
-    (CFLAGS="-I$ROOT/include -std=c89" LDFLAGS=-L$ROOT/libs/$CONFIG GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install $GRPCIO) || (
+    clean_grpcio_all
+    install_grpcio || (
       # Fall back to rebuilding the entire environment
       rm -rf $virtualenv_name
       make_virtualenv $1
     )
-    pip install $GRPCIO_TEST
-    pip install $GRPCIO_HEALTH_CHECKING
+    install_grpcio_test
+    install_grpcio_health_checking
   fi
 }
 
