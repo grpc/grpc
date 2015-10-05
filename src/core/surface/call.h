@@ -36,6 +36,8 @@
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/channel/context.h"
+#include "src/core/surface/api_trace.h"
+#include "src/core/surface/surface_trace.h"
 #include <grpc/grpc.h>
 
 #ifdef __cplusplus
@@ -128,8 +130,6 @@ grpc_call_stack *grpc_call_get_call_stack(grpc_call *call);
 /* Given the top call_element, get the call object. */
 grpc_call *grpc_call_from_top_element(grpc_call_element *surface_element);
 
-extern int grpc_trace_batch;
-
 void grpc_call_log_batch(char *file, int line, gpr_log_severity severity,
                          grpc_call *call, const grpc_op *ops, size_t nops,
                          void *tag);
@@ -155,17 +155,17 @@ void grpc_call_context_set(grpc_call *call, grpc_context_index elem,
 void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 
 #define GRPC_CALL_LOG_BATCH(sev, call, ops, nops, tag) \
-  if (grpc_trace_batch) grpc_call_log_batch(sev, call, ops, nops, tag)
+  if (grpc_api_trace) grpc_call_log_batch(sev, call, ops, nops, tag)
 
 #define GRPC_SERVER_LOG_REQUEST_CALL(sev, server, call, details,             \
                                      initial_metadata, cq_bound_to_call,     \
                                      cq_for_notifications, tag)              \
-  if (grpc_trace_batch)                                                      \
+  if (grpc_api_trace)                                                    \
   grpc_server_log_request_call(sev, server, call, details, initial_metadata, \
                                cq_bound_to_call, cq_for_notifications, tag)
 
 #define GRPC_SERVER_LOG_SHUTDOWN(sev, server, cq, tag) \
-  if (grpc_trace_batch) grpc_server_log_shutdown(sev, server, cq, tag)
+  if (grpc_api_trace) grpc_server_log_shutdown(sev, server, cq, tag)
 
 gpr_uint8 grpc_call_is_client(grpc_call *call);
 

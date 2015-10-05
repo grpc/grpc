@@ -47,6 +47,7 @@
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/security/auth_filters.h"
 #include "src/core/security/credentials.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/channel.h"
 #include "src/core/transport/chttp2_transport.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -246,7 +247,11 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 0;
 
+  GRPC_API_TRACE("grpc_secure_channel_create(creds=%p, target=%s, args=%p, "
+                                            "reserved=%p)", 4,
+                 (creds, target, args, reserved));
   GPR_ASSERT(reserved == NULL);
+
   if (grpc_find_security_connector_in_args(args) != NULL) {
     gpr_log(GPR_ERROR, "Cannot set security context in channel args.");
     grpc_exec_ctx_finish(&exec_ctx);

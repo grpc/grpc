@@ -6,7 +6,7 @@ A Ruby implementation of gRPC.
 Status
 ------
 
-Alpha : Ready for early adopters
+Beta
 
 PREREQUISITES
 -------------

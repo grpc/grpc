@@ -55,7 +55,6 @@ extern "C" {
 #include "src/core/support/string.h"
 }
 
-
 int test_client(const char* root, const char* host, int port) {
   int status;
   pid_t cli;
