@@ -38,6 +38,7 @@
 
 #include "src/core/channel/client_channel.h"
 #include "src/core/iomgr/alarm.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/completion_queue.h"
 
 grpc_connectivity_state grpc_channel_check_connectivity_state(
@@ -47,6 +48,9 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_connectivity_state state;
+  GRPC_API_TRACE(
+      "grpc_channel_check_connectivity_state(channel=%p, try_to_connect=%d)",
+      2, (channel, try_to_connect));
   if (client_channel_elem->filter != &grpc_client_channel_filter) {
     gpr_log(GPR_ERROR,
             "grpc_channel_check_connectivity_state called on something that is "
@@ -174,6 +178,14 @@ void grpc_channel_watch_connectivity_state(
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   state_watcher *w = gpr_malloc(sizeof(*w));
+
+  GRPC_API_TRACE(
+      "grpc_channel_watch_connectivity_state("
+        "channel=%p, last_observed_state=%d, "
+        "deadline=gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
+        "cq=%p, tag=%p)",
+      7, (channel, (int)last_observed_state, (long)deadline.tv_sec,
+          deadline.tv_nsec, (int)deadline.clock_type, cq, tag));
 
   grpc_cq_begin_op(cq);
 
