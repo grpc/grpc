@@ -87,7 +87,6 @@
     }
   },
   'targets': [
-    # TODO: Add C++ targets
     {
       'target_name': 'gpr',
       'product_prefix': 'lib',
@@ -134,8 +133,6 @@
         'src/core/support/tls_pthread.c',
       ],
     },
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
     {
       'target_name': 'grpc',
       'product_prefix': 'lib',
@@ -294,70 +291,5 @@
         'src/core/census/tracing.c',
       ],
     },
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
-    # TODO: Add C++ targets
   ]
 }
