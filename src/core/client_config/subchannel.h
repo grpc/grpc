@@ -82,6 +82,11 @@ void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx,
                                  grpc_subchannel_call **target,
                                  grpc_closure *notify);
 
+/** cancel \a call in the waiting state. */
+void grpc_subchannel_cancel_waiting_call(grpc_exec_ctx *exec_ctx,
+                                         grpc_subchannel *subchannel,
+                                         int iomgr_success);
+
 /** process a transport level op */
 void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
                                           grpc_subchannel *subchannel,
