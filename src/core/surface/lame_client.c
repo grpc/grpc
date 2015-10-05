@@ -154,7 +154,7 @@ grpc_channel *grpc_lame_client_channel_create(const char *target,
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   GRPC_API_TRACE(
       "grpc_lame_client_channel_create(target=%s, error_code=%d, "
-                                      "error_message=%s)",
+      "error_message=%s)",
       3, (target, (int)error_code, error_message));
   GPR_ASSERT(elem->filter == &lame_filter);
   chand = (channel_data *)elem->channel_data;

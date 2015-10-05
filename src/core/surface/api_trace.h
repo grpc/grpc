@@ -51,15 +51,15 @@ extern int grpc_api_trace;
 #define GRPC_API_TRACE_UNWRAP7(a, b, c, d, e, f, g) , a, b, c, d, e, f, g
 #define GRPC_API_TRACE_UNWRAP8(a, b, c, d, e, f, g, h) , a, b, c, d, e, f, g, h
 #define GRPC_API_TRACE_UNWRAP9(a, b, c, d, e, f, g, h, i) \
-    , a, b, c, d, e, f, g, h, i
+  , a, b, c, d, e, f, g, h, i
 #define GRPC_API_TRACE_UNWRAP10(a, b, c, d, e, f, g, h, i, j) \
-    , a, b, c, d, e, f, g, h, i, j
+  , a, b, c, d, e, f, g, h, i, j
 
 /* Due to the limitations of C89's preprocessor, the arity of the var-arg list
    'nargs' must be specified. */
-#define GRPC_API_TRACE(fmt, nargs, args)                          \
-    if (grpc_api_trace) {                                         \
-      gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args ); \
-    }
+#define GRPC_API_TRACE(fmt, nargs, args)                      \
+  if (grpc_api_trace) {                                       \
+    gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \
+  }
 
 #endif /* GRPC_INTERNAL_CORE_SURFACE_API_TRACE_H */
