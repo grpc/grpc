@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,24 +26,50 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# This script is invoked by run_jekins.sh. It contains the test logic
-# that should run inside a docker container.
-set -e
 
-cd /var/local/git/grpc
-nvm use 0.12
-rvm use ruby-2.1
+# A work-in-progress Dockerfile that allows running gRPC test suites
+# inside a docker container.
 
-# If port env variable is set, run corresponding interop server on given port in background.
-# TODO(jtattermusch): ideally, run_interop_tests.py would generate the commands to run servers.
+FROM debian:jessie
 
-[ -z "${SERVER_PORT_cxx}" ] || bins/opt/interop_server --enable_ssl --port=${SERVER_PORT_cxx} &
+# Install Git.
+RUN apt-get update && apt-get install -y \
+  autoconf \
+  autotools-dev \
+  build-essential \
+  bzip2 \
+  ccache \
+  curl \
+  gcc \
+  gcc-multilib \
+  git \
+  gyp \
+  libc6 \
+  libc6-dbg \
+  libc6-dev \
+  libgtest-dev \
+  libtool \
+  make \
+  strace \
+  python-dev \
+  python-setuptools \
+  python-yaml \
+  telnet \
+  unzip \
+  wget \
+  zip && apt-get clean
 
-[ -z "${SERVER_PORT_node}" ] || node src/node/interop/interop_server.js --use_tls=true --port=${SERVER_PORT_node} &
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
-[ -z "${SERVER_PORT_ruby}" ] || ruby src/ruby/bin/interop/interop_server.rb --use_tls --port=${SERVER_PORT_ruby} &
+##################
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang
 
-[ -z "${SERVER_PORT_csharp}" ] || (cd src/csharp/Grpc.IntegrationTesting.Server/bin/Debug && mono Grpc.IntegrationTesting.Server.exe --use_tls --port=${SERVER_PORT_csharp}) &
-
-sleep infinity
+# Define the default command.
+CMD ["bash"]

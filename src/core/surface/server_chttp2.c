@@ -36,6 +36,7 @@
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_server.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/server.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
@@ -91,6 +92,9 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   int port_num = -1;
   int port_temp;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
+  GRPC_API_TRACE("grpc_server_add_insecure_http2_port(server=%p, addr=%s)", 2,
+                 (server, addr));
 
   resolved = grpc_blocking_resolve_address(addr, "http");
   if (!resolved) {

@@ -46,6 +46,7 @@ Pod::Spec.new do |s|
   s.source = { :git => 'https://github.com/grpc/grpc.git',
                :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}" }
 
+
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
   s.requires_arc = true
@@ -223,6 +224,7 @@ Pod::Spec.new do |s|
                       'src/core/profiling/timers.h',
                       'src/core/statistics/census_interface.h',
                       'src/core/statistics/census_rpc_stats.h',
+                      'src/core/surface/api_trace.h',
                       'src/core/surface/byte_buffer_queue.h',
                       'src/core/surface/call.h',
                       'src/core/surface/channel.h',
@@ -366,6 +368,7 @@ Pod::Spec.new do |s|
                       'src/core/json/json_writer.c',
                       'src/core/profiling/basic_timers.c',
                       'src/core/profiling/stap_timers.c',
+                      'src/core/surface/api_trace.c',
                       'src/core/surface/byte_buffer.c',
                       'src/core/surface/byte_buffer_queue.c',
                       'src/core/surface/byte_buffer_reader.c',
@@ -383,7 +386,6 @@ Pod::Spec.new do |s|
                       'src/core/surface/server.c',
                       'src/core/surface/server_chttp2.c',
                       'src/core/surface/server_create.c',
-                      'src/core/surface/surface_trace.c',
                       'src/core/surface/version.c',
                       'src/core/transport/chttp2/alpn.c',
                       'src/core/transport/chttp2/bin_encoder.c',
@@ -513,6 +515,7 @@ Pod::Spec.new do |s|
                               'src/core/profiling/timers.h',
                               'src/core/statistics/census_interface.h',
                               'src/core/statistics/census_rpc_stats.h',
+                              'src/core/surface/api_trace.h',
                               'src/core/surface/byte_buffer_queue.h',
                               'src/core/surface/call.h',
                               'src/core/surface/channel.h',

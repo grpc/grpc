@@ -49,6 +49,7 @@
 #include "src/core/debug/trace.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/profiling/timers.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/init.h"
 #include "src/core/surface/surface_trace.h"
@@ -75,6 +76,8 @@ static grpc_plugin g_all_of_the_plugins[MAX_PLUGINS];
 static int g_number_of_plugins = 0;
 
 void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
+  GRPC_API_TRACE("grpc_register_plugin(init=%lx, destroy=%lx)", 2,
+                 ((unsigned long)init, (unsigned long)destroy));
   GPR_ASSERT(g_number_of_plugins != MAX_PLUGINS);
   g_all_of_the_plugins[g_number_of_plugins].init = init;
   g_all_of_the_plugins[g_number_of_plugins].destroy = destroy;
@@ -98,11 +101,10 @@ void grpc_init(void) {
 #ifdef GPR_POSIX_SOCKET
     grpc_register_resolver_type(grpc_unix_resolver_factory_create());
 #endif
+    grpc_register_tracer("api", &grpc_api_trace);
     grpc_register_tracer("channel", &grpc_trace_channel);
-    grpc_register_tracer("surface", &grpc_surface_trace);
     grpc_register_tracer("http", &grpc_http_trace);
     grpc_register_tracer("flowctl", &grpc_flowctl_trace);
-    grpc_register_tracer("batch", &grpc_trace_batch);
     grpc_register_tracer("connectivity_state", &grpc_connectivity_state_trace);
     grpc_security_pre_init();
     grpc_iomgr_init();
@@ -121,10 +123,12 @@ void grpc_init(void) {
     }
   }
   gpr_mu_unlock(&g_init_mu);
+  GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
 
 void grpc_shutdown(void) {
   int i;
+  GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     grpc_iomgr_shutdown();
