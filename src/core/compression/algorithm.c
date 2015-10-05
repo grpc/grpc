@@ -47,9 +47,9 @@ int grpc_compression_algorithm_parse(const char *name, size_t name_length,
    * data, for example) */
   GRPC_API_TRACE(
       "grpc_compression_algorithm_parse("
-        "name=%*.*s, name_length=%lu, algorithm=%p)", 5,
-        ((int)name_length, (int)name_length, name,
-         (unsigned long)name_length, algorithm));
+      "name=%*.*s, name_length=%lu, algorithm=%p)",
+      5, ((int)name_length, (int)name_length, name, (unsigned long)name_length,
+          algorithm));
   if (name_length == 0) {
     return 0;
   }
