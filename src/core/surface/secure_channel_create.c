@@ -247,9 +247,10 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 0;
 
-  GRPC_API_TRACE("grpc_secure_channel_create(creds=%p, target=%s, args=%p, "
-                                            "reserved=%p)", 4,
-                 (creds, target, args, reserved));
+  GRPC_API_TRACE(
+      "grpc_secure_channel_create(creds=%p, target=%s, args=%p, "
+      "reserved=%p)",
+      4, (creds, target, args, reserved));
   GPR_ASSERT(reserved == NULL);
 
   if (grpc_find_security_connector_in_args(args) != NULL) {

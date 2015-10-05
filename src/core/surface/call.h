@@ -160,7 +160,7 @@ void *grpc_call_context_get(grpc_call *call, grpc_context_index elem);
 #define GRPC_SERVER_LOG_REQUEST_CALL(sev, server, call, details,             \
                                      initial_metadata, cq_bound_to_call,     \
                                      cq_for_notifications, tag)              \
-  if (grpc_api_trace)                                                    \
+  if (grpc_api_trace)                                                        \
   grpc_server_log_request_call(sev, server, call, details, initial_metadata, \
                                cq_bound_to_call, cq_for_notifications, tag)
 
