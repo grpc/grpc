@@ -707,29 +707,6 @@ describe('Other conditions', function() {
       proxy.forceShutdown();
     });
     describe('Cancellation', function() {
-      it('With a unary call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.unary = function(parent, callback) {
-          client.unary(parent.request, function(err, value) {
-            try {
-              assert(err);
-              assert.strictEqual(err.code, grpc.status.CANCELLED);
-            } finally {
-              callback(err, value);
-              done();
-            }
-          }, null, {parent: parent});
-          call.cancel();
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var call = proxy_client.unary({}, function(err, value) {
-          done();
-        });
-      });
       it('With a client stream call', function(done) {
         done = multiDone(done, 2);
         proxy_impl.clientStream = function(parent, callback) {
@@ -750,28 +727,6 @@ describe('Other conditions', function() {
         var proxy_client = new Client('localhost:' + proxy_port,
                                       grpc.Credentials.createInsecure());
         var call = proxy_client.clientStream(function(err, value) {
-          done();
-        });
-      });
-      it('With a server stream call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.serverStream = function(parent) {
-          var child = client.serverStream(parent.request, null,
-                                          {parent: parent});
-          child.on('error', function(err) {
-            assert(err);
-            assert.strictEqual(err.code, grpc.status.CANCELLED);
-            done();
-          });
-          call.cancel();
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var call = proxy_client.serverStream({});
-        call.on('error', function(err) {
           done();
         });
       });
