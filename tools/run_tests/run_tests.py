@@ -715,17 +715,21 @@ def _start_port_server(port_server_port):
   try:
     version = urllib2.urlopen('http://localhost:%d/version' % port_server_port,
                               timeout=1).read()
+    print 'detected port server running'
     running = True
   except Exception:
+    print 'failed to detect port server: %s' % sys.exc_info()[0]
     running = False
   if running:
     with open('tools/run_tests/port_server.py') as f:
       current_version = hashlib.sha1(f.read()).hexdigest()
       running = (version == current_version)
       if not running:
+        print 'port_server version mismatch: killing the old one'
         urllib2.urlopen('http://localhost:%d/quit' % port_server_port).read()
         time.sleep(1)
   if not running:
+    print 'starting port_server'
     port_log = open('portlog.txt', 'w')
     port_server = subprocess.Popen(
         ['python2.7', 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port],
@@ -737,7 +741,7 @@ def _start_port_server(port_server_port):
       if waits > 10:
         port_server.kill()
       if port_server.poll() is not None:
-        print "port_server failed to start"
+        print 'port_server failed to start'
         port_log = open('portlog.txt', 'r').read()
         print port_log
         sys.exit(1)
@@ -746,11 +750,11 @@ def _start_port_server(port_server_port):
                         timeout=1).read()
         break
       except socket.timeout:
-        print "waiting for port_server"
+        print 'waiting for port_server: timeout'
         time.sleep(0.5)
         waits += 1
       except urllib2.URLError:
-        print "waiting for port_server"
+        print 'waiting for port_server: urlerror'
         time.sleep(0.5)
         waits += 1
       except:
