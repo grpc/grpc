@@ -39,7 +39,7 @@
 #include <grpc/support/log.h>
 
 #define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)    \
-  if (grpc_api_trace) {                             \
+  if (grpc_api_trace) {                                 \
     char *_ev = grpc_event_string(event);               \
     gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq, _ev); \
     gpr_free(_ev);                                      \
