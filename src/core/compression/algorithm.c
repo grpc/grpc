@@ -37,12 +37,19 @@
 #include <grpc/compression.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/surface/api_trace.h"
+
 int grpc_compression_algorithm_parse(const char *name, size_t name_length,
                                      grpc_compression_algorithm *algorithm) {
   /* we use strncmp not only because it's safer (even though in this case it
    * doesn't matter, given that we are comparing against string literals, but
    * because this way we needn't have "name" nil-terminated (useful for slice
    * data, for example) */
+  GRPC_API_TRACE(
+      "grpc_compression_algorithm_parse("
+      "name=%*.*s, name_length=%lu, algorithm=%p)",
+      5, ((int)name_length, (int)name_length, name, (unsigned long)name_length,
+          algorithm));
   if (name_length == 0) {
     return 0;
   }
@@ -60,6 +67,8 @@ int grpc_compression_algorithm_parse(const char *name, size_t name_length,
 
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                     char **name) {
+  GRPC_API_TRACE("grpc_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
+                 ((int)algorithm, name));
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
       *name = "identity";
@@ -80,6 +89,8 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
  * compression algorithms */
 grpc_compression_algorithm grpc_compression_algorithm_for_level(
     grpc_compression_level level) {
+  GRPC_API_TRACE("grpc_compression_algorithm_for_level(level=%d)", 1,
+                 ((int)level));
   switch (level) {
     case GRPC_COMPRESS_LEVEL_NONE:
       return GRPC_COMPRESS_NONE;
@@ -96,6 +107,8 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
 grpc_compression_level grpc_compression_level_for_algorithm(
     grpc_compression_algorithm algorithm) {
   grpc_compression_level clevel;
+  GRPC_API_TRACE("grpc_compression_level_for_algorithm(algorithm=%d)", 1,
+                 ((int)algorithm));
   for (clevel = GRPC_COMPRESS_LEVEL_NONE; clevel < GRPC_COMPRESS_LEVEL_COUNT;
        ++clevel) {
     if (grpc_compression_algorithm_for_level(clevel) == algorithm) {

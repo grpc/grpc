@@ -341,6 +341,7 @@
     <ClInclude Include="..\..\..\src\core\profiling\timers.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_rpc_stats.h" />
+    <ClInclude Include="..\..\..\src\core\surface\api_trace.h" />
     <ClInclude Include="..\..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\..\src\core\surface\call.h" />
     <ClInclude Include="..\..\..\src\core\surface\channel.h" />
@@ -580,6 +581,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\alarm.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\surface\api_trace.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\byte_buffer.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\byte_buffer_queue.c">
@@ -613,8 +616,6 @@
     <ClCompile Include="..\..\..\src\core\surface\server_chttp2.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\server_create.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\surface\surface_trace.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\version.c">
     </ClCompile>
