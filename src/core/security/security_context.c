@@ -273,7 +273,7 @@ void grpc_auth_context_add_property(grpc_auth_context *ctx, const char *name,
   grpc_auth_property *prop;
   GRPC_API_TRACE(
       "grpc_auth_context_add_property(ctx=%p, name=%s, value=%*.*s, "
-                                     "value_length=%lu)",
+      "value_length=%lu)",
       6, (ctx, name, (int)value_length, (int)value_length, value,
           (unsigned long)value_length));
   ensure_auth_context_capacity(ctx);

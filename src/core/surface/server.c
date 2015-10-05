@@ -1186,8 +1186,8 @@ grpc_call_error grpc_server_request_call(
   requested_call *rc = gpr_malloc(sizeof(*rc));
   GRPC_API_TRACE(
       "grpc_server_request_call("
-        "server=%p, call=%p, details=%p, initial_metadata=%p, "
-        "cq_bound_to_call=%p, cq_for_notification=%p, tag%p)",
+      "server=%p, call=%p, details=%p, initial_metadata=%p, "
+      "cq_bound_to_call=%p, cq_for_notification=%p, tag%p)",
       7, (server, call, details, initial_metadata, cq_bound_to_call,
           cq_for_notification, tag));
   GRPC_SERVER_LOG_REQUEST_CALL(GPR_INFO, server, call, details,
@@ -1225,9 +1225,9 @@ grpc_call_error grpc_server_request_registered_call(
   registered_method *rm = rmp;
   GRPC_API_TRACE(
       "grpc_server_request_registered_call("
-        "server=%p, rmp=%p, call=%p, deadline=%p, initial_metadata=%p, "
-        "optional_payload=%p, cq_bound_to_call=%p, cq_for_notification=%p, "
-        "tag=%p)",
+      "server=%p, rmp=%p, call=%p, deadline=%p, initial_metadata=%p, "
+      "optional_payload=%p, cq_bound_to_call=%p, cq_for_notification=%p, "
+      "tag=%p)",
       9, (server, rmp, call, deadline, initial_metadata, optional_payload,
           cq_bound_to_call, cq_for_notification, tag));
   if (!grpc_cq_is_server_cq(cq_for_notification)) {
