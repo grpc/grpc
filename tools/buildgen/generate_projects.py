@@ -34,6 +34,7 @@ import os
 import shutil
 import sys
 import tempfile
+import multiprocessing
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', 'run_tests'))
 
 assert sys.argv[1:], 'run generate_projects.sh instead of this directly'
@@ -73,7 +74,7 @@ for root, dirs, files in os.walk('templates'):
       cmd.append(root + '/' + f)
       jobs.append(jobset.JobSpec(cmd, shortname=out))
 
-jobset.run(jobs)
+jobset.run(jobs, maxjobs=multiprocessing.cpu_count())
 
 if test is not None:
   for s, g in test.iteritems():
