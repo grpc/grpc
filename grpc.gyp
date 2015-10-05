@@ -203,8 +203,6 @@
         'src/core/httpcli/format_request.c',
         'src/core/httpcli/httpcli.c',
         'src/core/httpcli/parser.c',
-        'src/core/iomgr/alarm.c',
-        'src/core/iomgr/alarm_heap.c',
         'src/core/iomgr/closure.c',
         'src/core/iomgr/endpoint.c',
         'src/core/iomgr/endpoint_pair_posix.c',
@@ -235,6 +233,8 @@
         'src/core/iomgr/tcp_server_windows.c',
         'src/core/iomgr/tcp_windows.c',
         'src/core/iomgr/time_averaged_stats.c',
+        'src/core/iomgr/timer.c',
+        'src/core/iomgr/timer_heap.c',
         'src/core/iomgr/udp_server.c',
         'src/core/iomgr/wakeup_fd_eventfd.c',
         'src/core/iomgr/wakeup_fd_nospecial.c',
@@ -248,6 +248,7 @@
         'src/core/json/json_writer.c',
         'src/core/profiling/basic_timers.c',
         'src/core/profiling/stap_timers.c',
+        'src/core/surface/alarm.c',
         'src/core/surface/byte_buffer.c',
         'src/core/surface/byte_buffer_queue.c',
         'src/core/surface/byte_buffer_reader.c',
@@ -389,8 +390,6 @@
         'src/core/httpcli/format_request.c',
         'src/core/httpcli/httpcli.c',
         'src/core/httpcli/parser.c',
-        'src/core/iomgr/alarm.c',
-        'src/core/iomgr/alarm_heap.c',
         'src/core/iomgr/closure.c',
         'src/core/iomgr/endpoint.c',
         'src/core/iomgr/endpoint_pair_posix.c',
@@ -421,6 +420,8 @@
         'src/core/iomgr/tcp_server_windows.c',
         'src/core/iomgr/tcp_windows.c',
         'src/core/iomgr/time_averaged_stats.c',
+        'src/core/iomgr/timer.c',
+        'src/core/iomgr/timer_heap.c',
         'src/core/iomgr/udp_server.c',
         'src/core/iomgr/wakeup_fd_eventfd.c',
         'src/core/iomgr/wakeup_fd_nospecial.c',
@@ -434,6 +435,7 @@
         'src/core/json/json_writer.c',
         'src/core/profiling/basic_timers.c',
         'src/core/profiling/stap_timers.c',
+        'src/core/surface/alarm.c',
         'src/core/surface/byte_buffer.c',
         'src/core/surface/byte_buffer_queue.c',
         'src/core/surface/byte_buffer_reader.c',
@@ -1264,32 +1266,6 @@
       ],
     },
     {
-      'target_name': 'alarm_heap_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_test_util',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/core/iomgr/alarm_heap_test.c',
-      ]
-    },
-    {
-      'target_name': 'alarm_list_test',
-      'type': 'executable',
-      'dependencies': [
-        'grpc_test_util',
-        'grpc',
-        'gpr_test_util',
-        'gpr',
-      ],
-      'sources': [
-        'test/core/iomgr/alarm_list_test.c',
-      ]
-    },
-    {
       'target_name': 'alpn_test',
       'type': 'executable',
       'dependencies': [
@@ -1654,6 +1630,19 @@
       ],
       'sources': [
         'test/core/support/useful_test.c',
+      ]
+    },
+    {
+      'target_name': 'grpc_alarm_test',
+      'type': 'executable',
+      'dependencies': [
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+        'test/core/surface/alarm_test.c',
       ]
     },
     {
@@ -2157,6 +2146,32 @@
       ],
       'sources': [
         'test/core/transport/chttp2/timeout_encoding_test.c',
+      ]
+    },
+    {
+      'target_name': 'timer_heap_test',
+      'type': 'executable',
+      'dependencies': [
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+        'test/core/iomgr/timer_heap_test.c',
+      ]
+    },
+    {
+      'target_name': 'timer_list_test',
+      'type': 'executable',
+      'dependencies': [
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+        'test/core/iomgr/timer_list_test.c',
       ]
     },
     {

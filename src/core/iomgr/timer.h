@@ -31,59 +31,59 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_ALARM_H
-#define GRPC_INTERNAL_CORE_IOMGR_ALARM_H
+#ifndef GRPC_INTERNAL_CORE_IOMGR_TIMER_H
+#define GRPC_INTERNAL_CORE_IOMGR_TIMER_H
 
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/exec_ctx.h"
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-typedef struct grpc_alarm {
+typedef struct grpc_timer {
   gpr_timespec deadline;
   gpr_uint32 heap_index; /* INVALID_HEAP_INDEX if not in heap */
   int triggered;
-  struct grpc_alarm *next;
-  struct grpc_alarm *prev;
+  struct grpc_timer *next;
+  struct grpc_timer *prev;
   grpc_closure closure;
-} grpc_alarm;
+} grpc_timer;
 
-/* Initialize *alarm. When expired or canceled, alarm_cb will be called with
-   *alarm_cb_arg and status to indicate if it expired (SUCCESS) or was
-   canceled (CANCELLED). alarm_cb is guaranteed to be called exactly once,
+/* Initialize *timer. When expired or canceled, timer_cb will be called with
+   *timer_cb_arg and status to indicate if it expired (SUCCESS) or was
+   canceled (CANCELLED). timer_cb is guaranteed to be called exactly once,
    and application code should check the status to determine how it was
    invoked. The application callback is also responsible for maintaining
    information about when to free up any user-level state. */
-void grpc_alarm_init(grpc_exec_ctx *exec_ctx, grpc_alarm *alarm,
-                     gpr_timespec deadline, grpc_iomgr_cb_func alarm_cb,
-                     void *alarm_cb_arg, gpr_timespec now);
+void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
+                     gpr_timespec deadline, grpc_iomgr_cb_func timer_cb,
+                     void *timer_cb_arg, gpr_timespec now);
 
-/* Note that there is no alarm destroy function. This is because the
-   alarm is a one-time occurrence with a guarantee that the callback will
+/* Note that there is no timer destroy function. This is because the
+   timer is a one-time occurrence with a guarantee that the callback will
    be called exactly once, either at expiration or cancellation. Thus, all
-   the internal alarm event management state is destroyed just before
+   the internal timer event management state is destroyed just before
    that callback is invoked. If the user has additional state associated with
-   the alarm, the user is responsible for determining when it is safe to
+   the timer, the user is responsible for determining when it is safe to
    destroy that state. */
 
-/* Cancel an *alarm.
+/* Cancel an *timer.
    There are three cases:
-   1. We normally cancel the alarm
-   2. The alarm has already run
-   3. We can't cancel the alarm because it is "in flight".
+   1. We normally cancel the timer
+   2. The timer has already run
+   3. We can't cancel the timer because it is "in flight".
 
    In all of these cases, the cancellation is still considered successful.
-   They are essentially distinguished in that the alarm_cb will be run
+   They are essentially distinguished in that the timer_cb will be run
    exactly once from either the cancellation (with status CANCELLED)
    or from the activation (with status SUCCESS)
 
    Note carefully that the callback function MAY occur in the same callstack
-   as grpc_alarm_cancel. It's expected that most alarms will be cancelled (their
+   as grpc_timer_cancel. It's expected that most timers will be cancelled (their
    primary use is to implement deadlines), and so this code is optimized such
    that cancellation costs as little as possible. Making callbacks run inline
    matches this aim.
 
-   Requires:  cancel() must happen after add() on a given alarm */
-void grpc_alarm_cancel(grpc_exec_ctx *exec_ctx, grpc_alarm *alarm);
+   Requires:  cancel() must happen after add() on a given timer */
+void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_ALARM_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_TIMER_H */

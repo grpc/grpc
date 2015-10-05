@@ -31,27 +31,27 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H
-#define GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H
+#ifndef GRPC_INTERNAL_CORE_IOMGR_TIMER_HEAP_H
+#define GRPC_INTERNAL_CORE_IOMGR_TIMER_HEAP_H
 
-#include "src/core/iomgr/alarm.h"
+#include "src/core/iomgr/timer.h"
 
 typedef struct {
-  grpc_alarm **alarms;
-  gpr_uint32 alarm_count;
-  gpr_uint32 alarm_capacity;
-} grpc_alarm_heap;
+  grpc_timer **timers;
+  gpr_uint32 timer_count;
+  gpr_uint32 timer_capacity;
+} grpc_timer_heap;
 
-/* return 1 if the new alarm is the first alarm in the heap */
-int grpc_alarm_heap_add(grpc_alarm_heap *heap, grpc_alarm *alarm);
+/* return 1 if the new timer is the first timer in the heap */
+int grpc_timer_heap_add(grpc_timer_heap *heap, grpc_timer *timer);
 
-void grpc_alarm_heap_init(grpc_alarm_heap *heap);
-void grpc_alarm_heap_destroy(grpc_alarm_heap *heap);
+void grpc_timer_heap_init(grpc_timer_heap *heap);
+void grpc_timer_heap_destroy(grpc_timer_heap *heap);
 
-void grpc_alarm_heap_remove(grpc_alarm_heap *heap, grpc_alarm *alarm);
-grpc_alarm *grpc_alarm_heap_top(grpc_alarm_heap *heap);
-void grpc_alarm_heap_pop(grpc_alarm_heap *heap);
+void grpc_timer_heap_remove(grpc_timer_heap *heap, grpc_timer *timer);
+grpc_timer *grpc_timer_heap_top(grpc_timer_heap *heap);
+void grpc_timer_heap_pop(grpc_timer_heap *heap);
 
-int grpc_alarm_heap_is_empty(grpc_alarm_heap *heap);
+int grpc_timer_heap_is_empty(grpc_timer_heap *heap);
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H */
+#endif /* GRPC_INTERNAL_CORE_IOMGR_TIMER_HEAP_H */
