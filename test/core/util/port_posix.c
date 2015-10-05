@@ -213,15 +213,25 @@ static void got_port_from_server(grpc_exec_ctx *exec_ctx, void *arg,
   size_t i;
   int port = 0;
   portreq *pr = arg;
+  int failed = 0;
 
-  if (!response || response->status != 200) {
+  if (!response) {
+    failed = 1;
+    gpr_log(GPR_DEBUG,
+            "failed port pick from server: retrying [response=NULL]");
+  } else if (response->status != 200) {
+    failed = 1;
+    gpr_log(GPR_DEBUG, "failed port pick from server: status=%d",
+            response->status);
+  }
+
+  if (failed) {
     grpc_httpcli_request req;
     memset(&req, 0, sizeof(req));
     GPR_ASSERT(pr->retries < 10);
     pr->retries++;
     req.host = pr->server;
     req.path = "/get";
-    gpr_log(GPR_DEBUG, "failed port pick from server: retrying");
     sleep(1);
     grpc_httpcli_get(exec_ctx, pr->ctx, &pr->pollset, &req,
                      GRPC_TIMEOUT_SECONDS_TO_DEADLINE(10), got_port_from_server,
