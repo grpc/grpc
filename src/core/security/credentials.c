@@ -171,8 +171,8 @@ void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials *creds, grpc_auth_metadata_processor processor) {
   GRPC_API_TRACE(
       "grpc_server_credentials_set_auth_metadata_processor("
-        "creds=%p, "
-        "processor=grpc_auth_metadata_processor { process: %lx, state: %p })",
+      "creds=%p, "
+      "processor=grpc_auth_metadata_processor { process: %lx, state: %p })",
       3, (creds, (unsigned long)processor.process, processor.state));
   if (creds == NULL) return;
   if (creds->processor.destroy != NULL && creds->processor.state != NULL) {
@@ -325,10 +325,11 @@ grpc_credentials *grpc_ssl_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
     void *reserved) {
   grpc_ssl_credentials *c = gpr_malloc(sizeof(grpc_ssl_credentials));
-  GRPC_API_TRACE("grpc_ssl_credentials_create(pem_root_certs=%s, "
-                                             "pem_key_cert_pair=%p, "
-                                             "reserved=%p)",
-                 3, (pem_root_certs, pem_key_cert_pair, reserved));
+  GRPC_API_TRACE(
+      "grpc_ssl_credentials_create(pem_root_certs=%s, "
+      "pem_key_cert_pair=%p, "
+      "reserved=%p)",
+      3, (pem_root_certs, pem_key_cert_pair, reserved));
   GPR_ASSERT(reserved == NULL);
   memset(c, 0, sizeof(grpc_ssl_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_SSL;
@@ -345,10 +346,10 @@ grpc_server_credentials *grpc_ssl_server_credentials_create(
       gpr_malloc(sizeof(grpc_ssl_server_credentials));
   GRPC_API_TRACE(
       "grpc_ssl_server_credentials_create("
-        "pem_root_certs=%s, pem_key_cert_pairs=%p, num_key_cert_pairs=%lu, "
-        "force_client_auth=%d, reserved=%p)", 5,
-      (pem_root_certs, pem_key_cert_pairs, (unsigned long)num_key_cert_pairs,
-       force_client_auth, reserved));
+      "pem_root_certs=%s, pem_key_cert_pairs=%p, num_key_cert_pairs=%lu, "
+      "force_client_auth=%d, reserved=%p)",
+      5, (pem_root_certs, pem_key_cert_pairs, (unsigned long)num_key_cert_pairs,
+          force_client_auth, reserved));
   GPR_ASSERT(reserved == NULL);
   memset(c, 0, sizeof(grpc_ssl_server_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_SSL;
@@ -469,12 +470,12 @@ grpc_credentials *grpc_service_account_jwt_access_credentials_create(
     const char *json_key, gpr_timespec token_lifetime, void *reserved) {
   GRPC_API_TRACE(
       "grpc_service_account_jwt_access_credentials_create("
-        "json_key=%s, "
-        "token_lifetime="
-          "gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
-          "reserved=%p)",
-      5, (json_key, (long)token_lifetime.tv_sec,
-          token_lifetime.tv_nsec, (int)token_lifetime.clock_type, reserved));
+      "json_key=%s, "
+      "token_lifetime="
+      "gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
+      "reserved=%p)",
+      5, (json_key, (long)token_lifetime.tv_sec, token_lifetime.tv_nsec,
+          (int)token_lifetime.clock_type, reserved));
   GPR_ASSERT(reserved == NULL);
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
       grpc_auth_json_key_create_from_string(json_key), token_lifetime);
@@ -748,9 +749,10 @@ grpc_credentials *grpc_refresh_token_credentials_create_from_auth_refresh_token(
 
 grpc_credentials *grpc_google_refresh_token_credentials_create(
     const char *json_refresh_token, void *reserved) {
-  GRPC_API_TRACE("grpc_refresh_token_credentials_create(json_refresh_token=%s, "
-                 "reserved=%p)",
-                 2, (json_refresh_token, reserved));
+  GRPC_API_TRACE(
+      "grpc_refresh_token_credentials_create(json_refresh_token=%s, "
+      "reserved=%p)",
+      2, (json_refresh_token, reserved));
   GPR_ASSERT(reserved == NULL);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(
       grpc_auth_refresh_token_create_from_string(json_refresh_token));
@@ -851,9 +853,10 @@ grpc_credentials *grpc_access_token_credentials_create(const char *access_token,
   grpc_access_token_credentials *c =
       gpr_malloc(sizeof(grpc_access_token_credentials));
   char *token_md_value;
-  GRPC_API_TRACE("grpc_access_token_credentials_create(access_token=%s, "
-                                                       "reserved=%p)", 2,
-                 (access_token, reserved));
+  GRPC_API_TRACE(
+      "grpc_access_token_credentials_create(access_token=%s, "
+      "reserved=%p)",
+      2, (access_token, reserved));
   GPR_ASSERT(reserved == NULL);
   memset(c, 0, sizeof(grpc_access_token_credentials));
   c->base.type = GRPC_CREDENTIALS_TYPE_OAUTH2;
@@ -1090,9 +1093,10 @@ grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
   grpc_credentials_array creds1_array;
   grpc_credentials_array creds2_array;
   grpc_composite_credentials *c;
-  GRPC_API_TRACE("grpc_composite_credentials_create(creds1=%p, creds2=%p, "
-                                                   "reserved=%p)", 3,
-                 (creds1, creds2, reserved));
+  GRPC_API_TRACE(
+      "grpc_composite_credentials_create(creds1=%p, creds2=%p, "
+      "reserved=%p)",
+      3, (creds1, creds2, reserved));
   GPR_ASSERT(reserved == NULL);
   GPR_ASSERT(creds1 != NULL);
   GPR_ASSERT(creds2 != NULL);
@@ -1195,9 +1199,10 @@ static grpc_credentials_vtable iam_vtable = {
 grpc_credentials *grpc_google_iam_credentials_create(
     const char *token, const char *authority_selector, void *reserved) {
   grpc_google_iam_credentials *c;
-  GRPC_API_TRACE("grpc_iam_credentials_create(token=%s, authority_selector=%s, "
-                                             "reserved=%p)",
-                 3, (token, authority_selector, reserved));
+  GRPC_API_TRACE(
+      "grpc_iam_credentials_create(token=%s, authority_selector=%s, "
+      "reserved=%p)",
+      3, (token, authority_selector, reserved));
   GPR_ASSERT(reserved == NULL);
   GPR_ASSERT(token != NULL);
   GPR_ASSERT(authority_selector != NULL);
