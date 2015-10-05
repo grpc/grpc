@@ -34,6 +34,7 @@ import os
 import shutil
 import sys
 import tempfile
+import multiprocessing
 sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..', 'run_tests'))
 
 assert sys.argv[1:], 'run generate_projects.sh instead of this directly'
@@ -73,13 +74,13 @@ for root, dirs, files in os.walk('templates'):
       cmd.append(root + '/' + f)
       jobs.append(jobset.JobSpec(cmd, shortname=out))
 
-jobset.run(jobs, maxjobs=4)
+jobset.run(jobs, maxjobs=multiprocessing.cpu_count())
 
 if test is not None:
   for s, g in test.iteritems():
     if os.path.isfile(g):
-      assert(0 == os.system('diff %s %s' % (s, g)))
+      assert 0 == os.system('diff %s %s' % (s, g)), s
       os.unlink(g)
     else:
-      assert(0 == os.system('diff -r %s %s' % (s, g)))
+      assert 0 == os.system('diff -r %s %s' % (s, g)), s
       shutil.rmtree(g, ignore_errors=True)

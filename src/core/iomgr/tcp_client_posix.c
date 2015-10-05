@@ -141,7 +141,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, int success) {
       err = getsockopt(fd->fd, SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
     } while (err < 0 && errno == EINTR);
     if (err < 0) {
-      gpr_log(GPR_ERROR, "getsockopt(ERROR): %s", strerror(errno));
+      gpr_log(GPR_ERROR, "failed to connect to '%s': getsockopt(ERROR): %s",
+              ac->addr_str, strerror(errno));
       goto finish;
     } else if (so_error != 0) {
       if (so_error == ENOBUFS) {
@@ -166,10 +167,14 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, int success) {
       } else {
         switch (so_error) {
           case ECONNREFUSED:
-            gpr_log(GPR_ERROR, "socket error: connection refused");
+            gpr_log(
+                GPR_ERROR,
+                "failed to connect to '%s': socket error: connection refused",
+                ac->addr_str);
             break;
           default:
-            gpr_log(GPR_ERROR, "socket error: %d", so_error);
+            gpr_log(GPR_ERROR, "failed to connect to '%s': socket error: %d",
+                    ac->addr_str, so_error);
             break;
         }
         goto finish;
@@ -181,7 +186,8 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, int success) {
       goto finish;
     }
   } else {
-    gpr_log(GPR_ERROR, "on_writable failed during connect");
+    gpr_log(GPR_ERROR, "failed to connect to '%s': timeout occurred",
+            ac->addr_str);
     goto finish;
   }
 

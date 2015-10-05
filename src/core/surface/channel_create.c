@@ -45,6 +45,7 @@
 #include "src/core/channel/http_client_filter.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/tcp_client.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/channel.h"
 #include "src/core/transport/chttp2_transport.h"
 
@@ -184,6 +185,9 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   grpc_mdctx *mdctx = grpc_mdctx_create();
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 0;
+  GRPC_API_TRACE(
+      "grpc_insecure_channel_create(target=%p, args=%p, reserved=%p)", 3,
+      (target, args, reserved));
   GPR_ASSERT(!reserved);
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;

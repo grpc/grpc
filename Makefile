@@ -4123,6 +4123,7 @@ LIBGRPC_SRC = \
     src/core/profiling/basic_timers.c \
     src/core/profiling/stap_timers.c \
     src/core/surface/alarm.c \
+    src/core/surface/api_trace.c \
     src/core/surface/byte_buffer.c \
     src/core/surface/byte_buffer_queue.c \
     src/core/surface/byte_buffer_reader.c \
@@ -4140,7 +4141,6 @@ LIBGRPC_SRC = \
     src/core/surface/server.c \
     src/core/surface/server_chttp2.c \
     src/core/surface/server_create.c \
-    src/core/surface/surface_trace.c \
     src/core/surface/version.c \
     src/core/transport/chttp2/alpn.c \
     src/core/transport/chttp2/bin_encoder.c \
@@ -4406,6 +4406,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/profiling/basic_timers.c \
     src/core/profiling/stap_timers.c \
     src/core/surface/alarm.c \
+    src/core/surface/api_trace.c \
     src/core/surface/byte_buffer.c \
     src/core/surface/byte_buffer_queue.c \
     src/core/surface/byte_buffer_reader.c \
@@ -4423,7 +4424,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/surface/server.c \
     src/core/surface/server_chttp2.c \
     src/core/surface/server_create.c \
-    src/core/surface/surface_trace.c \
     src/core/surface/version.c \
     src/core/transport/chttp2/alpn.c \
     src/core/transport/chttp2/bin_encoder.c \

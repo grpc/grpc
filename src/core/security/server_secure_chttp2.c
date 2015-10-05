@@ -44,6 +44,7 @@
 #include "src/core/security/credentials.h"
 #include "src/core/security/security_connector.h"
 #include "src/core/security/security_context.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/server.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
@@ -221,6 +222,11 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   grpc_security_status status = GRPC_SECURITY_ERROR;
   grpc_security_connector *sc = NULL;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
+  GRPC_API_TRACE(
+      "grpc_server_add_secure_http2_port("
+      "server=%p, addr=%s, creds=%p)",
+      3, (server, addr, creds));
 
   /* create security context */
   if (creds == NULL) goto error;

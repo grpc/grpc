@@ -352,6 +352,7 @@ static void basic_do_promote(grpc_exec_ctx *exec_ctx, void *args, int success) {
   if (pollset->shutting_down) {
     /* We don't care about this pollset anymore. */
     if (pollset->in_flight_cbs == 0 && !pollset->called_shutdown) {
+      pollset->called_shutdown = 1;
       finish_shutdown(exec_ctx, pollset);
     }
   } else if (grpc_fd_is_orphaned(fd)) {
@@ -476,6 +477,7 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
   if (fd) {
     pfd[2].fd = fd->fd;
     pfd[2].revents = 0;
+    GRPC_FD_REF(fd, "basicpoll_begin");
     gpr_mu_unlock(&pollset->mu);
     pfd[2].events =
         (short)grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
@@ -521,6 +523,10 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
         grpc_fd_become_writable(exec_ctx, fd);
       }
     }
+  }
+
+  if (fd) {
+    GRPC_FD_UNREF(fd, "basicpoll_begin");
   }
 }
 
