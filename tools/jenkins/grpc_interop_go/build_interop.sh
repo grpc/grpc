@@ -37,6 +37,8 @@ set -e
 git clone --recursive /var/local/jenkins/grpc-go src/gooogle.golang.org/grpc
 
 # Get dependencies from GitHub
+# NOTE: once grpc-go dependencies change, this needs to be updated manually
+# but we don't expect this to happen any time soon.
 go get github.com/golang/protobuf/proto
 go get golang.org/x/net/context
 go get golang.org/x/net/trace
