@@ -728,7 +728,7 @@ def _start_port_server(port_server_port):
   if not running:
     port_log = open('portlog.txt', 'w')
     port_server = subprocess.Popen(
-        ['python', 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port],
+        ['python2.7', 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port],
         stderr=subprocess.STDOUT,
         stdout=port_log)
     # ensure port server is up
