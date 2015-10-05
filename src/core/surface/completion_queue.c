@@ -38,6 +38,7 @@
 
 #include "src/core/iomgr/pollset.h"
 #include "src/core/support/string.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/event_string.h"
 #include "src/core/surface/surface_trace.h"
@@ -75,6 +76,7 @@ static void on_pollset_destroy_done(grpc_exec_ctx *exec_ctx, void *cc,
 
 grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
   grpc_completion_queue *cc = gpr_malloc(sizeof(grpc_completion_queue));
+  GRPC_API_TRACE("grpc_completion_queue_create(reserved=%p)", 1, (reserved));
   GPR_ASSERT(!reserved);
   memset(cc, 0, sizeof(*cc));
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
@@ -182,6 +184,13 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   gpr_timespec now;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
+  GRPC_API_TRACE(
+      "grpc_completion_queue_next("
+      "cc=%p, "
+      "deadline=gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
+      "reserved=%p)",
+      5, (cc, (long)deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
+          reserved));
   GPR_ASSERT(!reserved);
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
@@ -259,6 +268,13 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   int first_loop = 1;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
+  GRPC_API_TRACE(
+      "grpc_completion_queue_pluck("
+      "cc=%p, tag=%p, "
+      "deadline=gpr_timespec { tv_sec: %ld, tv_nsec: %d, clock_type: %d }, "
+      "reserved=%p)",
+      6, (cc, tag, (long)deadline.tv_sec, deadline.tv_nsec,
+          (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
@@ -324,6 +340,7 @@ done:
    to zero here, then enter shutdown mode and wake up any waiters */
 void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GRPC_API_TRACE("grpc_completion_queue_shutdown(cc=%p)", 1, (cc));
   gpr_mu_lock(GRPC_POLLSET_MU(&cc->pollset));
   if (cc->shutdown_called) {
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
@@ -343,6 +360,7 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
 }
 
 void grpc_completion_queue_destroy(grpc_completion_queue *cc) {
+  GRPC_API_TRACE("grpc_completion_queue_destroy(cc=%p)", 1, (cc));
   grpc_completion_queue_shutdown(cc);
   GRPC_CQ_INTERNAL_UNREF(cc, "destroy");
 }

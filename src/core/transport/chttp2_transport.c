@@ -1136,7 +1136,7 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
     grpc_chttp2_publish_reads(exec_ctx, &t->global, &t->parsing);
     t->parsing_active = 0;
   }
-  if (!success || i != t->read_buffer.count) {
+  if (!success || i != t->read_buffer.count || t->closed) {
     drop_connection(exec_ctx, t);
     read_error_locked(exec_ctx, t);
   } else if (!t->closed) {

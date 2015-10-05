@@ -28,32 +28,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# This script is invoked by build_docker_and_run_tests.sh inside a docker
-# container. You should never need to call this script on your own.
-
+# Builds Go interop server and client in a base image.
 set -e
 
-export CONFIG=$config
-export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
+# Clone just the grpc-go source code without any dependencies.
+# We are cloning from a local git repo that contains the right revision
+# to test instead of using "go get" to download from Github directly.
+git clone --recursive /var/local/jenkins/grpc-go src/gooogle.golang.org/grpc
 
-mkdir -p /var/local/git
-git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
+# Get dependencies from GitHub
+# NOTE: once grpc-go dependencies change, this needs to be updated manually
+# but we don't expect this to happen any time soon.
+go get github.com/golang/protobuf/proto
+go get golang.org/x/net/context
+go get golang.org/x/net/trace
+go get golang.org/x/oauth2
+go get google.golang.org/cloud
 
-nvm use 0.12
-rvm use ruby-2.1
-
-mkdir -p reports
-
-$RUN_TESTS_COMMAND
-
-cd reports
-echo '<html><head></head><body>' > index.html
-find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
-  d=${d#*/}
-  n=${d//_/ }
-  echo "<a href='$d/index.html'>$n</a><br />" >> index.html
-done
-echo '</body></html>' >> index.html
-cd ..
-
-zip -r reports.zip reports
+# Build the interop client and server
+(cd src/google.golang.org/grpc/interop/client && go install)
+(cd src/google.golang.org/grpc/interop/server && go install)
