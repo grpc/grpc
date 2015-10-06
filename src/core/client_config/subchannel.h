@@ -149,4 +149,10 @@ struct grpc_subchannel_args {
 grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
                                         grpc_subchannel_args *args);
 
+/** Return the metadata context associated with the subchannel */
+grpc_mdctx *grpc_subchannel_get_mdctx(grpc_subchannel *subchannel);
+
+/** Return the master channel associated with the subchannel */
+grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel);
+
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H */
