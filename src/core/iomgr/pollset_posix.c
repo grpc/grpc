@@ -98,8 +98,8 @@ static void push_front_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
   worker->prev->next = worker->next->prev = worker;
 }
 
-void grpc_pollset_kick_ex(grpc_pollset *p, grpc_pollset_worker *specific_worker,
-                          gpr_uint32 flags) {
+void grpc_pollset_kick_ext(grpc_pollset *p, grpc_pollset_worker *specific_worker,
+                           gpr_uint32 flags) {
   /* pollset->mu already held */
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
@@ -151,7 +151,7 @@ void grpc_pollset_kick_ex(grpc_pollset *p, grpc_pollset_worker *specific_worker,
 }
 
 void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
-  grpc_pollset_kick_ex(p, specific_worker, 0);
+  grpc_pollset_kick_ext(p, specific_worker, 0);
 }
 
 /* global state management */

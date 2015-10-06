@@ -118,8 +118,8 @@ int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
 #define GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP 2
 /* As per grpc_pollset_kick, with an extended set of flags (defined above)
    -- mostly for fd_posix's use. */
-void grpc_pollset_kick_ex(grpc_pollset *p, grpc_pollset_worker *specific_worker,
-                          gpr_uint32 flags);
+void grpc_pollset_kick_ext(grpc_pollset *p, grpc_pollset_worker *specific_worker,
+                           gpr_uint32 flags);
 
 /* turn a pollset into a multipoller: platform specific */
 typedef void (*grpc_platform_become_multipoller_type)(grpc_exec_ctx *exec_ctx,
