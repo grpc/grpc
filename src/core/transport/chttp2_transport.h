@@ -37,8 +37,8 @@
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/transport/transport.h"
 
-extern int grpc_http_trace;
-extern int grpc_flowctl_trace;
+extern gpr_atm grpc_http_trace;
+extern gpr_atm grpc_flowctl_trace;
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,

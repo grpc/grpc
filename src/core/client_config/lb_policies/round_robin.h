@@ -36,7 +36,7 @@
 
 #include "src/core/client_config/lb_policy.h"
 
-extern int grpc_lb_round_robin_trace;
+extern gpr_atm grpc_lb_round_robin_trace;
 
 #include "src/core/client_config/lb_policy_factory.h"
 

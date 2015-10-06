@@ -34,10 +34,13 @@
 #ifndef GRPC_INTERNAL_CORE_DEBUG_TRACE_H
 #define GRPC_INTERNAL_CORE_DEBUG_TRACE_H
 
+#include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 
-void grpc_register_tracer(const char *name, int *flag);
+void grpc_register_tracer(const char *name, gpr_atm *flag);
 void grpc_tracer_init(const char *env_var_name);
 void grpc_tracer_shutdown(void);
+
+#define GRPC_TRACE_ENABLED(tracer) gpr_atm_acq_load(&(tracer))
 
 #endif /* GRPC_INTERNAL_CORE_DEBUG_TRACE_H */

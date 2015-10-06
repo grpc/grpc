@@ -36,9 +36,10 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include "src/core/debug/trace.h"
 #include "src/core/transport/connectivity_state.h"
 
-int grpc_lb_round_robin_trace = 0;
+gpr_atm grpc_lb_round_robin_trace = 0;
 
 /** List of entities waiting for a pick.
  *
@@ -135,7 +136,7 @@ static void advance_last_picked_locked(round_robin_lb_policy *p) {
     GPR_ASSERT(p->ready_list_last_pick == &p->ready_list);
   }
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "[READYLIST] ADVANCED LAST PICK. NOW AT NODE %p (SC %p)",
             p->ready_list_last_pick, p->ready_list_last_pick->subchannel);
   }
@@ -159,7 +160,7 @@ static ready_list *add_connected_sc_locked(round_robin_lb_policy *p,
     p->ready_list.prev->next = new_elem;
     p->ready_list.prev = new_elem;
   }
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "[READYLIST] ADDING NODE %p (SC %p)", new_elem, csc);
   }
   return new_elem;
@@ -188,7 +189,7 @@ static void remove_disconnected_sc_locked(round_robin_lb_policy *p,
     node->next->prev = node->prev;
   }
 
-  if (grpc_lb_round_robin_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_DEBUG, "[READYLIST] REMOVED NODE %p (SC %p)", node,
             node->subchannel);
   }
@@ -297,7 +298,7 @@ void rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   if ((selected = peek_next_connected_locked(p))) {
     gpr_mu_unlock(&p->mu);
     *target = selected->subchannel;
-    if (grpc_lb_round_robin_trace) {
+    if (GRPC_TRACE_ENABLED(grpc_lb_round_robin_trace)) {
       gpr_log(GPR_DEBUG, "[RR PICK] TARGET <-- SUBCHANNEL %p (NODE %p)",
               selected->subchannel, selected);
     }
@@ -363,7 +364,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
           *pp->target = selected->subchannel;
-          if (grpc_lb_round_robin_trace) {
+          if (GRPC_TRACE_ENABLED(grpc_lb_round_robin_trace)) {
             gpr_log(GPR_DEBUG,
                     "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",
                     selected->subchannel, selected);

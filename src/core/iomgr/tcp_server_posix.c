@@ -55,6 +55,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "src/core/debug/trace.h"
 #include "src/core/iomgr/pollset_posix.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/sockaddr_utils.h"
@@ -333,7 +334,7 @@ static void on_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
     addr_str = grpc_sockaddr_to_uri((struct sockaddr *)&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
-    if (grpc_tcp_trace) {
+    if (GRPC_TRACE_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 

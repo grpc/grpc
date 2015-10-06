@@ -38,7 +38,7 @@
 
 /* --- Tracing. --- */
 
-int tsi_tracing_enabled = 0;
+gpr_atm tsi_tracing_enabled = 0;
 
 /* --- Utils. --- */
 

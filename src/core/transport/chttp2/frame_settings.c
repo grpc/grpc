@@ -232,7 +232,7 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
                     (int)transport_parsing->initial_window_update);
           }
           parser->incoming_settings[parser->id] = parser->value;
-          if (grpc_http_trace) {
+          if (GRPC_TRACE_ENABLED(grpc_http_trace)) {
             gpr_log(GPR_DEBUG, "CHTTP2:%s: got setting %d = %d",
                     transport_parsing->is_client ? "CLI" : "SVR", parser->id,
                     parser->value);

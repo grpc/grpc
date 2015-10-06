@@ -37,6 +37,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <grpc/support/atm.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,7 +66,7 @@ const char *tsi_result_to_string(tsi_result result);
 /* --- tsi tracing --- */
 
 /* Set this early to avoid races */
-extern int tsi_tracing_enabled;
+extern gpr_atm tsi_tracing_enabled;
 
 /* --- tsi_frame_protector object ---
 

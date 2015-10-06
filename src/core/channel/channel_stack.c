@@ -32,12 +32,13 @@
  */
 
 #include "src/core/channel/channel_stack.h"
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
 #include <stdlib.h>
 #include <string.h>
 
-int grpc_trace_channel = 0;
+gpr_atm grpc_trace_channel = 0;
 
 /* Memory layouts.
 

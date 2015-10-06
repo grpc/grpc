@@ -34,6 +34,7 @@
 #include "src/core/security/secure_endpoint.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/slice.h>
@@ -65,7 +66,7 @@ typedef struct {
   gpr_refcount ref;
 } secure_endpoint;
 
-int grpc_trace_secure_endpoint = 0;
+gpr_atm grpc_trace_secure_endpoint = 0;
 
 static void destroy(grpc_exec_ctx *exec_ctx, secure_endpoint *secure_ep) {
   secure_endpoint *ep = secure_ep;

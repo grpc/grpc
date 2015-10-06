@@ -32,6 +32,7 @@
  */
 
 #include "src/core/transport/connectivity_state.h"
+#include "src/core/debug/trace.h"
 
 #include <string.h>
 
@@ -39,7 +40,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-int grpc_connectivity_state_trace = 0;
+gpr_atm grpc_connectivity_state_trace = 0;
 
 const char *grpc_connectivity_state_name(grpc_connectivity_state state) {
   switch (state) {
@@ -87,7 +88,7 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
 
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker) {
-  if (grpc_connectivity_state_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_connectivity_state_trace)) {
     gpr_log(GPR_DEBUG, "CONWATCH: %s: get %s", tracker->name,
             grpc_connectivity_state_name(tracker->current_state));
   }
@@ -97,7 +98,7 @@ grpc_connectivity_state grpc_connectivity_state_check(
 int grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
     grpc_connectivity_state *current, grpc_closure *notify) {
-  if (grpc_connectivity_state_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_connectivity_state_trace)) {
     gpr_log(GPR_DEBUG, "CONWATCH: %s: from %s [cur=%s] notify=%p",
             tracker->name, grpc_connectivity_state_name(*current),
             grpc_connectivity_state_name(tracker->current_state), notify);
@@ -141,7 +142,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
                                  grpc_connectivity_state state,
                                  const char *reason) {
   grpc_connectivity_state_watcher *w;
-  if (grpc_connectivity_state_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_connectivity_state_trace)) {
     gpr_log(GPR_DEBUG, "SET: %s: %s --> %s [%s]", tracker->name,
             grpc_connectivity_state_name(tracker->current_state),
             grpc_connectivity_state_name(state), reason);

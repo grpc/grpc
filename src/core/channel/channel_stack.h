@@ -44,6 +44,7 @@
 #include <stddef.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include "src/core/debug/trace.h"
 #include "src/core/transport/transport.h"
@@ -199,9 +200,9 @@ void grpc_call_log_op(char *file, int line, gpr_log_severity severity,
 void grpc_call_element_send_cancel(grpc_exec_ctx *exec_ctx,
                                    grpc_call_element *cur_elem);
 
-extern int grpc_trace_channel;
+extern gpr_atm grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
-  if (grpc_trace_channel) grpc_call_log_op(sev, elem, op)
+  if (GRPC_TRACE_ENABLED(grpc_trace_channel)) grpc_call_log_op(sev, elem, op)
 
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CHANNEL_STACK_H */

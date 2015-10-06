@@ -598,8 +598,8 @@ void grpc_chttp2_parsing_become_skip_parser(
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-extern int grpc_http_trace;
-extern int grpc_flowctl_trace;
+extern gpr_atm grpc_http_trace;
+extern gpr_atm grpc_flowctl_trace;
 
 #define GRPC_CHTTP2_IF_TRACING(stmt) \
   if (!(grpc_http_trace))            \
