@@ -32,6 +32,8 @@
 import random
 import time
 
+from grpc.beta import implementations
+
 import route_guide_pb2
 import route_guide_resources
 
@@ -115,15 +117,16 @@ def guide_route_chat(stub):
 
 
 def run():
-  with route_guide_pb2.early_adopter_create_RouteGuide_stub('localhost', 50051) as stub:
-    print "-------------- GetFeature --------------"
-    guide_get_feature(stub)
-    print "-------------- ListFeatures --------------"
-    guide_list_features(stub)
-    print "-------------- RecordRoute --------------"
-    guide_record_route(stub)
-    print "-------------- RouteChat --------------"
-    guide_route_chat(stub)
+  channel = implementations.insecure_channel('localhost', 50051)
+  stub = route_guide_pb2.beta_create_RouteGuide_stub(channel)
+  print "-------------- GetFeature --------------"
+  guide_get_feature(stub)
+  print "-------------- ListFeatures --------------"
+  guide_list_features(stub)
+  print "-------------- RecordRoute --------------"
+  guide_record_route(stub)
+  print "-------------- RouteChat --------------"
+  guide_route_chat(stub)
 
 
 if __name__ == '__main__':

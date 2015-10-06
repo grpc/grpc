@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -51,18 +51,21 @@ with open(__file__) as f:
   _MY_VERSION = hashlib.sha1(f.read()).hexdigest()
 
 
-def refill_pool():
+def refill_pool(max_timeout, req):
   """Scan for ports not marked for being in use"""
-  for i in range(10000, 65000):
+  for i in range(1025, 32767):
     if len(pool) > 100: break
     if i in in_use:
       age = time.time() - in_use[i]
-      if age < 600:
+      if age < max_timeout:
         continue
+      req.log_message("kill old request %d" % i)
       del in_use[i]
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
       s.bind(('localhost', i))
+      req.log_message("found available port %d" % i)
       pool.append(i)
     except:
       pass # we really don't care about failures
@@ -70,11 +73,16 @@ def refill_pool():
       s.close()
 
 
-def allocate_port():
+def allocate_port(req):
   global pool
   global in_use
-  if not pool:
-    refill_pool()
+  max_timeout = 600
+  while not pool:
+    refill_pool(max_timeout, req)
+    if not pool:
+      req.log_message("failed to find ports: retrying soon")
+      time.sleep(1)
+      max_timeout /= 2
   port = pool[0]
   pool = pool[1:]
   in_use[port] = time.time()
@@ -94,15 +102,32 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_response(200)
       self.send_header('Content-Type', 'text/plain')
       self.end_headers()
-      p = allocate_port()
+      p = allocate_port(self)
       self.log_message('allocated port %d' % p)
       self.wfile.write('%d' % p)
+    elif self.path[0:6] == '/drop/':
+      self.send_response(200)
+      self.send_header('Content-Type', 'text/plain')
+      self.end_headers()
+      p = int(self.path[6:])
+      del in_use[p]
+      pool.append(p)
+      self.log_message('drop port %d' % p)
     elif self.path == '/version':
       # fetch a version string and the current process pid
       self.send_response(200)
       self.send_header('Content-Type', 'text/plain')
       self.end_headers()
       self.wfile.write(_MY_VERSION)
+    elif self.path == '/dump':
+      # yaml module is not installed on Macs and Windows machines by default
+      # so we import it lazily (/dump action is only used for debugging)
+      import yaml
+      self.send_response(200)
+      self.send_header('Content-Type', 'text/plain')
+      self.end_headers()
+      now = time.time()
+      self.wfile.write(yaml.dump({'pool': pool, 'in_use': dict((k, now - v) for k, v in in_use.iteritems())}))
     elif self.path == '/quit':
       self.send_response(200)
       self.end_headers()

@@ -34,6 +34,7 @@ import unittest
 from grpc import _grpcio_metadata
 from grpc._adapter import _types
 from grpc._adapter import _low
+from grpc_test import test_common
 
 
 def wait_for_events(completion_queues, deadline):
@@ -140,16 +141,16 @@ class InsecureServerInsecureClient(unittest.TestCase):
     self.assertIsInstance(request_event.call, _low.Call)
     self.assertIs(server_request_tag, request_event.tag)
     self.assertEqual(1, len(request_event.results))
-    received_initial_metadata = dict(request_event.results[0].initial_metadata)
+    received_initial_metadata = request_event.results[0].initial_metadata
     # Check that our metadata were transmitted
-    self.assertEqual(
-        dict(client_initial_metadata),
-        dict((x, received_initial_metadata[x])
-             for x in zip(*client_initial_metadata)[0]))
+    self.assertTrue(test_common.metadata_transmitted(client_initial_metadata,
+                                                     received_initial_metadata))
     # Check that Python's user agent string is a part of the full user agent
     # string
+    received_initial_metadata_dict = dict(received_initial_metadata)
+    self.assertIn('user-agent', received_initial_metadata_dict)
     self.assertIn('Python-gRPC-{}'.format(_grpcio_metadata.__version__),
-                  received_initial_metadata['user-agent'])
+                  received_initial_metadata_dict['user-agent'])
     self.assertEqual(method, request_event.call_details.method)
     self.assertEqual(host, request_event.call_details.host)
     self.assertLess(abs(deadline - request_event.call_details.deadline),
@@ -193,13 +194,15 @@ class InsecureServerInsecureClient(unittest.TestCase):
       self.assertNotIn(client_result.type, found_client_op_types)
       found_client_op_types.add(client_result.type)
       if client_result.type == _types.OpType.RECV_INITIAL_METADATA:
-        self.assertEqual(dict(server_initial_metadata),
-                         dict(client_result.initial_metadata))
+        self.assertTrue(
+            test_common.metadata_transmitted(server_initial_metadata,
+                                             client_result.initial_metadata))
       elif client_result.type == _types.OpType.RECV_MESSAGE:
         self.assertEqual(response, client_result.message)
       elif client_result.type == _types.OpType.RECV_STATUS_ON_CLIENT:
-        self.assertEqual(dict(server_trailing_metadata),
-                         dict(client_result.trailing_metadata))
+        self.assertTrue(
+            test_common.metadata_transmitted(server_trailing_metadata,
+                                             client_result.trailing_metadata))
         self.assertEqual(server_status_details, client_result.status.details)
         self.assertEqual(server_status_code, client_result.status.code)
     self.assertEqual(set([

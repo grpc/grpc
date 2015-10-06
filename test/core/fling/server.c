@@ -123,7 +123,7 @@ static void handle_unary_method(void) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  error = grpc_call_start_batch(call, unary_ops, op - unary_ops,
+  error = grpc_call_start_batch(call, unary_ops, (size_t)(op - unary_ops),
                                 tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
   grpc_test_init(1, fake_argv);
 
   grpc_init();
-  srand(clock());
+  srand((unsigned)clock());
 
   cl = gpr_cmdline_create("fling server");
   gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
@@ -268,7 +268,7 @@ int main(int argc, char **argv) {
             } else {
               GPR_ASSERT(shutdown_started);
             }
-            /*	    request_call();
+            /*      request_call();
              */
             break;
           case FLING_SERVER_READ_FOR_STREAMING:

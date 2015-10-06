@@ -43,6 +43,7 @@
 
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/sockaddr_utils.h"
+#include "src/core/support/block_annotate.h"
 #include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
@@ -50,6 +51,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpc/support/useful.h>
 
 typedef struct {
   char *name;
@@ -102,14 +104,18 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
   hints.ai_socktype = SOCK_STREAM; /* stream socket */
   hints.ai_flags = AI_PASSIVE;     /* for wildcard IP address */
 
+  GRPC_SCHEDULING_START_BLOCKING_REGION;
   s = getaddrinfo(host, port, &hints, &result);
+  GRPC_SCHEDULING_END_BLOCKING_REGION;
+
   if (s != 0) {
     /* Retry if well-known service name is recognized */
     char *svc[][2] = {{"http", "80"}, {"https", "443"}};
-    int i;
-    for (i = 0; i < (int)(sizeof(svc) / sizeof(svc[0])); i++) {
+    for (i = 0; i < GPR_ARRAY_SIZE(svc); i++) {
       if (strcmp(port, svc[i][0]) == 0) {
+        GRPC_SCHEDULING_START_BLOCKING_REGION;
         s = getaddrinfo(host, svc[i][1], &hints, &result);
+        GRPC_SCHEDULING_END_BLOCKING_REGION;
         break;
       }
     }
@@ -144,17 +150,19 @@ done:
 }
 
 /* Thread function to asynch-ify grpc_blocking_resolve_address */
-static void do_request(void *rp) {
+static void do_request_thread(void *rp) {
   request *r = rp;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_resolved_addresses *resolved =
       grpc_blocking_resolve_address(r->name, r->default_port);
   void *arg = r->arg;
   grpc_resolve_cb cb = r->cb;
   gpr_free(r->name);
   gpr_free(r->default_port);
-  cb(arg, resolved);
+  cb(&exec_ctx, arg, resolved);
   grpc_iomgr_unregister_object(&r->iomgr_object);
   gpr_free(r);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses *addrs) {
@@ -175,7 +183,7 @@ void grpc_resolve_address(const char *name, const char *default_port,
   r->default_port = gpr_strdup(default_port);
   r->cb = cb;
   r->arg = arg;
-  gpr_thd_new(&id, do_request, r, NULL);
+  gpr_thd_new(&id, do_request_thread, r, NULL);
 }
 
 #endif

@@ -67,9 +67,7 @@ static const grpc_metadata *find_metadata(const grpc_metadata *md,
   return NULL;
 }
 
-typedef struct {
-  size_t pseudo_refcount;
-} test_processor_state;
+typedef struct { size_t pseudo_refcount; } test_processor_state;
 
 static void process_oauth2_success(void *state, grpc_auth_context *ctx,
                                    const grpc_metadata *md, size_t md_count,
@@ -218,7 +216,6 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
 static grpc_end2end_test_config configs[] = {
     {"chttp2/simple_ssl_with_oauth2_fullstack",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION |
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
      chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack,

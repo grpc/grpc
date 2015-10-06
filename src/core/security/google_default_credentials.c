@@ -42,6 +42,7 @@
 #include "src/core/httpcli/httpcli.h"
 #include "src/core/support/env.h"
 #include "src/core/support/file.h"
+#include "src/core/surface/api_trace.h"
 
 /* -- Constants. -- */
 
@@ -63,7 +64,8 @@ typedef struct {
 } compute_engine_detector;
 
 static void on_compute_engine_detection_http_response(
-    void *user_data, const grpc_httpcli_response *response) {
+    grpc_exec_ctx *exec_ctx, void *user_data,
+    const grpc_httpcli_response *response) {
   compute_engine_detector *detector = (compute_engine_detector *)user_data;
   if (response != NULL && response->status == 200 && response->hdr_count > 0) {
     /* Internet providers can return a generic response to all requests, so
@@ -84,12 +86,16 @@ static void on_compute_engine_detection_http_response(
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector->pollset));
 }
 
-static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int s) {
+  grpc_pollset_destroy(p);
+}
 
 static int is_stack_running_on_compute_engine(void) {
   compute_engine_detector detector;
   grpc_httpcli_request request;
   grpc_httpcli_context context;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_closure destroy_closure;
 
   /* The http call is local. If it takes more than one sec, it is for sure not
      on compute engine. */
@@ -106,22 +112,27 @@ static int is_stack_running_on_compute_engine(void) {
   grpc_httpcli_context_init(&context);
 
   grpc_httpcli_get(
-      &context, &detector.pollset, &request,
+      &exec_ctx, &context, &detector.pollset, &request,
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), max_detection_delay),
       on_compute_engine_detection_http_response, &detector);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 
   /* Block until we get the response. This is not ideal but this should only be
      called once for the lifetime of the process by the default credentials. */
   gpr_mu_lock(GRPC_POLLSET_MU(&detector.pollset));
   while (!detector.is_done) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&detector.pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
+    grpc_pollset_work(&exec_ctx, &detector.pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
                       gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&detector.pollset));
 
   grpc_httpcli_context_destroy(&context);
-  grpc_pollset_shutdown(&detector.pollset, destroy_pollset, &detector.pollset);
+  grpc_closure_init(&destroy_closure, destroy_pollset, &detector.pollset);
+  grpc_pollset_shutdown(&exec_ctx, &detector.pollset, &destroy_closure);
+  grpc_exec_ctx_finish(&exec_ctx);
 
   return detector.success;
 }
@@ -168,6 +179,9 @@ end:
 grpc_credentials *grpc_google_default_credentials_create(void) {
   grpc_credentials *result = NULL;
   int serving_cached_credentials = 0;
+
+  GRPC_API_TRACE("grpc_google_default_credentials_create(void)", 0, ());
+
   gpr_once_init(&g_once, init_default_credentials);
 
   gpr_mu_lock(&g_mu);

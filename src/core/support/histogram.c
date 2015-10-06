@@ -212,7 +212,7 @@ double gpr_histogram_percentile(gpr_histogram *h, double percentile) {
 }
 
 double gpr_histogram_mean(gpr_histogram *h) {
-  GPR_ASSERT(h->count);
+  GPR_ASSERT(h->count != 0);
   return h->sum / h->count;
 }
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -144,7 +144,7 @@ def main():
               'name': 'end2end_fixture_%s' % f,
               'build': 'private',
               'language': 'c',
-              'secure': 'check' if END2END_FIXTURES[f].secure else 'no',
+              'secure': 'check' if END2END_FIXTURES[f].secure else False,
               'src': ['test/core/end2end/fixtures/%s.c' % f],
               'platforms': [ 'linux', 'mac', 'posix' ] if f.endswith('_posix') else END2END_FIXTURES[f].platforms,
               'deps': sec_deps if END2END_FIXTURES[f].secure else unsec_deps,
@@ -156,7 +156,7 @@ def main():
               'name': 'end2end_test_%s' % t,
               'build': 'private',
               'language': 'c',
-              'secure': 'check' if END2END_TESTS[t].secure else 'no',
+              'secure': 'check' if END2END_TESTS[t].secure else False,
               'src': ['test/core/end2end/tests/%s.c' % t],
               'headers': ['test/core/end2end/tests/cancel_test_helpers.h',
                           'test/core/end2end/end2end_tests.h'],

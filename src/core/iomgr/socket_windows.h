@@ -41,6 +41,7 @@
 #include <grpc/support/atm.h>
 
 #include "src/core/iomgr/iomgr_internal.h"
+#include "src/core/iomgr/exec_ctx.h"
 
 /* This holds the data for an outstanding read or write on a socket.
    The mutex to protect the concurrent access to that data is the one
@@ -54,8 +55,7 @@ typedef struct grpc_winsocket_callback_info {
   OVERLAPPED overlapped;
   /* The callback information for the pending operation. May be empty if the
      caller hasn't registered a callback yet. */
-  void (*cb)(void *opaque, int success);
-  void *opaque;
+  grpc_closure *closure;
   /* A boolean to describe if the IO Completion Port got a notification for
      that operation. This will happen if the operation completed before the
      called had time to register a callback. We could avoid that behavior
@@ -68,8 +68,6 @@ typedef struct grpc_winsocket_callback_info {
   /* The results of the overlapped operation. */
   DWORD bytes_transfered;
   int wsa_error;
-  /* A boolean indicating that we started an operation. */
-  int outstanding;
 } grpc_winsocket_callback_info;
 
 /* This is a wrapper to a Windows socket. A socket can have one outstanding
@@ -92,12 +90,8 @@ typedef struct grpc_winsocket {
   /* You can't add the same socket twice to the same IO Completion Port.
      This prevents that. */
   int added_to_iocp;
-  /* A boolean to indicate that the caller has abandoned that socket, but
-     there is a pending operation that the IO Completion Port will have to
-     wait for. The socket will be collected at that time. */
-  int orphan;
 
-  grpc_iomgr_closure shutdown_closure;
+  grpc_closure shutdown_closure;
 
   /* A label for iomgr to track outstanding objects */
   grpc_iomgr_object iomgr_object;
@@ -108,14 +102,10 @@ typedef struct grpc_winsocket {
 grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name);
 
 /* Initiate an asynchronous shutdown of the socket. Will call off any pending
-   operation to cancel them. Returns the number of callbacks that got setup. */
-int grpc_winsocket_shutdown(grpc_winsocket *socket);
+   operation to cancel them. */
+void grpc_winsocket_shutdown(grpc_winsocket *socket);
 
-/* Abandon a socket. */
-void grpc_winsocket_orphan(grpc_winsocket *socket);
-
-/* Destroy a socket. Should only be called by the IO Completion Port thread,
-   or by grpc_winsocket_orphan if there's no pending operation. */
+/* Destroy a socket. Should only be called if there's no pending operation. */
 void grpc_winsocket_destroy(grpc_winsocket *socket);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_SOCKET_WINDOWS_H */
