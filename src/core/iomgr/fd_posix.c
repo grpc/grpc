@@ -172,8 +172,8 @@ int grpc_fd_is_orphaned(grpc_fd *fd) {
 static void pollset_kick_locked(grpc_fd_watcher *watcher) {
   gpr_mu_lock(GRPC_POLLSET_MU(watcher->pollset));
   GPR_ASSERT(watcher->worker);
-  grpc_pollset_kick_ex(watcher->pollset, watcher->worker,
-                       GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
+  grpc_pollset_kick_ext(watcher->pollset, watcher->worker,
+                        GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP);
   gpr_mu_unlock(GRPC_POLLSET_MU(watcher->pollset));
 }
 
