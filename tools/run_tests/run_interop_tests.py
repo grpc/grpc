@@ -82,7 +82,7 @@ class CXXLanguage:
             ['--use_tls=true'])
 
   def cloud_to_prod_env(self):
-    return None
+    return {}
 
   def server_args(self):
     return ['bins/opt/interop_server', '--use_tls=true']
@@ -132,7 +132,7 @@ class JavaLanguage:
             ['--use_tls=true', '--use_test_ca=true'])
 
   def cloud_to_prod_env(self):
-    return None
+    return {}
 
   def server_args(self):
     return ['./run-test-server.sh', '--use_tls=true']
@@ -158,7 +158,7 @@ class GoLanguage:
             ['--use_tls=true'])
 
   def cloud_to_prod_env(self):
-    return None
+    return {}
 
   def server_args(self):
     return ['go', 'run', 'server.go', '--use_tls=true']
@@ -259,6 +259,9 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
                'client_streaming', 'server_streaming',
                'cancel_after_begin', 'cancel_after_first_response']
 
+_AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
+                    'oauth2_auth_token', 'per_rpc_creds']
+
 
 def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   """Wraps given cmdline array to create 'docker run' cmdline from it."""
@@ -287,22 +290,54 @@ def bash_login_cmdline(cmdline):
   return ['bash', '-l', '-c', ' '.join(cmdline)]
 
 
-def cloud_to_prod_jobspec(language, test_case, docker_image=None):
+def add_auth_options(language, test_case, cmdline, env):
+  """Returns (cmdline, env) tuple with cloud_to_prod_auth test options."""
+
+  language = str(language)
+  cmdline = list(cmdline)
+  env = env.copy()
+
+  # TODO(jtattermusch): this file path only works inside docker
+  key_filepath = '/root/service_account/stubbyCloudTestingTest-ee3fce360ac5.json'
+  oauth_scope_arg = '--oauth_scope=https://www.googleapis.com/auth/xapi.zoo'
+  key_file_arg = '--service_account_key_file=%s' % key_filepath
+  default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
+
+  if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
+    if language in ['csharp', 'node', 'php', 'ruby']:
+      env['GOOGLE_APPLICATION_CREDENTIALS'] = key_filepath
+    else:
+      cmdline += [key_file_arg]
+
+  if test_case in ['per_rpc_creds', 'oauth2_auth_token']:
+    cmdline += [oauth_scope_arg]
+
+  if test_case == 'compute_engine_creds':
+    cmdline += [oauth_scope_arg, default_account_arg]
+
+  return (cmdline, env)
+
+
+def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
   """Creates jobspec for cloud-to-prod interop test"""
-  cmdline = bash_login_cmdline(language.cloud_to_prod_args() +
-                               ['--test_case=%s' % test_case])
+  cmdline = language.cloud_to_prod_args() + ['--test_case=%s' % test_case]
   cwd = language.client_cwd
   environ = language.cloud_to_prod_env()
+  if auth:
+    cmdline, environ = add_auth_options(language, test_case, cmdline, environ)
+  cmdline = bash_login_cmdline(cmdline)
+
   if docker_image:
     cmdline = docker_run_cmdline(cmdline, image=docker_image, cwd=cwd, environ=environ)
     cwd = None
     environ = None
 
+  suite_name='cloud_to_prod_auth' if auth else 'cloud_to_prod'
   test_job = jobset.JobSpec(
           cmdline=cmdline,
           cwd=cwd,
           environ=environ,
-          shortname="cloud_to_prod:%s:%s" % (language, test_case),
+          shortname="%s:%s:%s" % (suite_name, language, test_case),
           timeout_seconds=2*60,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0)
@@ -381,6 +416,11 @@ argp.add_argument('--cloud_to_prod',
                   action='store_const',
                   const=True,
                   help='Run cloud_to_prod tests.')
+argp.add_argument('--cloud_to_prod_auth',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Run cloud_to_prod_auth tests.')
 argp.add_argument('-s', '--server',
                   choices=['all'] + sorted(_SERVERS),
                   action='append',
@@ -473,6 +513,14 @@ try:
       for test_case in _TEST_CASES:
         test_job = cloud_to_prod_jobspec(language, test_case,
                                          docker_image=docker_images.get(str(language)))
+        jobs.append(test_job)
+
+  if args.cloud_to_prod_auth:
+    for language in languages:
+      for test_case in _AUTH_TEST_CASES:
+        test_job = cloud_to_prod_jobspec(language, test_case,
+                                         docker_image=docker_images.get(str(language)),
+                                         auth=True)
         jobs.append(test_job)
 
   for server in args.override_server:

@@ -36,6 +36,9 @@ set -e
 # to test instead of using "go get" to download from Github directly.
 git clone --recursive /var/local/jenkins/grpc-go src/gooogle.golang.org/grpc
 
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
+
 # Get dependencies from GitHub
 # NOTE: once grpc-go dependencies change, this needs to be updated manually
 # but we don't expect this to happen any time soon.
