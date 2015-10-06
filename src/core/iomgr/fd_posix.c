@@ -242,8 +242,10 @@ void grpc_fd_unref(grpc_fd *fd) { unref_by(fd, 2); }
 static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                              grpc_closure **st, grpc_closure *closure) {
   if (*st == CLOSURE_NOT_READY) {
+    /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
   } else if (*st == CLOSURE_READY) {
+    /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
     grpc_exec_ctx_enqueue(exec_ctx, closure, !fd->shutdown);
     maybe_wake_one_watcher_locked(fd);
@@ -260,12 +262,14 @@ static void notify_on_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
 static int set_ready_locked(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
                             grpc_closure **st) {
   if (*st == CLOSURE_READY) {
-    /* duplicate ready, ignore */
+    /* duplicate ready ==> ignore */
     return 0;
   } else if (*st == CLOSURE_NOT_READY) {
+    /* not ready, and not waiting ==> flag ready */
     *st = CLOSURE_READY;
     return 0;
   } else {
+    /* waiting ==> queue closure */
     grpc_exec_ctx_enqueue(exec_ctx, *st, !fd->shutdown);
     *st = CLOSURE_NOT_READY;
     return 1;
