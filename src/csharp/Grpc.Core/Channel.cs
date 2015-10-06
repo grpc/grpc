@@ -68,7 +68,7 @@ namespace Grpc.Core
         /// <param name="target">Target of the channel.</param>
         /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string target, Credentials credentials, IEnumerable<ChannelOption> options = null)
+        public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options = null)
         {
             this.target = Preconditions.CheckNotNull(target, "target");
             this.environment = GrpcEnvironment.AddRef();
@@ -96,7 +96,7 @@ namespace Grpc.Core
         /// <param name="port">The port.</param>
         /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string host, int port, Credentials credentials, IEnumerable<ChannelOption> options = null) :
+        public Channel(string host, int port, ChannelCredentials credentials, IEnumerable<ChannelOption> options = null) :
             this(string.Format("{0}:{1}", host, port), credentials, options)
         {
         }

@@ -43,66 +43,22 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    public class CredentialsTest
+    public class CallCredentialsTest
     {
         [Test]
-        public void InsecureCredentials_IsNonComposable()
+        public void CallCredentials_ComposeAtLeastTwo()
         {
-            Assert.IsFalse(Credentials.Insecure.IsComposable);
+            Assert.Throws(typeof(ArgumentException), () => CallCredentials.Compose(new FakeCallCredentials()));
         }
 
         [Test]
-        public void CompositeCredentials_Create()
+        public void CallCredentials_ToNativeCredentials()
         {
-            new CompositeCredentials(new FakeCredentials(true), new FakeCredentials(true), new FakeCredentials(true));
-        }
-
-        [Test]
-        public void CompositeCredentials_ComposeAtLeastTwo()
-        {
-            Assert.Throws(typeof(ArgumentException), () => new CompositeCredentials(new FakeCredentials(true)));
-        }
-
-        [Test]
-        public void CompositeCredentials_ForbidsNonComposable()
-        {
-            Assert.Throws(typeof(ArgumentException), () => new CompositeCredentials(new FakeCredentials(true), new FakeCredentials(false)));
-        }
-
-        [Test]
-        public void CompositeCredentials_ToNativeCredentials()
-        {
-            var composite = new CompositeCredentials(new MetadataCredentials(async (uri, m) => { await Task.Delay(1); }), new SslCredentials());
+            var composite = CallCredentials.Compose(
+                new MetadataCredentials(async (uri, m) => { await Task.Delay(1); }),
+                new MetadataCredentials(async (uri, m) => { await Task.Delay(2); }));
             using (var nativeComposite = composite.ToNativeCredentials())
             {
-            }
-        }
-
-        [Test]
-        public void CompositeCredentials_OnlyOneConnectorCredentialAllowed()
-        {
-            var composite = new CompositeCredentials(new SslCredentials(), new SslCredentials());
-            // it makes no sense to compose multiple ssl credentials.
-            Assert.Throws(typeof(ArgumentException), () => composite.ToNativeCredentials());
-        }
-
-        private class FakeCredentials : Credentials
-        {
-            readonly bool composable;
-
-            public FakeCredentials(bool composable)
-            {
-                this.composable = composable;
-            }
-
-            internal override bool IsComposable
-            {
-                get { return composable; }
-            }
-
-            internal override CredentialsSafeHandle ToNativeCredentials()
-            {
-                return null;
             }
         }
     }

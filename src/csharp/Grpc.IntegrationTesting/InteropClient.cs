@@ -132,22 +132,22 @@ namespace Grpc.IntegrationTesting
             await channel.ShutdownAsync();
         }
 
-        private async Task<Credentials> CreateCredentialsAsync()
+        private async Task<ChannelCredentials> CreateCredentialsAsync()
         {
-            var credentials = options.UseTls ? TestCredentials.CreateTestClientCredentials(options.UseTestCa) : Credentials.Insecure;
+            var credentials = options.UseTls ? TestCredentials.CreateTestClientCredentials(options.UseTestCa) : ChannelCredentials.Insecure;
 
             if (options.TestCase == "jwt_token_creds")
             {
                 var googleCredential = await GoogleCredential.GetApplicationDefaultAsync();
                 Assert.IsTrue(googleCredential.IsCreateScopedRequired);
-                credentials = CompositeCredentials.Create(googleCredential.ToGrpcCredentials(), credentials);
+                credentials = ChannelCredentials.Create(credentials, googleCredential.ToGrpcCredentials());
             }
 
             if (options.TestCase == "compute_engine_creds")
             {
                 var googleCredential = await GoogleCredential.GetApplicationDefaultAsync();
                 Assert.IsFalse(googleCredential.IsCreateScopedRequired);
-                credentials = CompositeCredentials.Create(googleCredential.ToGrpcCredentials(), credentials);
+                credentials = ChannelCredentials.Create(credentials, googleCredential.ToGrpcCredentials());
             }
             return credentials;
         }

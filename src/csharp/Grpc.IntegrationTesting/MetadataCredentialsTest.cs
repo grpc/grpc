@@ -73,7 +73,7 @@ namespace Grpc.IntegrationTesting
                 metadata.Add("authorization", "SECRET_TOKEN");
             });
 
-            var clientCredentials = CompositeCredentials.Create(
+            var clientCredentials = ChannelCredentials.Create(
                 new SslCredentials(File.ReadAllText(TestCredentials.ClientCertAuthorityPath)),
                 new MetadataCredentials(asyncAuthInterceptor));
             channel = new Channel(Host, server.Ports.Single().BoundPort, clientCredentials, options);

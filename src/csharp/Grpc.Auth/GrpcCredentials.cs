@@ -41,7 +41,7 @@ using Grpc.Core.Utils;
 namespace Grpc.Auth
 {
     /// <summary>
-    /// Factory methods to create instances of <see cref="Credentials"/> class.
+    /// Factory methods to create instances of <see cref="ChannelCredentials"/> and <see cref="CallCredentials"/> classes.
     /// </summary>
     public static class GrpcCredentials
     {
@@ -57,15 +57,15 @@ namespace Grpc.Auth
         }
 
         /// <summary>
-        /// Convenience method to create a <see cref="CompositeCredentials"/> instance from
+        /// Convenience method to create a <see cref="ChannelCredentials"/> instance from
         /// <c>ITokenAccess</c> credential and <c>SslCredentials</c> instance.
         /// </summary>
         /// <param name="credential">The credential to use to obtain access tokens.</param>
         /// <param name="sslCredentials">The <c>SslCredentials</c> instance.</param>
-        /// <returns>The composite credential for access token based auth over a secure channel.</returns>
-        public static CompositeCredentials Create(ITokenAccess credential, SslCredentials sslCredentials)
+        /// <returns>The channel credentials for access token based auth over a secure channel.</returns>
+        public static ChannelCredentials Create(ITokenAccess credential, SslCredentials sslCredentials)
         {
-            return CompositeCredentials.Create(Create(credential), sslCredentials);
+            return ChannelCredentials.Create(sslCredentials, Create(credential));
         }
 
         /// <summary>

@@ -41,22 +41,45 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
-    /// Client-side credentials. Used for creation of a secure channel.
+    /// Client-side channel credentials. Used for creation of a secure channel.
     /// </summary>
-    public abstract class Credentials
+    public abstract class ChannelCredentials
     {
-        static readonly Credentials InsecureInstance = new InsecureCredentialsImpl();
+        static readonly ChannelCredentials InsecureInstance = new InsecureCredentialsImpl();
 
         /// <summary>
-        /// Returns instance of credential that provides no security and 
+        /// Returns instance of credentials that provides no security and 
         /// will result in creating an unsecure channel with no encryption whatsoever.
         /// </summary>
-        public static Credentials Insecure
+        public static ChannelCredentials Insecure
         {
             get
             {
                 return InsecureInstance;
             }
+        }
+
+        /// <summary>
+        /// Creates a new instance of <c>ChannelCredentials</c> class by composing
+        /// given channel credentials with call credentials.
+        /// </summary>
+        /// <param name="channelCredentials">Channel credentials.</param>
+        /// <param name="callCredentials">Call credentials.</param>
+        /// <returns>The new composite <c>ChannelCredentials</c></returns>
+        public static ChannelCredentials Create(ChannelCredentials channelCredentials, CallCredentials callCredentials)
+        {
+            return new CompositeChannelCredentials(channelCredentials, callCredentials);
+        }
+
+        /// <summary>
+        /// Creates a new instance of <c>ChannelCredentials</c> by wrapping
+        /// an instance of <c>CallCredentials</c>.
+        /// </summary>
+        /// <param name="callCredentials">Call credentials.</param>
+        /// <returns>The <c>ChannelCredentials</c> wrapping given call credentials.</returns>
+        public static ChannelCredentials Create(CallCredentials callCredentials)
+        {
+            return new WrappedCallCredentials(callCredentials);
         }
 
         /// <summary>
@@ -71,20 +94,14 @@ namespace Grpc.Core
         /// </summary>
         internal virtual bool IsComposable
         {
-            get { return true; }
+            get { return false; }
         }
 
-        private sealed class InsecureCredentialsImpl : Credentials
+        private sealed class InsecureCredentialsImpl : ChannelCredentials
         {
             internal override CredentialsSafeHandle ToNativeCredentials()
             {
                 return null;
-            }
-
-            // Composing insecure credentials makes no sense.
-            internal override bool IsComposable
-            {
-                get { return false; }
             }
         }
     }
@@ -92,7 +109,7 @@ namespace Grpc.Core
     /// <summary>
     /// Client-side SSL credentials.
     /// </summary>
-    public sealed class SslCredentials : Credentials
+    public sealed class SslCredentials : ChannelCredentials
     {
         readonly string rootCertificates;
         readonly KeyCertificatePair keyCertificatePair;
@@ -148,6 +165,12 @@ namespace Grpc.Core
             }
         }
 
+        // Composing composite makes no sense.
+        internal override bool IsComposable
+        {
+            get { return true; }
+        }
+
         internal override CredentialsSafeHandle ToNativeCredentials()
         {
             return CredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair);
@@ -155,86 +178,31 @@ namespace Grpc.Core
     }
 
     /// <summary>
-    /// Asynchronous authentication interceptor for <see cref="MetadataCredentials"/>.
+    /// Credentials that allow composing one <see cref="ChannelCredentials"/> object and 
+    /// one or more <see cref="CallCredentials"/> objects into a single <see cref="ChannelCredentials"/>.
     /// </summary>
-    /// <param name="authUri">URL of a service to which current remote call needs to authenticate</param>
-    /// <param name="metadata">Metadata to populate with entries that will be added to outgoing call's headers.</param>
-    /// <returns></returns>
-    public delegate Task AsyncAuthInterceptor(string authUri, Metadata metadata);
-
-    /// <summary>
-    /// Client-side credentials that delegate metadata based auth to an interceptor.
-    /// The interceptor is automatically invoked for each remote call that uses <c>MetadataCredentials.</c>
-    /// </summary>
-    public partial class MetadataCredentials : Credentials
+    internal sealed class CompositeChannelCredentials : ChannelCredentials
     {
-        readonly AsyncAuthInterceptor interceptor;
+        readonly ChannelCredentials channelCredentials;
+        readonly CallCredentials callCredentials;
 
         /// <summary>
-        /// Initializes a new instance of <c>MetadataCredentials</c> class.
-        /// </summary>
-        /// <param name="interceptor">authentication interceptor</param>
-        public MetadataCredentials(AsyncAuthInterceptor interceptor)
-        {
-            this.interceptor = interceptor;
-        }
-
-        internal override CredentialsSafeHandle ToNativeCredentials()
-        {
-            NativeMetadataCredentialsPlugin plugin = new NativeMetadataCredentialsPlugin(interceptor);
-            return plugin.Credentials;
-        }
-    }
-
-    /// <summary>
-    /// Credentials that allow composing multiple credentials objects into one <see cref="Credentials"/> object.
-    /// </summary>
-    public sealed class CompositeCredentials : Credentials
-    {
-        readonly List<Credentials> credentials;
-
-        /// <summary>
-        /// Initializes a new instance of <c>CompositeCredentials</c> class.
+        /// Initializes a new instance of <c>CompositeChannelCredentials</c> class.
         /// The resulting credentials object will be composite of all the credentials specified as parameters.
         /// </summary>
-        /// <param name="credentials">credentials to compose</param>
-        public CompositeCredentials(params Credentials[] credentials)
+        /// <param name="channelCredentials">channelCredentials to compose</param>
+        /// <param name="callCredentials">channelCredentials to compose</param>
+        public CompositeChannelCredentials(ChannelCredentials channelCredentials, CallCredentials callCredentials)
         {
-            Preconditions.CheckArgument(credentials.Length >= 2, "Composite credentials object can only be created from 2 or more credentials.");
-            foreach (var cred in credentials)
-            {
-                Preconditions.CheckArgument(cred.IsComposable, "Cannot create composite credentials: one or more credential objects do not allow composition.");
-            }
-            this.credentials = new List<Credentials>(credentials);
-        }
-
-        /// <summary>
-        /// Creates a new instance of <c>CompositeCredentials</c> class by composing
-        /// multiple <c>Credentials</c> objects.
-        /// </summary>
-        /// <param name="credentials">credentials to compose</param>
-        /// <returns>The new <c>CompositeCredentials</c></returns>
-        public static CompositeCredentials Create(params Credentials[] credentials)
-        {
-            return new CompositeCredentials(credentials);
+            this.channelCredentials = Preconditions.CheckNotNull(channelCredentials);
+            this.callCredentials = Preconditions.CheckNotNull(callCredentials);
+            Preconditions.CheckArgument(channelCredentials.IsComposable, "Supplied channel credentials do not allow composition.");
         }
 
         internal override CredentialsSafeHandle ToNativeCredentials()
         {
-            return ToNativeRecursive(0);
-        }
-
-        // Recursive descent makes managing lifetime of intermediate CredentialSafeHandle instances easier.
-        // In practice, we won't usually see composites from more than two credentials anyway.
-        private CredentialsSafeHandle ToNativeRecursive(int startIndex)
-        {
-            if (startIndex == credentials.Count - 1)
-            {
-                return credentials[startIndex].ToNativeCredentials();
-            }
-
-            using (var cred1 = credentials[startIndex].ToNativeCredentials())
-            using (var cred2 = ToNativeRecursive(startIndex + 1))
+            using (var cred1 = channelCredentials.ToNativeCredentials())
+            using (var cred2 = callCredentials.ToNativeCredentials())
             {
                 var nativeComposite = CredentialsSafeHandle.CreateComposite(cred1, cred2);
                 if (nativeComposite.IsInvalid)
@@ -243,6 +211,28 @@ namespace Grpc.Core
                 }
                 return nativeComposite;
             }
+        }
+    }
+
+    /// <summary>
+    /// Credentials wrapping <see cref="CallCredentials"/> as <see cref="ChannelCredentials"/>.
+    /// </summary>
+    internal sealed class WrappedCallCredentials : ChannelCredentials
+    {
+        readonly CallCredentials callCredentials;
+
+        /// <summary>
+        /// Wraps instance of <c>CallCredentials</c> as <c>ChannelCredentials</c>.
+        /// </summary>
+        /// <param name="callCredentials">credentials to wrap</param>
+        public WrappedCallCredentials(CallCredentials callCredentials)
+        {
+            this.callCredentials = Preconditions.CheckNotNull(callCredentials);
+        }
+
+        internal override CredentialsSafeHandle ToNativeCredentials()
+        {
+            return callCredentials.ToNativeCredentials();
         }
     }
 }
