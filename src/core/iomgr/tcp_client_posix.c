@@ -42,6 +42,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "src/core/debug/trace.h"
 #include "src/core/iomgr/alarm.h"
 #include "src/core/iomgr/iomgr_posix.h"
 #include "src/core/iomgr/pollset_posix.h"
@@ -54,7 +55,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-extern int grpc_tcp_trace;
+extern gpr_atm grpc_tcp_trace;
 
 typedef struct {
   gpr_mu mu;
@@ -94,7 +95,7 @@ error:
 static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, int success) {
   int done;
   async_connect *ac = acp;
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: success=%d", ac->addr_str,
             success);
   }
@@ -121,7 +122,7 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, int success) {
   grpc_closure *closure = ac->closure;
   grpc_fd *fd;
 
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: success=%d",
             ac->addr_str, success);
   }
@@ -284,7 +285,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   ac->write_closure.cb = on_writable;
   ac->write_closure.cb_arg = ac;
 
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
             ac->addr_str);
   }

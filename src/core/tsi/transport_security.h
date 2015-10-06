@@ -36,11 +36,13 @@
 
 #include "src/core/tsi/transport_security_interface.h"
 
+#include <grpc/support/atm.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int tsi_tracing_enabled;
+extern gpr_atm tsi_tracing_enabled;
 
 /* Base for tsi_frame_protector implementations.
    See transport_security_interface.h for documentation. */

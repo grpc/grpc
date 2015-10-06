@@ -55,7 +55,7 @@ typedef struct {
   char *name;
 } grpc_connectivity_state_tracker;
 
-extern int grpc_connectivity_state_trace;
+extern gpr_atm grpc_connectivity_state_trace;
 
 void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
                                   grpc_connectivity_state init_state,

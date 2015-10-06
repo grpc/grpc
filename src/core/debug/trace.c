@@ -42,17 +42,17 @@
 
 typedef struct tracer {
   const char *name;
-  int *flag;
+  gpr_atm *flag;
   struct tracer *next;
 } tracer;
 static tracer *tracers;
 
-void grpc_register_tracer(const char *name, int *flag) {
+void grpc_register_tracer(const char *name, gpr_atm *flag) {
   tracer *t = gpr_malloc(sizeof(*t));
   t->name = name;
   t->flag = flag;
   t->next = tracers;
-  *flag = 0;
+  gpr_atm_rel_store(flag, 0);
   tracers = t;
 }
 
@@ -117,13 +117,13 @@ int grpc_tracer_set_enabled(const char *name, int enabled) {
   tracer *t;
   if (0 == strcmp(name, "all")) {
     for (t = tracers; t; t = t->next) {
-      *t->flag = 1;
+      gpr_atm_rel_store(t->flag, 1);
     }
   } else {
     int found = 0;
     for (t = tracers; t; t = t->next) {
       if (0 == strcmp(name, t->name)) {
-        *t->flag = enabled;
+        gpr_atm_rel_store(t->flag, enabled);
         found = 1;
       }
     }

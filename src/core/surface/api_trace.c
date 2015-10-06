@@ -33,4 +33,4 @@
 
 #include "src/core/surface/api_trace.h"
 
-int grpc_api_trace = 0;
+gpr_atm grpc_api_trace = 0;

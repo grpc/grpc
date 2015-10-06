@@ -67,7 +67,7 @@ typedef GPR_MSG_IOVLEN_TYPE msg_iovlen_type;
 typedef size_t msg_iovlen_type;
 #endif
 
-int grpc_tcp_trace = 0;
+gpr_atm grpc_tcp_trace = 0;
 
 typedef struct {
   grpc_endpoint base;
@@ -154,7 +154,7 @@ static void tcp_destroy(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 static void call_read_cb(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp, int success) {
   grpc_closure *cb = tcp->read_cb;
 
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_tcp_trace)) {
     size_t i;
     gpr_log(GPR_DEBUG, "read: success=%d", success);
     for (i = 0; i < tcp->incoming_buffer->count; i++) {
@@ -388,7 +388,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   grpc_tcp *tcp = (grpc_tcp *)ep;
   flush_result status;
 
-  if (grpc_tcp_trace) {
+  if (GRPC_TRACE_ENABLED(grpc_tcp_trace)) {
     size_t i;
 
     for (i = 0; i < buf->count; i++) {

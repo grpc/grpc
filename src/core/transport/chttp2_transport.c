@@ -57,8 +57,8 @@
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 
-int grpc_http_trace = 0;
-int grpc_flowctl_trace = 0;
+gpr_atm grpc_http_trace = 0;
+gpr_atm grpc_flowctl_trace = 0;
 
 #define TRANSPORT_FROM_WRITING(tw)                                        \
   ((grpc_chttp2_transport *)((char *)(tw)-offsetof(grpc_chttp2_transport, \

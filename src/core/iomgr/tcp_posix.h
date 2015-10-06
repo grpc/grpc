@@ -47,9 +47,11 @@
 #include "src/core/iomgr/endpoint.h"
 #include "src/core/iomgr/fd_posix.h"
 
+#include <grpc/support/atm.h>
+
 #define GRPC_TCP_DEFAULT_READ_SLICE_SIZE 8192
 
-extern int grpc_tcp_trace;
+extern gpr_atm grpc_tcp_trace;
 
 /* Create a tcp endpoint given a file desciptor and a read slice size.
    Takes ownership of fd. */
