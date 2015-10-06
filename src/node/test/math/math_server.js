@@ -33,7 +33,7 @@
 
 'use strict';
 
-var grpc = require('..');
+var grpc = require('../..');
 var math = grpc.load(__dirname + '/math.proto').math;
 
 /**
