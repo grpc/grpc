@@ -32,13 +32,14 @@
  */
 
 #include <grpc/grpc.h>
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/completion_queue.h"
 #include "src/core/surface/server.h"
 #include "src/core/channel/compress_filter.h"
 
 grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
   const grpc_channel_filter *filters[] = {&grpc_compress_filter};
-  (void)reserved;
+  GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
   return grpc_server_create_from_filters(filters, GPR_ARRAY_SIZE(filters),
                                          args);
 }

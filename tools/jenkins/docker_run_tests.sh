@@ -42,4 +42,18 @@ git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 nvm use 0.12
 rvm use ruby-2.1
 
+mkdir -p reports
+
 $RUN_TESTS_COMMAND
+
+cd reports
+echo '<html><head></head><body>' > index.html
+find . -maxdepth 1 -mindepth 1 -type d | sort | while read d ; do
+  d=${d#*/}
+  n=${d//_/ }
+  echo "<a href='$d/index.html'>$n</a><br />" >> index.html
+done
+echo '</body></html>' >> index.html
+cd ..
+
+zip -r reports.zip reports

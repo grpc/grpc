@@ -198,7 +198,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
     }
     if (pfds[1].revents) {
       do {
-	/* The following epoll_wait never blocks; it has a timeout of 0 */
+        /* The following epoll_wait never blocks; it has a timeout of 0 */
         ep_rv = epoll_wait(h->epoll_fd, ep_ev, GRPC_EPOLL_MAX_EVENTS, 0);
         if (ep_rv < 0) {
           if (errno != EINTR) {
@@ -213,11 +213,15 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
             int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
             int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
             int write_ev = ep_ev[i].events & EPOLLOUT;
-            if (read_ev || cancel) {
-              grpc_fd_become_readable(exec_ctx, fd);
-            }
-            if (write_ev || cancel) {
-              grpc_fd_become_writable(exec_ctx, fd);
+            if (fd == NULL) {
+              grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
+            } else {
+              if (read_ev || cancel) {
+                grpc_fd_become_readable(exec_ctx, fd);
+              }
+              if (write_ev || cancel) {
+                grpc_fd_become_writable(exec_ctx, fd);
+              }
             }
           }
         }
@@ -246,6 +250,8 @@ static void epoll_become_multipoller(grpc_exec_ctx *exec_ctx,
                                      size_t nfds) {
   size_t i;
   pollset_hdr *h = gpr_malloc(sizeof(pollset_hdr));
+  struct epoll_event ev;
+  int err;
 
   pollset->vtable = &multipoll_with_epoll_pollset;
   pollset->data.ptr = h;
@@ -255,6 +261,17 @@ static void epoll_become_multipoller(grpc_exec_ctx *exec_ctx,
     gpr_log(GPR_ERROR, "epoll_create1 failed: %s", strerror(errno));
     abort();
   }
+
+  ev.events = (uint32_t)(EPOLLIN | EPOLLET);
+  ev.data.ptr = NULL;
+  err = epoll_ctl(h->epoll_fd, EPOLL_CTL_ADD,
+                  GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd), &ev);
+  if (err < 0) {
+    gpr_log(GPR_ERROR, "epoll_ctl add for %d failed: %s",
+            GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd),
+            strerror(errno));
+  }
+
   for (i = 0; i < nfds; i++) {
     multipoll_with_epoll_pollset_add_fd(exec_ctx, pollset, fds[i], 0);
   }

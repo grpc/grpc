@@ -317,13 +317,8 @@ void pf_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 }
 
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
-    pf_destroy,
-    pf_shutdown,
-    pf_pick,
-    pf_exit_idle,
-    pf_broadcast,
-    pf_check_connectivity,
-    pf_notify_on_state_change};
+    pf_destroy, pf_shutdown, pf_pick, pf_exit_idle, pf_broadcast,
+    pf_check_connectivity, pf_notify_on_state_change};
 
 static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}
 
