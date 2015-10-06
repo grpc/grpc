@@ -39,8 +39,7 @@
     "jshint": "^2.5.0",
     "minimist": "^1.1.0",
     "mocha": "~1.21.0",
-    "mustache": "^2.0.0",
-    "strftime": "^0.8.2"
+    "mustache": "^2.0.0"
   },
   "engines": {
     "node": ">=0.10.13"
@@ -50,14 +49,9 @@
     "README.md",
     "index.js",
     "binding.gyp",
-    "bin",
-    "cli",
-    "examples",
     "ext",
     "health_check",
-    "interop",
-    "src",
-    "test"
+    "src"
   ],
   "main": "index.js",
   "license": "BSD-3-Clause"
