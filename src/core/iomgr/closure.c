@@ -33,6 +33,8 @@
 
 #include "src/core/iomgr/closure.h"
 
+#include <grpc/support/alloc.h>
+
 void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
                        void *cb_arg) {
   closure->cb = cb;
@@ -68,4 +70,26 @@ void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst) {
     dst->tail = src->tail;
   }
   src->head = src->tail = NULL;
+}
+
+typedef struct {
+  grpc_iomgr_cb_func cb;
+  void *cb_arg;
+  grpc_closure wrapper;
+} wrapped_closure;
+
+static void closure_wrapper(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+  wrapped_closure *wc = arg;
+  grpc_iomgr_cb_func cb = wc->cb;
+  void *cb_arg = wc->cb_arg;
+  gpr_free(wc);
+  cb(exec_ctx, cb_arg, success);
+}
+
+grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg) {
+  wrapped_closure *wc = gpr_malloc(sizeof(*wc));
+  wc->cb = cb;
+  wc->cb_arg = cb_arg;
+  grpc_closure_init(&wc->wrapper, closure_wrapper, wc);
+  return &wc->wrapper;
 }
