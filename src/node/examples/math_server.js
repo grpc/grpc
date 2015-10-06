@@ -106,15 +106,20 @@ function mathDivMany(stream) {
     stream.end();
   });
 }
-var server = new grpc.Server();
-server.addProtoService(math.Math.service, {
-  div: mathDiv,
-  fib: mathFib,
-  sum: mathSum,
-  divMany: mathDivMany
-});
+
+function getMathServer() {
+  var server = new grpc.Server();
+  server.addProtoService(math.Math.service, {
+    div: mathDiv,
+    fib: mathFib,
+    sum: mathSum,
+    divMany: mathDivMany
+  });
+  return server;
+}
 
 if (require.main === module) {
+  var server = getMathServer();
   server.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
   server.start();
 }
@@ -122,4 +127,4 @@ if (require.main === module) {
 /**
  * See docs for server
  */
-module.exports = server;
+module.exports = getMathServer;

@@ -487,13 +487,8 @@ static void rr_notify_on_state_change(grpc_exec_ctx *exec_ctx,
 }
 
 static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
-    rr_destroy,
-    rr_shutdown,
-    rr_pick,
-    rr_exit_idle,
-    rr_broadcast,
-    rr_check_connectivity,
-    rr_notify_on_state_change};
+    rr_destroy, rr_shutdown, rr_pick, rr_exit_idle, rr_broadcast,
+    rr_check_connectivity, rr_notify_on_state_change};
 
 static void round_robin_factory_ref(grpc_lb_policy_factory *factory) {}
 

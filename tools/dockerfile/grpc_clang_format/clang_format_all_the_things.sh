@@ -4,7 +4,7 @@
 DIRS="src/core src/cpp test/core test/cpp include"
 
 # file matching patterns to check
-GLOB="*.h *.cpp"
+GLOB="*.h *.c *.cc"
 
 # clang format command
 CLANG_FORMAT=clang-format-3.6

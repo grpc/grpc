@@ -37,6 +37,7 @@
 
 #include "src/core/channel/channel_stack.h"
 #include "src/core/support/string.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/call.h"
 #include <grpc/support/alloc.h>
@@ -133,16 +134,9 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {}
 
 static const grpc_channel_filter lame_filter = {
-    lame_start_transport_stream_op,
-    lame_start_transport_op,
-    sizeof(call_data),
-    init_call_elem,
-    destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    lame_get_peer,
-    "lame-client",
+    lame_start_transport_stream_op, lame_start_transport_op, sizeof(call_data),
+    init_call_elem, destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, lame_get_peer, "lame-client",
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack *)((c) + 1))
@@ -158,6 +152,10 @@ grpc_channel *grpc_lame_client_channel_create(const char *target,
   channel = grpc_channel_create_from_filters(&exec_ctx, target, filters, 1,
                                              NULL, grpc_mdctx_create(), 1);
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
+  GRPC_API_TRACE(
+      "grpc_lame_client_channel_create(target=%s, error_code=%d, "
+      "error_message=%s)",
+      3, (target, (int)error_code, error_message));
   GPR_ASSERT(elem->filter == &lame_filter);
   chand = (channel_data *)elem->channel_data;
   chand->error_code = error_code;

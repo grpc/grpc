@@ -1114,8 +1114,8 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
     grpc_chttp2_prepare_to_read(&t->global, &t->parsing);
     gpr_mu_unlock(&t->mu);
     for (; i < t->read_buffer.count &&
-           grpc_chttp2_perform_read(exec_ctx, &t->parsing,
-                                    t->read_buffer.slices[i]);
+               grpc_chttp2_perform_read(exec_ctx, &t->parsing,
+                                        t->read_buffer.slices[i]);
          i++)
       ;
     gpr_mu_lock(&t->mu);
@@ -1136,7 +1136,7 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
     grpc_chttp2_publish_reads(exec_ctx, &t->global, &t->parsing);
     t->parsing_active = 0;
   }
-  if (!success || i != t->read_buffer.count) {
+  if (!success || i != t->read_buffer.count || t->closed) {
     drop_connection(exec_ctx, t);
     read_error_locked(exec_ctx, t);
   } else if (!t->closed) {
@@ -1229,13 +1229,9 @@ static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
   return gpr_strdup(((grpc_chttp2_transport *)t)->peer_string);
 }
 
-static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
-                                             init_stream,
-                                             perform_stream_op,
-                                             perform_transport_op,
-                                             destroy_stream,
-                                             destroy_transport,
-                                             chttp2_get_peer};
+static const grpc_transport_vtable vtable = {
+    sizeof(grpc_chttp2_stream), init_stream, perform_stream_op,
+    perform_transport_op, destroy_stream, destroy_transport, chttp2_get_peer};
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,

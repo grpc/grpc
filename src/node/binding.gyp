@@ -1,4 +1,7 @@
 {
+  "variables" : {
+    'config': '<!(echo $CONFIG)'
+  },
   "targets" : [
     {
       'include_dirs': [
@@ -22,6 +25,18 @@
             'pkg_config_grpc': '<!(pkg-config --exists grpc >/dev/null 2>&1 && echo true || echo false)'
           },
           'conditions': [
+            ['config=="gcov"', {
+              'cflags': [
+                '-ftest-coverage',
+                '-fprofile-arcs',
+                '-O0'
+              ],
+              'ldflags': [
+                '-ftest-coverage',
+                '-fprofile-arcs'
+              ]
+            }
+           ],
             ['pkg_config_grpc == "true"', {
               'link_settings': {
                 'libraries': [
