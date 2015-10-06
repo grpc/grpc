@@ -936,6 +936,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
   }
   /* we have to be reading a message to know what to do here */
   if (!call->reading_message) {
+    gpr_slice_unref(slice);
     cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT,
                        "Received payload data while not reading a message");
     return 0;
