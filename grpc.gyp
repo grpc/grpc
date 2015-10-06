@@ -175,6 +175,7 @@
         'src/core/channel/channel_args.c',
         'src/core/channel/channel_stack.c',
         'src/core/channel/client_channel.c',
+        'src/core/channel/client_uchannel.c',
         'src/core/channel/compress_filter.c',
         'src/core/channel/connected_channel.c',
         'src/core/channel/http_client_filter.c',
@@ -361,6 +362,7 @@
         'src/core/channel/channel_args.c',
         'src/core/channel/channel_stack.c',
         'src/core/channel/client_channel.c',
+        'src/core/channel/client_uchannel.c',
         'src/core/channel/compress_filter.c',
         'src/core/channel/connected_channel.c',
         'src/core/channel/http_client_filter.c',
@@ -707,6 +709,21 @@
       ],
       'sources': [
         'test/core/end2end/fixtures/h2_ssl_proxy.c',
+      ],
+    },
+    # TODO: Add C++ targets
+    {
+      'target_name': 'end2end_fixture_h2_uchannel',
+      'product_prefix': 'lib',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+        'test/core/end2end/fixtures/h2_uchannel.c',
       ],
     },
     # TODO: Add C++ targets
@@ -7878,6 +7895,501 @@
       ]
     },
     {
+      'target_name': 'h2_uchannel_bad_hostname_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_bad_hostname',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_binary_metadata_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_binary_metadata',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_call_creds_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_call_creds',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_cancel_after_accept_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_cancel_after_accept',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_cancel_after_client_done_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_cancel_after_client_done',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_cancel_after_invoke_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_cancel_after_invoke',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_cancel_before_invoke_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_cancel_before_invoke',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_cancel_in_a_vacuum_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_cancel_in_a_vacuum',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_census_simple_request_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_census_simple_request',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_channel_connectivity_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_channel_connectivity',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_compressed_payload_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_compressed_payload',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_default_host_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_default_host',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_disappearing_server_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_disappearing_server',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_empty_batch_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_empty_batch',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_graceful_server_shutdown_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_graceful_server_shutdown',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_high_initial_seqno_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_high_initial_seqno',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_invoke_large_request_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_invoke_large_request',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_large_metadata_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_large_metadata',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_max_concurrent_streams_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_max_concurrent_streams',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_max_message_length_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_max_message_length',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_metadata_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_metadata',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_no_op_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_no_op',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_payload_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_payload',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_ping_pong_streaming_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_ping_pong_streaming',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_registered_call_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_registered_call',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_request_with_flags_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_request_with_flags',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_request_with_payload_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_request_with_payload',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_server_finishes_request_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_server_finishes_request',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_shutdown_finishes_calls_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_shutdown_finishes_calls',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_shutdown_finishes_tags_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_shutdown_finishes_tags',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_simple_delayed_request_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_simple_delayed_request',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_simple_request_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_simple_request',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_trailing_metadata_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_trailing_metadata',
+        'end2end_certs',
+        'grpc_test_util',
+        'grpc',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
       'target_name': 'h2_uds_bad_hostname_test',
       'type': 'executable',
       'dependencies': [
@@ -11740,6 +12252,454 @@
       'type': 'executable',
       'dependencies': [
         'end2end_fixture_h2_sockpair_1byte',
+        'end2end_test_trailing_metadata',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_bad_hostname_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_bad_hostname',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_binary_metadata_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_binary_metadata',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_cancel_after_accept_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_cancel_after_accept',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_cancel_after_client_done_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_cancel_after_client_done',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_cancel_after_invoke_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_cancel_after_invoke',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_cancel_before_invoke_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_cancel_before_invoke',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_cancel_in_a_vacuum_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_cancel_in_a_vacuum',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_census_simple_request_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_census_simple_request',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_channel_connectivity_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_channel_connectivity',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_compressed_payload_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_compressed_payload',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_default_host_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_default_host',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_disappearing_server_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_disappearing_server',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_empty_batch_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_empty_batch',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_graceful_server_shutdown_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_graceful_server_shutdown',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_high_initial_seqno_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_high_initial_seqno',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_invoke_large_request_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_invoke_large_request',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_large_metadata_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_large_metadata',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_max_concurrent_streams_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_max_concurrent_streams',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_max_message_length_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_max_message_length',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_metadata_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_metadata',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_no_op_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_no_op',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_payload_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_payload',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_ping_pong_streaming_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_ping_pong_streaming',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_registered_call_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_registered_call',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_request_with_flags_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_request_with_flags',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_request_with_payload_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_request_with_payload',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_server_finishes_request_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_server_finishes_request',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_shutdown_finishes_calls_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_shutdown_finishes_calls',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_shutdown_finishes_tags_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_shutdown_finishes_tags',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_simple_delayed_request_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_simple_delayed_request',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_simple_request_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
+        'end2end_test_simple_request',
+        'grpc_test_util_unsecure',
+        'grpc_unsecure',
+        'gpr_test_util',
+        'gpr',
+      ],
+      'sources': [
+      ]
+    },
+    {
+      'target_name': 'h2_uchannel_trailing_metadata_nosec_test',
+      'type': 'executable',
+      'dependencies': [
+        'end2end_fixture_h2_uchannel',
         'end2end_test_trailing_metadata',
         'grpc_test_util_unsecure',
         'grpc_unsecure',

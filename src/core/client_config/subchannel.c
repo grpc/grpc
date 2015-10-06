@@ -792,3 +792,11 @@ static grpc_subchannel_call *create_call(grpc_exec_ctx *exec_ctx,
   grpc_call_stack_init(exec_ctx, chanstk, NULL, NULL, callstk);
   return call;
 }
+
+grpc_mdctx *grpc_subchannel_get_mdctx(grpc_subchannel *subchannel) {
+  return subchannel->mdctx;
+}
+
+grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel) {
+  return subchannel->master;
+}
