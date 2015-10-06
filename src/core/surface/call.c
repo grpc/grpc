@@ -427,9 +427,8 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
     }
     /* NB: the following integer arithmetic operation needs to be in its
      * expanded form due to the "integral promotion" performed (see section
-     * 3.2.1.1 of the C89 draft standard), which in this case upcasts the result
-     * of the bitwise OR to "unsigned". A cast to the smaller container type is
-     * then required to avoid the compiler warning */
+     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+     * is then required to avoid the compiler warning */
     call->allocated_completions =
         (gpr_uint8)(call->allocated_completions | (1u << i));
     gpr_mu_unlock(&call->completion_mu);
@@ -744,9 +743,8 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
   master = &call->masters[master_set];
   /* NB: the following integer arithmetic operation needs to be in its
    * expanded form due to the "integral promotion" performed (see section
-   * 3.2.1.1 of the C89 draft standard), which in this case upcasts the result
-   * of the bitwise OR to "unsigned". A cast to the smaller container type is
-   * then required to avoid the compiler warning */
+   * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+   * is then required to avoid the compiler warning */
   master->complete_mask = (gpr_uint16)(master->complete_mask | (1u << op));
   if (!success) {
     master->success = 0;
@@ -1259,9 +1257,8 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
     }
     /* NB: the following integer arithmetic operation needs to be in its
      * expanded form due to the "integral promotion" performed (see section
-     * 3.2.1.1 of the C89 draft standard), which in this case upcasts the result
-     * of the bitwise OR to "unsigned". A cast to the smaller container type is
-     * then required to avoid the compiler warning */
+     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+     * is then required to avoid the compiler warning */
     have_ops = (gpr_uint16)(have_ops | (1u << op));
 
     call->request_data[op] = data;

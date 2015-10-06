@@ -43,9 +43,8 @@ static void legal(int x) {
   int bit = x % 8;
   /* NB: the following integer arithmetic operation needs to be in its
    * expanded form due to the "integral promotion" performed (see section
-   * 3.2.1.1 of the C89 draft standard), which in this case upcasts the result
-   * of the bitwise OR to "unsigned". A cast to the smaller container type is
-   * then required to avoid the compiler warning */
+   * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+   * is then required to avoid the compiler warning */
   legal_bits[byte] =
       (unsigned char)((legal_bits[byte] | (unsigned char)(1 << bit)));
 }
