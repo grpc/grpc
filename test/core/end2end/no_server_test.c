@@ -79,8 +79,8 @@ int main(int argc, char **argv) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call, ops, op - ops, tag(1), NULL));
+  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(
+                                 call, ops, (size_t)(op - ops), tag(1), NULL));
   /* verify that all tags get completed */
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
@@ -88,9 +88,8 @@ int main(int argc, char **argv) {
   GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
 
   grpc_completion_queue_shutdown(cq);
-  while (
-      grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL)
-          .type != GRPC_QUEUE_SHUTDOWN)
+  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    NULL).type != GRPC_QUEUE_SHUTDOWN)
     ;
   grpc_completion_queue_destroy(cq);
   grpc_call_destroy(call);

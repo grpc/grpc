@@ -530,7 +530,20 @@ grpc_cloud_prod_auth_test_args() {
 
   [[ -n $1 ]] && {  # client_type
     case $1 in
-      cxx|go|java|node|php|python|ruby|csharp_mono)
+      go|java|node|php|python|ruby|csharp_mono)
+        grpc_client_platform='Docker'
+        grpc_gen_test_cmd+="_gen_$1_cmd"
+        declare -F $grpc_gen_test_cmd >> /dev/null || {
+          echo "-f: test_func for $1 => $grpc_gen_test_cmd is not defined" 1>&2
+          return 2
+        }
+        shift
+        ;;
+      cxx)
+        if [ "$test_case" == "oauth2_auth_token" ]
+        then
+          grpc_gen_test_cmd="grpc_cloud_prod_auth_compute_engine_creds"
+        fi
         grpc_client_platform='Docker'
         grpc_gen_test_cmd+="_gen_$1_cmd"
         declare -F $grpc_gen_test_cmd >> /dev/null || {
@@ -1464,7 +1477,7 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_node_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_interop_gen_cxx_cmd() {
     local cmd_prefix="sudo docker run grpc/cxx";
-    local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl";
+    local test_script="/var/local/git/grpc/bins/opt/interop_client --use_tls";
     local the_cmd="$cmd_prefix $test_script $@";
     echo $the_cmd
 }
@@ -1476,7 +1489,7 @@ grpc_interop_gen_cxx_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_gen_cxx_cmd() {
     local cmd_prefix="sudo docker run grpc/cxx";
-    local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots";
+    local test_script="/var/local/git/grpc/bins/opt/interop_client --use_tls --use_prod_roots";
     local gfe_flags=$(_grpc_prod_gfe_flags)
     local the_cmd="$cmd_prefix $test_script $gfe_flags $@";
     echo $the_cmd
@@ -1489,7 +1502,7 @@ grpc_cloud_prod_gen_cxx_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_auth_service_account_creds_gen_cxx_cmd() {
     local cmd_prefix="sudo docker run grpc/cxx";
-    local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots";
+    local test_script="/var/local/git/grpc/bins/opt/interop_client --use_tls --use_prod_roots";
     local gfe_flags=$(_grpc_prod_gfe_flags)
     local added_gfe_flags=$(_grpc_svc_acc_test_flags)
     local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
@@ -1503,7 +1516,7 @@ grpc_cloud_prod_auth_service_account_creds_gen_cxx_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_auth_compute_engine_creds_gen_cxx_cmd() {
     local cmd_prefix="sudo docker run grpc/cxx";
-    local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots";
+    local test_script="/var/local/git/grpc/bins/opt/interop_client --use_tls --use_prod_roots";
     local gfe_flags=$(_grpc_prod_gfe_flags)
     local added_gfe_flags=$(_grpc_gce_test_flags)
     local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";
@@ -1517,7 +1530,7 @@ grpc_cloud_prod_auth_compute_engine_creds_gen_cxx_cmd() {
 #   cmd=$($grpc_gen_test_cmd $flags)
 grpc_cloud_prod_auth_jwt_token_creds_gen_cxx_cmd() {
     local cmd_prefix="sudo docker run grpc/cxx";
-    local test_script="/var/local/git/grpc/bins/opt/interop_client --enable_ssl --use_prod_roots";
+    local test_script="/var/local/git/grpc/bins/opt/interop_client --use_tls --use_prod_roots";
     local gfe_flags=$(_grpc_prod_gfe_flags)
     local added_gfe_flags=$(_grpc_jwt_token_test_flags)
     local the_cmd="$cmd_prefix $test_script $gfe_flags $added_gfe_flags $@";

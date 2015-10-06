@@ -69,7 +69,7 @@ void gpr_slice_buffer_destroy(gpr_slice_buffer *sb) {
   }
 }
 
-gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, unsigned n) {
+gpr_uint8 *gpr_slice_buffer_tiny_add(gpr_slice_buffer *sb, size_t n) {
   gpr_slice *back;
   gpr_uint8 *out;
 
@@ -206,4 +206,28 @@ void gpr_slice_buffer_move_into(gpr_slice_buffer *src, gpr_slice_buffer *dst) {
   gpr_slice_buffer_addn(dst, src->slices, src->count);
   src->count = 0;
   src->length = 0;
+}
+
+void gpr_slice_buffer_trim_end(gpr_slice_buffer *sb, size_t n,
+                               gpr_slice_buffer *garbage) {
+  GPR_ASSERT(n <= sb->length);
+  sb->length -= n;
+  for (;;) {
+    size_t idx = sb->count - 1;
+    gpr_slice slice = sb->slices[idx];
+    size_t slice_len = GPR_SLICE_LENGTH(slice);
+    if (slice_len > n) {
+      sb->slices[idx] = gpr_slice_split_head(&slice, slice_len - n);
+      gpr_slice_buffer_add_indexed(garbage, slice);
+      return;
+    } else if (slice_len == n) {
+      gpr_slice_buffer_add_indexed(garbage, slice);
+      sb->count = idx;
+      return;
+    } else {
+      gpr_slice_buffer_add_indexed(garbage, slice);
+      n -= slice_len;
+      sb->count = idx;
+    }
+  }
 }

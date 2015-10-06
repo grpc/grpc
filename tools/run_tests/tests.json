@@ -47,24 +47,6 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "alarm_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
     "name": "alpn_test", 
     "platforms": [
       "linux", 
@@ -177,6 +159,24 @@
       "linux", 
       "mac", 
       "posix"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "endpoint_pair_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
     ]
   }, 
   {
@@ -643,8 +643,7 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "exclude_configs": [], 
     "flaky": false, 
@@ -653,8 +652,7 @@
     "platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ]
   }, 
   {
@@ -846,6 +844,24 @@
     "flaky": false, 
     "language": "c", 
     "name": "lame_client_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "lb_policies_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -1121,8 +1137,7 @@
     "ci_platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ], 
     "exclude_configs": [], 
     "flaky": false, 
@@ -1131,12 +1146,13 @@
     "platforms": [
       "linux", 
       "mac", 
-      "posix", 
-      "windows"
+      "posix"
     ]
   }, 
   {
     "ci_platforms": [
+      "linux", 
+      "mac", 
       "posix"
     ], 
     "exclude_configs": [], 
@@ -1144,6 +1160,8 @@
     "language": "c", 
     "name": "udp_server_test", 
     "platforms": [
+      "linux", 
+      "mac", 
       "posix"
     ]
   }, 
@@ -1163,6 +1181,22 @@
       "mac", 
       "posix", 
       "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "workqueue_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
     ]
   }, 
   {
@@ -1558,6 +1592,22 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
+    "name": "streaming_throughput_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
     "name": "sync_streaming_ping_pong_test", 
     "platforms": [
       "linux", 
@@ -1597,18 +1647,6 @@
       "mac", 
       "posix", 
       "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "zookeeper_test", 
-    "platforms": [
-      "linux"
     ]
   }, 
   {

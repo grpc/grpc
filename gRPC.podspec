@@ -36,17 +36,19 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  s.version  = '0.7.0'
+  version = '0.11.1'
+  s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'http://www.grpc.io'
   s.license  = 'New BSD'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  # s.source = { :git => 'https://github.com/grpc/grpc.git',
-  #              :tag => 'release-0_10_0-objectivec-0.6.0' }
+  s.source = { :git => 'https://github.com/grpc/grpc.git',
+               :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}" }
 
-  s.ios.deployment_target = '6.0'
-  s.osx.deployment_target = '10.8'
+
+  s.ios.deployment_target = '7.1'
+  s.osx.deployment_target = '10.9'
   s.requires_arc = true
 
   objc_dir = 'src/objective-c'
@@ -61,7 +63,8 @@ Pod::Spec.new do |s|
 
   # Core cross-platform gRPC library, written in C.
   s.subspec 'C-Core' do |ss|
-    ss.source_files = 'src/core/support/env.h',
+    ss.source_files = 'src/core/support/block_annotate.h',
+                      'src/core/support/env.h',
                       'src/core/support/file.h',
                       'src/core/support/murmur_hash.h',
                       'src/core/support/stack_lockfree.h',
@@ -136,10 +139,10 @@ Pod::Spec.new do |s|
                       'src/core/security/auth_filters.h',
                       'src/core/security/base64.h',
                       'src/core/security/credentials.h',
+                      'src/core/security/handshake.h',
                       'src/core/security/json_token.h',
                       'src/core/security/jwt_verifier.h',
                       'src/core/security/secure_endpoint.h',
-                      'src/core/security/secure_transport_setup.h',
                       'src/core/security/security_connector.h',
                       'src/core/security/security_context.h',
                       'src/core/tsi/fake_transport_security.h',
@@ -159,7 +162,10 @@ Pod::Spec.new do |s|
                       'src/core/client_config/client_config.h',
                       'src/core/client_config/connector.h',
                       'src/core/client_config/lb_policies/pick_first.h',
+                      'src/core/client_config/lb_policies/round_robin.h',
                       'src/core/client_config/lb_policy.h',
+                      'src/core/client_config/lb_policy_factory.h',
+                      'src/core/client_config/lb_policy_registry.h',
                       'src/core/client_config/resolver.h',
                       'src/core/client_config/resolver_factory.h',
                       'src/core/client_config/resolver_registry.h',
@@ -178,8 +184,10 @@ Pod::Spec.new do |s|
                       'src/core/iomgr/alarm.h',
                       'src/core/iomgr/alarm_heap.h',
                       'src/core/iomgr/alarm_internal.h',
+                      'src/core/iomgr/closure.h',
                       'src/core/iomgr/endpoint.h',
                       'src/core/iomgr/endpoint_pair.h',
+                      'src/core/iomgr/exec_ctx.h',
                       'src/core/iomgr/fd_posix.h',
                       'src/core/iomgr/iocp_windows.h',
                       'src/core/iomgr/iomgr.h',
@@ -206,6 +214,9 @@ Pod::Spec.new do |s|
                       'src/core/iomgr/udp_server.h',
                       'src/core/iomgr/wakeup_fd_pipe.h',
                       'src/core/iomgr/wakeup_fd_posix.h',
+                      'src/core/iomgr/workqueue.h',
+                      'src/core/iomgr/workqueue_posix.h',
+                      'src/core/iomgr/workqueue_windows.h',
                       'src/core/json/json.h',
                       'src/core/json/json_common.h',
                       'src/core/json/json_reader.h',
@@ -213,6 +224,7 @@ Pod::Spec.new do |s|
                       'src/core/profiling/timers.h',
                       'src/core/statistics/census_interface.h',
                       'src/core/statistics/census_rpc_stats.h',
+                      'src/core/surface/api_trace.h',
                       'src/core/surface/byte_buffer_queue.h',
                       'src/core/surface/call.h',
                       'src/core/surface/channel.h',
@@ -265,10 +277,10 @@ Pod::Spec.new do |s|
                       'src/core/security/credentials_posix.c',
                       'src/core/security/credentials_win32.c',
                       'src/core/security/google_default_credentials.c',
+                      'src/core/security/handshake.c',
                       'src/core/security/json_token.c',
                       'src/core/security/jwt_verifier.c',
                       'src/core/security/secure_endpoint.c',
-                      'src/core/security/secure_transport_setup.c',
                       'src/core/security/security_connector.c',
                       'src/core/security/security_context.c',
                       'src/core/security/server_auth_filter.c',
@@ -291,7 +303,10 @@ Pod::Spec.new do |s|
                       'src/core/client_config/client_config.c',
                       'src/core/client_config/connector.c',
                       'src/core/client_config/lb_policies/pick_first.c',
+                      'src/core/client_config/lb_policies/round_robin.c',
                       'src/core/client_config/lb_policy.c',
+                      'src/core/client_config/lb_policy_factory.c',
+                      'src/core/client_config/lb_policy_registry.c',
                       'src/core/client_config/resolver.c',
                       'src/core/client_config/resolver_factory.c',
                       'src/core/client_config/resolver_registry.c',
@@ -310,9 +325,11 @@ Pod::Spec.new do |s|
                       'src/core/httpcli/parser.c',
                       'src/core/iomgr/alarm.c',
                       'src/core/iomgr/alarm_heap.c',
+                      'src/core/iomgr/closure.c',
                       'src/core/iomgr/endpoint.c',
                       'src/core/iomgr/endpoint_pair_posix.c',
                       'src/core/iomgr/endpoint_pair_windows.c',
+                      'src/core/iomgr/exec_ctx.c',
                       'src/core/iomgr/fd_posix.c',
                       'src/core/iomgr/iocp_windows.c',
                       'src/core/iomgr/iomgr.c',
@@ -343,12 +360,15 @@ Pod::Spec.new do |s|
                       'src/core/iomgr/wakeup_fd_nospecial.c',
                       'src/core/iomgr/wakeup_fd_pipe.c',
                       'src/core/iomgr/wakeup_fd_posix.c',
+                      'src/core/iomgr/workqueue_posix.c',
+                      'src/core/iomgr/workqueue_windows.c',
                       'src/core/json/json.c',
                       'src/core/json/json_reader.c',
                       'src/core/json/json_string.c',
                       'src/core/json/json_writer.c',
                       'src/core/profiling/basic_timers.c',
                       'src/core/profiling/stap_timers.c',
+                      'src/core/surface/api_trace.c',
                       'src/core/surface/byte_buffer.c',
                       'src/core/surface/byte_buffer_queue.c',
                       'src/core/surface/byte_buffer_reader.c',
@@ -366,7 +386,6 @@ Pod::Spec.new do |s|
                       'src/core/surface/server.c',
                       'src/core/surface/server_chttp2.c',
                       'src/core/surface/server_create.c',
-                      'src/core/surface/surface_trace.c',
                       'src/core/surface/version.c',
                       'src/core/transport/chttp2/alpn.c',
                       'src/core/transport/chttp2/bin_encoder.c',
@@ -399,7 +418,8 @@ Pod::Spec.new do |s|
                       'src/core/census/operation.c',
                       'src/core/census/tracing.c'
 
-    ss.private_header_files = 'src/core/support/env.h',
+    ss.private_header_files = 'src/core/support/block_annotate.h',
+                              'src/core/support/env.h',
                               'src/core/support/file.h',
                               'src/core/support/murmur_hash.h',
                               'src/core/support/stack_lockfree.h',
@@ -410,10 +430,10 @@ Pod::Spec.new do |s|
                               'src/core/security/auth_filters.h',
                               'src/core/security/base64.h',
                               'src/core/security/credentials.h',
+                              'src/core/security/handshake.h',
                               'src/core/security/json_token.h',
                               'src/core/security/jwt_verifier.h',
                               'src/core/security/secure_endpoint.h',
-                              'src/core/security/secure_transport_setup.h',
                               'src/core/security/security_connector.h',
                               'src/core/security/security_context.h',
                               'src/core/tsi/fake_transport_security.h',
@@ -433,7 +453,10 @@ Pod::Spec.new do |s|
                               'src/core/client_config/client_config.h',
                               'src/core/client_config/connector.h',
                               'src/core/client_config/lb_policies/pick_first.h',
+                              'src/core/client_config/lb_policies/round_robin.h',
                               'src/core/client_config/lb_policy.h',
+                              'src/core/client_config/lb_policy_factory.h',
+                              'src/core/client_config/lb_policy_registry.h',
                               'src/core/client_config/resolver.h',
                               'src/core/client_config/resolver_factory.h',
                               'src/core/client_config/resolver_registry.h',
@@ -452,8 +475,10 @@ Pod::Spec.new do |s|
                               'src/core/iomgr/alarm.h',
                               'src/core/iomgr/alarm_heap.h',
                               'src/core/iomgr/alarm_internal.h',
+                              'src/core/iomgr/closure.h',
                               'src/core/iomgr/endpoint.h',
                               'src/core/iomgr/endpoint_pair.h',
+                              'src/core/iomgr/exec_ctx.h',
                               'src/core/iomgr/fd_posix.h',
                               'src/core/iomgr/iocp_windows.h',
                               'src/core/iomgr/iomgr.h',
@@ -480,6 +505,9 @@ Pod::Spec.new do |s|
                               'src/core/iomgr/udp_server.h',
                               'src/core/iomgr/wakeup_fd_pipe.h',
                               'src/core/iomgr/wakeup_fd_posix.h',
+                              'src/core/iomgr/workqueue.h',
+                              'src/core/iomgr/workqueue_posix.h',
+                              'src/core/iomgr/workqueue_windows.h',
                               'src/core/json/json.h',
                               'src/core/json/json_common.h',
                               'src/core/json/json_reader.h',
@@ -487,6 +515,7 @@ Pod::Spec.new do |s|
                               'src/core/profiling/timers.h',
                               'src/core/statistics/census_interface.h',
                               'src/core/statistics/census_rpc_stats.h',
+                              'src/core/surface/api_trace.h',
                               'src/core/surface/byte_buffer_queue.h',
                               'src/core/surface/call.h',
                               'src/core/surface/channel.h',
@@ -585,6 +614,6 @@ Pod::Spec.new do |s|
 
     ss.dependency 'gRPC/GRPCClient'
     ss.dependency 'gRPC/RxLibrary'
-    ss.dependency 'Protobuf', '~> 3.0.0-alpha-3'
+    ss.dependency 'Protobuf', '~> 3.0.0-alpha-4'
   end
 end

@@ -32,12 +32,14 @@
  */
 
 #include "src/core/transport/chttp2/internal.h"
-#include "src/core/transport/chttp2/http2_errors.h"
+
+#include <limits.h>
 
 #include <grpc/support/log.h>
 
+#include "src/core/transport/chttp2/http2_errors.h"
+
 static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing);
-static void finish_write_cb(void *tw, grpc_endpoint_cb_status write_status);
 
 int grpc_chttp2_unlocking_check_writes(
     grpc_chttp2_transport_global *transport_global,
@@ -79,12 +81,13 @@ int grpc_chttp2_unlocking_check_writes(
     stream_writing->send_closed = GRPC_DONT_SEND_CLOSED;
 
     if (stream_global->outgoing_sopb) {
-      window_delta =
-          grpc_chttp2_preencode(stream_global->outgoing_sopb->ops,
-                                &stream_global->outgoing_sopb->nops,
-                                GPR_MIN(transport_global->outgoing_window,
-                                        stream_global->outgoing_window),
-                                &stream_writing->sopb);
+      window_delta = grpc_chttp2_preencode(
+          stream_global->outgoing_sopb->ops,
+          &stream_global->outgoing_sopb->nops,
+          (gpr_uint32)GPR_MIN(GPR_MIN(transport_global->outgoing_window,
+                                      stream_global->outgoing_window),
+                              GPR_UINT32_MAX),
+          &stream_writing->sopb);
       GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT(
           "write", transport_global, outgoing_window, -(gpr_int64)window_delta);
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("write", transport_global, stream_global,
@@ -114,6 +117,10 @@ int grpc_chttp2_unlocking_check_writes(
 
     if (!stream_global->read_closed &&
         stream_global->unannounced_incoming_window > 0) {
+      GPR_ASSERT(stream_writing->announce_window == 0);
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "write", transport_writing, stream_writing, announce_window,
+          stream_global->unannounced_incoming_window);
       stream_writing->announce_window =
           stream_global->unannounced_incoming_window;
       GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
@@ -156,7 +163,8 @@ int grpc_chttp2_unlocking_check_writes(
 }
 
 void grpc_chttp2_perform_writes(
-    grpc_chttp2_transport_writing *transport_writing, grpc_endpoint *endpoint) {
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
+    grpc_endpoint *endpoint) {
   GPR_ASSERT(transport_writing->outbuf.count > 0 ||
              grpc_chttp2_list_have_writing_streams(transport_writing));
 
@@ -165,18 +173,8 @@ void grpc_chttp2_perform_writes(
   GPR_ASSERT(transport_writing->outbuf.count > 0);
   GPR_ASSERT(endpoint);
 
-  switch (grpc_endpoint_write(endpoint, transport_writing->outbuf.slices,
-                              transport_writing->outbuf.count, finish_write_cb,
-                              transport_writing)) {
-    case GRPC_ENDPOINT_WRITE_DONE:
-      grpc_chttp2_terminate_writing(transport_writing, 1);
-      break;
-    case GRPC_ENDPOINT_WRITE_ERROR:
-      grpc_chttp2_terminate_writing(transport_writing, 0);
-      break;
-    case GRPC_ENDPOINT_WRITE_PENDING:
-      break;
-  }
+  grpc_endpoint_write(exec_ctx, endpoint, &transport_writing->outbuf,
+                      &transport_writing->done_cb);
 }
 
 static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
@@ -198,6 +196,9 @@ static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
           &transport_writing->outbuf,
           grpc_chttp2_window_update_create(stream_writing->id,
                                            stream_writing->announce_window));
+      GRPC_CHTTP2_FLOWCTL_TRACE_STREAM(
+          "write", transport_writing, stream_writing, announce_window,
+          -(gpr_int64)stream_writing->announce_window);
       stream_writing->announce_window = 0;
     }
     if (stream_writing->send_closed == GRPC_SEND_CLOSED_WITH_RST_STREAM) {
@@ -209,14 +210,8 @@ static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
   }
 }
 
-static void finish_write_cb(void *tw, grpc_endpoint_cb_status write_status) {
-  grpc_chttp2_transport_writing *transport_writing = tw;
-  grpc_chttp2_terminate_writing(transport_writing,
-                                write_status == GRPC_ENDPOINT_CB_OK);
-}
-
 void grpc_chttp2_cleanup_writing(
-    grpc_chttp2_transport_global *transport_global,
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_writing *transport_writing) {
   grpc_chttp2_stream_writing *stream_writing;
   grpc_chttp2_stream_global *stream_global;
@@ -235,14 +230,12 @@ void grpc_chttp2_cleanup_writing(
           stream_global->outgoing_sopb->nops == 0) {
         GPR_ASSERT(stream_global->write_state != GRPC_WRITE_STATE_QUEUED_CLOSE);
         stream_global->outgoing_sopb = NULL;
-        grpc_chttp2_schedule_closure(transport_global,
-                                     stream_global->send_done_closure, 1);
+        grpc_exec_ctx_enqueue(exec_ctx, stream_global->send_done_closure, 1);
       }
     }
     stream_global->writing_now = 0;
     grpc_chttp2_list_add_read_write_state_changed(transport_global,
                                                   stream_global);
   }
-  transport_writing->outbuf.count = 0;
-  transport_writing->outbuf.length = 0;
+  gpr_slice_buffer_reset_and_unref(&transport_writing->outbuf);
 }

@@ -46,10 +46,13 @@
 #define NOMINMAX
 #endif /* NOMINMAX */
 
-#if defined(_WIN32_WINNT)
-#if _WIN32_WINNT < 0x0600
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
+#ifndef _WIN32_WINNT
+#error \
+    "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
+#else /* !defined(_WIN32_WINNT) */
+#if (_WIN32_WINNT < 0x0600)
+#error \
+    "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"
 #endif /* _WIN32_WINNT < 0x0600 */
 #endif /* defined(_WIN32_WINNT) */
 
@@ -121,6 +124,7 @@
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_HAVE_MSG_NOSIGNAL 1
 #elif defined(__linux__)
+#define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_PLATFORM_STRING "linux"
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
@@ -174,11 +178,10 @@
 #endif /* _LP64 */
 #elif defined(__APPLE__)
 #include <TargetConditionals.h>
-/* Provides IPV6_RECVPKTINFO */
-#define __APPLE_USE_RFC_3542
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
+#define GPR_MSG_IOVLEN_TYPE int
 #if TARGET_OS_IPHONE
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
@@ -187,6 +190,7 @@
 #define GPR_PLATFORM_STRING "osx"
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_TLS 1
+#define GPR_POSIX_CRASH_HANDLER 1
 #endif
 #define GPR_GCC_ATOMIC 1
 #define GPR_POSIX_LOG 1
@@ -318,6 +322,7 @@ typedef uintptr_t gpr_uintptr;
 
 /* INT64_MAX is unavailable on some platforms. */
 #define GPR_INT64_MAX (gpr_int64)(~(gpr_uint64)0 >> 1)
+#define GPR_UINT32_MAX (~(gpr_uint32)0)
 
 /* maximum alignment needed for any type on this platform, rounded up to a
    power of two */

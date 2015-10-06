@@ -42,14 +42,14 @@
  * are not owned by it.
  */
 typedef struct grpc_json {
-  struct grpc_json* next;
-  struct grpc_json* prev;
-  struct grpc_json* child;
-  struct grpc_json* parent;
+  struct grpc_json *next;
+  struct grpc_json *prev;
+  struct grpc_json *child;
+  struct grpc_json *parent;
 
   grpc_json_type type;
-  const char* key;
-  const char* value;
+  const char *key;
+  const char *value;
 } grpc_json;
 
 /* The next two functions are going to parse the input string, and
@@ -65,8 +65,8 @@ typedef struct grpc_json {
  *
  * Delete the allocated tree afterward using grpc_json_destroy().
  */
-grpc_json* grpc_json_parse_string_with_len(char* input, size_t size);
-grpc_json* grpc_json_parse_string(char* input);
+grpc_json *grpc_json_parse_string_with_len(char *input, size_t size);
+grpc_json *grpc_json_parse_string(char *input);
 
 /* This function will create a new string using gpr_realloc, and will
  * deserialize the grpc_json tree into it. It'll be zero-terminated,
@@ -76,13 +76,13 @@ grpc_json* grpc_json_parse_string(char* input);
  * If indent is 0, then newlines will be suppressed as well, and the
  * output will be condensed at its maximum.
  */
-char* grpc_json_dump_to_string(grpc_json* json, int indent);
+char *grpc_json_dump_to_string(grpc_json *json, int indent);
 
 /* Use these to create or delete a grpc_json object.
  * Deletion is recursive. We will not attempt to free any of the strings
  * in any of the objects of that tree.
  */
-grpc_json* grpc_json_create(grpc_json_type type);
-void grpc_json_destroy(grpc_json* json);
+grpc_json *grpc_json_create(grpc_json_type type);
+void grpc_json_destroy(grpc_json *json);
 
 #endif /* GRPC_INTERNAL_CORE_JSON_JSON_H */

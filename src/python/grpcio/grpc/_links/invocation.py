@@ -36,6 +36,8 @@ import threading
 import time
 
 from grpc._adapter import _intermediary_low
+from grpc._links import _constants
+from grpc.beta import interfaces as beta_interfaces
 from grpc.framework.foundation import activated
 from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import relay
@@ -72,11 +74,28 @@ class _LowWrite(enum.Enum):
   CLOSED = 'CLOSED'
 
 
+class _Context(beta_interfaces.GRPCInvocationContext):
+
+  def __init__(self):
+    self._lock = threading.Lock()
+    self._disable_next_compression = False
+
+  def disable_next_request_compression(self):
+    with self._lock:
+      self._disable_next_compression = True
+
+  def next_compression_disabled(self):
+    with self._lock:
+      disabled = self._disable_next_compression
+      self._disable_next_compression = False
+      return disabled
+
+
 class _RPCState(object):
 
   def __init__(
       self, call, request_serializer, response_deserializer, sequence_number,
-      read, allowance, high_write, low_write, due):
+      read, allowance, high_write, low_write, due, context):
     self.call = call
     self.request_serializer = request_serializer
     self.response_deserializer = response_deserializer
@@ -86,6 +105,7 @@ class _RPCState(object):
     self.high_write = high_write
     self.low_write = low_write
     self.due = due
+    self.context = context
 
 
 def _no_longer_due(kind, rpc_state, key, rpc_states):
@@ -168,14 +188,17 @@ class _Kernel(object):
       termination = links.Ticket.Termination.CANCELLATION
     elif event.status.code is _intermediary_low.Code.DEADLINE_EXCEEDED:
       termination = links.Ticket.Termination.EXPIRATION
+    elif event.status.code is _intermediary_low.Code.UNIMPLEMENTED:
+      termination = links.Ticket.Termination.REMOTE_FAILURE
     elif event.status.code is _intermediary_low.Code.UNKNOWN:
       termination = links.Ticket.Termination.LOCAL_FAILURE
     else:
       termination = links.Ticket.Termination.TRANSMISSION_FAILURE
+    code = _constants.LOW_STATUS_CODE_TO_HIGH_STATUS_CODE[event.status.code]
     ticket = links.Ticket(
         operation_id, rpc_state.sequence_number, None, None, None, None, None,
-        None, None, event.metadata, event.status.code, event.status.details,
-        termination, None)
+        None, None, event.metadata, code, event.status.details, termination,
+        None)
     rpc_state.sequence_number += 1
     self._relay.add_value(ticket)
 
@@ -205,7 +228,7 @@ class _Kernel(object):
 
   def _invoke(
       self, operation_id, group, method, initial_metadata, payload, termination,
-      timeout, allowance):
+      timeout, allowance, options):
     """Invoke an RPC.
 
     Args:
@@ -220,6 +243,7 @@ class _Kernel(object):
       timeout: A duration of time in seconds to allow for the RPC.
       allowance: The number of payloads (beyond the free first one) that the
         local ticket exchange mate has granted permission to be read.
+      options: A beta_interfaces.GRPCCallOptions value or None.
     """
     if termination is links.Ticket.Termination.COMPLETION:
       high_write = _HighWrite.CLOSED
@@ -237,6 +261,8 @@ class _Kernel(object):
     call = _intermediary_low.Call(
         self._channel, self._completion_queue, '/%s/%s' % (group, method),
         self._host, time.time() + timeout)
+    if options is not None and options.credentials is not None:
+      call.set_credentials(options.credentials._intermediary_low_credentials)
     if transformed_initial_metadata is not None:
       for metadata_key, metadata_value in transformed_initial_metadata:
         call.add_metadata(metadata_key, metadata_value)
@@ -250,17 +276,33 @@ class _Kernel(object):
         low_write = _LowWrite.OPEN
         due = set((_METADATA, _FINISH,))
     else:
-      call.write(request_serializer(payload), operation_id)
+      if options is not None and options.disable_compression:
+        flags = _intermediary_low.WriteFlags.WRITE_NO_COMPRESS
+      else:
+        flags = 0
+      call.write(request_serializer(payload), operation_id, flags)
       low_write = _LowWrite.ACTIVE
       due = set((_WRITE, _METADATA, _FINISH,))
+    context = _Context()
     self._rpc_states[operation_id] = _RPCState(
-        call, request_serializer, response_deserializer, 0,
+        call, request_serializer, response_deserializer, 1,
         _Read.AWAITING_METADATA, 1 if allowance is None else (1 + allowance),
-        high_write, low_write, due)
+        high_write, low_write, due, context)
+    protocol = links.Protocol(links.Protocol.Kind.INVOCATION_CONTEXT, context)
+    ticket = links.Ticket(
+        operation_id, 0, None, None, None, None, None, None, None, None, None,
+        None, None, protocol)
+    self._relay.add_value(ticket)
 
   def _advance(self, operation_id, rpc_state, payload, termination, allowance):
     if payload is not None:
-      rpc_state.call.write(rpc_state.request_serializer(payload), operation_id)
+      disable_compression = rpc_state.context.next_compression_disabled()
+      if disable_compression:
+        flags = _intermediary_low.WriteFlags.WRITE_NO_COMPRESS
+      else:
+        flags = 0
+      rpc_state.call.write(
+          rpc_state.request_serializer(payload), operation_id, flags)
       rpc_state.low_write = _LowWrite.ACTIVE
       rpc_state.due.add(_WRITE)
 
@@ -288,10 +330,15 @@ class _Kernel(object):
         if self._completion_queue is None:
           logging.error('Received invocation ticket %s after stop!', ticket)
         else:
+          if (ticket.protocol is not None and
+              ticket.protocol.kind is links.Protocol.Kind.CALL_OPTION):
+            grpc_call_options = ticket.protocol.value
+          else:
+            grpc_call_options = None
           self._invoke(
               ticket.operation_id, ticket.group, ticket.method,
               ticket.initial_metadata, ticket.payload, ticket.termination,
-              ticket.timeout, ticket.allowance)
+              ticket.timeout, ticket.allowance, grpc_call_options)
       else:
         rpc_state = self._rpc_states.get(ticket.operation_id)
         if rpc_state is not None:

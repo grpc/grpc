@@ -47,14 +47,14 @@ gpr_slice grpc_chttp2_rst_stream_create(gpr_uint32 id, gpr_uint32 code) {
   *p++ = 4;
   *p++ = GRPC_CHTTP2_FRAME_RST_STREAM;
   *p++ = 0;
-  *p++ = id >> 24;
-  *p++ = id >> 16;
-  *p++ = id >> 8;
-  *p++ = id;
-  *p++ = code >> 24;
-  *p++ = code >> 16;
-  *p++ = code >> 8;
-  *p++ = code;
+  *p++ = (gpr_uint8)(id >> 24);
+  *p++ = (gpr_uint8)(id >> 16);
+  *p++ = (gpr_uint8)(id >> 8);
+  *p++ = (gpr_uint8)(id);
+  *p++ = (gpr_uint8)(code >> 24);
+  *p++ = (gpr_uint8)(code >> 16);
+  *p++ = (gpr_uint8)(code >> 8);
+  *p++ = (gpr_uint8)(code);
 
   return slice;
 }
@@ -71,7 +71,8 @@ grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_rst_stream_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_exec_ctx *exec_ctx, void *parser,
+    grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);

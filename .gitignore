@@ -8,6 +8,7 @@ objs
 python*_virtual_environment
 
 # gcov coverage data
+reports
 coverage
 *.gcno
 
@@ -39,3 +40,7 @@ report.xml
 
 # port server log
 portlog.txt
+
+# gyp generated make files
+*-gyp.mk
+out

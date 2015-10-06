@@ -45,7 +45,6 @@ service TestService {
   rpc EmptyCall(grpc.testing.Empty) returns (grpc.testing.Empty);
 
   // One request followed by one response.
-  // TODO(Issue 527): Describe required server behavior.
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
 
   // One request followed by a sequence of responses (streamed download).

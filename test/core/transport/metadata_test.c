@@ -63,9 +63,9 @@ static void test_create_string(void) {
   LOG_TEST("test_create_string");
 
   ctx = grpc_mdctx_create();
-  s1 = grpc_mdstr_from_string(ctx, "hello", 0);
-  s2 = grpc_mdstr_from_string(ctx, "hello", 0);
-  s3 = grpc_mdstr_from_string(ctx, "very much not hello", 0);
+  s1 = grpc_mdstr_from_string(ctx, "hello");
+  s2 = grpc_mdstr_from_string(ctx, "hello");
+  s3 = grpc_mdstr_from_string(ctx, "very much not hello");
   GPR_ASSERT(s1 == s2);
   GPR_ASSERT(s3 != s1);
   GPR_ASSERT(gpr_slice_str_cmp(s1->slice, "hello") == 0);
@@ -177,11 +177,11 @@ static void test_spin_creating_the_same_thing(void) {
 
 static void test_things_stick_around(void) {
   grpc_mdctx *ctx;
-  int i, j;
+  size_t i, j;
   char *buffer;
-  int nstrs = 1000;
+  size_t nstrs = 1000;
   grpc_mdstr **strs = gpr_malloc(sizeof(grpc_mdstr *) * nstrs);
-  int *shuf = gpr_malloc(sizeof(int) * nstrs);
+  size_t *shuf = gpr_malloc(sizeof(size_t) * nstrs);
   grpc_mdstr *test;
 
   LOG_TEST("test_things_stick_around");
@@ -190,7 +190,7 @@ static void test_things_stick_around(void) {
 
   for (i = 0; i < nstrs; i++) {
     gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", i);
-    strs[i] = grpc_mdstr_from_string(ctx, buffer, 0);
+    strs[i] = grpc_mdstr_from_string(ctx, buffer);
     shuf[i] = i;
     gpr_free(buffer);
   }
@@ -201,9 +201,9 @@ static void test_things_stick_around(void) {
   }
 
   for (i = 0; i < nstrs; i++) {
-    int p = rand() % nstrs;
-    int q = rand() % nstrs;
-    int temp = shuf[p];
+    size_t p = (size_t)rand() % nstrs;
+    size_t q = (size_t)rand() % nstrs;
+    size_t temp = shuf[p];
     shuf[p] = shuf[q];
     shuf[q] = temp;
   }
@@ -212,7 +212,7 @@ static void test_things_stick_around(void) {
     GRPC_MDSTR_UNREF(strs[shuf[i]]);
     for (j = i + 1; j < nstrs; j++) {
       gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%dx", shuf[j]);
-      test = grpc_mdstr_from_string(ctx, buffer, 0);
+      test = grpc_mdstr_from_string(ctx, buffer);
       GPR_ASSERT(test == strs[shuf[j]]);
       GRPC_MDSTR_UNREF(test);
       gpr_free(buffer);
@@ -235,13 +235,13 @@ static void test_slices_work(void) {
   ctx = grpc_mdctx_create();
 
   str = grpc_mdstr_from_string(
-      ctx, "123456789012345678901234567890123456789012345678901234567890", 0);
+      ctx, "123456789012345678901234567890123456789012345678901234567890");
   slice = gpr_slice_ref(str->slice);
   GRPC_MDSTR_UNREF(str);
   gpr_slice_unref(slice);
 
   str = grpc_mdstr_from_string(
-      ctx, "123456789012345678901234567890123456789012345678901234567890", 0);
+      ctx, "123456789012345678901234567890123456789012345678901234567890");
   slice = gpr_slice_ref(str->slice);
   gpr_slice_unref(slice);
   GRPC_MDSTR_UNREF(str);
@@ -258,7 +258,7 @@ static void test_base64_and_huffman_works(void) {
   LOG_TEST("test_base64_and_huffman_works");
 
   ctx = grpc_mdctx_create();
-  str = grpc_mdstr_from_string(ctx, "abcdefg", 0);
+  str = grpc_mdstr_from_string(ctx, "abcdefg");
   slice1 = grpc_mdstr_as_base64_encoded_and_huffman_compressed(str);
   slice2 = grpc_chttp2_base64_encode_and_huffman_compress(str->slice);
   GPR_ASSERT(0 == gpr_slice_cmp(slice1, slice2));

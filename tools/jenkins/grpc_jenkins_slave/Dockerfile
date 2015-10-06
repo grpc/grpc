@@ -32,7 +32,7 @@
 
 FROM debian:jessie
 
-# Install Git.
+# Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
   autoconf \
   autotools-dev \
@@ -43,6 +43,8 @@ RUN apt-get update && apt-get install -y \
   gcc \
   gcc-multilib \
   git \
+  gyp \
+  lcov \
   libc6 \
   libc6-dbg \
   libc6-dev \

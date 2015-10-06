@@ -41,7 +41,8 @@
 
 #include "test/core/util/test_config.h"
 
-static void channel_init_func(grpc_channel_element *elem, grpc_channel *master,
+static void channel_init_func(grpc_exec_ctx *exec_ctx,
+                              grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args,
                               grpc_mdctx *metadata_context, int is_first,
                               int is_last) {
@@ -54,35 +55,40 @@ static void channel_init_func(grpc_channel_element *elem, grpc_channel *master,
   *(int *)(elem->channel_data) = 0;
 }
 
-static void call_init_func(grpc_call_element *elem,
+static void call_init_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            const void *server_transport_data,
                            grpc_transport_stream_op *initial_op) {
   ++*(int *)(elem->channel_data);
   *(int *)(elem->call_data) = 0;
 }
 
-static void channel_destroy_func(grpc_channel_element *elem) {}
+static void channel_destroy_func(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_element *elem) {}
 
-static void call_destroy_func(grpc_call_element *elem) {
+static void call_destroy_func(grpc_exec_ctx *exec_ctx,
+                              grpc_call_element *elem) {
   ++*(int *)(elem->channel_data);
 }
 
-static void call_func(grpc_call_element *elem, grpc_transport_stream_op *op) {
+static void call_func(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                      grpc_transport_stream_op *op) {
   ++*(int *)(elem->call_data);
 }
 
-static void channel_func(grpc_channel_element *elem, grpc_transport_op *op) {
+static void channel_func(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+                         grpc_transport_op *op) {
   ++*(int *)(elem->channel_data);
 }
 
-static char *get_peer(grpc_call_element *elem) { return gpr_strdup("peer"); }
+static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
+  return gpr_strdup("peer");
+}
 
 static void test_create_channel_stack(void) {
-  const grpc_channel_filter filter = {call_func,         channel_func,
-                                      sizeof(int),       call_init_func,
-                                      call_destroy_func, sizeof(int),
-                                      channel_init_func, channel_destroy_func,
-                                      get_peer,          "some_test_filter"};
+  const grpc_channel_filter filter = {
+      call_func, channel_func, sizeof(int), call_init_func, call_destroy_func,
+      sizeof(int), channel_init_func, channel_destroy_func, get_peer,
+      "some_test_filter"};
   const grpc_channel_filter *filters = &filter;
   grpc_channel_stack *channel_stack;
   grpc_call_stack *call_stack;
@@ -93,6 +99,7 @@ static void test_create_channel_stack(void) {
   grpc_mdctx *metadata_context;
   int *channel_data;
   int *call_data;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   metadata_context = grpc_mdctx_create();
 
@@ -104,15 +111,15 @@ static void test_create_channel_stack(void) {
   chan_args.args = &arg;
 
   channel_stack = gpr_malloc(grpc_channel_stack_size(&filters, 1));
-  grpc_channel_stack_init(&filters, 1, NULL, &chan_args, metadata_context,
-                          channel_stack);
+  grpc_channel_stack_init(&exec_ctx, &filters, 1, NULL, &chan_args,
+                          metadata_context, channel_stack);
   GPR_ASSERT(channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = (int *)channel_elem->channel_data;
   GPR_ASSERT(*channel_data == 0);
 
   call_stack = gpr_malloc(channel_stack->call_stack_size);
-  grpc_call_stack_init(channel_stack, NULL, NULL, call_stack);
+  grpc_call_stack_init(&exec_ctx, channel_stack, NULL, NULL, call_stack);
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
   GPR_ASSERT(call_elem->filter == channel_elem->filter);
@@ -121,14 +128,16 @@ static void test_create_channel_stack(void) {
   GPR_ASSERT(*call_data == 0);
   GPR_ASSERT(*channel_data == 1);
 
-  grpc_call_stack_destroy(call_stack);
+  grpc_call_stack_destroy(&exec_ctx, call_stack);
   gpr_free(call_stack);
   GPR_ASSERT(*channel_data == 2);
 
-  grpc_channel_stack_destroy(channel_stack);
+  grpc_channel_stack_destroy(&exec_ctx, channel_stack);
   gpr_free(channel_stack);
 
   grpc_mdctx_unref(metadata_context);
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {
