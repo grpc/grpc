@@ -49,7 +49,7 @@ namespace Grpc.Core
         CancellationToken cancellationToken;
         WriteOptions writeOptions;
         ContextPropagationToken propagationToken;
-        Credentials credentials;
+        CallCredentials credentials;
 
         /// <summary>
         /// Creates a new instance of <c>CallOptions</c> struct.
@@ -61,7 +61,7 @@ namespace Grpc.Core
         /// <param name="propagationToken">Context propagation token obtained from <see cref="ServerCallContext"/>.</param>
         /// <param name="credentials">Credentials to use for this call.</param>
         public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken),
-                           WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, Credentials credentials = null)
+                           WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null)
         {
             this.headers = headers;
             this.deadline = deadline;
@@ -120,7 +120,7 @@ namespace Grpc.Core
         /// <summary>
         /// Credentials to use for this call.
         /// </summary>
-        public Credentials Credentials
+        public CallCredentials Credentials
         {
             get
             {
