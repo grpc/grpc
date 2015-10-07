@@ -713,21 +713,24 @@ def _start_port_server(port_server_port):
   # if not running ==> start a new one
   # otherwise, leave it up
   try:
-    version = urllib2.urlopen('http://localhost:%d/version' % port_server_port,
-                              timeout=1).read()
-    print 'detected port server running'
+    version = int(urllib2.urlopen(
+        'http://localhost:%d/version_number' % port_server_port,
+        timeout=1).read())
+    print 'detected port server running version %d' % version
     running = True
-  except Exception:
+  except Exception as e:
     print 'failed to detect port server: %s' % sys.exc_info()[0]
+    print e.strerror
     running = False
   if running:
-    with open('tools/run_tests/port_server.py') as f:
-      current_version = hashlib.sha1(f.read()).hexdigest()
-      running = (version == current_version)
-      if not running:
-        print 'port_server version mismatch: killing the old one'
-        urllib2.urlopen('http://localhost:%d/quit' % port_server_port).read()
-        time.sleep(1)
+    current_version = int(subprocess.check_output(
+        [sys.executable, 'tools/run_tests/port_server.py', 'dump_version']))
+    print 'my port server is version %d' % current_version
+    running = (version >= current_version)
+    if not running:
+      print 'port_server version mismatch: killing the old one'
+      urllib2.urlopen('http://localhost:%d/quitquitquit' % port_server_port).read()
+      time.sleep(1)
   if not running:
     print 'starting port_server'
     port_log = open('portlog.txt', 'w')
@@ -773,7 +776,7 @@ def _build_and_run(
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
                  for _ in range(0, args.antagonists)]
-  port_server_port = 9999
+  port_server_port = 32767
   _start_port_server(port_server_port)
   try:
     infinite_runs = runs_per_test == 0
