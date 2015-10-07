@@ -247,4 +247,4 @@ void init(Local<Object> exports) {
   grpc::node::ServerCredentials::Init(exports);
 }
 
-NODE_MODULE(grpc, init)
+NODE_MODULE(grpc_node, init)

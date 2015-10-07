@@ -16,14 +16,13 @@
     }
   ],
   "directories": {
-    "lib": "src",
-    "example": "examples"
+    "lib": "src/node/src"
   },
   "scripts": {
-    "lint": "node ./node_modules/jshint/bin/jshint src test examples interop index.js",
-    "test": "./node_modules/.bin/mocha && npm run-script lint",
-    "gen_docs": "./node_modules/.bin/jsdoc -c jsdoc_conf.json",
-    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha"
+    "lint": "node ./node_modules/jshint/bin/jshint src/node/src src/node/test src/node/examples src/node/interop src/node/index.js",
+    "test": "./node_modules/.bin/mocha src/node/test && npm run-script lint",
+    "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test"
   },
   "dependencies": {
     "bindings": "^1.2.0",
@@ -46,13 +45,17 @@
   },
   "files": [
     "LICENSE",
-    "README.md",
-    "index.js",
-    "binding.gyp",
-    "ext",
-    "health_check",
-    "src"
+    "src/node/README.md",
+    "src/node/index.js",
+    "src/node/ext",
+    "src/node/health_check",
+    "src/node/src",
+    "src/core",
+    "test/proto",
+    "include",
+    "grpc.gyp",
+    "binding.gyp"
   ],
-  "main": "index.js",
+  "main": "src/node/index.js",
   "license": "BSD-3-Clause"
 }

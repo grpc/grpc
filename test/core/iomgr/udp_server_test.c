@@ -49,7 +49,8 @@ static grpc_pollset g_pollset;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
 
-static void on_read(grpc_fd *emfd, grpc_server *server) {
+static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
+                    grpc_server *server) {
   char read_buffer[512];
   ssize_t byte_count;
 
