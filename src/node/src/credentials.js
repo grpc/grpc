@@ -33,6 +33,29 @@
 
 /**
  * Credentials module
+ *
+ * This module contains factory methods for two different credential types:
+ * CallCredentials and ChannelCredentials. ChannelCredentials are things like
+ * SSL credentials that can be used to secure a connection, and are used to
+ * construct a Client object. CallCredentials genrally modify metadata, so they
+ * can be attached to an individual method call.
+ *
+ * CallCredentials can be composed with other CallCredentials to create
+ * CallCredentials. ChannelCredentials can be composed with CallCredentials
+ * to create ChannelCredentials. No combined credential can have more than
+ * one ChannelCredentials.
+ *
+ * For example, to create a client secured with SSL that uses Google
+ * default application credentials to authenticate:
+ *
+ * var channel_creds = credentials.createSsl(root_certs);
+ * (new GoogleAuth()).getApplicationDefault(function(err, credential) {
+ *   var call_creds = credentials.createFromGoogleCredential(credential);
+ *   var combined_creds = credentials.combineChannelCredentials(
+ *       channel_creds, call_creds);
+ *   var client = new Client(address, combined_creds);
+ * });
+ *
  * @module
  */
 
@@ -134,7 +157,7 @@ exports.combineCallCredentials = function() {
 
 /**
  * Create an insecure credentials object. This is used to create a channel that
- * does not use SSL.
+ * does not use SSL. This cannot be composed with anything.
  * @return {ChannelCredentials} The insecure credentials object
  */
 exports.createInsecure = ChannelCredentials.createInsecure;
