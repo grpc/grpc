@@ -31,19 +31,17 @@
  *
  */
 
-#ifndef NET_GRPC_NODE_CREDENTIALS_H_
-#define NET_GRPC_NODE_CREDENTIALS_H_
+#ifndef GRPC_NODE_CALL_CREDENTIALS_H_
+#define GRPC_NODE_CALL_CREDENTIALS_H_
 
 #include <node.h>
 #include <nan.h>
-#include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 
 namespace grpc {
 namespace node {
 
-/* Wrapper class for grpc_credentials structs */
-class Credentials : public Nan::ObjectWrap {
+class CallCredentials : public Nan::ObjectWrap {
  public:
   static void Init(v8::Local<v8::Object> exports);
   static bool HasInstance(v8::Local<v8::Value> val);
@@ -54,21 +52,18 @@ class Credentials : public Nan::ObjectWrap {
   grpc_credentials *GetWrappedCredentials();
 
  private:
-  explicit Credentials(grpc_credentials *credentials);
-  ~Credentials();
+  explicit CallCredentials(grpc_credentials *credentials);
+  ~CallCredentials();
 
   // Prevent copying
-  Credentials(const Credentials &);
-  Credentials &operator=(const Credentials &);
+  CallCredentials(const CallCredentials &);
+  CallCredentials &operator=(const CallCredentials &);
 
   static NAN_METHOD(New);
-  static NAN_METHOD(CreateDefault);
   static NAN_METHOD(CreateSsl);
-  static NAN_METHOD(CreateComposite);
-  static NAN_METHOD(CreateGce);
-  static NAN_METHOD(CreateFake);
-  static NAN_METHOD(CreateIam);
-  static NAN_METHOD(CreateInsecure);
+  static NAN_METHOD(CreateFromPlugin);
+
+  static NAN_METHOD(Compose);
   static Nan::Callback *constructor;
   // Used for typechecking instances of this javascript class
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
@@ -76,7 +71,30 @@ class Credentials : public Nan::ObjectWrap {
   grpc_credentials *wrapped_credentials;
 };
 
-}  // namespace node
-}  // namespace grpc
+/* Auth metadata plugin functionality */
 
-#endif  // NET_GRPC_NODE_CREDENTIALS_H_
+typedef struct plugin_state {
+  Nan::Callback *callback;
+} plugin_state;
+
+typedef struct plugin_callback_data {
+  plugin_state *state;
+  const char *service_url;
+  grpc_credentials_plugin_metadata_cb cb;
+  void *user_data;
+} plugin_callback_data;
+
+void plugin_get_metadata(void *state, const char *service_url,
+                         grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data);
+
+void plugin_destroy_state(void *state);
+
+NAN_METHOD(PluginCallback);
+
+NAUV_WORK_CB(SendPluginCallback);
+
+}  // namespace node
+}  // namepsace grpc
+
+#endif  // GRPC_NODE_CALL_CREDENTIALS_H_

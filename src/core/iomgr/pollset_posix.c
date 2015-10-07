@@ -98,29 +98,61 @@ static void push_front_worker(grpc_pollset *p, grpc_pollset_worker *worker) {
   worker->prev->next = worker->next->prev = worker;
 }
 
-void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
+void grpc_pollset_kick_ext(grpc_pollset *p,
+                           grpc_pollset_worker *specific_worker,
+                           gpr_uint32 flags) {
   /* pollset->mu already held */
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
+      GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
       for (specific_worker = p->root_worker.next;
            specific_worker != &p->root_worker;
            specific_worker = specific_worker->next) {
         grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
       }
       p->kicked_without_pollers = 1;
+      return;
     } else if (gpr_tls_get(&g_current_thread_worker) !=
                (gpr_intptr)specific_worker) {
+      if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
+        specific_worker->reevaluate_polling_on_wakeup = 1;
+      }
       grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
+      return;
+    } else if ((flags & GRPC_POLLSET_CAN_KICK_SELF) != 0) {
+      if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
+        specific_worker->reevaluate_polling_on_wakeup = 1;
+      }
+      grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
+      return;
     }
   } else if (gpr_tls_get(&g_current_thread_poller) != (gpr_intptr)p) {
+    GPR_ASSERT((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) == 0);
     specific_worker = pop_front_worker(p);
     if (specific_worker != NULL) {
+      if (gpr_tls_get(&g_current_thread_worker) ==
+          (gpr_intptr)specific_worker) {
+        push_back_worker(p, specific_worker);
+        specific_worker = pop_front_worker(p);
+        if ((flags & GRPC_POLLSET_CAN_KICK_SELF) == 0 &&
+            gpr_tls_get(&g_current_thread_worker) ==
+                (gpr_intptr)specific_worker) {
+          push_back_worker(p, specific_worker);
+          return;
+        }
+      }
       push_back_worker(p, specific_worker);
       grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
+      return;
     } else {
       p->kicked_without_pollers = 1;
+      return;
     }
   }
+}
+
+void grpc_pollset_kick(grpc_pollset *p, grpc_pollset_worker *specific_worker) {
+  grpc_pollset_kick_ext(p, specific_worker, 0);
 }
 
 /* global state management */
@@ -195,52 +227,88 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   /* pollset->mu already held */
   int added_worker = 0;
   int locked = 1;
+  int queued_work = 0;
+  int keep_polling = 0;
   /* this must happen before we (potentially) drop pollset->mu */
   worker->next = worker->prev = NULL;
+  worker->reevaluate_polling_on_wakeup = 0;
   /* TODO(ctiller): pool these */
   grpc_wakeup_fd_init(&worker->wakeup_fd);
+  /* If there's work waiting for the pollset to be idle, and the
+     pollset is idle, then do that work */
   if (!grpc_pollset_has_workers(pollset) &&
       !grpc_closure_list_empty(pollset->idle_jobs)) {
     grpc_exec_ctx_enqueue_list(exec_ctx, &pollset->idle_jobs);
     goto done;
   }
+  /* Check alarms - these are a global resource so we just ping
+     each time through on every pollset.
+     May update deadline to ensure timely wakeups.
+     TODO(ctiller): can this work be localized? */
   if (grpc_timer_check(exec_ctx, now, &deadline)) {
     gpr_mu_unlock(&pollset->mu);
     locked = 0;
     goto done;
   }
+  /* If we're shutting down then we don't execute any extended work */
   if (pollset->shutting_down) {
     goto done;
   }
+  /* Give do_promote priority so we don't starve it out */
   if (pollset->in_flight_cbs) {
-    /* Give do_promote priority so we don't starve it out */
     gpr_mu_unlock(&pollset->mu);
     locked = 0;
     goto done;
   }
-  if (!pollset->kicked_without_pollers) {
-    push_front_worker(pollset, worker);
-    added_worker = 1;
-    gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
-    gpr_tls_set(&g_current_thread_worker, (gpr_intptr)worker);
-    pollset->vtable->maybe_work_and_unlock(exec_ctx, pollset, worker, deadline,
-                                           now);
-    locked = 0;
-    gpr_tls_set(&g_current_thread_poller, 0);
-    gpr_tls_set(&g_current_thread_worker, 0);
-  } else {
-    pollset->kicked_without_pollers = 0;
+  /* Start polling, and keep doing so while we're being asked to
+     re-evaluate our pollers (this allows poll() based pollers to
+     ensure they don't miss wakeups) */
+  keep_polling = 1;
+  while (keep_polling) {
+    keep_polling = 0;
+    if (!pollset->kicked_without_pollers) {
+      if (!added_worker) {
+        push_front_worker(pollset, worker);
+        added_worker = 1;
+      }
+      gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
+      gpr_tls_set(&g_current_thread_worker, (gpr_intptr)worker);
+      pollset->vtable->maybe_work_and_unlock(exec_ctx, pollset, worker,
+                                             deadline, now);
+      locked = 0;
+      gpr_tls_set(&g_current_thread_poller, 0);
+      gpr_tls_set(&g_current_thread_worker, 0);
+    } else {
+      pollset->kicked_without_pollers = 0;
+    }
+  /* Finished execution - start cleaning up.
+     Note that we may arrive here from outside the enclosing while() loop.
+     In that case we won't loop though as we haven't added worker to the
+     worker list, which means nobody could ask us to re-evaluate polling). */
+  done:
+    if (!locked) {
+      queued_work |= grpc_exec_ctx_flush(exec_ctx);
+      gpr_mu_lock(&pollset->mu);
+      locked = 1;
+    }
+    /* If we're forced to re-evaluate polling (via grpc_pollset_kick with
+       GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) then we land here and force
+       a loop */
+    if (worker->reevaluate_polling_on_wakeup) {
+      worker->reevaluate_polling_on_wakeup = 0;
+      pollset->kicked_without_pollers = 0;
+      if (queued_work) {
+        /* If there's queued work on the list, then set the deadline to be
+           immediate so we get back out of the polling loop quickly */
+        deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
+      }
+      keep_polling = 1;
+    }
   }
-done:
-  if (!locked) {
-    grpc_exec_ctx_flush(exec_ctx);
-    gpr_mu_lock(&pollset->mu);
-    locked = 1;
-  }
-  grpc_wakeup_fd_destroy(&worker->wakeup_fd);
   if (added_worker) {
     remove_worker(pollset, worker);
   }
+  grpc_wakeup_fd_destroy(&worker->wakeup_fd);
   if (pollset->shutting_down) {
     if (grpc_pollset_has_workers(pollset)) {
       grpc_pollset_kick(pollset, NULL);
@@ -454,6 +522,9 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
                                                 grpc_pollset_worker *worker,
                                                 gpr_timespec deadline,
                                                 gpr_timespec now) {
+#define POLLOUT_CHECK (POLLOUT | POLLHUP | POLLERR)
+#define POLLIN_CHECK (POLLIN | POLLHUP | POLLERR)
+
   struct pollfd pfd[3];
   grpc_fd *fd;
   grpc_fd_watcher fd_watcher;
@@ -479,8 +550,8 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
     pfd[2].revents = 0;
     GRPC_FD_REF(fd, "basicpoll_begin");
     gpr_mu_unlock(&pollset->mu);
-    pfd[2].events =
-        (short)grpc_fd_begin_poll(fd, pollset, POLLIN, POLLOUT, &fd_watcher);
+    pfd[2].events = (short)grpc_fd_begin_poll(fd, pollset, worker, POLLIN,
+                                              POLLOUT, &fd_watcher);
     if (pfd[2].events != 0) {
       nfds++;
     }
@@ -497,31 +568,27 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   GRPC_TIMER_MARK(GRPC_PTAG_POLL_FINISHED, r);
 
-  if (fd) {
-    grpc_fd_end_poll(exec_ctx, &fd_watcher, pfd[2].revents & POLLIN,
-                     pfd[2].revents & POLLOUT);
-  }
-
   if (r < 0) {
-    if (errno != EINTR) {
-      gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    gpr_log(GPR_ERROR, "poll() failed: %s", strerror(errno));
+    if (fd) {
+      grpc_fd_end_poll(exec_ctx, &fd_watcher, 0, 0);
     }
   } else if (r == 0) {
-    /* do nothing */
+    if (fd) {
+      grpc_fd_end_poll(exec_ctx, &fd_watcher, 0, 0);
+    }
   } else {
-    if (pfd[0].revents & POLLIN) {
+    if (pfd[0].revents & POLLIN_CHECK) {
       grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
     }
-    if (pfd[1].revents & POLLIN) {
+    if (pfd[1].revents & POLLIN_CHECK) {
       grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd);
     }
     if (nfds > 2) {
-      if (pfd[2].revents & (POLLIN | POLLHUP | POLLERR)) {
-        grpc_fd_become_readable(exec_ctx, fd);
-      }
-      if (pfd[2].revents & (POLLOUT | POLLHUP | POLLERR)) {
-        grpc_fd_become_writable(exec_ctx, fd);
-      }
+      grpc_fd_end_poll(exec_ctx, &fd_watcher, pfd[2].revents & POLLIN_CHECK,
+                       pfd[2].revents & POLLOUT_CHECK);
+    } else if (fd) {
+      grpc_fd_end_poll(exec_ctx, &fd_watcher, 0, 0);
     }
   }
 
