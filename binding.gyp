@@ -78,9 +78,10 @@
       "sources": [
         "src/node/ext/byte_buffer.cc",
         "src/node/ext/call.cc",
+        "src/node/ext/call_credentials.cc",
         "src/node/ext/channel.cc",
+        "src/node/ext/channel_credentials.cc",
         "src/node/ext/completion_queue_async_worker.cc",
-        "src/node/ext/credentials.cc",
         "src/node/ext/node_grpc.cc",
         "src/node/ext/server.cc",
         "src/node/ext/server_credentials.cc",

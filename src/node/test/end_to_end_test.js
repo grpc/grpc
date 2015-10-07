@@ -57,7 +57,7 @@ function multiDone(done, count) {
   };
 }
 
-var insecureCreds = grpc.Credentials.createInsecure();
+var insecureCreds = grpc.ChannelCredentials.createInsecure();
 
 describe('end-to-end', function() {
   var server;

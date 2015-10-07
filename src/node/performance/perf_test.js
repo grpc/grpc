@@ -42,7 +42,7 @@ function runTest(iterations, callback) {
   var testServer = interop_server.getServer(0, false);
   testServer.server.start();
   var client = new testProto.TestService('localhost:' + testServer.port,
-                                         grpc.Credentials.createInsecure());
+                                         grpc.credentials.createInsecure());
 
   function runIterations(finish) {
     var start = process.hrtime();
