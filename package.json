@@ -38,8 +38,7 @@
     "jshint": "^2.5.0",
     "minimist": "^1.1.0",
     "mocha": "~1.21.0",
-    "mustache": "^2.0.0",
-    "strftime": "^0.8.2"
+    "mustache": "^2.0.0"
   },
   "engines": {
     "node": ">=0.10.13"
@@ -48,14 +47,9 @@
     "LICENSE",
     "src/node/README.md",
     "src/node/index.js",
-    "src/node/bin",
-    "src/node/cli",
-    "src/node/examples",
     "src/node/ext",
     "src/node/health_check",
-    "src/node/interop",
     "src/node/src",
-    "src/node/test",
     "src/core",
     "test/proto",
     "include",

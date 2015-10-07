@@ -41,7 +41,7 @@ var ProtoBuf = require('protobufjs');
 
 var grpc = require('..');
 
-var math_proto = ProtoBuf.loadProtoFile(__dirname + '/../examples/math.proto');
+var math_proto = ProtoBuf.loadProtoFile(__dirname + '/math/math.proto');
 
 var mathService = math_proto.lookup('math.Math');
 
