@@ -1,3 +1,17 @@
+grpc (0.11.1-1~bpo8+1) jessie-backports; urgency=low
+
+  * Backport for jessie
+
+ -- Andrew Pollock <apollock@debian.org>  Wed, 07 Oct 2015 13:32:11 +1000
+
+grpc (0.11.1-1) unstable; urgency=low
+
+  * New upstream release
+  * debian/control: update maintainer with upstream address, add myself as
+    uploader
+
+ -- Andrew Pollock <apollock@debian.org>  Thu, 24 Sep 2015 11:33:03 +1000
+
 grpc (0.11.0.0-1~bpo8+2) jessie-backports; urgency=unstable
 
   * Build backport against stable, not unstable
