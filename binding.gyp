@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,25 +26,69 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-set -ex
-
-CONFIG=${CONFIG:-opt}
-
-# change to grpc repo root
-cd $(dirname $0)/../..
-
-root=`pwd`
-
-if [ "$CONFIG" = "gcov" ]
-then
-  ./node_modules/.bin/istanbul cover --dir reports/node_coverage \
-    ./node_modules/.bin/_mocha -- --timeout 8000 src/node/test
-  cd build
-  gcov Release/obj.target/grpc/ext/*.o
-  lcov --base-directory . --directory . -c -o coverage.info
-  genhtml -o ../reports/node_ext_coverage --num-spaces 2 \
-    -t 'Node gRPC test coverage' coverage.info
-else
-  ./node_modules/mocha/bin/mocha --timeout 8000 src/node/test
-fi
+{
+  "variables" : {
+    'config': '<!(echo $CONFIG)'
+  },
+  "targets" : [
+    {
+      'include_dirs': [
+        "<!(node -e \"require('nan')\")"
+      ],
+      'cflags': [
+        '-std=c++0x',
+        '-Wall',
+        '-pthread',
+        '-g',
+        '-zdefs',
+        '-Werror',
+        '-Wno-error=deprecated-declarations'
+      ],
+      'ldflags': [
+        '-g'
+      ],
+      "conditions": [
+        ['OS != "win"', {
+          'conditions': [
+            ['config=="gcov"', {
+              'cflags': [
+                '-ftest-coverage',
+                '-fprofile-arcs',
+                '-O0'
+              ],
+              'ldflags': [
+                '-ftest-coverage',
+                '-fprofile-arcs'
+              ]
+            }
+           ]
+          ]
+        }],
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9',
+            'OTHER_CFLAGS': [
+              '-std=c++11',
+              '-stdlib=libc++'
+            ]
+          }
+        }]
+      ],
+      "target_name": "grpc_node",
+      "sources": [
+        "src/node/ext/byte_buffer.cc",
+        "src/node/ext/call.cc",
+        "src/node/ext/channel.cc",
+        "src/node/ext/completion_queue_async_worker.cc",
+        "src/node/ext/credentials.cc",
+        "src/node/ext/node_grpc.cc",
+        "src/node/ext/server.cc",
+        "src/node/ext/server_credentials.cc",
+        "src/node/ext/timeval.cc"
+      ],
+      "dependencies": [
+        "grpc.gyp:grpc"
+      ]
+    }
+  ]
+}
