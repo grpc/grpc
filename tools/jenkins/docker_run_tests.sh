@@ -36,6 +36,10 @@ set -e
 export CONFIG=$config
 export ASAN_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer-3.5
 
+# Ensure that programs depending on current-user-ownership of cache directories
+# are satisfied (it's being mounted from outside the image).
+chown `whoami` $XDG_CACHE_HOME
+
 mkdir -p /var/local/git
 git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
