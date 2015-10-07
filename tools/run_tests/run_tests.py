@@ -584,7 +584,9 @@ if platform.system() == 'Windows':
   def make_jobspec(cfg, targets, makefile='Makefile'):
     extra_args = []
     # better do parallel compilation
-    extra_args.extend(["/m"])
+    # empirically /m:2 gives the best performance/price and should prevent
+    # overloading the windows workers.
+    extra_args.extend(["/m:2"])
     # disable PDB generation: it's broken, and we don't need it during CI
     extra_args.extend(["/p:Jenkins=true"])
     return [
