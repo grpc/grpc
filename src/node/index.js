@@ -95,32 +95,6 @@ exports.load = function load(filename, format) {
 };
 
 /**
- * Get a function that a client can use to update metadata with authentication
- * information from a Google Auth credential object, which comes from the
- * google-auth-library.
- * @param {Object} credential The credential object to use
- * @return {function(Object, callback)} Metadata updater function
- */
-exports.getGoogleAuthDelegate = function getGoogleAuthDelegate(credential) {
-  /**
-   * Update a metadata object with authentication information.
-   * @param {string} authURI The uri to authenticate to
-   * @param {Object} metadata Metadata object
-   * @param {function(Error, Object)} callback
-   */
-  return function updateMetadata(authURI, metadata, callback) {
-    credential.getRequestMetadata(authURI, function(err, header) {
-      if (err) {
-        callback(err);
-        return;
-      }
-      metadata.add('authorization', header.Authorization);
-      callback(null, metadata);
-    });
-  };
-};
-
-/**
  * @see module:src/server.Server
  */
 exports.Server = server.Server;
