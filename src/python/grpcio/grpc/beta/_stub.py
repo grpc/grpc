@@ -49,6 +49,12 @@ class _AutoIntermediary(object):
   def __getattr__(self, attr):
     return getattr(self._delegate, attr)
 
+  def __enter__(self):
+    return self
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    return False
+
   def __del__(self):
     self._on_deletion()
 

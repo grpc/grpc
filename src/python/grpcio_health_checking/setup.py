@@ -51,7 +51,7 @@ _PACKAGE_DIRECTORIES = {
 }
 
 _INSTALL_REQUIRES = (
-    'grpcio>=0.11.0',
+    'grpcio>=0.11.0b0',
 )
 
 _SETUP_REQUIRES = _INSTALL_REQUIRES
@@ -63,7 +63,7 @@ _COMMAND_CLASS = {
 
 setuptools.setup(
     name='grpcio_health_checking',
-    version='0.11.0',
+    version='0.11.0b0',
     packages=list(_PACKAGES),
     package_dir=_PACKAGE_DIRECTORIES,
     install_requires=_INSTALL_REQUIRES,

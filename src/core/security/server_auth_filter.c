@@ -128,9 +128,11 @@ static void on_md_processing_done(
     calld->num_consumed_md = num_consumed_md;
     grpc_metadata_batch_filter(&calld->md_op->data.metadata, remove_consumed_md,
                                elem);
+    grpc_metadata_array_destroy(&calld->md);
     calld->on_done_recv->cb(calld->on_done_recv->cb_arg, 1);
   } else {
     gpr_slice message;
+    grpc_metadata_array_destroy(&calld->md);
     error_details = error_details != NULL
                     ? error_details
                     : "Authentication metadata processing failed.";
@@ -139,7 +141,6 @@ static void on_md_processing_done(
     grpc_transport_stream_op_add_close(&calld->transport_op, status, &message);
     grpc_call_next_op(elem, &calld->transport_op);
   }
-  grpc_metadata_array_destroy(&calld->md);
 }
 
 static void auth_on_recv(void *user_data, int success) {

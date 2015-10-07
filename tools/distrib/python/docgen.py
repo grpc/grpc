@@ -81,7 +81,7 @@ if args.submit:
   assert args.doc_branch
   github_user = args.gh_user
   github_repository_owner = (
-      args.gh_repo_owner if args.gh_repo_owner else gh_user)
+      args.gh_repo_owner if args.gh_repo_owner else args.gh_user)
   # Create a temporary directory out of tree, checkout gh-pages from the
   # specified repository, edit it, and push it. It's up to the user to then go
   # onto GitHub and make a PR against grpc/grpc:gh-pages.
