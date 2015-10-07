@@ -31,57 +31,49 @@
  *
  */
 
-'use strict';
+#ifndef NET_GRPC_NODE_CHANNEL_CREDENTIALS_H_
+#define NET_GRPC_NODE_CHANNEL_CREDENTIALS_H_
 
-var _ = require('lodash');
-var grpc = require('..');
-var examples = grpc.load(__dirname + '/stock.proto').examples;
+#include <node.h>
+#include <nan.h>
+#include "grpc/grpc.h"
+#include "grpc/grpc_security.h"
 
-function getLastTradePrice(call, callback) {
-  callback(null, {symbol: call.request.symbol, price: 88});
-}
+namespace grpc {
+namespace node {
 
-function watchFutureTrades(call) {
-  for (var i = 0; i < call.request.num_trades_to_watch; i++) {
-    call.write({price: 88.00 + i * 10.00});
-  }
-  call.end();
-}
+/* Wrapper class for grpc_credentials structs */
+class ChannelCredentials : public Nan::ObjectWrap {
+ public:
+  static void Init(v8::Local<v8::Object> exports);
+  static bool HasInstance(v8::Local<v8::Value> val);
+  /* Wrap a grpc_credentials struct in a javascript object */
+  static v8::Local<v8::Value> WrapStruct(grpc_credentials *credentials);
 
-function getHighestTradePrice(call, callback) {
-  var trades = [];
-  call.on('data', function(data) {
-    trades.push({symbol: data.symbol, price: _.random(0, 100)});
-  });
-  call.on('end', function() {
-    if(_.isEmpty(trades)) {
-      callback(null, {});
-    } else {
-      callback(null, _.max(trades, function(trade){return trade.price;}));
-    }
-  });
-}
+  /* Returns the grpc_credentials struct that this object wraps */
+  grpc_credentials *GetWrappedCredentials();
 
-function getLastTradePriceMultiple(call) {
-  call.on('data', function(data) {
-    call.write({price: 88});
-  });
-  call.on('end', function() {
-    call.end();
-  });
-}
+ private:
+  explicit ChannelCredentials(grpc_credentials *credentials);
+  ~ChannelCredentials();
 
-var stockServer = new grpc.Server();
-stockServer.addProtoService(examples.Stock.service, {
-  getLastTradePrice: getLastTradePrice,
-  getLastTradePriceMultiple: getLastTradePriceMultiple,
-  watchFutureTrades: watchFutureTrades,
-  getHighestTradePrice: getHighestTradePrice
-});
+  // Prevent copying
+  ChannelCredentials(const ChannelCredentials &);
+  ChannelCredentials &operator=(const ChannelCredentials &);
 
-if (require.main === module) {
-  stockServer.bind('0.0.0.0:50051', grpc.ServerCredentials.createInsecure());
-  stockServer.start();
-}
+  static NAN_METHOD(New);
+  static NAN_METHOD(CreateSsl);
+  static NAN_METHOD(CreateInsecure);
 
-module.exports = stockServer;
+  static NAN_METHOD(Compose);
+  static Nan::Callback *constructor;
+  // Used for typechecking instances of this javascript class
+  static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
+
+  grpc_credentials *wrapped_credentials;
+};
+
+}  // namespace node
+}  // namespace grpc
+
+#endif  // NET_GRPC_NODE_CHANNEL_CREDENTIALS_H_

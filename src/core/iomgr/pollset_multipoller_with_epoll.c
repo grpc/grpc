@@ -72,7 +72,7 @@ static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   /* We pretend to be polling whilst adding an fd to keep the fd from being
      closed during the add. This may result in a spurious wakeup being assigned
      to this pollset whilst adding, but that should be benign. */
-  GPR_ASSERT(grpc_fd_begin_poll(fd, pollset, 0, 0, &watcher) == 0);
+  GPR_ASSERT(grpc_fd_begin_poll(fd, pollset, NULL, 0, 0, &watcher) == 0);
   if (watcher.fd != NULL) {
     ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
     ev.data.ptr = fd;
