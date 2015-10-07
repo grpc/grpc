@@ -10,10 +10,10 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2015-09-24</date>
- <time>09:51:04</time>
+ <date>2015-10-07</date>
+ <time>13:40:54</time>
  <version>
-  <release>0.6.0</release>
+  <release>0.6.1</release>
   <api>0.6.0</api>
  </version>
  <stability>
@@ -22,12 +22,7 @@
  </stability>
  <license>BSD</license>
  <notes>
-- support per message compression disable
-- expose per-call host override option
-- expose connectivity API
-- expose channel target and call peer
-- add user-agent
-- update to wrap gRPC C core library beta version 0.11.0
+- fixed undefined constant fatal error when run with apache/nginx #2275
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -44,7 +39,7 @@
    <file baseinstalldir="/" md5sum="6988d6e97c19c8f8e3eb92371cf8246b" name="credentials.h" role="src" />
    <file baseinstalldir="/" md5sum="38a1bc979d810c36ebc2a52d4b7b5319" name="CREDITS" role="doc" />
    <file baseinstalldir="/" md5sum="3f35b472bbdef5a788cd90617d7d0847" name="LICENSE" role="doc" />
-   <file baseinstalldir="/" md5sum="6a550516a1423def0786851c76f87c85" name="php_grpc.c" role="src" />
+   <file baseinstalldir="/" md5sum="b77f1f3941aaf7a21090b493e9f26037" name="php_grpc.c" role="src" />
    <file baseinstalldir="/" md5sum="673b07859d9f69232f8a754c56780686" name="php_grpc.h" role="src" />
    <file baseinstalldir="/" md5sum="7533a6d3ea02c78cad23a9651de0825d" name="README.md" role="doc" />
    <file baseinstalldir="/" md5sum="3e4e960454ebb2fc7b78a840493f5315" name="server.c" role="src" />
@@ -116,6 +111,21 @@ Update to wrap gRPC C Core version 0.10.0
 - expose channel target and call peer
 - add user-agent
 - update to wrap gRPC C core library beta version 0.11.0
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.6.1</release>
+    <api>0.6.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2015-10-07</date>
+   <license>BSD</license>
+   <notes>
+- fixed undefined constant fatal error when run with apache/nginx #2275
    </notes>
   </release>
  </changelog>
