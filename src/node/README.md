@@ -5,25 +5,8 @@ Beta
 
 ## PREREQUISITES
 - `node`: This requires `node` to be installed. If you instead have the `nodejs` executable on Debian, you should install the [`nodejs-legacy`](https://packages.debian.org/sid/nodejs-legacy) package.
-- [homebrew][] on Mac OS X.  These simplify the installation of the gRPC C core.
 
 ## INSTALLATION
-
-**Linux (Debian):**
-
-Add [Debian jessie-backports][] to your `sources.list` file. Example:
-
-```sh
-echo "deb http://http.debian.net/debian jessie-backports main" | \
-sudo tee -a /etc/apt/sources.list
-```
-
-Install the gRPC Debian package
-
-```sh
-sudo apt-get update
-sudo apt-get install libgrpc-dev
-```
 
 Install the gRPC NPM package
 
@@ -31,24 +14,9 @@ Install the gRPC NPM package
 npm install grpc
 ```
 
-**Mac OS X**
-
-Install [homebrew][]. Run the following command to install gRPC Node.js.
-```sh
-$ curl -fsSL https://goo.gl/getgrpc | bash -s nodejs
-```
-This will download and run the [gRPC install script][], then install the latest version of gRPC Nodejs npm package.
-
 ## BUILD FROM SOURCE
  1. Clone [the grpc Git Repository](https://github.com/grpc/grpc).
- 2. Follow the instructions in the `INSTALL` file in the root of that repository to install the C core library that this package depends on.
  3. Run `npm install`.
-
-If you install the gRPC C core library in a custom location, then you need to set some environment variables to install this library. The command will look like this:
-
-```sh
-CXXFLAGS=-I<custom location>/include LDFLAGS=-L<custom location>/lib npm install [grpc]
-```
 
 ## TESTING
 To run the test suite, simply run `npm test` in the install location.
@@ -110,7 +78,3 @@ ServerCredentials
 ```
 
 An object with factory methods for creating credential objects for servers.
-
-[homebrew]:http://brew.sh
-[gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
-[Debian jessie-backports]:http://backports.debian.org/Instructions/

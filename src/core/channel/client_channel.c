@@ -51,7 +51,7 @@
 
 typedef struct call_data call_data;
 
-typedef struct {
+typedef struct client_channel_channel_data {
   /** metadata context for this channel */
   grpc_mdctx *mdctx;
   /** resolver for this channel */

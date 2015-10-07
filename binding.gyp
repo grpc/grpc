@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,27 +26,69 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#
-# Builds Go interop server and client in a base image.
-set -e
-
-# Clone just the grpc-go source code without any dependencies.
-# We are cloning from a local git repo that contains the right revision
-# to test instead of using "go get" to download from Github directly.
-git clone --recursive /var/local/jenkins/grpc-go src/gooogle.golang.org/grpc
-
-# copy service account keys if available
-cp -r /var/local/jenkins/service_account $HOME || true
-
-# Get dependencies from GitHub
-# NOTE: once grpc-go dependencies change, this needs to be updated manually
-# but we don't expect this to happen any time soon.
-go get github.com/golang/protobuf/proto
-go get golang.org/x/net/context
-go get golang.org/x/net/trace
-go get golang.org/x/oauth2
-go get google.golang.org/cloud
-
-# Build the interop client and server
-(cd src/google.golang.org/grpc/interop/client && go install)
-(cd src/google.golang.org/grpc/interop/server && go install)
+{
+  "variables" : {
+    'config': '<!(echo $CONFIG)'
+  },
+  "targets" : [
+    {
+      'include_dirs': [
+        "<!(node -e \"require('nan')\")"
+      ],
+      'cflags': [
+        '-std=c++0x',
+        '-Wall',
+        '-pthread',
+        '-g',
+        '-zdefs',
+        '-Werror',
+        '-Wno-error=deprecated-declarations'
+      ],
+      'ldflags': [
+        '-g'
+      ],
+      "conditions": [
+        ['OS != "win"', {
+          'conditions': [
+            ['config=="gcov"', {
+              'cflags': [
+                '-ftest-coverage',
+                '-fprofile-arcs',
+                '-O0'
+              ],
+              'ldflags': [
+                '-ftest-coverage',
+                '-fprofile-arcs'
+              ]
+            }
+           ]
+          ]
+        }],
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9',
+            'OTHER_CFLAGS': [
+              '-std=c++11',
+              '-stdlib=libc++'
+            ]
+          }
+        }]
+      ],
+      "target_name": "grpc_node",
+      "sources": [
+        "src/node/ext/byte_buffer.cc",
+        "src/node/ext/call.cc",
+        "src/node/ext/channel.cc",
+        "src/node/ext/completion_queue_async_worker.cc",
+        "src/node/ext/credentials.cc",
+        "src/node/ext/node_grpc.cc",
+        "src/node/ext/server.cc",
+        "src/node/ext/server_credentials.cc",
+        "src/node/ext/timeval.cc"
+      ],
+      "dependencies": [
+        "grpc.gyp:grpc"
+      ]
+    }
+  ]
+}
