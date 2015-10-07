@@ -38,7 +38,7 @@
 
 'use strict';
 
-var grpc = require('bindings')('grpc.node');
+var grpc = require('bindings')('grpc_node.node');
 
 var CallCredentials = grpc.CallCredentials;
 

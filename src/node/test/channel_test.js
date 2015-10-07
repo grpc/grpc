@@ -34,7 +34,7 @@
 'use strict';
 
 var assert = require('assert');
-var grpc = require('bindings')('grpc.node');
+var grpc = require('bindings')('grpc_node');
 
 /**
  * This is used for testing functions with multiple asynchronous calls that
