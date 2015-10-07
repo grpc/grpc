@@ -35,12 +35,12 @@ set -x
 
 cd `dirname $0`/../..
 GRPC_ROOT=`pwd`
-MOUNT_ARGS="-v $GRPC_ROOT:/var/local/jenkins/grpc"
+MOUNT_ARGS="-v $GRPC_ROOT:/var/local/jenkins/grpc:ro"
 
 GRPC_JAVA_ROOT=`cd ../grpc-java && pwd`
 if [ "$GRPC_JAVA_ROOT" != "" ]
 then
-  MOUNT_ARGS+=" -v $GRPC_JAVA_ROOT:/var/local/jenkins/grpc-java"
+  MOUNT_ARGS+=" -v $GRPC_JAVA_ROOT:/var/local/jenkins/grpc-java:ro"
 else
   echo "WARNING: grpc-java not found, it won't be mounted to the docker container."
 fi
@@ -48,7 +48,7 @@ fi
 GRPC_GO_ROOT=`cd ../grpc-go && pwd`
 if [ "$GRPC_GO_ROOT" != "" ]
 then
-  MOUNT_ARGS+=" -v $GRPC_GO_ROOT:/var/local/jenkins/grpc-go"
+  MOUNT_ARGS+=" -v $GRPC_GO_ROOT:/var/local/jenkins/grpc-go:ro"
 else
   echo "WARNING: grpc-go not found, it won't be mounted to the docker container."
 fi
@@ -59,6 +59,14 @@ mkdir -p /tmp/ccache
 #  INTEROP_IMAGE - name of tag of the final interop image
 #  BASE_NAME - base name used to locate the base Dockerfile and build script
 #  TTY_FLAG - optional -t flag to make docker allocate tty.
+
+# Mount service account dir if available.
+# If service_directory does not contain the service account JSON file,
+# some of the tests will fail.
+if [ -e $HOME/service_account ]
+then
+  MOUNT_ARGS+=" -v $HOME/service_account:/var/local/jenkins/service_account:ro"
+fi
 
 # Use image name based on Dockerfile checksum
 BASE_IMAGE=${BASE_NAME}_base:`sha1sum tools/jenkins/$BASE_NAME/Dockerfile | cut -f1 -d\ `

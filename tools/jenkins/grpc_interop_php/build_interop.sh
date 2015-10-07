@@ -34,6 +34,9 @@ set -e
 mkdir -p /var/local/git
 git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
+
 cd /var/local/git/grpc
 rvm --default use ruby-2.1
 
