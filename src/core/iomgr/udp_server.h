@@ -43,7 +43,8 @@ typedef struct grpc_server grpc_server;
 typedef struct grpc_udp_server grpc_udp_server;
 
 /* Called when data is available to read from the socket. */
-typedef void (*grpc_udp_server_read_cb)(grpc_fd *emfd, grpc_server *server);
+typedef void (*grpc_udp_server_read_cb)(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
+                                        grpc_server *server);
 
 /* Create a server, initially not bound to any ports */
 grpc_udp_server *grpc_udp_server_create(void);
