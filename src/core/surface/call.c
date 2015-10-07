@@ -522,8 +522,12 @@ static void set_compression_algorithm(grpc_call *call,
 }
 
 grpc_compression_algorithm grpc_call_get_compression_algorithm(
-    const grpc_call *call) {
-  return call->compression_algorithm;
+    grpc_call *call) {
+  grpc_compression_algorithm algorithm;
+  gpr_mu_lock(&call->mu);
+  algorithm = call->compression_algorithm;
+  gpr_mu_unlock(&call->mu);
+  return algorithm;
 }
 
 static void set_encodings_accepted_by_peer(
@@ -561,8 +565,12 @@ gpr_uint32 grpc_call_get_encodings_accepted_by_peer(grpc_call *call) {
   return call->encodings_accepted_by_peer;
 }
 
-gpr_uint32 grpc_call_get_message_flags(const grpc_call *call) {
-  return call->incoming_message_flags;
+gpr_uint32 grpc_call_get_message_flags(grpc_call *call) {
+  gpr_uint32 flags;
+  gpr_mu_lock(&call->mu);
+  flags = call->incoming_message_flags;
+  gpr_mu_unlock(&call->mu);
+  return flags;
 }
 
 static void set_status_details(grpc_call *call, status_source source,
