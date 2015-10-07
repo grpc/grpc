@@ -41,7 +41,7 @@ var ProtoBuf = require('protobufjs');
 
 var grpc = require('..');
 
-var math_proto = ProtoBuf.loadProtoFile(__dirname + '/../examples/math.proto');
+var math_proto = ProtoBuf.loadProtoFile(__dirname + '/math/math.proto');
 
 var mathService = math_proto.lookup('math.Math');
 
@@ -163,7 +163,7 @@ describe('waitForClientReady', function() {
     Client = surface_client.makeProtobufClientConstructor(mathService);
   });
   beforeEach(function() {
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
   });
   after(function() {
     server.forceShutdown();
@@ -217,7 +217,7 @@ describe('Echo service', function() {
     });
     var port = server.bind('localhost:0', server_insecure_creds);
     var Client = surface_client.makeProtobufClientConstructor(echo_service);
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
   after(function() {
@@ -263,7 +263,7 @@ describe('Generic client and server', function() {
       server.start();
       var Client = grpc.makeGenericClientConstructor(string_service_attrs);
       client = new Client('localhost:' + port,
-                          grpc.Credentials.createInsecure());
+                          grpc.credentials.createInsecure());
     });
     after(function() {
       server.forceShutdown();
@@ -311,7 +311,7 @@ describe('Echo metadata', function() {
     });
     var port = server.bind('localhost:0', server_insecure_creds);
     var Client = surface_client.makeProtobufClientConstructor(test_service);
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
     metadata = new grpc.Metadata();
     metadata.set('key', 'value');
@@ -356,7 +356,7 @@ describe('Echo metadata', function() {
     call.end();
   });
   it('shows the correct user-agent string', function(done) {
-    var version = require('../package.json').version;
+    var version = require('../../../package.json').version;
     var call = client.unary({}, function(err, data) { assert.ifError(err); },
                             metadata);
     call.on('metadata', function(metadata) {
@@ -437,7 +437,7 @@ describe('Other conditions', function() {
     });
     port = server.bind('localhost:0', server_insecure_creds);
     Client = surface_client.makeProtobufClientConstructor(test_service);
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
   after(function() {
@@ -484,7 +484,7 @@ describe('Other conditions', function() {
       var Client = surface_client.makeClientConstructor(test_service_attrs,
                                                         'TestService');
       misbehavingClient = new Client('localhost:' + port,
-                                     grpc.Credentials.createInsecure());
+                                     grpc.credentials.createInsecure());
     });
     it('should respond correctly to a unary call', function(done) {
       misbehavingClient.unary(badArg, function(err, data) {
@@ -711,7 +711,7 @@ describe('Call propagation', function() {
     });
     var port = server.bind('localhost:0', server_insecure_creds);
     Client = surface_client.makeProtobufClientConstructor(test_service);
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
   after(function() {
@@ -748,7 +748,7 @@ describe('Call propagation', function() {
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
-                                    grpc.Credentials.createInsecure());
+                                    grpc.credentials.createInsecure());
       var call = proxy_client.unary({}, function(err, value) {
         done();
       });
@@ -771,7 +771,7 @@ describe('Call propagation', function() {
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
-                                    grpc.Credentials.createInsecure());
+                                    grpc.credentials.createInsecure());
       var call = proxy_client.clientStream(function(err, value) {
         done();
       });
@@ -792,7 +792,7 @@ describe('Call propagation', function() {
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
-                                    grpc.Credentials.createInsecure());
+                                    grpc.credentials.createInsecure());
       var call = proxy_client.serverStream({});
       call.on('error', function(err) {
         done();
@@ -813,7 +813,7 @@ describe('Call propagation', function() {
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
-                                    grpc.Credentials.createInsecure());
+                                    grpc.credentials.createInsecure());
       var call = proxy_client.bidiStream();
       call.on('error', function(err) {
         done();
@@ -842,7 +842,7 @@ describe('Call propagation', function() {
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
-                                    grpc.Credentials.createInsecure());
+                                    grpc.credentials.createInsecure());
       var deadline = new Date();
       deadline.setSeconds(deadline.getSeconds() + 1);
       proxy_client.clientStream(function(err, value) {
@@ -865,7 +865,7 @@ describe('Call propagation', function() {
       var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
       proxy.start();
       var proxy_client = new Client('localhost:' + proxy_port,
-                                    grpc.Credentials.createInsecure());
+                                    grpc.credentials.createInsecure());
       var deadline = new Date();
       deadline.setSeconds(deadline.getSeconds() + 1);
       var call = proxy_client.bidiStream(null, {deadline: deadline});
@@ -888,7 +888,7 @@ describe('Cancelling surface client', function() {
     });
     var port = server.bind('localhost:0', server_insecure_creds);
     var Client = surface_client.makeProtobufClientConstructor(mathService);
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
   after(function() {

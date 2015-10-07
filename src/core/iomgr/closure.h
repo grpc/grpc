@@ -77,6 +77,9 @@ struct grpc_closure {
 void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
                        void *cb_arg);
 
+/* Create a heap allocated closure: try to avoid except for very rare events */
+grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg);
+
 #define GRPC_CLOSURE_LIST_INIT \
   { NULL, NULL }
 
