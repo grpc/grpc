@@ -147,7 +147,7 @@ def secure_channel(host, port, client_credentials):
     A secure Channel to the remote host through which RPCs may be conducted.
   """
   intermediary_low_channel = _intermediary_low.Channel(
-      '%s:%d' % (host, port), client_credentials.intermediary_low_credentials)
+      '%s:%d' % (host, port), client_credentials._intermediary_low_credentials)
   return Channel(intermediary_low_channel._internal, intermediary_low_channel)  # pylint: disable=protected-access
 
 
