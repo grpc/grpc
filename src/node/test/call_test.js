@@ -34,7 +34,7 @@
 'use strict';
 
 var assert = require('assert');
-var grpc = require('bindings')('grpc.node');
+var grpc = require('bindings')('grpc_node');
 
 /**
  * Helper function to return an absolute deadline given a relative timeout in

@@ -356,7 +356,7 @@ describe('Echo metadata', function() {
     call.end();
   });
   it('shows the correct user-agent string', function(done) {
-    var version = require('../package.json').version;
+    var version = require('../../../package.json').version;
     var call = client.unary({}, function(err, data) { assert.ifError(err); },
                             metadata);
     call.on('metadata', function(metadata) {

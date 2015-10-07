@@ -40,7 +40,7 @@
 
 var _ = require('lodash');
 
-var grpc = require('bindings')('grpc.node');
+var grpc = require('bindings')('grpc_node');
 
 var common = require('./common');
 
@@ -54,7 +54,7 @@ var Readable = stream.Readable;
 var Writable = stream.Writable;
 var Duplex = stream.Duplex;
 var util = require('util');
-var version = require('../package.json').version;
+var version = require('../../../package.json').version;
 
 util.inherits(ClientWritableStream, Writable);
 
