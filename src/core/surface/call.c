@@ -429,8 +429,7 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
     gpr_mu_unlock(&call->completion_mu);
     return &call->completions[i];
   }
-  gpr_log(GPR_ERROR, "should never reach here");
-  abort();
+  GPR_UNREACHABLE_CODE(return NULL);
 }
 
 static void done_completion(grpc_exec_ctx *exec_ctx, void *call,
