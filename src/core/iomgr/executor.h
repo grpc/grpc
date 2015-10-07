@@ -31,51 +31,19 @@
  *
  */
 
+#ifndef GRPC_INTERNAL_CORE_IOMGR_EXECUTOR_H
+#define GRPC_INTERNAL_CORE_IOMGR_EXECUTOR_H
+
 #include "src/core/iomgr/closure.h"
 
-void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
-                       void *cb_arg) {
-  closure->cb = cb;
-  closure->cb_arg = cb_arg;
-  closure->next = NULL;
-}
+/** initialize the global executor */
+void grpc_executor_init();
 
-void grpc_closure_list_add(grpc_closure_list *closure_list,
-                           grpc_closure *closure, int success) {
-  if (closure == NULL) return;
-  closure->next = NULL;
-  closure->success = success;
-  if (closure_list->head == NULL) {
-    closure_list->head = closure;
-  } else {
-    closure_list->tail->next = closure;
-  }
-  closure_list->tail = closure;
-}
+/** enqueue \a closure for its eventual execution of \a f(arg) on a separate
+ * thread */
+void grpc_executor_enqueue(grpc_closure *closure, int success);
 
-int grpc_closure_list_empty(grpc_closure_list closure_list) {
-  return closure_list.head == NULL;
-}
+/** shutdown the executor, running all pending work as part of the call */
+void grpc_executor_shutdown();
 
-void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst) {
-  if (src->head == NULL) {
-    return;
-  }
-  if (dst->head == NULL) {
-    *dst = *src;
-  } else {
-    dst->tail->next = src->head;
-    dst->tail = src->tail;
-  }
-  src->head = src->tail = NULL;
-}
-
-grpc_closure *grpc_closure_list_pop(grpc_closure_list *list) {
-  grpc_closure *head;
-  if (list->head == NULL) {
-    return NULL;
-  }
-  head = list->head;
-  list->head = list->head->next;
-  return head;
-}
+#endif /* GRPC_INTERNAL_CORE_IOMGR_EXECUTOR_H */
