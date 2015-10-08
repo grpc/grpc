@@ -86,3 +86,9 @@ else
   echo "Unknown platform $platform"
   exit 1
 fi
+
+if [ ! -e reports/index.html ]
+then
+  mkdir -p reports
+  echo 'No reports generated.' > reports/index.html
+fi
