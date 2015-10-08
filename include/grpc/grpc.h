@@ -480,14 +480,15 @@ void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 
 /** Create a completion queue alarm instance associated to \a cq.
  *
- * Once the alarm expires (at \a deadline) or it's cancelled (see ...), an event
- * with tag \a tag will be added to \a cq. If the alarm expired, the event's
- * success bit will be true, false otherwise (ie, upon cancellation). */
+ * Once the alarm expires (at \a deadline) or it's cancelled (see \a
+ * grpc_alarm_cancel), an event with tag \a tag will be added to \a cq. If the
+ * alarm expired, the event's success bit will be true, false otherwise (ie,
+ * upon cancellation). */
 grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
                               void *tag);
 
-/** Cancel a completion queue alarm. Calling this function ove an alarm that has
- * already run has no effect. */
+/** Cancel a completion queue alarm. Calling this function over an alarm that
+ * has already fired has no effect. */
 void grpc_alarm_cancel(grpc_alarm *alarm);
 
 /** Destroy the given completion queue alarm, cancelling it in the process. */
