@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,33 +28,46 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
-namespace Math
+namespace Grpc.Core.Tests
 {
-    class MathClient
+    public class ChannelCredentialsTest
     {
-        public static void Main(string[] args)
+        [Test]
+        public void InsecureCredentials_IsNonComposable()
         {
-            var channel = new Channel("127.0.0.1", 23456, ChannelCredentials.Insecure);
-            Math.IMathClient client = new Math.MathClient(channel);
-            MathExamples.DivExample(client);
+            Assert.IsFalse(ChannelCredentials.Insecure.IsComposable);
+        }
 
-            MathExamples.DivAsyncExample(client).Wait();
+        [Test]
+        public void ChannelCredentials_CreateComposite()
+        {
+            var composite = ChannelCredentials.Create(new FakeChannelCredentials(true), new FakeCallCredentials());
+            Assert.IsFalse(composite.IsComposable);
 
-            MathExamples.FibExample(client).Wait();
+            Assert.Throws(typeof(ArgumentNullException), () => ChannelCredentials.Create(null, new FakeCallCredentials()));
+            Assert.Throws(typeof(ArgumentNullException), () => ChannelCredentials.Create(new FakeChannelCredentials(true), null));
+            
+            // forbid composing non-composable
+            Assert.Throws(typeof(ArgumentException), () => ChannelCredentials.Create(new FakeChannelCredentials(false), new FakeCallCredentials()));
+        }
 
-            MathExamples.SumExample(client).Wait();
-
-            MathExamples.DivManyExample(client).Wait();
-
-            MathExamples.DependendRequestsExample(client).Wait();
-
-            channel.ShutdownAsync().Wait();
+        [Test]
+        public void ChannelCredentials_CreateWrapped()
+        {
+            ChannelCredentials.Create(new FakeCallCredentials());
         }
     }
 }
