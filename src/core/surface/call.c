@@ -435,6 +435,7 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
     return &call->completions[i];
   }
   GPR_UNREACHABLE_CODE(return NULL);
+  return NULL;
 }
 
 static void done_completion(grpc_exec_ctx *exec_ctx, void *call,
