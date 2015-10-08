@@ -159,6 +159,20 @@ describe 'ClientStub' do
         th.join
       end
 
+      it 'should downcase the keys provided by the metadata updater' do
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
+        th = run_request_response(@sent_msg, @resp, @pass,
+                                  k1: 'downcased-key-v1', k2: 'v2')
+        update_md = proc do |md|
+          md[:K1] = 'downcased-key-v1'
+          md
+        end
+        stub = GRPC::ClientStub.new(host, @cq, update_metadata: update_md)
+        expect(get_response(stub)).to eq(@resp)
+        th.join
+      end
+
       it 'should send a request when configured using an override channel' do
         server_port = create_test_server
         alt_host = "localhost:#{server_port}"
