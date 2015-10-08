@@ -89,6 +89,7 @@ static uint64_t g_time_start;
 
 void gpr_time_init(void) {
   mach_timebase_info_data_t tb = {0, 1};
+  gpr_precise_clock_init();
   mach_timebase_info(&tb);
   g_time_scale = tb.numer;
   g_time_scale /= tb.denom;
