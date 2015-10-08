@@ -46,6 +46,7 @@ using Grpc.Auth;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Testing;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 
 namespace Grpc.IntegrationTesting
@@ -180,13 +181,13 @@ namespace Grpc.IntegrationTesting
                     RunComputeEngineCreds(client, options.DefaultServiceAccount, options.OAuthScope);
                     break;
                 case "jwt_token_creds":
-                    RunJwtTokenCreds(client, options.DefaultServiceAccount);
+                    RunJwtTokenCreds(client);
                     break;
                 case "oauth2_auth_token":
-                    await RunOAuth2AuthTokenAsync(client, options.DefaultServiceAccount, options.OAuthScope);
+                    await RunOAuth2AuthTokenAsync(client, options.OAuthScope);
                     break;
                 case "per_rpc_creds":
-                    await RunPerRpcCredsAsync(client, options.DefaultServiceAccount, options.OAuthScope);
+                    await RunPerRpcCredsAsync(client, options.OAuthScope);
                     break;
                 case "cancel_after_begin":
                     await RunCancelAfterBeginAsync(client);
@@ -364,7 +365,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("Passed!");
         }
 
-        public static void RunJwtTokenCreds(TestService.TestServiceClient client, string defaultServiceAccount)
+        public static void RunJwtTokenCreds(TestService.TestServiceClient client)
         {
             Console.WriteLine("running jwt_token_creds");
            
@@ -381,11 +382,11 @@ namespace Grpc.IntegrationTesting
 
             Assert.AreEqual(PayloadType.COMPRESSABLE, response.Payload.Type);
             Assert.AreEqual(314159, response.Payload.Body.Length);
-            Assert.AreEqual(defaultServiceAccount, response.Username);
+            Assert.AreEqual(GetEmailFromServiceAccountFile(), response.Username);
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunOAuth2AuthTokenAsync(TestService.TestServiceClient client, string defaultServiceAccount, string oauthScope)
+        public static async Task RunOAuth2AuthTokenAsync(TestService.TestServiceClient client, string oauthScope)
         {
             Console.WriteLine("running oauth2_auth_token");
             ITokenAccess credential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { oauthScope });
@@ -402,14 +403,14 @@ namespace Grpc.IntegrationTesting
 
             Assert.False(string.IsNullOrEmpty(response.OauthScope));
             Assert.True(oauthScope.Contains(response.OauthScope));
-            Assert.AreEqual(defaultServiceAccount, response.Username);
+            Assert.AreEqual(GetEmailFromServiceAccountFile(), response.Username);
             Console.WriteLine("Passed!");
         }
 
-        public static async Task RunPerRpcCredsAsync(TestService.TestServiceClient client, string defaultServiceAccount, string oauthScope)
+        public static async Task RunPerRpcCredsAsync(TestService.TestServiceClient client, string oauthScope)
         {
             Console.WriteLine("running per_rpc_creds");
-            ITokenAccess googleCredential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { oauthScope });
+            ITokenAccess googleCredential = await GoogleCredential.GetApplicationDefaultAsync();
 
             var credentials = GrpcCredentials.Create(googleCredential);
             var request = new SimpleRequest
@@ -419,7 +420,7 @@ namespace Grpc.IntegrationTesting
 
             var response = client.UnaryCall(request, new CallOptions(credentials: credentials));
 
-            Assert.AreEqual(defaultServiceAccount, response.Username);
+            Assert.AreEqual(GetEmailFromServiceAccountFile(), response.Username);
             Console.WriteLine("Passed!");
         }
 
@@ -498,6 +499,18 @@ namespace Grpc.IntegrationTesting
         private static Payload CreateZerosPayload(int size)
         {
             return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
+        }
+
+        // extracts the client_email field from service account file used for auth test cases
+        private static string GetEmailFromServiceAccountFile()
+        {
+            string keyFile = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+            Assert.IsNotNull(keyFile);
+
+            var jobject = JObject.Parse(File.ReadAllText(keyFile));
+            string email = jobject.GetValue("client_email").Value<string>();
+            Assert.IsTrue(email.Length > 0);  // spec requires nonempty client email.
+            return email;
         }
     }
 }
