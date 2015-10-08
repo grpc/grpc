@@ -1077,6 +1077,22 @@
     ], 
     "headers": [], 
     "language": "c++", 
+    "name": "alarm_test", 
+    "src": [
+      "test/cpp/common/alarm_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c++", 
     "name": "async_end2end_test", 
     "src": [
       "test/cpp/end2end/async_end2end_test.cc"
@@ -13202,6 +13218,7 @@
       "grpc"
     ], 
     "headers": [
+      "include/grpc++/alarm.h", 
       "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
@@ -13255,6 +13272,7 @@
     "language": "c++", 
     "name": "grpc++", 
     "src": [
+      "include/grpc++/alarm.h", 
       "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
@@ -13308,6 +13326,7 @@
       "src/cpp/client/secure_channel_arguments.cc", 
       "src/cpp/client/secure_credentials.cc", 
       "src/cpp/client/secure_credentials.h", 
+      "src/cpp/common/alarm.cc", 
       "src/cpp/common/auth_property_iterator.cc", 
       "src/cpp/common/call.cc", 
       "src/cpp/common/completion_queue.cc", 
@@ -13386,6 +13405,7 @@
       "grpc_unsecure"
     ], 
     "headers": [
+      "include/grpc++/alarm.h", 
       "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
@@ -13436,6 +13456,7 @@
     "language": "c++", 
     "name": "grpc++_unsecure", 
     "src": [
+      "include/grpc++/alarm.h", 
       "include/grpc++/channel.h", 
       "include/grpc++/client_context.h", 
       "include/grpc++/completion_queue.h", 
@@ -13486,6 +13507,7 @@
       "src/cpp/client/credentials.cc", 
       "src/cpp/client/generic_stub.cc", 
       "src/cpp/client/insecure_credentials.cc", 
+      "src/cpp/common/alarm.cc", 
       "src/cpp/common/call.cc", 
       "src/cpp/common/completion_queue.cc", 
       "src/cpp/common/create_auth_context.h", 
