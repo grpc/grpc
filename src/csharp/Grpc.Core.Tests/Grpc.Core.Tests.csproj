@@ -63,8 +63,10 @@
     <Compile Include="..\Grpc.Core\Version.cs">
       <Link>Version.cs</Link>
     </Compile>
-    <Compile Include="ClientBaseTest.cs" />
+    <Compile Include="CallCredentialsTest.cs" />
+    <Compile Include="FakeCredentials.cs" />
     <Compile Include="MarshallingErrorsTest.cs" />
+    <Compile Include="ChannelCredentialsTest.cs" />
     <Compile Include="ShutdownTest.cs" />
     <Compile Include="Internal\AsyncCallTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

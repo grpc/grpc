@@ -176,8 +176,7 @@ module GRPC
                           deadline: deadline,
                           timeout: timeout,
                           parent: parent)
-      kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
+      md = update_metadata(kw, method)
       return c.request_response(req, **md) unless return_op
 
       # return the operation view of the active_call; define #execute as a
@@ -244,8 +243,7 @@ module GRPC
                           deadline: deadline,
                           timeout: timeout,
                           parent: parent)
-      kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
+      md = update_metadata(kw, method)
       return c.client_streamer(requests, **md) unless return_op
 
       # return the operation view of the active_call; define #execute as a
@@ -322,8 +320,7 @@ module GRPC
                           deadline: deadline,
                           timeout: timeout,
                           parent: parent)
-      kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
+      md = update_metadata(kw, method)
       return c.server_streamer(req, **md, &blk) unless return_op
 
       # return the operation view of the active_call; define #execute
@@ -439,8 +436,7 @@ module GRPC
                           deadline: deadline,
                           timeout: timeout,
                           parent: parent)
-      kw_with_jwt_uri = self.class.update_with_jwt_aud_uri(kw, @host, method)
-      md = @update_metadata.nil? ? kw : @update_metadata.call(kw_with_jwt_uri)
+      md = update_metadata(kw, method)
       return c.bidi_streamer(requests, **md, &blk) unless return_op
 
       # return the operation view of the active_call; define #execute
@@ -453,6 +449,16 @@ module GRPC
     end
 
     private
+
+    def update_metadata(kw, method)
+      return kw if @update_metadata.nil?
+      just_jwt_uri = self.class.update_with_jwt_aud_uri({}, @host, method)
+      updated = @update_metadata.call(just_jwt_uri)
+
+      # keys should be lowercase
+      updated = Hash[updated.each_pair.map { |k, v|  [k.downcase, v] }]
+      kw.merge(updated)
+    end
 
     # Creates a new active stub
     #
