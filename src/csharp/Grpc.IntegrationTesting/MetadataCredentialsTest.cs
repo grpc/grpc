@@ -1,4 +1,5 @@
-﻿#region Copyright notice and license
+#region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,70 +28,70 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-
 using Grpc.Core;
-using Grpc.Health.V1Alpha;
+using Grpc.Core.Utils;
+using Grpc.Testing;
 using NUnit.Framework;
 
-namespace Grpc.HealthCheck.Tests
+namespace Grpc.IntegrationTesting
 {
-    /// <summary>
-    /// Health client talks to health server.
-    /// </summary>
-    public class HealthClientServerTest
+    public class MetadataCredentialsTest
     {
         const string Host = "localhost";
         Server server;
         Channel channel;
-        Grpc.Health.V1Alpha.Health.IHealthClient client;
-        Grpc.HealthCheck.HealthServiceImpl serviceImpl;
+        TestService.ITestServiceClient client;
 
         [TestFixtureSetUp]
         public void Init()
         {
-            serviceImpl = new HealthServiceImpl();
-
+            var serverCredentials = new SslServerCredentials(new[] { new KeyCertificatePair(File.ReadAllText(TestCredentials.ServerCertChainPath), File.ReadAllText(TestCredentials.ServerPrivateKeyPath)) });
             server = new Server
             {
-                Services = { Grpc.Health.V1Alpha.Health.BindService(serviceImpl) },
-                Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
+                Services = { TestService.BindService(new TestServiceImpl()) },
+                Ports = { { Host, ServerPort.PickUnused, serverCredentials } }
             };
             server.Start();
-            channel = new Channel(Host, server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
 
-            client = Grpc.Health.V1Alpha.Health.NewClient(channel);
+            var options = new List<ChannelOption>
+            {
+                new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
+            };
+
+            var asyncAuthInterceptor = new AsyncAuthInterceptor(async (authUri, metadata) =>
+            {
+                await Task.Delay(100);  // make sure the operation is asynchronous.
+                metadata.Add("authorization", "SECRET_TOKEN");
+            });
+
+            var clientCredentials = ChannelCredentials.Create(
+                new SslCredentials(File.ReadAllText(TestCredentials.ClientCertAuthorityPath)),
+                new MetadataCredentials(asyncAuthInterceptor));
+            channel = new Channel(Host, server.Ports.Single().BoundPort, clientCredentials, options);
+            client = TestService.NewClient(channel);
         }
 
         [TestFixtureTearDown]
         public void Cleanup()
         {
             channel.ShutdownAsync().Wait();
-
             server.ShutdownAsync().Wait();
         }
 
         [Test]
-        public void ServiceIsRunning()
+        public void MetadataCredentials()
         {
-            serviceImpl.SetStatus("", "", HealthCheckResponse.Types.ServingStatus.SERVING);
-
-            var response = client.Check(new HealthCheckRequest { Host = "", Service = "" });
-            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.SERVING, response.Status);
+            var response = client.UnaryCall(new SimpleRequest { ResponseSize = 10 });
+            Assert.AreEqual(10, response.Payload.Body.Length);
         }
-
-        [Test]
-        public void ServiceDoesntExist()
-        {
-            Assert.Throws(Is.TypeOf(typeof(RpcException)).And.Property("Status").Property("StatusCode").EqualTo(StatusCode.NotFound), () => client.Check(new HealthCheckRequest { Host = "", Service = "nonexistent.service" }));
-        }
-
-        // TODO(jtattermusch): add test with timeout once timeouts are supported
     }
 }

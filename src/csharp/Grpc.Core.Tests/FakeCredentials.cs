@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,33 +28,46 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
-namespace Math
+namespace Grpc.Core.Tests
 {
-    class MathClient
+    internal class FakeChannelCredentials : ChannelCredentials
     {
-        public static void Main(string[] args)
+        readonly bool composable;
+
+        public FakeChannelCredentials(bool composable)
         {
-            var channel = new Channel("127.0.0.1", 23456, ChannelCredentials.Insecure);
-            Math.IMathClient client = new Math.MathClient(channel);
-            MathExamples.DivExample(client);
+            this.composable = composable;
+        }
 
-            MathExamples.DivAsyncExample(client).Wait();
+        internal override bool IsComposable
+        {
+            get { return composable; }
+        }
 
-            MathExamples.FibExample(client).Wait();
+        internal override CredentialsSafeHandle ToNativeCredentials()
+        {
+            return null;
+        }
+    }
 
-            MathExamples.SumExample(client).Wait();
-
-            MathExamples.DivManyExample(client).Wait();
-
-            MathExamples.DependendRequestsExample(client).Wait();
-
-            channel.ShutdownAsync().Wait();
+    internal class FakeCallCredentials : CallCredentials
+    {
+        internal override CredentialsSafeHandle ToNativeCredentials()
+        {
+            return null;
         }
     }
 }
