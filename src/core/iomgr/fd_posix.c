@@ -45,6 +45,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/profiling/timers.h"
+
 enum descriptor_state {
   NOT_READY = 0,
   READY = 1

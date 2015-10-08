@@ -1103,6 +1103,8 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
   int keep_reading = 0;
   grpc_chttp2_transport *t = tp;
 
+  GRPC_TIMER_BEGIN(GRPC_PTAG_HTTP2_RECV_DATA, 0);
+
   lock(t);
   i = 0;
   GPR_ASSERT(!t->parsing_active);
@@ -1154,6 +1156,8 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
   } else {
     UNREF_TRANSPORT(exec_ctx, t, "recv_data");
   }
+
+  GRPC_TIMER_END(GRPC_PTAG_HTTP2_RECV_DATA, 0);
 }
 
 /*

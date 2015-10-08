@@ -35,8 +35,11 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/profiling/timers.h"
+
 int grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   int did_something = 0;
+  GRPC_TIMER_BEGIN(GRPC_PTAG_EXEC_CTX_FLUSH, 0);
   while (!grpc_closure_list_empty(exec_ctx->closure_list)) {
     grpc_closure *c = exec_ctx->closure_list.head;
     exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
@@ -47,6 +50,7 @@ int grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
       c = next;
     }
   }
+  GRPC_TIMER_END(GRPC_PTAG_EXEC_CTX_FLUSH, 0);
   return did_something;
 }
 

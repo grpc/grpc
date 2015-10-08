@@ -199,7 +199,7 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
 
-  GRPC_TIMER_BEGIN(GRPC_PTAG_RECVMSG, 0);
+  GRPC_TIMER_BEGIN(GRPC_PTAG_RECVMSG, 1);
   do {
     read_bytes = recvmsg(tcp->fd, &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
@@ -316,7 +316,7 @@ static flush_result tcp_flush(grpc_tcp *tcp) {
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
 
-    GRPC_TIMER_BEGIN(GRPC_PTAG_SENDMSG, 0);
+    GRPC_TIMER_BEGIN(GRPC_PTAG_SENDMSG, 1);
     do {
       /* TODO(klempner): Cork if this is a partial write */
       sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
