@@ -45,8 +45,10 @@ int grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
     exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
     while (c != NULL) {
       grpc_closure *next = c->next;
-      did_something = 1;
+      did_something++;
+      GRPC_TIMER_BEGIN(GRPC_PTAG_EXEC_CTX_STEP, 0);
       c->cb(exec_ctx, c->cb_arg, c->success);
+      GRPC_TIMER_END(GRPC_PTAG_EXEC_CTX_STEP, 0);
       c = next;
     }
   }
