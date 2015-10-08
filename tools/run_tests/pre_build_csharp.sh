@@ -30,13 +30,12 @@
 
 set -ex
 
-if [ "$CONFIG" = "dbg" ]
-then
-  MSBUILD_CONFIG="Debug"
-else
-  MSBUILD_CONFIG="Release"
-fi
-
+# cd to gRPC csharp directory
 cd $(dirname $0)/../../src/csharp
 
-xbuild /p:Configuration=$MSBUILD_CONFIG Grpc.sln
+root=`pwd`
+
+if [ -n "$NUGET" ]
+then
+  $NUGET restore Grpc.sln
+fi
