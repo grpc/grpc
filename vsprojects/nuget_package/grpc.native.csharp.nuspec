@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package>
   <metadata>
-    <id>grpc.native.csharp_ext</id>
+    <id>grpc.native.csharp</id>
     <version>$version$</version>
     <authors>Google Inc.</authors>
     <owners>grpc-packages</owners>
@@ -20,8 +20,8 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="grpc.native.csharp_ext.props" target="\build\portable-net45\grpc.native.csharp_ext.props" />
-    <file src="grpc.native.csharp_ext.targets" target="\build\portable-net45\grpc.native.csharp_ext.targets" />
+    <file src="grpc.native.csharp.props" target="\build\portable-net45\grpc.native.csharp.props" />
+    <file src="grpc.native.csharp.targets" target="\build\portable-net45\grpc.native.csharp.targets" />
     <file src="output\v100\Win32\Release\grpc_csharp_ext.dll" target="/build/native/bin/v100\Win32\Release\grpc_csharp_ext.dll" />
     <file src="output\v120\Win32\Release\grpc_csharp_ext.dll" target="/build/native/bin/v120\Win32\Release\grpc_csharp_ext.dll" />
     <file src="output\v100\Win32\Debug\grpc_csharp_ext.dll" target="/build/native/bin/v100\Win32\Debug\grpc_csharp_ext.dll" />
