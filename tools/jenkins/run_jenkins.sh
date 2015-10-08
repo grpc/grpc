@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -31,8 +31,6 @@
 # This script is invoked by Jenkins and triggers a test run based on
 # env variable settings.
 #
-# Bootstrap into bash
-[ -z $1 ] && exec bash $0 bootstrapped
 # Setting up rvm environment BEFORE we set -ex.
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 # To prevent cygwin bash complaining about empty lines ending with \r
