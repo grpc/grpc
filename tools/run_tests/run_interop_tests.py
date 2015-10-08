@@ -62,7 +62,6 @@ _CLOUD_TO_CLOUD_BASE_ARGS = [
 _SSL_CERT_ENV = { 'SSL_CERT_FILE':'/usr/local/share/grpc/roots.pem' }
 
 # TODO(jtattermusch) unify usage of --use_tls and --use_tls=true
-# TODO(jtattermusch) unify usage of --use_prod_roots and --use_test_ca
 # TODO(jtattermusch) go uses --tls_ca_file instead of --use_test_ca
 
 
@@ -75,11 +74,11 @@ class CXXLanguage:
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
-            ['--use_tls=true','--use_prod_roots'])
+            ['--use_tls=true'])
 
   def cloud_to_cloud_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_tls=true'])
+            ['--use_tls=true', '--use_test_ca=true'])
 
   def cloud_to_prod_env(self):
     return {}
