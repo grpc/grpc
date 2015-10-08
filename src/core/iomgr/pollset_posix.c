@@ -195,6 +195,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   /* pollset->mu already held */
   int added_worker = 0;
   int locked = 1;
+  GRPC_TIMER_BEGIN(GRPC_PTAG_POLLSET_WORK, 0);
   /* this must happen before we (potentially) drop pollset->mu */
   worker->next = worker->prev = NULL;
   /* TODO(ctiller): pool these */
@@ -223,8 +224,10 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     added_worker = 1;
     gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
     gpr_tls_set(&g_current_thread_worker, (gpr_intptr)worker);
+    GRPC_TIMER_BEGIN(GRPC_PTAG_POLLSET_WORK, 0);
     pollset->vtable->maybe_work_and_unlock(exec_ctx, pollset, worker, deadline,
                                            now);
+    GRPC_TIMER_END(GRPC_PTAG_POLLSET_WORK, 0);
     locked = 0;
     gpr_tls_set(&g_current_thread_poller, 0);
     gpr_tls_set(&g_current_thread_worker, 0);
@@ -261,6 +264,7 @@ done:
       gpr_mu_lock(&pollset->mu);
     }
   }
+  GRPC_TIMER_END(GRPC_PTAG_POLLSET_WORK, 0);
 }
 
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -492,10 +496,11 @@ static void basic_pollset_maybe_work_and_unlock(grpc_exec_ctx *exec_ctx,
      even going into the blocking annotation if possible */
   /* poll fd count (argument 2) is shortened by one if we have no events
      to poll on - such that it only includes the kicker */
+  GRPC_TIMER_BEGIN(GRPC_PTAG_POLL, 0);
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   r = grpc_poll_function(pfd, nfds, timeout);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
-  GRPC_TIMER_MARK(GRPC_PTAG_POLL_FINISHED, r);
+  GRPC_TIMER_END(GRPC_PTAG_POLL, 0);
 
   if (fd) {
     grpc_fd_end_poll(exec_ctx, &fd_watcher, pfd[2].revents & POLLIN,

@@ -41,13 +41,11 @@ extern "C" {
 void grpc_timers_global_init(void);
 void grpc_timers_global_destroy(void);
 
-void grpc_timer_add_mark(int tag, const char *tagstr, void *id,
+void grpc_timer_add_mark(int tag, const char *tagstr, int important,
                          const char *file, int line);
-void grpc_timer_add_important_mark(int tag, const char *tagstr, void *id,
-                                   const char *file, int line);
-void grpc_timer_begin(int tag, const char *tagstr, void *id, const char *file,
+void grpc_timer_begin(int tag, const char *tagstr, int important, const char *file,
                       int line);
-void grpc_timer_end(int tag, const char *tagstr, void *id, const char *file,
+void grpc_timer_end(int tag, const char *tagstr, int important, const char *file,
                     int line);
 
 enum grpc_profiling_tags {
@@ -60,20 +58,35 @@ enum grpc_profiling_tags {
 
   /* Re. sockets. */
   GRPC_PTAG_HANDLE_READ = 200 + GRPC_PTAG_IGNORE_THRESHOLD,
-  GRPC_PTAG_SENDMSG = 201 + GRPC_PTAG_IGNORE_THRESHOLD,
-  GRPC_PTAG_RECVMSG = 202 + GRPC_PTAG_IGNORE_THRESHOLD,
-  GRPC_PTAG_POLL_FINISHED = 203 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_SENDMSG = 201,
+  GRPC_PTAG_RECVMSG = 202,
+  GRPC_PTAG_POLL = 203,
   GRPC_PTAG_TCP_CB_WRITE = 204 + GRPC_PTAG_IGNORE_THRESHOLD,
   GRPC_PTAG_TCP_WRITE = 205 + GRPC_PTAG_IGNORE_THRESHOLD,
-  GRPC_PTAG_CALL_ON_DONE_RECV = 206,
+  GRPC_PTAG_BECOME_READABLE = 207,
 
   /* C++ */
   GRPC_PTAG_CPP_CALL_CREATED = 300 + GRPC_PTAG_IGNORE_THRESHOLD,
   GRPC_PTAG_CPP_PERFORM_OPS = 301 + GRPC_PTAG_IGNORE_THRESHOLD,
+  GRPC_PTAG_CLIENT_UNARY_CALL = 302,
+  GRPC_PTAG_SERVER_CALL = 303,
+  GRPC_PTAG_SERVER_CALLBACK = 304,
 
   /* Transports */
+  GRPC_PTAG_HTTP2_RECV_DATA = 400,
   GRPC_PTAG_HTTP2_UNLOCK = 401 + GRPC_PTAG_IGNORE_THRESHOLD,
   GRPC_PTAG_HTTP2_UNLOCK_CLEANUP = 402 + GRPC_PTAG_IGNORE_THRESHOLD,
+
+  /* Completion queue */
+  GRPC_PTAG_CQ_NEXT = 501,
+  GRPC_PTAG_CQ_PLUCK = 502,
+  GRPC_PTAG_POLLSET_WORK = 503,
+  GRPC_PTAG_EXEC_CTX_FLUSH = 504,
+
+  /* Surface */
+  GRPC_PTAG_CALL_START_BATCH = 600,
+  GRPC_PTAG_CALL_ON_DONE_RECV = 601,
+  GRPC_PTAG_CALL_UNLOCK = 602,
 
   /* > 1024 Unassigned reserved. For any miscellaneous use.
    * Use addition to generate tags from this base or take advantage of the 10
@@ -83,19 +96,15 @@ enum grpc_profiling_tags {
 
 #if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
 /* No profiling. No-op all the things. */
-#define GRPC_TIMER_MARK(tag, id) \
+#define GRPC_TIMER_MARK(tag, important) \
   do {                           \
   } while (0)
 
-#define GRPC_TIMER_IMPORTANT_MARK(tag, id) \
-  do {                                     \
-  } while (0)
-
-#define GRPC_TIMER_BEGIN(tag, id) \
+#define GRPC_TIMER_BEGIN(tag, important) \
   do {                            \
   } while (0)
 
-#define GRPC_TIMER_END(tag, id) \
+#define GRPC_TIMER_END(tag, important) \
   do {                          \
   } while (0)
 
@@ -106,27 +115,21 @@ enum grpc_profiling_tags {
 #endif
 
 /* Generic profiling interface. */
-#define GRPC_TIMER_MARK(tag, id)                                         \
+#define GRPC_TIMER_MARK(tag, important)                                         \
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                \
-    grpc_timer_add_mark(tag, #tag, ((void *)(gpr_intptr)(id)), __FILE__, \
+    grpc_timer_add_mark(tag, #tag, important, __FILE__, \
                         __LINE__);                                       \
   }
 
-#define GRPC_TIMER_IMPORTANT_MARK(tag, id)                               \
-  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                \
-    grpc_timer_add_important_mark(tag, #tag, ((void *)(gpr_intptr)(id)), \
-                                  __FILE__, __LINE__);                   \
-  }
-
-#define GRPC_TIMER_BEGIN(tag, id)                                     \
+#define GRPC_TIMER_BEGIN(tag, important)                                     \
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                             \
-    grpc_timer_begin(tag, #tag, ((void *)(gpr_intptr)(id)), __FILE__, \
+    grpc_timer_begin(tag, #tag, important, __FILE__, \
                      __LINE__);                                       \
   }
 
-#define GRPC_TIMER_END(tag, id)                                                \
+#define GRPC_TIMER_END(tag, important)                                                \
   if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {                                      \
-    grpc_timer_end(tag, #tag, ((void *)(gpr_intptr)(id)), __FILE__, __LINE__); \
+    grpc_timer_end(tag, #tag, important, __FILE__, __LINE__); \
   }
 
 #ifdef GRPC_STAP_PROFILER
