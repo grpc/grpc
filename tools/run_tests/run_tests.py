@@ -618,7 +618,7 @@ for l in languages:
       set(l.make_targets()))
 
 build_steps = list(set(
-                   jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
+                   jobset.JobSpec(cmdline, environ={'CONFIG': cfg}, flake_retries=5)
                    for cfg in build_configs
                    for l in languages
                    for cmdline in l.pre_build_steps()))
@@ -737,7 +737,7 @@ def _build_and_run(
     check_cancelled, newline_on_success, travis, cache, xml_report=None):
   """Do one pass of building & running tests."""
   # build latest sequentially
-  if not jobset.run(build_steps, maxjobs=1,
+  if not jobset.run(build_steps, maxjobs=1, stop_on_failure=True,
                     newline_on_success=newline_on_success, travis=travis):
     return 1
 
