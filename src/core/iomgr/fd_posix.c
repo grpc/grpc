@@ -45,8 +45,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/profiling/timers.h"
-
 #define CLOSURE_NOT_READY ((grpc_closure *)0)
 #define CLOSURE_READY ((grpc_closure *)1)
 
