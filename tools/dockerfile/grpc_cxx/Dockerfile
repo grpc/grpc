@@ -54,4 +54,4 @@ ADD service_account service_account
 ADD cacerts cacerts
 ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH /cacerts/roots.pem
 
-CMD ["/var/local/git/grpc/bins/opt/interop_server", "--enable_ssl", "--port=8010"]
+CMD ["/var/local/git/grpc/bins/opt/interop_server", "--use_tls", "--port=8010"]

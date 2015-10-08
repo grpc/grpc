@@ -98,6 +98,13 @@ void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
                                             grpc_connectivity_state *state,
                                             grpc_closure *notify);
 
+/** Remove \a subscribed_notify from the list of closures to be called on a
+ * state change if present, returning 1. Otherwise, nothing is done and return
+ * 0. */
+int grpc_subchannel_state_change_unsubscribe(grpc_exec_ctx *exec_ctx,
+                                             grpc_subchannel *channel,
+                                             grpc_closure *subscribed_notify);
+
 /** express interest in \a channel's activities through \a pollset. */
 void grpc_subchannel_add_interested_party(grpc_exec_ctx *exec_ctx,
                                           grpc_subchannel *channel,

@@ -48,6 +48,7 @@
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/support/stack_lockfree.h"
 #include "src/core/support/string.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/completion_queue.h"
@@ -767,22 +768,18 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 static const grpc_channel_filter server_surface_filter = {
-    server_start_transport_stream_op,
-    grpc_channel_next_op,
-    sizeof(call_data),
-    init_call_elem,
-    destroy_call_elem,
-    sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
-    grpc_call_next_get_peer,
-    "server",
+    server_start_transport_stream_op, grpc_channel_next_op, sizeof(call_data),
+    init_call_elem, destroy_call_elem, sizeof(channel_data), init_channel_elem,
+    destroy_channel_elem, grpc_call_next_get_peer, "server",
 };
 
 void grpc_server_register_completion_queue(grpc_server *server,
                                            grpc_completion_queue *cq,
                                            void *reserved) {
   size_t i, n;
+  GRPC_API_TRACE(
+      "grpc_server_register_completion_queue(server=%p, cq=%p, reserved=%p)", 3,
+      (server, cq, reserved));
   GPR_ASSERT(!reserved);
   for (i = 0; i < server->cq_count; i++) {
     if (server->cqs[i] == cq) return;
@@ -861,6 +858,8 @@ static int streq(const char *a, const char *b) {
 void *grpc_server_register_method(grpc_server *server, const char *method,
                                   const char *host) {
   registered_method *m;
+  GRPC_API_TRACE("grpc_server_register_method(server=%p, method=%s, host=%s)",
+                 3, (server, method, host));
   if (!method) {
     gpr_log(GPR_ERROR,
             "grpc_server_register_method method string cannot be NULL");
@@ -887,6 +886,8 @@ void grpc_server_start(grpc_server *server) {
   listener *l;
   size_t i;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
+  GRPC_API_TRACE("grpc_server_start(server=%p)", 1, (server));
 
   server->pollsets = gpr_malloc(sizeof(grpc_pollset *) * server->cq_count);
   for (i = 0; i < server->cq_count; i++) {
@@ -940,8 +941,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   channel = grpc_channel_create_from_filters(exec_ctx, NULL, filters,
                                              num_filters, args, mdctx, 0);
   chand = (channel_data *)grpc_channel_stack_element(
-              grpc_channel_get_channel_stack(channel), 0)
-              ->channel_data;
+              grpc_channel_get_channel_stack(channel), 0)->channel_data;
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
@@ -962,7 +962,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
       method = grpc_mdstr_from_string(mdctx, rm->method);
       hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
-                           .server_registered_method != NULL;
+                               .server_registered_method != NULL;
            probes++)
         ;
       if (probes > max_probes) max_probes = probes;
@@ -1019,6 +1019,9 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
   channel_broadcaster broadcaster;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
+  GRPC_API_TRACE("grpc_server_shutdown_and_notify(server=%p, cq=%p, tag=%p)", 3,
+                 (server, cq, tag));
+
   GRPC_SERVER_LOG_SHUTDOWN(GPR_INFO, server, cq, tag);
 
   /* lock, and gather up some stuff to do */
@@ -1071,6 +1074,8 @@ void grpc_server_cancel_all_calls(grpc_server *server) {
   channel_broadcaster broadcaster;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
+  GRPC_API_TRACE("grpc_server_cancel_all_calls(server=%p)", 1, (server));
+
   gpr_mu_lock(&server->mu_global);
   channel_broadcaster_init(server, &broadcaster);
   gpr_mu_unlock(&server->mu_global);
@@ -1082,6 +1087,8 @@ void grpc_server_cancel_all_calls(grpc_server *server) {
 void grpc_server_destroy(grpc_server *server) {
   listener *l;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
+  GRPC_API_TRACE("grpc_server_destroy(server=%p)", 1, (server));
 
   gpr_mu_lock(&server->mu_global);
   GPR_ASSERT(gpr_atm_acq_load(&server->shutdown_flag) || !server->listeners);
@@ -1177,6 +1184,12 @@ grpc_call_error grpc_server_request_call(
   grpc_call_error error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   requested_call *rc = gpr_malloc(sizeof(*rc));
+  GRPC_API_TRACE(
+      "grpc_server_request_call("
+      "server=%p, call=%p, details=%p, initial_metadata=%p, "
+      "cq_bound_to_call=%p, cq_for_notification=%p, tag%p)",
+      7, (server, call, details, initial_metadata, cq_bound_to_call,
+          cq_for_notification, tag));
   GRPC_SERVER_LOG_REQUEST_CALL(GPR_INFO, server, call, details,
                                initial_metadata, cq_bound_to_call,
                                cq_for_notification, tag);
@@ -1210,6 +1223,13 @@ grpc_call_error grpc_server_request_registered_call(
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   requested_call *rc = gpr_malloc(sizeof(*rc));
   registered_method *rm = rmp;
+  GRPC_API_TRACE(
+      "grpc_server_request_registered_call("
+      "server=%p, rmp=%p, call=%p, deadline=%p, initial_metadata=%p, "
+      "optional_payload=%p, cq_bound_to_call=%p, cq_for_notification=%p, "
+      "tag=%p)",
+      9, (server, rmp, call, deadline, initial_metadata, optional_payload,
+          cq_bound_to_call, cq_for_notification, tag));
   if (!grpc_cq_is_server_cq(cq_for_notification)) {
     gpr_free(rc);
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;

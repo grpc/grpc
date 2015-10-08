@@ -45,6 +45,7 @@
 #include "src/core/iomgr/alarm.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/byte_buffer_queue.h"
 #include "src/core/surface/call.h"
 #include "src/core/surface/channel.h"
@@ -424,7 +425,12 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
     if (call->allocated_completions & (1u << i)) {
       continue;
     }
-    call->allocated_completions |= (gpr_uint8)(1u << i);
+    /* NB: the following integer arithmetic operation needs to be in its
+     * expanded form due to the "integral promotion" performed (see section
+     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+     * is then required to avoid the compiler warning */
+    call->allocated_completions =
+        (gpr_uint8)(call->allocated_completions | (1u << i));
     gpr_mu_unlock(&call->completion_mu);
     return &call->completions[i];
   }
@@ -735,7 +741,11 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
   size_t i;
   /* ioreq is live: we need to do something */
   master = &call->masters[master_set];
-  master->complete_mask |= (gpr_uint16)(1u << op);
+  /* NB: the following integer arithmetic operation needs to be in its
+   * expanded form due to the "integral promotion" performed (see section
+   * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+   * is then required to avoid the compiler warning */
+  master->complete_mask = (gpr_uint16)(master->complete_mask | (1u << op));
   if (!success) {
     master->success = 0;
   }
@@ -926,6 +936,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
   }
   /* we have to be reading a message to know what to do here */
   if (!call->reading_message) {
+    gpr_slice_unref(slice);
     cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT,
                        "Received payload data while not reading a message");
     return 0;
@@ -1245,7 +1256,11 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                            GRPC_MDSTR_REF(reqs[i].data.send_status.details));
       }
     }
-    have_ops |= (gpr_uint16)(1u << op);
+    /* NB: the following integer arithmetic operation needs to be in its
+     * expanded form due to the "integral promotion" performed (see section
+     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+     * is then required to avoid the compiler warning */
+    have_ops = (gpr_uint16)(have_ops | (1u << op));
 
     call->request_data[op] = data;
     call->request_flags[op] = reqs[i].flags;
@@ -1280,6 +1295,8 @@ void grpc_call_destroy(grpc_call *c) {
   grpc_call *parent = c->parent;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
+  GRPC_API_TRACE("grpc_call_destroy(c=%p)", 1, (c));
+
   if (parent) {
     gpr_mu_lock(&parent->mu);
     if (c == parent->first_child) {
@@ -1308,6 +1325,7 @@ void grpc_call_destroy(grpc_call *c) {
 }
 
 grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved) {
+  GRPC_API_TRACE("grpc_call_cancel(call=%p, reserved=%p)", 2, (call, reserved));
   GPR_ASSERT(!reserved);
   return grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED, "Cancelled",
                                       NULL);
@@ -1319,6 +1337,10 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *c,
                                              void *reserved) {
   grpc_call_error r;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GRPC_API_TRACE(
+      "grpc_call_cancel_with_status("
+      "c=%p, status=%d, description=%s, reserved=%p)",
+      4, (c, (int)status, description, reserved));
   GPR_ASSERT(reserved == NULL);
   lock(c);
   r = cancel_with_status(c, status, description);
@@ -1386,6 +1408,7 @@ char *grpc_call_get_peer(grpc_call *call) {
   grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   char *result = elem->filter->get_peer(&exec_ctx, elem);
+  GRPC_API_TRACE("grpc_call_get_peer(%p)", 1, (call));
   grpc_exec_ctx_finish(&exec_ctx);
   return result;
 }
@@ -1579,6 +1602,10 @@ grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
   void (*finish_func)(grpc_exec_ctx *, grpc_call *, int, void *) = finish_batch;
   grpc_call_error error;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
+  GRPC_API_TRACE(
+      "grpc_call_start_batch(call=%p, ops=%p, nops=%lu, tag=%p, reserved=%p)",
+      5, (call, ops, (unsigned long)nops, tag, reserved));
 
   if (reserved != NULL) {
     error = GRPC_CALL_ERROR;

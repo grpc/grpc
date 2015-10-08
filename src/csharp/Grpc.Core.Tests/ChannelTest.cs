@@ -44,13 +44,13 @@ namespace Grpc.Core.Tests
         [Test]
         public void Constructor_RejectsInvalidParams()
         {
-            Assert.Throws(typeof(ArgumentNullException), () => new Channel(null, Credentials.Insecure));
+            Assert.Throws(typeof(ArgumentNullException), () => new Channel(null, ChannelCredentials.Insecure));
         }
 
         [Test]
         public void State_IdleAfterCreation()
         {
-            var channel = new Channel("localhost", Credentials.Insecure);
+            var channel = new Channel("localhost", ChannelCredentials.Insecure);
             Assert.AreEqual(ChannelState.Idle, channel.State);
             channel.ShutdownAsync().Wait();
         }
@@ -58,7 +58,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void WaitForStateChangedAsync_InvalidArgument()
         {
-            var channel = new Channel("localhost", Credentials.Insecure);
+            var channel = new Channel("localhost", ChannelCredentials.Insecure);
             Assert.Throws(typeof(ArgumentException), () => channel.WaitForStateChangedAsync(ChannelState.FatalFailure));
             channel.ShutdownAsync().Wait();
         }
@@ -66,7 +66,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void ResolvedTarget()
         {
-            var channel = new Channel("127.0.0.1", Credentials.Insecure);
+            var channel = new Channel("127.0.0.1", ChannelCredentials.Insecure);
             Assert.IsTrue(channel.ResolvedTarget.Contains("127.0.0.1"));
             channel.ShutdownAsync().Wait();
         }
@@ -74,7 +74,7 @@ namespace Grpc.Core.Tests
         [Test]
         public void Shutdown_AllowedOnlyOnce()
         {
-            var channel = new Channel("localhost", Credentials.Insecure);
+            var channel = new Channel("localhost", ChannelCredentials.Insecure);
             channel.ShutdownAsync().Wait();
             Assert.Throws(typeof(InvalidOperationException), () => channel.ShutdownAsync().GetAwaiter().GetResult());
         }

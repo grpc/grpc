@@ -33,9 +33,12 @@
 
 #include <grpc/census.h>
 #include <grpc/grpc.h>
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/call.h"
 
 void grpc_census_call_set_context(grpc_call *call, census_context *context) {
+  GRPC_API_TRACE("grpc_census_call_set_context(call=%p, census_context=%p)", 2,
+                 (call, context));
   if (census_enabled() == CENSUS_FEATURE_NONE) {
     return;
   }
@@ -45,5 +48,6 @@ void grpc_census_call_set_context(grpc_call *call, census_context *context) {
 }
 
 census_context *grpc_census_call_get_context(grpc_call *call) {
+  GRPC_API_TRACE("grpc_census_call_get_context(call=%p)", 1, (call));
   return (census_context *)grpc_call_context_get(call, GRPC_CONTEXT_TRACING);
 }

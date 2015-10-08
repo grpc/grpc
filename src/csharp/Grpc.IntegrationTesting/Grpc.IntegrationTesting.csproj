@@ -96,6 +96,7 @@
     <Compile Include="Empty.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="InteropClientServerTest.cs" />
+    <Compile Include="MetadataCredentialsTest.cs" />
     <Compile Include="TestServiceImpl.cs" />
     <Compile Include="InteropServer.cs" />
     <Compile Include="InteropClient.cs" />

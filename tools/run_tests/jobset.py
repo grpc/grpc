@@ -180,6 +180,7 @@ class Job(object):
                                    name=self._spec.shortname) if xml_report is not None else None
     self._retries = 0
     self._timeout_retries = 0
+    self._suppress_failure_message = False
     message('START', spec.shortname, do_newline=self._travis)
     self.start()
 
@@ -220,9 +221,10 @@ class Job(object):
           self.start()
         else:
           self._state = _FAILURE
-          message('FAILED', '%s [ret=%d, pid=%d]' % (
-              self._spec.shortname, self._process.returncode, self._process.pid),
-              stdout, do_newline=True)
+          if not self._suppress_failure_message:
+            message('FAILED', '%s [ret=%d, pid=%d]' % (
+                self._spec.shortname, self._process.returncode, self._process.pid),
+                stdout, do_newline=True)
           if self._xml_test is not None:
             ET.SubElement(self._xml_test, 'failure', message='Failure').text
       else:
@@ -253,6 +255,9 @@ class Job(object):
     if self._state == _RUNNING:
       self._state = _KILLED
       self._process.terminate()
+
+  def suppress_failure_message(self):
+    self._suppress_failure_message = True
 
 
 class Jobset(object):

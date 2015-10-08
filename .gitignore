@@ -8,6 +8,7 @@ objs
 python*_virtual_environment
 
 # gcov coverage data
+reports
 coverage
 *.gcno
 

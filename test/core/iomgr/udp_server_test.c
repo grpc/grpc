@@ -49,12 +49,13 @@ static grpc_pollset g_pollset;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
 
-static void on_read(int fd, grpc_server *server) {
+static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
+                    grpc_server *server) {
   char read_buffer[512];
   ssize_t byte_count;
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  byte_count = recv(fd, read_buffer, sizeof(read_buffer), 0);
+  byte_count = recv(emfd->fd, read_buffer, sizeof(read_buffer), 0);
 
   g_number_of_reads++;
   g_number_of_bytes_read += (int)byte_count;

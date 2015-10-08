@@ -382,9 +382,9 @@ static char *win_get_peer(grpc_endpoint *ep) {
   return gpr_strdup(tcp->peer_string);
 }
 
-static grpc_endpoint_vtable vtable = {
-    win_read,     win_write,   win_add_to_pollset, win_add_to_pollset_set,
-    win_shutdown, win_destroy, win_get_peer};
+static grpc_endpoint_vtable vtable = {win_read, win_write, win_add_to_pollset,
+                                      win_add_to_pollset_set, win_shutdown,
+                                      win_destroy, win_get_peer};
 
 grpc_endpoint *grpc_tcp_create(grpc_winsocket *socket, char *peer_string) {
   grpc_tcp *tcp = (grpc_tcp *)gpr_malloc(sizeof(grpc_tcp));
