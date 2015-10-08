@@ -312,6 +312,10 @@ def add_auth_options(language, test_case, cmdline, env):
   if test_case in ['per_rpc_creds', 'oauth2_auth_token']:
     cmdline += [oauth_scope_arg]
 
+  if test_case == 'oauth2_auth_token' and language == 'c++':
+    # C++ oauth2 test uses GCE creds and thus needs to know the default account
+    cmdline += [default_account_arg]
+
   if test_case == 'compute_engine_creds':
     cmdline += [oauth_scope_arg, default_account_arg]
 
