@@ -338,6 +338,41 @@ function customMetadata(client, done) {
   stream.end();
 }
 
+function statusCodeAndMessage(client, done) {
+  done = multiDone(done, 2);
+  var arg = {
+    response_status: {
+      code: 2,
+      message: "test status message"
+    }
+  };
+  client.unaryCall(arg, function(err, resp) {
+    assert(err);
+    assert.strictEqual(err.code, 2);
+    assert.strictEqual(err.message, "test status message");
+    done();
+  });
+  var duplex = client.fullDuplexCall();
+  duplex.on('status', function(status) {
+    assert(status);
+    assert.strictEqual(status.code, 2);
+    assert.strictEqual(status.details, "test status message");
+    done();
+  });
+  duplex.on('error', function(){});
+  duplex.write(arg);
+  duplex.end();
+}
+
+function unimplementedMethod(client, done) {
+  client.unimplementedCall({}, function(err, resp) {
+    assert(err);
+    assert.strictEqual(err.code, grpc.status.UNIMPLEMENTED);
+    assert(!err.message);
+    done();
+  });
+}
+
 /**
  * Run one of the authentication tests.
  * @param {string} expected_user The expected username in the response
@@ -459,25 +494,44 @@ function getOauth2Creds(scope, callback) {
  * Map from test case names to test functions
  */
 var test_cases = {
-  empty_unary: {run: emptyUnary},
-  large_unary: {run: largeUnary},
-  client_streaming: {run: clientStreaming},
-  server_streaming: {run: serverStreaming},
-  ping_pong: {run: pingPong},
-  empty_stream: {run: emptyStream},
-  cancel_after_begin: {run: cancelAfterBegin},
-  cancel_after_first_response: {run: cancelAfterFirstResponse},
-  timeout_on_sleeping_server: {run: timeoutOnSleepingServer},
-  custom_metadata: {run: customMetadata},
+  empty_unary: {run: emptyUnary,
+                Client: testProto.TestService},
+  large_unary: {run: largeUnary,
+                Client: testProto.TestService},
+  client_streaming: {run: clientStreaming,
+                     Client: testProto.TestService},
+  server_streaming: {run: serverStreaming,
+                     Client: testProto.TestService},
+  ping_pong: {run: pingPong,
+              Client: testProto.TestService},
+  empty_stream: {run: emptyStream,
+                 Client: testProto.TestService},
+  cancel_after_begin: {run: cancelAfterBegin,
+                       Client: testProto.TestService},
+  cancel_after_first_response: {run: cancelAfterFirstResponse,
+                                Client: testProto.TestService},
+  timeout_on_sleeping_server: {run: timeoutOnSleepingServer,
+                               Client: testProto.TestService},
+  custom_metadata: {run: customMetadata,
+                    Client: testProto.TestService},
+  status_code_and_message: {run: statusCodeAndMessage,
+                            Client: testProto.TestService},
+  unimplemented_method: {run: unimplementedMethod,
+                         Client: testProto.UnimplementedService},
   compute_engine_creds: {run: computeEngineCreds,
+                         Client: testProto.TestService,
                          getCreds: getApplicationCreds},
   service_account_creds: {run: serviceAccountCreds,
+                          Client: testProto.TestService,
                           getCreds: getApplicationCreds},
   jwt_token_creds: {run: jwtTokenCreds,
+                    Client: testProto.TestService,
                     getCreds: getApplicationCreds},
   oauth2_auth_token: {run: oauth2Test,
+                      Client: testProto.TestService,
                       getCreds: getOauth2Creds},
-  per_rpc_creds: {run: perRpcAuthTest}
+  per_rpc_creds: {run: perRpcAuthTest,
+                  Client: testProto.TestService}
 };
 
 /**
@@ -516,7 +570,7 @@ function runTest(address, host_override, test_case, tls, test_ca, done, extra) {
 
   var execute = function(err, creds) {
     assert.ifError(err);
-    var client = new testProto.TestService(address, creds, options);
+    var client = new test.Client(address, creds, options);
     test.run(client, done);
   };
 

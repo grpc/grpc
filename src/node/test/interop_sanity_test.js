@@ -94,4 +94,12 @@ describe('Interop tests', function() {
     interop_client.runTest(port, name_override, 'custom_metadata',
                            true, true, done);
   });
+  it('should pass status_code_and_message', function(done) {
+    interop_client.runTest(port, name_override, 'status_code_and_message',
+                           true, true, done);
+  });
+  it('should pass unimplemented_method', function(done) {
+    interop_client.runTest(port, name_override, 'unimplemented_method',
+                           true, true, done);
+  });
 });
