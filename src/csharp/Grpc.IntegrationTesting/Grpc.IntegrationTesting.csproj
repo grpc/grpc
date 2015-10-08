@@ -118,9 +118,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <None Include="proto\test.proto" />
-    <None Include="proto\empty.proto" />
-    <None Include="proto\messages.proto" />
     <None Include="data\README">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
