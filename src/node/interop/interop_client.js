@@ -44,13 +44,6 @@ var GoogleAuth = require('google-auth-library');
 
 var assert = require('assert');
 
-var AUTH_SCOPE = 'https://www.googleapis.com/auth/xapi.zoo';
-var AUTH_SCOPE_RESPONSE = 'xapi.zoo';
-var AUTH_USER = ('155450119199-vefjjaekcc6cmsd5914v6lqufunmh9ue' +
-    '@developer.gserviceaccount.com');
-var COMPUTE_ENGINE_USER = ('155450119199-r5aaqa2vqoa9g5mv2m6s3m1l293rlmel' +
-    '@developer.gserviceaccount.com');
-
 var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
 var ECHO_TRAILING_KEY = 'x-grpc-test-echo-trailing-bin';
 
@@ -369,7 +362,7 @@ function authTest(expected_user, scope, client, done) {
     assert.strictEqual(resp.payload.body.length, 314159);
     assert.strictEqual(resp.username, expected_user);
     if (scope) {
-      assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+      assert(scope.indexOf(resp.oauth_scope) > -1);
     }
     if (done) {
       done();
@@ -377,56 +370,49 @@ function authTest(expected_user, scope, client, done) {
   });
 }
 
-function oauth2Test(expected_user, scope, per_rpc, client, done) {
-  (new GoogleAuth()).getApplicationDefault(function(err, credential) {
-    assert.ifError(err);
+function computeEngineCreds(client, done, extra) {
+  authTest(extra.service_account, null, client, done);
+}
+
+function serviceAccountCreds(client, done, extra) {
+  authTest(extra.default_service_account, extra.oauth_scope, client, done);
+}
+
+function jwtTokenCreds(client, done, extra) {
+  authTest(extra.default_service_account, null, client, done);
+}
+
+function oauth2Test(client, done, extra) {
     var arg = {
       fill_username: true,
       fill_oauth_scope: true
     };
-    credential = credential.createScoped(scope);
-    credential.getAccessToken(function(err, token) {
-      assert.ifError(err);
-      var updateMetadata = function(authURI, metadata, callback) {
-        metadata.add('authorization', 'Bearer ' + token);
-        callback(null, metadata);
-      };
-      var makeTestCall = function(error, client_metadata) {
-        assert.ifError(error);
-        client.unaryCall(arg, function(err, resp) {
-          assert.ifError(err);
-          assert.strictEqual(resp.username, expected_user);
-          assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
-          if (done) {
-            done();
-          }
-        }, client_metadata);
-      };
-      if (per_rpc) {
-        updateMetadata('', new grpc.Metadata(), makeTestCall);
-      } else {
-        client.$updateMetadata = updateMetadata;
-        makeTestCall(null, new grpc.Metadata());
-      }
-    });
+  client.unaryCall(arg, function(err, resp) {
+    assert.ifError(err);
+    assert.strictEqual(resp.username, extra.service_account);
+    assert(extra.oauth_scope.indexOf(resp.oauth_scope) > -1);
+    if (done) {
+      done();
+    }
   });
 }
 
-function perRpcAuthTest(expected_user, scope, per_rpc, client, done) {
+function perRpcAuthTest(client, done, extra) {
   (new GoogleAuth()).getApplicationDefault(function(err, credential) {
     assert.ifError(err);
     var arg = {
       fill_username: true,
       fill_oauth_scope: true
     };
+    var scope = extra.oauth_scope;
     if (credential.createScopedRequired() && scope) {
       credential = credential.createScoped(scope);
     }
     var creds = grpc.credentials.createFromGoogleCredential(credential);
     client.unaryCall(arg, function(err, resp) {
       assert.ifError(err);
-      assert.strictEqual(resp.username, expected_user);
-      assert.strictEqual(resp.oauth_scope, AUTH_SCOPE_RESPONSE);
+      assert.strictEqual(resp.username, extra.service_account);
+      assert(extra.oauth_scope.indexOf(resp.oauth_scope) > -1);
       if (done) {
         done();
       }
@@ -483,15 +469,15 @@ var test_cases = {
   cancel_after_first_response: {run: cancelAfterFirstResponse},
   timeout_on_sleeping_server: {run: timeoutOnSleepingServer},
   custom_metadata: {run: customMetadata},
-  compute_engine_creds: {run: _.partial(authTest, COMPUTE_ENGINE_USER, null),
-                         getCreds: _.partial(getApplicationCreds, null)},
-  service_account_creds: {run: _.partial(authTest, AUTH_USER, AUTH_SCOPE),
-                          getCreds: _.partial(getApplicationCreds, AUTH_SCOPE)},
-  jwt_token_creds: {run: _.partial(authTest, AUTH_USER, null),
-                    getCreds: _.partial(getApplicationCreds, null)},
-  oauth2_auth_token: {run: _.partial(oauth2Test, AUTH_USER, AUTH_SCOPE, false),
-                      getCreds: _.partial(getOauth2Creds, AUTH_SCOPE)},
-  per_rpc_creds: {run: _.partial(perRpcAuthTest, AUTH_USER, AUTH_SCOPE, true)}
+  compute_engine_creds: {run: computeEngineCreds,
+                         getCreds: getApplicationCreds},
+  service_account_creds: {run: serviceAccountCreds,
+                          getCreds: getApplicationCreds},
+  jwt_token_creds: {run: jwtTokenCreds,
+                    getCreds: getApplicationCreds},
+  oauth2_auth_token: {run: oauth2Test,
+                      getCreds: getOauth2Creds},
+  per_rpc_creds: {run: perRpcAuthTest}
 };
 
 /**
@@ -504,8 +490,9 @@ var test_cases = {
  * @param {bool} tls Indicates that a secure channel should be used
  * @param {function} done Callback to call when the test is completed. Included
  *     primarily for use with mocha
+ * @param {object=} extra Extra options for some tests
  */
-function runTest(address, host_override, test_case, tls, test_ca, done) {
+function runTest(address, host_override, test_case, tls, test_ca, done, extra) {
   // TODO(mlumish): enable TLS functionality
   var options = {};
   var creds;
@@ -534,7 +521,7 @@ function runTest(address, host_override, test_case, tls, test_ca, done) {
   };
 
   if (test.getCreds) {
-    test.getCreds(function(err, new_creds) {
+    test.getCreds(extra.oauth_scope, function(err, new_creds) {
       execute(err, grpc.credentials.combineChannelCredentials(
           creds, new_creds));
     });
@@ -547,13 +534,19 @@ if (require.main === module) {
   var parseArgs = require('minimist');
   var argv = parseArgs(process.argv, {
     string: ['server_host', 'server_host_override', 'server_port', 'test_case',
-             'use_tls', 'use_test_ca']
+             'use_tls', 'use_test_ca', 'default_service_account', 'oauth_scope',
+             'service_account_key_file']
   });
+  var extra_args = {
+    service_account: argv.default_service_account,
+    oauth_scope: argv.oauth_scope,
+    service_account_key_file: argv.service_account_key_file
+  };
   runTest(argv.server_host + ':' + argv.server_port, argv.server_host_override,
           argv.test_case, argv.use_tls === 'true', argv.use_test_ca === 'true',
           function () {
             console.log('OK:', argv.test_case);
-          });
+          }, extra_args);
 }
 
 /**
