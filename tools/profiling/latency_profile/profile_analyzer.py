@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+import argparse
 import collections
 import hashlib
 import itertools
@@ -14,6 +15,11 @@ TIME_TO_SCOPE_END = object()
 TIME_FROM_STACK_START = object()
 TIME_TO_STACK_END = object()
 
+
+argp = argparse.ArgumentParser(description='Process output of basic_prof builds')
+argp.add_argument('--source', default='latency_trace.txt', type=str)
+argp.add_argument('--fmt', choices=tabulate.tabulate_formats, default='simple')
+args = argp.parse_args()
 
 class LineItem(object):
 
@@ -117,10 +123,9 @@ class CallStack(object):
 builder = collections.defaultdict(CallStackBuilder)
 call_stacks = collections.defaultdict(CallStack)
 
-print 'Loading...'
 lines = 0
 start = time.time()
-with open('latency_trace.txt') as f:
+with open(args.source) as f:
   for line in f:
     lines += 1
     inf = json.loads(line)
@@ -133,14 +138,13 @@ with open('latency_trace.txt') as f:
         call_stacks[cs.signature] = CallStack(cs)
       del builder[thd]
 time_taken = time.time() - start
-print 'Read %d lines in %f seconds (%f lines/sec)' % (lines, time_taken, lines / time_taken)
 
-print 'Analyzing...'
 call_stacks = sorted(call_stacks.values(), key=lambda cs: cs.count, reverse=True)
+total_stacks = 0
 for cs in call_stacks:
+  total_stacks += cs.count
   cs.finish()
 
-print 'Writing report...'
 def percentile(N, percent, key=lambda x:x):
     """
     Find the percentile of a list of values.
@@ -191,8 +195,23 @@ FORMAT = [
   ('TO_SCOPE_END', time_format(TIME_TO_SCOPE_END)),
 ]
 
+BANNER = {
+    'simple': 'Count: %(count)d',
+    'html': '<h1>Count: %(count)d</h1>'
+}
+
+if args.fmt == 'html':
+  print '<html>'
+  print '<head>'
+  print '<title>Profile Report</title>'
+  print '</head>'
+
+accounted_for = 0
 for cs in call_stacks:
-  print cs.count
+  if args.fmt in BANNER:
+    print BANNER[args.fmt] % {
+        'count': cs.count,
+    }
   header, _ = zip(*FORMAT)
   table = []
   for line in cs.lines:
@@ -200,4 +219,11 @@ for cs in call_stacks:
     for _, fn in FORMAT:
       fields.append(fn(line))
     table.append(fields)
-  print tabulate.tabulate(table, header, tablefmt="simple")
+  print tabulate.tabulate(table, header, tablefmt=args.fmt)
+  accounted_for += cs.count
+  if accounted_for > .99 * total_stacks:
+    break
+
+if args.fmt == 'html':
+  print '</html>'
+
