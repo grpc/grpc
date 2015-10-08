@@ -244,6 +244,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\support\time_posix.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\time_precise.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\support\time_win32.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\support\tls_pthread.c">

@@ -134,6 +134,7 @@ Pod::Spec.new do |s|
                       'src/core/support/thd_win32.c',
                       'src/core/support/time.c',
                       'src/core/support/time_posix.c',
+                      'src/core/support/time_precise.c',
                       'src/core/support/time_win32.c',
                       'src/core/support/tls_pthread.c',
                       'src/core/security/auth_filters.h',
