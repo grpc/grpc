@@ -109,91 +109,125 @@ PHP_MINIT_FUNCTION(grpc) {
   */
   /* Register call error constants */
   grpc_init();
-  REGISTER_LONG_CONSTANT("Grpc\\CALL_OK", GRPC_CALL_OK, CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR", GRPC_CALL_ERROR, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\CALL_OK", GRPC_CALL_OK,
+                         CONST_CS | CONST_PERSISTENT);
+  REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR", GRPC_CALL_ERROR,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_NOT_ON_SERVER",
-                         GRPC_CALL_ERROR_NOT_ON_SERVER, CONST_CS);
+                         GRPC_CALL_ERROR_NOT_ON_SERVER,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_NOT_ON_CLIENT",
-                         GRPC_CALL_ERROR_NOT_ON_CLIENT, CONST_CS);
+                         GRPC_CALL_ERROR_NOT_ON_CLIENT,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_ALREADY_INVOKED",
-                         GRPC_CALL_ERROR_ALREADY_INVOKED, CONST_CS);
+                         GRPC_CALL_ERROR_ALREADY_INVOKED,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_NOT_INVOKED",
-                         GRPC_CALL_ERROR_NOT_INVOKED, CONST_CS);
+                         GRPC_CALL_ERROR_NOT_INVOKED,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_ALREADY_FINISHED",
-                         GRPC_CALL_ERROR_ALREADY_FINISHED, CONST_CS);
+                         GRPC_CALL_ERROR_ALREADY_FINISHED,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_TOO_MANY_OPERATIONS",
-                         GRPC_CALL_ERROR_TOO_MANY_OPERATIONS, CONST_CS);
+                         GRPC_CALL_ERROR_TOO_MANY_OPERATIONS,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR_INVALID_FLAGS",
-                         GRPC_CALL_ERROR_INVALID_FLAGS, CONST_CS);
+                         GRPC_CALL_ERROR_INVALID_FLAGS,
+                         CONST_CS | CONST_PERSISTENT);
 
   /* Register flag constants */
   REGISTER_LONG_CONSTANT("Grpc\\WRITE_BUFFER_HINT", GRPC_WRITE_BUFFER_HINT,
-                         CONST_CS);
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\WRITE_NO_COMPRESS", GRPC_WRITE_NO_COMPRESS,
-                         CONST_CS);
+                         CONST_CS | CONST_PERSISTENT);
 
   /* Register status constants */
-  REGISTER_LONG_CONSTANT("Grpc\\STATUS_OK", GRPC_STATUS_OK, CONST_CS);
+  REGISTER_LONG_CONSTANT("Grpc\\STATUS_OK", GRPC_STATUS_OK,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_CANCELLED", GRPC_STATUS_CANCELLED,
-                         CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNKNOWN", GRPC_STATUS_UNKNOWN, CONST_CS);
+                         CONST_CS | CONST_PERSISTENT);
+  REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNKNOWN", GRPC_STATUS_UNKNOWN,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_INVALID_ARGUMENT",
-                         GRPC_STATUS_INVALID_ARGUMENT, CONST_CS);
+                         GRPC_STATUS_INVALID_ARGUMENT,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_DEADLINE_EXCEEDED",
-                         GRPC_STATUS_DEADLINE_EXCEEDED, CONST_CS);
+                         GRPC_STATUS_DEADLINE_EXCEEDED,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_NOT_FOUND", GRPC_STATUS_NOT_FOUND,
-                         CONST_CS);
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_ALREADY_EXISTS",
-                         GRPC_STATUS_ALREADY_EXISTS, CONST_CS);
+                         GRPC_STATUS_ALREADY_EXISTS,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_PERMISSION_DENIED",
-                         GRPC_STATUS_PERMISSION_DENIED, CONST_CS);
+                         GRPC_STATUS_PERMISSION_DENIED,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNAUTHENTICATED",
-                         GRPC_STATUS_UNAUTHENTICATED, CONST_CS);
+                         GRPC_STATUS_UNAUTHENTICATED,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_RESOURCE_EXHAUSTED",
-                         GRPC_STATUS_RESOURCE_EXHAUSTED, CONST_CS);
+                         GRPC_STATUS_RESOURCE_EXHAUSTED,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_FAILED_PRECONDITION",
-                         GRPC_STATUS_FAILED_PRECONDITION, CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\STATUS_ABORTED", GRPC_STATUS_ABORTED, CONST_CS);
-  REGISTER_LONG_CONSTANT("Grpc\\STATUS_OUT_OF_RANGE", GRPC_STATUS_OUT_OF_RANGE,
-                         CONST_CS);
+                         GRPC_STATUS_FAILED_PRECONDITION,
+                         CONST_CS | CONST_PERSISTENT);
+  REGISTER_LONG_CONSTANT("Grpc\\STATUS_ABORTED", GRPC_STATUS_ABORTED,
+                         CONST_CS | CONST_PERSISTENT);
+  REGISTER_LONG_CONSTANT("Grpc\\STATUS_OUT_OF_RANGE",
+                         GRPC_STATUS_OUT_OF_RANGE,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNIMPLEMENTED",
-                         GRPC_STATUS_UNIMPLEMENTED, CONST_CS);
+                         GRPC_STATUS_UNIMPLEMENTED,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_INTERNAL", GRPC_STATUS_INTERNAL,
-                         CONST_CS);
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNAVAILABLE", GRPC_STATUS_UNAVAILABLE,
-                         CONST_CS);
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_DATA_LOSS", GRPC_STATUS_DATA_LOSS,
-                         CONST_CS);
+                         CONST_CS | CONST_PERSISTENT);
 
   /* Register op type constants */
   REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_INITIAL_METADATA",
-                         GRPC_OP_SEND_INITIAL_METADATA, CONST_CS);
+                         GRPC_OP_SEND_INITIAL_METADATA,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_MESSAGE",
-                         GRPC_OP_SEND_MESSAGE, CONST_CS);
+                         GRPC_OP_SEND_MESSAGE,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_CLOSE_FROM_CLIENT",
-                         GRPC_OP_SEND_CLOSE_FROM_CLIENT, CONST_CS);
+                         GRPC_OP_SEND_CLOSE_FROM_CLIENT,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_SEND_STATUS_FROM_SERVER",
-                         GRPC_OP_SEND_STATUS_FROM_SERVER, CONST_CS);
+                         GRPC_OP_SEND_STATUS_FROM_SERVER,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_INITIAL_METADATA",
-                         GRPC_OP_RECV_INITIAL_METADATA, CONST_CS);
+                         GRPC_OP_RECV_INITIAL_METADATA,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_MESSAGE",
-                         GRPC_OP_RECV_MESSAGE, CONST_CS);
+                         GRPC_OP_RECV_MESSAGE,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_STATUS_ON_CLIENT",
-                         GRPC_OP_RECV_STATUS_ON_CLIENT, CONST_CS);
+                         GRPC_OP_RECV_STATUS_ON_CLIENT,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_CLOSE_ON_SERVER",
-                         GRPC_OP_RECV_CLOSE_ON_SERVER, CONST_CS);
+                         GRPC_OP_RECV_CLOSE_ON_SERVER,
+                         CONST_CS | CONST_PERSISTENT);
 
   /* Register connectivity state constants */
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_IDLE",
-                         GRPC_CHANNEL_IDLE, CONST_CS);
+                         GRPC_CHANNEL_IDLE,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_CONNECTING",
-                         GRPC_CHANNEL_CONNECTING, CONST_CS);
+                         GRPC_CHANNEL_CONNECTING,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_READY",
-                         GRPC_CHANNEL_READY, CONST_CS);
+                         GRPC_CHANNEL_READY,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_TRANSIENT_FAILURE",
-                         GRPC_CHANNEL_TRANSIENT_FAILURE, CONST_CS);
+                         GRPC_CHANNEL_TRANSIENT_FAILURE,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_FATAL_FAILURE",
-                         GRPC_CHANNEL_FATAL_FAILURE, CONST_CS);
+                         GRPC_CHANNEL_FATAL_FAILURE,
+                         CONST_CS | CONST_PERSISTENT);
 
   grpc_init_call(TSRMLS_C);
   grpc_init_channel(TSRMLS_C);

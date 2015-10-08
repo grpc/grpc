@@ -30,8 +30,8 @@
 var fs = require('fs');
 var parseArgs = require('minimist');
 var path = require('path');
-var _ = require('underscore');
-var grpc = require('grpc');
+var _ = require('lodash');
+var grpc = require('../../../');
 var routeguide = grpc.load(__dirname + '/route_guide.proto').routeguide;
 
 var COORD_FACTOR = 1e7;

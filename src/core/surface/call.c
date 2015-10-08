@@ -425,12 +425,18 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
     if (call->allocated_completions & (1u << i)) {
       continue;
     }
-    call->allocated_completions |= (gpr_uint8)(1u << i);
+    /* NB: the following integer arithmetic operation needs to be in its
+     * expanded form due to the "integral promotion" performed (see section
+     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+     * is then required to avoid the compiler warning */
+    call->allocated_completions =
+        (gpr_uint8)(call->allocated_completions | (1u << i));
     gpr_mu_unlock(&call->completion_mu);
     return &call->completions[i];
   }
   gpr_log(GPR_ERROR, "should never reach here");
   abort();
+  return NULL;
 }
 
 static void done_completion(grpc_exec_ctx *exec_ctx, void *call,
@@ -740,7 +746,11 @@ static void finish_live_ioreq_op(grpc_call *call, grpc_ioreq_op op,
   size_t i;
   /* ioreq is live: we need to do something */
   master = &call->masters[master_set];
-  master->complete_mask |= (gpr_uint16)(1u << op);
+  /* NB: the following integer arithmetic operation needs to be in its
+   * expanded form due to the "integral promotion" performed (see section
+   * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+   * is then required to avoid the compiler warning */
+  master->complete_mask = (gpr_uint16)(master->complete_mask | (1u << op));
   if (!success) {
     master->success = 0;
   }
@@ -931,6 +941,7 @@ static int add_slice_to_message(grpc_call *call, gpr_slice slice) {
   }
   /* we have to be reading a message to know what to do here */
   if (!call->reading_message) {
+    gpr_slice_unref(slice);
     cancel_with_status(call, GRPC_STATUS_INVALID_ARGUMENT,
                        "Received payload data while not reading a message");
     return 0;
@@ -1250,7 +1261,11 @@ static grpc_call_error start_ioreq(grpc_call *call, const grpc_ioreq *reqs,
                            GRPC_MDSTR_REF(reqs[i].data.send_status.details));
       }
     }
-    have_ops |= (gpr_uint16)(1u << op);
+    /* NB: the following integer arithmetic operation needs to be in its
+     * expanded form due to the "integral promotion" performed (see section
+     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+     * is then required to avoid the compiler warning */
+    have_ops = (gpr_uint16)(have_ops | (1u << op));
 
     call->request_data[op] = data;
     call->request_flags[op] = reqs[i].flags;

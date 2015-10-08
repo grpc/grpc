@@ -61,7 +61,7 @@ namespace Math.Tests
                 Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
             };
             server.Start();
-            channel = new Channel(Host, server.Ports.Single().BoundPort, Credentials.Insecure);
+            channel = new Channel(Host, server.Ports.Single().BoundPort, ChannelCredentials.Insecure);
             client = Math.NewClient(channel);
         }
 

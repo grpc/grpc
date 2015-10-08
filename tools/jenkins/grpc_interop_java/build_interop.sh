@@ -34,6 +34,9 @@ set -e
 mkdir -p /var/local/git
 git clone --recursive --depth 1 /var/local/jenkins/grpc-java /var/local/git/grpc-java
 
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
+
 cd /var/local/git/grpc-java
 
 ./gradlew :grpc-interop-testing:installDist -PskipCodegen=true
