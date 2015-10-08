@@ -37,6 +37,4 @@ export GRPC_CONFIG=${CONFIG:-opt}
 cd $(dirname $0)/../../src/ruby
 
 rm -rf ./tmp
-
-bundle install
 rake compile:grpc

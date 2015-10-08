@@ -8,7 +8,7 @@ This requires PHP 5.5 or greater.
 
 INSTALL
 -------
- - On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][]. Run the following command to install gRPC.
+ - On Mac OS X, install [homebrew][]. Run the following command to install gRPC.
 
    ```sh
    $ curl -fsSL https://goo.gl/getgrpc | bash -s php
@@ -59,7 +59,6 @@ TUTORIAL
 You can find a more detailed tutorial in [gRPC Basics: PHP][]
 
 [homebrew]:http://brew.sh
-[linuxbrew]:https://github.com/Homebrew/linuxbrew#installation
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [Node]:https://github.com/grpc/grpc/tree/master/examples/node
 [gRPC Basics: PHP]:http://www.grpc.io/docs/tutorials/basic/php.html

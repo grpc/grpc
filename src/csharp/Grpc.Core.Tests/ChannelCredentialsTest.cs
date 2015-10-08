@@ -1,3 +1,4 @@
+#region Copyright notice and license
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
@@ -28,16 +29,45 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-syntax = "proto3";
+#endregion
 
-package grpc.testing;
+using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Grpc.Core;
+using Grpc.Core.Internal;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
-// An empty message that you can re-use to avoid defining duplicated empty
-// messages in your project. A typical example is to use it as argument or the
-// return value of a service API. For instance:
-//
-//   service Foo {
-//     rpc Bar (grpc.testing.Empty) returns (grpc.testing.Empty) { };
-//   };
-//
-message Empty {}
+namespace Grpc.Core.Tests
+{
+    public class ChannelCredentialsTest
+    {
+        [Test]
+        public void InsecureCredentials_IsNonComposable()
+        {
+            Assert.IsFalse(ChannelCredentials.Insecure.IsComposable);
+        }
+
+        [Test]
+        public void ChannelCredentials_CreateComposite()
+        {
+            var composite = ChannelCredentials.Create(new FakeChannelCredentials(true), new FakeCallCredentials());
+            Assert.IsFalse(composite.IsComposable);
+
+            Assert.Throws(typeof(ArgumentNullException), () => ChannelCredentials.Create(null, new FakeCallCredentials()));
+            Assert.Throws(typeof(ArgumentNullException), () => ChannelCredentials.Create(new FakeChannelCredentials(true), null));
+            
+            // forbid composing non-composable
+            Assert.Throws(typeof(ArgumentException), () => ChannelCredentials.Create(new FakeChannelCredentials(false), new FakeCallCredentials()));
+        }
+
+        [Test]
+        public void ChannelCredentials_CreateWrapped()
+        {
+            ChannelCredentials.Create(new FakeCallCredentials());
+        }
+    }
+}
