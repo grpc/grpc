@@ -167,7 +167,10 @@ class CLanguage(object):
     return ['buildtests_%s' % self.make_target, 'tools_%s' % self.make_target]
 
   def pre_build_steps(self):
-    return []
+    if self.platform == 'windows':
+      return [['tools\\run_tests\\pre_build_c.bat']]
+    else:
+      return []
 
   def build_steps(self):
     return []
@@ -322,7 +325,7 @@ class CSharpLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return []
+      return [['tools\\run_tests\\pre_build_csharp.bat']]
     else:
       return [['tools/run_tests/pre_build_csharp.sh']]
 
