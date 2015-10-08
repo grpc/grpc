@@ -44,6 +44,9 @@ namespace Grpc.Core.Internal
         static extern CredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
 
         [DllImport("grpc_csharp_ext.dll")]
+        static extern CredentialsSafeHandle grpcsharp_composite_credentials_create(CredentialsSafeHandle creds1, CredentialsSafeHandle creds2);
+
+        [DllImport("grpc_csharp_ext.dll")]
         static extern void grpcsharp_credentials_release(IntPtr credentials);
 
         private CredentialsSafeHandle()
@@ -67,6 +70,11 @@ namespace Grpc.Core.Internal
             {
                 return grpcsharp_ssl_credentials_create(pemRootCerts, null, null);
             }
+        }
+
+        public static CredentialsSafeHandle CreateComposite(CredentialsSafeHandle creds1, CredentialsSafeHandle creds2)
+        {
+            return grpcsharp_composite_credentials_create(creds1, creds2);
         }
 
         protected override bool ReleaseHandle()

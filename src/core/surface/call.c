@@ -436,6 +436,7 @@ static grpc_cq_completion *allocate_completion(grpc_call *call) {
   }
   gpr_log(GPR_ERROR, "should never reach here");
   abort();
+  return NULL;
 }
 
 static void done_completion(grpc_exec_ctx *exec_ctx, void *call,

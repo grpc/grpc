@@ -17,7 +17,7 @@ services.
 <a name="install"></a>
 ## Install protoc with the gRPC plugin
 
-On Mac OS X, install [homebrew][]. On Linux, install [linuxbrew][].
+On Mac OS X, install [homebrew][].
 
 Run the following command to install _protoc_ and the gRPC _protoc_ plugin:
 ```sh
@@ -153,7 +153,7 @@ _protoc_, in which case no system modification nor renaming is necessary.
 <a name="no-cocoapods"></a>
 ### Integrate the generated gRPC library without using Cocoapods
 
-You need to compile the generated `.pbpbjc.*` files (the enums and messages) without ARC support,
+You need to compile the generated `.pbobjc.*` files (the enums and messages) without ARC support,
 and the generated `.pbrpc.*` files (the services) with ARC support. The generated code depends on
 v0.5+ of the Objective-C gRPC runtime library and v3.0.0-alpha-3+ of the Objective-C Protobuf
 runtime library.
@@ -168,7 +168,6 @@ Objective-C Protobuf runtime library.
 
 [Protocol Buffers]:https://developers.google.com/protocol-buffers/
 [homebrew]:http://brew.sh
-[linuxbrew]:https://github.com/Homebrew/linuxbrew
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [example Podfile]:https://github.com/grpc/grpc/blob/master/src/objective-c/examples/Sample/Podfile
 [sample app]: https://github.com/grpc/grpc/tree/master/src/objective-c/examples/Sample
