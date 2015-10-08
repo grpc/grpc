@@ -66,11 +66,13 @@ namespace Grpc.IntegrationTesting
             [Option("test_case", DefaultValue = "large_unary")]
             public string TestCase { get; set; }
 
-            [Option("use_tls")]
-            public bool UseTls { get; set; }
+            // Deliberately using nullable bool type to allow --use_tls=true syntax (as opposed to --use_tls)
+            [Option("use_tls", DefaultValue = false)]
+            public bool? UseTls { get; set; }
 
-            [Option("use_test_ca")]
-            public bool UseTestCa { get; set; }
+            // Deliberately using nullable bool type to allow --use_test_ca=true syntax (as opposed to --use_test_ca)
+            [Option("use_test_ca", DefaultValue = false)]
+            public bool? UseTestCa { get; set; }
 
             [Option("default_service_account", Required = false)]
             public string DefaultServiceAccount { get; set; }
@@ -134,7 +136,7 @@ namespace Grpc.IntegrationTesting
 
         private async Task<ChannelCredentials> CreateCredentialsAsync()
         {
-            var credentials = options.UseTls ? TestCredentials.CreateTestClientCredentials(options.UseTestCa) : ChannelCredentials.Insecure;
+            var credentials = options.UseTls.Value ? TestCredentials.CreateTestClientCredentials(options.UseTestCa.Value) : ChannelCredentials.Insecure;
 
             if (options.TestCase == "jwt_token_creds")
             {
