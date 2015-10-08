@@ -63,7 +63,7 @@ static gpr_timespec gpr_from_timespec(struct timespec ts,
 /** maps gpr_clock_type --> clockid_t for clock_gettime */
 static clockid_t clockid_for_gpr_clock[] = {CLOCK_MONOTONIC, CLOCK_REALTIME};
 
-void gpr_time_init(void) {}
+void gpr_time_init(void) { gpr_precise_clock_init(); }
 
 gpr_timespec gpr_now(gpr_clock_type clock_type) {
   struct timespec now;

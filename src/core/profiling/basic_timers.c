@@ -53,31 +53,42 @@ typedef enum {
 
 typedef struct grpc_timer_entry {
   gpr_timespec tm;
-  int tag;
   const char *tagstr;
   marker_type type;
-  void *id;
   const char *file;
   int line;
 } grpc_timer_entry;
 
 #define MAX_COUNT (1024 * 1024 / sizeof(grpc_timer_entry))
 
-static __thread grpc_timer_entry log[MAX_COUNT];
-static __thread int count;
+static __thread grpc_timer_entry g_log[MAX_COUNT];
+static __thread int g_count;
+static gpr_once g_once_init = GPR_ONCE_INIT;
+static FILE *output_file;
+
+static void close_output() { fclose(output_file); }
+
+static void init_output() {
+  output_file = fopen("latency_trace.txt", "w");
+  GPR_ASSERT(output_file);
+  atexit(close_output);
+}
 
 static void log_report() {
   int i;
-  for (i = 0; i < count; i++) {
-    grpc_timer_entry *entry = &(log[i]);
-    printf("GRPC_LAT_PROF %ld.%09d  %p %c %d(%s) %p %s %d\n", entry->tm.tv_sec,
-           entry->tm.tv_nsec, (void *)(gpr_intptr)gpr_thd_currentid(),
-           entry->type, entry->tag, entry->tagstr, entry->id, entry->file,
-           entry->line);
+  gpr_once_init(&g_once_init, init_output);
+  for (i = 0; i < g_count; i++) {
+    grpc_timer_entry *entry = &(g_log[i]);
+    fprintf(output_file,
+            "{\"t\": %ld.%09d, \"thd\": \"%p\", \"type\": \"%c\", \"tag\": "
+            "\"%s\", \"file\": \"%s\", \"line\": %d}\n",
+            entry->tm.tv_sec, entry->tm.tv_nsec,
+            (void *)(gpr_intptr)gpr_thd_currentid(), entry->type, entry->tagstr,
+            entry->file, entry->line);
   }
 
   /* Now clear out the log */
-  count = 0;
+  g_count = 0;
 }
 
 static void grpc_timers_log_add(int tag, const char *tagstr, marker_type type,
@@ -85,17 +96,15 @@ static void grpc_timers_log_add(int tag, const char *tagstr, marker_type type,
   grpc_timer_entry *entry;
 
   /* TODO (vpai) : Improve concurrency */
-  if (count == MAX_COUNT) {
+  if (g_count == MAX_COUNT) {
     log_report();
   }
 
-  entry = &log[count++];
+  entry = &g_log[g_count++];
 
   entry->tm = gpr_now(GPR_CLOCK_PRECISE);
-  entry->tag = tag;
   entry->tagstr = tagstr;
   entry->type = type;
-  entry->id = id;
   entry->file = file;
   entry->line = line;
 }
