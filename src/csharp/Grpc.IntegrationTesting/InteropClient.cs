@@ -410,7 +410,7 @@ namespace Grpc.IntegrationTesting
         public static async Task RunPerRpcCredsAsync(TestService.TestServiceClient client, string oauthScope)
         {
             Console.WriteLine("running per_rpc_creds");
-            ITokenAccess googleCredential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { oauthScope });
+            ITokenAccess googleCredential = await GoogleCredential.GetApplicationDefaultAsync();
 
             var credentials = GrpcCredentials.Create(googleCredential);
             var request = new SimpleRequest
