@@ -185,8 +185,12 @@ gpr_slice grpc_chttp2_huffman_compress(gpr_slice input) {
   }
 
   if (temp_length) {
-    *out++ = (gpr_uint8)(temp << (8u - temp_length)) |
-             (gpr_uint8)(0xffu >> temp_length);
+    /* NB: the following integer arithmetic operation needs to be in its
+     * expanded form due to the "integral promotion" performed (see section
+     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+     * is then required to avoid the compiler warning */
+    *out++ = (gpr_uint8)((gpr_uint8)(temp << (8u - temp_length)) |
+                         (gpr_uint8)(0xffu >> temp_length));
   }
 
   GPR_ASSERT(out == GPR_SLICE_END_PTR(output));
@@ -265,8 +269,12 @@ gpr_slice grpc_chttp2_base64_encode_and_huffman_compress(gpr_slice input) {
   }
 
   if (out.temp_length) {
-    *out.out++ = (gpr_uint8)(out.temp << (8u - out.temp_length)) |
-                 (gpr_uint8)(0xffu >> out.temp_length);
+    /* NB: the following integer arithmetic operation needs to be in its
+     * expanded form due to the "integral promotion" performed (see section
+     * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
+     * is then required to avoid the compiler warning */
+    *out.out++ = (gpr_uint8)((gpr_uint8)(out.temp << (8u - out.temp_length)) |
+                             (gpr_uint8)(0xffu >> out.temp_length));
   }
 
   GPR_ASSERT(out.out <= GPR_SLICE_END_PTR(output));

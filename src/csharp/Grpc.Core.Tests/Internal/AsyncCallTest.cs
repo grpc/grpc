@@ -49,7 +49,7 @@ namespace Grpc.Core.Internal.Tests
         [SetUp]
         public void Init()
         {
-            channel = new Channel("localhost", Credentials.Insecure);
+            channel = new Channel("localhost", ChannelCredentials.Insecure);
 
             fakeCall = new FakeNativeCall();
 
