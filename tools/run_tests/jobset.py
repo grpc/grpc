@@ -135,13 +135,14 @@ class JobSpec(object):
 
   def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
                cwd=None, shell=False, timeout_seconds=5*60, flake_retries=0,
-               timeout_retries=0):
+               timeout_retries=0, kill_handler=None):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
       environ: a dictionary of environment variables to set in the child process
       hash_targets: which files to include in the hash representing the jobs version
                     (or empty, indicating the job should not be hashed)
+      kill_handler: a handler that will be called whenever job.kill() is invoked
     """
     if environ is None:
       environ = {}
@@ -156,6 +157,7 @@ class JobSpec(object):
     self.timeout_seconds = timeout_seconds
     self.flake_retries = flake_retries
     self.timeout_retries = timeout_retries
+    self.kill_handler = kill_handler
 
   def identity(self):
     return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
@@ -254,6 +256,8 @@ class Job(object):
   def kill(self):
     if self._state == _RUNNING:
       self._state = _KILLED
+      if self._spec.kill_handler:
+        self._spec.kill_handler(self)
       self._process.terminate()
 
   def suppress_failure_message(self):
