@@ -37,10 +37,11 @@
 #include "grpc/grpc.h"
 
 #include "call.h"
+#include "call_credentials.h"
 #include "channel.h"
+#include "channel_credentials.h"
 #include "server.h"
 #include "completion_queue_async_worker.h"
-#include "credentials.h"
 #include "server_credentials.h"
 
 using v8::Local;
@@ -240,11 +241,12 @@ void init(Local<Object> exports) {
   InitWriteFlags(exports);
 
   grpc::node::Call::Init(exports);
+  grpc::node::CallCredentials::Init(exports);
   grpc::node::Channel::Init(exports);
+  grpc::node::ChannelCredentials::Init(exports);
   grpc::node::Server::Init(exports);
   grpc::node::CompletionQueueAsyncWorker::Init(exports);
-  grpc::node::Credentials::Init(exports);
   grpc::node::ServerCredentials::Init(exports);
 }
 
-NODE_MODULE(grpc, init)
+NODE_MODULE(grpc_node, init)

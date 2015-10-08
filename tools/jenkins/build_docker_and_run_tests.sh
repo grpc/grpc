@@ -37,7 +37,12 @@ cd `dirname $0`/../..
 git_root=`pwd`
 cd -
 
+# Ensure existence of ccache directory
 mkdir -p /tmp/ccache
+
+# Ensure existence of the home directory for XDG caches (e.g. what pip uses for
+# its cache location now that --download-cache is deprecated).
+mkdir -p /tmp/xdg-cache-home
 
 # Create a local branch so the child Docker script won't complain
 git branch -f jenkins-docker
@@ -57,9 +62,11 @@ docker run \
   -e "config=$config" \
   -e "arch=$arch" \
   -e CCACHE_DIR=/tmp/ccache \
+  -e XDG_CACHE_HOME=/tmp/xdg-cache-home \
   -i $TTY_FLAG \
   -v "$git_root:/var/local/jenkins/grpc" \
   -v /tmp/ccache:/tmp/ccache \
+  -v /tmp/xdg-cache-home:/tmp/xdg-cache-home \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(which docker):/bin/docker \
   -w /var/local/git/grpc \
@@ -73,6 +80,10 @@ if [ "$XML_REPORT" != "" ]
 then
   docker cp "$DOCKER_CID:/var/local/git/grpc/$XML_REPORT" $git_root
 fi
+
+docker cp "$DOCKER_CID:/var/local/git/grpc/reports.zip" $git_root || true
+unzip $git_root/reports.zip -d $git_root || true
+rm -f reports.zip
 
 # remove the container, possibly killing it first
 docker rm -f $DOCKER_CID || true

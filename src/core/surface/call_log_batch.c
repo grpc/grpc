@@ -37,8 +37,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-int grpc_trace_batch = 0;
-
 static void add_metadata(gpr_strvec *b, const grpc_metadata *md, size_t count) {
   size_t i;
   for (i = 0; i < count; i++) {

@@ -73,6 +73,10 @@ struct Resources {
   std::vector<unique_ptr<PersistentValue> > handles;
 };
 
+bool CreateMetadataArray(v8::Local<v8::Object> metadata,
+                         grpc_metadata_array *array,
+                         shared_ptr<Resources> resources);
+
 class Op {
  public:
   virtual v8::Local<v8::Value> GetNodeValue() const = 0;
@@ -122,6 +126,7 @@ class Call : public Nan::ObjectWrap {
   static NAN_METHOD(Cancel);
   static NAN_METHOD(CancelWithStatus);
   static NAN_METHOD(GetPeer);
+  static NAN_METHOD(SetCredentials);
   static Nan::Callback *constructor;
   // Used for typechecking instances of this javascript class
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;

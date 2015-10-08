@@ -51,13 +51,6 @@ static gpr_cv g_rcv;
 static int g_shutdown;
 static grpc_iomgr_object g_root_object;
 
-void grpc_kick_poller(void) {
-  /* Empty. The background callback executor polls periodically. The activity
-   * the kicker is trying to draw the executor's attention to will be picked up
-   * either by one of the periodic wakeups or by one of the polling application
-   * threads. */
-}
-
 void grpc_iomgr_init(void) {
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
@@ -66,6 +59,7 @@ void grpc_iomgr_init(void) {
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = "root";
   grpc_iomgr_platform_init();
+  grpc_pollset_global_init();
 }
 
 static size_t count_objects(void) {
@@ -89,6 +83,8 @@ void grpc_iomgr_shutdown(void) {
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   gpr_timespec last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
+  grpc_iomgr_platform_flush();
 
   gpr_mu_lock(&g_mu);
   g_shutdown = 1;
@@ -135,6 +131,7 @@ void grpc_iomgr_shutdown(void) {
   gpr_mu_lock(&g_mu);
   gpr_mu_unlock(&g_mu);
 
+  grpc_pollset_global_shutdown();
   grpc_iomgr_platform_shutdown();
   gpr_mu_destroy(&g_mu);
   gpr_cv_destroy(&g_rcv);
