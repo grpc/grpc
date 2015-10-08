@@ -63,10 +63,6 @@ then
   # Prevent msbuild from picking up "platform" env variable, which would break the build
   unset platform
 
-  # TODO(jtattermusch): integrate nuget restore in a nicer way.
-  /cygdrive/c/nuget/nuget.exe restore vsprojects/grpc.sln
-  /cygdrive/c/nuget/nuget.exe restore src/csharp/Grpc.sln
-
   python tools/run_tests/run_tests.py -t -l $language -x report.xml $@ || true
 
 elif [ "$platform" == "macos" ]
