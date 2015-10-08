@@ -86,7 +86,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, null, StatusCode.Unknown, GetMetadataExceptionMsg);
+                grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
                 Logger.Error(e, GetMetadataExceptionMsg);
             }
         }
@@ -97,6 +97,7 @@ namespace Grpc.Core.Internal
             {
                 var metadata = new Metadata();
                 await interceptor(serviceUrl, metadata);
+
                 using (var metadataArray = MetadataArraySafeHandle.Create(metadata))
                 {
                     grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, metadataArray, StatusCode.OK, null);
@@ -104,7 +105,7 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, null, StatusCode.Unknown, GetMetadataExceptionMsg);
+                grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
                 Logger.Error(e, GetMetadataExceptionMsg);
             }
         }
