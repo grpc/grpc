@@ -150,7 +150,7 @@ PHP_MINIT_FUNCTION(grpc) {
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_INVALID_ARGUMENT",
                          GRPC_STATUS_INVALID_ARGUMENT,
-                        CONST_CS | CONST_PERSISTENT);
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_DEADLINE_EXCEEDED",
                          GRPC_STATUS_DEADLINE_EXCEEDED,
                          CONST_CS | CONST_PERSISTENT);
@@ -173,7 +173,8 @@ PHP_MINIT_FUNCTION(grpc) {
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_ABORTED", GRPC_STATUS_ABORTED,
                          CONST_CS | CONST_PERSISTENT);
-  REGISTER_LONG_CONSTANT("Grpc\\STATUS_OUT_OF_RANGE", GRPC_STATUS_OUT_OF_RANGE,
+  REGISTER_LONG_CONSTANT("Grpc\\STATUS_OUT_OF_RANGE",
+                         GRPC_STATUS_OUT_OF_RANGE,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\STATUS_UNIMPLEMENTED",
                          GRPC_STATUS_UNIMPLEMENTED,
@@ -202,7 +203,8 @@ PHP_MINIT_FUNCTION(grpc) {
                          GRPC_OP_RECV_INITIAL_METADATA,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_MESSAGE",
-                         GRPC_OP_RECV_MESSAGE, CONST_CS | CONST_PERSISTENT);
+                         GRPC_OP_RECV_MESSAGE,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\OP_RECV_STATUS_ON_CLIENT",
                          GRPC_OP_RECV_STATUS_ON_CLIENT,
                          CONST_CS | CONST_PERSISTENT);
@@ -212,11 +214,14 @@ PHP_MINIT_FUNCTION(grpc) {
 
   /* Register connectivity state constants */
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_IDLE",
-                         GRPC_CHANNEL_IDLE, CONST_CS | CONST_PERSISTENT);
+                         GRPC_CHANNEL_IDLE,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_CONNECTING",
-                         GRPC_CHANNEL_CONNECTING, CONST_CS | CONST_PERSISTENT);
+                         GRPC_CHANNEL_CONNECTING,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_READY",
-                         GRPC_CHANNEL_READY, CONST_CS | CONST_PERSISTENT);
+                         GRPC_CHANNEL_READY,
+                         CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CHANNEL_TRANSIENT_FAILURE",
                          GRPC_CHANNEL_TRANSIENT_FAILURE,
                          CONST_CS | CONST_PERSISTENT);
