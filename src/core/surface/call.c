@@ -836,6 +836,7 @@ static void early_out_write_ops(grpc_call *call) {
 
 static void call_on_done_send(grpc_exec_ctx *exec_ctx, void *pc, int success) {
   grpc_call *call = pc;
+  GRPC_TIMER_BEGIN(GRPC_PTAG_CALL_ON_DONE_SEND, 0);
   lock(call);
   if (call->last_send_contains & (1 << GRPC_IOREQ_SEND_INITIAL_METADATA)) {
     finish_ioreq_op(call, GRPC_IOREQ_SEND_INITIAL_METADATA, success);
@@ -859,6 +860,7 @@ static void call_on_done_send(grpc_exec_ctx *exec_ctx, void *pc, int success) {
   call->sending = 0;
   unlock(exec_ctx, call);
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "sending");
+  GRPC_TIMER_END(GRPC_PTAG_CALL_ON_DONE_SEND, 0);
 }
 
 static void finish_message(grpc_call *call) {

@@ -36,16 +36,18 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/surface/channel.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/support/string.h"
-#include "src/core/transport/connectivity_state.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/channel/channel_args.h"
+#include "src/core/channel/connected_channel.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
+#include "src/core/surface/channel.h"
+#include "src/core/transport/connectivity_state.h"
 
 /* Client channel implementation */
 
@@ -235,6 +237,8 @@ static void picked_target(grpc_exec_ctx *exec_ctx, void *arg,
   call_data *calld = arg;
   grpc_pollset *pollset;
 
+  GRPC_TIMER_BEGIN(GRPC_PTAG_CHANNEL_PICKED_TARGET, 0);
+
   if (calld->picked_channel == NULL) {
     /* treat this like a cancellation */
     calld->waiting_op.cancel_with_status = GRPC_STATUS_UNAVAILABLE;
@@ -255,6 +259,8 @@ static void picked_target(grpc_exec_ctx *exec_ctx, void *arg,
                                   &calld->async_setup_task);
     }
   }
+
+  GRPC_TIMER_END(GRPC_PTAG_CHANNEL_PICKED_TARGET, 0);
 }
 
 static grpc_closure *merge_into_waiting_op(grpc_call_element *elem,

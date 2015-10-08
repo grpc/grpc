@@ -546,6 +546,8 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_transport_writing *transport_writing = transport_writing_ptr;
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING(transport_writing);
 
+  GRPC_TIMER_BEGIN(GRPC_PTAG_HTTP2_TERMINATE_WRITING, 0);
+
   lock(t);
 
   allow_endpoint_shutdown_locked(exec_ctx, t);
@@ -567,12 +569,16 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
   unlock(exec_ctx, t);
 
   UNREF_TRANSPORT(exec_ctx, t, "writing");
+  
+  GRPC_TIMER_END(GRPC_PTAG_HTTP2_TERMINATE_WRITING, 0);
 }
 
 static void writing_action(grpc_exec_ctx *exec_ctx, void *gt,
                            int iomgr_success_ignored) {
   grpc_chttp2_transport *t = gt;
+  GRPC_TIMER_BEGIN(GRPC_PTAG_HTTP2_WRITING_ACTION, 0);
   grpc_chttp2_perform_writes(exec_ctx, &t->writing, t->ep);
+  GRPC_TIMER_END(GRPC_PTAG_HTTP2_WRITING_ACTION, 0);
 }
 
 void grpc_chttp2_add_incoming_goaway(
