@@ -8,7 +8,7 @@ cd /d %~dp0\..\..
 @rem Location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
 
-if exists %NUGET% (
+if exist %NUGET% (
   %NUGET% restore vsprojects/grpc.sln || goto :error
 )
 
