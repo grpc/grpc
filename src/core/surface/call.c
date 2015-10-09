@@ -536,12 +536,24 @@ grpc_compression_algorithm grpc_call_get_compression_algorithm(
   return call->compression_algorithm;
 }
 
-static void set_encodings_accepted_by_peer(
-    grpc_call *call, const gpr_slice accept_encoding_slice) {
+static void destroy_encodings_accepted_by_peer(void *p) { return; }
+
+static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
   size_t i;
   grpc_compression_algorithm algorithm;
   gpr_slice_buffer accept_encoding_parts;
+  gpr_slice accept_encoding_slice;
+  void *accepted_user_data;
 
+  accepted_user_data =
+      grpc_mdelem_get_user_data(mdel, destroy_encodings_accepted_by_peer);
+  if (accepted_user_data != NULL) {
+    call->encodings_accepted_by_peer =
+        (gpr_uint32)(((gpr_uintptr)accepted_user_data) - 1);
+    return;
+  }
+
+  accept_encoding_slice = mdel->value->slice;
   gpr_slice_buffer_init(&accept_encoding_parts);
   gpr_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
 
@@ -565,6 +577,12 @@ static void set_encodings_accepted_by_peer(
       gpr_free(accept_encoding_entry_str);
     }
   }
+
+  gpr_slice_buffer_destroy(&accept_encoding_parts);
+
+  grpc_mdelem_set_user_data(
+      mdel, destroy_encodings_accepted_by_peer,
+      (void *)(((gpr_uintptr)call->encodings_accepted_by_peer) + 1));
 }
 
 gpr_uint32 grpc_call_get_encodings_accepted_by_peer(grpc_call *call) {
@@ -1539,7 +1557,7 @@ static void recv_metadata(grpc_exec_ctx *exec_ctx, grpc_call *call,
     } else if (key == grpc_channel_get_encodings_accepted_by_peer_string(
                           call->channel)) {
       GRPC_TIMER_BEGIN("encodings_accepted_by_peer", 0);
-      set_encodings_accepted_by_peer(call, mdel->value->slice);
+      set_encodings_accepted_by_peer(call, mdel);
       GRPC_TIMER_END("encodings_accepted_by_peer", 0);
     } else {
       GRPC_TIMER_BEGIN("report_up", 0);
