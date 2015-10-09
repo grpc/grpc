@@ -29,6 +29,8 @@ class LineItem(object):
     self.start_time = line['t']
     self.end_time = None
     self.important = line['imp']
+    self.filename = line['file']
+    self.fileline = line['line']
     self.times = {}
 
 
@@ -48,7 +50,7 @@ class ScopeBuilder(object):
 
 
   def finish(self, line):
-    assert line['tag'] == self.top_line.tag
+    assert line['tag'] == self.top_line.tag, 'expected %s, got %s' % (self.top_line.tag, line['tag'])
     final_time_stamp = line['t']
     assert self.top_line.end_time is None
     self.top_line.end_time = final_time_stamp
@@ -187,6 +189,7 @@ def time_format(idx):
 
 FORMAT = [
   ('TAG', lambda line: '..'*line.indent + tidy_tag(line.tag)),
+  ('LOC', lambda line: '%s:%d' % (line.filename[line.filename.rfind('/')+1:], line.fileline)),
   ('FROM_STACK_START', time_format(TIME_FROM_STACK_START)),
   ('SELF', time_format(SELF_TIME)),
   ('TO_STACK_END', time_format(TIME_TO_STACK_END)),
