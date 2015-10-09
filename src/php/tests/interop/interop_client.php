@@ -261,8 +261,9 @@ function emptyStream($stub) {
   // so this test is imeplemented as a timeout to indicate the absence
   // of receiving any response from the server
   $call = $stub->FullDuplexCall(array('timeout' => 100000));
+  $call->writesDone();
   hardAssert($call->read() === null, 'Server returned too many responses');
-  hardAssert($call->getStatus()->code === Grpc\STATUS_DEADLINE_EXCEEDED,
+  hardAssert($call->getStatus()->code === Grpc\STATUS_OK,
               'Call did not complete successfully');
 }
 
