@@ -251,6 +251,22 @@ function pingPong($stub) {
 }
 
 /**
+ * Run the empty_stream test.
+ * Passes when run against the Node server as of 2015-10-09
+ * @param $stub Stub object that has service methods.
+ */
+function emptyStream($stub) {
+  // for the current PHP implementation, $call->read() will wait
+  // forever for a server response if the server is not sending any.
+  // so this test is imeplemented as a timeout to indicate the absence
+  // of receiving any response from the server
+  $call = $stub->FullDuplexCall(array('timeout' => 100000));
+  hardAssert($call->read() === null, 'Server returned too many responses');
+  hardAssert($call->getStatus()->code === Grpc\STATUS_DEADLINE_EXCEEDED,
+              'Call did not complete successfully');
+}
+
+/**
  * Run the cancel_after_begin test.
  * Passes when run against the Node server as of 2015-08-28
  * @param $stub Stub object that has service methods.
@@ -369,6 +385,9 @@ switch ($args['test_case']) {
     break;
   case 'ping_pong':
     pingPong($stub);
+    break;
+  case 'empty_stream':
+    emptyStream($stub);
     break;
   case 'cancel_after_begin':
     cancelAfterBegin($stub);
