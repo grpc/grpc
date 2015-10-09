@@ -96,6 +96,7 @@
     <Compile Include="Empty.cs" />
     <Compile Include="Messages.cs" />
     <Compile Include="InteropClientServerTest.cs" />
+    <Compile Include="MetadataCredentialsTest.cs" />
     <Compile Include="TestServiceImpl.cs" />
     <Compile Include="InteropServer.cs" />
     <Compile Include="InteropClient.cs" />
@@ -118,9 +119,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <None Include="proto\test.proto" />
-    <None Include="proto\empty.proto" />
-    <None Include="proto\messages.proto" />
     <None Include="data\README">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

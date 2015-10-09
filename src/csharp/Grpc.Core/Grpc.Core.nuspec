@@ -16,7 +16,7 @@
     <tags>gRPC RPC Protocol HTTP/2</tags>
     <dependencies>
       <dependency id="Ix-Async" version="1.2.3" />
-      <dependency id="grpc.native.csharp_ext" version="$GrpcNativeCsharpExtVersion$" />
+      <dependency id="grpc.native.csharp" version="$GrpcNativeCsharpVersion$" />
     </dependencies>
   </metadata>
   <files>
