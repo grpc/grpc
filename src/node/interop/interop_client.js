@@ -44,6 +44,9 @@ var GoogleAuth = require('google-auth-library');
 
 var assert = require('assert');
 
+var SERVICE_ACCOUNT_EMAIL = require(
+    process.env.GOOGLE_APPLICATION_CREDENTIALS).client_email;
+
 var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
 var ECHO_TRAILING_KEY = 'x-grpc-test-echo-trailing-bin';
 
@@ -410,21 +413,21 @@ function computeEngineCreds(client, done, extra) {
 }
 
 function serviceAccountCreds(client, done, extra) {
-  authTest(extra.default_service_account, extra.oauth_scope, client, done);
+  authTest(SERVICE_ACCOUNT_EMAIL, extra.oauth_scope, client, done);
 }
 
 function jwtTokenCreds(client, done, extra) {
-  authTest(extra.default_service_account, null, client, done);
+  authTest(SERVICE_ACCOUNT_EMAIL, null, client, done);
 }
 
 function oauth2Test(client, done, extra) {
-    var arg = {
-      fill_username: true,
-      fill_oauth_scope: true
-    };
+  var arg = {
+    fill_username: true,
+    fill_oauth_scope: true
+  };
   client.unaryCall(arg, function(err, resp) {
     assert.ifError(err);
-    assert.strictEqual(resp.username, extra.service_account);
+    assert.strictEqual(resp.username, SERVICE_ACCOUNT_EMAIL);
     assert(extra.oauth_scope.indexOf(resp.oauth_scope) > -1);
     if (done) {
       done();
@@ -446,7 +449,7 @@ function perRpcAuthTest(client, done, extra) {
     var creds = grpc.credentials.createFromGoogleCredential(credential);
     client.unaryCall(arg, function(err, resp) {
       assert.ifError(err);
-      assert.strictEqual(resp.username, extra.service_account);
+      assert.strictEqual(resp.username, SERVICE_ACCOUNT_EMAIL);
       assert(extra.oauth_scope.indexOf(resp.oauth_scope) > -1);
       if (done) {
         done();
@@ -571,11 +574,12 @@ function runTest(address, host_override, test_case, tls, test_ca, done, extra) {
   var execute = function(err, creds) {
     assert.ifError(err);
     var client = new test.Client(address, creds, options);
-    test.run(client, done);
+    test.run(client, done, extra);
   };
 
   if (test.getCreds) {
     test.getCreds(extra.oauth_scope, function(err, new_creds) {
+      assert.ifError(err);
       execute(err, grpc.credentials.combineChannelCredentials(
           creds, new_creds));
     });
@@ -593,8 +597,7 @@ if (require.main === module) {
   });
   var extra_args = {
     service_account: argv.default_service_account,
-    oauth_scope: argv.oauth_scope,
-    service_account_key_file: argv.service_account_key_file
+    oauth_scope: argv.oauth_scope
   };
   runTest(argv.server_host + ':' + argv.server_port, argv.server_host_override,
           argv.test_case, argv.use_tls === 'true', argv.use_test_ca === 'true',
