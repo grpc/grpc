@@ -233,7 +233,6 @@ typedef struct {
       grpc_server_credentials *c, grpc_security_connector **sc);
 } grpc_server_credentials_vtable;
 
-/* TODO(jboeuf): Add a refcount. */
 struct grpc_server_credentials {
   const grpc_server_credentials_vtable *vtable;
   const char *type;
@@ -248,6 +247,13 @@ grpc_server_credentials *grpc_server_credentials_ref(
     grpc_server_credentials *creds);
 
 void grpc_server_credentials_unref(grpc_server_credentials *creds);
+
+#define GRPC_SERVER_CREDENTIALS_ARG "grpc.server_credentials"
+
+grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials *c);
+grpc_server_credentials *grpc_server_credentials_from_arg(const grpc_arg *arg);
+grpc_server_credentials *grpc_find_server_credentials_in_args(
+    const grpc_channel_args *args);
 
 /* -- Fake transport security credentials. -- */
 
