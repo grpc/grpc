@@ -101,7 +101,7 @@ ENV NUGET mono /var/local/NuGet.exe
 # Install nvm
 RUN touch .profile
 RUN curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
-RUN /bin/bash -l -c "nvm install 0.12"
+RUN /bin/bash -l -c "nvm install 0.12 && npm config set cache /tmp/npm-cache"
 
 ##################
 # Ruby dependencies
