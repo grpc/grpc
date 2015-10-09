@@ -1,7 +1,7 @@
 %YAML 1.2
 --- |
-  # GRPC gyp file
-  # This currently builds C code.
+  # GRPC Node gyp file
+  # This currently builds the Node extension and dependencies
   # This file has been automatically generated from a template file.
   # Please look at the templates directory instead.
   # This file can be regenerated from the template by running
@@ -39,54 +39,20 @@
   # Some of this file is built with the help of
   # https://n8.io/converting-a-c-library-to-gyp/
   {
+    'variables': {
+      'config': '<!(echo $CONFIG)'
+    },
     # TODO: Finish windows support
     'target_defaults': {
-      'default_configuration': 'Debug',
-      'configurations': {
-        'Debug': {
-          'defines': [ 'DEBUG', '_DEBUG' ],
-          'msvs_settings': {
-            'VCCLCompilerTool': {
-              'RuntimeLibrary': 1, # static debug
-            },
-          },
-        },
-        'Release': {
-          'defines': [ 'NDEBUG' ],
-          'msvs_settings': {
-            'VCCLCompilerTool': {
-              'RuntimeLibrary': 0, # static release
-            },
-          },
-        }
-      },
-      'msvs_settings': {
-        'VCLinkerTool': {
-          'GenerateDebugInformation': 'true',
-        },
-      },
-      # TODO: Add fallback for Windows, and if pkg-config is not available
+        # Emperically, Node only exports ALPN symbols if its major version is >0.
+        # io.js always reports versions >0 and always exports ALPN symbols.
       'defines': [
-        'TSI_OPENSSL_ALPN_SUPPORT=<!(pkg-config --atleast-version=1.0.2 openssl >/dev/null 2>&1 && echo 1 || echo 0)'
+        'TSI_OPENSSL_ALPN_SUPPORT=<!(node -v | grep -oP "(?<=v)(\d+)(?=\.\d+\.\d+)")'
       ],
       'include_dirs': [
         '.',
         'include'
-      ],
-      # TODO: Check for libraries with pkg-config
-      'libraries': [
-        '-lcrypto',
-        '-lssl',
-        '-ldl',
-        '-lpthread',
-        '-lz'
-      ],
-      'direct_dependent_settings': {
-        'include_dirs': [
-          '.',
-          'include'
-        ],
-      }
+      ]
     },
     'targets': [
       % for lib in libs:
@@ -108,5 +74,65 @@
       },
       % endif
       % endfor
+      {
+        'include_dirs': [
+          "<!(node -e \"require('nan')\")"
+        ],
+        'cflags': [
+          '-std=c++0x',
+          '-Wall',
+          '-pthread',
+          '-g',
+          '-zdefs',
+          '-Werror',
+          '-Wno-error=deprecated-declarations'
+        ],
+        'ldflags': [
+          '-g'
+        ],
+        "conditions": [
+          ['OS != "win"', {
+            'conditions': [
+              ['config=="gcov"', {
+                'cflags': [
+                  '-ftest-coverage',
+                  '-fprofile-arcs',
+                  '-O0'
+                ],
+                'ldflags': [
+                  '-ftest-coverage',
+                  '-fprofile-arcs'
+                ]
+              }
+             ]
+            ]
+          }],
+          ['OS == "mac"', {
+            'xcode_settings': {
+              'MACOSX_DEPLOYMENT_TARGET': '10.9',
+              'OTHER_CFLAGS': [
+                '-std=c++11',
+                '-stdlib=libc++'
+              ]
+            }
+          }]
+        ],
+        "target_name": "grpc_node",
+        "sources": [
+          "src/node/ext/byte_buffer.cc",
+          "src/node/ext/call.cc",
+          "src/node/ext/call_credentials.cc",
+          "src/node/ext/channel.cc",
+          "src/node/ext/channel_credentials.cc",
+          "src/node/ext/completion_queue_async_worker.cc",
+          "src/node/ext/node_grpc.cc",
+          "src/node/ext/server.cc",
+          "src/node/ext/server_credentials.cc",
+          "src/node/ext/timeval.cc"
+        ],
+        "dependencies": [
+          "grpc"
+        ]
+      }
     ]
   }
