@@ -52,7 +52,7 @@
 #include "test/cpp/util/create_test_channel.h"
 
 DECLARE_bool(use_tls);
-DECLARE_bool(use_prod_roots);
+DECLARE_bool(use_test_ca);
 DECLARE_int32(server_port);
 DECLARE_string(server_host);
 DECLARE_string(server_host_override);
@@ -102,7 +102,7 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     GPR_ASSERT(FLAGS_use_tls);
     creds = GoogleComputeEngineCredentials();
     return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             FLAGS_use_tls, FLAGS_use_prod_roots, creds);
+                             FLAGS_use_tls, !FLAGS_use_test_ca, creds);
   } else if (test_case == "jwt_token_creds") {
     std::shared_ptr<Credentials> creds;
     GPR_ASSERT(FLAGS_use_tls);
@@ -111,15 +111,15 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     creds =
         ServiceAccountJWTAccessCredentials(json_key, token_lifetime.count());
     return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             FLAGS_use_tls, FLAGS_use_prod_roots, creds);
+                             FLAGS_use_tls, !FLAGS_use_test_ca, creds);
   } else if (test_case == "oauth2_auth_token") {
     grpc::string raw_token = GetOauth2AccessToken();
     std::shared_ptr<Credentials> creds = AccessTokenCredentials(raw_token);
     return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             FLAGS_use_tls, FLAGS_use_prod_roots, creds);
+                             FLAGS_use_tls, !FLAGS_use_test_ca, creds);
   } else {
     return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             FLAGS_use_tls, FLAGS_use_prod_roots);
+                             FLAGS_use_tls, !FLAGS_use_test_ca);
   }
 }
 
