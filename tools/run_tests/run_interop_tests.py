@@ -321,17 +321,29 @@ def add_auth_options(language, test_case, cmdline, env):
   return (cmdline, env)
 
 
+def _job_kill_handler(job):
+  if job._spec.container_name:
+    dockerjob.docker_kill(job._spec.container_name)
+
+
 def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
   """Creates jobspec for cloud-to-prod interop test"""
   cmdline = language.cloud_to_prod_args() + ['--test_case=%s' % test_case]
   cwd = language.client_cwd
   environ = language.cloud_to_prod_env()
+  container_name = None
   if auth:
     cmdline, environ = add_auth_options(language, test_case, cmdline, environ)
   cmdline = bash_login_cmdline(cmdline)
 
   if docker_image:
-    cmdline = docker_run_cmdline(cmdline, image=docker_image, cwd=cwd, environ=environ)
+    container_name = dockerjob.random_name('interop_client_%s' % language)
+    cmdline = docker_run_cmdline(cmdline,
+                                 image=docker_image,
+                                 cwd=cwd,
+                                 environ=environ,
+                                 docker_args=['--net=host',
+                                              '--name', container_name])
     cwd = None
     environ = None
 
@@ -343,7 +355,9 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
           shortname="%s:%s:%s" % (suite_name, language, test_case),
           timeout_seconds=2*60,
           flake_retries=5 if args.allow_flakes else 0,
-          timeout_retries=2 if args.allow_flakes else 0)
+          timeout_retries=2 if args.allow_flakes else 0,
+          kill_handler=_job_kill_handler)
+  test_job.container_name = container_name
   return test_job
 
 
@@ -356,11 +370,14 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                                 '--server_port=%s' % server_port ])
   cwd = language.client_cwd
   if docker_image:
+    container_name = dockerjob.random_name('interop_client_%s' % language)
     cmdline = docker_run_cmdline(cmdline,
                                  image=docker_image,
                                  cwd=cwd,
-                                 docker_args=['--net=host'])
+                                 docker_args=['--net=host',
+                                              '--name', container_name])
     cwd = None
+
   test_job = jobset.JobSpec(
           cmdline=cmdline,
           cwd=cwd,
@@ -368,25 +385,27 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                                                  test_case),
           timeout_seconds=2*60,
           flake_retries=5 if args.allow_flakes else 0,
-          timeout_retries=2 if args.allow_flakes else 0)
+          timeout_retries=2 if args.allow_flakes else 0,
+          kill_handler=_job_kill_handler)
+  test_job.container_name = container_name
   return test_job
 
 
 def server_jobspec(language, docker_image):
   """Create jobspec for running a server"""
-  cidfile = tempfile.mktemp()
+  container_name = dockerjob.random_name('interop_server_%s' % language)
   cmdline = bash_login_cmdline(language.server_args() +
                                ['--port=%s' % _DEFAULT_SERVER_PORT])
   docker_cmdline = docker_run_cmdline(cmdline,
                                       image=docker_image,
                                       cwd=language.server_cwd,
                                       docker_args=['-p', str(_DEFAULT_SERVER_PORT),
-                                                   '--cidfile', cidfile])
+                                                   '--name', container_name])
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
-          shortname="interop_server:%s" % language,
+          shortname="interop_server_%s" % language,
           timeout_seconds=30*60)
-  server_job.cidfile = cidfile
+  server_job.container_name = container_name
   return server_job
 
 
