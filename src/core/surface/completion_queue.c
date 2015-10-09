@@ -144,6 +144,8 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
   int i;
   grpc_pollset_worker *pluck_worker;
 
+  GRPC_TIMER_BEGIN("grpc_cq_end_op", 0);
+
   storage->tag = tag;
   storage->done = done;
   storage->done_arg = done_arg;
@@ -175,6 +177,8 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
     grpc_pollset_shutdown(exec_ctx, &cc->pollset, &cc->pollset_destroy_done);
   }
+
+  GRPC_TIMER_END("grpc_cq_end_op", 0);
 }
 
 grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
