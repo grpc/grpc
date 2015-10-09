@@ -258,11 +258,9 @@ _LANGUAGES = {
 # languages supported as cloud_to_cloud servers
 _SERVERS = ['c++', 'node', 'csharp', 'java', 'go', 'ruby']
 
-# TODO(jtattermusch): add empty_stream once PHP starts supporting it.
 # TODO(jtattermusch): add timeout_on_sleeping_server once java starts supporting it.
-# TODO(jtattermusch): add support for auth tests.
 _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
-               'client_streaming', 'server_streaming',
+               'empty_stream', 'client_streaming', 'server_streaming',
                'cancel_after_begin', 'cancel_after_first_response']
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
