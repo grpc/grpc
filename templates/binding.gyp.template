@@ -44,7 +44,7 @@
     },
     # TODO: Finish windows support
     'target_defaults': {
-        # Emperically, Node only exports ALPN symbols if its major version is >0.
+        # Empirically, Node only exports ALPN symbols if its major version is >0.
         # io.js always reports versions >0 and always exports ALPN symbols.
         # Therefore, Node's major version will be truthy if and only if it
         # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
