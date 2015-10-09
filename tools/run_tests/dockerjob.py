@@ -49,10 +49,19 @@ def docker_kill(cid):
   return subprocess.call(['docker','kill', str(cid)]) == 0
 
 
-def docker_mapped_port(cid, port):
+def docker_mapped_port(cid, port, timeout_seconds=15):
   """Get port mapped to internal given internal port for given container."""
-  output = subprocess.check_output('docker port %s %s' % (cid, port), shell=True)
-  return int(output.split(':', 2)[1])
+  started = time.time()
+  while time.time() - started < timeout_seconds:
+    try:
+      output = subprocess.check_output('docker port %s %s' % (cid, port),
+                                       stderr=_DEVNULL
+                                       shell=True)
+      return int(output.split(':', 2)[1])
+    except subprocess.CalledProcessError as e:
+      pass
+  raise Exception('Failed to get exposed port %s for container %s.' %
+                  (port, cid))
 
 
 def finish_jobs(jobs):
@@ -68,7 +77,7 @@ def image_exists(image):
   """Returns True if given docker image exists."""
   return subprocess.call(['docker','inspect', image],
                          stdout=_DEVNULL,
-                         stderr=_DEVNULL) == 0
+                         stderr=subprocess.STDOUT) == 0
 
 
 def remove_image(image, skip_nonexistent=False, max_retries=10):
