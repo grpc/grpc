@@ -77,7 +77,7 @@ docker build -t $BASE_IMAGE --force-rm=true tools/jenkins/$BASE_NAME || exit $?
 # Create a local branch so the child Docker script won't complain
 git branch -f jenkins-docker
 
-CIDFILE=`mktemp -u --suffix=.cid`
+CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 
 # Prepare image for interop tests, commit it on success.
 (docker run \
@@ -85,17 +85,14 @@ CIDFILE=`mktemp -u --suffix=.cid`
   -i $TTY_FLAG \
   $MOUNT_ARGS \
   -v /tmp/ccache:/tmp/ccache \
-  --cidfile=$CIDFILE \
+  --name=$CONTAINER_NAME \
   $BASE_IMAGE \
   bash -l /var/local/jenkins/grpc/tools/jenkins/$BASE_NAME/build_interop.sh \
-  && docker commit `cat $CIDFILE` $INTEROP_IMAGE \
+  && docker commit $CONTAINER_NAME $INTEROP_IMAGE \
   && echo "Successfully built image $INTEROP_IMAGE")
 EXITCODE=$?
 
 # remove intermediate container, possibly killing it first
-docker rm -f `cat $CIDFILE`
-
-# remove the cidfile
-rm -rf `cat $CIDFILE`
+docker rm -f $CONTAINER_NAME
 
 exit $EXITCODE
