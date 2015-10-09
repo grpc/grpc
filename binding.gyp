@@ -44,6 +44,10 @@
   'target_defaults': {
       # Emperically, Node only exports ALPN symbols if its major version is >0.
       # io.js always reports versions >0 and always exports ALPN symbols.
+      # Therefore, Node's major version will be truthy if and only if it
+      # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
+      # like "v4.1.1" in a recent version. We use grep to extract just the
+      # major version. "4", would be the output for the example.
     'defines': [
       'TSI_OPENSSL_ALPN_SUPPORT=<!(node -v | grep -oP "(?<=v)(\d+)(?=\.\d+\.\d+)")'
     ],
