@@ -280,16 +280,15 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       if (!added_worker) {
         push_front_worker(pollset, worker);
         added_worker = 1;
+        gpr_tls_set(&g_current_thread_worker, (gpr_intptr)worker);
       }
       gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
-      gpr_tls_set(&g_current_thread_worker, (gpr_intptr)worker);
       GRPC_TIMER_BEGIN("maybe_work_and_unlock", 0);
       pollset->vtable->maybe_work_and_unlock(exec_ctx, pollset, worker,
                                              deadline, now);
       GRPC_TIMER_END("maybe_work_and_unlock", 0);
       locked = 0;
       gpr_tls_set(&g_current_thread_poller, 0);
-      gpr_tls_set(&g_current_thread_worker, 0);
     } else {
       pollset->kicked_without_pollers = 0;
     }
@@ -319,6 +318,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
   if (added_worker) {
     remove_worker(pollset, worker);
+    gpr_tls_set(&g_current_thread_worker, 0);
   }
   grpc_wakeup_fd_destroy(&worker->wakeup_fd);
   if (pollset->shutting_down) {
