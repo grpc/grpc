@@ -39,28 +39,28 @@
 
 void *gpr_malloc(size_t size) {
   void *p;
-  GRPC_TIMER_BEGIN("gpr_malloc", 0);
+  GPR_TIMER_BEGIN("gpr_malloc", 0);
   p = malloc(size);
   if (!p) {
     abort();
   }
-  GRPC_TIMER_END("gpr_malloc", 0);
+  GPR_TIMER_END("gpr_malloc", 0);
   return p;
 }
 
 void gpr_free(void *p) {
-  GRPC_TIMER_BEGIN("gpr_free", 0);
+  GPR_TIMER_BEGIN("gpr_free", 0);
   free(p);
-  GRPC_TIMER_END("gpr_free", 0);
+  GPR_TIMER_END("gpr_free", 0);
 }
 
 void *gpr_realloc(void *p, size_t size) {
-  GRPC_TIMER_BEGIN("gpr_realloc", 0);
+  GPR_TIMER_BEGIN("gpr_realloc", 0);
   p = realloc(p, size);
   if (!p) {
     abort();
   }
-  GRPC_TIMER_END("gpr_realloc", 0);
+  GPR_TIMER_END("gpr_realloc", 0);
   return p;
 }
 

@@ -69,7 +69,7 @@ void grpc_chttp2_prepare_to_read(
   grpc_chttp2_stream_global *stream_global;
   grpc_chttp2_stream_parsing *stream_parsing;
 
-  GRPC_TIMER_BEGIN("grpc_chttp2_prepare_to_read", 0);
+  GPR_TIMER_BEGIN("grpc_chttp2_prepare_to_read", 0);
 
   transport_parsing->next_stream_id = transport_global->next_stream_id;
 
@@ -93,7 +93,7 @@ void grpc_chttp2_prepare_to_read(
     }
   }
 
-  GRPC_TIMER_END("grpc_chttp2_prepare_to_read", 0);
+  GPR_TIMER_END("grpc_chttp2_prepare_to_read", 0);
 }
 
 void grpc_chttp2_publish_reads(
