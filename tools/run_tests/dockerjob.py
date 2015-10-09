@@ -46,13 +46,24 @@ def random_name(base_name):
 
 def docker_kill(cid):
   """Kills a docker container. Returns True if successful."""
-  return subprocess.call(['docker','kill', str(cid)]) == 0
+  return subprocess.call(['docker','kill', str(cid)],
+                         stdout=_DEVNULL,
+                         stderr=subprocess.STDOUT) == 0
 
 
-def docker_mapped_port(cid, port):
+def docker_mapped_port(cid, port, timeout_seconds=15):
   """Get port mapped to internal given internal port for given container."""
-  output = subprocess.check_output('docker port %s %s' % (cid, port), shell=True)
-  return int(output.split(':', 2)[1])
+  started = time.time()
+  while time.time() - started < timeout_seconds:
+    try:
+      output = subprocess.check_output('docker port %s %s' % (cid, port),
+                                       stderr=_DEVNULL,
+                                       shell=True)
+      return int(output.split(':', 2)[1])
+    except subprocess.CalledProcessError as e:
+      pass
+  raise Exception('Failed to get exposed port %s for container %s.' %
+                  (port, cid))
 
 
 def finish_jobs(jobs):
@@ -68,7 +79,7 @@ def image_exists(image):
   """Returns True if given docker image exists."""
   return subprocess.call(['docker','inspect', image],
                          stdout=_DEVNULL,
-                         stderr=_DEVNULL) == 0
+                         stderr=subprocess.STDOUT) == 0
 
 
 def remove_image(image, skip_nonexistent=False, max_retries=10):
@@ -76,7 +87,9 @@ def remove_image(image, skip_nonexistent=False, max_retries=10):
   if skip_nonexistent and not image_exists(image):
     return True
   for attempt in range(0, max_retries):
-    if subprocess.call(['docker','rmi', '-f', image]) == 0:
+    if subprocess.call(['docker','rmi', '-f', image],
+                       stdout=_DEVNULL,
+                       stderr=subprocess.STDOUT) == 0:
       return True
     time.sleep(2)
   print 'Failed to remove docker image %s' % image
