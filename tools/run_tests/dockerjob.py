@@ -38,18 +38,15 @@ import subprocess
 
 _DEVNULL = open(os.devnull, 'w')
 
-def wait_for_file(filepath, timeout_seconds=15):
-  """Wait until given file exists and returns its content."""
-  started = time.time()
-  while time.time() - started < timeout_seconds:
-    if os.path.isfile(filepath):
-      with open(filepath, 'r') as f:
-        content = f.read()
-        # make sure we don't return empty content
-        if content:
-          return content
-    time.sleep(1)
-  raise Exception('Failed to read file %s.' % filepath)
+
+def random_name(base_name):
+  """Randomizes given base name."""
+  return '%s_%s' % (base_name, uuid.uuid4())
+
+
+def docker_kill(cid):
+  """Kills a docker container. Returns True if successful."""
+  return subprocess.call(['docker','kill', str(cid)]) == 0
 
 
 def docker_mapped_port(cid, port):
@@ -92,23 +89,16 @@ class DockerJob:
   def __init__(self, spec):
     self._spec = spec
     self._job = jobset.Job(spec, bin_hash=None, newline_on_success=True, travis=True, add_env={}, xml_report=None)
-    self._cidfile = spec.cidfile
-    self._cid = None
-
-  def cid(self):
-    """Gets cid of this container"""
-    if not self._cid:
-      self._cid = wait_for_file(self._cidfile)
-    return self._cid
+    self._container_name = spec.container_name
 
   def mapped_port(self, port):
-    return docker_mapped_port(self.cid(), port)
+    return docker_mapped_port(self._container_name, port)
 
   def kill(self, suppress_failure=False):
     """Sends kill signal to the container."""
     if suppress_failure:
       self._job.suppress_failure_message()
-    return subprocess.call(['docker','kill', self.cid()]) == 0
+    return docker_kill(self._container_name)
 
   def is_running(self):
     """Polls a job and returns True if given job is still running."""
