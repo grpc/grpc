@@ -46,6 +46,8 @@ then
   lcov --base-directory . --directory . -c -o coverage.info
   genhtml -o ../reports/node_ext_coverage --num-spaces 2 \
     -t 'Node gRPC test coverage' coverage.info
+  echo '<html><head><meta http-equiv="refresh" content="0;URL=lcov-report/index.html"></head></html>' > \
+    ../reports/node_coverage/index.html
 else
   ./node_modules/mocha/bin/mocha --timeout 8000 src/node/test
 fi
