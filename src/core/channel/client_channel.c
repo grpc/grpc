@@ -196,13 +196,12 @@ static int is_empty(void *p, int len) {
   return 1;
 }
 
-static void started_call(grpc_exec_ctx *exec_ctx, void *arg,
-                         int iomgr_success) {
+static void started_call_locked(grpc_exec_ctx *exec_ctx, void *arg,
+                                int iomgr_success) {
   call_data *calld = arg;
   grpc_transport_stream_op op;
   int have_waiting;
 
-  gpr_mu_lock(&calld->mu_state);
   if (calld->state == CALL_CANCELLED && calld->subchannel_call != NULL) {
     memset(&op, 0, sizeof(op));
     op.cancel_with_status = GRPC_STATUS_CANCELLED;
@@ -230,10 +229,18 @@ static void started_call(grpc_exec_ctx *exec_ctx, void *arg,
   }
 }
 
+static void started_call(grpc_exec_ctx *exec_ctx, void *arg,
+                         int iomgr_success) {
+  call_data *calld = arg;
+  gpr_mu_lock(&calld->mu_state);
+  started_call_locked(exec_ctx, arg, iomgr_success);
+}
+
 static void picked_target(grpc_exec_ctx *exec_ctx, void *arg,
                           int iomgr_success) {
   call_data *calld = arg;
   grpc_pollset *pollset;
+  grpc_subchannel_call_create_status call_creation_status;
 
   if (calld->picked_channel == NULL) {
     /* treat this like a cancellation */
@@ -248,11 +255,15 @@ static void picked_target(grpc_exec_ctx *exec_ctx, void *arg,
       GPR_ASSERT(calld->state == CALL_WAITING_FOR_PICK);
       calld->state = CALL_WAITING_FOR_CALL;
       pollset = calld->waiting_op.bind_pollset;
-      gpr_mu_unlock(&calld->mu_state);
       grpc_closure_init(&calld->async_setup_task, started_call, calld);
-      grpc_subchannel_create_call(exec_ctx, calld->picked_channel, pollset,
-                                  &calld->subchannel_call,
-                                  &calld->async_setup_task);
+      call_creation_status = grpc_subchannel_create_call(
+          exec_ctx, calld->picked_channel, pollset, &calld->subchannel_call,
+          &calld->async_setup_task);
+      if (call_creation_status == GRPC_SUBCHANNEL_CALL_CREATE_READY) {
+        started_call_locked(exec_ctx, calld, iomgr_success);
+      } else {
+        gpr_mu_unlock(&calld->mu_state);
+      }
     }
   }
 }
