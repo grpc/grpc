@@ -53,8 +53,8 @@ DOCKER_IMAGE_NAME=grpc_jenkins_slave${docker_suffix}_`sha1sum tools/jenkins/grpc
 # Make sure docker image has been built. Should be instantaneous if so.
 docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave$docker_suffix
 
-# Make sure the CID file is gone.
-rm -f docker.cid
+# Choose random name for docker container
+CONTAINER_NAME="run_tests_$(uuidgen)"
 
 # Run tests inside docker
 docker run \
@@ -70,23 +70,21 @@ docker run \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(which docker):/bin/docker \
   -w /var/local/git/grpc \
-  --cidfile=docker.cid \
+  --name=$CONTAINER_NAME \
   $DOCKER_IMAGE_NAME \
   bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_tests.sh || DOCKER_FAILED="true"
 
-DOCKER_CID=`cat docker.cid`
-
 if [ "$XML_REPORT" != "" ]
 then
-  docker cp "$DOCKER_CID:/var/local/git/grpc/$XML_REPORT" $git_root
+  docker cp "$CONTAINER_NAME:/var/local/git/grpc/$XML_REPORT" $git_root
 fi
 
-docker cp "$DOCKER_CID:/var/local/git/grpc/reports.zip" $git_root || true
+docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" $git_root || true
 unzip $git_root/reports.zip -d $git_root || true
 rm -f reports.zip
 
 # remove the container, possibly killing it first
-docker rm -f $DOCKER_CID || true
+docker rm -f $CONTAINER_NAME || true
 
 if [ "$DOCKER_FAILED" != "" ] && [ "$XML_REPORT" == "" ]
 then
