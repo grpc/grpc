@@ -54,13 +54,15 @@ typedef enum {
 
 #define GRPC_FAKE_TRANSPORT_SECURITY_TYPE "fake"
 
-#define GRPC_CREDENTIALS_TYPE_SSL "Ssl"
-#define GRPC_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
-#define GRPC_CREDENTIALS_TYPE_METADATA_PLUGIN "Plugin"
-#define GRPC_CREDENTIALS_TYPE_JWT "Jwt"
-#define GRPC_CREDENTIALS_TYPE_IAM "Iam"
-#define GRPC_CREDENTIALS_TYPE_COMPOSITE "Composite"
-#define GRPC_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY "FakeTransportSecurity"
+#define GRPC_CHANNEL_CREDENTIALS_TYPE_SSL "Ssl"
+#define GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY \
+  "FakeTransportSecurity"
+
+#define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
+#define GRPC_CALL_CREDENTIALS_TYPE_METADATA_PLUGIN "Plugin"
+#define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
+#define GRPC_CALL_CREDENTIALS_TYPE_IAM "Iam"
+#define GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE "Composite"
 
 #define GRPC_AUTHORIZATION_METADATA_KEY "Authorization"
 #define GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY \
@@ -86,6 +88,41 @@ typedef enum {
 
 #define GRPC_REFRESH_TOKEN_POST_BODY_FORMAT_STRING \
   "client_id=%s&client_secret=%s&refresh_token=%s&grant_type=refresh_token"
+
+/* --- Google utils --- */
+
+/* It is the caller's responsibility to gpr_free the result if not NULL. */
+char *grpc_get_well_known_google_credentials_file_path(void);
+
+/* --- grpc_channel_credentials. --- */
+
+typedef struct {
+  void (*destruct)(grpc_channel_credentials *c);
+  grpc_security_status (*create_security_connector)(
+      grpc_channel_credentials *c, const char *target, const grpc_channel_args *args,
+      grpc_call_credentials *call_creds,
+      grpc_channel_security_connector **sc, grpc_channel_args **new_args);
+} grpc_channel_credentials_vtable;
+
+struct grpc_channel_credentials {
+  const grpc_channel_credentials_vtable *vtable;
+  const char *type;
+  gpr_refcount refcount;
+  grpc_call_credentials *call_creds;
+};
+
+grpc_channel_credentials *grpc_channel_credentials_ref(
+    grpc_channel_credentials *creds);
+void grpc_channel_credentials_unref(grpc_channel_credentials *creds);
+
+/* Creates a security connector for the channel. May also create new channel
+   args for the channel to be used in place of the passed in const args if
+   returned non NULL. In that case the caller is responsible for destroying
+   new_args after channel creation. */
+grpc_security_status grpc_channel_credentials_create_security_connector(
+    grpc_channel_credentials *creds, const char *target,
+    const grpc_channel_args *args, grpc_call_credentials *call_creds,
+    grpc_channel_security_connector **sc, grpc_channel_args **new_args);
 
 /* --- grpc_credentials_md. --- */
 
@@ -113,16 +150,7 @@ grpc_credentials_md_store *grpc_credentials_md_store_ref(
     grpc_credentials_md_store *store);
 void grpc_credentials_md_store_unref(grpc_credentials_md_store *store);
 
-/* --- grpc_credentials. --- */
-
-/* Creates a fake transport security credentials object for testing. */
-grpc_credentials *grpc_fake_transport_security_credentials_create(void);
-/* Creates a fake server transport security credentials object for testing. */
-grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
-    void);
-
-/* It is the caller's responsibility to gpr_free the result if not NULL. */
-char *grpc_get_well_known_google_credentials_file_path(void);
+/* --- grpc_call_credentials. --- */
 
 typedef void (*grpc_credentials_metadata_cb)(grpc_exec_ctx *exec_ctx,
                                              void *user_data,
@@ -131,57 +159,47 @@ typedef void (*grpc_credentials_metadata_cb)(grpc_exec_ctx *exec_ctx,
                                              grpc_credentials_status status);
 
 typedef struct {
-  void (*destruct)(grpc_credentials *c);
-  int (*has_request_metadata)(const grpc_credentials *c);
-  int (*has_request_metadata_only)(const grpc_credentials *c);
-  void (*get_request_metadata)(grpc_exec_ctx *exec_ctx, grpc_credentials *c,
-                               grpc_pollset *pollset, const char *service_url,
+  void (*destruct)(grpc_call_credentials *c);
+  int (*has_request_metadata)(const grpc_call_credentials *c);
+  void (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
+                               grpc_call_credentials *c, grpc_pollset *pollset,
+                               const char *service_url,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
-  grpc_security_status (*create_security_connector)(
-      grpc_credentials *c, const char *target, const grpc_channel_args *args,
-      grpc_credentials *request_metadata_creds,
-      grpc_channel_security_connector **sc, grpc_channel_args **new_args);
-} grpc_credentials_vtable;
+} grpc_call_credentials_vtable;
 
-struct grpc_credentials {
-  const grpc_credentials_vtable *vtable;
+struct grpc_call_credentials {
+  const grpc_call_credentials_vtable *vtable;
   const char *type;
   gpr_refcount refcount;
 };
 
-grpc_credentials *grpc_credentials_ref(grpc_credentials *creds);
-void grpc_credentials_unref(grpc_credentials *creds);
-int grpc_credentials_has_request_metadata(grpc_credentials *creds);
-int grpc_credentials_has_request_metadata_only(grpc_credentials *creds);
-void grpc_credentials_get_request_metadata(
-    grpc_exec_ctx *exec_ctx, grpc_credentials *creds, grpc_pollset *pollset,
-    const char *service_url, grpc_credentials_metadata_cb cb, void *user_data);
+grpc_call_credentials *grpc_credentials_ref(grpc_call_credentials *creds);
+void grpc_call_credentials_unref(grpc_call_credentials *creds);
+int grpc_call_credentials_has_request_metadata(grpc_call_credentials *creds);
+void grpc_call_credentials_get_request_metadata(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_credentials *creds,
+                                                grpc_pollset *pollset,
+                                                const char *service_url,
+                                                grpc_credentials_metadata_cb cb,
+                                                void *user_data);
 
-/* Creates a security connector for the channel. May also create new channel
-   args for the channel to be used in place of the passed in const args if
-   returned non NULL. In that case the caller is responsible for destroying
-   new_args after channel creation. */
-grpc_security_status grpc_credentials_create_security_connector(
-    grpc_credentials *creds, const char *target, const grpc_channel_args *args,
-    grpc_credentials *request_metadata_creds,
-    grpc_channel_security_connector **sc, grpc_channel_args **new_args);
 
 typedef struct {
-  grpc_credentials **creds_array;
+  grpc_call_credentials **creds_array;
   size_t num_creds;
-} grpc_credentials_array;
+} grpc_call_credentials_array;
 
-const grpc_credentials_array *grpc_composite_credentials_get_credentials(
-    grpc_credentials *composite_creds);
+const grpc_call_credentials_array *grpc_composite_credentials_get_credentials(
+    grpc_call_credentials *composite_creds);
 
 /* Returns creds if creds is of the specified type or the inner creds of the
    specified type (if found), if the creds is of type COMPOSITE.
    If composite_creds is not NULL, *composite_creds will point to creds if of
    type COMPOSITE in case of success. */
-grpc_credentials *grpc_credentials_contains_type(
-    grpc_credentials *creds, const char *type,
-    grpc_credentials **composite_creds);
+grpc_call_credentials *grpc_credentials_contains_type(
+    grpc_call_credentials *creds, const char *type,
+    grpc_call_credentials **composite_creds);
 
 /* Exposed for testing only. */
 grpc_credentials_status
@@ -192,19 +210,19 @@ void grpc_flush_cached_google_default_credentials(void);
 
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */
-grpc_credentials *grpc_md_only_test_credentials_create(const char *md_key,
-                                                       const char *md_value,
-                                                       int is_async);
+grpc_call_credentials *grpc_md_only_test_credentials_create(
+    const char *md_key, const char *md_value, int is_async);
 
 /* Private constructor for jwt credentials from an already parsed json key.
    Takes ownership of the key. */
-grpc_credentials *
+grpc_call_credentials *
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime);
 
 /* Private constructor for refresh token credentials from an already parsed
    refresh token. Takes ownership of the refresh token. */
-grpc_credentials *grpc_refresh_token_credentials_create_from_auth_refresh_token(
+grpc_call_credentials *
+grpc_refresh_token_credentials_create_from_auth_refresh_token(
     grpc_auth_refresh_token token);
 
 /* --- grpc_server_credentials. --- */
@@ -231,10 +249,18 @@ grpc_server_credentials *grpc_server_credentials_ref(
 
 void grpc_server_credentials_unref(grpc_server_credentials *creds);
 
+/* -- Fake transport security credentials. -- */
+
+/* Creates a fake transport security credentials object for testing. */
+grpc_channel_credentials *grpc_fake_transport_security_credentials_create(void);
+/* Creates a fake server transport security credentials object for testing. */
+grpc_server_credentials *grpc_fake_transport_security_server_credentials_create(
+    void);
+
 /* -- Ssl credentials. -- */
 
 typedef struct {
-  grpc_credentials base;
+  grpc_channel_credentials base;
   grpc_ssl_config config;
 } grpc_ssl_credentials;
 
@@ -246,7 +272,7 @@ typedef struct {
 /* -- Jwt credentials -- */
 
 typedef struct {
-  grpc_credentials base;
+  grpc_call_credentials base;
 
   /* Have a simple cache for now with just 1 entry. We could have a map based on
      the service_url for a more sophisticated one. */
@@ -277,7 +303,7 @@ typedef void (*grpc_fetch_oauth2_func)(grpc_exec_ctx *exec_ctx,
                                        gpr_timespec deadline);
 
 typedef struct {
-  grpc_credentials base;
+  grpc_call_credentials base;
   gpr_mu mu;
   grpc_credentials_md_store *access_token_md;
   gpr_timespec token_expiration;
@@ -295,14 +321,14 @@ typedef struct {
 /* -- Oauth2 Access Token credentials. -- */
 
 typedef struct {
-  grpc_credentials base;
+  grpc_call_credentials base;
   grpc_credentials_md_store *access_token_md;
 } grpc_access_token_credentials;
 
 /* --  Metadata-only Test credentials. -- */
 
 typedef struct {
-  grpc_credentials base;
+  grpc_call_credentials base;
   grpc_credentials_md_store *md_store;
   int is_async;
 } grpc_md_only_test_credentials;
@@ -310,22 +336,21 @@ typedef struct {
 /* -- GoogleIAM credentials. -- */
 
 typedef struct {
-  grpc_credentials base;
+  grpc_call_credentials base;
   grpc_credentials_md_store *iam_md;
 } grpc_google_iam_credentials;
 
 /* -- Composite credentials. -- */
 
 typedef struct {
-  grpc_credentials base;
-  grpc_credentials_array inner;
-  grpc_credentials *connector_creds;
+  grpc_call_credentials base;
+  grpc_call_credentials_array inner;
 } grpc_composite_credentials;
 
 /* -- Plugin credentials. -- */
 
 typedef struct {
-  grpc_credentials base;
+  grpc_call_credentials base;
   grpc_metadata_credentials_plugin plugin;
   grpc_credentials_md_store *plugin_md;
 } grpc_plugin_credentials;
