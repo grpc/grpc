@@ -45,5 +45,4 @@ make install-certs
 
 # build Node interop client & server
 npm install -g node-gyp
-make install_c -C /var/local/git/grpc
-(cd src/node && npm install && node-gyp rebuild)
+(npm install && node-gyp rebuild)
