@@ -41,15 +41,16 @@
 extern "C" {
 #endif
 
-/* --- grpc_credentials object. ---
+/* --- grpc_channel_credentials object. ---
 
-   A credentials object represents a way to authenticate a client.  */
+   A channel credentials object represents a way to authenticate a client on a
+   channel.  */
 
-typedef struct grpc_credentials grpc_credentials;
+typedef struct grpc_channel_credentials grpc_channel_credentials;
 
-/* Releases a credentials object.
+/* Releases a channel credentials object.
    The creator of the credentials object is responsible for its release. */
-void grpc_credentials_release(grpc_credentials *creds);
+void grpc_credentials_release(grpc_channel_credentials *creds);
 
 /* Environment variable that points to the google default application
    credentials json key or refresh token. Used in the
@@ -59,7 +60,7 @@ void grpc_credentials_release(grpc_credentials *creds);
 /* Creates default credentials to connect to a google gRPC service.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. */
-grpc_credentials *grpc_google_default_credentials_create(void);
+grpc_channel_credentials *grpc_google_default_credentials_create(void);
 
 /* Environment variable that points to the default SSL roots file. This file
    must be a PEM encoded file with all the roots such as the one that can be
@@ -88,19 +89,33 @@ typedef struct {
    - pem_key_cert_pair is a pointer on the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair. */
-grpc_credentials *grpc_ssl_credentials_create(
+grpc_channel_credentials *grpc_ssl_credentials_create(
     const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
     void *reserved);
 
-/* Creates a composite credentials object. */
-grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
-                                                    grpc_credentials *creds2,
-                                                    void *reserved);
+/* --- grpc_call_credentials object.
+
+   A call credentials object represents a way to authenticate on a particular
+   call. These credentials can be composed with a channel credentials object
+   so that they are sent with every call on this channel.  */
+
+typedef struct grpc_call_credentials grpc_call_credentials;
+
+/* Creates a composite channel credentials object. */
+grpc_channel_credentials *grpc_composite_channel_credentials_create(
+    grpc_channel_credentials *channel_creds, grpc_call_credentials *call_creds,
+    void *reserved);
+
+/* Creates a composite call credentials object. */
+grpc_call_credentials *grpc_composite_call_credentials_create(
+    grpc_call_credentials *creds1, grpc_call_credentials *creds2,
+    void *reserved);
 
 /* Creates a compute engine credentials object for connecting to Google.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. */
-grpc_credentials *grpc_google_compute_engine_credentials_create(void *reserved);
+grpc_call_credentials *grpc_google_compute_engine_credentials_create(
+    void *reserved);
 
 extern const gpr_timespec grpc_max_auth_token_lifetime;
 
@@ -109,7 +124,7 @@ extern const gpr_timespec grpc_max_auth_token_lifetime;
    - token_lifetime is the lifetime of each Json Web Token (JWT) created with
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
      will be cropped to this value.  */
-grpc_credentials *grpc_service_account_jwt_access_credentials_create(
+grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
     const char *json_key, gpr_timespec token_lifetime, void *reserved);
 
 /* Creates an Oauth2 Refresh Token credentials object for connecting to Google.
@@ -118,16 +133,16 @@ grpc_credentials *grpc_service_account_jwt_access_credentials_create(
    this could result in an oauth2 token leak.
    - json_refresh_token is the JSON string containing the refresh token itself
      along with a client_id and client_secret. */
-grpc_credentials *grpc_google_refresh_token_credentials_create(
+grpc_call_credentials *grpc_google_refresh_token_credentials_create(
     const char *json_refresh_token, void *reserved);
 
 /* Creates an Oauth2 Access Token credentials with an access token that was
    aquired by an out of band mechanism. */
-grpc_credentials *grpc_access_token_credentials_create(const char *access_token,
-                                                       void *reserved);
+grpc_call_credentials *grpc_access_token_credentials_create(
+    const char *access_token, void *reserved);
 
 /* Creates an IAM credentials object for connecting to Google. */
-grpc_credentials *grpc_google_iam_credentials_create(
+grpc_call_credentials *grpc_google_iam_credentials_create(
     const char *authorization_token, const char *authority_selector,
     void *reserved);
 
@@ -168,13 +183,13 @@ typedef struct {
 } grpc_metadata_credentials_plugin;
 
 /* Creates a credentials object from a plugin. */
-grpc_credentials *grpc_metadata_credentials_create_from_plugin(
+grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin, void *reserved);
 
 /* --- Secure channel creation. --- */
 
 /* Creates a secure channel using the passed-in credentials. */
-grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
+grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
                                          const char *target,
                                          const grpc_channel_args *args,
                                          void *reserved);
@@ -218,7 +233,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
 /* Sets a credentials to a call. Can only be called on the client side before
    grpc_call_start_batch. */
 grpc_call_error grpc_call_set_credentials(grpc_call *call,
-                                          grpc_credentials *creds);
+                                          grpc_call_credentials *creds);
 
 /* --- Authentication Context. --- */
 
