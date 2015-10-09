@@ -44,8 +44,14 @@ var GoogleAuth = require('google-auth-library');
 
 var assert = require('assert');
 
-var SERVICE_ACCOUNT_EMAIL = require(
-    process.env.GOOGLE_APPLICATION_CREDENTIALS).client_email;
+var SERVICE_ACCOUNT_EMAIL;
+try {
+  SERVICE_ACCOUNT_EMAIL = require(
+      process.env.GOOGLE_APPLICATION_CREDENTIALS).client_email;
+} catch (e) {
+  // This will cause the tests to fail if they need that string
+  SERVICE_ACCOUNT_EMAIL = null;
+}
 
 var ECHO_INITIAL_KEY = 'x-grpc-test-echo-initial';
 var ECHO_TRAILING_KEY = 'x-grpc-test-echo-trailing-bin';
@@ -346,20 +352,20 @@ function statusCodeAndMessage(client, done) {
   var arg = {
     response_status: {
       code: 2,
-      message: "test status message"
+      message: 'test status message'
     }
   };
   client.unaryCall(arg, function(err, resp) {
     assert(err);
     assert.strictEqual(err.code, 2);
-    assert.strictEqual(err.message, "test status message");
+    assert.strictEqual(err.message, 'test status message');
     done();
   });
   var duplex = client.fullDuplexCall();
   duplex.on('status', function(status) {
     assert(status);
     assert.strictEqual(status.code, 2);
-    assert.strictEqual(status.details, "test status message");
+    assert.strictEqual(status.details, 'test status message');
     done();
   });
   duplex.on('error', function(){});
