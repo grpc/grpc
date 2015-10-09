@@ -44,11 +44,7 @@
 #include <grpc/support/thd.h>
 #include <stdio.h>
 
-typedef enum {
-  BEGIN = '{',
-  END = '}',
-  MARK = '.'
-} marker_type;
+typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
 typedef struct grpc_timer_entry {
   gpr_timespec tm;
@@ -91,7 +87,7 @@ static void log_report() {
   g_count = 0;
 }
 
-static void grpc_timers_log_add(int tag, const char *tagstr, marker_type type,
+static void grpc_timers_log_add(const char *tagstr, marker_type type,
                                 int important, const char *file, int line) {
   grpc_timer_entry *entry;
 
@@ -111,25 +107,19 @@ static void grpc_timers_log_add(int tag, const char *tagstr, marker_type type,
 }
 
 /* Latency profiler API implementation. */
-void grpc_timer_add_mark(int tag, const char *tagstr, int important,
-                         const char *file, int line) {
-  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, tagstr, MARK, important, file, line);
-  }
+void grpc_timer_add_mark(const char *tagstr, int important, const char *file,
+                         int line) {
+  grpc_timers_log_add(tagstr, MARK, important, file, line);
 }
 
-void grpc_timer_begin(int tag, const char *tagstr, int important, const char *file,
+void grpc_timer_begin(const char *tagstr, int important, const char *file,
                       int line) {
-  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, tagstr, BEGIN, important, file, line);
-  }
+  grpc_timers_log_add(tagstr, BEGIN, important, file, line);
 }
 
-void grpc_timer_end(int tag, const char *tagstr, int important, const char *file,
+void grpc_timer_end(const char *tagstr, int important, const char *file,
                     int line) {
-  if (tag < GRPC_PTAG_IGNORE_THRESHOLD) {
-    grpc_timers_log_add(tag, tagstr, END, important, file, line);
-  }
+  grpc_timers_log_add(tagstr, END, important, file, line);
 }
 
 /* Basic profiler specific API functions. */

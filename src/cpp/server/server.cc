@@ -541,7 +541,7 @@ void Server::ScheduleCallback() {
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
-  GRPC_TIMER_BEGIN(GRPC_PTAG_SERVER_CALL, 0);
+  GRPC_TIMER_SCOPE("Server::RunRpc", 0);
   auto* mrd = SyncRequest::Wait(&cq_, &ok);
   if (mrd) {
     ScheduleCallback();
@@ -557,12 +557,10 @@ void Server::RunRpc() {
           mrd->TeardownRequest();
         }
       }
-      GRPC_TIMER_BEGIN(GRPC_PTAG_SERVER_CALLBACK, 0);
+      GRPC_TIMER_SCOPE("cd.Run()", 0);
       cd.Run();
-      GRPC_TIMER_END(GRPC_PTAG_SERVER_CALLBACK, 0);
     }
   }
-  GRPC_TIMER_END(GRPC_PTAG_SERVER_CALL, 0);
 
   {
     grpc::unique_lock<grpc::mutex> lock(mu_);

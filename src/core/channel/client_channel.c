@@ -237,7 +237,7 @@ static void picked_target(grpc_exec_ctx *exec_ctx, void *arg,
   call_data *calld = arg;
   grpc_pollset *pollset;
 
-  GRPC_TIMER_BEGIN(GRPC_PTAG_CHANNEL_PICKED_TARGET, 0);
+  GRPC_TIMER_BEGIN("picked_target", 0);
 
   if (calld->picked_channel == NULL) {
     /* treat this like a cancellation */
@@ -260,7 +260,7 @@ static void picked_target(grpc_exec_ctx *exec_ctx, void *arg,
     }
   }
 
-  GRPC_TIMER_END(GRPC_PTAG_CHANNEL_PICKED_TARGET, 0);
+  GRPC_TIMER_END("picked_target", 0);
 }
 
 static grpc_closure *merge_into_waiting_op(grpc_call_element *elem,
@@ -321,6 +321,7 @@ static void perform_transport_stream_op(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_call *subchannel_call;
   grpc_lb_policy *lb_policy;
   grpc_transport_stream_op op2;
+  GRPC_TIMER_BEGIN("perform_transport_stream_op", 0);
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
@@ -432,6 +433,8 @@ static void perform_transport_stream_op(grpc_exec_ctx *exec_ctx,
       }
       break;
   }
+
+  GRPC_TIMER_END("perform_transport_stream_op", 0);
 }
 
 static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,

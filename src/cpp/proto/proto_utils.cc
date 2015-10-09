@@ -42,6 +42,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc++/support/config.h>
 
+#include "src/core/profiling/timers.h"
+
 const int kMaxBufferLength = 8192;
 
 class GrpcBufferWriter GRPC_FINAL
@@ -158,6 +160,7 @@ namespace grpc {
 
 Status SerializeProto(const grpc::protobuf::Message& msg,
                       grpc_byte_buffer** bp) {
+  GRPC_TIMER_SCOPE("SerializeProto", 0);
   int byte_size = msg.ByteSize();
   if (byte_size <= kMaxBufferLength) {
     gpr_slice slice = gpr_slice_malloc(byte_size);
@@ -176,6 +179,7 @@ Status SerializeProto(const grpc::protobuf::Message& msg,
 
 Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
                         int max_message_size) {
+  GRPC_TIMER_SCOPE("DeserializeProto", 0);
   if (!buffer) {
     return Status(StatusCode::INTERNAL, "No payload");
   }

@@ -36,6 +36,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include "src/core/support/string.h"
+#include "src/core/profiling/timers.h"
 
 typedef struct call_data {
   grpc_linked_mdelem method;
@@ -162,8 +163,10 @@ static void hc_mutate_op(grpc_call_element *elem,
 static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   grpc_transport_stream_op *op) {
+  GRPC_TIMER_BEGIN("hc_start_transport_op", 0);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
   hc_mutate_op(elem, op);
+  GRPC_TIMER_END("hc_start_transport_op", 0);
   grpc_call_next_op(exec_ctx, elem, op);
 }
 

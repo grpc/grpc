@@ -185,7 +185,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   gpr_timespec now;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  GRPC_TIMER_BEGIN(GRPC_PTAG_CQ_NEXT, 0);
+  GRPC_TIMER_BEGIN("grpc_completion_queue_next", 0);
 
   GRPC_API_TRACE(
       "grpc_completion_queue_next("
@@ -234,7 +234,7 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
   GRPC_CQ_INTERNAL_UNREF(cc, "next");
   grpc_exec_ctx_finish(&exec_ctx);
 
-  GRPC_TIMER_END(GRPC_PTAG_CQ_NEXT, 0);
+  GRPC_TIMER_END("grpc_completion_queue_next", 0);
 
   return ret;
 }
@@ -274,7 +274,7 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue *cc, void *tag,
   int first_loop = 1;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-  GRPC_TIMER_BEGIN(GRPC_PTAG_CQ_PLUCK, 0);
+  GRPC_TIMER_BEGIN("grpc_completion_queue_pluck", 0);
 
   GRPC_API_TRACE(
       "grpc_completion_queue_pluck("
@@ -342,7 +342,7 @@ done:
   GRPC_CQ_INTERNAL_UNREF(cc, "pluck");
   grpc_exec_ctx_finish(&exec_ctx);
 
-  GRPC_TIMER_END(GRPC_PTAG_CQ_PLUCK, 0);
+  GRPC_TIMER_END("grpc_completion_queue_pluck", 0);
 
   return ret;
 }

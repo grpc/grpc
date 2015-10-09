@@ -35,6 +35,7 @@
 
 #include <string.h>
 
+#include "src/core/profiling/timers.h"
 #include "src/core/transport/chttp2/http2_errors.h"
 #include "src/core/transport/chttp2/status_conversion.h"
 #include "src/core/transport/chttp2/timeout_encoding.h"
@@ -68,6 +69,8 @@ void grpc_chttp2_prepare_to_read(
   grpc_chttp2_stream_global *stream_global;
   grpc_chttp2_stream_parsing *stream_parsing;
 
+  GRPC_TIMER_BEGIN("grpc_chttp2_prepare_to_read", 0);
+
   transport_parsing->next_stream_id = transport_global->next_stream_id;
 
   /* update the parsing view of incoming window */
@@ -89,6 +92,8 @@ void grpc_chttp2_prepare_to_read(
       stream_parsing->incoming_window = stream_global->incoming_window;
     }
   }
+
+  GRPC_TIMER_END("grpc_chttp2_prepare_to_read", 0);
 }
 
 void grpc_chttp2_publish_reads(

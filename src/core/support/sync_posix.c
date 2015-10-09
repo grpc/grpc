@@ -46,16 +46,16 @@ void gpr_mu_init(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_init(mu, NULL) == 0); }
 
 void gpr_mu_destroy(gpr_mu* mu) { GPR_ASSERT(pthread_mutex_destroy(mu) == 0); }
 
-void gpr_mu_lock(gpr_mu* mu) { 
-  GRPC_TIMER_BEGIN(GRPC_PTAG_MUTEX_LOCK, 0);
-  GPR_ASSERT(pthread_mutex_lock(mu) == 0); 
-  GRPC_TIMER_END(GRPC_PTAG_MUTEX_LOCK, 0);
+void gpr_mu_lock(gpr_mu* mu) {
+  GRPC_TIMER_BEGIN("gpr_mu_lock", 0);
+  GPR_ASSERT(pthread_mutex_lock(mu) == 0);
+  GRPC_TIMER_END("gpr_mu_lock", 0);
 }
 
-void gpr_mu_unlock(gpr_mu* mu) { 
-  GRPC_TIMER_BEGIN(GRPC_PTAG_MUTEX_UNLOCK, 0);
-  GPR_ASSERT(pthread_mutex_unlock(mu) == 0); 
-  GRPC_TIMER_END(GRPC_PTAG_MUTEX_UNLOCK, 0);
+void gpr_mu_unlock(gpr_mu* mu) {
+  GRPC_TIMER_BEGIN("gpr_mu_unlock", 0);
+  GPR_ASSERT(pthread_mutex_unlock(mu) == 0);
+  GRPC_TIMER_END("gpr_mu_unlock", 0);
 }
 
 int gpr_mu_trylock(gpr_mu* mu) {

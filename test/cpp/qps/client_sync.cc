@@ -101,11 +101,10 @@ class SynchronousUnaryClient GRPC_FINAL : public SynchronousClient {
     WaitToIssue(thread_idx);
     auto* stub = channels_[thread_idx % channels_.size()].get_stub();
     double start = Timer::Now();
+    GRPC_TIMER_SCOPE("SynchronousUnaryClient::ThreadFunc", 0);
     grpc::ClientContext context;
-    GRPC_TIMER_BEGIN(GRPC_PTAG_CLIENT_UNARY_CALL, 0);
     grpc::Status s =
         stub->UnaryCall(&context, request_, &responses_[thread_idx]);
-    GRPC_TIMER_END(GRPC_PTAG_CLIENT_UNARY_CALL, 0);
     histogram->Add((Timer::Now() - start) * 1e9);
     return s.ok();
   }
@@ -139,15 +138,13 @@ class SynchronousStreamingClient GRPC_FINAL : public SynchronousClient {
 
   bool ThreadFunc(Histogram* histogram, size_t thread_idx) GRPC_OVERRIDE {
     WaitToIssue(thread_idx);
+    GRPC_TIMER_SCOPE("SynchronousStreamingClient::ThreadFunc", 0);
     double start = Timer::Now();
-    GRPC_TIMER_BEGIN(GRPC_PTAG_CLIENT_UNARY_CALL, 0);
     if (stream_[thread_idx]->Write(request_) &&
         stream_[thread_idx]->Read(&responses_[thread_idx])) {
-      GRPC_TIMER_END(GRPC_PTAG_CLIENT_UNARY_CALL, 0);
       histogram->Add((Timer::Now() - start) * 1e9);
       return true;
     }
-    GRPC_TIMER_END(GRPC_PTAG_CLIENT_UNARY_CALL, 0);
     return false;
   }
 
