@@ -632,6 +632,9 @@
     <ClInclude Include="..\..\..\src\core\surface\call.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\surface\call_test_only.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\surface\channel.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>

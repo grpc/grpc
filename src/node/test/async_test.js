@@ -57,7 +57,7 @@ describe('Async functionality', function() {
                                grpc.ServerCredentials.createInsecure());
     server.start();
     math_client = new math.Math('localhost:' + port_num,
-                                grpc.Credentials.createInsecure());
+                                grpc.credentials.createInsecure());
     done();
   });
   after(function() {

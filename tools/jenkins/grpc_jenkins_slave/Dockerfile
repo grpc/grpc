@@ -157,6 +157,12 @@ RUN apt-get update && apt-get install -y \
 
 RUN apt-get install -y libzookeeper-mt-dev
 
+##################
+# Docker "inception".
+# Note this is quite the ugly hack.
+# This makes sure that the docker binary we inject has its dependencies.
+RUN curl https://get.docker.com/ | sh
+RUN apt-get remove --purge -y docker-engine
 
 RUN mkdir /var/local/jenkins
 
