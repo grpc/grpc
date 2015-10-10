@@ -50,6 +50,8 @@ int grpc_chttp2_unlocking_check_writes(
   grpc_chttp2_stream_global *first_reinserted_stream = NULL;
   gpr_uint32 window_delta;
 
+  GPR_TIMER_BEGIN("grpc_chttp2_unlocking_check_writes", 0);
+
   /* simple writes are queued to qbuf, and flushed here */
   gpr_slice_buffer_swap(&transport_global->qbuf, &transport_writing->outbuf);
   GPR_ASSERT(transport_global->qbuf.count == 0);
@@ -158,6 +160,8 @@ int grpc_chttp2_unlocking_check_writes(
                                         incoming_window, window_delta);
     transport_global->incoming_window += window_delta;
   }
+
+  GPR_TIMER_END("grpc_chttp2_unlocking_check_writes", 0);
 
   return transport_writing->outbuf.count > 0 ||
          grpc_chttp2_list_have_writing_streams(transport_writing);
