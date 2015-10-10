@@ -39,20 +39,20 @@
 
 int grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
   int did_something = 0;
-  GRPC_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
+  GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
   while (!grpc_closure_list_empty(exec_ctx->closure_list)) {
     grpc_closure *c = exec_ctx->closure_list.head;
     exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
     while (c != NULL) {
       grpc_closure *next = c->next;
       did_something++;
-      GRPC_TIMER_BEGIN("grpc_exec_ctx_flush.cb", 0);
+      GPR_TIMER_BEGIN("grpc_exec_ctx_flush.cb", 0);
       c->cb(exec_ctx, c->cb_arg, c->success);
-      GRPC_TIMER_END("grpc_exec_ctx_flush.cb", 0);
+      GPR_TIMER_END("grpc_exec_ctx_flush.cb", 0);
       c = next;
     }
   }
-  GRPC_TIMER_END("grpc_exec_ctx_flush", 0);
+  GPR_TIMER_END("grpc_exec_ctx_flush", 0);
   return did_something;
 }
 

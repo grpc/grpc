@@ -46,18 +46,18 @@
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
-typedef struct grpc_timer_entry {
+typedef struct gpr_timer_entry {
   gpr_timespec tm;
   const char *tagstr;
   const char *file;
   int line;
   char type;
   gpr_uint8 important;
-} grpc_timer_entry;
+} gpr_timer_entry;
 
-#define MAX_COUNT (1024 * 1024 / sizeof(grpc_timer_entry))
+#define MAX_COUNT (1024 * 1024 / sizeof(gpr_timer_entry))
 
-static __thread grpc_timer_entry g_log[MAX_COUNT];
+static __thread gpr_timer_entry g_log[MAX_COUNT];
 static __thread int g_count;
 static gpr_once g_once_init = GPR_ONCE_INIT;
 static FILE *output_file;
@@ -74,7 +74,7 @@ static void log_report() {
   int i;
   gpr_once_init(&g_once_init, init_output);
   for (i = 0; i < g_count; i++) {
-    grpc_timer_entry *entry = &(g_log[i]);
+    gpr_timer_entry *entry = &(g_log[i]);
     fprintf(output_file,
             "{\"t\": %ld.%09d, \"thd\": \"%p\", \"type\": \"%c\", \"tag\": "
             "\"%s\", \"file\": \"%s\", \"line\": %d, \"imp\": %d}\n",
@@ -87,9 +87,9 @@ static void log_report() {
   g_count = 0;
 }
 
-static void grpc_timers_log_add(const char *tagstr, marker_type type,
-                                int important, const char *file, int line) {
-  grpc_timer_entry *entry;
+static void gpr_timers_log_add(const char *tagstr, marker_type type,
+                               int important, const char *file, int line) {
+  gpr_timer_entry *entry;
 
   /* TODO (vpai) : Improve concurrency */
   if (g_count == MAX_COUNT) {
@@ -107,28 +107,28 @@ static void grpc_timers_log_add(const char *tagstr, marker_type type,
 }
 
 /* Latency profiler API implementation. */
-void grpc_timer_add_mark(const char *tagstr, int important, const char *file,
-                         int line) {
-  grpc_timers_log_add(tagstr, MARK, important, file, line);
+void gpr_timer_add_mark(const char *tagstr, int important, const char *file,
+                        int line) {
+  gpr_timers_log_add(tagstr, MARK, important, file, line);
 }
 
-void grpc_timer_begin(const char *tagstr, int important, const char *file,
-                      int line) {
-  grpc_timers_log_add(tagstr, BEGIN, important, file, line);
+void gpr_timer_begin(const char *tagstr, int important, const char *file,
+                     int line) {
+  gpr_timers_log_add(tagstr, BEGIN, important, file, line);
 }
 
-void grpc_timer_end(const char *tagstr, int important, const char *file,
-                    int line) {
-  grpc_timers_log_add(tagstr, END, important, file, line);
+void gpr_timer_end(const char *tagstr, int important, const char *file,
+                   int line) {
+  gpr_timers_log_add(tagstr, END, important, file, line);
 }
 
 /* Basic profiler specific API functions. */
-void grpc_timers_global_init(void) {}
+void gpr_timers_global_init(void) {}
 
-void grpc_timers_global_destroy(void) {}
+void gpr_timers_global_destroy(void) {}
 
 #else  /* !GRPC_BASIC_PROFILER */
-void grpc_timers_global_init(void) {}
+void gpr_timers_global_init(void) {}
 
-void grpc_timers_global_destroy(void) {}
+void gpr_timers_global_destroy(void) {}
 #endif /* GRPC_BASIC_PROFILER */

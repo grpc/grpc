@@ -38,28 +38,28 @@
 extern "C" {
 #endif
 
-void grpc_timers_global_init(void);
-void grpc_timers_global_destroy(void);
+void gpr_timers_global_init(void);
+void gpr_timers_global_destroy(void);
 
-void grpc_timer_add_mark(const char *tagstr, int important, const char *file,
-                         int line);
-void grpc_timer_begin(const char *tagstr, int important, const char *file,
-                      int line);
-void grpc_timer_end(const char *tagstr, int important, const char *file,
-                    int line);
+void gpr_timer_add_mark(const char *tagstr, int important, const char *file,
+                        int line);
+void gpr_timer_begin(const char *tagstr, int important, const char *file,
+                     int line);
+void gpr_timer_end(const char *tagstr, int important, const char *file,
+                   int line);
 
 #if !(defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
 /* No profiling. No-op all the things. */
-#define GRPC_TIMER_MARK(tag, important) \
+#define GPR_TIMER_MARK(tag, important) \
+  do {                                 \
+  } while (0)
+
+#define GPR_TIMER_BEGIN(tag, important) \
   do {                                  \
   } while (0)
 
-#define GRPC_TIMER_BEGIN(tag, important) \
-  do {                                   \
-  } while (0)
-
-#define GRPC_TIMER_END(tag, important) \
-  do {                                 \
+#define GPR_TIMER_END(tag, important) \
+  do {                                \
   } while (0)
 
 #else /* at least one profiler requested... */
@@ -69,14 +69,14 @@ void grpc_timer_end(const char *tagstr, int important, const char *file,
 #endif
 
 /* Generic profiling interface. */
-#define GRPC_TIMER_MARK(tag, important) \
-  grpc_timer_add_mark(tag, important, __FILE__, __LINE__);
+#define GPR_TIMER_MARK(tag, important) \
+  gpr_timer_add_mark(tag, important, __FILE__, __LINE__);
 
-#define GRPC_TIMER_BEGIN(tag, important) \
-  grpc_timer_begin(tag, important, __FILE__, __LINE__);
+#define GPR_TIMER_BEGIN(tag, important) \
+  gpr_timer_begin(tag, important, __FILE__, __LINE__);
 
-#define GRPC_TIMER_END(tag, important) \
-  grpc_timer_end(tag, important, __FILE__, __LINE__);
+#define GPR_TIMER_END(tag, important) \
+  gpr_timer_end(tag, important, __FILE__, __LINE__);
 
 #ifdef GRPC_STAP_PROFILER
 /* Empty placeholder for now. */
@@ -91,21 +91,27 @@ void grpc_timer_end(const char *tagstr, int important, const char *file,
 #ifdef __cplusplus
 }
 
+#if (defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
 namespace grpc {
 class ProfileScope {
  public:
   ProfileScope(const char *desc, bool important) : desc_(desc) {
-    GRPC_TIMER_BEGIN(desc_, important ? 1 : 0);
+    GPR_TIMER_BEGIN(desc_, important ? 1 : 0);
   }
-  ~ProfileScope() { GRPC_TIMER_END(desc_, 0); }
+  ~ProfileScope() { GPR_TIMER_END(desc_, 0); }
 
  private:
   const char *const desc_;
 };
 }
 
-#define GRPC_TIMER_SCOPE(tag, important) \
-  ProfileScope _profile_scope_##__LINE__((tag), (important))
+#define GPR_TIMER_SCOPE(tag, important) \
+  ::grpc::ProfileScope _profile_scope_##__LINE__((tag), (important))
+#else
+#define GPR_TIMER_SCOPE(tag, important) \
+  do {                                  \
+  } while (false)
+#endif
 #endif
 
 #endif /* GRPC_CORE_PROFILING_TIMERS_H */

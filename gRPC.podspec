@@ -63,7 +63,8 @@ Pod::Spec.new do |s|
 
   # Core cross-platform gRPC library, written in C.
   s.subspec 'C-Core' do |ss|
-    ss.source_files = 'src/core/support/block_annotate.h',
+    ss.source_files = 'src/core/profiling/timers.h',
+                      'src/core/support/block_annotate.h',
                       'src/core/support/env.h',
                       'src/core/support/file.h',
                       'src/core/support/murmur_hash.h',
@@ -99,6 +100,8 @@ Pod::Spec.new do |s|
                       'grpc/support/tls_msvc.h',
                       'grpc/support/tls_pthread.h',
                       'grpc/support/useful.h',
+                      'src/core/profiling/basic_timers.c',
+                      'src/core/profiling/stap_timers.c',
                       'src/core/support/alloc.c',
                       'src/core/support/cmdline.c',
                       'src/core/support/cpu_iphone.c',
@@ -222,7 +225,6 @@ Pod::Spec.new do |s|
                       'src/core/json/json_common.h',
                       'src/core/json/json_reader.h',
                       'src/core/json/json_writer.h',
-                      'src/core/profiling/timers.h',
                       'src/core/statistics/census_interface.h',
                       'src/core/statistics/census_rpc_stats.h',
                       'src/core/surface/api_trace.h',
@@ -367,8 +369,6 @@ Pod::Spec.new do |s|
                       'src/core/json/json_reader.c',
                       'src/core/json/json_string.c',
                       'src/core/json/json_writer.c',
-                      'src/core/profiling/basic_timers.c',
-                      'src/core/profiling/stap_timers.c',
                       'src/core/surface/api_trace.c',
                       'src/core/surface/byte_buffer.c',
                       'src/core/surface/byte_buffer_queue.c',
@@ -419,7 +419,8 @@ Pod::Spec.new do |s|
                       'src/core/census/operation.c',
                       'src/core/census/tracing.c'
 
-    ss.private_header_files = 'src/core/support/block_annotate.h',
+    ss.private_header_files = 'src/core/profiling/timers.h',
+                              'src/core/support/block_annotate.h',
                               'src/core/support/env.h',
                               'src/core/support/file.h',
                               'src/core/support/murmur_hash.h',
@@ -513,7 +514,6 @@ Pod::Spec.new do |s|
                               'src/core/json/json_common.h',
                               'src/core/json/json_reader.h',
                               'src/core/json/json_writer.h',
-                              'src/core/profiling/timers.h',
                               'src/core/statistics/census_interface.h',
                               'src/core/statistics/census_rpc_stats.h',
                               'src/core/surface/api_trace.h',
