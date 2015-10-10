@@ -62,6 +62,8 @@
 #define REF_MD_LOCKED(s) ref_md_locked((s))
 #endif
 
+typedef void (*destroy_user_data_func)(void *user_data);
+
 typedef struct internal_string {
   /* must be byte compatible with grpc_mdstr */
   gpr_slice slice;
@@ -88,8 +90,8 @@ typedef struct internal_metadata {
 
   /* private only data */
   gpr_mu mu_user_data;
-  void *user_data;
-  void (*destroy_user_data)(void *user_data);
+  gpr_atm destroy_user_data;
+  gpr_atm user_data;
 
   grpc_mdctx *context;
   struct internal_metadata *bucket_next;
@@ -201,12 +203,14 @@ static void discard_metadata(grpc_mdctx *ctx) {
   for (i = 0; i < ctx->mdtab_capacity; i++) {
     cur = ctx->mdtab[i];
     while (cur) {
+      void *user_data = (void *)gpr_atm_no_barrier_load(&cur->user_data);
       GPR_ASSERT(gpr_atm_acq_load(&cur->refcnt) == 0);
       next = cur->bucket_next;
       INTERNAL_STRING_UNREF(cur->key);
       INTERNAL_STRING_UNREF(cur->value);
-      if (cur->user_data) {
-        cur->destroy_user_data(cur->user_data);
+      if (user_data != NULL) {
+        ((destroy_user_data_func)gpr_atm_no_barrier_load(
+            &cur->destroy_user_data))(user_data);
       }
       gpr_mu_destroy(&cur->mu_user_data);
       gpr_free(cur);
@@ -392,12 +396,14 @@ static void gc_mdtab(grpc_mdctx *ctx) {
   for (i = 0; i < ctx->mdtab_capacity; i++) {
     prev_next = &ctx->mdtab[i];
     for (md = ctx->mdtab[i]; md; md = next) {
+      void *user_data = (void *)gpr_atm_no_barrier_load(&md->user_data);
       next = md->bucket_next;
       if (gpr_atm_acq_load(&md->refcnt) == 0) {
         INTERNAL_STRING_UNREF(md->key);
         INTERNAL_STRING_UNREF(md->value);
         if (md->user_data) {
-          md->destroy_user_data(md->user_data);
+          ((destroy_user_data_func)gpr_atm_no_barrier_load(
+              &md->destroy_user_data))(user_data);
         }
         gpr_free(md);
         *prev_next = next;
@@ -473,8 +479,8 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
   md->context = ctx;
   md->key = key;
   md->value = value;
-  md->user_data = NULL;
-  md->destroy_user_data = NULL;
+  md->user_data = 0;
+  md->destroy_user_data = 0;
   md->bucket_next = ctx->mdtab[hash % ctx->mdtab_capacity];
   gpr_mu_init(&md->mu_user_data);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
@@ -588,13 +594,14 @@ size_t grpc_mdctx_get_mdtab_free_test_only(grpc_mdctx *ctx) {
   return ctx->mdtab_free;
 }
 
-void *grpc_mdelem_get_user_data(grpc_mdelem *md,
-                                void (*if_destroy_func)(void *)) {
+void *grpc_mdelem_get_user_data(grpc_mdelem *md, void (*destroy_func)(void *)) {
   internal_metadata *im = (internal_metadata *)md;
   void *result;
-  gpr_mu_lock(&im->mu_user_data);
-  result = im->destroy_user_data == if_destroy_func ? im->user_data : NULL;
-  gpr_mu_unlock(&im->mu_user_data);
+  if (gpr_atm_acq_load(&im->destroy_user_data) == (gpr_atm)destroy_func) {
+    return (void *)gpr_atm_no_barrier_load(&im->user_data);
+  } else {
+    return NULL;
+  }
   return result;
 }
 
@@ -603,7 +610,7 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
   internal_metadata *im = (internal_metadata *)md;
   GPR_ASSERT((user_data == NULL) == (destroy_func == NULL));
   gpr_mu_lock(&im->mu_user_data);
-  if (im->destroy_user_data) {
+  if (gpr_atm_no_barrier_load(&im->destroy_user_data)) {
     /* user data can only be set once */
     gpr_mu_unlock(&im->mu_user_data);
     if (destroy_func != NULL) {
@@ -611,8 +618,8 @@ void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
     }
     return;
   }
-  im->destroy_user_data = destroy_func;
-  im->user_data = user_data;
+  gpr_atm_no_barrier_store(&im->user_data, (gpr_atm)user_data);
+  gpr_atm_rel_store(&im->destroy_user_data, (gpr_atm)destroy_func);
   gpr_mu_unlock(&im->mu_user_data);
 }
 
