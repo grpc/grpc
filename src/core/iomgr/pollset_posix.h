@@ -48,8 +48,13 @@ typedef struct grpc_pollset_vtable grpc_pollset_vtable;
    use the struct tag */
 struct grpc_fd;
 
+typedef struct grpc_cached_wakeup_fd {
+  grpc_wakeup_fd fd;
+  struct grpc_cached_wakeup_fd *next;
+} grpc_cached_wakeup_fd;
+
 typedef struct grpc_pollset_worker {
-  grpc_wakeup_fd wakeup_fd;
+  grpc_cached_wakeup_fd *wakeup_fd;
   int reevaluate_polling_on_wakeup;
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
