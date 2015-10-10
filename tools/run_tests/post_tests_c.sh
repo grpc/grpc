@@ -30,16 +30,13 @@
 
 set -ex
 
-out=`readlink -f ${1:-coverage}`
+if [ "$CONFIG" != "gcov" ] ; then exit ; fi
 
 root=`readlink -f $(dirname $0)/../..`
+out=$root/reports/c_cxx_coverage
 tmp=`mktemp`
 cd $root
 tools/run_tests/run_tests.py -c gcov -l c c++ || true
 lcov --capture --directory . --output-file $tmp
 genhtml $tmp --output-directory $out
 rm $tmp
-if which xdg-open > /dev/null
-then
-  xdg-open file://$out/index.html
-fi
