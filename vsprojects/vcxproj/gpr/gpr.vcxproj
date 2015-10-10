@@ -163,6 +163,7 @@
     <ClInclude Include="..\..\..\include\grpc\support\useful.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\core\profiling\timers.h" />
     <ClInclude Include="..\..\..\src\core\support\block_annotate.h" />
     <ClInclude Include="..\..\..\src\core\support\env.h" />
     <ClInclude Include="..\..\..\src\core\support\file.h" />
@@ -174,6 +175,10 @@
     <ClInclude Include="..\..\..\src\core\support\time_precise.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\core\profiling\basic_timers.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\profiling\stap_timers.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\support\alloc.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\support\cmdline.c">

@@ -3893,6 +3893,8 @@ clean:
 
 
 LIBGPR_SRC = \
+    src/core/profiling/basic_timers.c \
+    src/core/profiling/stap_timers.c \
     src/core/support/alloc.c \
     src/core/support/cmdline.c \
     src/core/support/cpu_iphone.c \
@@ -4118,8 +4120,6 @@ LIBGRPC_SRC = \
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
-    src/core/profiling/basic_timers.c \
-    src/core/profiling/stap_timers.c \
     src/core/surface/api_trace.c \
     src/core/surface/byte_buffer.c \
     src/core/surface/byte_buffer_queue.c \
@@ -4400,8 +4400,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/json/json_reader.c \
     src/core/json/json_string.c \
     src/core/json/json_writer.c \
-    src/core/profiling/basic_timers.c \
-    src/core/profiling/stap_timers.c \
     src/core/surface/api_trace.c \
     src/core/surface/byte_buffer.c \
     src/core/surface/byte_buffer_queue.c \

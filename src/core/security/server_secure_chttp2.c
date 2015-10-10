@@ -93,9 +93,9 @@ static void setup_transport(grpc_exec_ctx *exec_ctx, void *statep,
   grpc_server_secure_state *state = statep;
   grpc_channel_args *args_copy;
   grpc_arg args_to_add[2];
-  args_to_add[0] = grpc_security_connector_to_arg(state->sc);
+  args_to_add[0] = grpc_server_credentials_to_arg(state->creds);
   args_to_add[1] =
-      grpc_auth_metadata_processor_to_arg(&state->creds->processor);
+      grpc_auth_context_to_arg(state->sc->auth_context);
   args_copy = grpc_channel_args_copy_and_add(
       grpc_server_get_channel_args(state->server), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));

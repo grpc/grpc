@@ -302,7 +302,7 @@ void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
   grpc_linked_mdelem *l;
   grpc_linked_mdelem *next;
 
-  GRPC_TIMER_BEGIN("grpc_metadata_batch_filter", 0);
+  GPR_TIMER_BEGIN("grpc_metadata_batch_filter", 0);
 
   assert_valid_list(&batch->list);
   assert_valid_list(&batch->garbage);
@@ -333,5 +333,5 @@ void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
   assert_valid_list(&batch->list);
   assert_valid_list(&batch->garbage);
 
-  GRPC_TIMER_END("grpc_metadata_batch_filter", 0);
+  GPR_TIMER_END("grpc_metadata_batch_filter", 0);
 }
