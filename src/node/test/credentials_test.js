@@ -130,8 +130,8 @@ describe('client credentials', function() {
       callback(null, metadata);
     };
     var creds = grpc.credentials.createFromMetadataGenerator(metadataUpdater);
-    var combined_creds = grpc.credentials.combineCredentials(client_ssl_creds,
-                                                             creds);
+    var combined_creds = grpc.credentials.combineChannelCredentials(
+        client_ssl_creds, creds);
     var client = new Client('localhost:' + port, combined_creds,
                             client_options);
     var call = client.unary({}, function(err, data) {
@@ -150,8 +150,8 @@ describe('client credentials', function() {
       callback(null, metadata);
     };
     var creds = grpc.credentials.createFromMetadataGenerator(metadataUpdater);
-    var combined_creds = grpc.credentials.combineCredentials(client_ssl_creds,
-                                                             creds);
+    var combined_creds = grpc.credentials.combineChannelCredentials(
+        client_ssl_creds, creds);
     var client = new Client('localhost:' + port, combined_creds,
                             client_options);
     var call = client.unary({}, function(err, data) {
@@ -231,7 +231,7 @@ describe('client credentials', function() {
           updater_creds, alt_updater_creds);
       var call = client.unary({}, function(err, data) {
         assert.ifError(err);
-      }, null, {credentials: updater_creds});
+      }, null, {credentials: combined_updater});
       call.on('metadata', function(metadata) {
         assert.deepEqual(metadata.get('plugin_key'), ['plugin_value']);
         assert.deepEqual(metadata.get('other_plugin_key'),

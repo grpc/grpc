@@ -243,7 +243,7 @@ static void process_send_ops(grpc_call_element *elem,
         GPR_ASSERT(calld->remaining_slice_bytes > 0);
         /* Increase input ref count, gpr_slice_buffer_add takes ownership.  */
         gpr_slice_buffer_add(&calld->slices, gpr_slice_ref(sop->data.slice));
-        GPR_ASSERT(GPR_SLICE_LENGTH(sop->data.slice) >=
+        GPR_ASSERT(GPR_SLICE_LENGTH(sop->data.slice) <=
                    calld->remaining_slice_bytes);
         calld->remaining_slice_bytes -=
             (gpr_uint32)GPR_SLICE_LENGTH(sop->data.slice);

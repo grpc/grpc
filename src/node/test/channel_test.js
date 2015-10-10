@@ -149,7 +149,7 @@ describe('channel', function() {
     afterEach(function() {
       channel.close();
     });
-    it.only('should time out if called alone', function(done) {
+    it('should time out if called alone', function(done) {
       var old_state = channel.getConnectivityState();
       var deadline = new Date();
       deadline.setSeconds(deadline.getSeconds() + 1);

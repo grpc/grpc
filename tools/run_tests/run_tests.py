@@ -101,7 +101,8 @@ class SimpleConfig(object):
                           timeout_seconds=self.timeout_seconds,
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
-                          flake_retries=5 if args.allow_flakes else 0)
+                          flake_retries=5 if args.allow_flakes else 0,
+                          timeout_retries=3 if args.allow_flakes else 0)
 
 
 # ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
@@ -121,7 +122,7 @@ class ValgrindConfig(object):
                           shortname='valgrind %s' % cmdline[0],
                           hash_targets=None,
                           flake_retries=5 if args.allow_flakes else 0,
-                          timeout_retries=2 if args.allow_flakes else 0)
+                          timeout_retries=3 if args.allow_flakes else 0)
 
 
 def get_c_tests(travis, test_lang) :

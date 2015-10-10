@@ -322,6 +322,7 @@
     <ClInclude Include="..\..\..\src\core\surface\api_trace.h" />
     <ClInclude Include="..\..\..\src\core\surface\byte_buffer_queue.h" />
     <ClInclude Include="..\..\..\src\core\surface\call.h" />
+    <ClInclude Include="..\..\..\src\core\surface\call_test_only.h" />
     <ClInclude Include="..\..\..\src\core\surface\channel.h" />
     <ClInclude Include="..\..\..\src\core\surface\completion_queue.h" />
     <ClInclude Include="..\..\..\src\core\surface\event_string.h" />
