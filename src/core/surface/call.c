@@ -1484,7 +1484,6 @@ static void recv_metadata(grpc_exec_ctx *exec_ctx, grpc_call *call,
   grpc_metadata_array *dest;
   grpc_metadata *mdusr;
   int is_trailing;
-  grpc_mdctx *mdctx = call->metadata_context;
 
   is_trailing = call->read_state >= READ_STATE_GOT_INITIAL_METADATA;
   for (l = md->list.head; l != NULL; l = l->next) {
@@ -1532,14 +1531,12 @@ static void recv_metadata(grpc_exec_ctx *exec_ctx, grpc_call *call,
     call->read_state = READ_STATE_GOT_INITIAL_METADATA;
   }
 
-  grpc_mdctx_lock(mdctx);
   for (l = md->list.head; l; l = l->next) {
-    if (l->md) GRPC_MDCTX_LOCKED_MDELEM_UNREF(mdctx, l->md);
+    if (l->md) GRPC_MDELEM_UNREF(l->md);
   }
   for (l = md->garbage.head; l; l = l->next) {
-    GRPC_MDCTX_LOCKED_MDELEM_UNREF(mdctx, l->md);
+    GRPC_MDELEM_UNREF(l->md);
   }
-  grpc_mdctx_unlock(mdctx);
 }
 
 grpc_call_stack *grpc_call_get_call_stack(grpc_call *call) {

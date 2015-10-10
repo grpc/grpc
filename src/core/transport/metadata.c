@@ -159,6 +159,10 @@ static void ref_md_locked(internal_metadata *md DEBUG_ARGS) {
           grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
 #endif
   if (0 == gpr_atm_no_barrier_fetch_add(&md->refcnt, 1)) {
+    /* This ref is dropped if grpc_mdelem_unref reaches 1,
+       but allows us to safely unref without taking the mdctx lock
+       until such time */
+    gpr_atm_no_barrier_fetch_add(&md->refcnt, 1);
     md->context->mdtab_free--;
   }
 }
@@ -465,7 +469,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
 
   /* not found: create a new pair */
   md = gpr_malloc(sizeof(internal_metadata));
-  gpr_atm_rel_store(&md->refcnt, 1);
+  gpr_atm_rel_store(&md->refcnt, 2);
   md->context = ctx;
   md->key = key;
   md->value = value;
@@ -534,8 +538,6 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
 
 void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
   internal_metadata *md = (internal_metadata *)gmd;
-  grpc_mdctx *ctx = md->context;
-  lock(ctx);
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
           "ELM UNREF:%p:%d->%d: '%s' = '%s'", md,
@@ -544,11 +546,13 @@ void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
           grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
           grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
 #endif
-  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
-  if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
+  if (2 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
+    grpc_mdctx *ctx = md->context;
+    lock(ctx);
+    GPR_ASSERT(1 == gpr_atm_full_fetch_add(&md->refcnt, -1));
     ctx->mdtab_free++;
+    unlock(ctx);
   }
-  unlock(ctx);
 }
 
 const char *grpc_mdstr_as_c_string(grpc_mdstr *s) {
@@ -626,29 +630,6 @@ gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *gs) {
   unlock(ctx);
   return slice;
 }
-
-void grpc_mdctx_lock(grpc_mdctx *ctx) { lock(ctx); }
-
-void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx,
-                                    grpc_mdelem *gmd DEBUG_ARGS) {
-  internal_metadata *md = (internal_metadata *)gmd;
-  grpc_mdctx *elem_ctx = md->context;
-  GPR_ASSERT(ctx == elem_ctx);
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-          "ELM UNREF:%p:%d->%d: '%s' = '%s'", md,
-          gpr_atm_no_barrier_load(&md->refcnt),
-          gpr_atm_no_barrier_load(&md->refcnt) - 1,
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->key),
-          grpc_mdstr_as_c_string((grpc_mdstr *)md->value));
-#endif
-  assert(gpr_atm_no_barrier_load(&md->refcnt) >= 1);
-  if (1 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
-    ctx->mdtab_free++;
-  }
-}
-
-void grpc_mdctx_unlock(grpc_mdctx *ctx) { unlock(ctx); }
 
 static int conforms_to(grpc_mdstr *s, const gpr_uint8 *legal_bits) {
   const gpr_uint8 *p = GPR_SLICE_START_PTR(s->slice);
