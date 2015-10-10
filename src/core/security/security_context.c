@@ -305,33 +305,43 @@ void grpc_auth_property_reset(grpc_auth_property *property) {
   memset(property, 0, sizeof(grpc_auth_property));
 }
 
-grpc_arg grpc_auth_metadata_processor_to_arg(grpc_auth_metadata_processor *p) {
+static void auth_context_pointer_arg_destroy(void *p) {
+  GRPC_AUTH_CONTEXT_UNREF(p, "auth_context_pointer_arg");
+}
+
+static void *auth_context_pointer_arg_copy(void *p) {
+  return GRPC_AUTH_CONTEXT_REF(p, "auth_context_pointer_arg");
+}
+
+grpc_arg grpc_auth_context_to_arg(grpc_auth_context *p) {
   grpc_arg arg;
   memset(&arg, 0, sizeof(grpc_arg));
   arg.type = GRPC_ARG_POINTER;
-  arg.key = GRPC_AUTH_METADATA_PROCESSOR_ARG;
+  arg.key = GRPC_AUTH_CONTEXT_ARG;
   arg.value.pointer.p = p;
+  arg.value.pointer.copy = auth_context_pointer_arg_copy;
+  arg.value.pointer.destroy = auth_context_pointer_arg_destroy;
   return arg;
 }
 
-grpc_auth_metadata_processor *grpc_auth_metadata_processor_from_arg(
+grpc_auth_context *grpc_auth_context_from_arg(
     const grpc_arg *arg) {
-  if (strcmp(arg->key, GRPC_AUTH_METADATA_PROCESSOR_ARG) != 0) return NULL;
+  if (strcmp(arg->key, GRPC_AUTH_CONTEXT_ARG) != 0) return NULL;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_AUTH_METADATA_PROCESSOR_ARG);
+            GRPC_AUTH_CONTEXT_ARG);
     return NULL;
   }
   return arg->value.pointer.p;
 }
 
-grpc_auth_metadata_processor *grpc_find_auth_metadata_processor_in_args(
+grpc_auth_context *grpc_find_auth_context_in_args(
     const grpc_channel_args *args) {
   size_t i;
   if (args == NULL) return NULL;
   for (i = 0; i < args->num_args; i++) {
-    grpc_auth_metadata_processor *p =
-        grpc_auth_metadata_processor_from_arg(&args->args[i]);
+    grpc_auth_context *p =
+        grpc_auth_context_from_arg(&args->args[i]);
     if (p != NULL) return p;
   }
   return NULL;
