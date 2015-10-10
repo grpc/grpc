@@ -125,6 +125,8 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
 
 void grpc_pollset_destroy(grpc_pollset *pollset) {}
 
+void grpc_pollset_reset(grpc_pollset *pollset) {}
+
 void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                        grpc_pollset_worker *worker, gpr_timespec now,
                        gpr_timespec deadline) {

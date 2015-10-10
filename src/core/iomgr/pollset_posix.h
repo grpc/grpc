@@ -78,6 +78,8 @@ typedef struct grpc_pollset {
     int fd;
     void *ptr;
   } data;
+  /* Local cache of eventfds for workers */
+  grpc_cached_wakeup_fd *local_wakeup_cache;
 } grpc_pollset;
 
 struct grpc_pollset_vtable {
