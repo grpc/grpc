@@ -50,7 +50,7 @@
 
 /* We can have a per-call credentials. */
 typedef struct {
-  grpc_credentials *creds;
+  grpc_call_credentials *creds;
   grpc_mdstr *host;
   grpc_mdstr *method;
   /* pollset bound to this call; if we need to make external
@@ -146,39 +146,35 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   grpc_client_security_context *ctx =
       (grpc_client_security_context *)op->context[GRPC_CONTEXT_SECURITY].value;
-  grpc_credentials *channel_creds =
+  grpc_call_credentials *channel_call_creds =
       chand->security_connector->request_metadata_creds;
-  int channel_creds_has_md =
-      (channel_creds != NULL) &&
-      grpc_credentials_has_request_metadata(channel_creds);
-  int call_creds_has_md = (ctx != NULL) && (ctx->creds != NULL) &&
-                          grpc_credentials_has_request_metadata(ctx->creds);
+  int call_creds_has_md = (ctx != NULL) && (ctx->creds != NULL);
 
-  if (!channel_creds_has_md && !call_creds_has_md) {
+  if (channel_call_creds == NULL && !call_creds_has_md) {
     /* Skip sending metadata altogether. */
     grpc_call_next_op(exec_ctx, elem, op);
     return;
   }
 
-  if (channel_creds_has_md && call_creds_has_md) {
-    calld->creds =
-        grpc_composite_credentials_create(channel_creds, ctx->creds, NULL);
+  if (channel_call_creds != NULL && call_creds_has_md) {
+    calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
+                                                          ctx->creds, NULL);
     if (calld->creds == NULL) {
       bubble_up_error(exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT,
                       "Incompatible credentials set on channel and call.");
       return;
     }
   } else {
-    calld->creds =
-        grpc_credentials_ref(call_creds_has_md ? ctx->creds : channel_creds);
+    calld->creds = grpc_call_credentials_ref(
+        call_creds_has_md ? ctx->creds : channel_call_creds);
   }
 
   build_service_url(chand->security_connector->base.url_scheme, calld);
   calld->op = *op; /* Copy op (originates from the caller's stack). */
   GPR_ASSERT(calld->pollset);
-  grpc_credentials_get_request_metadata(exec_ctx, calld->creds, calld->pollset,
-                                        calld->service_url,
-                                        on_credentials_metadata, elem);
+  grpc_call_credentials_get_request_metadata(exec_ctx, calld->creds,
+                                             calld->pollset, calld->service_url,
+                                             on_credentials_metadata, elem);
 }
 
 static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
@@ -294,7 +290,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
                               grpc_call_element *elem) {
   call_data *calld = elem->call_data;
-  grpc_credentials_unref(calld->creds);
+  grpc_call_credentials_unref(calld->creds);
   if (calld->host != NULL) {
     GRPC_MDSTR_UNREF(calld->host);
   }
