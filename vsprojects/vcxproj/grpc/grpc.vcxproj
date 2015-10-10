@@ -338,7 +338,6 @@
     <ClInclude Include="..\..\..\src\core\json\json_common.h" />
     <ClInclude Include="..\..\..\src\core\json\json_reader.h" />
     <ClInclude Include="..\..\..\src\core\json\json_writer.h" />
-    <ClInclude Include="..\..\..\src\core\profiling\timers.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_rpc_stats.h" />
     <ClInclude Include="..\..\..\src\core\surface\api_trace.h" />
@@ -574,10 +573,6 @@
     <ClCompile Include="..\..\..\src\core\json\json_string.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\json\json_writer.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\basic_timers.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\stap_timers.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\api_trace.c">
     </ClCompile>

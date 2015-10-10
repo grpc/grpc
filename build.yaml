@@ -177,7 +177,6 @@ filegroups:
   - src/core/json/json_common.h
   - src/core/json/json_reader.h
   - src/core/json/json_writer.h
-  - src/core/profiling/timers.h
   - src/core/statistics/census_interface.h
   - src/core/statistics/census_rpc_stats.h
   - src/core/surface/api_trace.h
@@ -292,8 +291,6 @@ filegroups:
   - src/core/json/json_reader.c
   - src/core/json/json_string.c
   - src/core/json/json_writer.c
-  - src/core/profiling/basic_timers.c
-  - src/core/profiling/stap_timers.c
   - src/core/surface/api_trace.c
   - src/core/surface/byte_buffer.c
   - src/core/surface/byte_buffer_queue.c
@@ -392,6 +389,7 @@ libs:
   - include/grpc/support/tls_pthread.h
   - include/grpc/support/useful.h
   headers:
+  - src/core/profiling/timers.h
   - src/core/support/block_annotate.h
   - src/core/support/env.h
   - src/core/support/file.h
@@ -402,6 +400,8 @@ libs:
   - src/core/support/thd_internal.h
   - src/core/support/time_precise.h
   src:
+  - src/core/profiling/basic_timers.c
+  - src/core/profiling/stap_timers.c
   - src/core/support/alloc.c
   - src/core/support/cmdline.c
   - src/core/support/cpu_iphone.c
