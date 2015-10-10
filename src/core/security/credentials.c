@@ -88,6 +88,7 @@ void grpc_channel_credentials_unref(grpc_channel_credentials *creds) {
   if (creds == NULL) return;
   if (gpr_unref(&creds->refcount)) {
     creds->vtable->destruct(creds);
+    grpc_call_credentials_unref(creds->call_creds);
     gpr_free(creds);
   }
 }

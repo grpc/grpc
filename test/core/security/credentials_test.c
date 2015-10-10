@@ -54,7 +54,6 @@ static const char test_google_iam_authorization_token[] = "blahblahblhahb";
 static const char test_google_iam_authority_selector[] = "respectmyauthoritah";
 static const char test_oauth2_bearer_token[] =
     "Bearer blaaslkdjfaslkdfasdsfasf";
-static const char test_root_cert[] = "I am the root!";
 
 /* This JSON key was generated with the GCE console and revoked immediately.
    The identifiers have been changed as well.
