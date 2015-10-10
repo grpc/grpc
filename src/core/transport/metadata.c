@@ -41,9 +41,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
+#include "src/core/profiling/timers.h"
 #include "src/core/support/murmur_hash.h"
 #include "src/core/transport/chttp2/bin_encoder.h"
-#include <grpc/support/time.h>
 
 #define INITIAL_STRTAB_CAPACITY 4
 #define INITIAL_MDTAB_CAPACITY 4
@@ -234,24 +235,32 @@ static void metadata_context_destroy_locked(grpc_mdctx *ctx) {
 }
 
 void grpc_mdctx_ref(grpc_mdctx *ctx) {
+  GPR_TIMER_BEGIN("grpc_mdctx_ref", 0);
   lock(ctx);
   GPR_ASSERT(ctx->refs > 0);
   ctx->refs++;
   unlock(ctx);
+  GPR_TIMER_END("grpc_mdctx_ref", 0);
 }
 
 void grpc_mdctx_unref(grpc_mdctx *ctx) {
+  GPR_TIMER_BEGIN("grpc_mdctx_unref", 0);
   lock(ctx);
   GPR_ASSERT(ctx->refs > 0);
   ctx->refs--;
   unlock(ctx);
+  GPR_TIMER_END("grpc_mdctx_unref", 0);
 }
 
 static void grow_strtab(grpc_mdctx *ctx) {
   size_t capacity = ctx->strtab_capacity * 2;
   size_t i;
-  internal_string **strtab = gpr_malloc(sizeof(internal_string *) * capacity);
+  internal_string **strtab;
   internal_string *s, *next;
+
+  GPR_TIMER_BEGIN("grow_strtab", 0);
+
+  strtab = gpr_malloc(sizeof(internal_string *) * capacity);
   memset(strtab, 0, sizeof(internal_string *) * capacity);
 
   for (i = 0; i < ctx->strtab_capacity; i++) {
@@ -265,12 +274,15 @@ static void grow_strtab(grpc_mdctx *ctx) {
   gpr_free(ctx->strtab);
   ctx->strtab = strtab;
   ctx->strtab_capacity = capacity;
+
+  GPR_TIMER_END("grow_strtab", 0);
 }
 
 static void internal_destroy_string(internal_string *is) {
   internal_string **prev_next;
   internal_string *cur;
   grpc_mdctx *ctx = is->context;
+  GPR_TIMER_BEGIN("internal_destroy_string", 0);
   if (is->has_base64_and_huffman_encoded) {
     gpr_slice_unref(is->base64_and_huffman);
   }
@@ -281,6 +293,7 @@ static void internal_destroy_string(internal_string *is) {
   *prev_next = cur->bucket_next;
   ctx->strtab_count--;
   gpr_free(is);
+  GPR_TIMER_END("internal_destroy_string", 0);
 }
 
 static void internal_string_ref(internal_string *s DEBUG_ARGS) {
@@ -306,18 +319,22 @@ static void slice_ref(void *p) {
   internal_string *is =
       (internal_string *)((char *)p - offsetof(internal_string, refcount));
   grpc_mdctx *ctx = is->context;
+  GPR_TIMER_BEGIN("slice_ref", 0);
   lock(ctx);
   INTERNAL_STRING_REF(is);
   unlock(ctx);
+  GPR_TIMER_END("slice_ref", 0);
 }
 
 static void slice_unref(void *p) {
   internal_string *is =
       (internal_string *)((char *)p - offsetof(internal_string, refcount));
   grpc_mdctx *ctx = is->context;
+  GPR_TIMER_BEGIN("slice_unref", 0);
   lock(ctx);
   INTERNAL_STRING_UNREF(is);
   unlock(ctx);
+  GPR_TIMER_END("slice_unref", 0);
 }
 
 grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str) {
@@ -336,6 +353,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *buf,
   gpr_uint32 hash = gpr_murmur_hash3(buf, length, ctx->hash_seed);
   internal_string *s;
 
+  GPR_TIMER_BEGIN("grpc_mdstr_from_buffer", 0);
   lock(ctx);
 
   /* search for an existing string */
@@ -344,6 +362,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *buf,
         0 == memcmp(buf, GPR_SLICE_START_PTR(s->slice), length)) {
       INTERNAL_STRING_REF(s);
       unlock(ctx);
+      GPR_TIMER_END("grpc_mdstr_from_buffer", 0);
       return (grpc_mdstr *)s;
     }
   }
@@ -384,6 +403,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *buf,
   }
 
   unlock(ctx);
+  GPR_TIMER_END("grpc_mdstr_from_buffer", 0);
 
   return (grpc_mdstr *)s;
 }
@@ -393,6 +413,7 @@ static void gc_mdtab(grpc_mdctx *ctx) {
   internal_metadata **prev_next;
   internal_metadata *md, *next;
 
+  GPR_TIMER_BEGIN("gc_mdtab", 0);
   for (i = 0; i < ctx->mdtab_capacity; i++) {
     prev_next = &ctx->mdtab[i];
     for (md = ctx->mdtab[i]; md; md = next) {
@@ -414,6 +435,7 @@ static void gc_mdtab(grpc_mdctx *ctx) {
       }
     }
   }
+  GPR_TIMER_END("gc_mdtab", 0);
 
   GPR_ASSERT(ctx->mdtab_free == 0);
 }
@@ -421,10 +443,13 @@ static void gc_mdtab(grpc_mdctx *ctx) {
 static void grow_mdtab(grpc_mdctx *ctx) {
   size_t capacity = ctx->mdtab_capacity * 2;
   size_t i;
-  internal_metadata **mdtab =
-      gpr_malloc(sizeof(internal_metadata *) * capacity);
+  internal_metadata **mdtab;
   internal_metadata *md, *next;
   gpr_uint32 hash;
+
+  GPR_TIMER_BEGIN("grow_mdtab", 0);
+
+  mdtab = gpr_malloc(sizeof(internal_metadata *) * capacity);
   memset(mdtab, 0, sizeof(internal_metadata *) * capacity);
 
   for (i = 0; i < ctx->mdtab_capacity; i++) {
@@ -439,6 +464,8 @@ static void grow_mdtab(grpc_mdctx *ctx) {
   gpr_free(ctx->mdtab);
   ctx->mdtab = mdtab;
   ctx->mdtab_capacity = capacity;
+
+  GPR_TIMER_END("grow_mdtab", 0);
 }
 
 static void rehash_mdtab(grpc_mdctx *ctx) {
@@ -460,6 +487,8 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
   GPR_ASSERT(key->context == ctx);
   GPR_ASSERT(value->context == ctx);
 
+  GPR_TIMER_BEGIN("grpc_mdelem_from_metadata_strings", 0);
+
   lock(ctx);
 
   /* search for an existing pair */
@@ -469,6 +498,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
       INTERNAL_STRING_UNREF(key);
       INTERNAL_STRING_UNREF(value);
       unlock(ctx);
+      GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
       return (grpc_mdelem *)md;
     }
   }
@@ -497,6 +527,8 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
   }
 
   unlock(ctx);
+
+  GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
 
   return (grpc_mdelem *)md;
 }
@@ -554,10 +586,12 @@ void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
 #endif
   if (2 == gpr_atm_full_fetch_add(&md->refcnt, -1)) {
     grpc_mdctx *ctx = md->context;
+    GPR_TIMER_BEGIN("grpc_mdelem_unref.to_zero", 0);
     lock(ctx);
     GPR_ASSERT(1 == gpr_atm_full_fetch_add(&md->refcnt, -1));
     ctx->mdtab_free++;
     unlock(ctx);
+    GPR_TIMER_END("grpc_mdelem_unref.to_zero", 0);
   }
 }
 
