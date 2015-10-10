@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
   int result = 0;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   synchronizer sync;
-  grpc_credentials *creds = NULL;
+  grpc_channel_credentials *creds = NULL;
   char *service_url = "https://test.foo.google.com/Foo";
   gpr_cmdline *cl = gpr_cmdline_create("print_google_default_creds_token");
   gpr_cmdline_add_string(cl, "service_url",
@@ -91,9 +91,9 @@ int main(int argc, char **argv) {
   grpc_pollset_init(&sync.pollset);
   sync.is_done = 0;
 
-  grpc_credentials_get_request_metadata(&exec_ctx, creds, &sync.pollset,
-                                        service_url, on_metadata_response,
-                                        &sync);
+  grpc_call_credentials_get_request_metadata(&exec_ctx, creds->call_creds,
+                                             &sync.pollset, service_url,
+                                             on_metadata_response, &sync);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   while (!sync.is_done) {
@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&sync.pollset));
 
-  grpc_credentials_release(creds);
+  grpc_channel_credentials_release(creds);
 
 end:
   gpr_cmdline_destroy(cl);

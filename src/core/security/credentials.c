@@ -116,7 +116,7 @@ void grpc_call_credentials_release(grpc_call_credentials *creds) {
   grpc_call_credentials_unref(creds);
 }
 
-void grpc_credentials_get_request_metadata(
+void grpc_call_credentials_get_request_metadata(
     grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds, grpc_pollset *pollset,
     const char *service_url, grpc_credentials_metadata_cb cb, void *user_data) {
   if (creds == NULL || creds->vtable->get_request_metadata == NULL) {
@@ -980,9 +980,9 @@ static void composite_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
   if (ctx->creds_index < ctx->composite_creds->inner.num_creds) {
     grpc_call_credentials *inner_creds =
         ctx->composite_creds->inner.creds_array[ctx->creds_index++];
-    grpc_credentials_get_request_metadata(exec_ctx, inner_creds, ctx->pollset,
-                                          ctx->service_url,
-                                          composite_metadata_cb, ctx);
+    grpc_call_credentials_get_request_metadata(exec_ctx, inner_creds,
+                                               ctx->pollset, ctx->service_url,
+                                               composite_metadata_cb, ctx);
     return;
   }
 
@@ -1006,7 +1006,7 @@ static void composite_get_request_metadata(
   ctx->composite_creds = c;
   ctx->pollset = pollset;
   ctx->md_elems = grpc_credentials_md_store_create(c->inner.num_creds);
-  grpc_credentials_get_request_metadata(
+  grpc_call_credentials_get_request_metadata(
       exec_ctx, c->inner.creds_array[ctx->creds_index++], pollset, service_url,
       composite_metadata_cb, ctx);
 }
@@ -1090,6 +1090,24 @@ grpc_call_credentials *grpc_credentials_contains_type(
     }
   }
   return NULL;
+}
+
+grpc_channel_credentials *grpc_composite_channel_credentials_create(
+    grpc_channel_credentials *channel_creds, grpc_call_credentials *call_creds,
+    void *reserved) {
+  GPR_ASSERT(reserved == NULL);
+  if (channel_creds == NULL) return NULL;
+  if (channel_creds->call_creds == NULL) {
+    channel_creds->call_creds = grpc_call_credentials_ref(call_creds);
+  } else if (call_creds != NULL) {
+    grpc_call_credentials *composite_creds =
+        grpc_composite_call_credentials_create(channel_creds->call_creds,
+                                               call_creds, NULL);
+    if (composite_creds == NULL) return NULL;
+    grpc_call_credentials_unref(channel_creds->call_creds);
+    channel_creds->call_creds = composite_creds;
+  }
+  return grpc_channel_credentials_ref(channel_creds);
 }
 
 /* -- IAM credentials. -- */

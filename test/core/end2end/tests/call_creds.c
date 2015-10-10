@@ -132,27 +132,6 @@ static void print_auth_context(int is_client, const grpc_auth_context *ctx) {
   }
 }
 
-static void test_call_creds_failure(grpc_end2end_test_config config) {
-  grpc_call *c;
-  grpc_credentials *creds = NULL;
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_call_creds_failure", 0);
-  gpr_timespec deadline = five_seconds_time();
-  c = grpc_channel_create_call(f.client, NULL, GRPC_PROPAGATE_DEFAULTS, f.cq,
-                               "/foo", "foo.test.google.fr", deadline, NULL);
-  GPR_ASSERT(c);
-
-  /* Try with credentials unfit to be set on a call (channel creds). */
-  creds = grpc_fake_transport_security_credentials_create();
-  GPR_ASSERT(grpc_call_set_credentials(c, creds) != GRPC_CALL_OK);
-  grpc_credentials_release(creds);
-
-  grpc_call_destroy(c);
-
-  end_test(&f);
-  config.tear_down_data(&f);
-}
-
 static void request_response_with_payload_and_call_creds(
     const char *test_name, grpc_end2end_test_config config,
     override_mode mode) {
@@ -180,7 +159,7 @@ static void request_response_with_payload_and_call_creds(
   char *details = NULL;
   size_t details_capacity = 0;
   int was_cancelled = 2;
-  grpc_credentials *creds = NULL;
+  grpc_call_credentials *creds = NULL;
   grpc_auth_context *s_auth_context = NULL;
   grpc_auth_context *c_auth_context = NULL;
 
@@ -197,7 +176,7 @@ static void request_response_with_payload_and_call_creds(
     case NONE:
       break;
     case OVERRIDE:
-      grpc_credentials_release(creds);
+      grpc_call_credentials_release(creds);
       creds = grpc_google_iam_credentials_create(overridden_iam_token,
                                                  overridden_iam_selector, NULL);
       GPR_ASSERT(creds != NULL);
@@ -207,7 +186,7 @@ static void request_response_with_payload_and_call_creds(
       GPR_ASSERT(grpc_call_set_credentials(c, NULL) == GRPC_CALL_OK);
       break;
   }
-  grpc_credentials_release(creds);
+  grpc_call_credentials_release(creds);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -412,7 +391,7 @@ static void test_request_with_server_rejecting_client_creds(
   gpr_slice request_payload_slice = gpr_slice_from_copied_string("hello world");
   grpc_byte_buffer *request_payload =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_credentials *creds;
+  grpc_call_credentials *creds;
 
   f = begin_test(config, "test_request_with_server_rejecting_client_creds", 1);
   cqv = cq_verifier_create(f.cq);
@@ -424,7 +403,7 @@ static void test_request_with_server_rejecting_client_creds(
   creds = grpc_google_iam_credentials_create(iam_token, iam_selector, NULL);
   GPR_ASSERT(creds != NULL);
   GPR_ASSERT(grpc_call_set_credentials(c, creds) == GRPC_CALL_OK);
-  grpc_credentials_release(creds);
+  grpc_call_credentials_release(creds);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -490,7 +469,6 @@ static void test_request_with_server_rejecting_client_creds(
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
   if (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) {
-    test_call_creds_failure(config);
     test_request_response_with_payload_and_call_creds(config);
     test_request_response_with_payload_and_overridden_call_creds(config);
     test_request_response_with_payload_and_deleted_call_creds(config);
