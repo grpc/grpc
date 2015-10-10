@@ -78,7 +78,6 @@ static void lame_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
     calld->details.prev = &calld->status;
     mdb.list.head = &calld->status;
     mdb.list.tail = &calld->details;
-    mdb.garbage.head = mdb.garbage.tail = NULL;
     mdb.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     grpc_sopb_add_metadata(op->recv_ops, mdb);
     *op->recv_state = GRPC_STREAM_CLOSED;

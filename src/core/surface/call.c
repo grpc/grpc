@@ -1148,7 +1148,6 @@ static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
       data = call->request_data[GRPC_IOREQ_SEND_INITIAL_METADATA];
       mdb.list = chain_metadata_from_app(call, data.send_metadata.count,
                                          data.send_metadata.metadata);
-      mdb.garbage.head = mdb.garbage.tail = NULL;
       mdb.deadline = call->send_deadline;
       for (i = 0; i < call->send_initial_metadata_count; i++) {
         grpc_metadata_batch_link_head(&mdb, &call->send_initial_metadata[i]);
@@ -1179,7 +1178,6 @@ static int fill_send_ops(grpc_call *call, grpc_transport_stream_op *op) {
           data = call->request_data[GRPC_IOREQ_SEND_TRAILING_METADATA];
           mdb.list = chain_metadata_from_app(call, data.send_metadata.count,
                                              data.send_metadata.metadata);
-          mdb.garbage.head = mdb.garbage.tail = NULL;
           mdb.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
           /* send status */
           /* TODO(ctiller): cache common status values */
@@ -1607,9 +1605,6 @@ static void recv_metadata(grpc_exec_ctx *exec_ctx, grpc_call *call,
 
   for (l = md->list.head; l; l = l->next) {
     if (l->md) GRPC_MDELEM_UNREF(l->md);
-  }
-  for (l = md->garbage.head; l; l = l->next) {
-    GRPC_MDELEM_UNREF(l->md);
   }
 }
 

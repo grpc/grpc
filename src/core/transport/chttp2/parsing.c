@@ -591,6 +591,8 @@ static void on_header(void *tp, grpc_mdelem *md) {
   grpc_chttp2_stream_parsing *stream_parsing =
       transport_parsing->incoming_stream;
 
+  GPR_TIMER_BEGIN("on_header", 0);
+
   GPR_ASSERT(stream_parsing);
 
   GRPC_CHTTP2_IF_TRACING(gpr_log(
@@ -621,6 +623,8 @@ static void on_header(void *tp, grpc_mdelem *md) {
   }
 
   grpc_chttp2_list_add_parsing_seen_stream(transport_parsing, stream_parsing);
+
+  GPR_TIMER_END("on_header", 0);
 }
 
 static int init_header_frame_parser(

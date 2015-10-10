@@ -133,23 +133,32 @@ void grpc_sopb_add_no_op(grpc_stream_op_buffer *sopb) {
 
 void grpc_sopb_add_begin_message(grpc_stream_op_buffer *sopb, gpr_uint32 length,
                                  gpr_uint32 flags) {
-  grpc_stream_op *op = add(sopb);
+  grpc_stream_op *op;
+  GPR_TIMER_BEGIN("grpc_sopb_add_begin_message", 0);
+  op = add(sopb);
   op->type = GRPC_OP_BEGIN_MESSAGE;
   op->data.begin_message.length = length;
   op->data.begin_message.flags = flags;
+  GPR_TIMER_END("grpc_sopb_add_begin_message", 0);
 }
 
 void grpc_sopb_add_metadata(grpc_stream_op_buffer *sopb,
                             grpc_metadata_batch b) {
-  grpc_stream_op *op = add(sopb);
+  grpc_stream_op *op;
+  GPR_TIMER_BEGIN("grpc_sopb_add_metadata", 0);
+  op = add(sopb);
   op->type = GRPC_OP_METADATA;
   op->data.metadata = b;
+  GPR_TIMER_END("grpc_sopb_add_metadata", 0);
 }
 
 void grpc_sopb_add_slice(grpc_stream_op_buffer *sopb, gpr_slice slice) {
-  grpc_stream_op *op = add(sopb);
+  grpc_stream_op *op;
+  GPR_TIMER_BEGIN("grpc_sopb_add_slice", 0);
+  op = add(sopb);
   op->type = GRPC_OP_SLICE;
   op->data.slice = slice;
+  GPR_TIMER_END("grpc_sopb_add_slice", 0);
 }
 
 void grpc_sopb_append(grpc_stream_op_buffer *sopb, grpc_stream_op *ops,
@@ -200,22 +209,17 @@ static void assert_valid_list(grpc_mdelem_list *list) {
 #ifndef NDEBUG
 void grpc_metadata_batch_assert_ok(grpc_metadata_batch *batch) {
   assert_valid_list(&batch->list);
-  assert_valid_list(&batch->garbage);
 }
 #endif /* NDEBUG */
 
 void grpc_metadata_batch_init(grpc_metadata_batch *batch) {
-  batch->list.head = batch->list.tail = batch->garbage.head =
-      batch->garbage.tail = NULL;
+  batch->list.head = batch->list.tail = NULL;
   batch->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 }
 
 void grpc_metadata_batch_destroy(grpc_metadata_batch *batch) {
   grpc_linked_mdelem *l;
   for (l = batch->list.head; l; l = l->next) {
-    GRPC_MDELEM_UNREF(l->md);
-  }
-  for (l = batch->garbage.head; l; l = l->next) {
     GRPC_MDELEM_UNREF(l->md);
   }
 }
@@ -283,10 +287,6 @@ void grpc_metadata_batch_merge(grpc_metadata_batch *target,
     next = l->next;
     link_tail(&target->list, l);
   }
-  for (l = to_add->garbage.head; l; l = next) {
-    next = l->next;
-    link_tail(&target->garbage, l);
-  }
 }
 
 void grpc_metadata_batch_move(grpc_metadata_batch *dst,
@@ -305,7 +305,6 @@ void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
   GPR_TIMER_BEGIN("grpc_metadata_batch_filter", 0);
 
   assert_valid_list(&batch->list);
-  assert_valid_list(&batch->garbage);
   for (l = batch->list.head; l; l = next) {
     grpc_mdelem *orig = l->md;
     grpc_mdelem *filt = filter(user_data, orig);
@@ -324,14 +323,13 @@ void grpc_metadata_batch_filter(grpc_metadata_batch *batch,
         batch->list.tail = l->prev;
       }
       assert_valid_list(&batch->list);
-      link_head(&batch->garbage, l);
+      GRPC_MDELEM_UNREF(l->md);
     } else if (filt != orig) {
       GRPC_MDELEM_UNREF(orig);
       l->md = filt;
     }
   }
   assert_valid_list(&batch->list);
-  assert_valid_list(&batch->garbage);
 
   GPR_TIMER_END("grpc_metadata_batch_filter", 0);
 }

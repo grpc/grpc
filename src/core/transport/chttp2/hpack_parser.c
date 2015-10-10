@@ -38,12 +38,14 @@
 #include <string.h>
 #include <assert.h>
 
-#include "src/core/transport/chttp2/bin_encoder.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
+#include "src/core/transport/chttp2/bin_encoder.h"
 
 typedef enum {
   NOT_BINARY,
@@ -1379,14 +1381,17 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   grpc_chttp2_hpack_parser *parser = hpack_parser;
+  GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
   if (!grpc_chttp2_hpack_parser_parse(parser, GPR_SLICE_START_PTR(slice),
                                       GPR_SLICE_END_PTR(slice))) {
+    GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
     return GRPC_CHTTP2_CONNECTION_ERROR;
   }
   if (is_last) {
     if (parser->is_boundary && parser->state != parse_begin) {
       gpr_log(GPR_ERROR,
               "end of header frame not aligned with a hpack record boundary");
+      GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
       return GRPC_CHTTP2_CONNECTION_ERROR;
     }
     if (parser->is_boundary) {
@@ -1404,5 +1409,6 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
     parser->is_boundary = 0xde;
     parser->is_eof = 0xde;
   }
+  GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
   return GRPC_CHTTP2_PARSE_OK;
 }

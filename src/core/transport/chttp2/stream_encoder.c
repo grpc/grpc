@@ -611,7 +611,6 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
            slot. THIS MAY NOT BE THE SAME ELEMENT (if a decoder table slot got
            updated). After this loop, we'll do a batch unref of elements. */
         begin_new_frame(&st, HEADER);
-        need_unref |= op->data.metadata.garbage.head != NULL;
         grpc_metadata_batch_assert_ok(&op->data.metadata);
         for (l = op->data.metadata.list.head; l; l = l->next) {
           l->md = hpack_enc(compressor, l->md, &st);
@@ -654,9 +653,6 @@ void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
       if (op->type != GRPC_OP_METADATA) continue;
       for (l = op->data.metadata.list.head; l; l = l->next) {
         if (l->md) GRPC_MDELEM_UNREF(l->md);
-      }
-      for (l = op->data.metadata.garbage.head; l; l = l->next) {
-        GRPC_MDELEM_UNREF(l->md);
       }
     }
   }
