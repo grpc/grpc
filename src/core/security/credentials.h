@@ -98,10 +98,11 @@ char *grpc_get_well_known_google_credentials_file_path(void);
 
 typedef struct {
   void (*destruct)(grpc_channel_credentials *c);
+
   grpc_security_status (*create_security_connector)(
-      grpc_channel_credentials *c, const char *target, const grpc_channel_args *args,
-      grpc_call_credentials *call_creds,
-      grpc_channel_security_connector **sc, grpc_channel_args **new_args);
+      grpc_channel_credentials *c, const char *target,
+      const grpc_channel_args *args, grpc_channel_security_connector **sc,
+      grpc_channel_args **new_args);
 } grpc_channel_credentials_vtable;
 
 struct grpc_channel_credentials {
@@ -121,8 +122,8 @@ void grpc_channel_credentials_unref(grpc_channel_credentials *creds);
    new_args after channel creation. */
 grpc_security_status grpc_channel_credentials_create_security_connector(
     grpc_channel_credentials *creds, const char *target,
-    const grpc_channel_args *args, grpc_call_credentials *call_creds,
-    grpc_channel_security_connector **sc, grpc_channel_args **new_args);
+    const grpc_channel_args *args, grpc_channel_security_connector **sc,
+    grpc_channel_args **new_args);
 
 /* --- grpc_credentials_md. --- */
 
@@ -160,7 +161,6 @@ typedef void (*grpc_credentials_metadata_cb)(grpc_exec_ctx *exec_ctx,
 
 typedef struct {
   void (*destruct)(grpc_call_credentials *c);
-  int (*has_request_metadata)(const grpc_call_credentials *c);
   void (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
                                grpc_call_credentials *c, grpc_pollset *pollset,
                                const char *service_url,
@@ -174,16 +174,14 @@ struct grpc_call_credentials {
   gpr_refcount refcount;
 };
 
-grpc_call_credentials *grpc_credentials_ref(grpc_call_credentials *creds);
+grpc_call_credentials *grpc_call_credentials_ref(grpc_call_credentials *creds);
 void grpc_call_credentials_unref(grpc_call_credentials *creds);
-int grpc_call_credentials_has_request_metadata(grpc_call_credentials *creds);
 void grpc_call_credentials_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_credentials *creds,
                                                 grpc_pollset *pollset,
                                                 const char *service_url,
                                                 grpc_credentials_metadata_cb cb,
                                                 void *user_data);
-
 
 typedef struct {
   grpc_call_credentials **creds_array;

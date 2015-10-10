@@ -50,7 +50,7 @@ typedef struct grpc_channel_credentials grpc_channel_credentials;
 
 /* Releases a channel credentials object.
    The creator of the credentials object is responsible for its release. */
-void grpc_credentials_release(grpc_channel_credentials *creds);
+void grpc_channel_credentials_release(grpc_channel_credentials *creds);
 
 /* Environment variable that points to the google default application
    credentials json key or refresh token. Used in the
@@ -100,6 +100,10 @@ grpc_channel_credentials *grpc_ssl_credentials_create(
    so that they are sent with every call on this channel.  */
 
 typedef struct grpc_call_credentials grpc_call_credentials;
+
+/* Releases a call credentials object.
+   The creator of the credentials object is responsible for its release. */
+void grpc_call_credentials_release(grpc_call_credentials *creds);
 
 /* Creates a composite channel credentials object. */
 grpc_channel_credentials *grpc_composite_channel_credentials_create(
