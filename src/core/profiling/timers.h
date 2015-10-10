@@ -91,6 +91,7 @@ void gpr_timer_end(const char *tagstr, int important, const char *file,
 #ifdef __cplusplus
 }
 
+#if (defined(GRPC_STAP_PROFILER) + defined(GRPC_BASIC_PROFILER))
 namespace grpc {
 class ProfileScope {
  public:
@@ -106,6 +107,11 @@ class ProfileScope {
 
 #define GPR_TIMER_SCOPE(tag, important) \
   ::grpc::ProfileScope _profile_scope_##__LINE__((tag), (important))
+#else
+#define GPR_TIMER_SCOPE(tag, important) \
+  do {                                  \
+  } while (false)
+#endif
 #endif
 
 #endif /* GRPC_CORE_PROFILING_TIMERS_H */
