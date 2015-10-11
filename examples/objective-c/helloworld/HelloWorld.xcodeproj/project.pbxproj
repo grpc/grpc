@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3EF35C14BDC2B65E21837F02 /* libPods.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 43AB08B32839A6700EA00DD4 /* libPods.a */; };
 		5E3690661B2A23800040F884 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E3690651B2A23800040F884 /* main.m */; };
 		5E3690691B2A23800040F884 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E3690681B2A23800040F884 /* AppDelegate.m */; };
 		5E36906C1B2A23800040F884 /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E36906B1B2A23800040F884 /* ViewController.m */; };
@@ -17,6 +18,7 @@
 
 /* Begin PBXFileReference section */
 		0C432EF610DB15C0F47A66BB /* Pods-HelloWorld.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-HelloWorld.release.xcconfig"; path = "Pods/Target Support Files/Pods-HelloWorld/Pods-HelloWorld.release.xcconfig"; sourceTree = "<group>"; };
+		43AB08B32839A6700EA00DD4 /* libPods.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPods.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E3690601B2A23800040F884 /* HelloWorld.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HelloWorld.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E3690641B2A23800040F884 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5E3690651B2A23800040F884 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -35,6 +37,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EF61CF6AE2536A31D47F0E63 /* libPods-HelloWorld.a in Frameworks */,
+				3EF35C14BDC2B65E21837F02 /* libPods.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -85,6 +88,7 @@
 			isa = PBXGroup;
 			children = (
 				6B4E1F55F8A2EC95A0E7EE88 /* libPods-HelloWorld.a */,
+				43AB08B32839A6700EA00DD4 /* libPods.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -208,7 +212,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-HelloWorld/Pods-HelloWorld-frameworks.sh\"\n";
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods/Pods-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
