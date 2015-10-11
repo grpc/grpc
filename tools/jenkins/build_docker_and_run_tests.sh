@@ -66,6 +66,7 @@ docker run \
   -i $TTY_FLAG \
   -v "$git_root:/var/local/jenkins/grpc" \
   -v /tmp/ccache:/tmp/ccache \
+  -v /tmp/npm-cache:/tmp/npm-cache \
   -v /tmp/xdg-cache-home:/tmp/xdg-cache-home \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(which docker):/bin/docker \
