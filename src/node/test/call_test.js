@@ -107,6 +107,12 @@ describe('call', function() {
         new grpc.Call(channel, 'method', 'now');
       }, TypeError);
     });
+    it('should succeed without the new keyword', function() {
+      assert.doesNotThrow(function() {
+        var call = grpc.Call(channel, 'method', new Date());
+        assert(call instanceof grpc.Call);
+      });
+    });
   });
   describe('deadline', function() {
     it('should time out immediately with negative deadline', function(done) {
