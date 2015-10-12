@@ -146,13 +146,13 @@ class TestAuthMetadataProcessor : public AuthMetadataProcessor {
 
   TestAuthMetadataProcessor(bool is_blocking) : is_blocking_(is_blocking) {}
 
-  std::shared_ptr<Credentials> GetCompatibleClientCreds() {
+  std::shared_ptr<CallCredentials> GetCompatibleClientCreds() {
     return MetadataCredentialsFromPlugin(
         std::unique_ptr<MetadataCredentialsPlugin>(
             new TestMetadataCredentialsPlugin(kGoodGuy, is_blocking_, true)));
   }
 
-  std::shared_ptr<Credentials> GetIncompatibleClientCreds() {
+  std::shared_ptr<CallCredentials> GetIncompatibleClientCreds() {
     return MetadataCredentialsFromPlugin(
         std::unique_ptr<MetadataCredentialsPlugin>(
             new TestMetadataCredentialsPlugin("Mr Hyde", is_blocking_, true)));
@@ -407,7 +407,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
     }
     EXPECT_TRUE(is_server_started_);
     ChannelArguments args;
-    auto channel_creds = InsecureCredentials();
+    auto channel_creds = InsecureChannelCredentials();
     if (GetParam().use_tls) {
       SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
       args.SetSslTargetNameOverride("foo.test.google.fr");
@@ -429,7 +429,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       builder.RegisterService(proxy_service_.get());
       proxy_server_ = builder.BuildAndStart();
 
-      channel_ = CreateChannel(proxyaddr.str(), InsecureCredentials());
+      channel_ = CreateChannel(proxyaddr.str(), InsecureChannelCredentials());
     }
 
     stub_ = grpc::cpp::test::util::TestService::NewStub(channel_);
@@ -751,7 +751,8 @@ TEST_P(End2endTest, ChannelStateTimeout) {
   std::ostringstream server_address;
   server_address << "127.0.0.1:" << port;
   // Channel to non-existing server
-  auto channel = CreateChannel(server_address.str(), InsecureCredentials());
+  auto channel =
+      CreateChannel(server_address.str(), InsecureChannelCredentials());
   // Start IDLE
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(true));
 
@@ -971,33 +972,6 @@ TEST_P(SecureEnd2endTest, SimpleRpcWithHost) {
   EXPECT_TRUE(s.ok());
 }
 
-// rpc and stream should fail on bad credentials.
-TEST_P(SecureEnd2endTest, BadCredentials) {
-  std::shared_ptr<Credentials> bad_creds = GoogleRefreshTokenCredentials("");
-  EXPECT_EQ(static_cast<Credentials*>(nullptr), bad_creds.get());
-  std::shared_ptr<Channel> channel =
-      CreateChannel(server_address_.str(), bad_creds);
-  std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub(
-      grpc::cpp::test::util::TestService::NewStub(channel));
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-  request.set_message("Hello");
-
-  Status s = stub->Echo(&context, request, &response);
-  EXPECT_EQ("", response.message());
-  EXPECT_FALSE(s.ok());
-  EXPECT_EQ(StatusCode::INVALID_ARGUMENT, s.error_code());
-  EXPECT_EQ("Invalid credentials.", s.error_message());
-
-  ClientContext context2;
-  auto stream = stub->BidiStream(&context2);
-  s = stream->Finish();
-  EXPECT_FALSE(s.ok());
-  EXPECT_EQ(StatusCode::INVALID_ARGUMENT, s.error_code());
-  EXPECT_EQ("Invalid credentials.", s.error_message());
-}
-
 bool MetadataContains(
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
     const grpc::string& key, const grpc::string& value) {
@@ -1055,7 +1029,7 @@ TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  std::shared_ptr<Credentials> creds =
+  std::shared_ptr<CallCredentials> creds =
       GoogleIAMCredentials("fake_token", "fake_selector");
   context.set_credentials(creds);
   request.set_message("Hello");
@@ -1072,30 +1046,15 @@ TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
                                "fake_selector"));
 }
 
-TEST_P(SecureEnd2endTest, InsecurePerCallCredentials) {
-  ResetStub();
-  EchoRequest request;
-  EchoResponse response;
-  ClientContext context;
-  std::shared_ptr<Credentials> creds = InsecureCredentials();
-  context.set_credentials(creds);
-  request.set_message("Hello");
-  request.mutable_param()->set_echo_metadata(true);
-
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_EQ("Failed to set credentials to rpc.", s.error_message());
-}
-
 TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   ResetStub();
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
-  std::shared_ptr<Credentials> creds1 =
+  std::shared_ptr<CallCredentials> creds1 =
       GoogleIAMCredentials("fake_token1", "fake_selector1");
   context.set_credentials(creds1);
-  std::shared_ptr<Credentials> creds2 =
+  std::shared_ptr<CallCredentials> creds2 =
       GoogleIAMCredentials("fake_token2", "fake_selector2");
   context.set_credentials(creds2);
   request.set_message("Hello");

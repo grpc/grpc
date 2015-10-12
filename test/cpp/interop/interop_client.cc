@@ -211,7 +211,7 @@ void InteropClient::DoPerRpcCreds(const grpc::string& json_key) {
 
   ClientContext context;
   std::chrono::seconds token_lifetime = std::chrono::hours(1);
-  std::shared_ptr<Credentials> creds =
+  std::shared_ptr<CallCredentials> creds =
       ServiceAccountJWTAccessCredentials(json_key, token_lifetime.count());
 
   context.set_credentials(creds);
