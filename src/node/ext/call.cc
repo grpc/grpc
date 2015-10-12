@@ -83,6 +83,18 @@ using v8::Value;
 Callback *Call::constructor;
 Persistent<FunctionTemplate> Call::fun_tpl;
 
+/**
+ * Helper function for throwing errors with a grpc_call_error value.
+ * Modified from the answer by Gus Goose to
+ * http://stackoverflow.com/questions/31794200.
+ */
+Local<Value> nanErrorWithCode(const char *msg, grpc_call_error code) {
+  EscapableHandleScope scope;
+  Local<Object> err = Nan::Error(msg).As<Object>();
+  Nan::Set(err, Nan::New("code").ToLocalChecked(), Nan::New<Uint32>(code));
+  return scope.Escape(err);
+}
+
 bool EndsWith(const char *str, const char *substr) {
   return strcmp(str+strlen(str)-strlen(substr), substr) == 0;
 }
