@@ -43,7 +43,7 @@
 namespace grpc {
 
 namespace {
-class InsecureCredentialsImpl GRPC_FINAL : public Credentials {
+class InsecureChannelCredentialsImpl GRPC_FINAL : public ChannelCredentials {
  public:
   std::shared_ptr<grpc::Channel> CreateChannel(
       const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE {
@@ -54,15 +54,13 @@ class InsecureCredentialsImpl GRPC_FINAL : public Credentials {
         grpc_insecure_channel_create(target.c_str(), &channel_args, nullptr));
   }
 
-  // InsecureCredentials should not be applied to a call.
-  bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE { return false; }
-
-  SecureCredentials* AsSecureCredentials() GRPC_OVERRIDE { return nullptr; }
+  SecureChannelCredentials* AsSecureCredentials() GRPC_OVERRIDE { return nullptr; }
 };
 }  // namespace
 
-std::shared_ptr<Credentials> InsecureCredentials() {
-  return std::shared_ptr<Credentials>(new InsecureCredentialsImpl());
+std::shared_ptr<ChannelCredentials> InsecureChannelCredentials() {
+  return std::shared_ptr<ChannelCredentials>(
+      new InsecureChannelCredentialsImpl());
 }
 
 }  // namespace grpc
