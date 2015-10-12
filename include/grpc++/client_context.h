@@ -69,7 +69,7 @@ namespace grpc {
 
 class Channel;
 class CompletionQueue;
-class Credentials;
+class CallCredentials;
 class RpcMethod;
 template <class R>
 class ClientReader;
@@ -244,7 +244,7 @@ class ClientContext {
   /// call.
   ///
   /// \see  https://github.com/grpc/grpc/blob/master/doc/grpc-auth-support.md
-  void set_credentials(const std::shared_ptr<Credentials>& creds) {
+  void set_credentials(const std::shared_ptr<CallCredentials>& creds) {
     creds_ = creds;
   }
 
@@ -318,7 +318,7 @@ class ClientContext {
   grpc_call* call_;
   gpr_timespec deadline_;
   grpc::string authority_;
-  std::shared_ptr<Credentials> creds_;
+  std::shared_ptr<CallCredentials> creds_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
   struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
