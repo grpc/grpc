@@ -36,7 +36,6 @@ root=`readlink -f $(dirname $0)/../..`
 out=$root/reports/c_cxx_coverage
 tmp=`mktemp`
 cd $root
-tools/run_tests/run_tests.py -c gcov -l c c++ || true
 lcov --capture --directory . --output-file $tmp
 genhtml $tmp --output-directory $out
 rm $tmp
