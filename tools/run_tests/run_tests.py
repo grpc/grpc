@@ -710,14 +710,18 @@ def _start_port_server(port_server_port):
     os.close(fd)
     print 'starting port_server, with log file %s' % logfile
     args = [sys.executable, 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port, '-l', logfile]
+    env = dict(os.environ)
+    env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
     if platform.system() == 'Windows':
       port_server = subprocess.Popen(
-        args,
-        creationflags = 0x00000008, # detached process
-        close_fds=True)
+          args,
+          env=env,
+          creationflags = 0x00000008, # detached process
+          close_fds=True)
     else:
       port_server = subprocess.Popen(
           args,
+          env=env,
           preexec_fn=os.setsid,
           close_fds=True)
     time.sleep(1)
