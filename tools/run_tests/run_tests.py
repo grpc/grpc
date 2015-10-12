@@ -71,16 +71,17 @@ def platform_string():
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
-  def __init__(self, config, environ=None, timeout_seconds=5*60):
+  def __init__(self, config, environ=None, timeout_multiplier=1):
     if environ is None:
       environ = {}
     self.build_config = config
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
-    self.timeout_seconds = timeout_seconds
+    self.timeout_multiplier = timeout_multiplier
 
-  def job_spec(self, cmdline, hash_targets, shortname=None, environ={}):
+  def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
+               shortname=None, environ={}):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
@@ -98,7 +99,7 @@ class SimpleConfig(object):
     return jobset.JobSpec(cmdline=cmdline,
                           shortname=shortname,
                           environ=actual_environ,
-                          timeout_seconds=self.timeout_seconds,
+                          timeout_seconds=self.timeout_multiplier * timeout_seconds,
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
                           flake_retries=5 if args.allow_flakes else 0,
@@ -250,6 +251,7 @@ class PythonLanguage(object):
         None,
         environ=environment,
         shortname='py.test',
+        timeout_seconds=15*60
     )]
 
   def pre_build_steps(self):
@@ -433,11 +435,11 @@ class Build(object):
 _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
-    'tsan': SimpleConfig('tsan', timeout_seconds=10*60, environ={
+    'tsan': SimpleConfig('tsan', timeout_multiplier=2, environ={
         'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
-    'msan': SimpleConfig('msan', timeout_seconds=7*60),
+    'msan': SimpleConfig('msan', timeout_multiplier=1.5),
     'ubsan': SimpleConfig('ubsan'),
-    'asan': SimpleConfig('asan', timeout_seconds=7*60, environ={
+    'asan': SimpleConfig('asan', timeout_multiplier=1.5, environ={
         'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt',
         'LSAN_OPTIONS': 'report_objects=1'}),
     'asan-noleaks': SimpleConfig('asan', environ={
