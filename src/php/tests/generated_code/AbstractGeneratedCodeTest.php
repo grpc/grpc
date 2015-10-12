@@ -51,6 +51,14 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase {
     $this->assertTrue(is_string(self::$client->getTarget()));
   }
 
+  /**
+   * @expectedException InvalidArgumentException
+   */
+  public function testInvalidMetadata() {
+    $div_arg = new math\DivArgs();
+    $call = self::$client->Div($div_arg, array(' ' => 'abc123'));
+  }
+
   public function testWriteFlags() {
     $div_arg = new math\DivArgs();
     $div_arg->setDividend(7);
