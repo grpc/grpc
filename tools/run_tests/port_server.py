@@ -56,6 +56,9 @@ argp.add_argument('-l', '--logfile', default=None, type=str)
 args = argp.parse_args()
 
 if args.logfile is not None:
+  sys.stdin.close()
+  sys.stderr.close()
+  sys.stdout.close()
   sys.stderr = open(args.logfile, 'w')
   sys.stdout = sys.stderr
 
