@@ -165,7 +165,7 @@ class BaseStub {
       if (!preg_match('/^[A-Za-z\d_-]+$/', $key)) {
         throw new \InvalidArgumentException(
             'Metadata keys must be nonempty strings containing only '.
-            'alphanumeric characters and hyphens');
+            'alphanumeric characters, hyphens and underscores');
       }
       $metadata_copy[strtolower($key)] = $value;
     }
