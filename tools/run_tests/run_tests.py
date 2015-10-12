@@ -709,9 +709,17 @@ def _start_port_server(port_server_port):
     fd, logfile = tempfile.mkstemp()
     os.close(fd)
     print 'starting port_server, with log file %s' % logfile
-    port_server = subprocess.Popen(
-        [sys.executable, 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port, '-l', logfile],
+    args = [sys.executable, 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port, '-l', logfile]
+    if platform.system() == 'Windows':
+      port_server = subprocess.Popen(
+        args,
+        creationflags = 0x00000008, # detached process
         close_fds=True)
+    else:
+      port_server = subprocess.Popen(
+          args,
+          preexec_fn=os.setsid,
+          close_fds=True)
     time.sleep(1)
     # ensure port server is up
     waits = 0

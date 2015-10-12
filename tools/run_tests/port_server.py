@@ -42,7 +42,7 @@ import time
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 4
+_MY_VERSION = 5
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
@@ -124,9 +124,12 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_header('Content-Type', 'text/plain')
       self.end_headers()
       p = int(self.path[6:])
-      del in_use[p]
-      pool.append(p)
-      self.log_message('drop port %d' % p)
+      if p in in_use:
+        del in_use[p]
+        pool.append(p)
+        self.log_message('drop known port %d' % p)
+      else:
+        self.log_message('drop unknown port %d' % p)
     elif self.path == '/version_number':
       # fetch a version string and the current process pid
       self.send_response(200)
