@@ -169,6 +169,24 @@ describe('client credentials', function() {
       done();
     });
   });
+  it.skip('should propagate errors that the updater emits', function(done) {
+    var metadataUpdater = function(service_url, callback) {
+      var error = new Error('Authentication error');
+      error.code = grpc.status.UNAUTHENTICATED;
+      callback(error);
+    };
+    var creds = grpc.credentials.createFromMetadataGenerator(metadataUpdater);
+    var combined_creds = grpc.credentials.combineChannelCredentials(
+        client_ssl_creds, creds);
+    var client = new Client('localhost:' + port, combined_creds,
+                            client_options);
+    client.unary({}, function(err, data) {
+      assert(err);
+      assert.strictEqual(err.message, 'Authentication error');
+      assert.strictEqual(err.code, grpc.status.UNAUTHENTICATED);
+      done();
+    });
+  });
   describe('Per-rpc creds', function() {
     var client;
     var updater_creds;
