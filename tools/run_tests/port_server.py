@@ -42,7 +42,7 @@ import time
 # increment this number whenever making a change to ensure that
 # the changes are picked up by running CI servers
 # note that all changes must be backwards compatible
-_MY_VERSION = 2
+_MY_VERSION = 4
 
 
 if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
@@ -52,7 +52,12 @@ if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
 
 argp = argparse.ArgumentParser(description='Server for httpcli_test')
 argp.add_argument('-p', '--port', default=12345, type=int)
+argp.add_argument('-l', '--logfile', default=None, type=str)
 args = argp.parse_args()
+
+if args.logfile is not None:
+  sys.stderr = open(args.logfile, 'w')
+  sys.stdout = sys.stderr
 
 print 'port server running on port %d' % args.port
 
@@ -146,6 +151,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 httpd = BaseHTTPServer.HTTPServer(('', args.port), Handler)
 while keep_running:
   httpd.handle_request()
+  sys.stderr.flush()
 
 print 'done'
-
