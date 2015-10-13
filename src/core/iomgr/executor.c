@@ -124,14 +124,12 @@ void grpc_executor_enqueue(grpc_closure *closure, int success) {
 }
 
 void grpc_executor_shutdown() {
-  gpr_thd_id tid;
   int pending_join;
   grpc_closure *closure;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_mu_lock(&g_executor.mu);
   pending_join = g_executor.pending_join;
-  tid = g_executor.tid;
   g_executor.shutting_down = 1;
   gpr_mu_unlock(&g_executor.mu);
   /* we can release the lock at this point despite the access to the closure
