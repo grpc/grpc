@@ -510,6 +510,7 @@ grpc_chttp2_stream_parsing *grpc_chttp2_parsing_accept_stream(
 static void lock(grpc_chttp2_transport *t) { gpr_mu_lock(&t->mu); }
 
 static void unlock(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
+  GPR_TIMER_BEGIN("unlock", 0);
   unlock_check_read_write_state(exec_ctx, t);
   if (!t->writing_active && !t->closed &&
       grpc_chttp2_unlocking_check_writes(&t->global, &t->writing)) {
@@ -520,6 +521,7 @@ static void unlock(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   }
 
   gpr_mu_unlock(&t->mu);
+  GPR_TIMER_END("unlock", 0);
 }
 
 /*
@@ -546,6 +548,8 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_transport_writing *transport_writing = transport_writing_ptr;
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING(transport_writing);
 
+  GPR_TIMER_BEGIN("grpc_chttp2_terminate_writing", 0);
+
   lock(t);
 
   allow_endpoint_shutdown_locked(exec_ctx, t);
@@ -567,12 +571,16 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
   unlock(exec_ctx, t);
 
   UNREF_TRANSPORT(exec_ctx, t, "writing");
+
+  GPR_TIMER_END("grpc_chttp2_terminate_writing", 0);
 }
 
 static void writing_action(grpc_exec_ctx *exec_ctx, void *gt,
                            int iomgr_success_ignored) {
   grpc_chttp2_transport *t = gt;
+  GPR_TIMER_BEGIN("writing_action", 0);
   grpc_chttp2_perform_writes(exec_ctx, &t->writing, t->ep);
+  GPR_TIMER_END("writing_action", 0);
 }
 
 void grpc_chttp2_add_incoming_goaway(
@@ -642,6 +650,7 @@ static void maybe_start_some_streams(
 static void perform_stream_op_locked(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, grpc_transport_stream_op *op) {
+  GPR_TIMER_BEGIN("perform_stream_op_locked", 0);
   if (op->cancel_with_status != GRPC_STATUS_OK) {
     cancel_from_api(transport_global, stream_global, op->cancel_with_status);
   }
@@ -713,6 +722,7 @@ static void perform_stream_op_locked(
   }
 
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, 1);
+  GPR_TIMER_END("perform_stream_op_locked", 0);
 }
 
 static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
@@ -1103,6 +1113,8 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
   int keep_reading = 0;
   grpc_chttp2_transport *t = tp;
 
+  GPR_TIMER_BEGIN("recv_data", 0);
+
   lock(t);
   i = 0;
   GPR_ASSERT(!t->parsing_active);
@@ -1113,11 +1125,13 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
                                      &t->parsing_stream_map);
     grpc_chttp2_prepare_to_read(&t->global, &t->parsing);
     gpr_mu_unlock(&t->mu);
+    GPR_TIMER_BEGIN("recv_data.parse", 0);
     for (; i < t->read_buffer.count &&
                grpc_chttp2_perform_read(exec_ctx, &t->parsing,
                                         t->read_buffer.slices[i]);
          i++)
       ;
+    GPR_TIMER_END("recv_data.parse", 0);
     gpr_mu_lock(&t->mu);
     if (i != t->read_buffer.count) {
       drop_connection(exec_ctx, t);
@@ -1154,6 +1168,8 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
   } else {
     UNREF_TRANSPORT(exec_ctx, t, "recv_data");
   }
+
+  GPR_TIMER_END("recv_data", 0);
 }
 
 /*

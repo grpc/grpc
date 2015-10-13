@@ -38,17 +38,34 @@ import socket
 import sys
 import time
 
+
+# increment this number whenever making a change to ensure that
+# the changes are picked up by running CI servers
+# note that all changes must be backwards compatible
+_MY_VERSION = 5
+
+
+if len(sys.argv) == 2 and sys.argv[1] == 'dump_version':
+  print _MY_VERSION
+  sys.exit(0)
+
+
 argp = argparse.ArgumentParser(description='Server for httpcli_test')
 argp.add_argument('-p', '--port', default=12345, type=int)
+argp.add_argument('-l', '--logfile', default=None, type=str)
 args = argp.parse_args()
+
+if args.logfile is not None:
+  sys.stdin.close()
+  sys.stderr.close()
+  sys.stdout.close()
+  sys.stderr = open(args.logfile, 'w')
+  sys.stdout = sys.stderr
 
 print 'port server running on port %d' % args.port
 
 pool = []
 in_use = {}
-
-with open(__file__) as f:
-  _MY_VERSION = hashlib.sha1(f.read()).hexdigest()
 
 
 def refill_pool(max_timeout, req):
@@ -110,10 +127,13 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.send_header('Content-Type', 'text/plain')
       self.end_headers()
       p = int(self.path[6:])
-      del in_use[p]
-      pool.append(p)
-      self.log_message('drop port %d' % p)
-    elif self.path == '/version':
+      if p in in_use:
+        del in_use[p]
+        pool.append(p)
+        self.log_message('drop known port %d' % p)
+      else:
+        self.log_message('drop unknown port %d' % p)
+    elif self.path == '/version_number':
       # fetch a version string and the current process pid
       self.send_response(200)
       self.send_header('Content-Type', 'text/plain')
@@ -128,7 +148,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
       self.end_headers()
       now = time.time()
       self.wfile.write(yaml.dump({'pool': pool, 'in_use': dict((k, now - v) for k, v in in_use.iteritems())}))
-    elif self.path == '/quit':
+    elif self.path == '/quitquitquit':
       self.send_response(200)
       self.end_headers()
       keep_running = False
@@ -137,6 +157,6 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
 httpd = BaseHTTPServer.HTTPServer(('', args.port), Handler)
 while keep_running:
   httpd.handle_request()
+  sys.stderr.flush()
 
 print 'done'
-

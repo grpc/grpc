@@ -153,8 +153,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
         GPR_ASSERT((*req)->in_flight_);
         return true;
     }
-    gpr_log(GPR_ERROR, "Should never reach here");
-    abort();
+    GPR_UNREACHABLE_CODE(return false);
   }
 
   void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
@@ -541,6 +540,7 @@ void Server::ScheduleCallback() {
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
+  GPR_TIMER_SCOPE("Server::RunRpc", 0);
   auto* mrd = SyncRequest::Wait(&cq_, &ok);
   if (mrd) {
     ScheduleCallback();
@@ -556,6 +556,7 @@ void Server::RunRpc() {
           mrd->TeardownRequest();
         }
       }
+      GPR_TIMER_SCOPE("cd.Run()", 0);
       cd.Run();
     }
   }

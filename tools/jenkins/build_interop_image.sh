@@ -35,12 +35,12 @@ set -x
 
 cd `dirname $0`/../..
 GRPC_ROOT=`pwd`
-MOUNT_ARGS="-v $GRPC_ROOT:/var/local/jenkins/grpc"
+MOUNT_ARGS="-v $GRPC_ROOT:/var/local/jenkins/grpc:ro"
 
 GRPC_JAVA_ROOT=`cd ../grpc-java && pwd`
 if [ "$GRPC_JAVA_ROOT" != "" ]
 then
-  MOUNT_ARGS+=" -v $GRPC_JAVA_ROOT:/var/local/jenkins/grpc-java"
+  MOUNT_ARGS+=" -v $GRPC_JAVA_ROOT:/var/local/jenkins/grpc-java:ro"
 else
   echo "WARNING: grpc-java not found, it won't be mounted to the docker container."
 fi
@@ -48,7 +48,7 @@ fi
 GRPC_GO_ROOT=`cd ../grpc-go && pwd`
 if [ "$GRPC_GO_ROOT" != "" ]
 then
-  MOUNT_ARGS+=" -v $GRPC_GO_ROOT:/var/local/jenkins/grpc-go"
+  MOUNT_ARGS+=" -v $GRPC_GO_ROOT:/var/local/jenkins/grpc-go:ro"
 else
   echo "WARNING: grpc-go not found, it won't be mounted to the docker container."
 fi
@@ -60,6 +60,14 @@ mkdir -p /tmp/ccache
 #  BASE_NAME - base name used to locate the base Dockerfile and build script
 #  TTY_FLAG - optional -t flag to make docker allocate tty.
 
+# Mount service account dir if available.
+# If service_directory does not contain the service account JSON file,
+# some of the tests will fail.
+if [ -e $HOME/service_account ]
+then
+  MOUNT_ARGS+=" -v $HOME/service_account:/var/local/jenkins/service_account:ro"
+fi
+
 # Use image name based on Dockerfile checksum
 BASE_IMAGE=${BASE_NAME}_base:`sha1sum tools/jenkins/$BASE_NAME/Dockerfile | cut -f1 -d\ `
 
@@ -69,7 +77,7 @@ docker build -t $BASE_IMAGE --force-rm=true tools/jenkins/$BASE_NAME || exit $?
 # Create a local branch so the child Docker script won't complain
 git branch -f jenkins-docker
 
-CIDFILE=`mktemp -u --suffix=.cid`
+CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 
 # Prepare image for interop tests, commit it on success.
 (docker run \
@@ -77,17 +85,14 @@ CIDFILE=`mktemp -u --suffix=.cid`
   -i $TTY_FLAG \
   $MOUNT_ARGS \
   -v /tmp/ccache:/tmp/ccache \
-  --cidfile=$CIDFILE \
+  --name=$CONTAINER_NAME \
   $BASE_IMAGE \
   bash -l /var/local/jenkins/grpc/tools/jenkins/$BASE_NAME/build_interop.sh \
-  && docker commit `cat $CIDFILE` $INTEROP_IMAGE \
+  && docker commit $CONTAINER_NAME $INTEROP_IMAGE \
   && echo "Successfully built image $INTEROP_IMAGE")
 EXITCODE=$?
 
 # remove intermediate container, possibly killing it first
-docker rm -f `cat $CIDFILE`
-
-# remove the cidfile
-rm -rf `cat $CIDFILE`
+docker rm -f $CONTAINER_NAME
 
 exit $EXITCODE

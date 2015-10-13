@@ -41,10 +41,11 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/fd_posix.h"
-#include "src/core/support/block_annotate.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/iomgr/fd_posix.h"
+#include "src/core/support/block_annotate.h"
+#include "src/core/profiling/timers.h"
 
 typedef struct wakeup_fd_hdl {
   grpc_wakeup_fd wakeup_fd;
@@ -72,7 +73,7 @@ static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   /* We pretend to be polling whilst adding an fd to keep the fd from being
      closed during the add. This may result in a spurious wakeup being assigned
      to this pollset whilst adding, but that should be benign. */
-  GPR_ASSERT(grpc_fd_begin_poll(fd, pollset, 0, 0, &watcher) == 0);
+  GPR_ASSERT(grpc_fd_begin_poll(fd, pollset, NULL, 0, 0, &watcher) == 0);
   if (watcher.fd != NULL) {
     ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
     ev.data.ptr = fd;
@@ -182,9 +183,11 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
 
   /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
      even going into the blocking annotation if possible */
+  GPR_TIMER_BEGIN("poll", 0);
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   poll_rv = grpc_poll_function(pfds, 2, timeout_ms);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GPR_TIMER_END("poll", 0);
 
   if (poll_rv < 0) {
     if (errno != EINTR) {

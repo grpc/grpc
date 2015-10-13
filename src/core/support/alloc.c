@@ -35,22 +35,32 @@
 
 #include <stdlib.h>
 #include <grpc/support/port_platform.h>
+#include "src/core/profiling/timers.h"
 
 void *gpr_malloc(size_t size) {
-  void *p = malloc(size);
+  void *p;
+  GPR_TIMER_BEGIN("gpr_malloc", 0);
+  p = malloc(size);
   if (!p) {
     abort();
   }
+  GPR_TIMER_END("gpr_malloc", 0);
   return p;
 }
 
-void gpr_free(void *p) { free(p); }
+void gpr_free(void *p) {
+  GPR_TIMER_BEGIN("gpr_free", 0);
+  free(p);
+  GPR_TIMER_END("gpr_free", 0);
+}
 
 void *gpr_realloc(void *p, size_t size) {
+  GPR_TIMER_BEGIN("gpr_realloc", 0);
   p = realloc(p, size);
   if (!p) {
     abort();
   }
+  GPR_TIMER_END("gpr_realloc", 0);
   return p;
 }
 
