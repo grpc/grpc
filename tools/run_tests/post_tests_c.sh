@@ -32,9 +32,9 @@ set -ex
 
 if [ "$CONFIG" != "gcov" ] ; then exit ; fi
 
-root=`readlink -f $(dirname $0)/../..`
+root=$(readlink -f $(dirname $0)/../..)
 out=$root/reports/c_cxx_coverage
-tmp=`mktemp`
+tmp=$(mktemp)
 cd $root
 lcov --capture --directory . --output-file $tmp
 genhtml $tmp --output-directory $out
