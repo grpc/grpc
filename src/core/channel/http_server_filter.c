@@ -36,6 +36,7 @@
 #include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/profiling/timers.h"
 
 typedef struct call_data {
   gpr_uint8 got_initial_metadata;
@@ -230,8 +231,10 @@ static void hs_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem,
                                   grpc_transport_stream_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
+  GPR_TIMER_BEGIN("hs_start_transport_op", 0);
   hs_mutate_op(elem, op);
   grpc_call_next_op(exec_ctx, elem, op);
+  GPR_TIMER_END("hs_start_transport_op", 0);
 }
 
 /* Constructor for call_data */

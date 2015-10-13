@@ -85,7 +85,6 @@ void grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
      We can't do list building here as later incoming metadata may reallocate
      the underlying array. */
   b.list.tail = (void *)(gpr_intptr)buffer->count;
-  b.garbage.head = b.garbage.tail = NULL;
   b.deadline = buffer->deadline;
   buffer->deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
 

@@ -88,10 +88,6 @@ typedef struct grpc_mdelem_list {
 typedef struct grpc_metadata_batch {
   /** Metadata elements in this batch */
   grpc_mdelem_list list;
-  /** Elements that have been removed from the batch, but have
-      not yet been unreffed - used to allow collecting garbage
-      under a single metadata context lock */
-  grpc_mdelem_list garbage;
   /** Used to calculate grpc-timeout at the point of sending,
       or gpr_inf_future if this batch does not need to send a
       grpc-timeout */

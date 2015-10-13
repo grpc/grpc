@@ -31,41 +31,59 @@
  *
  */
 
-#include "src/core/iomgr/exec_ctx.h"
-
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
+#include <stdio.h>
 
-#include "src/core/profiling/timers.h"
-
-int grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx) {
-  int did_something = 0;
-  GPR_TIMER_BEGIN("grpc_exec_ctx_flush", 0);
-  while (!grpc_closure_list_empty(exec_ctx->closure_list)) {
-    grpc_closure *c = exec_ctx->closure_list.head;
-    exec_ctx->closure_list.head = exec_ctx->closure_list.tail = NULL;
-    while (c != NULL) {
-      grpc_closure *next = c->next;
-      did_something++;
-      GPR_TIMER_BEGIN("grpc_exec_ctx_flush.cb", 0);
-      c->cb(exec_ctx, c->cb_arg, c->success);
-      GPR_TIMER_END("grpc_exec_ctx_flush.cb", 0);
-      c = next;
-    }
-  }
-  GPR_TIMER_END("grpc_exec_ctx_flush", 0);
-  return did_something;
+#ifdef GRPC_TIMERS_RDTSC
+#if defined(__i386__)
+static void gpr_get_cycle_counter(long long int *clk) {
+  long long int ret;
+  __asm__ volatile("rdtsc" : "=A"(ret));
+  *clk = ret;
 }
 
-void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx) {
-  grpc_exec_ctx_flush(exec_ctx);
+// ----------------------------------------------------------------
+#elif defined(__x86_64__) || defined(__amd64__)
+static void gpr_get_cycle_counter(long long int *clk) {
+  unsigned long long low, high;
+  __asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
+  *clk = (long long)(high << 32) | (long long)low;
+}
+#endif
+
+static double cycles_per_second = 0;
+static long long int start_cycle;
+void gpr_precise_clock_init(void) {
+  time_t start;
+  long long end_cycle;
+  gpr_log(GPR_DEBUG, "Calibrating timers");
+  start = time(NULL);
+  while (time(NULL) == start)
+    ;
+  gpr_get_cycle_counter(&start_cycle);
+  while (time(NULL) <= start + 10)
+    ;
+  gpr_get_cycle_counter(&end_cycle);
+  cycles_per_second = (double)(end_cycle - start_cycle) / 10.0;
+  gpr_log(GPR_DEBUG, "... cycles_per_second = %f\n", cycles_per_second);
 }
 
-void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                           int success) {
-  grpc_closure_list_add(&exec_ctx->closure_list, closure, success);
+void gpr_precise_clock_now(gpr_timespec *clk) {
+  long long int counter;
+  double secs;
+  gpr_get_cycle_counter(&counter);
+  secs = (double)(counter - start_cycle) / cycles_per_second;
+  clk->clock_type = GPR_CLOCK_PRECISE;
+  clk->tv_sec = (time_t)secs;
+  clk->tv_nsec = (int)(1e9 * (secs - (double)clk->tv_sec));
 }
 
-void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
-                                grpc_closure_list *list) {
-  grpc_closure_list_move(list, &exec_ctx->closure_list);
+#else  /* GRPC_TIMERS_RDTSC */
+void gpr_precise_clock_init(void) {}
+
+void gpr_precise_clock_now(gpr_timespec *clk) {
+  *clk = gpr_now(GPR_CLOCK_REALTIME);
+  clk->clock_type = GPR_CLOCK_PRECISE;
 }
+#endif /* GRPC_TIMERS_RDTSC */

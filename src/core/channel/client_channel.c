@@ -36,16 +36,18 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/channel/channel_args.h"
-#include "src/core/channel/connected_channel.h"
-#include "src/core/surface/channel.h"
-#include "src/core/iomgr/iomgr.h"
-#include "src/core/support/string.h"
-#include "src/core/transport/connectivity_state.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/channel/channel_args.h"
+#include "src/core/channel/connected_channel.h"
+#include "src/core/iomgr/iomgr.h"
+#include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
+#include "src/core/surface/channel.h"
+#include "src/core/transport/connectivity_state.h"
 
 /* Client channel implementation */
 
@@ -149,7 +151,6 @@ static void handle_op_after_cancellation(grpc_exec_ctx *exec_ctx,
     calld->details.prev = &calld->status;
     mdb.list.head = &calld->status;
     mdb.list.tail = &calld->details;
-    mdb.garbage.head = mdb.garbage.tail = NULL;
     mdb.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     grpc_sopb_add_metadata(op->recv_ops, mdb);
     *op->recv_state = GRPC_STREAM_CLOSED;
@@ -242,6 +243,8 @@ static void picked_target(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_pollset *pollset;
   grpc_subchannel_call_create_status call_creation_status;
 
+  GPR_TIMER_BEGIN("picked_target", 0);
+
   if (calld->picked_channel == NULL) {
     /* treat this like a cancellation */
     calld->waiting_op.cancel_with_status = GRPC_STATUS_UNAVAILABLE;
@@ -266,6 +269,8 @@ static void picked_target(grpc_exec_ctx *exec_ctx, void *arg,
       }
     }
   }
+
+  GPR_TIMER_END("picked_target", 0);
 }
 
 static grpc_closure *merge_into_waiting_op(grpc_call_element *elem,
@@ -326,6 +331,7 @@ static void perform_transport_stream_op(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_call *subchannel_call;
   grpc_lb_policy *lb_policy;
   grpc_transport_stream_op op2;
+  GPR_TIMER_BEGIN("perform_transport_stream_op", 0);
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
@@ -437,6 +443,8 @@ static void perform_transport_stream_op(grpc_exec_ctx *exec_ctx,
       }
       break;
   }
+
+  GPR_TIMER_END("perform_transport_stream_op", 0);
 }
 
 static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
