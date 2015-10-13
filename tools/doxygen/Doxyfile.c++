@@ -760,8 +760,7 @@ WARN_LOGFILE           =
 # spaces.
 # Note: If this tag is empty the current directory is searched.
 
-INPUT                  = include/grpc++/alarm.h \
-include/grpc++/channel.h \
+INPUT                  = include/grpc++/channel.h \
 include/grpc++/client_context.h \
 include/grpc++/completion_queue.h \
 include/grpc++/create_channel.h \

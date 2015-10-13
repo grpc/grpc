@@ -143,14 +143,14 @@ namespace Grpc.IntegrationTesting
             {
                 var googleCredential = await GoogleCredential.GetApplicationDefaultAsync();
                 Assert.IsTrue(googleCredential.IsCreateScopedRequired);
-                credentials = ChannelCredentials.Create(credentials, googleCredential.ToGrpcCredentials());
+                credentials = ChannelCredentials.Create(credentials, googleCredential.ToCallCredentials());
             }
 
             if (options.TestCase == "compute_engine_creds")
             {
                 var googleCredential = await GoogleCredential.GetApplicationDefaultAsync();
                 Assert.IsFalse(googleCredential.IsCreateScopedRequired);
-                credentials = ChannelCredentials.Create(credentials, googleCredential.ToGrpcCredentials());
+                credentials = ChannelCredentials.Create(credentials, googleCredential.ToCallCredentials());
             }
             return credentials;
         }
@@ -392,7 +392,7 @@ namespace Grpc.IntegrationTesting
             ITokenAccess credential = (await GoogleCredential.GetApplicationDefaultAsync()).CreateScoped(new[] { oauthScope });
             string oauth2Token = await credential.GetAccessTokenForRequestAsync();
 
-            var credentials = GrpcCredentials.FromAccessToken(oauth2Token);
+            var credentials = GoogleGrpcCredentials.FromAccessToken(oauth2Token);
             var request = new SimpleRequest
             {
                 FillUsername = true,
@@ -412,7 +412,7 @@ namespace Grpc.IntegrationTesting
             Console.WriteLine("running per_rpc_creds");
             ITokenAccess googleCredential = await GoogleCredential.GetApplicationDefaultAsync();
 
-            var credentials = GrpcCredentials.Create(googleCredential);
+            var credentials = googleCredential.ToCallCredentials();
             var request = new SimpleRequest
             {
                 FillUsername = true,

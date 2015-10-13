@@ -121,7 +121,7 @@ static void store32_little_endian(gpr_uint32 value, unsigned char *buf) {
   buf[3] = (unsigned char)((value >> 24) & 0xFF);
   buf[2] = (unsigned char)((value >> 16) & 0xFF);
   buf[1] = (unsigned char)((value >> 8) & 0xFF);
-  buf[0] = (unsigned char)((value) & 0xFF);
+  buf[0] = (unsigned char)((value)&0xFF);
 }
 
 static void tsi_fake_frame_reset(tsi_fake_frame *frame, int needs_draining) {

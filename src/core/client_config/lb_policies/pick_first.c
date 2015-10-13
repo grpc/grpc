@@ -175,7 +175,7 @@ void pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   }
 }
 
-static void destroy_subchannels(grpc_exec_ctx *exec_ctx, void *arg, 
+static void destroy_subchannels(grpc_exec_ctx *exec_ctx, void *arg,
                                 int iomgr_success) {
   pick_first_lb_policy *p = arg;
   size_t i;
@@ -235,7 +235,8 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         GRPC_SUBCHANNEL_REF(p->selected, "picked_first");
         /* drop the pick list: we are connected now */
         GRPC_LB_POLICY_REF(&p->base, "destroy_subchannels");
-        grpc_exec_ctx_enqueue(exec_ctx, grpc_closure_create(destroy_subchannels, p), 1);
+        grpc_exec_ctx_enqueue(exec_ctx,
+                              grpc_closure_create(destroy_subchannels, p), 1);
         /* update any calls that were waiting for a pick */
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;

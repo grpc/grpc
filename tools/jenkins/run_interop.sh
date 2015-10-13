@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,19 +27,11 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#
+# This script is invoked by Jenkins and runs interop test suite.
 set -ex
 
-out=$(readlink -f ${1:-coverage})
+# Enter the gRPC repo root
+cd $(dirname $0)/../..
 
-root=$(readlink -f $(dirname $0)/../..)
-tmp=$(mktemp)
-cd $root
-tools/run_tests/run_tests.py -c gcov -l c c++ || true
-lcov --capture --directory . --output-file $tmp
-genhtml $tmp --output-directory $out
-rm $tmp
-if which xdg-open > /dev/null
-then
-  xdg-open file://$out/index.html
-fi
+tools/run_tests/run_interop_tests.py -l all -s all --cloud_to_prod --use_docker -t -j 8 $@ || true

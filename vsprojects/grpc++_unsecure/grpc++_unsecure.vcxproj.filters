@@ -28,9 +28,6 @@
     <ClCompile Include="..\..\..\src\cpp\client\insecure_credentials.cc">
       <Filter>src\cpp\client</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\cpp\common\alarm.cc">
-      <Filter>src\cpp\common</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\cpp\common\call.cc">
       <Filter>src\cpp\common</Filter>
     </ClCompile>
@@ -87,9 +84,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\include\grpc++\alarm.h">
-      <Filter>include\grpc++</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\include\grpc++\channel.h">
       <Filter>include\grpc++</Filter>
     </ClInclude>

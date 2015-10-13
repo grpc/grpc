@@ -298,6 +298,9 @@
     <ClInclude Include="..\..\..\src\core\httpcli\format_request.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\httpcli.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\parser.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\alarm.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\alarm_heap.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\alarm_internal.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\closure.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint_pair.h" />
@@ -325,9 +328,6 @@
     <ClInclude Include="..\..\..\src\core\iomgr\tcp_server.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\tcp_windows.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\time_averaged_stats.h" />
-    <ClInclude Include="..\..\..\src\core\iomgr\timer.h" />
-    <ClInclude Include="..\..\..\src\core\iomgr\timer_heap.h" />
-    <ClInclude Include="..\..\..\src\core\iomgr\timer_internal.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\udp_server.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\wakeup_fd_posix.h" />
@@ -338,7 +338,6 @@
     <ClInclude Include="..\..\..\src\core\json\json_common.h" />
     <ClInclude Include="..\..\..\src\core\json\json_reader.h" />
     <ClInclude Include="..\..\..\src\core\json\json_writer.h" />
-    <ClInclude Include="..\..\..\src\core\profiling\timers.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_rpc_stats.h" />
     <ClInclude Include="..\..\..\src\core\surface\api_trace.h" />
@@ -490,6 +489,10 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\httpcli\parser.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\alarm.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\alarm_heap.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\closure.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint.c">
@@ -550,10 +553,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\time_averaged_stats.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\iomgr\timer.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\iomgr\timer_heap.c">
-    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\udp_server.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\wakeup_fd_eventfd.c">
@@ -575,12 +574,6 @@
     <ClCompile Include="..\..\..\src\core\json\json_string.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\json\json_writer.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\basic_timers.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\stap_timers.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\surface\alarm.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\api_trace.c">
     </ClCompile>
