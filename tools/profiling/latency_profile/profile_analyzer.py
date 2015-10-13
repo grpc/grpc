@@ -48,7 +48,6 @@ class ScopeBuilder(object):
     line_item.end_time = line_item.start_time
     self.call_stack_builder.lines.append(line_item)
 
-
   def finish(self, line):
     assert line['tag'] == self.top_line.tag, 'expected %s, got %s' % (self.top_line.tag, line['tag'])
     final_time_stamp = line['t']
