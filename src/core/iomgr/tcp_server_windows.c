@@ -336,6 +336,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, int from_iocp) {
                            peer_name_string);
       gpr_free(fd_name);
       gpr_free(peer_name_string);
+    } else {
+      closesocket(sock);
     }
   }
 

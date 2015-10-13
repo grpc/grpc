@@ -34,7 +34,7 @@
 #include <string.h>
 
 #include "src/core/security/auth_filters.h"
-#include "src/core/security/security_connector.h"
+#include "src/core/security/credentials.h"
 #include "src/core/security/security_context.h"
 
 #include <grpc/support/alloc.h>
@@ -58,8 +58,8 @@ typedef struct call_data {
 } call_data;
 
 typedef struct channel_data {
-  grpc_security_connector *security_connector;
-  grpc_auth_metadata_processor processor;
+  grpc_auth_context *auth_context;
+  grpc_server_credentials *creds;
   grpc_mdctx *mdctx;
 } channel_data;
 
@@ -160,12 +160,12 @@ static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA || calld->got_client_metadata) continue;
       calld->got_client_metadata = 1;
-      if (chand->processor.process == NULL) continue;
+      if (chand->creds->processor.process == NULL) continue;
       calld->md_op = op;
       calld->md = metadata_batch_to_md_array(&op->data.metadata);
-      chand->processor.process(chand->processor.state, calld->auth_context,
-                               calld->md.metadata, calld->md.count,
-                               on_md_processing_done, elem);
+      chand->creds->processor.process(
+          chand->creds->processor.state, calld->auth_context,
+          calld->md.metadata, calld->md.count, on_md_processing_done, elem);
       return;
     }
   }
@@ -221,7 +221,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   }
   server_ctx = grpc_server_security_context_create();
   server_ctx->auth_context =
-      grpc_auth_context_create(chand->security_connector->auth_context);
+      grpc_auth_context_create(chand->auth_context);
   server_ctx->auth_context->pollset = initial_op->bind_pollset;
   initial_op->context[GRPC_CONTEXT_SECURITY].value = server_ctx;
   initial_op->context[GRPC_CONTEXT_SECURITY].destroy =
@@ -241,9 +241,8 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
-  grpc_security_connector *sc = grpc_find_security_connector_in_args(args);
-  grpc_auth_metadata_processor *processor =
-      grpc_find_auth_metadata_processor_in_args(args);
+  grpc_auth_context *auth_context = grpc_find_auth_context_in_args(args);
+  grpc_server_credentials *creds = grpc_find_server_credentials_in_args(args);
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
 
@@ -252,15 +251,14 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
      path */
   GPR_ASSERT(!is_first);
   GPR_ASSERT(!is_last);
-  GPR_ASSERT(sc != NULL);
-  GPR_ASSERT(processor != NULL);
+  GPR_ASSERT(auth_context != NULL);
+  GPR_ASSERT(creds != NULL);
 
   /* initialize members */
-  GPR_ASSERT(!sc->is_client_side);
-  chand->security_connector =
-      GRPC_SECURITY_CONNECTOR_REF(sc, "server_auth_filter");
+  chand->auth_context =
+      GRPC_AUTH_CONTEXT_REF(auth_context, "server_auth_filter");
+  chand->creds = grpc_server_credentials_ref(creds);
   chand->mdctx = mdctx;
-  chand->processor = *processor;
 }
 
 /* Destructor for channel data */
@@ -268,8 +266,8 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
-  GRPC_SECURITY_CONNECTOR_UNREF(chand->security_connector,
-                                "server_auth_filter");
+  GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "server_auth_filter");
+  grpc_server_credentials_unref(chand->creds);
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {

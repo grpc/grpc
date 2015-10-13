@@ -75,12 +75,22 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
                                 grpc_subchannel_call *call
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
-/** construct a call (possibly asynchronously) */
-void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx,
-                                 grpc_subchannel *subchannel,
-                                 grpc_pollset *pollset,
-                                 grpc_subchannel_call **target,
-                                 grpc_closure *notify);
+typedef enum {
+  GRPC_SUBCHANNEL_CALL_CREATE_READY,
+  GRPC_SUBCHANNEL_CALL_CREATE_PENDING
+} grpc_subchannel_call_create_status;
+
+/** construct a subchannel call (possibly asynchronously).
+ *
+ * If the returned status is \a GRPC_SUBCHANNEL_CALL_CREATE_READY, the call will
+ * return immediately and \a target will point to a connected \a subchannel_call
+ * instance. Note that \a notify will \em not be invoked in this case.
+ * Otherwise, if the returned status is GRPC_SUBCHANNEL_CALL_CREATE_PENDING, the
+ * subchannel call will be created asynchronously, invoking the \a notify
+ * callback upon completion. */
+grpc_subchannel_call_create_status grpc_subchannel_create_call(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel *subchannel, grpc_pollset *pollset,
+    grpc_subchannel_call **target, grpc_closure *notify);
 
 /** cancel \a call in the waiting state. */
 void grpc_subchannel_cancel_waiting_call(grpc_exec_ctx *exec_ctx,

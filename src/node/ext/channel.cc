@@ -42,7 +42,7 @@
 #include "call.h"
 #include "channel.h"
 #include "completion_queue_async_worker.h"
-#include "credentials.h"
+#include "channel_credentials.h"
 #include "timeval.h"
 
 namespace grpc {
@@ -112,11 +112,11 @@ NAN_METHOD(Channel::New) {
     // Owned by the Channel object
     Utf8String host(info[0]);
     grpc_credentials *creds;
-    if (!Credentials::HasInstance(info[1])) {
+    if (!ChannelCredentials::HasInstance(info[1])) {
       return Nan::ThrowTypeError(
-          "Channel's second argument must be a credential");
+          "Channel's second argument must be a ChannelCredentials");
     }
-    Credentials *creds_object = ObjectWrap::Unwrap<Credentials>(
+    ChannelCredentials *creds_object = ObjectWrap::Unwrap<ChannelCredentials>(
         Nan::To<Object>(info[1]).ToLocalChecked());
     creds = creds_object->GetWrappedCredentials();
     grpc_channel_args *channel_args_ptr;

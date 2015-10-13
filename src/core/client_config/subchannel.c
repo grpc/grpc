@@ -358,18 +358,20 @@ static void start_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
 
 static void continue_creating_call(grpc_exec_ctx *exec_ctx, void *arg,
                                    int iomgr_success) {
+  grpc_subchannel_call_create_status call_creation_status;
   waiting_for_connect *w4c = arg;
   grpc_subchannel_del_interested_party(exec_ctx, w4c->subchannel, w4c->pollset);
-  grpc_subchannel_create_call(exec_ctx, w4c->subchannel, w4c->pollset,
-                              w4c->target, w4c->notify);
+  call_creation_status = grpc_subchannel_create_call(
+      exec_ctx, w4c->subchannel, w4c->pollset, w4c->target, w4c->notify);
+  GPR_ASSERT(call_creation_status == GRPC_SUBCHANNEL_CALL_CREATE_READY);
+  w4c->notify->cb(exec_ctx, w4c->notify->cb_arg, iomgr_success);
   GRPC_SUBCHANNEL_UNREF(exec_ctx, w4c->subchannel, "waiting_for_connect");
   gpr_free(w4c);
 }
 
-void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx, grpc_subchannel *c,
-                                 grpc_pollset *pollset,
-                                 grpc_subchannel_call **target,
-                                 grpc_closure *notify) {
+grpc_subchannel_call_create_status grpc_subchannel_create_call(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel *c, grpc_pollset *pollset,
+    grpc_subchannel_call **target, grpc_closure *notify) {
   connection *con;
   gpr_mu_lock(&c->mu);
   if (c->active != NULL) {
@@ -378,7 +380,7 @@ void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx, grpc_subchannel *c,
     gpr_mu_unlock(&c->mu);
 
     *target = create_call(exec_ctx, con);
-    notify->cb(exec_ctx, notify->cb_arg, 1);
+    return GRPC_SUBCHANNEL_CALL_CREATE_READY;
   } else {
     waiting_for_connect *w4c = gpr_malloc(sizeof(*w4c));
     w4c->next = c->waiting;
@@ -403,6 +405,7 @@ void grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx, grpc_subchannel *c,
     } else {
       gpr_mu_unlock(&c->mu);
     }
+    return GRPC_SUBCHANNEL_CALL_CREATE_PENDING;
   }
 }
 

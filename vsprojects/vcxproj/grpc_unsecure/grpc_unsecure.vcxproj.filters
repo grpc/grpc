@@ -235,12 +235,6 @@
     <ClCompile Include="..\..\..\src\core\json\json_writer.c">
       <Filter>src\core\json</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\basic_timers.c">
-      <Filter>src\core\profiling</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\stap_timers.c">
-      <Filter>src\core\profiling</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\api_trace.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -629,9 +623,6 @@
     <ClInclude Include="..\..\..\src\core\json\json_writer.h">
       <Filter>src\core\json</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\profiling\timers.h">
-      <Filter>src\core\profiling</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
     </ClInclude>
@@ -645,6 +636,9 @@
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\surface\call.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\surface\call_test_only.h">
       <Filter>src\core\surface</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\surface\channel.h">
@@ -799,9 +793,6 @@
     </Filter>
     <Filter Include="src\core\json">
       <UniqueIdentifier>{443ffc61-1bea-2477-6e54-1ddf8c139264}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\profiling">
-      <UniqueIdentifier>{7f91d9bf-c9de-835a-d74d-b16f843b89a9}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\statistics">
       <UniqueIdentifier>{e084164c-a069-00e3-db35-4e0b1cd6f0b7}</UniqueIdentifier>

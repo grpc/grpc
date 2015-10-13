@@ -50,6 +50,7 @@ struct grpc_fd;
 
 typedef struct grpc_pollset_worker {
   grpc_wakeup_fd wakeup_fd;
+  int reevaluate_polling_on_wakeup;
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
 } grpc_pollset_worker;
@@ -110,6 +111,16 @@ void grpc_kick_drain(grpc_pollset *p);
    - infinite timeouts are converted to -1 */
 int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
                                          gpr_timespec now);
+
+/* Allow kick to wakeup the currently polling worker */
+#define GRPC_POLLSET_CAN_KICK_SELF 1
+/* Force the wakee to repoll when awoken */
+#define GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP 2
+/* As per grpc_pollset_kick, with an extended set of flags (defined above)
+   -- mostly for fd_posix's use. */
+void grpc_pollset_kick_ext(grpc_pollset *p,
+                           grpc_pollset_worker *specific_worker,
+                           gpr_uint32 flags);
 
 /* turn a pollset into a multipoller: platform specific */
 typedef void (*grpc_platform_become_multipoller_type)(grpc_exec_ctx *exec_ctx,

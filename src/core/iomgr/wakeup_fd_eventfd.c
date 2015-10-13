@@ -39,8 +39,10 @@
 #include <sys/eventfd.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/wakeup_fd_posix.h"
 #include <grpc/support/log.h>
+
+#include "src/core/iomgr/wakeup_fd_posix.h"
+#include "src/core/profiling/timers.h"
 
 static void eventfd_create(grpc_wakeup_fd* fd_info) {
   int efd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
@@ -60,9 +62,11 @@ static void eventfd_consume(grpc_wakeup_fd* fd_info) {
 
 static void eventfd_wakeup(grpc_wakeup_fd* fd_info) {
   int err;
+  GPR_TIMER_BEGIN("eventfd_wakeup", 0);
   do {
     err = eventfd_write(fd_info->read_fd, 1);
   } while (err < 0 && errno == EINTR);
+  GPR_TIMER_END("eventfd_wakeup", 0);
 }
 
 static void eventfd_destroy(grpc_wakeup_fd* fd_info) {

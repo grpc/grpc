@@ -180,7 +180,7 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   GPR_ASSERT(!tcp->finished_edge);
   GPR_ASSERT(tcp->iov_size <= MAX_READ_IOVEC);
   GPR_ASSERT(tcp->incoming_buffer->count <= MAX_READ_IOVEC);
-  GRPC_TIMER_BEGIN(GRPC_PTAG_HANDLE_READ, 0);
+  GPR_TIMER_BEGIN("tcp_continue_read", 0);
 
   while (tcp->incoming_buffer->count < (size_t)tcp->iov_size) {
     gpr_slice_buffer_add_indexed(tcp->incoming_buffer,
@@ -199,11 +199,11 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
   msg.msg_controllen = 0;
   msg.msg_flags = 0;
 
-  GRPC_TIMER_BEGIN(GRPC_PTAG_RECVMSG, 0);
+  GPR_TIMER_BEGIN("recvmsg", 1);
   do {
     read_bytes = recvmsg(tcp->fd, &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
-  GRPC_TIMER_END(GRPC_PTAG_RECVMSG, 0);
+  GPR_TIMER_END("recvmsg", 0);
 
   if (read_bytes < 0) {
     /* NB: After calling call_read_cb a parallel call of the read handler may
@@ -240,7 +240,7 @@ static void tcp_continue_read(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
     TCP_UNREF(exec_ctx, tcp, "read");
   }
 
-  GRPC_TIMER_END(GRPC_PTAG_HANDLE_READ, 0);
+  GPR_TIMER_END("tcp_continue_read", 0);
 }
 
 static void tcp_handle_read(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
@@ -316,12 +316,12 @@ static flush_result tcp_flush(grpc_tcp *tcp) {
     msg.msg_controllen = 0;
     msg.msg_flags = 0;
 
-    GRPC_TIMER_BEGIN(GRPC_PTAG_SENDMSG, 0);
+    GPR_TIMER_BEGIN("sendmsg", 1);
     do {
       /* TODO(klempner): Cork if this is a partial write */
       sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
     } while (sent_length < 0 && errno == EINTR);
-    GRPC_TIMER_END(GRPC_PTAG_SENDMSG, 0);
+    GPR_TIMER_END("sendmsg", 0);
 
     if (sent_length < 0) {
       if (errno == EAGAIN) {
@@ -370,17 +370,17 @@ static void tcp_handle_write(grpc_exec_ctx *exec_ctx, void *arg /* grpc_tcp */,
     return;
   }
 
-  GRPC_TIMER_BEGIN(GRPC_PTAG_TCP_CB_WRITE, 0);
   status = tcp_flush(tcp);
   if (status == FLUSH_PENDING) {
     grpc_fd_notify_on_write(exec_ctx, tcp->em_fd, &tcp->write_closure);
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = NULL;
+    GPR_TIMER_BEGIN("tcp_handle_write.cb", 0);
     cb->cb(exec_ctx, cb->cb_arg, status == FLUSH_DONE);
+    GPR_TIMER_END("tcp_handle_write.cb", 0);
     TCP_UNREF(exec_ctx, tcp, "write");
   }
-  GRPC_TIMER_END(GRPC_PTAG_TCP_CB_WRITE, 0);
 }
 
 static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
@@ -399,11 +399,11 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     }
   }
 
-  GRPC_TIMER_BEGIN(GRPC_PTAG_TCP_WRITE, 0);
+  GPR_TIMER_BEGIN("tcp_write", 0);
   GPR_ASSERT(tcp->write_cb == NULL);
 
   if (buf->length == 0) {
-    GRPC_TIMER_END(GRPC_PTAG_TCP_WRITE, 0);
+    GPR_TIMER_END("tcp_write", 0);
     grpc_exec_ctx_enqueue(exec_ctx, cb, 1);
     return;
   }
@@ -420,7 +420,7 @@ static void tcp_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
     grpc_exec_ctx_enqueue(exec_ctx, cb, status == FLUSH_DONE);
   }
 
-  GRPC_TIMER_END(GRPC_PTAG_TCP_WRITE, 0);
+  GPR_TIMER_END("tcp_write", 0);
 }
 
 static void tcp_add_to_pollset(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,

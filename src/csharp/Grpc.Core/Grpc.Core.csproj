@@ -48,7 +48,9 @@
   <ItemGroup>
     <Compile Include="AsyncDuplexStreamingCall.cs" />
     <Compile Include="AsyncServerStreamingCall.cs" />
+    <Compile Include="CallCredentials.cs" />
     <Compile Include="IClientStreamWriter.cs" />
+    <Compile Include="Internal\NativeMetadataCredentialsPlugin.cs" />
     <Compile Include="Internal\INativeCall.cs" />
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
@@ -79,7 +81,7 @@
     <Compile Include="Utils\AsyncStreamExtensions.cs" />
     <Compile Include="Utils\BenchmarkUtil.cs" />
     <Compile Include="Internal\CredentialsSafeHandle.cs" />
-    <Compile Include="Credentials.cs" />
+    <Compile Include="ChannelCredentials.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
     <Compile Include="Internal\AsyncCompletion.cs" />
     <Compile Include="Internal\AsyncCallBase.cs" />

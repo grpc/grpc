@@ -103,13 +103,12 @@ typedef struct {
 grpc_server_security_context *grpc_server_security_context_create(void);
 void grpc_server_security_context_destroy(void *ctx);
 
-/* --- Auth metadata processing. --- */
-#define GRPC_AUTH_METADATA_PROCESSOR_ARG "grpc.auth_metadata_processor"
+/* --- Channel args for auth context --- */
+#define GRPC_AUTH_CONTEXT_ARG "grpc.auth_context"
 
-grpc_arg grpc_auth_metadata_processor_to_arg(grpc_auth_metadata_processor *p);
-grpc_auth_metadata_processor *grpc_auth_metadata_processor_from_arg(
-    const grpc_arg *arg);
-grpc_auth_metadata_processor *grpc_find_auth_metadata_processor_in_args(
+grpc_arg grpc_auth_context_to_arg(grpc_auth_context *c);
+grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg);
+grpc_auth_context *grpc_find_auth_context_in_args(
     const grpc_channel_args *args);
 
 #endif /* GRPC_INTERNAL_CORE_SECURITY_SECURITY_CONTEXT_H */

@@ -1,0 +1,142 @@
+%YAML 1.2
+--- |
+  # GRPC Node gyp file
+  # This currently builds the Node extension and dependencies
+  # This file has been automatically generated from a template file.
+  # Please look at the templates directory instead.
+  # This file can be regenerated from the template by running
+  # tools/buildgen/generate_projects.sh
+
+  # Copyright 2015, Google Inc.
+  # All rights reserved.
+  #
+  # Redistribution and use in source and binary forms, with or without
+  # modification, are permitted provided that the following conditions are
+  # met:
+  #
+  #     * Redistributions of source code must retain the above copyright
+  # notice, this list of conditions and the following disclaimer.
+  #     * Redistributions in binary form must reproduce the above
+  # copyright notice, this list of conditions and the following disclaimer
+  # in the documentation and/or other materials provided with the
+  # distribution.
+  #     * Neither the name of Google Inc. nor the names of its
+  # contributors may be used to endorse or promote products derived from
+  # this software without specific prior written permission.
+  #
+  # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  # A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  # OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  # SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  # DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+  # Some of this file is built with the help of
+  # https://n8.io/converting-a-c-library-to-gyp/
+  {
+    'variables': {
+      'config': '<!(echo $CONFIG)'
+    },
+    # TODO: Finish windows support
+    'target_defaults': {
+        # Empirically, Node only exports ALPN symbols if its major version is >0.
+        # io.js always reports versions >0 and always exports ALPN symbols.
+        # Therefore, Node's major version will be truthy if and only if it
+        # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
+        # like "v4.1.1" in a recent version. We use grep to extract just the
+        # major version. "4", would be the output for the example.
+      'defines': [
+        'TSI_OPENSSL_ALPN_SUPPORT=<!(node -v | grep -oP "(?<=v)(\d+)(?=\.\d+\.\d+)")'
+      ],
+      'include_dirs': [
+        '.',
+        'include'
+      ]
+    },
+    'targets': [
+      % for lib in libs:
+      % if lib.name == 'gpr' or lib.name == 'grpc':
+      {
+        'target_name': '${lib.name}',
+        'product_prefix': 'lib',
+        'type': 'static_library',
+        'dependencies': [
+          % for dep in getattr(lib, 'deps', []):
+          '${dep}',
+          % endfor
+        ],
+        'sources': [
+          % for source in lib.src:
+          '${source}',
+          % endfor
+        ],
+      },
+      % endif
+      % endfor
+      {
+        'include_dirs': [
+          "<!(node -e \"require('nan')\")"
+        ],
+        'cflags': [
+          '-std=c++0x',
+          '-Wall',
+          '-pthread',
+          '-g',
+          '-zdefs',
+          '-Werror',
+          '-Wno-error=deprecated-declarations'
+        ],
+        'ldflags': [
+          '-g'
+        ],
+        "conditions": [
+          ['OS != "win"', {
+            'conditions': [
+              ['config=="gcov"', {
+                'cflags': [
+                  '-ftest-coverage',
+                  '-fprofile-arcs',
+                  '-O0'
+                ],
+                'ldflags': [
+                  '-ftest-coverage',
+                  '-fprofile-arcs'
+                ]
+              }
+             ]
+            ]
+          }],
+          ['OS == "mac"', {
+            'xcode_settings': {
+              'MACOSX_DEPLOYMENT_TARGET': '10.9',
+              'OTHER_CFLAGS': [
+                '-std=c++11',
+                '-stdlib=libc++'
+              ]
+            }
+          }]
+        ],
+        "target_name": "grpc_node",
+        "sources": [
+          "src/node/ext/byte_buffer.cc",
+          "src/node/ext/call.cc",
+          "src/node/ext/call_credentials.cc",
+          "src/node/ext/channel.cc",
+          "src/node/ext/channel_credentials.cc",
+          "src/node/ext/completion_queue_async_worker.cc",
+          "src/node/ext/node_grpc.cc",
+          "src/node/ext/server.cc",
+          "src/node/ext/server_credentials.cc",
+          "src/node/ext/timeval.cc"
+        ],
+        "dependencies": [
+          "grpc"
+        ]
+      }
+    ]
+  }

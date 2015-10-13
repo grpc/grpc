@@ -101,6 +101,7 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
     default:
       /* we shouldn't be making it here */
       abort();
+      return GRPC_COMPRESS_NONE;
   }
 }
 
@@ -116,6 +117,7 @@ grpc_compression_level grpc_compression_level_for_algorithm(
     }
   }
   abort();
+  return GRPC_COMPRESS_LEVEL_NONE;
 }
 
 void grpc_compression_options_init(grpc_compression_options *opts) {
