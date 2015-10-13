@@ -60,6 +60,22 @@ function multiDone(done, count) {
   };
 }
 
+var fakeSuccessfulGoogleCredentials = {
+  getRequestMetadata: function(service_url, callback) {
+    setTimeout(function() {
+      callback(null, {Authorization: 'success'});
+    }, 0);
+  }
+};
+
+var fakeFailingGoogleCredentials = {
+  getRequestMetadata: function(service_url, callback) {
+    setTimeout(function() {
+      callback(new Error("Authorization failure"));
+    }, 0);
+  }
+};
+
 describe('client credentials', function() {
   var Client;
   var server;
@@ -184,6 +200,34 @@ describe('client credentials', function() {
       assert(err);
       assert.strictEqual(err.message, 'Authentication error');
       assert.strictEqual(err.code, grpc.status.UNAUTHENTICATED);
+      done();
+    });
+  });
+  it('should successfully wrap a Google credential', function(done) {
+    var creds = grpc.credentials.createFromGoogleCredential(
+        fakeSuccessfulGoogleCredentials);
+    var combined_creds = grpc.credentials.combineChannelCredentials(
+        client_ssl_creds, creds);
+    var client = new Client('localhost:' + port, combined_creds,
+                            client_options);
+    var call = client.unary({}, function(err, data) {
+      assert.ifError(err);
+    });
+    call.on('metadata', function(metadata) {
+      assert.deepStrictEqual(metadata.get('authorization'), ['success']);
+      done();
+    });
+  });
+  it.skip('should get an error from a Google credential', function(done) {
+    var creds = grpc.credentials.createFromGoogleCredential(
+        fakeFailingGoogleCredentials);
+    var combined_creds = grpc.credentials.combineChannelCredentials(
+        client_ssl_creds, creds);
+    var client = new Client('localhost:' + port, combined_creds,
+                            client_options);
+    client.unary({}, function(err, data) {
+      assert(err);
+      assert.strictEqual(err.message, 'Authorization failure');
       done();
     });
   });
