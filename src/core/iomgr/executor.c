@@ -82,6 +82,7 @@ static void closure_exec_thread_func(void *ignored) {
     }
     gpr_mu_unlock(&g_executor.mu);
     closure->cb(&exec_ctx, closure->cb_arg, closure->success);
+    grpc_exec_ctx_flush(&exec_ctx);
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }
