@@ -5,7 +5,7 @@
   # Please look at the templates directory instead.
   # This file can be regenerated from the template by running
   # tools/buildgen/generate_projects.sh
-  
+
   # Copyright 2015, Google Inc.
   # All rights reserved.
   #
@@ -34,13 +34,10 @@
   # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
   # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-  
+
   <%!
-  bad_header_names = ('time.h', 'string.h')
   def fix_header_name(name):
     split_name = name.split('/')
-    if split_name[-1] in bad_header_names:
-      split_name[-1] = 'grpc_' + split_name[-1]
     if split_name[0] == 'include':
       split_name = split_name[1:]
     return '/'.join(split_name)
@@ -63,7 +60,7 @@
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC'
-    version = '0.11.1'
+    version = '0.11.2'
     s.version  = version
     s.summary  = 'gRPC client library for iOS/OSX'
     s.homepage = 'http://www.grpc.io'
@@ -79,7 +76,7 @@
     s.requires_arc = true
   
     objc_dir = 'src/objective-c'
-  
+
     # Reactive Extensions library for iOS.
     s.subspec 'RxLibrary' do |ss|
       src_dir = "#{objc_dir}/RxLibrary"
@@ -87,71 +84,47 @@
       ss.private_header_files = "#{src_dir}/private/*.h"
       ss.header_mappings_dir = "#{objc_dir}"
     end
-  
+
     # Core cross-platform gRPC library, written in C.
     s.subspec 'C-Core' do |ss|
       ss.source_files = ${(',\n' + 22*' ').join('\'%s\'' % f for f in grpc_files(libs))}
-  
+
       ss.private_header_files = ${(',\n' + 30*' ').join('\'%s\'' % f for f in grpc_private_headers(libs))}
-  
+
       ss.header_mappings_dir = '.'
-  
+
       ss.requires_arc = false
       ss.libraries = 'z'
       ss.dependency 'OpenSSL', '~> 1.0.200'
-  
+
       # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
     end
-  
-    # This is a workaround for Cocoapods Issue #1437.
-    # It renames time.h and string.h to grpc_time.h and grpc_string.h.
-    # It needs to be here (top-level) instead of in the C-Core subspec because Cocoapods doesn't run
+
+    # Move contents of include/ up a level to avoid manually specifying include paths.
+    # This needs to be here (top-level) instead of in the C-Core subspec because Cocoapods doesn't run
     # prepare_command's of subspecs.
-    #
-    # TODO(jcanizales): Try out others' solutions at Issue #1437.
-    s.prepare_command = <<-CMD
-      # Move contents of include up a level to avoid manually specifying include paths
-      cp -r "include/grpc" "."
-  
-      DIR_TIME="grpc/support"
-      BAD_TIME="$DIR_TIME/time.h"
-      GOOD_TIME="$DIR_TIME/grpc_time.h"
-      grep -rl "$BAD_TIME" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
-      if [ -f "$BAD_TIME" ];
-      then
-        mv -f "$BAD_TIME" "$GOOD_TIME"
-      fi
-  
-      DIR_STRING="src/core/support"
-      BAD_STRING="$DIR_STRING/string.h"
-      GOOD_STRING="$DIR_STRING/grpc_string.h"
-      grep -rl "$BAD_STRING" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
-      if [ -f "$BAD_STRING" ];
-      then
-        mv -f "$BAD_STRING" "$GOOD_STRING"
-      fi
-    CMD
-  
+    s.prepare_command = 'cp -r "include/grpc" "."'
+
     # Objective-C wrapper around the core gRPC library.
     s.subspec 'GRPCClient' do |ss|
       src_dir = "#{objc_dir}/GRPCClient"
       ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
       ss.private_header_files = "#{src_dir}/private/*.h"
       ss.header_mappings_dir = "#{objc_dir}"
-  
+
       ss.dependency 'gRPC/C-Core'
       ss.dependency 'gRPC/RxLibrary'
-  
+
       # Certificates, to be able to establish TLS connections:
       ss.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
     end
-  
+
     # RPC library for ProtocolBuffers, based on gRPC
     s.subspec 'ProtoRPC' do |ss|
       src_dir = "#{objc_dir}/ProtoRPC"
       ss.source_files = "#{src_dir}/*.{h,m}"
       ss.header_mappings_dir = "#{objc_dir}"
-  
+
       ss.dependency 'gRPC/GRPCClient'
       ss.dependency 'gRPC/RxLibrary'
       ss.dependency 'Protobuf', '~> 3.0.0-alpha-4'

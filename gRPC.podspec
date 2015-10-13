@@ -36,7 +36,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '0.11.1'
+  version = '0.11.2'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'http://www.grpc.io'
@@ -45,6 +45,7 @@ Pod::Spec.new do |s|
 
   s.source = { :git => 'https://github.com/grpc/grpc.git',
                :tag => "release-#{version.gsub(/\./, '_')}-objectivec-#{version}" }
+
 
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
@@ -66,7 +67,7 @@ Pod::Spec.new do |s|
                       'src/core/support/file.h',
                       'src/core/support/murmur_hash.h',
                       'src/core/support/stack_lockfree.h',
-                      'src/core/support/grpc_string.h',
+                      'src/core/support/string.h',
                       'src/core/support/string_win32.h',
                       'src/core/support/thd_internal.h',
                       'src/core/support/time_precise.h',
@@ -91,7 +92,7 @@ Pod::Spec.new do |s|
                       'grpc/support/sync_posix.h',
                       'grpc/support/sync_win32.h',
                       'grpc/support/thd.h',
-                      'grpc/support/grpc_time.h',
+                      'grpc/support/time.h',
                       'grpc/support/tls.h',
                       'grpc/support/tls_gcc.h',
                       'grpc/support/tls_msvc.h',
@@ -535,34 +536,10 @@ Pod::Spec.new do |s|
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end
 
-  # This is a workaround for Cocoapods Issue #1437.
-  # It renames time.h and string.h to grpc_time.h and grpc_string.h.
-  # It needs to be here (top-level) instead of in the C-Core subspec because Cocoapods doesn't run
+  # Move contents of include/ up a level to avoid manually specifying include paths.
+  # This needs to be here (top-level) instead of in the C-Core subspec because Cocoapods doesn't run
   # prepare_command's of subspecs.
-  #
-  # TODO(jcanizales): Try out others' solutions at Issue #1437.
-  s.prepare_command = <<-CMD
-    # Move contents of include up a level to avoid manually specifying include paths
-    cp -r "include/grpc" "."
-
-    DIR_TIME="grpc/support"
-    BAD_TIME="$DIR_TIME/time.h"
-    GOOD_TIME="$DIR_TIME/grpc_time.h"
-    grep -rl "$BAD_TIME" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_TIME@$GOOD_TIME@g
-    if [ -f "$BAD_TIME" ];
-    then
-      mv -f "$BAD_TIME" "$GOOD_TIME"
-    fi
-
-    DIR_STRING="src/core/support"
-    BAD_STRING="$DIR_STRING/string.h"
-    GOOD_STRING="$DIR_STRING/grpc_string.h"
-    grep -rl "$BAD_STRING" grpc src/core src/objective-c/GRPCClient | xargs sed -i '' -e s@$BAD_STRING@$GOOD_STRING@g
-    if [ -f "$BAD_STRING" ];
-    then
-      mv -f "$BAD_STRING" "$GOOD_STRING"
-    fi
-  CMD
+  s.prepare_command = 'cp -r "include/grpc" "."'
 
   # Objective-C wrapper around the core gRPC library.
   s.subspec 'GRPCClient' do |ss|
