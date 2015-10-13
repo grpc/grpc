@@ -32,6 +32,10 @@
 #endregion
 
 using System;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
@@ -39,24 +43,23 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
-    public class ClientBaseTest
+    public class CallCredentialsTest
     {
         [Test]
-        public void GetAuthUriBase_Valid()
+        public void CallCredentials_ComposeAtLeastTwo()
         {
-            Assert.AreEqual("https://some.googleapi.com/", ClientBase.GetAuthUriBase("some.googleapi.com"));
-            Assert.AreEqual("https://some.googleapi.com/", ClientBase.GetAuthUriBase("dns:///some.googleapi.com/"));
-            Assert.AreEqual("https://some.googleapi.com/", ClientBase.GetAuthUriBase("dns:///some.googleapi.com:443/"));
-            Assert.AreEqual("https://some.googleapi.com/", ClientBase.GetAuthUriBase("some.googleapi.com:443/"));
+            Assert.Throws(typeof(ArgumentException), () => CallCredentials.Compose(new FakeCallCredentials()));
         }
 
         [Test]
-        public void GetAuthUriBase_Invalid()
+        public void CallCredentials_ToNativeCredentials()
         {
-            Assert.IsNull(ClientBase.GetAuthUriBase("some.googleapi.com:"));
-            Assert.IsNull(ClientBase.GetAuthUriBase("https://some.googleapi.com/"));
-            Assert.IsNull(ClientBase.GetAuthUriBase("dns://some.googleapi.com:443"));  // just two slashes
-            Assert.IsNull(ClientBase.GetAuthUriBase(""));
+            var composite = CallCredentials.Compose(
+                new MetadataCredentials(async (uri, m) => { await Task.Delay(1); }),
+                new MetadataCredentials(async (uri, m) => { await Task.Delay(2); }));
+            using (var nativeComposite = composite.ToNativeCredentials())
+            {
+            }
         }
     }
 }
