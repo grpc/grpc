@@ -181,6 +181,7 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
+#define GPR_FORBID_UNREACHABLE_CODE
 #define GPR_MSG_IOVLEN_TYPE int
 #if TARGET_OS_IPHONE
 #define GPR_PLATFORM_STRING "ios"
@@ -335,5 +336,16 @@ typedef uintptr_t gpr_uintptr;
 #define GRPC_MUST_USE_RESULT
 #endif
 #endif
+
+#ifdef GPR_FORBID_UNREACHABLE_CODE
+#define GPR_UNREACHABLE_CODE(STATEMENT)
+#else
+#define GPR_UNREACHABLE_CODE(STATEMENT)             \
+  do {                                              \
+    gpr_log(GPR_ERROR, "Should never reach here."); \
+    abort();                                        \
+    STATEMENT;                                      \
+  } while (0)
+#endif /* GPR_FORBID_UNREACHABLE_CODE */
 
 #endif /* GRPC_SUPPORT_PORT_PLATFORM_H */

@@ -152,9 +152,7 @@ grpc_chttp2_parse_error grpc_chttp2_goaway_parser_parse(
       }
       return GRPC_CHTTP2_PARSE_OK;
   }
-  gpr_log(GPR_ERROR, "Should never end up here");
-  abort();
-  return GRPC_CHTTP2_CONNECTION_ERROR;
+  GPR_UNREACHABLE_CODE(return GRPC_CHTTP2_CONNECTION_ERROR);
 }
 
 void grpc_chttp2_goaway_append(gpr_uint32 last_stream_id, gpr_uint32 error_code,
