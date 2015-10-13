@@ -39,6 +39,7 @@
 
 #include "src/core/support/string.h"
 #include "src/core/transport/transport.h"
+#include "src/core/profiling/timers.h"
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

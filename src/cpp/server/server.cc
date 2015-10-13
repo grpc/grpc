@@ -540,6 +540,7 @@ void Server::ScheduleCallback() {
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
+  GPR_TIMER_SCOPE("Server::RunRpc", 0);
   auto* mrd = SyncRequest::Wait(&cq_, &ok);
   if (mrd) {
     ScheduleCallback();
@@ -555,6 +556,7 @@ void Server::RunRpc() {
           mrd->TeardownRequest();
         }
       }
+      GPR_TIMER_SCOPE("cd.Run()", 0);
       cd.Run();
     }
   }
