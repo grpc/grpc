@@ -62,7 +62,6 @@ _CLOUD_TO_CLOUD_BASE_ARGS = [
 _SSL_CERT_ENV = { 'SSL_CERT_FILE':'/usr/local/share/grpc/roots.pem' }
 
 # TODO(jtattermusch) unify usage of --use_tls and --use_tls=true
-# TODO(jtattermusch) unify usage of --use_prod_roots and --use_test_ca
 # TODO(jtattermusch) go uses --tls_ca_file instead of --use_test_ca
 
 
@@ -72,14 +71,15 @@ class CXXLanguage:
     self.client_cmdline_base = ['bins/opt/interop_client']
     self.client_cwd = None
     self.server_cwd = None
+    self.safename = 'cxx'
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
-            ['--use_tls=true','--use_prod_roots'])
+            ['--use_tls=true'])
 
   def cloud_to_cloud_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_tls=true'])
+            ['--use_tls=true', '--use_test_ca=true'])
 
   def cloud_to_prod_env(self):
     return {}
@@ -97,20 +97,21 @@ class CSharpLanguage:
     self.client_cmdline_base = ['mono', 'Grpc.IntegrationTesting.Client.exe']
     self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug'
     self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug'
+    self.safename = str(self)
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
-            ['--use_tls'])
+            ['--use_tls=true'])
 
   def cloud_to_cloud_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_tls', '--use_test_ca'])
+            ['--use_tls=true', '--use_test_ca=true'])
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
 
   def server_args(self):
-    return ['mono', 'Grpc.IntegrationTesting.Server.exe', '--use_tls']
+    return ['mono', 'Grpc.IntegrationTesting.Server.exe', '--use_tls=true']
 
   def __str__(self):
     return 'csharp'
@@ -122,6 +123,7 @@ class JavaLanguage:
     self.client_cmdline_base = ['./run-test-client.sh']
     self.client_cwd = '../grpc-java'
     self.server_cwd = '../grpc-java'
+    self.safename = str(self)
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
@@ -148,6 +150,7 @@ class GoLanguage:
     # TODO: this relies on running inside docker
     self.client_cwd = '/go/src/google.golang.org/grpc/interop/client'
     self.server_cwd = '/go/src/google.golang.org/grpc/interop/server'
+    self.safename = str(self)
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
@@ -173,6 +176,7 @@ class NodeLanguage:
     self.client_cmdline_base = ['node', 'src/node/interop/interop_client.js']
     self.client_cwd = None
     self.server_cwd = None
+    self.safename = str(self)
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
@@ -197,6 +201,7 @@ class PHPLanguage:
   def __init__(self):
     self.client_cmdline_base = ['src/php/bin/interop_client.sh']
     self.client_cwd = None
+    self.safename = str(self)
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
@@ -219,6 +224,7 @@ class RubyLanguage:
     self.client_cmdline_base = ['ruby', 'src/ruby/bin/interop/interop_client.rb']
     self.client_cwd = None
     self.server_cwd = None
+    self.safename = str(self)
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
@@ -252,11 +258,9 @@ _LANGUAGES = {
 # languages supported as cloud_to_cloud servers
 _SERVERS = ['c++', 'node', 'csharp', 'java', 'go', 'ruby']
 
-# TODO(jtattermusch): add empty_stream once PHP starts supporting it.
 # TODO(jtattermusch): add timeout_on_sleeping_server once java starts supporting it.
-# TODO(jtattermusch): add support for auth tests.
 _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
-               'client_streaming', 'server_streaming',
+               'empty_stream', 'client_streaming', 'server_streaming',
                'cancel_after_begin', 'cancel_after_first_response']
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
@@ -312,10 +316,19 @@ def add_auth_options(language, test_case, cmdline, env):
   if test_case in ['per_rpc_creds', 'oauth2_auth_token']:
     cmdline += [oauth_scope_arg]
 
+  if test_case == 'oauth2_auth_token' and language == 'c++':
+    # C++ oauth2 test uses GCE creds and thus needs to know the default account
+    cmdline += [default_account_arg]
+
   if test_case == 'compute_engine_creds':
     cmdline += [oauth_scope_arg, default_account_arg]
 
   return (cmdline, env)
+
+
+def _job_kill_handler(job):
+  if job._spec.container_name:
+    dockerjob.docker_kill(job._spec.container_name)
 
 
 def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
@@ -323,12 +336,19 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
   cmdline = language.cloud_to_prod_args() + ['--test_case=%s' % test_case]
   cwd = language.client_cwd
   environ = language.cloud_to_prod_env()
+  container_name = None
   if auth:
     cmdline, environ = add_auth_options(language, test_case, cmdline, environ)
   cmdline = bash_login_cmdline(cmdline)
 
   if docker_image:
-    cmdline = docker_run_cmdline(cmdline, image=docker_image, cwd=cwd, environ=environ)
+    container_name = dockerjob.random_name('interop_client_%s' % language.safename)
+    cmdline = docker_run_cmdline(cmdline,
+                                 image=docker_image,
+                                 cwd=cwd,
+                                 environ=environ,
+                                 docker_args=['--net=host',
+                                              '--name', container_name])
     cwd = None
     environ = None
 
@@ -340,7 +360,9 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
           shortname="%s:%s:%s" % (suite_name, language, test_case),
           timeout_seconds=2*60,
           flake_retries=5 if args.allow_flakes else 0,
-          timeout_retries=2 if args.allow_flakes else 0)
+          timeout_retries=2 if args.allow_flakes else 0,
+          kill_handler=_job_kill_handler)
+  test_job.container_name = container_name
   return test_job
 
 
@@ -353,11 +375,14 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                                 '--server_port=%s' % server_port ])
   cwd = language.client_cwd
   if docker_image:
+    container_name = dockerjob.random_name('interop_client_%s' % language.safename)
     cmdline = docker_run_cmdline(cmdline,
                                  image=docker_image,
                                  cwd=cwd,
-                                 docker_args=['--net=host'])
+                                 docker_args=['--net=host',
+                                              '--name', container_name])
     cwd = None
+
   test_job = jobset.JobSpec(
           cmdline=cmdline,
           cwd=cwd,
@@ -365,34 +390,36 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                                                  test_case),
           timeout_seconds=2*60,
           flake_retries=5 if args.allow_flakes else 0,
-          timeout_retries=2 if args.allow_flakes else 0)
+          timeout_retries=2 if args.allow_flakes else 0,
+          kill_handler=_job_kill_handler)
+  test_job.container_name = container_name
   return test_job
 
 
 def server_jobspec(language, docker_image):
   """Create jobspec for running a server"""
-  cidfile = tempfile.mktemp()
+  container_name = dockerjob.random_name('interop_server_%s' % language.safename)
   cmdline = bash_login_cmdline(language.server_args() +
                                ['--port=%s' % _DEFAULT_SERVER_PORT])
   docker_cmdline = docker_run_cmdline(cmdline,
                                       image=docker_image,
                                       cwd=language.server_cwd,
                                       docker_args=['-p', str(_DEFAULT_SERVER_PORT),
-                                                   '--cidfile', cidfile])
+                                                   '--name', container_name])
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
-          shortname="interop_server:%s" % language,
+          shortname="interop_server_%s" % language,
           timeout_seconds=30*60)
-  server_job.cidfile = cidfile
+  server_job.container_name = container_name
   return server_job
 
 
 def build_interop_image_jobspec(language, tag=None):
   """Creates jobspec for building interop docker image for a language"""
-  safelang = str(language).replace("+", "x")
   if not tag:
-    tag = 'grpc_interop_%s:%s' % (safelang, uuid.uuid4())
-  env = {'INTEROP_IMAGE': tag, 'BASE_NAME': 'grpc_interop_%s' % safelang}
+    tag = 'grpc_interop_%s:%s' % (language.safename, uuid.uuid4())
+  env = {'INTEROP_IMAGE': tag,
+         'BASE_NAME': 'grpc_interop_%s' % language.safename}
   if not args.travis:
     env['TTY_FLAG'] = '-t'
   build_job = jobset.JobSpec(

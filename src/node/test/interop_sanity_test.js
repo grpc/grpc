@@ -71,7 +71,7 @@ describe('Interop tests', function() {
     interop_client.runTest(port, name_override, 'server_streaming', true, true,
                            done);
   });
-  it('should pass ping_pong', function(done) {
+  it.only('should pass ping_pong', function(done) {
     interop_client.runTest(port, name_override, 'ping_pong', true, true, done);
   });
   it('should pass empty_stream', function(done) {
@@ -92,6 +92,14 @@ describe('Interop tests', function() {
   });
   it('should pass custom_metadata', function(done) {
     interop_client.runTest(port, name_override, 'custom_metadata',
+                           true, true, done);
+  });
+  it('should pass status_code_and_message', function(done) {
+    interop_client.runTest(port, name_override, 'status_code_and_message',
+                           true, true, done);
+  });
+  it('should pass unimplemented_method', function(done) {
+    interop_client.runTest(port, name_override, 'unimplemented_method',
                            true, true, done);
   });
 });

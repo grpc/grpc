@@ -20,9 +20,9 @@ endlocal
 
 @call ..\..\vsprojects\build_plugins.bat || goto :error
 
-%NUGET% pack ..\..\vsprojects\nuget_package\grpc.native.csharp_ext.nuspec -Version %CORE_VERSION% || goto :error
+%NUGET% pack ..\..\vsprojects\nuget_package\grpc.native.csharp.nuspec -Version %CORE_VERSION% || goto :error
 %NUGET% pack Grpc.Auth\Grpc.Auth.nuspec -Symbols -Version %VERSION% || goto :error
-%NUGET% pack Grpc.Core\Grpc.Core.nuspec -Symbols -Version %VERSION% -Properties GrpcNativeCsharpExtVersion=%CORE_VERSION% || goto :error
+%NUGET% pack Grpc.Core\Grpc.Core.nuspec -Symbols -Version %VERSION% -Properties GrpcNativeCsharpVersion=%CORE_VERSION% || goto :error
 %NUGET% pack Grpc.HealthCheck\Grpc.HealthCheck.nuspec -Symbols -Version %VERSION_WITH_BETA% -Properties ProtobufVersion=%PROTOBUF_VERSION% || goto :error
 %NUGET% pack Grpc.Tools.nuspec -Version %VERSION% || goto :error
 %NUGET% pack Grpc.nuspec -Version %VERSION% || goto :error
