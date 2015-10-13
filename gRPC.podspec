@@ -73,33 +73,33 @@ Pod::Spec.new do |s|
                       'src/core/support/string_win32.h',
                       'src/core/support/thd_internal.h',
                       'src/core/support/time_precise.h',
-                      'grpc/support/alloc.h',
-                      'grpc/support/atm.h',
-                      'grpc/support/atm_gcc_atomic.h',
-                      'grpc/support/atm_gcc_sync.h',
-                      'grpc/support/atm_win32.h',
-                      'grpc/support/cmdline.h',
-                      'grpc/support/cpu.h',
-                      'grpc/support/histogram.h',
-                      'grpc/support/host_port.h',
-                      'grpc/support/log.h',
-                      'grpc/support/log_win32.h',
-                      'grpc/support/port_platform.h',
-                      'grpc/support/slice.h',
-                      'grpc/support/slice_buffer.h',
-                      'grpc/support/string_util.h',
-                      'grpc/support/subprocess.h',
-                      'grpc/support/sync.h',
-                      'grpc/support/sync_generic.h',
-                      'grpc/support/sync_posix.h',
-                      'grpc/support/sync_win32.h',
-                      'grpc/support/thd.h',
-                      'grpc/support/time.h',
-                      'grpc/support/tls.h',
-                      'grpc/support/tls_gcc.h',
-                      'grpc/support/tls_msvc.h',
-                      'grpc/support/tls_pthread.h',
-                      'grpc/support/useful.h',
+                      'include/grpc/support/alloc.h',
+                      'include/grpc/support/atm.h',
+                      'include/grpc/support/atm_gcc_atomic.h',
+                      'include/grpc/support/atm_gcc_sync.h',
+                      'include/grpc/support/atm_win32.h',
+                      'include/grpc/support/cmdline.h',
+                      'include/grpc/support/cpu.h',
+                      'include/grpc/support/histogram.h',
+                      'include/grpc/support/host_port.h',
+                      'include/grpc/support/log.h',
+                      'include/grpc/support/log_win32.h',
+                      'include/grpc/support/port_platform.h',
+                      'include/grpc/support/slice.h',
+                      'include/grpc/support/slice_buffer.h',
+                      'include/grpc/support/string_util.h',
+                      'include/grpc/support/subprocess.h',
+                      'include/grpc/support/sync.h',
+                      'include/grpc/support/sync_generic.h',
+                      'include/grpc/support/sync_posix.h',
+                      'include/grpc/support/sync_win32.h',
+                      'include/grpc/support/thd.h',
+                      'include/grpc/support/time.h',
+                      'include/grpc/support/tls.h',
+                      'include/grpc/support/tls_gcc.h',
+                      'include/grpc/support/tls_msvc.h',
+                      'include/grpc/support/tls_pthread.h',
+                      'include/grpc/support/useful.h',
                       'src/core/profiling/basic_timers.c',
                       'src/core/profiling/stap_timers.c',
                       'src/core/support/alloc.c',
@@ -266,13 +266,13 @@ Pod::Spec.new do |s|
                       'src/core/census/aggregation.h',
                       'src/core/census/context.h',
                       'src/core/census/rpc_metric_id.h',
-                      'grpc/grpc_security.h',
-                      'grpc/byte_buffer.h',
-                      'grpc/byte_buffer_reader.h',
-                      'grpc/compression.h',
-                      'grpc/grpc.h',
-                      'grpc/status.h',
-                      'grpc/census.h',
+                      'include/grpc/grpc_security.h',
+                      'include/grpc/byte_buffer.h',
+                      'include/grpc/byte_buffer_reader.h',
+                      'include/grpc/compression.h',
+                      'include/grpc/grpc.h',
+                      'include/grpc/status.h',
+                      'include/grpc/census.h',
                       'src/core/httpcli/httpcli_security_connector.c',
                       'src/core/security/base64.c',
                       'src/core/security/client_auth_filter.c',
@@ -558,6 +558,8 @@ Pod::Spec.new do |s|
                               'src/core/census/rpc_metric_id.h'
 
     ss.header_mappings_dir = '.'
+    ss.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC" ' +
+                                             '"$(PODS_ROOT)/Headers/Private/gRPC/include"' }
 
     ss.requires_arc = false
     ss.libraries = 'z'
@@ -565,11 +567,6 @@ Pod::Spec.new do |s|
 
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end
-
-  # Move contents of include/ up a level to avoid manually specifying include paths.
-  # This needs to be here (top-level) instead of in the C-Core subspec because Cocoapods doesn't run
-  # prepare_command's of subspecs.
-  s.prepare_command = 'cp -r "include/grpc" "."'
 
   # Objective-C wrapper around the core gRPC library.
   s.subspec 'GRPCClient' do |ss|

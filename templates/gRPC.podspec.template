@@ -36,26 +36,20 @@
   # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   <%!
-  def fix_header_name(name):
-    split_name = name.split('/')
-    if split_name[0] == 'include':
-      split_name = split_name[1:]
-    return '/'.join(split_name)
-  
   def grpc_files(libs):
     out = []
     for lib in libs:
       if lib.name in ("grpc", "gpr"):
-        out.extend(fix_header_name(h) for h in lib.get('headers', []))
-        out.extend(fix_header_name(h) for h in lib.get('public_headers', []))
-        out.extend(lib.get('src', []))
+        out += lib.get('headers', [])
+        out += lib.get('public_headers', [])
+        out += lib.get('src', [])
     return out;
   
   def grpc_private_headers(libs):
     out = []
     for lib in libs:
       if lib.name in ("grpc", "gpr"):
-        out.extend(lib.get('headers', []))
+        out += lib.get('headers', [])
     return out
   %>
   Pod::Spec.new do |s|
@@ -92,6 +86,8 @@
       ss.private_header_files = ${(',\n' + 30*' ').join('\'%s\'' % f for f in grpc_private_headers(libs))}
 
       ss.header_mappings_dir = '.'
+      ss.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC" ' +
+                                               '"$(PODS_ROOT)/Headers/Private/gRPC/include"' }
 
       ss.requires_arc = false
       ss.libraries = 'z'
@@ -99,11 +95,6 @@
 
       # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
     end
-
-    # Move contents of include/ up a level to avoid manually specifying include paths.
-    # This needs to be here (top-level) instead of in the C-Core subspec because Cocoapods doesn't run
-    # prepare_command's of subspecs.
-    s.prepare_command = 'cp -r "include/grpc" "."'
 
     # Objective-C wrapper around the core gRPC library.
     s.subspec 'GRPCClient' do |ss|
