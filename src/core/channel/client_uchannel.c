@@ -54,7 +54,7 @@
 
 typedef struct call_data call_data;
 
-typedef struct {
+typedef struct client_uchannel_channel_data {
   /** metadata context for this channel */
   grpc_mdctx *mdctx;
 
@@ -171,13 +171,12 @@ static void monitor_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
                                          &chand->connectivity_cb);
 }
 
-static void started_call(grpc_exec_ctx *exec_ctx, void *arg,
+static void started_call_locked(grpc_exec_ctx *exec_ctx, void *arg,
                          int iomgr_success) {
   call_data *calld = arg;
   grpc_transport_stream_op op;
   int have_waiting;
 
-  gpr_mu_lock(&calld->mu_state);
   if (calld->state == CALL_CANCELLED && iomgr_success == 0) {
     have_waiting = !is_empty(&calld->waiting_op, sizeof(calld->waiting_op));
     gpr_mu_unlock(&calld->mu_state);
@@ -213,6 +212,13 @@ static void started_call(grpc_exec_ctx *exec_ctx, void *arg,
       handle_op_after_cancellation(exec_ctx, calld->elem, &calld->waiting_op);
     }
   }
+}
+
+static void started_call(grpc_exec_ctx *exec_ctx, void *arg,
+                         int iomgr_success) {
+  call_data *calld = arg;
+  gpr_mu_lock(&calld->mu_state);
+  started_call_locked(exec_ctx, arg, iomgr_success);
 }
 
 static grpc_closure *merge_into_waiting_op(grpc_call_element *elem,
@@ -334,13 +340,18 @@ static void perform_transport_stream_op(grpc_exec_ctx *exec_ctx,
           calld->state = CALL_WAITING_FOR_SEND;
           gpr_mu_unlock(&calld->mu_state);
         } else {
+          grpc_subchannel_call_create_status call_creation_status;
           grpc_pollset *pollset = calld->waiting_op.bind_pollset;
           calld->state = CALL_WAITING_FOR_CALL;
-          gpr_mu_unlock(&calld->mu_state);
           grpc_closure_init(&calld->async_setup_task, started_call, calld);
-          grpc_subchannel_create_call(exec_ctx, chand->subchannel, pollset,
-                                      &calld->subchannel_call,
-                                      &calld->async_setup_task);
+          call_creation_status = grpc_subchannel_create_call(
+              exec_ctx, chand->subchannel, pollset, &calld->subchannel_call,
+              &calld->async_setup_task);
+          if (call_creation_status == GRPC_SUBCHANNEL_CALL_CREATE_READY) {
+            started_call_locked(exec_ctx, calld, 1);
+          } else {
+            gpr_mu_unlock(&calld->mu_state);
+          }
         }
       }
       break;
@@ -417,9 +428,7 @@ static void cmc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
       break;
     case CALL_WAITING_FOR_CALL:
     case CALL_WAITING_FOR_SEND:
-      gpr_log(GPR_ERROR, "should never reach here");
-      abort();
-      break;
+      GPR_UNREACHABLE_CODE(return );
   }
 }
 
