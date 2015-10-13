@@ -48,6 +48,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpc/support/log_win32.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
@@ -94,7 +95,9 @@ grpc_resolved_addresses *grpc_blocking_resolve_address(
   s = getaddrinfo(host, port, &hints, &result);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
   if (s != 0) {
-    gpr_log(GPR_ERROR, "getaddrinfo: %s", gai_strerror(s));
+    char *error_message = gpr_format_message(s);
+    gpr_log(GPR_ERROR, "getaddrinfo: %s", error_message);
+    gpr_free(error_message);
     goto done;
   }
 
