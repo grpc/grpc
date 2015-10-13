@@ -32,6 +32,6 @@
 set -ex
 
 # Enter the gRPC repo root
-cd `dirname $0`/../..
+cd $(dirname $0)/../..
 
 tools/run_tests/run_interop_tests.py --l all --s all --cloud_to_prod --use_docker -t -j 8
