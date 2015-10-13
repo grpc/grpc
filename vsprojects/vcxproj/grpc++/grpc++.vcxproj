@@ -237,7 +237,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\include\grpc++\alarm.h" />
     <ClInclude Include="..\..\..\include\grpc++\channel.h" />
     <ClInclude Include="..\..\..\include\grpc++\client_context.h" />
     <ClInclude Include="..\..\..\include\grpc++\completion_queue.h" />
@@ -318,8 +317,6 @@
     <ClCompile Include="..\..\..\src\cpp\client\generic_stub.cc">
     </ClCompile>
     <ClCompile Include="..\..\..\src\cpp\client\insecure_credentials.cc">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\cpp\common\alarm.cc">
     </ClCompile>
     <ClCompile Include="..\..\..\src\cpp\common\call.cc">
     </ClCompile>

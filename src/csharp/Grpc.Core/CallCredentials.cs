@@ -41,6 +41,14 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
+    /// Asynchronous authentication interceptor for <see cref="CallCredentials"/>.
+    /// </summary>
+    /// <param name="authUri">URL of a service to which current remote call needs to authenticate</param>
+    /// <param name="metadata">Metadata to populate with entries that will be added to outgoing call's headers.</param>
+    /// <returns></returns>
+    public delegate Task AsyncAuthInterceptor(string authUri, Metadata metadata);
+
+    /// <summary>
     /// Client-side call credentials. Provide authorization with per-call granularity.
     /// </summary>
     public abstract class CallCredentials
@@ -57,6 +65,16 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Creates a new instance of <c>CallCredentials</c> class from an
+        /// interceptor that can attach metadata to outgoing calls.
+        /// </summary>
+        /// <param name="interceptor">authentication interceptor</param>
+        public static CallCredentials FromInterceptor(AsyncAuthInterceptor interceptor)
+        {
+            return new MetadataCredentials(interceptor);
+        }
+
+        /// <summary>
         /// Creates native object for the credentials.
         /// </summary>
         /// <returns>The native credentials.</returns>
@@ -64,18 +82,10 @@ namespace Grpc.Core
     }
 
     /// <summary>
-    /// Asynchronous authentication interceptor for <see cref="MetadataCredentials"/>.
-    /// </summary>
-    /// <param name="authUri">URL of a service to which current remote call needs to authenticate</param>
-    /// <param name="metadata">Metadata to populate with entries that will be added to outgoing call's headers.</param>
-    /// <returns></returns>
-    public delegate Task AsyncAuthInterceptor(string authUri, Metadata metadata);
-
-    /// <summary>
     /// Client-side credentials that delegate metadata based auth to an interceptor.
     /// The interceptor is automatically invoked for each remote call that uses <c>MetadataCredentials.</c>
     /// </summary>
-    public class MetadataCredentials : CallCredentials
+    internal sealed class MetadataCredentials : CallCredentials
     {
         readonly AsyncAuthInterceptor interceptor;
 
@@ -85,7 +95,7 @@ namespace Grpc.Core
         /// <param name="interceptor">authentication interceptor</param>
         public MetadataCredentials(AsyncAuthInterceptor interceptor)
         {
-            this.interceptor = interceptor;
+            this.interceptor = Preconditions.CheckNotNull(interceptor);
         }
 
         internal override CredentialsSafeHandle ToNativeCredentials()
