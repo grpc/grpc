@@ -31,55 +31,35 @@
  *
  */
 
-#include "test/cpp/interop/server_helper.h"
+#ifndef GRPC_INTERNAL_CORE_SURFACE_CALL_TEST_ONLY_H
+#define GRPC_INTERNAL_CORE_SURFACE_CALL_TEST_ONLY_H
 
-#include <memory>
+#include <grpc/grpc.h>
 
-#include <gflags/gflags.h>
-#include <grpc++/security/server_credentials.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#include "src/core/surface/call_test_only.h"
-#include "test/core/end2end/data/ssl_test_data.h"
+/** Return the compression algorithm from \a call.
+ *
+ * \warning This function should \b only be used in test code. */
+grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
+    grpc_call *call);
 
-DECLARE_bool(use_tls);
+/** Return the message flags from \a call.
+ *
+ * \warning This function should \b only be used in test code. */
+gpr_uint32 grpc_call_test_only_get_message_flags(grpc_call *call);
 
-namespace grpc {
-namespace testing {
+/** Returns a bitset for the encodings (compression algorithms) supported by \a
+ * call's peer.
+ *
+ * To be indexed by grpc_compression_algorithm enum values. */
+gpr_uint32 grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call);
 
-std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
-  if (FLAGS_use_tls) {
-    SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                        test_server1_cert};
-    SslServerCredentialsOptions ssl_opts;
-    ssl_opts.pem_root_certs = "";
-    ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-    return SslServerCredentials(ssl_opts);
-  } else {
-    return InsecureServerCredentials();
-  }
+
+#ifdef __cplusplus
 }
+#endif
 
-InteropServerContextInspector::InteropServerContextInspector(
-    const ::grpc::ServerContext& context)
-    : context_(context) {}
-
-grpc_compression_algorithm
-InteropServerContextInspector::GetCallCompressionAlgorithm() const {
-  return grpc_call_test_only_get_compression_algorithm(context_.call_);
-}
-
-gpr_uint32 InteropServerContextInspector::GetEncodingsAcceptedByClient() const {
-  return grpc_call_test_only_get_encodings_accepted_by_peer(context_.call_);
-}
-
-std::shared_ptr<const AuthContext>
-InteropServerContextInspector::GetAuthContext() const {
-  return context_.auth_context();
-}
-
-bool InteropServerContextInspector::IsCancelled() const {
-  return context_.IsCancelled();
-}
-
-}  // namespace testing
-}  // namespace grpc
+#endif /* GRPC_INTERNAL_CORE_SURFACE_CALL_TEST_ONLY_H */

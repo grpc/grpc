@@ -19,7 +19,7 @@
     "lib": "src/node/src"
   },
   "scripts": {
-    "lint": "node ./node_modules/jshint/bin/jshint src/node/src src/node/test src/node/examples src/node/interop src/node/index.js",
+    "lint": "node ./node_modules/jshint/bin/jshint src/node/src src/node/test src/node/interop src/node/index.js",
     "test": "./node_modules/.bin/mocha src/node/test && npm run-script lint",
     "gen_docs": "./node_modules/.bin/jsdoc -c src/node/jsdoc_conf.json",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha src/node/test"
@@ -53,7 +53,6 @@
     "src/core",
     "test/proto",
     "include",
-    "grpc.gyp",
     "binding.gyp"
   ],
   "main": "src/node/index.js",

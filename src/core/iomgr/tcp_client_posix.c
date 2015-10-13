@@ -191,7 +191,7 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, int success) {
     goto finish;
   }
 
-  abort();
+  GPR_UNREACHABLE_CODE(return );
 
 finish:
   if (fd != NULL) {
