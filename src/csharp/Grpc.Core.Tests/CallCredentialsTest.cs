@@ -55,8 +55,8 @@ namespace Grpc.Core.Tests
         public void CallCredentials_ToNativeCredentials()
         {
             var composite = CallCredentials.Compose(
-                new MetadataCredentials(async (uri, m) => { await Task.Delay(1); }),
-                new MetadataCredentials(async (uri, m) => { await Task.Delay(2); }));
+                CallCredentials.FromInterceptor(async (uri, m) => { await Task.Delay(1); }),
+                CallCredentials.FromInterceptor(async (uri, m) => { await Task.Delay(2); }));
             using (var nativeComposite = composite.ToNativeCredentials())
             {
             }

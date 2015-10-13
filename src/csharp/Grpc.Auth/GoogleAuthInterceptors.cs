@@ -41,53 +41,46 @@ using Grpc.Core.Utils;
 namespace Grpc.Auth
 {
     /// <summary>
-    /// Factory methods to create instances of <see cref="ChannelCredentials"/> and <see cref="CallCredentials"/> classes.
+    /// Factory methods to create authorization interceptors for Google credentials.
+    /// <seealso cref="GoogleGrpcCredentials"/>
     /// </summary>
-    public static class GrpcCredentials
+    public static class GoogleAuthInterceptors
     {
+        private const string AuthorizationHeader = "Authorization";
+        private const string Schema = "Bearer";
+
         /// <summary>
-        /// Creates a <see cref="MetadataCredentials"/> instance that will obtain access tokens 
-        /// from any credential that implements <c>ITokenAccess</c>. (e.g. <c>GoogleCredential</c>).
+        /// Creates an <see cref="AsyncAuthInterceptor"/> that will obtain access token from any credential type that implements
+        /// <c>ITokenAccess</c>. (e.g. <c>GoogleCredential</c>).
         /// </summary>
         /// <param name="credential">The credential to use to obtain access tokens.</param>
-        /// <returns>The <c>MetadataCredentials</c> instance.</returns>
-        public static MetadataCredentials Create(ITokenAccess credential)
+        /// <returns>The interceptor.</returns>
+        public static AsyncAuthInterceptor FromCredential(ITokenAccess credential)
         {
-            return new MetadataCredentials(AuthInterceptors.FromCredential(credential));
+            return new AsyncAuthInterceptor(async (authUri, metadata) =>
+            {
+                var accessToken = await credential.GetAccessTokenForRequestAsync(authUri, CancellationToken.None).ConfigureAwait(false);
+                metadata.Add(CreateBearerTokenHeader(accessToken));
+            });
         }
 
         /// <summary>
-        /// Convenience method to create a <see cref="ChannelCredentials"/> instance from
-        /// <c>ITokenAccess</c> credential and <c>SslCredentials</c> instance.
-        /// </summary>
-        /// <param name="credential">The credential to use to obtain access tokens.</param>
-        /// <param name="sslCredentials">The <c>SslCredentials</c> instance.</param>
-        /// <returns>The channel credentials for access token based auth over a secure channel.</returns>
-        public static ChannelCredentials Create(ITokenAccess credential, SslCredentials sslCredentials)
-        {
-            return ChannelCredentials.Create(sslCredentials, Create(credential));
-        }
-
-        /// <summary>
-        /// Creates an instance of <see cref="MetadataCredentials"/> that will use given access token to authenticate
-        /// with a gRPC service.
+        /// Creates an <see cref="AsyncAuthInterceptor"/> that will use given access token as authorization.
         /// </summary>
         /// <param name="accessToken">OAuth2 access token.</param>
-        /// /// <returns>The <c>MetadataCredentials</c> instance.</returns>
-        public static MetadataCredentials FromAccessToken(string accessToken)
+        /// <returns>The interceptor.</returns>
+        public static AsyncAuthInterceptor FromAccessToken(string accessToken)
         {
-            return new MetadataCredentials(AuthInterceptors.FromAccessToken(accessToken));
+            Preconditions.CheckNotNull(accessToken);
+            return new AsyncAuthInterceptor(async (authUri, metadata) =>
+            {
+                metadata.Add(CreateBearerTokenHeader(accessToken));
+            });
         }
 
-        /// <summary>
-        /// Converts a <c>ITokenAccess</c> object into a <see cref="MetadataCredentials"/> object supported
-        /// by gRPC.
-        /// </summary>
-        /// <param name="credential"></param>
-        /// <returns></returns>
-        public static MetadataCredentials ToGrpcCredentials(this ITokenAccess credential)
+        private static Metadata.Entry CreateBearerTokenHeader(string accessToken)
         {
-            return GrpcCredentials.Create(credential);
+            return new Metadata.Entry(AuthorizationHeader, Schema + " " + accessToken);
         }
     }
 }
