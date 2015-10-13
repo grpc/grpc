@@ -37,6 +37,7 @@ cache.mk
 
 # Temporary test reports
 report.xml
+latency_trace.txt
 
 # port server log
 portlog.txt
