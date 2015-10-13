@@ -214,7 +214,7 @@ describe('client credentials', function() {
       assert.ifError(err);
     });
     call.on('metadata', function(metadata) {
-      assert.deepStrictEqual(metadata.get('authorization'), ['success']);
+      assert.deepEqual(metadata.get('authorization'), ['success']);
       done();
     });
   });
