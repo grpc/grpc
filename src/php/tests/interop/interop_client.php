@@ -256,15 +256,11 @@ function pingPong($stub) {
  * @param $stub Stub object that has service methods.
  */
 function emptyStream($stub) {
-  // for the current PHP implementation, $call->read() will wait
-  // forever for a server response if the server is not sending any.
-  // so this test is imeplemented as a timeout to indicate the absence
-  // of receiving any response from the server
-  $call = $stub->FullDuplexCall(array('timeout' => 100000));
+  $call = $stub->FullDuplexCall();
   $call->writesDone();
   hardAssert($call->read() === null, 'Server returned too many responses');
   hardAssert($call->getStatus()->code === Grpc\STATUS_OK,
-              'Call did not complete successfully');
+             'Call did not complete successfully');
 }
 
 /**
