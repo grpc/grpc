@@ -31,7 +31,7 @@
  *
  */
 
-#include "src/core/iomgr/alarm_heap.h"
+#include "src/core/iomgr/timer_heap.h"
 
 #include <string.h>
 
@@ -43,7 +43,7 @@
    position. This functor is called each time immediately after modifying a
    value in the underlying container, with the offset of the modified element as
    its argument. */
-static void adjust_upwards(grpc_alarm **first, gpr_uint32 i, grpc_alarm *t) {
+static void adjust_upwards(grpc_timer **first, gpr_uint32 i, grpc_timer *t) {
   while (i > 0) {
     gpr_uint32 parent = (gpr_uint32)(((int)i - 1) / 2);
     if (gpr_time_cmp(first[parent]->deadline, t->deadline) >= 0) break;
@@ -58,8 +58,8 @@ static void adjust_upwards(grpc_alarm **first, gpr_uint32 i, grpc_alarm *t) {
 /* Adjusts a heap so as to move a hole at position i farther away from the root,
    until a suitable position is found for element t.  Then, copies t into that
    position. */
-static void adjust_downwards(grpc_alarm **first, gpr_uint32 i,
-                             gpr_uint32 length, grpc_alarm *t) {
+static void adjust_downwards(grpc_timer **first, gpr_uint32 i,
+                             gpr_uint32 length, grpc_timer *t) {
   for (;;) {
     gpr_uint32 left_child = 1u + 2u * i;
     gpr_uint32 right_child;
@@ -83,66 +83,66 @@ static void adjust_downwards(grpc_alarm **first, gpr_uint32 i,
 #define SHRINK_MIN_ELEMS 8
 #define SHRINK_FULLNESS_FACTOR 2
 
-static void maybe_shrink(grpc_alarm_heap *heap) {
-  if (heap->alarm_count >= 8 &&
-      heap->alarm_count <= heap->alarm_capacity / SHRINK_FULLNESS_FACTOR / 2) {
-    heap->alarm_capacity = heap->alarm_count * SHRINK_FULLNESS_FACTOR;
-    heap->alarms =
-        gpr_realloc(heap->alarms, heap->alarm_capacity * sizeof(grpc_alarm *));
+static void maybe_shrink(grpc_timer_heap *heap) {
+  if (heap->timer_count >= 8 &&
+      heap->timer_count <= heap->timer_capacity / SHRINK_FULLNESS_FACTOR / 2) {
+    heap->timer_capacity = heap->timer_count * SHRINK_FULLNESS_FACTOR;
+    heap->timers =
+        gpr_realloc(heap->timers, heap->timer_capacity * sizeof(grpc_timer *));
   }
 }
 
-static void note_changed_priority(grpc_alarm_heap *heap, grpc_alarm *alarm) {
-  gpr_uint32 i = alarm->heap_index;
+static void note_changed_priority(grpc_timer_heap *heap, grpc_timer *timer) {
+  gpr_uint32 i = timer->heap_index;
   gpr_uint32 parent = (gpr_uint32)(((int)i - 1) / 2);
-  if (gpr_time_cmp(heap->alarms[parent]->deadline, alarm->deadline) < 0) {
-    adjust_upwards(heap->alarms, i, alarm);
+  if (gpr_time_cmp(heap->timers[parent]->deadline, timer->deadline) < 0) {
+    adjust_upwards(heap->timers, i, timer);
   } else {
-    adjust_downwards(heap->alarms, i, heap->alarm_count, alarm);
+    adjust_downwards(heap->timers, i, heap->timer_count, timer);
   }
 }
 
-void grpc_alarm_heap_init(grpc_alarm_heap *heap) {
+void grpc_timer_heap_init(grpc_timer_heap *heap) {
   memset(heap, 0, sizeof(*heap));
 }
 
-void grpc_alarm_heap_destroy(grpc_alarm_heap *heap) { gpr_free(heap->alarms); }
+void grpc_timer_heap_destroy(grpc_timer_heap *heap) { gpr_free(heap->timers); }
 
-int grpc_alarm_heap_add(grpc_alarm_heap *heap, grpc_alarm *alarm) {
-  if (heap->alarm_count == heap->alarm_capacity) {
-    heap->alarm_capacity =
-        GPR_MAX(heap->alarm_capacity + 1, heap->alarm_capacity * 3 / 2);
-    heap->alarms =
-        gpr_realloc(heap->alarms, heap->alarm_capacity * sizeof(grpc_alarm *));
+int grpc_timer_heap_add(grpc_timer_heap *heap, grpc_timer *timer) {
+  if (heap->timer_count == heap->timer_capacity) {
+    heap->timer_capacity =
+        GPR_MAX(heap->timer_capacity + 1, heap->timer_capacity * 3 / 2);
+    heap->timers =
+        gpr_realloc(heap->timers, heap->timer_capacity * sizeof(grpc_timer *));
   }
-  alarm->heap_index = heap->alarm_count;
-  adjust_upwards(heap->alarms, heap->alarm_count, alarm);
-  heap->alarm_count++;
-  return alarm->heap_index == 0;
+  timer->heap_index = heap->timer_count;
+  adjust_upwards(heap->timers, heap->timer_count, timer);
+  heap->timer_count++;
+  return timer->heap_index == 0;
 }
 
-void grpc_alarm_heap_remove(grpc_alarm_heap *heap, grpc_alarm *alarm) {
-  gpr_uint32 i = alarm->heap_index;
-  if (i == heap->alarm_count - 1) {
-    heap->alarm_count--;
+void grpc_timer_heap_remove(grpc_timer_heap *heap, grpc_timer *timer) {
+  gpr_uint32 i = timer->heap_index;
+  if (i == heap->timer_count - 1) {
+    heap->timer_count--;
     maybe_shrink(heap);
     return;
   }
-  heap->alarms[i] = heap->alarms[heap->alarm_count - 1];
-  heap->alarms[i]->heap_index = i;
-  heap->alarm_count--;
+  heap->timers[i] = heap->timers[heap->timer_count - 1];
+  heap->timers[i]->heap_index = i;
+  heap->timer_count--;
   maybe_shrink(heap);
-  note_changed_priority(heap, heap->alarms[i]);
+  note_changed_priority(heap, heap->timers[i]);
 }
 
-int grpc_alarm_heap_is_empty(grpc_alarm_heap *heap) {
-  return heap->alarm_count == 0;
+int grpc_timer_heap_is_empty(grpc_timer_heap *heap) {
+  return heap->timer_count == 0;
 }
 
-grpc_alarm *grpc_alarm_heap_top(grpc_alarm_heap *heap) {
-  return heap->alarms[0];
+grpc_timer *grpc_timer_heap_top(grpc_timer_heap *heap) {
+  return heap->timers[0];
 }
 
-void grpc_alarm_heap_pop(grpc_alarm_heap *heap) {
-  grpc_alarm_heap_remove(heap, grpc_alarm_heap_top(heap));
+void grpc_timer_heap_pop(grpc_timer_heap *heap) {
+  grpc_timer_heap_remove(heap, grpc_timer_heap_top(heap));
 }

@@ -10,34 +10,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "alarm_heap_test", 
-    "src": [
-      "test/core/iomgr/alarm_heap_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "alarm_list_test", 
-    "src": [
-      "test/core/iomgr/alarm_list_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "alpn_test", 
     "src": [
       "test/core/transport/chttp2/alpn_test.c"
@@ -966,6 +938,34 @@
     "name": "timeout_encoding_test", 
     "src": [
       "test/core/transport/chttp2/timeout_encoding_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "timer_heap_test", 
+    "src": [
+      "test/core/iomgr/timer_heap_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "timer_list_test", 
+    "src": [
+      "test/core/iomgr/timer_list_test.c"
     ]
   }, 
   {
@@ -12315,9 +12315,6 @@
       "src/core/httpcli/format_request.h", 
       "src/core/httpcli/httpcli.h", 
       "src/core/httpcli/parser.h", 
-      "src/core/iomgr/alarm.h", 
-      "src/core/iomgr/alarm_heap.h", 
-      "src/core/iomgr/alarm_internal.h", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
@@ -12345,6 +12342,9 @@
       "src/core/iomgr/tcp_server.h", 
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/timer.h", 
+      "src/core/iomgr/timer_heap.h", 
+      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
@@ -12490,11 +12490,6 @@
       "src/core/httpcli/httpcli_security_connector.c", 
       "src/core/httpcli/parser.c", 
       "src/core/httpcli/parser.h", 
-      "src/core/iomgr/alarm.c", 
-      "src/core/iomgr/alarm.h", 
-      "src/core/iomgr/alarm_heap.c", 
-      "src/core/iomgr/alarm_heap.h", 
-      "src/core/iomgr/alarm_internal.h", 
       "src/core/iomgr/closure.c", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.c", 
@@ -12552,6 +12547,11 @@
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.c", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/timer.c", 
+      "src/core/iomgr/timer.h", 
+      "src/core/iomgr/timer_heap.c", 
+      "src/core/iomgr/timer_heap.h", 
+      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.c", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
@@ -12818,9 +12818,6 @@
       "src/core/httpcli/format_request.h", 
       "src/core/httpcli/httpcli.h", 
       "src/core/httpcli/parser.h", 
-      "src/core/iomgr/alarm.h", 
-      "src/core/iomgr/alarm_heap.h", 
-      "src/core/iomgr/alarm_internal.h", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
@@ -12848,6 +12845,9 @@
       "src/core/iomgr/tcp_server.h", 
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/timer.h", 
+      "src/core/iomgr/timer_heap.h", 
+      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
@@ -12978,11 +12978,6 @@
       "src/core/httpcli/httpcli.h", 
       "src/core/httpcli/parser.c", 
       "src/core/httpcli/parser.h", 
-      "src/core/iomgr/alarm.c", 
-      "src/core/iomgr/alarm.h", 
-      "src/core/iomgr/alarm_heap.c", 
-      "src/core/iomgr/alarm_heap.h", 
-      "src/core/iomgr/alarm_internal.h", 
       "src/core/iomgr/closure.c", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.c", 
@@ -13040,6 +13035,11 @@
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.c", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/timer.c", 
+      "src/core/iomgr/timer.h", 
+      "src/core/iomgr/timer_heap.c", 
+      "src/core/iomgr/timer_heap.h", 
+      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.c", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 

@@ -42,7 +42,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/alarm.h"
+#include "src/core/iomgr/timer.h"
 #include "src/core/iomgr/iomgr_posix.h"
 #include "src/core/iomgr/pollset_posix.h"
 #include "src/core/iomgr/sockaddr_utils.h"
@@ -60,7 +60,7 @@ typedef struct {
   gpr_mu mu;
   grpc_fd *fd;
   gpr_timespec deadline;
-  grpc_alarm alarm;
+  grpc_timer alarm;
   int refs;
   grpc_closure write_closure;
   grpc_pollset_set *interested_parties;
@@ -132,7 +132,7 @@ static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, int success) {
   ac->fd = NULL;
   gpr_mu_unlock(&ac->mu);
 
-  grpc_alarm_cancel(exec_ctx, &ac->alarm);
+  grpc_timer_cancel(exec_ctx, &ac->alarm);
 
   gpr_mu_lock(&ac->mu);
   if (success) {
@@ -290,7 +290,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
   }
 
   gpr_mu_lock(&ac->mu);
-  grpc_alarm_init(exec_ctx, &ac->alarm,
+  grpc_timer_init(exec_ctx, &ac->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                   tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_fd_notify_on_write(exec_ctx, ac->fd, &ac->write_closure);
