@@ -202,7 +202,9 @@ class NodeLanguage(object):
 
   def pre_build_steps(self):
     # Default to 1 week cache expiration
-    return [['npm', 'update', '--cache-min', '604800']]
+    return [['npm', 'update', '--cache-min', '604800'],
+            ['npm', 'install', '-g', 'node-gyp-install'],
+            ['node-gyp-install']]
 
   def make_targets(self):
     return []
