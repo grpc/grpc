@@ -298,9 +298,6 @@
     <ClInclude Include="..\..\..\src\core\httpcli\format_request.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\httpcli.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\parser.h" />
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm.h" />
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm_heap.h" />
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm_internal.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\closure.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint_pair.h" />
@@ -328,6 +325,9 @@
     <ClInclude Include="..\..\..\src\core\iomgr\tcp_server.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\tcp_windows.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\time_averaged_stats.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\timer.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\timer_heap.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\timer_internal.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\udp_server.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\wakeup_fd_pipe.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\wakeup_fd_posix.h" />
@@ -489,10 +489,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\httpcli\parser.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\iomgr\alarm.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\iomgr\alarm_heap.c">
-    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\closure.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint.c">
@@ -552,6 +548,10 @@
     <ClCompile Include="..\..\..\src\core\iomgr\tcp_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\time_averaged_stats.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\timer.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\timer_heap.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\udp_server.c">
     </ClCompile>

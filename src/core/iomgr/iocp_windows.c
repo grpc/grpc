@@ -42,7 +42,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/thd.h>
 
-#include "src/core/iomgr/alarm_internal.h"
+#include "src/core/iomgr/timer_internal.h"
 #include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/socket_windows.h"
