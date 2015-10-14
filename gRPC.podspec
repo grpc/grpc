@@ -558,6 +558,8 @@ Pod::Spec.new do |s|
                               'src/core/census/rpc_metric_id.h'
 
     ss.header_mappings_dir = '.'
+    # This isn't officially supported in Cocoapods. We've asked for an alternative:
+    # https://github.com/CocoaPods/CocoaPods/issues/4386
     ss.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC" ' +
                                              '"$(PODS_ROOT)/Headers/Private/gRPC/include"' }
 
