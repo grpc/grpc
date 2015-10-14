@@ -417,7 +417,12 @@ module GRPC
         begin
           an_rpc = @server.request_call(@cq, loop_tag, INFINITE_FUTURE)
           c = new_active_server_call(an_rpc)
-          unless c.nil?
+          if c.nil?
+            # With infinite timeout on request_call, a nil call implies that the
+            # server has shut down. Waiting for another call at that point will
+            # not accomplish anything.
+            break
+          else
             mth = an_rpc.method.to_sym
             @pool.schedule(c) do |call|
               rpc_descs[mth].run_server_method(call, rpc_handlers[mth])
