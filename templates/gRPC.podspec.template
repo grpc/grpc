@@ -86,6 +86,8 @@
       ss.private_header_files = ${(',\n' + 30*' ').join('\'%s\'' % f for f in grpc_private_headers(libs))}
 
       ss.header_mappings_dir = '.'
+      # This isn't officially supported in Cocoapods. We've asked for an alternative:
+      # https://github.com/CocoaPods/CocoaPods/issues/4386
       ss.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC" ' +
                                                '"$(PODS_ROOT)/Headers/Private/gRPC/include"' }
 
