@@ -33,6 +33,13 @@
 
 set -x
 
+# Params:
+#  INTEROP_IMAGE - name of tag of the final interop image
+#  BASE_NAME - base name used to locate the base Dockerfile and build script
+#  TTY_FLAG - optional -t flag to make docker allocate tty
+#  BUILD_INTEROP_DOCKER_EXTRA_ARGS - optional args to be passed to the
+#    docker run command
+
 cd `dirname $0`/../..
 GRPC_ROOT=`pwd`
 MOUNT_ARGS="-v $GRPC_ROOT:/var/local/jenkins/grpc:ro"
@@ -54,11 +61,6 @@ else
 fi
 
 mkdir -p /tmp/ccache
-
-# Params:
-#  INTEROP_IMAGE - name of tag of the final interop image
-#  BASE_NAME - base name used to locate the base Dockerfile and build script
-#  TTY_FLAG - optional -t flag to make docker allocate tty.
 
 # Mount service account dir if available.
 # If service_directory does not contain the service account JSON file,
@@ -84,6 +86,7 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
   -e CCACHE_DIR=/tmp/ccache \
   -i $TTY_FLAG \
   $MOUNT_ARGS \
+  $BUILD_INTEROP_DOCKER_EXTRA_ARGS \
   -v /tmp/ccache:/tmp/ccache \
   --name=$CONTAINER_NAME \
   $BASE_IMAGE \
