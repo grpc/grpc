@@ -547,6 +547,8 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
                                    void *transport_writing_ptr, int success) {
   grpc_chttp2_transport_writing *transport_writing = transport_writing_ptr;
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING(transport_writing);
+  grpc_chttp2_transport_global *transport_global = &t->global;
+  grpc_chttp2_stream_global *stream_global;
 
   GPR_TIMER_BEGIN("grpc_chttp2_terminate_writing", 0);
 
@@ -566,6 +568,11 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
   t->writing_active = 0;
   if (t->ep && !t->endpoint_reading) {
     destroy_endpoint(exec_ctx, t);
+  }
+  while (grpc_chttp2_list_pop_cancelled_waiting_for_writing(transport_global,
+                                                            &stream_global)) {
+    grpc_chttp2_list_add_read_write_state_changed(transport_global,
+                                                  stream_global);
   }
 
   unlock(exec_ctx, t);
@@ -853,28 +860,7 @@ static void unlock_check_read_write_state(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_stream_global *stream_global;
   grpc_stream_state state;
 
-  if (!t->parsing_active) {
-    /* if a stream is in the stream map, and gets cancelled, we need to ensure
-       we are not parsing before continuing the cancellation to keep things in
-       a sane state */
-    while (grpc_chttp2_list_pop_closed_waiting_for_parsing(transport_global,
-                                                           &stream_global)) {
-      GPR_ASSERT(stream_global->in_stream_map);
-      GPR_ASSERT(stream_global->write_state != GRPC_WRITE_STATE_OPEN);
-      GPR_ASSERT(stream_global->read_closed);
-      remove_stream(exec_ctx, t, stream_global->id);
-      grpc_chttp2_list_add_read_write_state_changed(transport_global,
-                                                    stream_global);
-    }
-  }
-
-  if (!t->writing_active) {
-    while (grpc_chttp2_list_pop_cancelled_waiting_for_writing(transport_global,
-                                                              &stream_global)) {
-      grpc_chttp2_list_add_read_write_state_changed(transport_global,
-                                                    stream_global);
-    }
-  }
+  GPR_TIMER_BEGIN("unlock_check_read_write_state", 0);
 
   while (grpc_chttp2_list_pop_read_write_state_changed(transport_global,
                                                        &stream_global)) {
@@ -943,6 +929,8 @@ static void unlock_check_read_write_state(grpc_exec_ctx *exec_ctx,
     stream_global->publish_sopb = NULL;
     stream_global->publish_state = NULL;
   }
+
+  GPR_TIMER_END("unlock_check_read_write_state", 0);
 }
 
 static void cancel_from_api(grpc_chttp2_transport_global *transport_global,
@@ -1112,6 +1100,9 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
   size_t i;
   int keep_reading = 0;
   grpc_chttp2_transport *t = tp;
+  grpc_chttp2_transport_global *transport_global = &t->global;
+  grpc_chttp2_transport_parsing *transport_parsing = &t->parsing;
+  grpc_chttp2_stream_global *stream_global;
 
   GPR_TIMER_BEGIN("recv_data", 0);
 
@@ -1123,11 +1114,11 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
     /* merge stream lists */
     grpc_chttp2_stream_map_move_into(&t->new_stream_map,
                                      &t->parsing_stream_map);
-    grpc_chttp2_prepare_to_read(&t->global, &t->parsing);
+    grpc_chttp2_prepare_to_read(transport_global, transport_parsing);
     gpr_mu_unlock(&t->mu);
     GPR_TIMER_BEGIN("recv_data.parse", 0);
     for (; i < t->read_buffer.count &&
-               grpc_chttp2_perform_read(exec_ctx, &t->parsing,
+               grpc_chttp2_perform_read(exec_ctx, transport_parsing,
                                         t->read_buffer.slices[i]);
          i++)
       ;
@@ -1139,16 +1130,28 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
     /* merge stream lists */
     grpc_chttp2_stream_map_move_into(&t->new_stream_map,
                                      &t->parsing_stream_map);
-    t->global.concurrent_stream_count =
+    transport_global->concurrent_stream_count =
         (gpr_uint32)grpc_chttp2_stream_map_size(&t->parsing_stream_map);
-    if (t->parsing.initial_window_update != 0) {
+    if (transport_parsing->initial_window_update != 0) {
       grpc_chttp2_stream_map_for_each(&t->parsing_stream_map,
                                       update_global_window, t);
-      t->parsing.initial_window_update = 0;
+      transport_parsing->initial_window_update = 0;
     }
     /* handle higher level things */
-    grpc_chttp2_publish_reads(exec_ctx, &t->global, &t->parsing);
+    grpc_chttp2_publish_reads(exec_ctx, transport_global, transport_parsing);
     t->parsing_active = 0;
+    /* if a stream is in the stream map, and gets cancelled, we need to ensure
+     we are not parsing before continuing the cancellation to keep things in
+     a sane state */
+    while (grpc_chttp2_list_pop_closed_waiting_for_parsing(transport_global,
+                                                           &stream_global)) {
+      GPR_ASSERT(stream_global->in_stream_map);
+      GPR_ASSERT(stream_global->write_state != GRPC_WRITE_STATE_OPEN);
+      GPR_ASSERT(stream_global->read_closed);
+      remove_stream(exec_ctx, t, stream_global->id);
+      grpc_chttp2_list_add_read_write_state_changed(transport_global,
+                                                    stream_global);
+    }
   }
   if (!success || i != t->read_buffer.count || t->closed) {
     drop_connection(exec_ctx, t);
