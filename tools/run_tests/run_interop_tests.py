@@ -308,10 +308,10 @@ _LANGUAGES = {
 # languages supported as cloud_to_cloud servers
 _SERVERS = ['c++', 'node', 'csharp', 'java', 'go', 'ruby', 'python']
 
-# TODO(jtattermusch): add timeout_on_sleeping_server once java starts supporting it.
 _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
                'empty_stream', 'client_streaming', 'server_streaming',
-               'cancel_after_begin', 'cancel_after_first_response']
+               'cancel_after_begin', 'cancel_after_first_response',
+               'timeout_on_sleeping_server']
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
