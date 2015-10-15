@@ -31,7 +31,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-require 'AbstractGeneratedCodeTest.php';
+require_once dirname(__FILE__) . '/AbstractGeneratedCodeTest.php';
 
 class GeneratedCodeWithCallbackTest extends AbstractGeneratedCodeTest {
   public static function setUpBeforeClass() {
@@ -43,5 +43,9 @@ class GeneratedCodeWithCallbackTest extends AbstractGeneratedCodeTest {
                                      $a_copy['foo'] = ['bar'];
                                      return $a_copy;
                                    }]);
+  }
+
+  public static function tearDownAfterClass() {
+    self::$client->close();
   }
 }
