@@ -220,11 +220,11 @@ class PHPLanguage:
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
-            ['--use_tls'])
+            ['--use_tls=true'])
 
   def cloud_to_cloud_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_tls', '--use_test_ca'])
+            ['--use_tls=true', '--use_test_ca=true'])
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
