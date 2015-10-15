@@ -38,6 +38,7 @@ require 'messages.php';
 require 'test.php';
 use Google\Auth\CredentialsLoader;
 use Google\Auth\ApplicationDefaultCredentials;
+use GuzzleHttp\ClientInterface;
 
 /**
  * Assertion function that always exits with an error code if the assertion is
@@ -54,7 +55,6 @@ function hardAssert($value, $error_message) {
 
 /**
  * Run the empty_unary test.
- * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods
  */
 function emptyUnary($stub) {
@@ -65,7 +65,6 @@ function emptyUnary($stub) {
 
 /**
  * Run the large_unary test.
- * Passes when run against the C++/Node server as of 2015-04-30
  * @param $stub Stub object that has service methods
  */
 function largeUnary($stub) {
@@ -78,7 +77,8 @@ function largeUnary($stub) {
  * @param $fillUsername boolean whether to fill result with username
  * @param $fillOauthScope boolean whether to fill result with oauth scope
  */
-function performLargeUnary($stub, $fillUsername = false, $fillOauthScope = false) {
+function performLargeUnary($stub, $fillUsername = false, $fillOauthScope = false,
+                           $metadata = array()) {
   $request_len = 271828;
   $response_len = 314159;
 
@@ -92,7 +92,7 @@ function performLargeUnary($stub, $fillUsername = false, $fillOauthScope = false
   $request->setFillUsername($fillUsername);
   $request->setFillOauthScope($fillOauthScope);
 
-  list($result, $status) = $stub->UnaryCall($request)->wait();
+  list($result, $status) = $stub->UnaryCall($request, $metadata)->wait();
   hardAssert($status->code === Grpc\STATUS_OK, 'Call did not complete successfully');
   hardAssert($result !== null, 'Call returned a null response');
   $payload = $result->getPayload();
@@ -107,7 +107,6 @@ function performLargeUnary($stub, $fillUsername = false, $fillOauthScope = false
 
 /**
  * Run the service account credentials auth test.
- * Passes when run against the cloud server as of 2015-04-30
  * @param $stub Stub object that has service methods
  * @param $args array command line args
  */
@@ -145,7 +144,6 @@ function computeEngineCreds($stub, $args) {
 
 /**
  * Run the jwt token credentials auth test.
- * Passes when run against the cloud server as of 2015-05-12
  * @param $stub Stub object that has service methods
  * @param $args array command line args
  */
@@ -159,8 +157,44 @@ function jwtTokenCreds($stub, $args) {
 }
 
 /**
+ * Run the oauth2_auth_token auth test.
+ * @param $stub Stub object that has service methods
+ * @param $args array command line args
+ */
+function oauth2AuthToken($stub, $args) {
+  $jsonKey = json_decode(
+      file_get_contents(getenv(CredentialsLoader::ENV_VAR)),
+      true);
+  $result = performLargeUnary($stub, $fillUsername=true, $fillOauthScope=true);
+  hardAssert($result->getUsername() == $jsonKey['client_email'],
+             'invalid email returned');
+}
+
+/**
+ * Run the per_rpc_creds auth test.
+ * @param $stub Stub object that has service methods
+ * @param $args array command line args
+ */
+function perRpcCreds($stub, $args) {
+  $jsonKey = json_decode(
+      file_get_contents(getenv(CredentialsLoader::ENV_VAR)),
+      true);
+  $auth_credentials = ApplicationDefaultCredentials::getCredentials(
+      $args['oauth_scope']
+  );
+  $token = $auth_credentials->fetchAuthToken();
+  $metadata = array(CredentialsLoader::AUTH_METADATA_KEY =>
+                    array(sprintf("%s %s",
+                                  $token['token_type'],
+                                  $token['access_token'])));
+  $result = performLargeUnary($stub, $fillUsername=true, $fillOauthScope=true,
+                              $metadata);
+  hardAssert($result->getUsername() == $jsonKey['client_email'],
+             'invalid email returned');
+}
+
+/**
  * Run the client_streaming test.
- * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods
  */
 function clientStreaming($stub) {
@@ -187,7 +221,6 @@ function clientStreaming($stub) {
 
 /**
  * Run the server_streaming test.
- * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods.
  */
 function serverStreaming($stub) {
@@ -218,7 +251,6 @@ function serverStreaming($stub) {
 
 /**
  * Run the ping_pong test.
- * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods.
  */
 function pingPong($stub) {
@@ -254,7 +286,6 @@ function pingPong($stub) {
 
 /**
  * Run the empty_stream test.
- * Passes when run against the Node server as of 2015-10-09
  * @param $stub Stub object that has service methods.
  */
 function emptyStream($stub) {
@@ -267,7 +298,6 @@ function emptyStream($stub) {
 
 /**
  * Run the cancel_after_begin test.
- * Passes when run against the Node server as of 2015-08-28
  * @param $stub Stub object that has service methods.
  */
 function cancelAfterBegin($stub) {
@@ -280,7 +310,6 @@ function cancelAfterBegin($stub) {
 
 /**
  * Run the cancel_after_first_response test.
- * Passes when run against the Node server as of 2015-04-30
  * @param $stub Stub object that has service methods.
  */
 function cancelAfterFirstResponse($stub) {
@@ -385,6 +414,25 @@ if (in_array($test_case, array('service_account_creds',
   $opts['update_metadata'] = $auth_credentials->getUpdateMetadataFunc();
 }
 
+if ($test_case == 'oauth2_auth_token') {
+  $auth_credentials = ApplicationDefaultCredentials::getCredentials(
+      $args['oauth_scope']
+  );
+  $token = $auth_credentials->fetchAuthToken();
+  $update_metadata =
+      function($metadata,
+               $authUri = null,
+               ClientInterface $client = null) use ($token) {
+        $metadata_copy = $metadata;
+        $metadata_copy[CredentialsLoader::AUTH_METADATA_KEY] =
+            array(sprintf("%s %s",
+                          $token['token_type'],
+                          $token['access_token']));
+        return $metadata_copy;
+      };
+  $opts['update_metadata'] = $update_metadata;
+}
+
 $stub = new grpc\testing\TestServiceClient($server_address, $opts);
 
 echo "Connecting to $server_address\n";
@@ -426,6 +474,12 @@ switch ($test_case) {
     break;
   case 'jwt_token_creds':
     jwtTokenCreds($stub, $args);
+    break;
+  case 'oauth2_auth_token':
+    oauth2AuthToken($stub, $args);
+    break;
+  case 'per_rpc_creds':
+    perRpcCreds($stub, $args);
     break;
   default:
     echo "Unsupported test case $test_case\n";
