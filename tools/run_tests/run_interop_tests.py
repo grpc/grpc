@@ -220,17 +220,20 @@ class PHPLanguage:
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
-            ['--use_tls'])
+            ['--use_tls=true'])
 
   def cloud_to_cloud_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_tls', '--use_test_ca'])
+            ['--use_tls=true', '--use_test_ca=true'])
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
 
   def global_env(self):
-    return {}
+    # need to manually copy to each jenkins machine if we run into github
+    # rate limit when running `composer install`
+    return {"BUILD_INTEROP_DOCKER_EXTRA_ARGS":
+            "-v /var/local/.composer/auth.json:/root/.composer/auth.json:ro"}
 
   def __str__(self):
     return 'php'
@@ -472,15 +475,16 @@ def server_jobspec(language, docker_image):
 
 def build_interop_image_jobspec(language, tag=None):
   """Creates jobspec for building interop docker image for a language"""
+  environ = language.global_env()
   if not tag:
     tag = 'grpc_interop_%s:%s' % (language.safename, uuid.uuid4())
-  env = {'INTEROP_IMAGE': tag,
-         'BASE_NAME': 'grpc_interop_%s' % language.safename}
+  environ['INTEROP_IMAGE'] = tag
+  environ['BASE_NAME'] = 'grpc_interop_%s' % language.safename
   if not args.travis:
-    env['TTY_FLAG'] = '-t'
+    environ['TTY_FLAG'] = '-t'
   build_job = jobset.JobSpec(
           cmdline=['tools/jenkins/build_interop_image.sh'],
-          environ=env,
+          environ=environ,
           shortname="build_docker_%s" % (language),
           timeout_seconds=30*60)
   build_job.tag = tag
