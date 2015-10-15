@@ -45,7 +45,8 @@ then
   gcov Release/obj.target/grpc/ext/*.o
   lcov --base-directory . --directory . -c -o coverage.info
   genhtml -o ../reports/node_ext_coverage --num-spaces 2 \
-    -t 'Node gRPC test coverage' coverage.info
+    -t 'Node gRPC test coverage' coverage.info --rc genhtml_hi_limit=95 \
+    --rc genhtml_med_limit=80
   echo '<html><head><meta http-equiv="refresh" content="0;URL=lcov-report/index.html"></head></html>' > \
     ../reports/node_coverage/index.html
 else

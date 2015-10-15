@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "src/core/iomgr/timer.h"
 #include "src/core/iomgr/pollset.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/api_trace.h"
@@ -46,6 +47,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/time.h>
 
 typedef struct {
   grpc_pollset_worker *worker;
@@ -91,6 +93,15 @@ void grpc_cq_global_shutdown(void) {
     g_freelist = next;
   }
 }
+
+struct grpc_cq_alarm {
+  grpc_timer alarm;
+  grpc_cq_completion completion;
+  /** completion queue where events about this alarm will be posted */
+  grpc_completion_queue *cq;
+  /** user supplied tag */
+  void *tag;
+};
 
 grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
   grpc_completion_queue *cc;

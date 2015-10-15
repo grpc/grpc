@@ -43,7 +43,7 @@
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/useful.h>
 
-#include "src/core/iomgr/alarm.h"
+#include "src/core/iomgr/timer.h"
 #include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/tcp_client.h"
 #include "src/core/iomgr/tcp_windows.h"
@@ -56,7 +56,7 @@ typedef struct {
   gpr_mu mu;
   grpc_winsocket *socket;
   gpr_timespec deadline;
-  grpc_alarm alarm;
+  grpc_timer alarm;
   char *addr_name;
   int refs;
   grpc_closure on_connect;
@@ -91,7 +91,7 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *acp, int from_iocp) {
   grpc_winsocket_callback_info *info = &ac->socket->write_info;
   grpc_closure *on_done = ac->on_done;
 
-  grpc_alarm_cancel(exec_ctx, &ac->alarm);
+  grpc_timer_cancel(exec_ctx, &ac->alarm);
 
   gpr_mu_lock(&ac->mu);
 
@@ -201,7 +201,7 @@ void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *on_done,
   ac->endpoint = endpoint;
   grpc_closure_init(&ac->on_connect, on_connect, ac);
 
-  grpc_alarm_init(exec_ctx, &ac->alarm, deadline, on_alarm, ac,
+  grpc_timer_init(exec_ctx, &ac->alarm, deadline, on_alarm, ac,
                   gpr_now(GPR_CLOCK_MONOTONIC));
   grpc_socket_notify_on_write(exec_ctx, socket, &ac->on_connect);
   return;

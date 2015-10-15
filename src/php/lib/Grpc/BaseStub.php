@@ -114,7 +114,7 @@ class BaseStub {
       return true;
     }
     if ($new_state == \Grpc\CHANNEL_FATAL_FAILURE) {
-      throw new Exception('Failed to connect to server');
+      throw new \Exception('Failed to connect to server');
     }
     return false;
   }
@@ -153,6 +153,25 @@ class BaseStub {
     return array($metadata_copy, $timeout);
   }
 
+  /**
+   * validate and normalize the metadata array
+   * @param $metadata The metadata map
+   * @return $metadata Validated and key-normalized metadata map
+   * @throw InvalidArgumentException if key contains invalid characters
+   */
+  private function _validate_and_normalize_metadata($metadata) {
+    $metadata_copy = array();
+    foreach ($metadata as $key => $value) {
+      if (!preg_match('/^[A-Za-z\d_-]+$/', $key)) {
+        throw new \InvalidArgumentException(
+            'Metadata keys must be nonempty strings containing only '.
+            'alphanumeric characters, hyphens and underscores');
+      }
+      $metadata_copy[strtolower($key)] = $value;
+    }
+    return $metadata_copy;
+  }
+
   /* This class is intended to be subclassed by generated code, so all functions
      begin with "_" to avoid name collisions. */
 
@@ -178,6 +197,7 @@ class BaseStub {
                                         $actual_metadata,
                                         $jwt_aud_uri);
     }
+    $actual_metadata = $this->_validate_and_normalize_metadata($actual_metadata);
     $call->start($argument, $actual_metadata, $options);
     return $call;
   }
@@ -204,6 +224,7 @@ class BaseStub {
                                         $actual_metadata,
                                         $jwt_aud_uri);
     }
+    $actual_metadata = $this->_validate_and_normalize_metadata($actual_metadata);
     $call->start($actual_metadata);
     return $call;
   }
@@ -231,6 +252,7 @@ class BaseStub {
                                         $actual_metadata,
                                         $jwt_aud_uri);
     }
+    $actual_metadata = $this->_validate_and_normalize_metadata($actual_metadata);
     $call->start($argument, $actual_metadata, $options);
     return $call;
   }
@@ -254,6 +276,7 @@ class BaseStub {
                                         $actual_metadata,
                                         $jwt_aud_uri);
     }
+    $actual_metadata = $this->_validate_and_normalize_metadata($actual_metadata);
     $call->start($actual_metadata);
     return $call;
   }

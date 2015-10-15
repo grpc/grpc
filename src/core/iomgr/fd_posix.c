@@ -286,7 +286,7 @@ static void set_ready(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure **st) {
 
 void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd) {
   gpr_mu_lock(&fd->mu);
-  GPR_ASSERT(!gpr_atm_no_barrier_load(&fd->shutdown));
+  GPR_ASSERT(!fd->shutdown);
   fd->shutdown = 1;
   set_ready_locked(exec_ctx, fd, &fd->read_closure);
   set_ready_locked(exec_ctx, fd, &fd->write_closure);
@@ -320,7 +320,7 @@ gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
   gpr_mu_lock(&fd->mu);
 
   /* if we are shutdown, then don't add to the watcher set */
-  if (gpr_atm_no_barrier_load(&fd->shutdown)) {
+  if (fd->shutdown) {
     watcher->fd = NULL;
     watcher->pollset = NULL;
     watcher->worker = NULL;

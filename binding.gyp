@@ -54,6 +54,24 @@
     'include_dirs': [
       '.',
       'include'
+    ],
+    'conditions': [
+      ['OS != "win"', {
+        'conditions': [
+          ['config=="gcov"', {
+            'cflags': [
+              '-ftest-coverage',
+              '-fprofile-arcs',
+              '-O0'
+            ],
+            'ldflags': [
+              '-ftest-coverage',
+              '-fprofile-arcs'
+            ]
+          }
+         ]
+        ]
+      }],
     ]
   },
   'targets': [
@@ -64,6 +82,8 @@
       'dependencies': [
       ],
       'sources': [
+        'src/core/profiling/basic_timers.c',
+        'src/core/profiling/stap_timers.c',
         'src/core/support/alloc.c',
         'src/core/support/cmdline.c',
         'src/core/support/cpu_iphone.c',
@@ -99,6 +119,7 @@
         'src/core/support/thd_win32.c',
         'src/core/support/time.c',
         'src/core/support/time_posix.c',
+        'src/core/support/time_precise.c',
         'src/core/support/time_win32.c',
         'src/core/support/tls_pthread.c',
       ],
@@ -165,8 +186,6 @@
         'src/core/httpcli/format_request.c',
         'src/core/httpcli/httpcli.c',
         'src/core/httpcli/parser.c',
-        'src/core/iomgr/alarm.c',
-        'src/core/iomgr/alarm_heap.c',
         'src/core/iomgr/closure.c',
         'src/core/iomgr/endpoint.c',
         'src/core/iomgr/endpoint_pair_posix.c',
@@ -197,6 +216,8 @@
         'src/core/iomgr/tcp_server_windows.c',
         'src/core/iomgr/tcp_windows.c',
         'src/core/iomgr/time_averaged_stats.c',
+        'src/core/iomgr/timer.c',
+        'src/core/iomgr/timer_heap.c',
         'src/core/iomgr/udp_server.c',
         'src/core/iomgr/wakeup_fd_eventfd.c',
         'src/core/iomgr/wakeup_fd_nospecial.c',
@@ -208,8 +229,6 @@
         'src/core/json/json_reader.c',
         'src/core/json/json_string.c',
         'src/core/json/json_writer.c',
-        'src/core/profiling/basic_timers.c',
-        'src/core/profiling/stap_timers.c',
         'src/core/surface/api_trace.c',
         'src/core/surface/byte_buffer.c',
         'src/core/surface/byte_buffer_queue.c',
@@ -278,22 +297,6 @@
         '-g'
       ],
       "conditions": [
-        ['OS != "win"', {
-          'conditions': [
-            ['config=="gcov"', {
-              'cflags': [
-                '-ftest-coverage',
-                '-fprofile-arcs',
-                '-O0'
-              ],
-              'ldflags': [
-                '-ftest-coverage',
-                '-fprofile-arcs'
-              ]
-            }
-           ]
-          ]
-        }],
         ['OS == "mac"', {
           'xcode_settings': {
             'MACOSX_DEPLOYMENT_TARGET': '10.9',

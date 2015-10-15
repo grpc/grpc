@@ -117,7 +117,7 @@ NAN_METHOD(ServerCredentials::New) {
   if (info.IsConstructCall()) {
     if (!info[0]->IsExternal()) {
       return Nan::ThrowTypeError(
-          "ServerCredentials can only be created with the provide functions");
+          "ServerCredentials can only be created with the provided functions");
     }
     Local<External> ext = info[0].As<External>();
     grpc_server_credentials *creds_value =
@@ -126,16 +126,9 @@ NAN_METHOD(ServerCredentials::New) {
     credentials->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
   } else {
-    const int argc = 1;
-    Local<Value> argv[argc] = {info[0]};
-    MaybeLocal<Object> maybe_instance = constructor->GetFunction()->NewInstance(
-        argc, argv);
-    if (maybe_instance.IsEmpty()) {
-      // There's probably a pending exception
-      return;
-    } else {
-      info.GetReturnValue().Set(maybe_instance.ToLocalChecked());
-    }
+    // This should never be called directly
+    return Nan::ThrowTypeError(
+        "ServerCredentials can only be created with the provided functions");
   }
 }
 

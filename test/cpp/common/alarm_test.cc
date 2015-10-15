@@ -31,33 +31,61 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H
-#define GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H
+#include <grpc++/alarm.h>
+#include <grpc++/completion_queue.h>
+#include <gtest/gtest.h>
 
-#include "src/core/iomgr/exec_ctx.h"
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
+#include "test/core/util/test_config.h"
 
-/* iomgr internal api for dealing with alarms */
+namespace grpc {
+namespace {
 
-/* Check for alarms to be run, and run them.
-   Return non zero if alarm callbacks were executed.
-   Drops drop_mu if it is non-null before executing callbacks.
-   If next is non-null, TRY to update *next with the next running alarm
-   IF that alarm occurs before *next current value.
-   *next is never guaranteed to be updated on any given execution; however,
-   with high probability at least one thread in the system will see an update
-   at any time slice. */
+class TestTag : public CompletionQueueTag {
+ public:
+  TestTag() : tag_(0) {}
+  TestTag(gpr_intptr tag) : tag_(tag) {}
+  bool FinalizeResult(void** tag, bool* status) { return true; }
+  gpr_intptr tag() { return tag_; }
 
-int grpc_alarm_check(grpc_exec_ctx* exec_ctx, gpr_timespec now,
-                     gpr_timespec* next);
-void grpc_alarm_list_init(gpr_timespec now);
-void grpc_alarm_list_shutdown(grpc_exec_ctx* exec_ctx);
+ private:
+  gpr_intptr tag_;
+};
 
-gpr_timespec grpc_alarm_list_next_timeout(void);
+TEST(AlarmTest, RegularExpiry) {
+  CompletionQueue cq;
+  TestTag input_tag(1618033);
+  Alarm alarm(&cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), &input_tag);
 
-/* the following must be implemented by each iomgr implementation */
+  TestTag* output_tag;
+  bool ok;
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2));
 
-void grpc_kick_poller(void);
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_TRUE(ok);
+  EXPECT_EQ(output_tag->tag(), input_tag.tag());
+}
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_ALARM_INTERNAL_H */
+TEST(AlarmTest, Cancellation) {
+  CompletionQueue cq;
+  TestTag input_tag(1618033);
+  Alarm alarm(&cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2), &input_tag);
+  alarm.Cancel();
+
+  TestTag* output_tag;
+  bool ok;
+  const CompletionQueue::NextStatus status = cq.AsyncNext(
+      (void**)&output_tag, &ok, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
+
+  EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
+  EXPECT_FALSE(ok);
+  EXPECT_EQ(output_tag->tag(), input_tag.tag());
+}
+
+}  // namespace
+}  // namespace grpc
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

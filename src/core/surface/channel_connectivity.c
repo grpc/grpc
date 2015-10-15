@@ -37,7 +37,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/channel/client_channel.h"
-#include "src/core/iomgr/alarm.h"
+#include "src/core/iomgr/timer.h"
 #include "src/core/surface/api_trace.h"
 #include "src/core/surface/completion_queue.h"
 
@@ -78,7 +78,7 @@ typedef struct {
   int success;
   int removed;
   grpc_closure on_complete;
-  grpc_alarm alarm;
+  grpc_timer alarm;
   grpc_connectivity_state state;
   grpc_completion_queue *cq;
   grpc_cq_completion completion_storage;
@@ -133,7 +133,7 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
     gpr_mu_lock(&w->mu);
     w->success = 1;
     gpr_mu_unlock(&w->mu);
-    grpc_alarm_cancel(exec_ctx, &w->alarm);
+    grpc_timer_cancel(exec_ctx, &w->alarm);
   }
 
   gpr_mu_lock(&w->mu);
@@ -195,7 +195,7 @@ void grpc_channel_watch_connectivity_state(
   w->tag = tag;
   w->channel = channel;
 
-  grpc_alarm_init(&exec_ctx, &w->alarm,
+  grpc_timer_init(&exec_ctx, &w->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                   timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC));
 

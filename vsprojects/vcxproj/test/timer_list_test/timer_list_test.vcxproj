@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{E6F27D86-476F-CB60-AC56-ED3A210C0E96}</ProjectGuid>
+    <ProjectGuid>{C43EA45B-1E72-C58D-8CE3-A879D1B1E2DB}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
@@ -55,13 +55,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>alarm_list_test</TargetName>
+    <TargetName>timer_list_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>alarm_list_test</TargetName>
+    <TargetName>timer_list_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
@@ -143,7 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\core\iomgr\alarm_list_test.c">
+    <ClCompile Include="..\..\..\..\test\core\iomgr\timer_list_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -31,27 +31,53 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H
-#define GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H
+#include "src/core/iomgr/timer.h"
+#include "src/core/surface/completion_queue.h"
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 
-#include "src/core/iomgr/alarm.h"
+struct grpc_alarm {
+  grpc_timer alarm;
+  grpc_cq_completion completion;
+  /** completion queue where events about this alarm will be posted */
+  grpc_completion_queue *cq;
+  /** user supplied tag */
+  void *tag;
+};
 
-typedef struct {
-  grpc_alarm **alarms;
-  gpr_uint32 alarm_count;
-  gpr_uint32 alarm_capacity;
-} grpc_alarm_heap;
+static void do_nothing_end_completion(grpc_exec_ctx *exec_ctx, void *arg,
+                                      grpc_cq_completion *c) {}
 
-/* return 1 if the new alarm is the first alarm in the heap */
-int grpc_alarm_heap_add(grpc_alarm_heap *heap, grpc_alarm *alarm);
+static void alarm_cb(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+  grpc_alarm *alarm = arg;
+  grpc_cq_end_op(exec_ctx, alarm->cq, alarm->tag, success,
+                 do_nothing_end_completion, NULL, &alarm->completion);
+}
 
-void grpc_alarm_heap_init(grpc_alarm_heap *heap);
-void grpc_alarm_heap_destroy(grpc_alarm_heap *heap);
+grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
+                              void *tag) {
+  grpc_alarm *alarm = gpr_malloc(sizeof(grpc_alarm));
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
-void grpc_alarm_heap_remove(grpc_alarm_heap *heap, grpc_alarm *alarm);
-grpc_alarm *grpc_alarm_heap_top(grpc_alarm_heap *heap);
-void grpc_alarm_heap_pop(grpc_alarm_heap *heap);
+  GRPC_CQ_INTERNAL_REF(cq, "alarm");
+  alarm->cq = cq;
+  alarm->tag = tag;
 
-int grpc_alarm_heap_is_empty(grpc_alarm_heap *heap);
+  grpc_timer_init(&exec_ctx, &alarm->alarm, deadline, alarm_cb, alarm,
+                  gpr_now(GPR_CLOCK_MONOTONIC));
+  grpc_cq_begin_op(cq);
+  grpc_exec_ctx_finish(&exec_ctx);
+  return alarm;
+}
 
-#endif /* GRPC_INTERNAL_CORE_IOMGR_ALARM_HEAP_H */
+void grpc_alarm_cancel(grpc_alarm *alarm) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_timer_cancel(&exec_ctx, &alarm->alarm);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
+void grpc_alarm_destroy(grpc_alarm *alarm) {
+  grpc_alarm_cancel(alarm);
+  GRPC_CQ_INTERNAL_UNREF(alarm->cq, "alarm");
+  gpr_free(alarm);
+}
