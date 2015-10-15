@@ -43,7 +43,7 @@ RUN apt-get update && apt-get install -y \
     python-virtualenv
 
 # Install Python packages from PyPI
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.0.0a2 cython==0.23
 
 # Get the GRPC source from GitHub
 RUN git clone --recursive https://github.com/grpc/grpc.git /var/local/git/grpc
