@@ -475,15 +475,16 @@ def server_jobspec(language, docker_image):
 
 def build_interop_image_jobspec(language, tag=None):
   """Creates jobspec for building interop docker image for a language"""
+  environ = language.global_env()
   if not tag:
     tag = 'grpc_interop_%s:%s' % (language.safename, uuid.uuid4())
-  env = {'INTEROP_IMAGE': tag,
-         'BASE_NAME': 'grpc_interop_%s' % language.safename}
+  environ['INTEROP_IMAGE'] = tag
+  environ['BASE_NAME'] = 'grpc_interop_%s' % language.safename
   if not args.travis:
-    env['TTY_FLAG'] = '-t'
+    environ['TTY_FLAG'] = '-t'
   build_job = jobset.JobSpec(
           cmdline=['tools/jenkins/build_interop_image.sh'],
-          environ=env,
+          environ=environ,
           shortname="build_docker_%s" % (language),
           timeout_seconds=30*60)
   build_job.tag = tag
