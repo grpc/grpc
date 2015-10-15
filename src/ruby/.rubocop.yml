@@ -9,3 +9,9 @@ AllCops:
     - 'bin/math_services.rb'
     - 'pb/grpc/health/v1alpha/*'
     - 'pb/test/**/*'
+
+Metrics/CyclomaticComplexity:
+  Max: 8
+
+Metrics/PerceivedComplexity:
+  Max: 8
