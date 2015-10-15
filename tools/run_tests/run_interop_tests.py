@@ -230,10 +230,7 @@ class PHPLanguage:
     return _SSL_CERT_ENV
 
   def global_env(self):
-    # need to manually copy to each jenkins machine if we run into github
-    # rate limit when running `composer install`
-    return {"BUILD_INTEROP_DOCKER_EXTRA_ARGS":
-            "-v /var/local/.composer/auth.json:/root/.composer/auth.json:ro"}
+    return {}
 
   def __str__(self):
     return 'php'
@@ -475,16 +472,21 @@ def server_jobspec(language, docker_image):
 
 def build_interop_image_jobspec(language, tag=None):
   """Creates jobspec for building interop docker image for a language"""
-  environ = language.global_env()
   if not tag:
     tag = 'grpc_interop_%s:%s' % (language.safename, uuid.uuid4())
-  environ['INTEROP_IMAGE'] = tag
-  environ['BASE_NAME'] = 'grpc_interop_%s' % language.safename
+  env = {'INTEROP_IMAGE': tag,
+         'BASE_NAME': 'grpc_interop_%s' % language.safename}
   if not args.travis:
-    environ['TTY_FLAG'] = '-t'
+    env['TTY_FLAG'] = '-t'
+  # This env variable is used to get around the github rate limit
+  # error when running the PHP `composer install` command
+  # TODO(stanleycheung): find a more elegant way to do this
+  if language.safename == 'php':
+    env['BUILD_INTEROP_DOCKER_EXTRA_ARGS'] = \
+      "-v /var/local/.composer/auth.json:/root/.composer/auth.json:ro"
   build_job = jobset.JobSpec(
           cmdline=['tools/jenkins/build_interop_image.sh'],
-          environ=environ,
+          environ=env,
           shortname="build_docker_%s" % (language),
           timeout_seconds=30*60)
   build_job.tag = tag
