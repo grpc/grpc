@@ -230,7 +230,10 @@ class PHPLanguage:
     return _SSL_CERT_ENV
 
   def global_env(self):
-    return {}
+    # need to manually copy to each jenkins machine if we run into github
+    # rate limit when running `composer install`
+    return {"BUILD_INTEROP_DOCKER_EXTRA_ARGS":
+            "-v /var/local/.composer/auth.json:/root/.composer/auth.json:ro"}
 
   def __str__(self):
     return 'php'
