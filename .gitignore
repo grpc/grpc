@@ -45,3 +45,9 @@ portlog.txt
 # gyp generated make files
 *-gyp.mk
 out
+
+# YCM config files
+.ycm_extra_conf.py
+
+# Core dump files
+core
