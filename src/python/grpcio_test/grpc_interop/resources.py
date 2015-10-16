@@ -29,6 +29,7 @@
 
 """Constants and functions for data used in interoperability testing."""
 
+import argparse
 import os
 
 import pkg_resources
@@ -54,3 +55,11 @@ def private_key():
 def certificate_chain():
   return pkg_resources.resource_string(
       __name__, _CERTIFICATE_CHAIN_RESOURCE_PATH)
+
+
+def parse_bool(value):
+  if value == 'true':
+    return True
+  if value == 'false':
+    return False
+  raise argparse.ArgumentTypeError('Only true/false allowed')
