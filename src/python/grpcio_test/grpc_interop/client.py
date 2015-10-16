@@ -49,11 +49,11 @@ def _args():
   parser.add_argument(
       '--test_case', help='the test case to execute', type=str)
   parser.add_argument(
-      '--use_tls', help='require a secure connection', dest='use_tls',
-      action='store_true')
+      '--use_tls', help='require a secure connection', default=False,
+      type=resources.parse_bool)
   parser.add_argument(
       '--use_test_ca', help='replace platform root CAs with ca.pem',
-      action='store_true')
+      default=False, type=resources.parse_bool)
   parser.add_argument(
       '--server_host_override',
       help='the server host to which to claim to connect', type=str)
