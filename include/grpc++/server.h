@@ -37,6 +37,7 @@
 #include <list>
 #include <memory>
 
+#include <grpc/compression.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/impl/call.h>
 #include <grpc++/impl/grpc_library.h>
@@ -99,7 +100,7 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   /// \param max_message_size Maximum message length that the channel can
   /// receive.
   Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-         int max_message_size);
+         int max_message_size, grpc_compression_options compression_options);
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
@@ -214,11 +215,10 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
     bool FinalizeResult(void** tag, bool* status) GRPC_OVERRIDE {
       bool serialization_status =
           *status && payload_ &&
-          SerializationTraits<Message>::Deserialize(payload_, request_,
-                                                    server_->max_message_size_)
-              .ok();
+          SerializationTraits<Message>::Deserialize(
+              payload_, request_, server_->max_message_size_).ok();
       bool ret = RegisteredAsyncRequest::FinalizeResult(tag, status);
-      *status = serialization_status && *status;
+      *status = serialization_status&&* status;
       return ret;
     }
 

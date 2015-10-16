@@ -72,6 +72,7 @@ _COLORS = {
     'yellow': [ 33, 0 ],
     'lightgray': [ 37, 0],
     'gray': [ 30, 1 ],
+    'purple': [ 35, 0 ],
     }
 
 
@@ -81,6 +82,8 @@ _CLEAR_LINE = '\x1b[2K'
 
 _TAG_COLOR = {
     'FAILED': 'red',
+    'FLAKE': 'purple',
+    'TIMEOUT_FLAKE': 'purple',
     'WARNING': 'yellow',
     'TIMEOUT': 'red',
     'PASSED': 'green',
@@ -131,13 +134,15 @@ class JobSpec(object):
   """Specifies what to run for a job."""
 
   def __init__(self, cmdline, shortname=None, environ=None, hash_targets=None,
-               cwd=None, shell=False, timeout_seconds=5*60):
+               cwd=None, shell=False, timeout_seconds=5*60, flake_retries=0,
+               timeout_retries=0, kill_handler=None):
     """
     Arguments:
       cmdline: a list of arguments to pass as the command line
       environ: a dictionary of environment variables to set in the child process
       hash_targets: which files to include in the hash representing the jobs version
                     (or empty, indicating the job should not be hashed)
+      kill_handler: a handler that will be called whenever job.kill() is invoked
     """
     if environ is None:
       environ = {}
@@ -150,6 +155,9 @@ class JobSpec(object):
     self.cwd = cwd
     self.shell = shell
     self.timeout_seconds = timeout_seconds
+    self.flake_retries = flake_retries
+    self.timeout_retries = timeout_retries
+    self.kill_handler = kill_handler
 
   def identity(self):
     return '%r %r %r' % (self.cmdline, self.environ, self.hash_targets)
@@ -167,25 +175,30 @@ class Job(object):
   def __init__(self, spec, bin_hash, newline_on_success, travis, add_env, xml_report):
     self._spec = spec
     self._bin_hash = bin_hash
-    self._tempfile = tempfile.TemporaryFile()
-    env = os.environ.copy()
-    for k, v in spec.environ.iteritems():
-      env[k] = v
-    for k, v in add_env.iteritems():
-      env[k] = v
-    self._start = time.time()
-    self._process = subprocess.Popen(args=spec.cmdline,
-                                     stderr=subprocess.STDOUT,
-                                     stdout=self._tempfile,
-                                     cwd=spec.cwd,
-                                     shell=spec.shell,
-                                     env=env)
-    self._state = _RUNNING
     self._newline_on_success = newline_on_success
     self._travis = travis
+    self._add_env = add_env.copy()
     self._xml_test = ET.SubElement(xml_report, 'testcase',
                                    name=self._spec.shortname) if xml_report is not None else None
+    self._retries = 0
+    self._timeout_retries = 0
+    self._suppress_failure_message = False
     message('START', spec.shortname, do_newline=self._travis)
+    self.start()
+
+  def start(self):
+    self._tempfile = tempfile.TemporaryFile()
+    env = dict(os.environ)
+    env.update(self._spec.environ)
+    env.update(self._add_env)
+    self._start = time.time()
+    self._process = subprocess.Popen(args=self._spec.cmdline,
+                                     stderr=subprocess.STDOUT,
+                                     stdout=self._tempfile,
+                                     cwd=self._spec.cwd,
+                                     shell=self._spec.shell,
+                                     env=env)
+    self._state = _RUNNING
 
   def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
@@ -202,33 +215,53 @@ class Job(object):
         self._xml_test.set('time', str(elapsed))
         ET.SubElement(self._xml_test, 'system-out').text = filtered_stdout
       if self._process.returncode != 0:
-        self._state = _FAILURE
-        message('FAILED', '%s [ret=%d, pid=%d]' % (
+        if self._retries < self._spec.flake_retries:
+          message('FLAKE', '%s [ret=%d, pid=%d]' % (
             self._spec.shortname, self._process.returncode, self._process.pid),
             stdout, do_newline=True)
-        if self._xml_test is not None:
-          ET.SubElement(self._xml_test, 'failure', message='Failure').text
+          self._retries += 1
+          self.start()
+        else:
+          self._state = _FAILURE
+          if not self._suppress_failure_message:
+            message('FAILED', '%s [ret=%d, pid=%d]' % (
+                self._spec.shortname, self._process.returncode, self._process.pid),
+                stdout, do_newline=True)
+          if self._xml_test is not None:
+            ET.SubElement(self._xml_test, 'failure', message='Failure').text
       else:
         self._state = _SUCCESS
-        message('PASSED', '%s [time=%.1fsec]' % (self._spec.shortname, elapsed),
-                do_newline=self._newline_on_success or self._travis)
+        message('PASSED', '%s [time=%.1fsec; retries=%d;%d]' % (
+                    self._spec.shortname, elapsed, self._retries, self._timeout_retries),
+            do_newline=self._newline_on_success or self._travis)
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
       self._tempfile.seek(0)
       stdout = self._tempfile.read()
       filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))
-      message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
-      self.kill()
-      if self._xml_test is not None:
-        ET.SubElement(self._xml_test, 'system-out').text = filtered_stdout
-        ET.SubElement(self._xml_test, 'error', message='Timeout')
+      if self._timeout_retries < self._spec.timeout_retries:
+        message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
+        self._timeout_retries += 1
+        self._process.terminate()
+        self.start()
+      else:
+        message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
+        self.kill()
+        if self._xml_test is not None:
+          ET.SubElement(self._xml_test, 'system-out').text = filtered_stdout
+          ET.SubElement(self._xml_test, 'error', message='Timeout')
     return self._state
 
   def kill(self):
     if self._state == _RUNNING:
       self._state = _KILLED
+      if self._spec.kill_handler:
+        self._spec.kill_handler(self)
       self._process.terminate()
+
+  def suppress_failure_message(self):
+    self._suppress_failure_message = True
 
 
 class Jobset(object):

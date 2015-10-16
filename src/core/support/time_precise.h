@@ -34,60 +34,9 @@
 #ifndef GRPC_CORE_SUPPORT_TIME_PRECISE_H_
 #define GRPC_CORE_SUPPORT_TIME_PRECISE_H_
 
-#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <stdio.h>
 
-#ifdef GRPC_TIMERS_RDTSC
-#if defined(__i386__)
-static void gpr_get_cycle_counter(long long int *clk) {
-  long long int ret;
-  __asm__ volatile("rdtsc" : "=A"(ret));
-  *clk = ret;
-}
-
-// ----------------------------------------------------------------
-#elif defined(__x86_64__) || defined(__amd64__)
-static void gpr_get_cycle_counter(long long int *clk) {
-  unsigned long long low, high;
-  __asm__ volatile("rdtsc" : "=a"(low), "=d"(high));
-  *clk = (high << 32) | low;
-}
-#endif
-
-static gpr_once precise_clock_init = GPR_ONCE_INIT;
-static long long cycles_per_second = 0;
-static void gpr_precise_clock_init() {
-  time_t start = time(NULL);
-  gpr_precise_clock start_cycle;
-  gpr_precise_clock end_cycle;
-  while (time(NULL) == start)
-    ;
-  gpr_get_cycle_counter(&start_cycle);
-  while (time(NULL) == start + 1)
-    ;
-  gpr_get_cycle_counter(&end_cycle);
-  cycles_per_second = end_cycle - start_cycle;
-}
-
-static double grpc_precise_clock_scaling_factor() {
-  gpr_once_init(&precise_clock_init, grpc_precise_clock_init);
-  return 1e6 / cycles_per_second;
-}
-
-static void gpr_precise_clock_now(gpr_timespec *clk) {
-  long long int counter;
-  gpr_get_cycle_counter(&counter);
-  clk->clock = GPR_CLOCK_REALTIME;
-  clk->tv_sec = counter / cycles_per_second;
-  clk->tv_nsec = counter % cycles_per_second;
-}
-
-#else /* GRPC_TIMERS_RDTSC */
-static void gpr_precise_clock_now(gpr_timespec *clk) {
-  *clk = gpr_now(GPR_CLOCK_REALTIME);
-  clk->clock_type = GPR_CLOCK_PRECISE;
-}
-#endif /* GRPC_TIMERS_RDTSC */
+void gpr_precise_clock_init(void);
+void gpr_precise_clock_now(gpr_timespec *clk);
 
 #endif /* GRPC_CORE_SUPPORT_TIME_PRECISE_ */

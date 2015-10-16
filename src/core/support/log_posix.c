@@ -62,9 +62,9 @@ void gpr_log(const char *file, int line, gpr_log_severity severity,
   } else if ((size_t)ret <= sizeof(buf) - 1) {
     message = buf;
   } else {
-    message = allocated = gpr_malloc(ret + 1);
+    message = allocated = gpr_malloc((size_t)ret + 1);
     va_start(args, format);
-    vsnprintf(message, ret + 1, format, args);
+    vsnprintf(message, (size_t)(ret + 1), format, args);
     va_end(args);
   }
   gpr_log_message(file, line, severity, message);

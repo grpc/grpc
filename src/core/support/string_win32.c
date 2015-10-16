@@ -81,7 +81,8 @@ int gpr_asprintf(char **strp, const char *format, ...) {
 }
 
 #if defined UNICODE || defined _UNICODE
-LPTSTR gpr_char_to_tchar(LPCSTR input) {
+LPTSTR
+gpr_char_to_tchar(LPCSTR input) {
   LPTSTR ret;
   int needed = MultiByteToWideChar(CP_UTF8, 0, input, -1, NULL, 0);
   if (needed == 0) return NULL;
@@ -90,7 +91,8 @@ LPTSTR gpr_char_to_tchar(LPCSTR input) {
   return ret;
 }
 
-LPSTR gpr_tchar_to_char(LPCTSTR input) {
+LPSTR
+gpr_tchar_to_char(LPCTSTR input) {
   LPSTR ret;
   int needed = WideCharToMultiByte(CP_UTF8, 0, input, -1, NULL, 0, NULL, NULL);
   if (needed == 0) return NULL;

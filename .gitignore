@@ -8,6 +8,7 @@ objs
 python*_virtual_environment
 
 # gcov coverage data
+reports
 coverage
 *.gcno
 
@@ -36,9 +37,14 @@ cache.mk
 
 # Temporary test reports
 report.xml
+latency_trace.txt
 
 # port server log
 portlog.txt
+
+# gyp generated make files
+*-gyp.mk
+out
 
 # XCode
 build/

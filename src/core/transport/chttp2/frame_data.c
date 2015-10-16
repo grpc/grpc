@@ -70,7 +70,8 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_exec_ctx *exec_ctx, void *parser,
+    grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
@@ -146,25 +147,26 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
       grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
                                                stream_parsing);
       if ((gpr_uint32)(end - cur) == p->frame_size) {
-        grpc_sopb_add_slice(&p->incoming_sopb,
-                            gpr_slice_sub(slice, cur - beg, end - beg));
+        grpc_sopb_add_slice(
+            &p->incoming_sopb,
+            gpr_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
         p->state = GRPC_CHTTP2_DATA_FH_0;
         return GRPC_CHTTP2_PARSE_OK;
       } else if ((gpr_uint32)(end - cur) > p->frame_size) {
-        grpc_sopb_add_slice(
-            &p->incoming_sopb,
-            gpr_slice_sub(slice, cur - beg, cur + p->frame_size - beg));
+        grpc_sopb_add_slice(&p->incoming_sopb,
+                            gpr_slice_sub(slice, (size_t)(cur - beg),
+                                          (size_t)(cur + p->frame_size - beg)));
         cur += p->frame_size;
         goto fh_0; /* loop */
       } else {
-        grpc_sopb_add_slice(&p->incoming_sopb,
-                            gpr_slice_sub(slice, cur - beg, end - beg));
-        p->frame_size -= (end - cur);
+        grpc_sopb_add_slice(
+            &p->incoming_sopb,
+            gpr_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
+        GPR_ASSERT((size_t)(end - cur) <= p->frame_size);
+        p->frame_size -= (gpr_uint32)(end - cur);
         return GRPC_CHTTP2_PARSE_OK;
       }
   }
 
-  gpr_log(GPR_ERROR, "should never reach here");
-  abort();
-  return GRPC_CHTTP2_CONNECTION_ERROR;
+  GPR_UNREACHABLE_CODE(return GRPC_CHTTP2_CONNECTION_ERROR);
 }

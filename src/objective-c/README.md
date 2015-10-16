@@ -153,7 +153,7 @@ _protoc_, in which case no system modification nor renaming is necessary.
 <a name="no-cocoapods"></a>
 ### Integrate the generated gRPC library without using Cocoapods
 
-You need to compile the generated `.pbpbjc.*` files (the enums and messages) without ARC support,
+You need to compile the generated `.pbobjc.*` files (the enums and messages) without ARC support,
 and the generated `.pbrpc.*` files (the services) with ARC support. The generated code depends on
 v0.5+ of the Objective-C gRPC runtime library and v3.0.0-alpha-3+ of the Objective-C Protobuf
 runtime library.

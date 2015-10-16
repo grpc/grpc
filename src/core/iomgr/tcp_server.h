@@ -39,16 +39,17 @@
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;
 
-/* New server callback: tcp is the newly connected tcp connection */
-typedef void (*grpc_tcp_server_cb)(void *arg, grpc_endpoint *ep);
+/* Called for newly connected TCP connections. */
+typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
+                                   grpc_endpoint *ep);
 
 /* Create a server, initially not bound to any ports */
 grpc_tcp_server *grpc_tcp_server_create(void);
 
 /* Start listening to bound ports */
-void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset **pollsets,
-                           size_t pollset_count, grpc_tcp_server_cb cb,
-                           void *cb_arg);
+void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *server,
+                           grpc_pollset **pollsets, size_t pollset_count,
+                           grpc_tcp_server_cb on_accept_cb, void *cb_arg);
 
 /* Add a port to the server, returning port number on success, or negative
    on failure.
@@ -62,7 +63,7 @@ void grpc_tcp_server_start(grpc_tcp_server *server, grpc_pollset **pollsets,
 /* TODO(ctiller): deprecate this, and make grpc_tcp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
 int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
-                             int addr_len);
+                             size_t addr_len);
 
 /* Returns the file descriptor of the Nth listening socket on this server,
    or -1 if the index is out of bounds.
@@ -71,8 +72,7 @@ int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
    up when grpc_tcp_server_destroy is called. */
 int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned index);
 
-void grpc_tcp_server_destroy(grpc_tcp_server *server,
-                             void (*shutdown_done)(void *shutdown_done_arg),
-                             void *shutdown_done_arg);
+void grpc_tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *server,
+                             grpc_closure *closure);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H */

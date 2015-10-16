@@ -31,9 +31,9 @@
  *
  */
 
-#include <atomic>
 #include <mutex>
 #include <thread>
+#include <time.h>
 
 #include <grpc++/channel.h>
 #include <grpc++/client_context.h>
@@ -44,6 +44,7 @@
 #include <grpc++/server_builder.h>
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <gtest/gtest.h>
@@ -57,53 +58,62 @@ using grpc::cpp::test::util::EchoRequest;
 using grpc::cpp::test::util::EchoResponse;
 using std::chrono::system_clock;
 
-const char* kLargeString = "("
-  "To be, or not to be- that is the question:"
-  "Whether 'tis nobler in the mind to suffer"
-  "The slings and arrows of outrageous fortune"
-  "Or to take arms against a sea of troubles,"
-  "And by opposing end them. To die- to sleep-"
-  "No more; and by a sleep to say we end"
-  "The heartache, and the thousand natural shock"
-  "That flesh is heir to. 'Tis a consummation"
-  "Devoutly to be wish'd. To die- to sleep."
-  "To sleep- perchance to dream: ay, there's the rub!"
-  "For in that sleep of death what dreams may come"
-  "When we have shuffled off this mortal coil,"
-  "Must give us pause. There's the respect"
-  "That makes calamity of so long life."
-  "For who would bear the whips and scorns of time,"
-  "Th' oppressor's wrong, the proud man's contumely,"
-  "The pangs of despis'd love, the law's delay,"
-  "The insolence of office, and the spurns"
-  "That patient merit of th' unworthy takes,"
-  "When he himself might his quietus make"
-  "With a bare bodkin? Who would these fardels bear,"
-  "To grunt and sweat under a weary life,"
-  "But that the dread of something after death-"
-  "The undiscover'd country, from whose bourn"
-  "No traveller returns- puzzles the will,"
-  "And makes us rather bear those ills we have"
-  "Than fly to others that we know not of?"
-  "Thus conscience does make cowards of us all,"
-  "And thus the native hue of resolution"
-  "Is sicklied o'er with the pale cast of thought,"
-  "And enterprises of great pith and moment"
-  "With this regard their currents turn awry"
-  "And lose the name of action.- Soft you now!"
-  "The fair Ophelia!- Nymph, in thy orisons"
-  "Be all my sins rememb'red.";
+const char* kLargeString =
+    "("
+    "To be, or not to be- that is the question:"
+    "Whether 'tis nobler in the mind to suffer"
+    "The slings and arrows of outrageous fortune"
+    "Or to take arms against a sea of troubles,"
+    "And by opposing end them. To die- to sleep-"
+    "No more; and by a sleep to say we end"
+    "The heartache, and the thousand natural shock"
+    "That flesh is heir to. 'Tis a consummation"
+    "Devoutly to be wish'd. To die- to sleep."
+    "To sleep- perchance to dream: ay, there's the rub!"
+    "For in that sleep of death what dreams may come"
+    "When we have shuffled off this mortal coil,"
+    "Must give us pause. There's the respect"
+    "That makes calamity of so long life."
+    "For who would bear the whips and scorns of time,"
+    "Th' oppressor's wrong, the proud man's contumely,"
+    "The pangs of despis'd love, the law's delay,"
+    "The insolence of office, and the spurns"
+    "That patient merit of th' unworthy takes,"
+    "When he himself might his quietus make"
+    "With a bare bodkin? Who would these fardels bear,"
+    "To grunt and sweat under a weary life,"
+    "But that the dread of something after death-"
+    "The undiscover'd country, from whose bourn"
+    "No traveller returns- puzzles the will,"
+    "And makes us rather bear those ills we have"
+    "Than fly to others that we know not of?"
+    "Thus conscience does make cowards of us all,"
+    "And thus the native hue of resolution"
+    "Is sicklied o'er with the pale cast of thought,"
+    "And enterprises of great pith and moment"
+    "With this regard their currents turn awry"
+    "And lose the name of action.- Soft you now!"
+    "The fair Ophelia!- Nymph, in thy orisons"
+    "Be all my sins rememb'red.";
 
 namespace grpc {
 namespace testing {
 
 class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
  public:
-  static void BidiStream_Sender(ServerReaderWriter<EchoResponse, EchoRequest>* stream, std::atomic<bool>* should_exit) {
+  static void BidiStream_Sender(
+      ServerReaderWriter<EchoResponse, EchoRequest>* stream,
+      gpr_atm* should_exit) {
     EchoResponse response;
     response.set_message(kLargeString);
-    while (!should_exit->load()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    while (gpr_atm_acq_load(should_exit) == static_cast<gpr_atm>(0)) {
+      struct timespec tv = {0, 1000000};  // 1 ms
+      struct timespec rem;
+      // TODO (vpai): Mark this blocking
+      while (nanosleep(&tv, &rem) != 0) {
+        tv = rem;
+      };
+
       stream->Write(response);
     }
   }
@@ -113,13 +123,21 @@ class TestServiceImpl : public ::grpc::cpp::test::util::TestService::Service {
                     ServerReaderWriter<EchoResponse, EchoRequest>* stream)
       GRPC_OVERRIDE {
     EchoRequest request;
-    std::atomic<bool> should_exit(false);
-    std::thread sender(std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
+    gpr_atm should_exit;
+    gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(0));
+
+    std::thread sender(
+        std::bind(&TestServiceImpl::BidiStream_Sender, stream, &should_exit));
 
     while (stream->Read(&request)) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(3));
+      struct timespec tv = {0, 3000000};  // 3 ms
+      struct timespec rem;
+      // TODO (vpai): Mark this blocking
+      while (nanosleep(&tv, &rem) != 0) {
+        tv = rem;
+      };
     }
-    should_exit.store(true);
+    gpr_atm_rel_store(&should_exit, static_cast<gpr_atm>(1));
     sender.join();
     return Status::OK;
   }
@@ -141,9 +159,9 @@ class End2endTest : public ::testing::Test {
   void TearDown() GRPC_OVERRIDE { server_->Shutdown(); }
 
   void ResetStub() {
-    std::shared_ptr<Channel> channel = CreateChannel(
-        server_address_.str(), InsecureCredentials());
-    stub_ = std::move(grpc::cpp::test::util::TestService::NewStub(channel));
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureCredentials());
+    stub_ = grpc::cpp::test::util::TestService::NewStub(channel);
   }
 
   std::unique_ptr<grpc::cpp::test::util::TestService::Stub> stub_;
@@ -155,7 +173,7 @@ class End2endTest : public ::testing::Test {
 static void Drainer(ClientReaderWriter<EchoRequest, EchoResponse>* reader) {
   EchoResponse response;
   while (reader->Read(&response)) {
-      // Just drain out the responses as fast as possible.
+    // Just drain out the responses as fast as possible.
   }
 }
 

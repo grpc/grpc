@@ -62,18 +62,18 @@ class InteropClient {
   void DoCancelAfterBegin();
   void DoCancelAfterFirstResponse();
   void DoTimeoutOnSleepingServer();
+  void DoEmptyStream();
   void DoStatusWithMessage();
   // Auth tests.
   // username is a string containing the user email
   void DoJwtTokenCreds(const grpc::string& username);
   void DoComputeEngineCreds(const grpc::string& default_service_account,
                             const grpc::string& oauth_scope);
-  // username is a string containing the user email
+  // username the GCE default service account email
   void DoOauth2AuthToken(const grpc::string& username,
                          const grpc::string& oauth_scope);
   // username is a string containing the user email
-  void DoPerRpcCreds(const grpc::string& username,
-                     const grpc::string& oauth_scope);
+  void DoPerRpcCreds(const grpc::string& json_key);
 
  private:
   void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);

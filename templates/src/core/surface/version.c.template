@@ -38,6 +38,5 @@
   
   #include <grpc/grpc.h>
   
-  const char *grpc_version_string(void) {
-  	return "${settings.version.major}.${settings.version.minor}.${settings.version.micro}.${settings.version.build}";
-  }
+  const char *grpc_version_string(void) { \
+  return "${settings.version.major}.${settings.version.minor}.${settings.version.micro}.${settings.version.build}"; }

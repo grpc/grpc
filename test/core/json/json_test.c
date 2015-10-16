@@ -43,8 +43,8 @@
 #include "test/core/util/test_config.h"
 
 typedef struct testing_pair {
-  const char* input;
-  const char* output;
+  const char *input;
+  const char *output;
 } testing_pair;
 
 static testing_pair testing_pairs[] = {
@@ -66,7 +66,7 @@ static testing_pair testing_pairs[] = {
     {"\"\\ud834\\udd1e\"", "\"\\ud834\\udd1e\""},
     /* Testing nested empty containers. */
     {
-        " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
+     " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
     },
     /* Testing escapes and control chars in key strings. */
     {" { \"\x7f\\n\\\\a , b\": 1, \"\": 0 } ",
@@ -131,16 +131,16 @@ static void test_pairs() {
   unsigned i;
 
   for (i = 0; i < GPR_ARRAY_SIZE(testing_pairs); i++) {
-    testing_pair* pair = testing_pairs + i;
-    char* scratchpad = gpr_strdup(pair->input);
-    grpc_json* json;
+    testing_pair *pair = testing_pairs + i;
+    char *scratchpad = gpr_strdup(pair->input);
+    grpc_json *json;
 
     gpr_log(GPR_INFO, "parsing string %i - should %s", i,
             pair->output ? "succeed" : "fail");
     json = grpc_json_parse_string(scratchpad);
 
     if (pair->output) {
-      char* output;
+      char *output;
 
       GPR_ASSERT(json);
       output = grpc_json_dump_to_string(json, 0);
@@ -160,9 +160,9 @@ static void test_pairs() {
 }
 
 static void test_atypical() {
-  char* scratchpad = gpr_strdup("[[],[]]");
-  grpc_json* json = grpc_json_parse_string(scratchpad);
-  grpc_json* brother;
+  char *scratchpad = gpr_strdup("[[],[]]");
+  grpc_json *json = grpc_json_parse_string(scratchpad);
+  grpc_json *brother;
 
   GPR_ASSERT(json);
   GPR_ASSERT(json->child);
@@ -173,7 +173,7 @@ static void test_atypical() {
   gpr_free(scratchpad);
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_pairs();
   test_atypical();

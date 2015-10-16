@@ -40,7 +40,7 @@
 
 var _ = require('lodash');
 
-var grpc = require('bindings')('grpc.node');
+var grpc = require('bindings')('grpc_node');
 
 var common = require('./common');
 
@@ -54,7 +54,7 @@ var Readable = stream.Readable;
 var Writable = stream.Writable;
 var Duplex = stream.Duplex;
 var util = require('util');
-var version = require('../package.json').version;
+var version = require('../../../package.json').version;
 
 util.inherits(ClientWritableStream, Writable);
 
@@ -233,17 +233,23 @@ function getCall(channel, method, options) {
   var host;
   var parent;
   var propagate_flags;
+  var credentials;
   if (options) {
     deadline = options.deadline;
     host = options.host;
     parent = _.get(options, 'parent.call');
     propagate_flags = options.propagate_flags;
+    credentials = options.credentials;
   }
   if (deadline === undefined) {
     deadline = Infinity;
   }
-  return new grpc.Call(channel, method, deadline, host,
-                       parent, propagate_flags);
+  var call = new grpc.Call(channel, method, deadline, host,
+                           parent, propagate_flags);
+  if (credentials) {
+    call.setCredentials(credentials);
+  }
+  return call;
 }
 
 /**
@@ -282,60 +288,53 @@ function makeUnaryRequestFunction(method, serialize, deserialize) {
     emitter.getPeer = function getPeer() {
       return call.getPeer();
     };
-    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
-      if (error) {
-        call.cancel();
-        callback(error);
-        return;
-      }
-      var client_batch = {};
-      var message = serialize(argument);
-      if (options) {
-        message.grpcWriteFlags = options.flags;
-      }
-      client_batch[grpc.opType.SEND_INITIAL_METADATA] =
-          metadata._getCoreRepresentation();
-      client_batch[grpc.opType.SEND_MESSAGE] = message;
-      client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
-      client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
-      client_batch[grpc.opType.RECV_MESSAGE] = true;
-      client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
-      call.startBatch(client_batch, function(err, response) {
-        response.status.metadata = Metadata._fromCoreRepresentation(
-              response.status.metadata);
-        var status = response.status;
-        var error;
-        var deserialized;
-        if (status.code === grpc.status.OK) {
-          if (err) {
-            // Got a batch error, but OK status. Something went wrong
-            callback(err);
-            return;
-          } else {
-            try {
-              deserialized = deserialize(response.read);
-            } catch (e) {
-              /* Change status to indicate bad server response. This will result
-               * in passing an error to the callback */
-              status = {
-                code: grpc.status.INTERNAL,
-                details: 'Failed to parse server response'
-              };
-            }
+    var client_batch = {};
+    var message = serialize(argument);
+    if (options) {
+      message.grpcWriteFlags = options.flags;
+    }
+    client_batch[grpc.opType.SEND_INITIAL_METADATA] =
+        metadata._getCoreRepresentation();
+    client_batch[grpc.opType.SEND_MESSAGE] = message;
+    client_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
+    client_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
+    client_batch[grpc.opType.RECV_MESSAGE] = true;
+    client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+    call.startBatch(client_batch, function(err, response) {
+      response.status.metadata = Metadata._fromCoreRepresentation(
+          response.status.metadata);
+      var status = response.status;
+      var error;
+      var deserialized;
+      if (status.code === grpc.status.OK) {
+        if (err) {
+          // Got a batch error, but OK status. Something went wrong
+          callback(err);
+          return;
+        } else {
+          try {
+            deserialized = deserialize(response.read);
+          } catch (e) {
+            /* Change status to indicate bad server response. This will result
+             * in passing an error to the callback */
+            status = {
+              code: grpc.status.INTERNAL,
+              details: 'Failed to parse server response'
+            };
           }
         }
-        if (status.code !== grpc.status.OK) {
-          error = new Error(response.status.details);
-          error.code = status.code;
-          error.metadata = status.metadata;
-          callback(error);
-        } else {
-          callback(null, deserialized);
-        }
-        emitter.emit('status', status);
-        emitter.emit('metadata', Metadata._fromCoreRepresentation(
-            response.metadata));
-      });
+      }
+      if (status.code !== grpc.status.OK) {
+        error = new Error(response.status.details);
+        error.code = status.code;
+        error.metadata = status.metadata;
+        callback(error);
+      } else {
+        callback(null, deserialized);
+      }
+      emitter.emit('status', status);
+      emitter.emit('metadata', Metadata._fromCoreRepresentation(
+          response.metadata));
     });
     return emitter;
   }
@@ -371,62 +370,55 @@ function makeClientStreamRequestFunction(method, serialize, deserialize) {
       metadata = metadata.clone();
     }
     var stream = new ClientWritableStream(call, serialize);
-    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
-      if (error) {
-        call.cancel();
-        callback(error);
+    var metadata_batch = {};
+    metadata_batch[grpc.opType.SEND_INITIAL_METADATA] =
+        metadata._getCoreRepresentation();
+    metadata_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
+    call.startBatch(metadata_batch, function(err, response) {
+      if (err) {
+        // The call has stopped for some reason. A non-OK status will arrive
+        // in the other batch.
         return;
       }
-      var metadata_batch = {};
-      metadata_batch[grpc.opType.SEND_INITIAL_METADATA] =
-          metadata._getCoreRepresentation();
-      metadata_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
-      call.startBatch(metadata_batch, function(err, response) {
+      stream.emit('metadata', Metadata._fromCoreRepresentation(
+          response.metadata));
+    });
+    var client_batch = {};
+    client_batch[grpc.opType.RECV_MESSAGE] = true;
+    client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+    call.startBatch(client_batch, function(err, response) {
+      response.status.metadata = Metadata._fromCoreRepresentation(
+          response.status.metadata);
+      var status = response.status;
+      var error;
+      var deserialized;
+      if (status.code === grpc.status.OK) {
         if (err) {
-          // The call has stopped for some reason. A non-OK status will arrive
-          // in the other batch.
+          // Got a batch error, but OK status. Something went wrong
+          callback(err);
           return;
-        }
-        stream.emit('metadata', Metadata._fromCoreRepresentation(
-            response.metadata));
-      });
-      var client_batch = {};
-      client_batch[grpc.opType.RECV_MESSAGE] = true;
-      client_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
-      call.startBatch(client_batch, function(err, response) {
-        response.status.metadata = Metadata._fromCoreRepresentation(
-              response.status.metadata);
-        var status = response.status;
-        var error;
-        var deserialized;
-        if (status.code === grpc.status.OK) {
-          if (err) {
-            // Got a batch error, but OK status. Something went wrong
-            callback(err);
-            return;
-          } else {
-            try {
-              deserialized = deserialize(response.read);
-            } catch (e) {
-              /* Change status to indicate bad server response. This will result
-               * in passing an error to the callback */
-              status = {
-                code: grpc.status.INTERNAL,
-                details: 'Failed to parse server response'
-              };
-            }
+        } else {
+          try {
+            deserialized = deserialize(response.read);
+          } catch (e) {
+            /* Change status to indicate bad server response. This will result
+             * in passing an error to the callback */
+            status = {
+              code: grpc.status.INTERNAL,
+              details: 'Failed to parse server response'
+            };
           }
         }
-        if (status.code !== grpc.status.OK) {
-          error = new Error(response.status.details);
-          error.code = status.code;
-          error.metadata = status.metadata;
-          callback(error);
-        } else {
-          callback(null, deserialized);
-        }
-        stream.emit('status', status);
-      });
+      }
+      if (status.code !== grpc.status.OK) {
+        error = new Error(response.status.details);
+        error.code = status.code;
+        error.metadata = status.metadata;
+        callback(error);
+      } else {
+        callback(null, deserialized);
+      }
+      stream.emit('status', status);
     });
     return stream;
   }
@@ -462,51 +454,44 @@ function makeServerStreamRequestFunction(method, serialize, deserialize) {
       metadata = metadata.clone();
     }
     var stream = new ClientReadableStream(call, deserialize);
-    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
-      if (error) {
-        call.cancel();
-        stream.emit('error', error);
+    var start_batch = {};
+    var message = serialize(argument);
+    if (options) {
+      message.grpcWriteFlags = options.flags;
+    }
+    start_batch[grpc.opType.SEND_INITIAL_METADATA] =
+        metadata._getCoreRepresentation();
+    start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
+    start_batch[grpc.opType.SEND_MESSAGE] = message;
+    start_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
+    call.startBatch(start_batch, function(err, response) {
+      if (err) {
+        // The call has stopped for some reason. A non-OK status will arrive
+        // in the other batch.
         return;
       }
-      var start_batch = {};
-      var message = serialize(argument);
-      if (options) {
-        message.grpcWriteFlags = options.flags;
-      }
-      start_batch[grpc.opType.SEND_INITIAL_METADATA] =
-          metadata._getCoreRepresentation();
-      start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
-      start_batch[grpc.opType.SEND_MESSAGE] = message;
-      start_batch[grpc.opType.SEND_CLOSE_FROM_CLIENT] = true;
-      call.startBatch(start_batch, function(err, response) {
+      stream.emit('metadata', Metadata._fromCoreRepresentation(
+          response.metadata));
+    });
+    var status_batch = {};
+    status_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+    call.startBatch(status_batch, function(err, response) {
+      response.status.metadata = Metadata._fromCoreRepresentation(
+          response.status.metadata);
+      stream.emit('status', response.status);
+      if (response.status.code !== grpc.status.OK) {
+        var error = new Error(response.status.details);
+        error.code = response.status.code;
+        error.metadata = response.status.metadata;
+        stream.emit('error', error);
+        return;
+      } else {
         if (err) {
-          // The call has stopped for some reason. A non-OK status will arrive
-          // in the other batch.
+          // Got a batch error, but OK status. Something went wrong
+          stream.emit('error', err);
           return;
         }
-        stream.emit('metadata', Metadata._fromCoreRepresentation(
-            response.metadata));
-      });
-      var status_batch = {};
-      status_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
-      call.startBatch(status_batch, function(err, response) {
-        response.status.metadata = Metadata._fromCoreRepresentation(
-              response.status.metadata);
-        stream.emit('status', response.status);
-        if (response.status.code !== grpc.status.OK) {
-          var error = new Error(response.status.details);
-          error.code = response.status.code;
-          error.metadata = response.status.metadata;
-          stream.emit('error', error);
-          return;
-        } else {
-          if (err) {
-            // Got a batch error, but OK status. Something went wrong
-            stream.emit('error', err);
-            return;
-          }
-        }
-      });
+      }
     });
     return stream;
   }
@@ -540,45 +525,38 @@ function makeBidiStreamRequestFunction(method, serialize, deserialize) {
       metadata = metadata.clone();
     }
     var stream = new ClientDuplexStream(call, serialize, deserialize);
-    this.$updateMetadata(this.$auth_uri, metadata, function(error, metadata) {
-      if (error) {
-        call.cancel();
-        stream.emit('error', error);
+    var start_batch = {};
+    start_batch[grpc.opType.SEND_INITIAL_METADATA] =
+        metadata._getCoreRepresentation();
+    start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
+    call.startBatch(start_batch, function(err, response) {
+      if (err) {
+        // The call has stopped for some reason. A non-OK status will arrive
+        // in the other batch.
         return;
       }
-      var start_batch = {};
-      start_batch[grpc.opType.SEND_INITIAL_METADATA] =
-          metadata._getCoreRepresentation();
-      start_batch[grpc.opType.RECV_INITIAL_METADATA] = true;
-      call.startBatch(start_batch, function(err, response) {
+      stream.emit('metadata', Metadata._fromCoreRepresentation(
+          response.metadata));
+    });
+    var status_batch = {};
+    status_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+    call.startBatch(status_batch, function(err, response) {
+      response.status.metadata = Metadata._fromCoreRepresentation(
+          response.status.metadata);
+      stream.emit('status', response.status);
+      if (response.status.code !== grpc.status.OK) {
+        var error = new Error(response.status.details);
+        error.code = response.status.code;
+        error.metadata = response.status.metadata;
+        stream.emit('error', error);
+        return;
+      } else {
         if (err) {
-          // The call has stopped for some reason. A non-OK status will arrive
-          // in the other batch.
+          // Got a batch error, but OK status. Something went wrong
+          stream.emit('error', err);
           return;
         }
-        stream.emit('metadata', Metadata._fromCoreRepresentation(
-            response.metadata));
-      });
-      var status_batch = {};
-      status_batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
-      call.startBatch(status_batch, function(err, response) {
-        response.status.metadata = Metadata._fromCoreRepresentation(
-              response.status.metadata);
-        stream.emit('status', response.status);
-        if (response.status.code !== grpc.status.OK) {
-          var error = new Error(response.status.details);
-          error.code = response.status.code;
-          error.metadata = response.status.metadata;
-          stream.emit('error', error);
-          return;
-        } else {
-          if (err) {
-            // Got a batch error, but OK status. Something went wrong
-            stream.emit('error', err);
-            return;
-          }
-        }
-      });
+      }
     });
     return stream;
   }
@@ -618,15 +596,8 @@ exports.makeClientConstructor = function(methods, serviceName) {
    * @param {grpc.Credentials} credentials Credentials to use to connect
    *     to the server
    * @param {Object} options Options to pass to the underlying channel
-   * @param {function(string, Object, function)=} updateMetadata function to
-   *     update the metadata for each request
    */
-  function Client(address, credentials, options, updateMetadata) {
-    if (!updateMetadata) {
-      updateMetadata = function(uri, metadata, callback) {
-        callback(null, metadata);
-      };
-    }
+  function Client(address, credentials, options) {
     if (!options) {
       options = {};
     }
@@ -634,11 +605,6 @@ exports.makeClientConstructor = function(methods, serviceName) {
     /* Private fields use $ as a prefix instead of _ because it is an invalid
      * prefix of a method name */
     this.$channel = new grpc.Channel(address, credentials, options);
-    // Remove the optional DNS scheme, trailing port, and trailing backslash
-    address = address.replace(/^(dns:\/{3})?([^:\/]+)(:\d+)?\/?$/, '$2');
-    this.$server_address = address;
-    this.$auth_uri = 'https://' + this.$server_address + '/' + serviceName;
-    this.$updateMetadata = updateMetadata;
   }
 
   _.each(methods, function(attrs, name) {
@@ -695,6 +661,7 @@ exports.waitForClientReady = function(client, deadline, callback) {
   var checkState = function(err) {
     if (err) {
       callback(new Error('Failed to connect before the deadline'));
+      return;
     }
     var new_state = client.$channel.getConnectivityState(true);
     if (new_state === grpc.connectivityState.READY) {

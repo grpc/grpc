@@ -108,7 +108,7 @@
   LD_opt = $(DEFAULT_CC)
   LDXX_opt = $(DEFAULT_CXX)
   CPPFLAGS_opt = -O2
-  LDFLAGS_opt =
+  LDFLAGS_opt = -rdynamic
   DEFINES_opt = NDEBUG
 
   VALID_CONFIG_basicprof = 1
@@ -135,7 +135,7 @@
   LD_dbg = $(DEFAULT_CC)
   LDXX_dbg = $(DEFAULT_CXX)
   CPPFLAGS_dbg = -O0
-  LDFLAGS_dbg =
+  LDFLAGS_dbg = -rdynamic
   DEFINES_dbg = _DEBUG DEBUG
 
   VALID_CONFIG_mutrace = 1
@@ -155,7 +155,7 @@
   LDXX_valgrind = $(DEFAULT_CXX)
   CPPFLAGS_valgrind = -O0
   OPENSSL_CFLAGS_valgrind = -DPURIFY
-  LDFLAGS_valgrind =
+  LDFLAGS_valgrind = -rdynamic
   DEFINES_valgrind = _DEBUG DEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=20
 
   VALID_CONFIG_tsan = 1
@@ -164,7 +164,7 @@
   CXX_tsan = clang++
   LD_tsan = clang
   LDXX_tsan = clang++
-  CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-error=unused-command-line-argument
+  CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
   LDFLAGS_tsan = -fsanitize=thread
   DEFINES_tsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=10
 
@@ -174,7 +174,7 @@
   CXX_asan = clang++
   LD_asan = clang
   LDXX_asan = clang++
-  CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-error=unused-command-line-argument
+  CPPFLAGS_asan = -O0 -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
   LDFLAGS_asan = -fsanitize=address
   DEFINES_asan = GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
 
@@ -184,7 +184,7 @@
   CXX_msan = clang++-libc++
   LD_msan = clang
   LDXX_msan = clang++-libc++
-  CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-error=unused-command-line-argument
+  CPPFLAGS_msan = -O0 -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
   OPENSSL_CFLAGS_msan = -DPURIFY
   LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
   DEFINES_msan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=4
@@ -195,7 +195,7 @@
   CXX_ubsan = clang++
   LD_ubsan = clang
   LDXX_ubsan = clang++
-  CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-error=unused-command-line-argument
+  CPPFLAGS_ubsan = -O1 -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument
   OPENSSL_CFLAGS_ubsan = -DPURIFY
   LDFLAGS_ubsan = -fsanitize=undefined
   DEFINES_ubsan = NDEBUG GRPC_TEST_SLOWDOWN_BUILD_FACTOR=3
@@ -206,7 +206,7 @@
   LD_gcov = gcc
   LDXX_gcov = g++
   CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage
-  LDFLAGS_gcov = -fprofile-arcs -ftest-coverage
+  LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
   DEFINES_gcov = _DEBUG DEBUG
 
 
@@ -264,7 +264,7 @@
   DEFINES += $(EXTRA_DEFINES)
   endif
 
-  CFLAGS += -std=c89 -pedantic
+  CFLAGS += -std=c89 -pedantic -Wsign-conversion -Wconversion -Wshadow
   ifeq ($(HAS_CXX11),true)
   CXXFLAGS += -std=c++11
   else
