@@ -34,7 +34,7 @@
 #include <string.h>
 
 #include "src/core/security/auth_filters.h"
-#include "src/core/security/security_connector.h"
+#include "src/core/security/credentials.h"
 #include "src/core/security/security_context.h"
 
 #include <grpc/support/alloc.h>
@@ -44,11 +44,11 @@ typedef struct call_data {
   gpr_uint8 got_client_metadata;
   grpc_stream_op_buffer *recv_ops;
   /* Closure to call when finished with the auth_on_recv hook. */
-  grpc_iomgr_closure *on_done_recv;
+  grpc_closure *on_done_recv;
   /* Receive closures are chained: we inject this closure as the on_done_recv
      up-call on transport_op, and remember to call our on_done_recv member after
      handling it. */
-  grpc_iomgr_closure auth_on_recv;
+  grpc_closure auth_on_recv;
   grpc_transport_stream_op transport_op;
   grpc_metadata_array md;
   const grpc_metadata *consumed_md;
@@ -58,8 +58,8 @@ typedef struct call_data {
 } call_data;
 
 typedef struct channel_data {
-  grpc_security_connector *security_connector;
-  grpc_auth_metadata_processor processor;
+  grpc_auth_context *auth_context;
+  grpc_server_credentials *creds;
   grpc_mdctx *mdctx;
 } channel_data;
 
@@ -109,12 +109,14 @@ static grpc_mdelem *remove_consumed_md(void *user_data, grpc_mdelem *md) {
   return md;
 }
 
+/* called from application code */
 static void on_md_processing_done(
     void *user_data, const grpc_metadata *consumed_md, size_t num_consumed_md,
     const grpc_metadata *response_md, size_t num_response_md,
     grpc_status_code status, const char *error_details) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != NULL && num_response_md > 0) {
@@ -129,21 +131,24 @@ static void on_md_processing_done(
     grpc_metadata_batch_filter(&calld->md_op->data.metadata, remove_consumed_md,
                                elem);
     grpc_metadata_array_destroy(&calld->md);
-    calld->on_done_recv->cb(calld->on_done_recv->cb_arg, 1);
+    calld->on_done_recv->cb(&exec_ctx, calld->on_done_recv->cb_arg, 1);
   } else {
     gpr_slice message;
     grpc_metadata_array_destroy(&calld->md);
     error_details = error_details != NULL
-                    ? error_details
-                    : "Authentication metadata processing failed.";
+                        ? error_details
+                        : "Authentication metadata processing failed.";
     message = gpr_slice_from_copied_string(error_details);
     grpc_sopb_reset(calld->recv_ops);
     grpc_transport_stream_op_add_close(&calld->transport_op, status, &message);
-    grpc_call_next_op(elem, &calld->transport_op);
+    grpc_call_next_op(&exec_ctx, elem, &calld->transport_op);
   }
+
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void auth_on_recv(void *user_data, int success) {
+static void auth_on_recv(grpc_exec_ctx *exec_ctx, void *user_data,
+                         int success) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
@@ -155,16 +160,16 @@ static void auth_on_recv(void *user_data, int success) {
       grpc_stream_op *op = &ops[i];
       if (op->type != GRPC_OP_METADATA || calld->got_client_metadata) continue;
       calld->got_client_metadata = 1;
-      if (chand->processor.process == NULL) continue;
+      if (chand->creds->processor.process == NULL) continue;
       calld->md_op = op;
       calld->md = metadata_batch_to_md_array(&op->data.metadata);
-      chand->processor.process(chand->processor.state, calld->auth_context,
-                               calld->md.metadata, calld->md.count,
-                               on_md_processing_done, elem);
+      chand->creds->processor.process(
+          chand->creds->processor.state, calld->auth_context,
+          calld->md.metadata, calld->md.count, on_md_processing_done, elem);
       return;
     }
   }
-  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
+  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, success);
 }
 
 static void set_recv_ops_md_callbacks(grpc_call_element *elem,
@@ -185,14 +190,15 @@ static void set_recv_ops_md_callbacks(grpc_call_element *elem,
      - a network event (or similar) from below, to receive something
    op contains type and call direction information, in addition to the data
    that is being sent or received. */
-static void auth_start_transport_op(grpc_call_element *elem,
+static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
+                                    grpc_call_element *elem,
                                     grpc_transport_stream_op *op) {
   set_recv_ops_md_callbacks(elem, op);
-  grpc_call_next_op(elem, op);
+  grpc_call_next_op(exec_ctx, elem, op);
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_call_element *elem,
+static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            const void *server_transport_data,
                            grpc_transport_stream_op *initial_op) {
   /* grab pointers to our data from the call element */
@@ -202,7 +208,7 @@ static void init_call_elem(grpc_call_element *elem,
 
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
-  grpc_iomgr_closure_init(&calld->auth_on_recv, auth_on_recv, elem);
+  grpc_closure_init(&calld->auth_on_recv, auth_on_recv, elem);
 
   GPR_ASSERT(initial_op && initial_op->context != NULL &&
              initial_op->context[GRPC_CONTEXT_SECURITY].value == NULL);
@@ -215,7 +221,7 @@ static void init_call_elem(grpc_call_element *elem,
   }
   server_ctx = grpc_server_security_context_create();
   server_ctx->auth_context =
-      grpc_auth_context_create(chand->security_connector->auth_context);
+      grpc_auth_context_create(chand->auth_context);
   server_ctx->auth_context->pollset = initial_op->bind_pollset;
   initial_op->context[GRPC_CONTEXT_SECURITY].value = server_ctx;
   initial_op->context[GRPC_CONTEXT_SECURITY].destroy =
@@ -227,15 +233,16 @@ static void init_call_elem(grpc_call_element *elem,
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem) {}
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_call_element *elem) {}
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
+static void init_channel_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
-  grpc_security_connector *sc = grpc_find_security_connector_in_args(args);
-  grpc_auth_metadata_processor *processor =
-      grpc_find_auth_metadata_processor_in_args(args);
+  grpc_auth_context *auth_context = grpc_find_auth_context_in_args(args);
+  grpc_server_credentials *creds = grpc_find_server_credentials_in_args(args);
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
 
@@ -244,28 +251,27 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
      path */
   GPR_ASSERT(!is_first);
   GPR_ASSERT(!is_last);
-  GPR_ASSERT(sc != NULL);
-  GPR_ASSERT(processor != NULL);
+  GPR_ASSERT(auth_context != NULL);
+  GPR_ASSERT(creds != NULL);
 
   /* initialize members */
-  GPR_ASSERT(!sc->is_client_side);
-  chand->security_connector =
-      GRPC_SECURITY_CONNECTOR_REF(sc, "server_auth_filter");
+  chand->auth_context =
+      GRPC_AUTH_CONTEXT_REF(auth_context, "server_auth_filter");
+  chand->creds = grpc_server_credentials_ref(creds);
   chand->mdctx = mdctx;
-  chand->processor = *processor;
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element *elem) {
+static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
-  GRPC_SECURITY_CONNECTOR_UNREF(chand->security_connector,
-                                "server_auth_filter");
+  GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "server_auth_filter");
+  grpc_server_credentials_unref(chand->creds);
 }
 
 const grpc_channel_filter grpc_server_auth_filter = {
-    auth_start_transport_op, grpc_channel_next_op,
-    sizeof(call_data),       init_call_elem,
-    destroy_call_elem,       sizeof(channel_data),
-    init_channel_elem,       destroy_channel_elem,
-    grpc_call_next_get_peer, "server-auth"};
+    auth_start_transport_op, grpc_channel_next_op, sizeof(call_data),
+    init_call_elem,          destroy_call_elem,    sizeof(channel_data),
+    init_channel_elem,       destroy_channel_elem, grpc_call_next_get_peer,
+    "server-auth"};

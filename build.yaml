@@ -3,866 +3,1827 @@
 '#3': Please refer to the templates directory for more information.
 settings:
   '#': The public version number of the library.
-  version: {major: 0, minor: 11, micro: 0, build: 0}
+  version:
+    major: 0
+    minor: 11
+    micro: 0
+    build: 0
 filegroups:
 - name: census
-  public_headers: [include/grpc/census.h]
-  headers: [src/core/census/aggregation.h, src/core/census/context.h, src/core/census/rpc_metric_id.h]
-  src: [src/core/census/context.c, src/core/census/initialize.c, src/core/census/operation.c,
-    src/core/census/tracing.c]
+  public_headers:
+  - include/grpc/census.h
+  headers:
+  - src/core/census/aggregation.h
+  - src/core/census/context.h
+  - src/core/census/rpc_metric_id.h
+  src:
+  - src/core/census/context.c
+  - src/core/census/initialize.c
+  - src/core/census/operation.c
+  - src/core/census/tracing.c
 - name: grpc++_base
-  public_headers: [include/grpc++/channel.h, include/grpc++/client_context.h, include/grpc++/completion_queue.h,
-    include/grpc++/create_channel.h, include/grpc++/generic/async_generic_service.h,
-    include/grpc++/generic/generic_stub.h, include/grpc++/grpc++.h, include/grpc++/impl/call.h,
-    include/grpc++/impl/client_unary_call.h, include/grpc++/impl/grpc_library.h, include/grpc++/impl/proto_utils.h,
-    include/grpc++/impl/rpc_method.h, include/grpc++/impl/rpc_service_method.h, include/grpc++/impl/serialization_traits.h,
-    include/grpc++/impl/service_type.h, include/grpc++/impl/sync.h, include/grpc++/impl/sync_cxx11.h,
-    include/grpc++/impl/sync_no_cxx11.h, include/grpc++/impl/thd.h, include/grpc++/impl/thd_cxx11.h,
-    include/grpc++/impl/thd_no_cxx11.h, include/grpc++/security/auth_context.h, include/grpc++/security/auth_metadata_processor.h,
-    include/grpc++/security/credentials.h, include/grpc++/security/server_credentials.h,
-    include/grpc++/server.h, include/grpc++/server_builder.h, include/grpc++/server_context.h,
-    include/grpc++/support/async_stream.h, include/grpc++/support/async_unary_call.h,
-    include/grpc++/support/byte_buffer.h, include/grpc++/support/channel_arguments.h,
-    include/grpc++/support/config.h, include/grpc++/support/config_protobuf.h, include/grpc++/support/slice.h,
-    include/grpc++/support/status.h, include/grpc++/support/status_code_enum.h, include/grpc++/support/string_ref.h,
-    include/grpc++/support/stub_options.h, include/grpc++/support/sync_stream.h, include/grpc++/support/time.h]
-  headers: [src/cpp/client/create_channel_internal.h, src/cpp/common/create_auth_context.h,
-    src/cpp/server/dynamic_thread_pool.h, src/cpp/server/fixed_size_thread_pool.h,
-    src/cpp/server/thread_pool_interface.h]
-  src: [src/cpp/client/channel.cc, src/cpp/client/channel_arguments.cc, src/cpp/client/client_context.cc,
-    src/cpp/client/create_channel.cc, src/cpp/client/create_channel_internal.cc, src/cpp/client/credentials.cc,
-    src/cpp/client/generic_stub.cc, src/cpp/client/insecure_credentials.cc, src/cpp/common/call.cc,
-    src/cpp/common/completion_queue.cc, src/cpp/common/rpc_method.cc, src/cpp/proto/proto_utils.cc,
-    src/cpp/server/async_generic_service.cc, src/cpp/server/create_default_thread_pool.cc,
-    src/cpp/server/dynamic_thread_pool.cc, src/cpp/server/fixed_size_thread_pool.cc,
-    src/cpp/server/insecure_server_credentials.cc, src/cpp/server/server.cc, src/cpp/server/server_builder.cc,
-    src/cpp/server/server_context.cc, src/cpp/server/server_credentials.cc, src/cpp/util/byte_buffer.cc,
-    src/cpp/util/slice.cc, src/cpp/util/status.cc, src/cpp/util/string_ref.cc, src/cpp/util/time.cc]
+  public_headers:
+  - include/grpc++/channel.h
+  - include/grpc++/client_context.h
+  - include/grpc++/completion_queue.h
+  - include/grpc++/create_channel.h
+  - include/grpc++/generic/async_generic_service.h
+  - include/grpc++/generic/generic_stub.h
+  - include/grpc++/grpc++.h
+  - include/grpc++/impl/call.h
+  - include/grpc++/impl/client_unary_call.h
+  - include/grpc++/impl/grpc_library.h
+  - include/grpc++/impl/proto_utils.h
+  - include/grpc++/impl/rpc_method.h
+  - include/grpc++/impl/rpc_service_method.h
+  - include/grpc++/impl/serialization_traits.h
+  - include/grpc++/impl/service_type.h
+  - include/grpc++/impl/sync.h
+  - include/grpc++/impl/sync_cxx11.h
+  - include/grpc++/impl/sync_no_cxx11.h
+  - include/grpc++/impl/thd.h
+  - include/grpc++/impl/thd_cxx11.h
+  - include/grpc++/impl/thd_no_cxx11.h
+  - include/grpc++/security/auth_context.h
+  - include/grpc++/security/auth_metadata_processor.h
+  - include/grpc++/security/credentials.h
+  - include/grpc++/security/server_credentials.h
+  - include/grpc++/server.h
+  - include/grpc++/server_builder.h
+  - include/grpc++/server_context.h
+  - include/grpc++/support/async_stream.h
+  - include/grpc++/support/async_unary_call.h
+  - include/grpc++/support/byte_buffer.h
+  - include/grpc++/support/channel_arguments.h
+  - include/grpc++/support/config.h
+  - include/grpc++/support/config_protobuf.h
+  - include/grpc++/support/slice.h
+  - include/grpc++/support/status.h
+  - include/grpc++/support/status_code_enum.h
+  - include/grpc++/support/string_ref.h
+  - include/grpc++/support/stub_options.h
+  - include/grpc++/support/sync_stream.h
+  - include/grpc++/support/time.h
+  headers:
+  - src/cpp/client/create_channel_internal.h
+  - src/cpp/common/create_auth_context.h
+  - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/fixed_size_thread_pool.h
+  - src/cpp/server/thread_pool_interface.h
+  src:
+  - src/cpp/client/channel.cc
+  - src/cpp/client/channel_arguments.cc
+  - src/cpp/client/client_context.cc
+  - src/cpp/client/create_channel.cc
+  - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/credentials.cc
+  - src/cpp/client/generic_stub.cc
+  - src/cpp/client/insecure_credentials.cc
+  - src/cpp/common/call.cc
+  - src/cpp/common/completion_queue.cc
+  - src/cpp/common/rpc_method.cc
+  - src/cpp/proto/proto_utils.cc
+  - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/create_default_thread_pool.cc
+  - src/cpp/server/dynamic_thread_pool.cc
+  - src/cpp/server/fixed_size_thread_pool.cc
+  - src/cpp/server/insecure_server_credentials.cc
+  - src/cpp/server/server.cc
+  - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
+  - src/cpp/util/byte_buffer.cc
+  - src/cpp/util/slice.cc
+  - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
+  - src/cpp/util/time.cc
 - name: grpc_base
-  public_headers: [include/grpc/byte_buffer.h, include/grpc/byte_buffer_reader.h,
-    include/grpc/compression.h, include/grpc/grpc.h, include/grpc/status.h]
-  headers: [src/core/census/grpc_filter.h, src/core/channel/channel_args.h, src/core/channel/channel_stack.h,
-    src/core/channel/client_channel.h, src/core/channel/compress_filter.h, src/core/channel/connected_channel.h,
-    src/core/channel/context.h, src/core/channel/http_client_filter.h, src/core/channel/http_server_filter.h,
-    src/core/channel/noop_filter.h, src/core/client_config/client_config.h, src/core/client_config/connector.h,
-    src/core/client_config/lb_policies/pick_first.h, src/core/client_config/lb_policy.h,
-    src/core/client_config/resolver.h, src/core/client_config/resolver_factory.h,
-    src/core/client_config/resolver_registry.h, src/core/client_config/resolvers/dns_resolver.h,
-    src/core/client_config/resolvers/sockaddr_resolver.h, src/core/client_config/subchannel.h,
-    src/core/client_config/subchannel_factory.h, src/core/client_config/subchannel_factory_decorators/add_channel_arg.h,
-    src/core/client_config/subchannel_factory_decorators/merge_channel_args.h, src/core/client_config/uri_parser.h,
-    src/core/compression/message_compress.h, src/core/debug/trace.h, src/core/httpcli/format_request.h,
-    src/core/httpcli/httpcli.h, src/core/httpcli/parser.h, src/core/iomgr/alarm.h,
-    src/core/iomgr/alarm_heap.h, src/core/iomgr/alarm_internal.h, src/core/iomgr/endpoint.h,
-    src/core/iomgr/endpoint_pair.h, src/core/iomgr/fd_posix.h, src/core/iomgr/iocp_windows.h,
-    src/core/iomgr/iomgr.h, src/core/iomgr/iomgr_internal.h, src/core/iomgr/iomgr_posix.h,
-    src/core/iomgr/pollset.h, src/core/iomgr/pollset_posix.h, src/core/iomgr/pollset_set.h,
-    src/core/iomgr/pollset_set_posix.h, src/core/iomgr/pollset_set_windows.h, src/core/iomgr/pollset_windows.h,
-    src/core/iomgr/resolve_address.h, src/core/iomgr/sockaddr.h, src/core/iomgr/sockaddr_posix.h,
-    src/core/iomgr/sockaddr_utils.h, src/core/iomgr/sockaddr_win32.h, src/core/iomgr/socket_utils_posix.h,
-    src/core/iomgr/socket_windows.h, src/core/iomgr/tcp_client.h, src/core/iomgr/tcp_posix.h,
-    src/core/iomgr/tcp_server.h, src/core/iomgr/tcp_windows.h, src/core/iomgr/time_averaged_stats.h,
-    src/core/iomgr/udp_server.h, src/core/iomgr/wakeup_fd_pipe.h, src/core/iomgr/wakeup_fd_posix.h,
-    src/core/json/json.h, src/core/json/json_common.h, src/core/json/json_reader.h,
-    src/core/json/json_writer.h, src/core/profiling/timers.h, src/core/statistics/census_interface.h,
-    src/core/statistics/census_rpc_stats.h, src/core/surface/byte_buffer_queue.h,
-    src/core/surface/call.h, src/core/surface/channel.h, src/core/surface/completion_queue.h,
-    src/core/surface/event_string.h, src/core/surface/init.h, src/core/surface/server.h,
-    src/core/surface/surface_trace.h, src/core/transport/chttp2/alpn.h, src/core/transport/chttp2/bin_encoder.h,
-    src/core/transport/chttp2/frame.h, src/core/transport/chttp2/frame_data.h, src/core/transport/chttp2/frame_goaway.h,
-    src/core/transport/chttp2/frame_ping.h, src/core/transport/chttp2/frame_rst_stream.h,
-    src/core/transport/chttp2/frame_settings.h, src/core/transport/chttp2/frame_window_update.h,
-    src/core/transport/chttp2/hpack_parser.h, src/core/transport/chttp2/hpack_table.h,
-    src/core/transport/chttp2/http2_errors.h, src/core/transport/chttp2/huffsyms.h,
-    src/core/transport/chttp2/incoming_metadata.h, src/core/transport/chttp2/internal.h,
-    src/core/transport/chttp2/status_conversion.h, src/core/transport/chttp2/stream_encoder.h,
-    src/core/transport/chttp2/stream_map.h, src/core/transport/chttp2/timeout_encoding.h,
-    src/core/transport/chttp2/varint.h, src/core/transport/chttp2_transport.h, src/core/transport/connectivity_state.h,
-    src/core/transport/metadata.h, src/core/transport/stream_op.h, src/core/transport/transport.h,
-    src/core/transport/transport_impl.h]
-  src: [src/core/census/grpc_context.c, src/core/census/grpc_filter.c, src/core/channel/channel_args.c,
-    src/core/channel/channel_stack.c, src/core/channel/client_channel.c, src/core/channel/compress_filter.c,
-    src/core/channel/connected_channel.c, src/core/channel/http_client_filter.c, src/core/channel/http_server_filter.c,
-    src/core/channel/noop_filter.c, src/core/client_config/client_config.c, src/core/client_config/connector.c,
-    src/core/client_config/lb_policies/pick_first.c, src/core/client_config/lb_policy.c,
-    src/core/client_config/resolver.c, src/core/client_config/resolver_factory.c,
-    src/core/client_config/resolver_registry.c, src/core/client_config/resolvers/dns_resolver.c,
-    src/core/client_config/resolvers/sockaddr_resolver.c, src/core/client_config/subchannel.c,
-    src/core/client_config/subchannel_factory.c, src/core/client_config/subchannel_factory_decorators/add_channel_arg.c,
-    src/core/client_config/subchannel_factory_decorators/merge_channel_args.c, src/core/client_config/uri_parser.c,
-    src/core/compression/algorithm.c, src/core/compression/message_compress.c, src/core/debug/trace.c,
-    src/core/httpcli/format_request.c, src/core/httpcli/httpcli.c, src/core/httpcli/parser.c,
-    src/core/iomgr/alarm.c, src/core/iomgr/alarm_heap.c, src/core/iomgr/endpoint.c,
-    src/core/iomgr/endpoint_pair_posix.c, src/core/iomgr/endpoint_pair_windows.c,
-    src/core/iomgr/fd_posix.c, src/core/iomgr/iocp_windows.c, src/core/iomgr/iomgr.c,
-    src/core/iomgr/iomgr_posix.c, src/core/iomgr/iomgr_windows.c, src/core/iomgr/pollset_multipoller_with_epoll.c,
-    src/core/iomgr/pollset_multipoller_with_poll_posix.c, src/core/iomgr/pollset_posix.c,
-    src/core/iomgr/pollset_set_posix.c, src/core/iomgr/pollset_set_windows.c, src/core/iomgr/pollset_windows.c,
-    src/core/iomgr/resolve_address_posix.c, src/core/iomgr/resolve_address_windows.c,
-    src/core/iomgr/sockaddr_utils.c, src/core/iomgr/socket_utils_common_posix.c, src/core/iomgr/socket_utils_linux.c,
-    src/core/iomgr/socket_utils_posix.c, src/core/iomgr/socket_windows.c, src/core/iomgr/tcp_client_posix.c,
-    src/core/iomgr/tcp_client_windows.c, src/core/iomgr/tcp_posix.c, src/core/iomgr/tcp_server_posix.c,
-    src/core/iomgr/tcp_server_windows.c, src/core/iomgr/tcp_windows.c, src/core/iomgr/time_averaged_stats.c,
-    src/core/iomgr/udp_server.c, src/core/iomgr/wakeup_fd_eventfd.c, src/core/iomgr/wakeup_fd_nospecial.c,
-    src/core/iomgr/wakeup_fd_pipe.c, src/core/iomgr/wakeup_fd_posix.c, src/core/json/json.c,
-    src/core/json/json_reader.c, src/core/json/json_string.c, src/core/json/json_writer.c,
-    src/core/profiling/basic_timers.c, src/core/profiling/stap_timers.c, src/core/surface/byte_buffer.c,
-    src/core/surface/byte_buffer_queue.c, src/core/surface/byte_buffer_reader.c, src/core/surface/call.c,
-    src/core/surface/call_details.c, src/core/surface/call_log_batch.c, src/core/surface/channel.c,
-    src/core/surface/channel_connectivity.c, src/core/surface/channel_create.c, src/core/surface/completion_queue.c,
-    src/core/surface/event_string.c, src/core/surface/init.c, src/core/surface/lame_client.c,
-    src/core/surface/metadata_array.c, src/core/surface/server.c, src/core/surface/server_chttp2.c,
-    src/core/surface/server_create.c, src/core/surface/surface_trace.c, src/core/surface/version.c,
-    src/core/transport/chttp2/alpn.c, src/core/transport/chttp2/bin_encoder.c, src/core/transport/chttp2/frame_data.c,
-    src/core/transport/chttp2/frame_goaway.c, src/core/transport/chttp2/frame_ping.c,
-    src/core/transport/chttp2/frame_rst_stream.c, src/core/transport/chttp2/frame_settings.c,
-    src/core/transport/chttp2/frame_window_update.c, src/core/transport/chttp2/hpack_parser.c,
-    src/core/transport/chttp2/hpack_table.c, src/core/transport/chttp2/huffsyms.c,
-    src/core/transport/chttp2/incoming_metadata.c, src/core/transport/chttp2/parsing.c,
-    src/core/transport/chttp2/status_conversion.c, src/core/transport/chttp2/stream_encoder.c,
-    src/core/transport/chttp2/stream_lists.c, src/core/transport/chttp2/stream_map.c,
-    src/core/transport/chttp2/timeout_encoding.c, src/core/transport/chttp2/varint.c,
-    src/core/transport/chttp2/writing.c, src/core/transport/chttp2_transport.c, src/core/transport/connectivity_state.c,
-    src/core/transport/metadata.c, src/core/transport/stream_op.c, src/core/transport/transport.c,
-    src/core/transport/transport_op_string.c]
+  public_headers:
+  - include/grpc/byte_buffer.h
+  - include/grpc/byte_buffer_reader.h
+  - include/grpc/compression.h
+  - include/grpc/grpc.h
+  - include/grpc/status.h
+  headers:
+  - src/core/census/grpc_filter.h
+  - src/core/channel/channel_args.h
+  - src/core/channel/channel_stack.h
+  - src/core/channel/client_channel.h
+  - src/core/channel/compress_filter.h
+  - src/core/channel/connected_channel.h
+  - src/core/channel/context.h
+  - src/core/channel/http_client_filter.h
+  - src/core/channel/http_server_filter.h
+  - src/core/channel/noop_filter.h
+  - src/core/client_config/client_config.h
+  - src/core/client_config/connector.h
+  - src/core/client_config/lb_policies/pick_first.h
+  - src/core/client_config/lb_policies/round_robin.h
+  - src/core/client_config/lb_policy.h
+  - src/core/client_config/lb_policy_factory.h
+  - src/core/client_config/lb_policy_registry.h
+  - src/core/client_config/resolver.h
+  - src/core/client_config/resolver_factory.h
+  - src/core/client_config/resolver_registry.h
+  - src/core/client_config/resolvers/dns_resolver.h
+  - src/core/client_config/resolvers/sockaddr_resolver.h
+  - src/core/client_config/subchannel.h
+  - src/core/client_config/subchannel_factory.h
+  - src/core/client_config/subchannel_factory_decorators/add_channel_arg.h
+  - src/core/client_config/subchannel_factory_decorators/merge_channel_args.h
+  - src/core/client_config/uri_parser.h
+  - src/core/compression/message_compress.h
+  - src/core/debug/trace.h
+  - src/core/httpcli/format_request.h
+  - src/core/httpcli/httpcli.h
+  - src/core/httpcli/parser.h
+  - src/core/iomgr/closure.h
+  - src/core/iomgr/endpoint.h
+  - src/core/iomgr/endpoint_pair.h
+  - src/core/iomgr/exec_ctx.h
+  - src/core/iomgr/fd_posix.h
+  - src/core/iomgr/iocp_windows.h
+  - src/core/iomgr/iomgr.h
+  - src/core/iomgr/iomgr_internal.h
+  - src/core/iomgr/iomgr_posix.h
+  - src/core/iomgr/pollset.h
+  - src/core/iomgr/pollset_posix.h
+  - src/core/iomgr/pollset_set.h
+  - src/core/iomgr/pollset_set_posix.h
+  - src/core/iomgr/pollset_set_windows.h
+  - src/core/iomgr/pollset_windows.h
+  - src/core/iomgr/resolve_address.h
+  - src/core/iomgr/sockaddr.h
+  - src/core/iomgr/sockaddr_posix.h
+  - src/core/iomgr/sockaddr_utils.h
+  - src/core/iomgr/sockaddr_win32.h
+  - src/core/iomgr/socket_utils_posix.h
+  - src/core/iomgr/socket_windows.h
+  - src/core/iomgr/tcp_client.h
+  - src/core/iomgr/tcp_posix.h
+  - src/core/iomgr/tcp_server.h
+  - src/core/iomgr/tcp_windows.h
+  - src/core/iomgr/time_averaged_stats.h
+  - src/core/iomgr/timer.h
+  - src/core/iomgr/timer_heap.h
+  - src/core/iomgr/timer_internal.h
+  - src/core/iomgr/udp_server.h
+  - src/core/iomgr/wakeup_fd_pipe.h
+  - src/core/iomgr/wakeup_fd_posix.h
+  - src/core/iomgr/workqueue.h
+  - src/core/iomgr/workqueue_posix.h
+  - src/core/iomgr/workqueue_windows.h
+  - src/core/json/json.h
+  - src/core/json/json_common.h
+  - src/core/json/json_reader.h
+  - src/core/json/json_writer.h
+  - src/core/statistics/census_interface.h
+  - src/core/statistics/census_rpc_stats.h
+  - src/core/surface/api_trace.h
+  - src/core/surface/byte_buffer_queue.h
+  - src/core/surface/call.h
+  - src/core/surface/call_test_only.h
+  - src/core/surface/channel.h
+  - src/core/surface/completion_queue.h
+  - src/core/surface/event_string.h
+  - src/core/surface/init.h
+  - src/core/surface/server.h
+  - src/core/surface/surface_trace.h
+  - src/core/transport/chttp2/alpn.h
+  - src/core/transport/chttp2/bin_encoder.h
+  - src/core/transport/chttp2/frame.h
+  - src/core/transport/chttp2/frame_data.h
+  - src/core/transport/chttp2/frame_goaway.h
+  - src/core/transport/chttp2/frame_ping.h
+  - src/core/transport/chttp2/frame_rst_stream.h
+  - src/core/transport/chttp2/frame_settings.h
+  - src/core/transport/chttp2/frame_window_update.h
+  - src/core/transport/chttp2/hpack_parser.h
+  - src/core/transport/chttp2/hpack_table.h
+  - src/core/transport/chttp2/http2_errors.h
+  - src/core/transport/chttp2/huffsyms.h
+  - src/core/transport/chttp2/incoming_metadata.h
+  - src/core/transport/chttp2/internal.h
+  - src/core/transport/chttp2/status_conversion.h
+  - src/core/transport/chttp2/stream_encoder.h
+  - src/core/transport/chttp2/stream_map.h
+  - src/core/transport/chttp2/timeout_encoding.h
+  - src/core/transport/chttp2/varint.h
+  - src/core/transport/chttp2_transport.h
+  - src/core/transport/connectivity_state.h
+  - src/core/transport/metadata.h
+  - src/core/transport/stream_op.h
+  - src/core/transport/transport.h
+  - src/core/transport/transport_impl.h
+  src:
+  - src/core/census/grpc_context.c
+  - src/core/census/grpc_filter.c
+  - src/core/channel/channel_args.c
+  - src/core/channel/channel_stack.c
+  - src/core/channel/client_channel.c
+  - src/core/channel/compress_filter.c
+  - src/core/channel/connected_channel.c
+  - src/core/channel/http_client_filter.c
+  - src/core/channel/http_server_filter.c
+  - src/core/channel/noop_filter.c
+  - src/core/client_config/client_config.c
+  - src/core/client_config/connector.c
+  - src/core/client_config/lb_policies/pick_first.c
+  - src/core/client_config/lb_policies/round_robin.c
+  - src/core/client_config/lb_policy.c
+  - src/core/client_config/lb_policy_factory.c
+  - src/core/client_config/lb_policy_registry.c
+  - src/core/client_config/resolver.c
+  - src/core/client_config/resolver_factory.c
+  - src/core/client_config/resolver_registry.c
+  - src/core/client_config/resolvers/dns_resolver.c
+  - src/core/client_config/resolvers/sockaddr_resolver.c
+  - src/core/client_config/subchannel.c
+  - src/core/client_config/subchannel_factory.c
+  - src/core/client_config/subchannel_factory_decorators/add_channel_arg.c
+  - src/core/client_config/subchannel_factory_decorators/merge_channel_args.c
+  - src/core/client_config/uri_parser.c
+  - src/core/compression/algorithm.c
+  - src/core/compression/message_compress.c
+  - src/core/debug/trace.c
+  - src/core/httpcli/format_request.c
+  - src/core/httpcli/httpcli.c
+  - src/core/httpcli/parser.c
+  - src/core/iomgr/closure.c
+  - src/core/iomgr/endpoint.c
+  - src/core/iomgr/endpoint_pair_posix.c
+  - src/core/iomgr/endpoint_pair_windows.c
+  - src/core/iomgr/exec_ctx.c
+  - src/core/iomgr/fd_posix.c
+  - src/core/iomgr/iocp_windows.c
+  - src/core/iomgr/iomgr.c
+  - src/core/iomgr/iomgr_posix.c
+  - src/core/iomgr/iomgr_windows.c
+  - src/core/iomgr/pollset_multipoller_with_epoll.c
+  - src/core/iomgr/pollset_multipoller_with_poll_posix.c
+  - src/core/iomgr/pollset_posix.c
+  - src/core/iomgr/pollset_set_posix.c
+  - src/core/iomgr/pollset_set_windows.c
+  - src/core/iomgr/pollset_windows.c
+  - src/core/iomgr/resolve_address_posix.c
+  - src/core/iomgr/resolve_address_windows.c
+  - src/core/iomgr/sockaddr_utils.c
+  - src/core/iomgr/socket_utils_common_posix.c
+  - src/core/iomgr/socket_utils_linux.c
+  - src/core/iomgr/socket_utils_posix.c
+  - src/core/iomgr/socket_windows.c
+  - src/core/iomgr/tcp_client_posix.c
+  - src/core/iomgr/tcp_client_windows.c
+  - src/core/iomgr/tcp_posix.c
+  - src/core/iomgr/tcp_server_posix.c
+  - src/core/iomgr/tcp_server_windows.c
+  - src/core/iomgr/tcp_windows.c
+  - src/core/iomgr/time_averaged_stats.c
+  - src/core/iomgr/timer.c
+  - src/core/iomgr/timer_heap.c
+  - src/core/iomgr/udp_server.c
+  - src/core/iomgr/wakeup_fd_eventfd.c
+  - src/core/iomgr/wakeup_fd_nospecial.c
+  - src/core/iomgr/wakeup_fd_pipe.c
+  - src/core/iomgr/wakeup_fd_posix.c
+  - src/core/iomgr/workqueue_posix.c
+  - src/core/iomgr/workqueue_windows.c
+  - src/core/json/json.c
+  - src/core/json/json_reader.c
+  - src/core/json/json_string.c
+  - src/core/json/json_writer.c
+  - src/core/surface/api_trace.c
+  - src/core/surface/byte_buffer.c
+  - src/core/surface/byte_buffer_queue.c
+  - src/core/surface/byte_buffer_reader.c
+  - src/core/surface/call.c
+  - src/core/surface/call_details.c
+  - src/core/surface/call_log_batch.c
+  - src/core/surface/channel.c
+  - src/core/surface/channel_connectivity.c
+  - src/core/surface/channel_create.c
+  - src/core/surface/completion_queue.c
+  - src/core/surface/event_string.c
+  - src/core/surface/init.c
+  - src/core/surface/lame_client.c
+  - src/core/surface/metadata_array.c
+  - src/core/surface/server.c
+  - src/core/surface/server_chttp2.c
+  - src/core/surface/server_create.c
+  - src/core/surface/version.c
+  - src/core/transport/chttp2/alpn.c
+  - src/core/transport/chttp2/bin_encoder.c
+  - src/core/transport/chttp2/frame_data.c
+  - src/core/transport/chttp2/frame_goaway.c
+  - src/core/transport/chttp2/frame_ping.c
+  - src/core/transport/chttp2/frame_rst_stream.c
+  - src/core/transport/chttp2/frame_settings.c
+  - src/core/transport/chttp2/frame_window_update.c
+  - src/core/transport/chttp2/hpack_parser.c
+  - src/core/transport/chttp2/hpack_table.c
+  - src/core/transport/chttp2/huffsyms.c
+  - src/core/transport/chttp2/incoming_metadata.c
+  - src/core/transport/chttp2/parsing.c
+  - src/core/transport/chttp2/status_conversion.c
+  - src/core/transport/chttp2/stream_encoder.c
+  - src/core/transport/chttp2/stream_lists.c
+  - src/core/transport/chttp2/stream_map.c
+  - src/core/transport/chttp2/timeout_encoding.c
+  - src/core/transport/chttp2/varint.c
+  - src/core/transport/chttp2/writing.c
+  - src/core/transport/chttp2_transport.c
+  - src/core/transport/connectivity_state.c
+  - src/core/transport/metadata.c
+  - src/core/transport/stream_op.c
+  - src/core/transport/transport.c
+  - src/core/transport/transport_op_string.c
 - name: grpc_test_util_base
-  headers: [test/core/end2end/cq_verifier.h, test/core/end2end/fixtures/proxy.h, test/core/iomgr/endpoint_tests.h,
-    test/core/security/oauth2_utils.h, test/core/util/grpc_profiler.h, test/core/util/parse_hexstring.h,
-    test/core/util/port.h, test/core/util/slice_splitter.h]
-  src: [test/core/end2end/cq_verifier.c, test/core/end2end/fixtures/proxy.c, test/core/iomgr/endpoint_tests.c,
-    test/core/security/oauth2_utils.c, test/core/util/grpc_profiler.c, test/core/util/parse_hexstring.c,
-    test/core/util/port_posix.c, test/core/util/port_windows.c, test/core/util/slice_splitter.c]
+  headers:
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/iomgr/endpoint_tests.h
+  - test/core/security/oauth2_utils.h
+  - test/core/util/grpc_profiler.h
+  - test/core/util/parse_hexstring.h
+  - test/core/util/port.h
+  - test/core/util/slice_splitter.h
+  src:
+  - test/core/end2end/cq_verifier.c
+  - test/core/end2end/fixtures/proxy.c
+  - test/core/iomgr/endpoint_tests.c
+  - test/core/security/oauth2_utils.c
+  - test/core/util/grpc_profiler.c
+  - test/core/util/parse_hexstring.c
+  - test/core/util/port_posix.c
+  - test/core/util/port_windows.c
+  - test/core/util/slice_splitter.c
 libs:
 - name: gpr
   build: all
   language: c
-  public_headers: [include/grpc/support/alloc.h, include/grpc/support/atm.h, include/grpc/support/atm_gcc_atomic.h,
-    include/grpc/support/atm_gcc_sync.h, include/grpc/support/atm_win32.h, include/grpc/support/cmdline.h,
-    include/grpc/support/cpu.h, include/grpc/support/histogram.h, include/grpc/support/host_port.h,
-    include/grpc/support/log.h, include/grpc/support/log_win32.h, include/grpc/support/port_platform.h,
-    include/grpc/support/slice.h, include/grpc/support/slice_buffer.h, include/grpc/support/string_util.h,
-    include/grpc/support/subprocess.h, include/grpc/support/sync.h, include/grpc/support/sync_generic.h,
-    include/grpc/support/sync_posix.h, include/grpc/support/sync_win32.h, include/grpc/support/thd.h,
-    include/grpc/support/time.h, include/grpc/support/tls.h, include/grpc/support/tls_gcc.h,
-    include/grpc/support/tls_msvc.h, include/grpc/support/tls_pthread.h, include/grpc/support/useful.h]
-  headers: [src/core/support/env.h, src/core/support/file.h, src/core/support/murmur_hash.h,
-    src/core/support/stack_lockfree.h, src/core/support/string.h, src/core/support/string_win32.h,
-    src/core/support/thd_internal.h, src/core/support/time_precise.h]
-  src: [src/core/support/alloc.c, src/core/support/cmdline.c, src/core/support/cpu_iphone.c,
-    src/core/support/cpu_linux.c, src/core/support/cpu_posix.c, src/core/support/cpu_windows.c,
-    src/core/support/env_linux.c, src/core/support/env_posix.c, src/core/support/env_win32.c,
-    src/core/support/file.c, src/core/support/file_posix.c, src/core/support/file_win32.c,
-    src/core/support/histogram.c, src/core/support/host_port.c, src/core/support/log.c,
-    src/core/support/log_android.c, src/core/support/log_linux.c, src/core/support/log_posix.c,
-    src/core/support/log_win32.c, src/core/support/murmur_hash.c, src/core/support/slice.c,
-    src/core/support/slice_buffer.c, src/core/support/stack_lockfree.c, src/core/support/string.c,
-    src/core/support/string_posix.c, src/core/support/string_win32.c, src/core/support/subprocess_posix.c,
-    src/core/support/sync.c, src/core/support/sync_posix.c, src/core/support/sync_win32.c,
-    src/core/support/thd.c, src/core/support/thd_posix.c, src/core/support/thd_win32.c,
-    src/core/support/time.c, src/core/support/time_posix.c, src/core/support/time_win32.c,
-    src/core/support/tls_pthread.c]
+  public_headers:
+  - include/grpc/support/alloc.h
+  - include/grpc/support/atm.h
+  - include/grpc/support/atm_gcc_atomic.h
+  - include/grpc/support/atm_gcc_sync.h
+  - include/grpc/support/atm_win32.h
+  - include/grpc/support/cmdline.h
+  - include/grpc/support/cpu.h
+  - include/grpc/support/histogram.h
+  - include/grpc/support/host_port.h
+  - include/grpc/support/log.h
+  - include/grpc/support/log_win32.h
+  - include/grpc/support/port_platform.h
+  - include/grpc/support/slice.h
+  - include/grpc/support/slice_buffer.h
+  - include/grpc/support/string_util.h
+  - include/grpc/support/subprocess.h
+  - include/grpc/support/sync.h
+  - include/grpc/support/sync_generic.h
+  - include/grpc/support/sync_posix.h
+  - include/grpc/support/sync_win32.h
+  - include/grpc/support/thd.h
+  - include/grpc/support/time.h
+  - include/grpc/support/tls.h
+  - include/grpc/support/tls_gcc.h
+  - include/grpc/support/tls_msvc.h
+  - include/grpc/support/tls_pthread.h
+  - include/grpc/support/useful.h
+  headers:
+  - src/core/profiling/timers.h
+  - src/core/support/block_annotate.h
+  - src/core/support/env.h
+  - src/core/support/file.h
+  - src/core/support/murmur_hash.h
+  - src/core/support/stack_lockfree.h
+  - src/core/support/string.h
+  - src/core/support/string_win32.h
+  - src/core/support/thd_internal.h
+  - src/core/support/time_precise.h
+  src:
+  - src/core/profiling/basic_timers.c
+  - src/core/profiling/stap_timers.c
+  - src/core/support/alloc.c
+  - src/core/support/cmdline.c
+  - src/core/support/cpu_iphone.c
+  - src/core/support/cpu_linux.c
+  - src/core/support/cpu_posix.c
+  - src/core/support/cpu_windows.c
+  - src/core/support/env_linux.c
+  - src/core/support/env_posix.c
+  - src/core/support/env_win32.c
+  - src/core/support/file.c
+  - src/core/support/file_posix.c
+  - src/core/support/file_win32.c
+  - src/core/support/histogram.c
+  - src/core/support/host_port.c
+  - src/core/support/log.c
+  - src/core/support/log_android.c
+  - src/core/support/log_linux.c
+  - src/core/support/log_posix.c
+  - src/core/support/log_win32.c
+  - src/core/support/murmur_hash.c
+  - src/core/support/slice.c
+  - src/core/support/slice_buffer.c
+  - src/core/support/stack_lockfree.c
+  - src/core/support/string.c
+  - src/core/support/string_posix.c
+  - src/core/support/string_win32.c
+  - src/core/support/subprocess_posix.c
+  - src/core/support/sync.c
+  - src/core/support/sync_posix.c
+  - src/core/support/sync_win32.c
+  - src/core/support/thd.c
+  - src/core/support/thd_posix.c
+  - src/core/support/thd_win32.c
+  - src/core/support/time.c
+  - src/core/support/time_posix.c
+  - src/core/support/time_precise.c
+  - src/core/support/time_win32.c
+  - src/core/support/tls_pthread.c
   secure: false
   vs_project_guid: '{B23D3D1A-9438-4EDA-BEB6-9A0A03D17792}'
 - name: gpr_test_util
   build: private
   language: c
-  headers: [test/core/util/test_config.h]
-  src: [test/core/util/test_config.c]
-  deps: [gpr]
+  headers:
+  - test/core/util/test_config.h
+  src:
+  - test/core/util/test_config.c
+  deps:
+  - gpr
   secure: false
   vs_project_guid: '{EAB0A629-17A9-44DB-B5FF-E91A721FE037}'
 - name: grpc
   build: all
   language: c
-  public_headers: [include/grpc/grpc_security.h]
-  headers: [src/core/security/auth_filters.h, src/core/security/base64.h, src/core/security/credentials.h,
-    src/core/security/json_token.h, src/core/security/jwt_verifier.h, src/core/security/secure_endpoint.h,
-    src/core/security/secure_transport_setup.h, src/core/security/security_connector.h,
-    src/core/security/security_context.h, src/core/tsi/fake_transport_security.h,
-    src/core/tsi/ssl_transport_security.h, src/core/tsi/transport_security.h, src/core/tsi/transport_security_interface.h]
-  src: [src/core/httpcli/httpcli_security_connector.c, src/core/security/base64.c,
-    src/core/security/client_auth_filter.c, src/core/security/credentials.c, src/core/security/credentials_metadata.c,
-    src/core/security/credentials_posix.c, src/core/security/credentials_win32.c,
-    src/core/security/google_default_credentials.c, src/core/security/json_token.c,
-    src/core/security/jwt_verifier.c, src/core/security/secure_endpoint.c, src/core/security/secure_transport_setup.c,
-    src/core/security/security_connector.c, src/core/security/security_context.c,
-    src/core/security/server_auth_filter.c, src/core/security/server_secure_chttp2.c,
-    src/core/surface/init_secure.c, src/core/surface/secure_channel_create.c, src/core/tsi/fake_transport_security.c,
-    src/core/tsi/ssl_transport_security.c, src/core/tsi/transport_security.c]
-  deps: [gpr]
+  public_headers:
+  - include/grpc/grpc_security.h
+  headers:
+  - src/core/security/auth_filters.h
+  - src/core/security/base64.h
+  - src/core/security/credentials.h
+  - src/core/security/handshake.h
+  - src/core/security/json_token.h
+  - src/core/security/jwt_verifier.h
+  - src/core/security/secure_endpoint.h
+  - src/core/security/security_connector.h
+  - src/core/security/security_context.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_interface.h
+  src:
+  - src/core/httpcli/httpcli_security_connector.c
+  - src/core/security/base64.c
+  - src/core/security/client_auth_filter.c
+  - src/core/security/credentials.c
+  - src/core/security/credentials_metadata.c
+  - src/core/security/credentials_posix.c
+  - src/core/security/credentials_win32.c
+  - src/core/security/google_default_credentials.c
+  - src/core/security/handshake.c
+  - src/core/security/json_token.c
+  - src/core/security/jwt_verifier.c
+  - src/core/security/secure_endpoint.c
+  - src/core/security/security_connector.c
+  - src/core/security/security_context.c
+  - src/core/security/server_auth_filter.c
+  - src/core/security/server_secure_chttp2.c
+  - src/core/surface/init_secure.c
+  - src/core/surface/secure_channel_create.c
+  - src/core/tsi/fake_transport_security.c
+  - src/core/tsi/ssl_transport_security.c
+  - src/core/tsi/transport_security.c
+  deps:
+  - gpr
   baselib: true
   dll: true
-  filegroups: [grpc_base, census]
+  filegroups:
+  - grpc_base
+  - census
   secure: true
-  vs_packages: [grpc.dependencies.openssl, grpc.dependencies.zlib]
+  vs_packages:
+  - grpc.dependencies.openssl
+  - grpc.dependencies.zlib
   vs_project_guid: '{29D16885-7228-4C31-81ED-5F9187C7F2A9}'
 - name: grpc_test_util
   build: private
   language: c
-  headers: [test/core/end2end/data/ssl_test_data.h]
-  src: [test/core/end2end/data/server1_cert.c, test/core/end2end/data/server1_key.c,
-    test/core/end2end/data/test_root_cert.c]
-  deps: [gpr, gpr_test_util, grpc]
-  filegroups: [grpc_test_util_base]
+  headers:
+  - test/core/end2end/data/ssl_test_data.h
+  src:
+  - test/core/end2end/data/server1_cert.c
+  - test/core/end2end/data/server1_key.c
+  - test/core/end2end/data/test_root_cert.c
+  deps:
+  - gpr
+  - gpr_test_util
+  - grpc
+  filegroups:
+  - grpc_test_util_base
   vs_project_guid: '{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}'
 - name: grpc_test_util_unsecure
   build: private
   language: c
-  deps: [gpr, gpr_test_util, grpc]
-  filegroups: [grpc_test_util_base]
+  deps:
+  - gpr
+  - gpr_test_util
+  - grpc
+  filegroups:
+  - grpc_test_util_base
   secure: false
   vs_project_guid: '{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}'
 - name: grpc_unsecure
   build: all
   language: c
-  src: [src/core/surface/init_unsecure.c]
-  deps: [gpr]
+  src:
+  - src/core/surface/init_unsecure.c
+  deps:
+  - gpr
   baselib: true
   dll: true
-  filegroups: [grpc_base, census]
+  filegroups:
+  - grpc_base
+  - census
   secure: false
   vs_project_guid: '{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}'
 - name: grpc_zookeeper
   build: all
   language: c
-  public_headers: [include/grpc/grpc_zookeeper.h]
-  headers: [src/core/client_config/resolvers/zookeeper_resolver.h]
-  src: [src/core/client_config/resolvers/zookeeper_resolver.c]
-  deps: [gpr, grpc]
-  external_deps: [zookeeper]
-  platforms: [linux]
+  public_headers:
+  - include/grpc/grpc_zookeeper.h
+  headers:
+  - src/core/client_config/resolvers/zookeeper_resolver.h
+  src:
+  - src/core/client_config/resolvers/zookeeper_resolver.c
+  deps:
+  - gpr
+  - grpc
+  external_deps:
+  - zookeeper
+  platforms:
+  - linux
   secure: false
 - name: reconnect_server
   build: private
   language: c
-  headers: [test/core/util/reconnect_server.h]
-  src: [test/core/util/reconnect_server.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  headers:
+  - test/core/util/reconnect_server.h
+  src:
+  - test/core/util/reconnect_server.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc++
   build: all
   language: c++
-  headers: [src/cpp/client/secure_credentials.h, src/cpp/common/secure_auth_context.h,
-    src/cpp/server/secure_server_credentials.h]
-  src: [src/cpp/client/secure_channel_arguments.cc, src/cpp/client/secure_credentials.cc,
-    src/cpp/common/auth_property_iterator.cc, src/cpp/common/secure_auth_context.cc,
-    src/cpp/common/secure_create_auth_context.cc, src/cpp/server/secure_server_credentials.cc]
-  deps: [gpr, grpc]
+  headers:
+  - src/cpp/client/secure_credentials.h
+  - src/cpp/common/secure_auth_context.h
+  - src/cpp/server/secure_server_credentials.h
+  src:
+  - src/cpp/client/secure_channel_arguments.cc
+  - src/cpp/client/secure_credentials.cc
+  - src/cpp/common/auth_property_iterator.cc
+  - src/cpp/common/secure_auth_context.cc
+  - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/server/secure_server_credentials.cc
+  deps:
+  - gpr
+  - grpc
   baselib: true
   dll: true
-  filegroups: [grpc++_base]
+  filegroups:
+  - grpc++_base
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
 - name: grpc++_test_config
   build: private
   language: c++
-  headers: [test/cpp/util/test_config.h]
-  src: [test/cpp/util/test_config.cc]
+  headers:
+  - test/cpp/util/test_config.h
+  src:
+  - test/cpp/util/test_config.cc
 - name: grpc++_test_util
   build: private
   language: c++
-  headers: [test/cpp/util/cli_call.h, test/cpp/util/create_test_channel.h, test/cpp/util/string_ref_helper.h,
-    test/cpp/util/subprocess.h]
-  src: [test/cpp/util/messages.proto, test/cpp/util/echo.proto, test/cpp/util/echo_duplicate.proto,
-    test/cpp/util/cli_call.cc, test/cpp/util/create_test_channel.cc, test/cpp/util/string_ref_helper.cc,
-    test/cpp/util/subprocess.cc]
-  deps: [grpc++, grpc_test_util]
+  headers:
+  - test/cpp/util/cli_call.h
+  - test/cpp/util/create_test_channel.h
+  - test/cpp/util/string_ref_helper.h
+  - test/cpp/util/subprocess.h
+  src:
+  - test/cpp/util/messages.proto
+  - test/cpp/util/echo.proto
+  - test/cpp/util/echo_duplicate.proto
+  - test/cpp/util/cli_call.cc
+  - test/cpp/util/create_test_channel.cc
+  - test/cpp/util/string_ref_helper.cc
+  - test/cpp/util/subprocess.cc
+  deps:
+  - grpc++
+  - grpc_test_util
 - name: grpc++_unsecure
   build: all
   language: c++
-  src: [src/cpp/common/insecure_create_auth_context.cc]
-  deps: [gpr, grpc_unsecure]
+  src:
+  - src/cpp/common/insecure_create_auth_context.cc
+  deps:
+  - gpr
+  - grpc_unsecure
   baselib: true
   dll: true
-  filegroups: [grpc++_base]
+  filegroups:
+  - grpc++_base
   secure: false
   vs_project_guid: '{6EE56155-DF7C-4F6E-BFC4-F6F776BEB211}'
 - name: grpc_plugin_support
   build: protoc
   language: c++
-  headers: [include/grpc++/support/config.h, include/grpc++/support/config_protobuf.h,
-    src/compiler/config.h, src/compiler/cpp_generator.h, src/compiler/cpp_generator_helpers.h,
-    src/compiler/csharp_generator.h, src/compiler/csharp_generator_helpers.h, src/compiler/generator_helpers.h,
-    src/compiler/objective_c_generator.h, src/compiler/objective_c_generator_helpers.h,
-    src/compiler/python_generator.h, src/compiler/ruby_generator.h, src/compiler/ruby_generator_helpers-inl.h,
-    src/compiler/ruby_generator_map-inl.h, src/compiler/ruby_generator_string-inl.h]
-  src: [src/compiler/cpp_generator.cc, src/compiler/csharp_generator.cc, src/compiler/objective_c_generator.cc,
-    src/compiler/python_generator.cc, src/compiler/ruby_generator.cc]
+  headers:
+  - include/grpc++/support/config.h
+  - include/grpc++/support/config_protobuf.h
+  - src/compiler/config.h
+  - src/compiler/cpp_generator.h
+  - src/compiler/cpp_generator_helpers.h
+  - src/compiler/csharp_generator.h
+  - src/compiler/csharp_generator_helpers.h
+  - src/compiler/generator_helpers.h
+  - src/compiler/objective_c_generator.h
+  - src/compiler/objective_c_generator_helpers.h
+  - src/compiler/python_generator.h
+  - src/compiler/ruby_generator.h
+  - src/compiler/ruby_generator_helpers-inl.h
+  - src/compiler/ruby_generator_map-inl.h
+  - src/compiler/ruby_generator_string-inl.h
+  src:
+  - src/compiler/cpp_generator.cc
+  - src/compiler/csharp_generator.cc
+  - src/compiler/objective_c_generator.cc
+  - src/compiler/python_generator.cc
+  - src/compiler/ruby_generator.cc
   deps: []
   secure: false
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
 - name: interop_client_helper
   build: private
   language: c++
-  headers: [test/cpp/interop/client_helper.h]
-  src: [test/proto/messages.proto, test/cpp/interop/client_helper.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr]
+  headers:
+  - test/cpp/interop/client_helper.h
+  src:
+  - test/proto/messages.proto
+  - test/cpp/interop/client_helper.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: interop_client_main
   build: private
   language: c++
-  headers: [test/cpp/interop/interop_client.h]
-  src: [test/proto/empty.proto, test/proto/messages.proto, test/proto/test.proto,
-    test/cpp/interop/client.cc, test/cpp/interop/interop_client.cc]
-  deps: [interop_client_helper, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util,
-    gpr, grpc++_test_config]
+  headers:
+  - test/cpp/interop/interop_client.h
+  src:
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
+  - test/cpp/interop/client.cc
+  - test/cpp/interop/interop_client.cc
+  deps:
+  - interop_client_helper
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: interop_server_helper
   build: private
   language: c++
-  headers: [test/cpp/interop/server_helper.h]
-  src: [test/cpp/interop/server_helper.cc]
-  deps: [grpc_test_util, grpc++, grpc, gpr]
+  headers:
+  - test/cpp/interop/server_helper.h
+  src:
+  - test/cpp/interop/server_helper.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: interop_server_main
   build: private
   language: c++
-  src: [test/proto/empty.proto, test/proto/messages.proto, test/proto/test.proto,
-    test/cpp/interop/server.cc]
-  deps: [interop_server_helper, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util,
-    gpr, grpc++_test_config]
+  src:
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
+  - test/cpp/interop/server.cc
+  deps:
+  - interop_server_helper
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: qps
   build: private
   language: c++
-  headers: [test/cpp/qps/client.h, test/cpp/qps/driver.h, test/cpp/qps/histogram.h,
-    test/cpp/qps/interarrival.h, test/cpp/qps/perf_db_client.h, test/cpp/qps/qps_worker.h,
-    test/cpp/qps/report.h, test/cpp/qps/server.h, test/cpp/qps/stats.h, test/cpp/qps/timer.h,
-    test/cpp/util/benchmark_config.h]
-  src: [test/cpp/qps/qpstest.proto, test/cpp/qps/perf_db.proto, test/cpp/qps/client_async.cc,
-    test/cpp/qps/client_sync.cc, test/cpp/qps/driver.cc, test/cpp/qps/perf_db_client.cc,
-    test/cpp/qps/qps_worker.cc, test/cpp/qps/report.cc, test/cpp/qps/server_async.cc,
-    test/cpp/qps/server_sync.cc, test/cpp/qps/timer.cc, test/cpp/util/benchmark_config.cc]
-  deps: [grpc_test_util, grpc++_test_util, grpc++]
+  headers:
+  - test/cpp/qps/client.h
+  - test/cpp/qps/driver.h
+  - test/cpp/qps/histogram.h
+  - test/cpp/qps/interarrival.h
+  - test/cpp/qps/perf_db_client.h
+  - test/cpp/qps/qps_worker.h
+  - test/cpp/qps/report.h
+  - test/cpp/qps/server.h
+  - test/cpp/qps/stats.h
+  - test/cpp/qps/timer.h
+  - test/cpp/util/benchmark_config.h
+  src:
+  - test/cpp/qps/qpstest.proto
+  - test/cpp/qps/perf_db.proto
+  - test/cpp/qps/client_async.cc
+  - test/cpp/qps/client_sync.cc
+  - test/cpp/qps/driver.cc
+  - test/cpp/qps/perf_db_client.cc
+  - test/cpp/qps/qps_worker.cc
+  - test/cpp/qps/report.cc
+  - test/cpp/qps/server_async.cc
+  - test/cpp/qps/server_sync.cc
+  - test/cpp/qps/timer.cc
+  - test/cpp/util/benchmark_config.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_util
+  - grpc++
 - name: grpc_csharp_ext
   build: all
   language: csharp
-  src: [src/csharp/ext/grpc_csharp_ext.c]
-  deps: [gpr, grpc]
+  src:
+  - src/csharp/ext/grpc_csharp_ext.c
+  deps:
+  - gpr
+  - grpc
   dll: only
   vs_config_type: DynamicLibrary
-  vs_packages: [grpc.dependencies.openssl, grpc.dependencies.zlib]
+  vs_packages:
+  - grpc.dependencies.openssl
+  - grpc.dependencies.zlib
   vs_project_guid: '{D64C6D63-4458-4A88-AB38-35678384A7E4}'
-  vs_props: [zlib, openssl, winsock, global]
+  vs_props:
+  - zlib
+  - openssl
+  - winsock
+  - global
 targets:
-- name: alarm_heap_test
-  build: test
-  language: c
-  src: [test/core/iomgr/alarm_heap_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-- name: alarm_list_test
-  build: test
-  language: c
-  src: [test/core/iomgr/alarm_list_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-- name: alarm_test
-  build: test
-  language: c
-  src: [test/core/iomgr/alarm_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
 - name: alpn_test
   build: test
   language: c
-  src: [test/core/transport/chttp2/alpn_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/transport/chttp2/alpn_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: bin_encoder_test
   build: test
   language: c
-  src: [test/core/transport/chttp2/bin_encoder_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/transport/chttp2/bin_encoder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: chttp2_status_conversion_test
   build: test
   language: c
-  src: [test/core/transport/chttp2/status_conversion_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/transport/chttp2/status_conversion_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: chttp2_stream_encoder_test
   build: test
   language: c
-  src: [test/core/transport/chttp2/stream_encoder_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/transport/chttp2/stream_encoder_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: chttp2_stream_map_test
   build: test
   language: c
-  src: [test/core/transport/chttp2/stream_map_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/transport/chttp2/stream_map_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: compression_test
   build: test
   language: c
-  src: [test/core/compression/compression_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/compression/compression_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: dualstack_socket_test
   build: test
   language: c
-  src: [test/core/end2end/dualstack_socket_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/core/end2end/dualstack_socket_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: endpoint_pair_test
   build: test
   language: c
-  src: [test/core/iomgr/endpoint_pair_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/iomgr/endpoint_pair_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: fd_conservation_posix_test
   build: test
   language: c
-  src: [test/core/iomgr/fd_conservation_posix_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/core/iomgr/fd_conservation_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: fd_posix_test
   build: test
   language: c
-  src: [test/core/iomgr/fd_posix_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/core/iomgr/fd_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: fling_client
   build: test
   run: false
   language: c
-  src: [test/core/fling/client.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/fling/client.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: fling_server
   build: test
   run: false
   language: c
-  src: [test/core/fling/server.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/fling/server.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: fling_stream_test
   build: test
   language: c
-  src: [test/core/fling/fling_stream_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/core/fling/fling_stream_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: fling_test
   build: test
   language: c
-  src: [test/core/fling/fling_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/core/fling/fling_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: gen_hpack_tables
   build: tool
   language: c
-  src: [tools/codegen/core/gen_hpack_tables.c]
-  deps: [gpr, grpc]
+  src:
+  - tools/codegen/core/gen_hpack_tables.c
+  deps:
+  - gpr
+  - grpc
 - name: gen_legal_metadata_characters
   build: tool
   language: c
-  src: [tools/codegen/core/gen_legal_metadata_characters.c]
+  src:
+  - tools/codegen/core/gen_legal_metadata_characters.c
   deps: []
 - name: gpr_cmdline_test
   build: test
   language: c
-  src: [test/core/support/cmdline_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/cmdline_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_env_test
   build: test
   language: c
-  src: [test/core/support/env_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/env_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_file_test
   build: test
   language: c
-  src: [test/core/support/file_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/file_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_histogram_test
   build: test
   language: c
-  src: [test/core/support/histogram_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/histogram_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_host_port_test
   build: test
   language: c
-  src: [test/core/support/host_port_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/host_port_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_log_test
   build: test
   language: c
-  src: [test/core/support/log_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/log_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_slice_buffer_test
   build: test
   language: c
-  src: [test/core/support/slice_buffer_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/slice_buffer_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_slice_test
   build: test
   language: c
-  src: [test/core/support/slice_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/slice_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_stack_lockfree_test
   build: test
   language: c
-  src: [test/core/support/stack_lockfree_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/stack_lockfree_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_string_test
   build: test
   language: c
-  src: [test/core/support/string_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/string_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_sync_test
   build: test
   language: c
-  src: [test/core/support/sync_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/sync_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_thd_test
   build: test
   language: c
-  src: [test/core/support/thd_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/thd_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_time_test
   build: test
   language: c
-  src: [test/core/support/time_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/time_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_tls_test
   build: test
   language: c
-  src: [test/core/support/tls_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/tls_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_useful_test
   build: test
   language: c
-  src: [test/core/support/useful_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/useful_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: grpc_auth_context_test
   build: test
   language: c
-  src: [test/core/security/auth_context_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/security/auth_context_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_base64_test
   build: test
   language: c
-  src: [test/core/security/base64_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/security/base64_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_byte_buffer_reader_test
   build: test
   language: c
-  src: [test/core/surface/byte_buffer_reader_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/surface/byte_buffer_reader_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_channel_args_test
   build: test
   language: c
-  src: [test/core/channel/channel_args_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/channel/channel_args_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_channel_stack_test
   build: test
   language: c
-  src: [test/core/channel/channel_stack_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/channel/channel_stack_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_completion_queue_test
   build: test
   language: c
-  src: [test/core/surface/completion_queue_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/surface/completion_queue_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_create_jwt
   build: tool
   language: c
-  src: [test/core/security/create_jwt.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/security/create_jwt.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_credentials_test
   build: test
   language: c
-  src: [test/core/security/credentials_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/security/credentials_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_fetch_oauth2
   build: tool
   language: c
-  src: [test/core/security/fetch_oauth2.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/security/fetch_oauth2.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_json_token_test
   build: test
   language: c
-  src: [test/core/security/json_token_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [linux, posix, mac]
+  src:
+  - test/core/security/json_token_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: grpc_jwt_verifier_test
   build: test
   language: c
-  src: [test/core/security/jwt_verifier_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/security/jwt_verifier_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_print_google_default_creds_token
   build: tool
   language: c
-  src: [test/core/security/print_google_default_creds_token.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/security/print_google_default_creds_token.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_security_connector_test
   build: test
   language: c
-  src: [test/core/security/security_connector_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/security/security_connector_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_stream_op_test
   build: test
   language: c
-  src: [test/core/transport/stream_op_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/transport/stream_op_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_verify_jwt
   build: tool
   language: c
-  src: [test/core/security/verify_jwt.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/security/verify_jwt.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: hpack_parser_test
   build: test
   language: c
-  src: [test/core/transport/chttp2/hpack_parser_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/transport/chttp2/hpack_parser_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: hpack_table_test
   build: test
   language: c
-  src: [test/core/transport/chttp2/hpack_table_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/transport/chttp2/hpack_table_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: httpcli_format_request_test
   build: test
   language: c
-  src: [test/core/httpcli/format_request_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/httpcli/format_request_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: httpcli_parser_test
   build: test
   language: c
-  src: [test/core/httpcli/parser_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/httpcli/parser_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: httpcli_test
   build: test
   language: c
-  src: [test/core/httpcli/httpcli_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/core/httpcli/httpcli_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: json_rewrite
   build: test
   run: false
   language: c
-  src: [test/core/json/json_rewrite.c]
-  deps: [grpc, gpr]
+  src:
+  - test/core/json/json_rewrite.c
+  deps:
+  - grpc
+  - gpr
 - name: json_rewrite_test
   build: test
   language: c
-  src: [test/core/json/json_rewrite_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/json/json_rewrite_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: json_test
   build: test
   language: c
-  src: [test/core/json/json_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/json/json_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: lame_client_test
   build: test
   language: c
-  src: [test/core/surface/lame_client_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/surface/lame_client_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: lb_policies_test
+  build: test
+  language: c
+  src:
+  - test/core/client_config/lb_policies_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: low_level_ping_pong_benchmark
   build: benchmark
   language: c
-  src: [test/core/network_benchmarks/low_level_ping_pong.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/core/network_benchmarks/low_level_ping_pong.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: message_compress_test
   build: test
   language: c
-  src: [test/core/compression/message_compress_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/compression/message_compress_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: multi_init_test
   build: test
   language: c
-  src: [test/core/surface/multi_init_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/surface/multi_init_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: multiple_server_queues_test
   build: test
   language: c
-  src: [test/core/end2end/multiple_server_queues_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/end2end/multiple_server_queues_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: murmur_hash_test
   build: test
   language: c
-  src: [test/core/support/murmur_hash_test.c]
-  deps: [gpr_test_util, gpr]
+  src:
+  - test/core/support/murmur_hash_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: no_server_test
   build: test
   language: c
-  src: [test/core/end2end/no_server_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/end2end/no_server_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: resolve_address_test
   build: test
   language: c
-  src: [test/core/iomgr/resolve_address_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/iomgr/resolve_address_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: secure_endpoint_test
   build: test
   language: c
-  src: [test/core/security/secure_endpoint_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/security/secure_endpoint_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: sockaddr_utils_test
   build: test
   language: c
-  src: [test/core/iomgr/sockaddr_utils_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/iomgr/sockaddr_utils_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: tcp_client_posix_test
   build: test
   language: c
-  src: [test/core/iomgr/tcp_client_posix_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/core/iomgr/tcp_client_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: tcp_posix_test
   build: test
   language: c
-  src: [test/core/iomgr/tcp_posix_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/core/iomgr/tcp_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: tcp_server_posix_test
   build: test
   language: c
-  src: [test/core/iomgr/tcp_server_posix_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/core/iomgr/tcp_server_posix_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: time_averaged_stats_test
   build: test
   language: c
-  src: [test/core/iomgr/time_averaged_stats_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/iomgr/time_averaged_stats_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: timeout_encoding_test
   build: test
   language: c
-  src: [test/core/transport/chttp2/timeout_encoding_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/transport/chttp2/timeout_encoding_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: timer_heap_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/timer_heap_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: timer_list_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/timer_list_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: timers_test
   build: test
   language: c
-  src: [test/core/profiling/timers_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/profiling/timers_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: transport_metadata_test
   build: test
   language: c
-  src: [test/core/transport/metadata_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/transport/metadata_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: transport_security_test
   build: test
   language: c
-  src: [test/core/tsi/transport_security_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [linux, posix, mac]
+  src:
+  - test/core/tsi/transport_security_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: udp_server_test
   build: test
   language: c
-  src: [test/core/iomgr/udp_server_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [posix]
+  src:
+  - test/core/iomgr/udp_server_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: uri_parser_test
   build: test
   language: c
-  src: [test/core/client_config/uri_parser_test.c]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
+  src:
+  - test/core/client_config/uri_parser_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: workqueue_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/workqueue_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: async_end2end_test
   build: test
   language: c++
-  src: [test/cpp/end2end/async_end2end_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/end2end/async_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: async_streaming_ping_pong_test
   build: test
   language: c++
-  src: [test/cpp/qps/async_streaming_ping_pong_test.cc]
-  deps: [qps, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/qps/async_streaming_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: async_unary_ping_pong_test
   build: test
   language: c++
-  src: [test/cpp/qps/async_unary_ping_pong_test.cc]
-  deps: [qps, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/qps/async_unary_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: auth_property_iterator_test
   build: test
   language: c++
-  src: [test/cpp/common/auth_property_iterator_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/common/auth_property_iterator_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: channel_arguments_test
   build: test
   language: c++
-  src: [test/cpp/client/channel_arguments_test.cc]
-  deps: [grpc++, grpc, gpr]
+  src:
+  - test/cpp/client/channel_arguments_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
 - name: cli_call_test
   build: test
   language: c++
-  src: [test/cpp/util/cli_call_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/util/cli_call_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: client_crash_test
   build: test
   language: c++
-  src: [test/cpp/end2end/client_crash_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/end2end/client_crash_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: client_crash_test_server
   build: test
   run: false
   language: c++
-  src: [test/cpp/end2end/client_crash_test_server.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/end2end/client_crash_test_server.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: credentials_test
   build: test
   language: c++
-  src: [test/cpp/client/credentials_test.cc]
-  deps: [grpc++, grpc, gpr]
+  src:
+  - test/cpp/client/credentials_test.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
 - name: cxx_byte_buffer_test
   build: test
   language: c++
-  src: [test/cpp/util/byte_buffer_test.cc]
-  deps: [grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/util/byte_buffer_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: cxx_slice_test
   build: test
   language: c++
-  src: [test/cpp/util/slice_test.cc]
-  deps: [grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/util/slice_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: cxx_string_ref_test
   build: test
   language: c++
-  src: [test/cpp/util/string_ref_test.cc]
-  deps: [grpc++]
+  src:
+  - test/cpp/util/string_ref_test.cc
+  deps:
+  - grpc++
 - name: cxx_time_test
   build: test
   language: c++
-  src: [test/cpp/util/time_test.cc]
-  deps: [grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/util/time_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: end2end_test
   build: test
   language: c++
-  src: [test/cpp/end2end/end2end_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/end2end/end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: generic_end2end_test
   build: test
   language: c++
-  src: [test/cpp/end2end/generic_end2end_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/end2end/generic_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: grpc_cli
   build: test
   run: false
   language: c++
-  src: [test/cpp/util/grpc_cli.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr, grpc++_test_config]
+  src:
+  - test/cpp/util/grpc_cli.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
-  src: [src/compiler/cpp_plugin.cc]
-  deps: [grpc_plugin_support]
+  src:
+  - src/compiler/cpp_plugin.cc
+  deps:
+  - grpc_plugin_support
   secure: false
   vs_config_type: Application
   vs_project_guid: '{7E51A25F-AC59-488F-906C-C60FAAE706AA}'
 - name: grpc_csharp_plugin
   build: protoc
   language: c++
-  src: [src/compiler/csharp_plugin.cc]
-  deps: [grpc_plugin_support]
+  src:
+  - src/compiler/csharp_plugin.cc
+  deps:
+  - grpc_plugin_support
   secure: false
   vs_config_type: Application
   vs_project_guid: '{3C813052-A49A-4662-B90A-1ADBEC7EE453}'
 - name: grpc_objective_c_plugin
   build: protoc
   language: c++
-  src: [src/compiler/objective_c_plugin.cc]
-  deps: [grpc_plugin_support]
+  src:
+  - src/compiler/objective_c_plugin.cc
+  deps:
+  - grpc_plugin_support
   secure: false
   vs_config_type: Application
   vs_project_guid: '{19564640-CEE6-4921-ABA5-676ED79A36F6}'
 - name: grpc_python_plugin
   build: protoc
   language: c++
-  src: [src/compiler/python_plugin.cc]
-  deps: [grpc_plugin_support]
+  src:
+  - src/compiler/python_plugin.cc
+  deps:
+  - grpc_plugin_support
   secure: false
   vs_config_type: Application
   vs_project_guid: '{DF52D501-A6CF-4E6F-BA38-6EBE2E8DAFB2}'
 - name: grpc_ruby_plugin
   build: protoc
   language: c++
-  src: [src/compiler/ruby_plugin.cc]
-  deps: [grpc_plugin_support]
+  src:
+  - src/compiler/ruby_plugin.cc
+  deps:
+  - grpc_plugin_support
   secure: false
   vs_config_type: Application
   vs_project_guid: '{069E9D05-B78B-4751-9252-D21EBAE7DE8E}'
@@ -871,138 +1832,346 @@ targets:
   run: false
   language: c++
   src: []
-  deps: [interop_client_main, interop_client_helper, grpc++_test_util, grpc_test_util,
-    grpc++, grpc, gpr_test_util, gpr, grpc++_test_config]
-  platforms: [mac, linux, posix]
+  deps:
+  - interop_client_main
+  - interop_client_helper
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: interop_server
   build: test
   run: false
   language: c++
   src: []
-  deps: [interop_server_main, interop_server_helper, grpc++_test_util, grpc_test_util,
-    grpc++, grpc, gpr_test_util, gpr, grpc++_test_config]
-  platforms: [mac, linux, posix]
+  deps:
+  - interop_server_main
+  - interop_server_helper
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: interop_test
   build: test
   language: c++
-  src: [test/cpp/interop/interop_test.cc]
-  deps: [grpc_test_util, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/interop/interop_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: mock_test
   build: test
   language: c++
-  src: [test/cpp/end2end/mock_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/end2end/mock_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: qps_driver
   build: benchmark
   language: c++
-  src: [test/cpp/qps/qps_driver.cc]
-  deps: [qps, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr,
-    grpc++_test_config]
+  src:
+  - test/cpp/qps/qps_driver.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: qps_interarrival_test
   build: test
   run: false
   language: c++
-  src: [test/cpp/qps/qps_interarrival_test.cc]
-  deps: [qps, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/qps/qps_interarrival_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: qps_openloop_test
   build: test
   language: c++
-  src: [test/cpp/qps/qps_openloop_test.cc]
-  deps: [qps, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr,
-    grpc++_test_config]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/qps/qps_openloop_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: qps_test
   build: test
   language: c++
-  src: [test/cpp/qps/qps_test.cc]
-  deps: [qps, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr,
-    grpc++_test_config]
-  exclude_configs: [tsan]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/qps/qps_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  exclude_configs:
+  - tsan
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: qps_worker
   build: benchmark
   language: c++
-  headers: [test/cpp/qps/client.h, test/cpp/qps/server.h]
-  src: [test/cpp/qps/worker.cc]
-  deps: [qps, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr,
-    grpc++_test_config]
+  headers:
+  - test/cpp/qps/client.h
+  - test/cpp/qps/server.h
+  src:
+  - test/cpp/qps/worker.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: reconnect_interop_client
   build: test
   run: false
   language: c++
-  src: [test/proto/empty.proto, test/proto/messages.proto, test/proto/test.proto,
-    test/cpp/interop/reconnect_interop_client.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr, grpc++_test_config]
+  src:
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
+  - test/cpp/interop/reconnect_interop_client.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: reconnect_interop_server
   build: test
   run: false
   language: c++
-  src: [test/proto/empty.proto, test/proto/messages.proto, test/proto/test.proto,
-    test/cpp/interop/reconnect_interop_server.cc]
-  deps: [reconnect_server, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util,
-    gpr, grpc++_test_config]
+  src:
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
+  - test/cpp/interop/reconnect_interop_server.cc
+  deps:
+  - reconnect_server
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: secure_auth_context_test
   build: test
   language: c++
-  src: [test/cpp/common/secure_auth_context_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/common/secure_auth_context_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: server_crash_test
   build: test
   language: c++
-  src: [test/cpp/end2end/server_crash_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/end2end/server_crash_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: server_crash_test_client
   build: test
   run: false
   language: c++
-  src: [test/cpp/end2end/server_crash_test_client.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/end2end/server_crash_test_client.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: shutdown_test
   build: test
   language: c++
-  src: [test/cpp/end2end/shutdown_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/end2end/shutdown_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: status_test
   build: test
   language: c++
-  src: [test/cpp/util/status_test.cc]
-  deps: [grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/util/status_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: streaming_throughput_test
   build: test
   language: c++
-  src: [test/cpp/end2end/streaming_throughput_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/end2end/streaming_throughput_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: sync_streaming_ping_pong_test
   build: test
   language: c++
-  src: [test/cpp/qps/sync_streaming_ping_pong_test.cc]
-  deps: [qps, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/qps/sync_streaming_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: sync_unary_ping_pong_test
   build: test
   language: c++
-  src: [test/cpp/qps/sync_unary_ping_pong_test.cc]
-  deps: [qps, grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
-  platforms: [mac, linux, posix]
+  src:
+  - test/cpp/qps/sync_unary_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: thread_stress_test
   build: test
   language: c++
-  src: [test/cpp/end2end/thread_stress_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc, gpr_test_util, gpr]
+  src:
+  - test/cpp/end2end/thread_stress_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: zookeeper_test
   build: test
+  run: false
   language: c++
-  src: [test/cpp/end2end/zookeeper_test.cc]
-  deps: [grpc++_test_util, grpc_test_util, grpc++, grpc_zookeeper, grpc, gpr_test_util,
-    gpr]
-  external_deps: [zookeeper]
-  platforms: [linux]
+  src:
+  - test/cpp/end2end/zookeeper_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc_zookeeper
+  - grpc
+  - gpr_test_util
+  - gpr
+  external_deps:
+  - zookeeper
+  platforms:
+  - linux
 vspackages:
-- {linkage: static, name: grpc.dependencies.zlib, props: false, redist: true, version: 1.2.8.9}
-- {name: grpc.dependencies.openssl, props: true, redist: true, version: 1.0.2.3}
-- {name: gflags, props: false, redist: false, version: 2.1.2.1}
-- {name: gtest, props: false, redist: false, version: 1.7.0.1}
+- linkage: static
+  name: grpc.dependencies.zlib
+  props: false
+  redist: true
+  version: 1.2.8.9
+- name: grpc.dependencies.openssl
+  props: true
+  redist: true
+  version: 1.0.2.3
+- name: gflags
+  props: false
+  redist: false
+  version: 2.1.2.1
+- name: gtest
+  props: false
+  redist: false
+  version: 1.7.0.1

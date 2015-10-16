@@ -40,14 +40,4 @@ export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
 export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
 source "python"$PYVER"_virtual_environment"/bin/activate
 
-# TODO(atash): These tests don't currently run under py.test and thus don't
-# appear under the coverage report. Find a way to get these tests to work with
-# py.test (or find another tool or *something*) that's acceptable to the rest of
-# the team...
-"python"$PYVER -m grpc_test._core_over_links_base_interface_test
-"python"$PYVER -m grpc_test._crust_over_core_over_links_face_interface_test
-"python"$PYVER -m grpc_test.beta._face_interface_test
-"python"$PYVER -m grpc_test.framework._crust_over_core_face_interface_test
-"python"$PYVER -m grpc_test.framework.core._base_interface_test
-
-"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml --timeout=300"
+"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml --timeout=300 -v --boxed --timeout_method=thread"

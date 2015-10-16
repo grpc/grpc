@@ -45,17 +45,21 @@ namespace Grpc.Core.Internal.Tests
         [Test]
         public void CreateAndDestroy()
         {
+            GrpcEnvironment.AddRef();
             var cq = CompletionQueueSafeHandle.Create();
             cq.Dispose();
+            GrpcEnvironment.Release();
         }
 
         [Test]
         public void CreateAndShutdown()
         {
+            GrpcEnvironment.AddRef();
             var cq = CompletionQueueSafeHandle.Create();
             cq.Shutdown();
             var ev = cq.Next();
             cq.Dispose();
+            GrpcEnvironment.Release();
             Assert.AreEqual(GRPCCompletionType.Shutdown, ev.type);
             Assert.AreNotEqual(IntPtr.Zero, ev.success);
             Assert.AreEqual(IntPtr.Zero, ev.tag);

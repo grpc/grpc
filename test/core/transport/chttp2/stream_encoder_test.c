@@ -52,14 +52,14 @@ int g_failure = 0;
 grpc_stream_op_buffer g_sopb;
 
 void **to_delete = NULL;
-int num_to_delete = 0;
-int cap_to_delete = 0;
+size_t num_to_delete = 0;
+size_t cap_to_delete = 0;
 
 static gpr_slice create_test_slice(size_t length) {
   gpr_slice slice = gpr_slice_malloc(length);
   size_t i;
   for (i = 0; i < length; i++) {
-    GPR_SLICE_START_PTR(slice)[i] = i;
+    GPR_SLICE_START_PTR(slice)[i] = (gpr_uint8)i;
   }
   return slice;
 }
@@ -75,8 +75,8 @@ static void verify_sopb(size_t window_available, int eof,
   gpr_slice_buffer_init(&output);
   grpc_sopb_init(&encops);
   GPR_ASSERT(expect_window_used ==
-             grpc_chttp2_preencode(g_sopb.ops, &g_sopb.nops, window_available,
-                                   &encops));
+             grpc_chttp2_preencode(g_sopb.ops, &g_sopb.nops,
+                                   (gpr_uint32)window_available, &encops));
   grpc_chttp2_encode(encops.ops, encops.nops, eof, 0xdeadbeef, &g_compressor,
                      &output);
   encops.nops = 0;
@@ -126,8 +126,8 @@ static void test_small_data_framing(void) {
   verify_sopb(10, 0, 5, "000005 0000 deadbeef 00000000ff");
 }
 
-static void add_sopb_headers(int n, ...) {
-  int i;
+static void add_sopb_headers(size_t n, ...) {
+  size_t i;
   grpc_metadata_batch b;
   va_list l;
   grpc_linked_mdelem *e = gpr_malloc(sizeof(*e) * n);
@@ -196,10 +196,10 @@ static void test_basic_headers(void) {
 }
 
 static void encode_int_to_str(int i, char *p) {
-  p[0] = 'a' + i % 26;
+  p[0] = (char)('a' + i % 26);
   i /= 26;
   GPR_ASSERT(i < 26);
-  p[1] = 'a' + i;
+  p[1] = (char)('a' + i);
   p[2] = 0;
 }
 
@@ -246,7 +246,7 @@ static void randstr(char *p, int bufsz) {
   int i;
   int len = 1 + rand() % bufsz;
   for (i = 0; i < len; i++) {
-    p[i] = 'a' + rand() % 26;
+    p[i] = (char)('a' + rand() % 26);
   }
   p[len] = 0;
 }
@@ -336,7 +336,7 @@ static void run_test(void (*test)(), const char *name) {
 }
 
 int main(int argc, char **argv) {
-  int i;
+  size_t i;
   grpc_test_init(argc, argv);
   TEST(test_small_data_framing);
   TEST(test_basic_headers);

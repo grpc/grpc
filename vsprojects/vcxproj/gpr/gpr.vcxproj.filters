@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="..\..\..\src\core\profiling\basic_timers.c">
+      <Filter>src\core\profiling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\profiling\stap_timers.c">
+      <Filter>src\core\profiling</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\support\alloc.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
@@ -106,6 +112,9 @@
     <ClCompile Include="..\..\..\src\core\support\time_posix.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\support\time_precise.c">
+      <Filter>src\core\support</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\support\time_win32.c">
       <Filter>src\core\support</Filter>
     </ClCompile>
@@ -197,6 +206,12 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\src\core\profiling\timers.h">
+      <Filter>src\core\profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\support\block_annotate.h">
+      <Filter>src\core\support</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\support\env.h">
       <Filter>src\core\support</Filter>
     </ClInclude>
@@ -238,6 +253,9 @@
     </Filter>
     <Filter Include="src\core">
       <UniqueIdentifier>{c5e1baa7-de77-beb1-9675-942261648f79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\profiling">
+      <UniqueIdentifier>{93b7086c-8c8a-6bbf-fb14-1f166bf0146a}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\support">
       <UniqueIdentifier>{bb116f2a-ea2a-c233-82da-0c54e3cbfec1}</UniqueIdentifier>

@@ -52,7 +52,6 @@
 #include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 
-
 namespace grpc {
 namespace testing {
 
@@ -68,7 +67,7 @@ class AsyncQpsServerTest : public Server {
 
     builder.RegisterAsyncService(&async_service_);
     for (int i = 0; i < config.threads(); i++) {
-      srv_cqs_.emplace_back(std::move(builder.AddCompletionQueue()));
+      srv_cqs_.emplace_back(builder.AddCompletionQueue());
     }
 
     server_ = builder.BuildAndStart();
@@ -98,7 +97,8 @@ class AsyncQpsServerTest : public Server {
     }
   }
   ~AsyncQpsServerTest() {
-    server_->Shutdown();
+    auto deadline = std::chrono::system_clock::now() + std::chrono::seconds(10);
+    server_->Shutdown(deadline);
     for (auto ss = shutdown_state_.begin(); ss != shutdown_state_.end(); ++ss) {
       (*ss)->set_shutdown();
     }

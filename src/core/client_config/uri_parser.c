@@ -37,12 +37,16 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-static grpc_uri *bad_uri(const char *uri_text, int pos, const char *section,
+/** a size_t default value... maps to all 1's */
+#define NOT_SET (~(size_t)0)
+
+static grpc_uri *bad_uri(const char *uri_text, size_t pos, const char *section,
                          int suppress_errors) {
   char *line_prefix;
-  int pfx_len;
+  size_t pfx_len;
 
   if (!suppress_errors) {
     gpr_asprintf(&line_prefix, "bad uri.%s: '", section);
@@ -60,22 +64,88 @@ static grpc_uri *bad_uri(const char *uri_text, int pos, const char *section,
   return NULL;
 }
 
-static char *copy_fragment(const char *src, int begin, int end) {
+/** Returns a copy of \a src[begin, end) */
+static char *copy_component(const char *src, size_t begin, size_t end) {
   char *out = gpr_malloc(end - begin + 1);
   memcpy(out, src + begin, end - begin);
   out[end - begin] = 0;
   return out;
 }
 
+/** Returns how many chars to advance if \a uri_text[i] begins a valid \a pchar
+ * production. If \a uri_text[i] introduces an invalid \a pchar (such as percent
+ * sign not followed by two hex digits), NOT_SET is returned. */
+static size_t parse_pchar(const char *uri_text, size_t i) {
+  /* pchar = unreserved / pct-encoded / sub-delims / ":" / "@"
+   * unreserved = ALPHA / DIGIT / "-" / "." / "_" / "~"
+   * pct-encoded = "%" HEXDIG HEXDIG
+   * sub-delims = "!" / "$" / "&" / "'" / "(" / ")"
+   / "*" / "+" / "," / ";" / "=" */
+  char c = uri_text[i];
+  if (((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z')) ||
+      ((c >= '0') && (c <= '9')) ||
+      (c == '-' || c == '.' || c == '_' || c == '~') || /* unreserved */
+      (c == '!' || c == '$' || c == '&' || c == '\'' || c == '$' || c == '&' ||
+       c == '(' || c == ')' || c == '*' || c == '+' || c == ',' || c == ';' ||
+       c == '=') /* sub-delims */) {
+    return 1;
+  }
+  if (c == '%') { /* pct-encoded */
+    size_t j;
+    if (uri_text[i + 1] == 0 || uri_text[i + 2] == 0) {
+      return NOT_SET;
+    }
+    for (j = i + 1; j < 2; j++) {
+      c = uri_text[j];
+      if (!(((c >= '0') && (c <= '9')) || ((c >= 'a') && (c <= 'f')) ||
+            ((c >= 'A') && (c <= 'F')))) {
+        return NOT_SET;
+      }
+    }
+    return 2;
+  }
+  return 0;
+}
+
+/* *( pchar / "?" / "/" ) */
+static int parse_fragment_or_query(const char *uri_text, size_t *i) {
+  char c;
+  while ((c = uri_text[*i]) != 0) {
+    const size_t advance = parse_pchar(uri_text, *i); /* pchar */
+    switch (advance) {
+      case 0: /* uri_text[i] isn't in pchar */
+        /* maybe it's ? or / */
+        if (uri_text[*i] == '?' || uri_text[*i] == '/') {
+          (*i)++;
+          break;
+        } else {
+          return 1;
+        }
+        GPR_UNREACHABLE_CODE(return 0);
+      default:
+        (*i) += advance;
+        break;
+      case NOT_SET: /* uri_text[i] introduces an invalid URI */
+        return 0;
+    }
+  }
+  /* *i is the first uri_text position past the \a query production, maybe \0 */
+  return 1;
+}
+
 grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
   grpc_uri *uri;
-  int scheme_begin = 0;
-  int scheme_end = -1;
-  int authority_begin = -1;
-  int authority_end = -1;
-  int path_begin = -1;
-  int path_end = -1;
-  int i;
+  size_t scheme_begin = 0;
+  size_t scheme_end = NOT_SET;
+  size_t authority_begin = NOT_SET;
+  size_t authority_end = NOT_SET;
+  size_t path_begin = NOT_SET;
+  size_t path_end = NOT_SET;
+  size_t query_begin = NOT_SET;
+  size_t query_end = NOT_SET;
+  size_t fragment_begin = NOT_SET;
+  size_t fragment_end = NOT_SET;
+  size_t i;
 
   for (i = scheme_begin; uri_text[i] != 0; i++) {
     if (uri_text[i] == ':') {
@@ -92,27 +162,22 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
     }
     break;
   }
-  if (scheme_end == -1) {
+  if (scheme_end == NOT_SET) {
     return bad_uri(uri_text, i, "scheme", suppress_errors);
   }
 
   if (uri_text[scheme_end + 1] == '/' && uri_text[scheme_end + 2] == '/') {
     authority_begin = scheme_end + 3;
-    for (i = authority_begin; uri_text[i] != 0 && authority_end == -1; i++) {
-      if (uri_text[i] == '/') {
+    for (i = authority_begin; uri_text[i] != 0 && authority_end == NOT_SET;
+         i++) {
+      if (uri_text[i] == '/' || uri_text[i] == '?' || uri_text[i] == '#') {
         authority_end = i;
       }
-      if (uri_text[i] == '?') {
-        return bad_uri(uri_text, i, "query_not_supported", suppress_errors);
-      }
-      if (uri_text[i] == '#') {
-        return bad_uri(uri_text, i, "fragment_not_supported", suppress_errors);
-      }
     }
-    if (authority_end == -1 && uri_text[i] == 0) {
+    if (authority_end == NOT_SET && uri_text[i] == 0) {
       authority_end = i;
     }
-    if (authority_end == -1) {
+    if (authority_end == NOT_SET) {
       return bad_uri(uri_text, i, "authority", suppress_errors);
     }
     /* TODO(ctiller): parse the authority correctly */
@@ -122,20 +187,46 @@ grpc_uri *grpc_uri_parse(const char *uri_text, int suppress_errors) {
   }
 
   for (i = path_begin; uri_text[i] != 0; i++) {
-    if (uri_text[i] == '?') {
-      return bad_uri(uri_text, i, "query_not_supported", suppress_errors);
-    }
-    if (uri_text[i] == '#') {
-      return bad_uri(uri_text, i, "fragment_not_supported", suppress_errors);
+    if (uri_text[i] == '?' || uri_text[i] == '#') {
+      path_end = i;
+      break;
     }
   }
-  path_end = i;
+  if (path_end == NOT_SET && uri_text[i] == 0) {
+    path_end = i;
+  }
+  if (path_end == NOT_SET) {
+    return bad_uri(uri_text, i, "path", suppress_errors);
+  }
+
+  if (uri_text[i] == '?') {
+    query_begin = ++i;
+    if (!parse_fragment_or_query(uri_text, &i)) {
+      return bad_uri(uri_text, i, "query", suppress_errors);
+    } else if (uri_text[i] != 0 && uri_text[i] != '#') {
+      /* We must be at the end or at the beginning of a fragment */
+      return bad_uri(uri_text, i, "query", suppress_errors);
+    }
+    query_end = i;
+  }
+  if (uri_text[i] == '#') {
+    fragment_begin = ++i;
+    if (!parse_fragment_or_query(uri_text, &i)) {
+      return bad_uri(uri_text, i - fragment_end, "fragment", suppress_errors);
+    } else if (uri_text[i] != 0) {
+      /* We must be at the end */
+      return bad_uri(uri_text, i, "fragment", suppress_errors);
+    }
+    fragment_end = i;
+  }
 
   uri = gpr_malloc(sizeof(*uri));
   memset(uri, 0, sizeof(*uri));
-  uri->scheme = copy_fragment(uri_text, scheme_begin, scheme_end);
-  uri->authority = copy_fragment(uri_text, authority_begin, authority_end);
-  uri->path = copy_fragment(uri_text, path_begin, path_end);
+  uri->scheme = copy_component(uri_text, scheme_begin, scheme_end);
+  uri->authority = copy_component(uri_text, authority_begin, authority_end);
+  uri->path = copy_component(uri_text, path_begin, path_end);
+  uri->query = copy_component(uri_text, query_begin, query_end);
+  uri->fragment = copy_component(uri_text, fragment_begin, fragment_end);
 
   return uri;
 }
@@ -145,5 +236,7 @@ void grpc_uri_destroy(grpc_uri *uri) {
   gpr_free(uri->scheme);
   gpr_free(uri->authority);
   gpr_free(uri->path);
+  gpr_free(uri->query);
+  gpr_free(uri->fragment);
   gpr_free(uri);
 }

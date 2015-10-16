@@ -36,6 +36,7 @@
 #include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/profiling/timers.h"
 
 typedef struct call_data {
   gpr_uint8 got_initial_metadata;
@@ -50,11 +51,11 @@ typedef struct call_data {
 
   grpc_stream_op_buffer *recv_ops;
   /** Closure to call when finished with the hs_on_recv hook */
-  grpc_iomgr_closure *on_done_recv;
+  grpc_closure *on_done_recv;
   /** Receive closures are chained: we inject this closure as the on_done_recv
       up-call on transport_op, and remember to call our on_done_recv member
       after handling it. */
-  grpc_iomgr_closure hs_on_recv;
+  grpc_closure hs_on_recv;
 } call_data;
 
 typedef struct channel_data {
@@ -74,8 +75,14 @@ typedef struct channel_data {
   grpc_mdctx *mdctx;
 } channel_data;
 
+typedef struct {
+  grpc_call_element *elem;
+  grpc_exec_ctx *exec_ctx;
+} server_filter_args;
+
 static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
-  grpc_call_element *elem = user_data;
+  server_filter_args *a = user_data;
+  grpc_call_element *elem = a->elem;
   channel_data *channeld = elem->channel_data;
   call_data *calld = elem->call_data;
 
@@ -111,14 +118,13 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     return NULL;
   } else if (md->key == channeld->te_trailers->key ||
              md->key == channeld->method_post->key ||
-             md->key == channeld->http_scheme->key ||
-             md->key == channeld->content_type->key) {
+             md->key == channeld->http_scheme->key) {
     gpr_log(GPR_ERROR, "Invalid %s: header: '%s'",
             grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value));
     /* swallow it and error everything out. */
     /* TODO(klempner): We ought to generate more descriptive error messages
        on the wire here. */
-    grpc_call_element_send_cancel(elem);
+    grpc_call_element_send_cancel(a->exec_ctx, elem);
     return NULL;
   } else if (md->key == channeld->path_key) {
     if (calld->seen_path) {
@@ -144,7 +150,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   }
 }
 
-static void hs_on_recv(void *user_data, int success) {
+static void hs_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, int success) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
   if (success) {
@@ -153,9 +159,12 @@ static void hs_on_recv(void *user_data, int success) {
     grpc_stream_op *ops = calld->recv_ops->ops;
     for (i = 0; i < nops; i++) {
       grpc_stream_op *op = &ops[i];
+      server_filter_args a;
       if (op->type != GRPC_OP_METADATA) continue;
       calld->got_initial_metadata = 1;
-      grpc_metadata_batch_filter(&op->data.metadata, server_filter, elem);
+      a.elem = elem;
+      a.exec_ctx = exec_ctx;
+      grpc_metadata_batch_filter(&op->data.metadata, server_filter, &a);
       /* Have we seen the required http2 transport headers?
          (:method, :scheme, content-type, with :path and :authority covered
          at the channel level right now) */
@@ -180,11 +189,11 @@ static void hs_on_recv(void *user_data, int success) {
         }
         /* Error this call out */
         success = 0;
-        grpc_call_element_send_cancel(elem);
+        grpc_call_element_send_cancel(exec_ctx, elem);
       }
     }
   }
-  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
+  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, success);
 }
 
 static void hs_mutate_op(grpc_call_element *elem,
@@ -198,12 +207,13 @@ static void hs_mutate_op(grpc_call_element *elem,
     size_t nops = op->send_ops->nops;
     grpc_stream_op *ops = op->send_ops->ops;
     for (i = 0; i < nops; i++) {
-      grpc_stream_op *op = &ops[i];
-      if (op->type != GRPC_OP_METADATA) continue;
+      grpc_stream_op *stream_op = &ops[i];
+      if (stream_op->type != GRPC_OP_METADATA) continue;
       calld->sent_status = 1;
-      grpc_metadata_batch_add_head(&op->data.metadata, &calld->status,
+      grpc_metadata_batch_add_head(&stream_op->data.metadata, &calld->status,
                                    GRPC_MDELEM_REF(channeld->status_ok));
-      grpc_metadata_batch_add_tail(&op->data.metadata, &calld->content_type,
+      grpc_metadata_batch_add_tail(&stream_op->data.metadata,
+                                   &calld->content_type,
                                    GRPC_MDELEM_REF(channeld->content_type));
       break;
     }
@@ -217,30 +227,35 @@ static void hs_mutate_op(grpc_call_element *elem,
   }
 }
 
-static void hs_start_transport_op(grpc_call_element *elem,
+static void hs_start_transport_op(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
                                   grpc_transport_stream_op *op) {
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
+  GPR_TIMER_BEGIN("hs_start_transport_op", 0);
   hs_mutate_op(elem, op);
-  grpc_call_next_op(elem, op);
+  grpc_call_next_op(exec_ctx, elem, op);
+  GPR_TIMER_END("hs_start_transport_op", 0);
 }
 
 /* Constructor for call_data */
-static void init_call_elem(grpc_call_element *elem,
+static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            const void *server_transport_data,
                            grpc_transport_stream_op *initial_op) {
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
-  grpc_iomgr_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
+  grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
   if (initial_op) hs_mutate_op(elem, initial_op);
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element *elem) {}
+static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_call_element *elem) {}
 
 /* Constructor for channel_data */
-static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
+static void init_channel_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_channel_element *elem, grpc_channel *master,
                               const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
   /* grab pointers to our data from the channel element */
@@ -261,9 +276,9 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
   channeld->http_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "http");
   channeld->https_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "https");
   channeld->grpc_scheme = grpc_mdelem_from_strings(mdctx, ":scheme", "grpc");
-  channeld->path_key = grpc_mdstr_from_string(mdctx, ":path", 0);
-  channeld->authority_key = grpc_mdstr_from_string(mdctx, ":authority", 0);
-  channeld->host_key = grpc_mdstr_from_string(mdctx, "host", 0);
+  channeld->path_key = grpc_mdstr_from_string(mdctx, ":path");
+  channeld->authority_key = grpc_mdstr_from_string(mdctx, ":authority");
+  channeld->host_key = grpc_mdstr_from_string(mdctx, "host");
   channeld->content_type =
       grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
 
@@ -271,7 +286,8 @@ static void init_channel_elem(grpc_channel_element *elem, grpc_channel *master,
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element *elem) {
+static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_element *elem) {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 

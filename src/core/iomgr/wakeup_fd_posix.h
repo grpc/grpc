@@ -72,10 +72,10 @@ void grpc_wakeup_fd_global_init_force_fallback(void);
 typedef struct grpc_wakeup_fd grpc_wakeup_fd;
 
 typedef struct grpc_wakeup_fd_vtable {
-  void (*init)(grpc_wakeup_fd *fd_info);
-  void (*consume)(grpc_wakeup_fd *fd_info);
-  void (*wakeup)(grpc_wakeup_fd *fd_info);
-  void (*destroy)(grpc_wakeup_fd *fd_info);
+  void (*init)(grpc_wakeup_fd* fd_info);
+  void (*consume)(grpc_wakeup_fd* fd_info);
+  void (*wakeup)(grpc_wakeup_fd* fd_info);
+  void (*destroy)(grpc_wakeup_fd* fd_info);
   /* Must be called before calling any other functions */
   int (*check_availability)(void);
 } grpc_wakeup_fd_vtable;
@@ -87,10 +87,10 @@ struct grpc_wakeup_fd {
 
 #define GRPC_WAKEUP_FD_GET_READ_FD(fd_info) ((fd_info)->read_fd)
 
-void grpc_wakeup_fd_init(grpc_wakeup_fd *fd_info);
-void grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd *fd_info);
-void grpc_wakeup_fd_wakeup(grpc_wakeup_fd *fd_info);
-void grpc_wakeup_fd_destroy(grpc_wakeup_fd *fd_info);
+void grpc_wakeup_fd_init(grpc_wakeup_fd* fd_info);
+void grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd* fd_info);
+void grpc_wakeup_fd_wakeup(grpc_wakeup_fd* fd_info);
+void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info);
 
 /* Defined in some specialized implementation's .c file, or by
  * wakeup_fd_nospecial.c if no such implementation exists. */

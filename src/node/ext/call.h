@@ -53,18 +53,7 @@ using std::shared_ptr;
 
 typedef Nan::Persistent<v8::Value, Nan::CopyablePersistentTraits<v8::Value>> PersistentValue;
 
-/**
- * Helper function for throwing errors with a grpc_call_error value.
- * Modified from the answer by Gus Goose to
- * http://stackoverflow.com/questions/31794200.
- */
-inline v8::Local<v8::Value> nanErrorWithCode(const char *msg,
-                                             grpc_call_error code) {
-  Nan::EscapableHandleScope scope;
-    v8::Local<v8::Object> err = Nan::Error(msg).As<v8::Object>();
-    Nan::Set(err, Nan::New("code").ToLocalChecked(), Nan::New<v8::Uint32>(code));
-    return scope.Escape(err);
-}
+v8::Local<v8::Value> nanErrorWithCode(const char *msg, grpc_call_error code);
 
 v8::Local<v8::Value> ParseMetadata(const grpc_metadata_array *metadata_array);
 
@@ -72,6 +61,10 @@ struct Resources {
   std::vector<unique_ptr<Nan::Utf8String> > strings;
   std::vector<unique_ptr<PersistentValue> > handles;
 };
+
+bool CreateMetadataArray(v8::Local<v8::Object> metadata,
+                         grpc_metadata_array *array,
+                         shared_ptr<Resources> resources);
 
 class Op {
  public:
@@ -122,6 +115,7 @@ class Call : public Nan::ObjectWrap {
   static NAN_METHOD(Cancel);
   static NAN_METHOD(CancelWithStatus);
   static NAN_METHOD(GetPeer);
+  static NAN_METHOD(SetCredentials);
   static Nan::Callback *constructor;
   // Used for typechecking instances of this javascript class
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;

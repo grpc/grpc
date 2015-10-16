@@ -132,7 +132,7 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
         !strcmp(GRPC_COMPRESSION_ALGORITHM_ARG, a->args[i].key)) {
-      return a->args[i].value.integer;
+      return (grpc_compression_algorithm)a->args[i].value.integer;
       break;
     }
   }
@@ -151,8 +151,8 @@ grpc_channel_args *grpc_channel_args_set_compression_algorithm(
 /** Returns 1 if the argument for compression algorithm's enabled states bitset
  * was found in \a a, returning the arg's value in \a states. Otherwise, returns
  * 0. */
-static int find_compression_algorithm_states_bitset(
-    const grpc_channel_args *a, int **states_arg) {
+static int find_compression_algorithm_states_bitset(const grpc_channel_args *a,
+                                                    int **states_arg) {
   if (a != NULL) {
     size_t i;
     for (i = 0; i < a->num_args; ++i) {
@@ -167,9 +167,7 @@ static int find_compression_algorithm_states_bitset(
 }
 
 grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
-    grpc_channel_args **a,
-    grpc_compression_algorithm algorithm,
-    int state) {
+    grpc_channel_args **a, grpc_compression_algorithm algorithm, int state) {
   int *states_arg;
   grpc_channel_args *result = *a;
   const int states_arg_found =
@@ -177,9 +175,9 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
 
   if (states_arg_found) {
     if (state != 0) {
-      GPR_BITSET(states_arg, algorithm);
+      GPR_BITSET((unsigned *)states_arg, algorithm);
     } else {
-      GPR_BITCLEAR(states_arg, algorithm);
+      GPR_BITCLEAR((unsigned *)states_arg, algorithm);
     }
   } else {
     /* create a new arg */
@@ -189,9 +187,9 @@ grpc_channel_args *grpc_channel_args_compression_algorithm_set_state(
     /* all enabled by default */
     tmp.value.integer = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
     if (state != 0) {
-      GPR_BITSET(&tmp.value.integer, algorithm);
+      GPR_BITSET((unsigned *)&tmp.value.integer, algorithm);
     } else {
-      GPR_BITCLEAR(&tmp.value.integer, algorithm);
+      GPR_BITCLEAR((unsigned *)&tmp.value.integer, algorithm);
     }
     result = grpc_channel_args_copy_and_add(*a, &tmp, 1);
     grpc_channel_args_destroy(*a);

@@ -48,14 +48,14 @@ gpr_slice grpc_chttp2_window_update_create(gpr_uint32 id,
   *p++ = 4;
   *p++ = GRPC_CHTTP2_FRAME_WINDOW_UPDATE;
   *p++ = 0;
-  *p++ = id >> 24;
-  *p++ = id >> 16;
-  *p++ = id >> 8;
-  *p++ = id;
-  *p++ = window_update >> 24;
-  *p++ = window_update >> 16;
-  *p++ = window_update >> 8;
-  *p++ = window_update;
+  *p++ = (gpr_uint8)(id >> 24);
+  *p++ = (gpr_uint8)(id >> 16);
+  *p++ = (gpr_uint8)(id >> 8);
+  *p++ = (gpr_uint8)(id);
+  *p++ = (gpr_uint8)(window_update >> 24);
+  *p++ = (gpr_uint8)(window_update >> 16);
+  *p++ = (gpr_uint8)(window_update >> 8);
+  *p++ = (gpr_uint8)(window_update);
 
   return slice;
 }
@@ -74,7 +74,8 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_begin_frame(
 }
 
 grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
-    void *parser, grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_exec_ctx *exec_ctx, void *parser,
+    grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);

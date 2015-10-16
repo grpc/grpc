@@ -37,6 +37,7 @@
 #include <memory>
 #include <vector>
 
+#include <grpc/compression.h>
 #include <grpc++/support/config.h>
 
 namespace grpc {
@@ -92,6 +93,11 @@ class ServerBuilder {
     max_message_size_ = max_message_size;
   }
 
+  /// Set the compression options to be used by the server.
+  void SetCompressionOptions(const grpc_compression_options& options) {
+    compression_options_ = options;
+  }
+
   /// Tries to bind \a server to the given \a addr.
   ///
   /// It can be invoked multiple times.
@@ -133,6 +139,7 @@ class ServerBuilder {
   };
 
   int max_message_size_;
+  grpc_compression_options compression_options_;
   std::vector<std::unique_ptr<NamedService<RpcService>>> services_;
   std::vector<std::unique_ptr<NamedService<AsynchronousService>>>
       async_services_;

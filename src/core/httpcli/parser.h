@@ -55,10 +55,10 @@ typedef struct {
   size_t cur_line_length;
 } grpc_httpcli_parser;
 
-void grpc_httpcli_parser_init(grpc_httpcli_parser *parser);
-void grpc_httpcli_parser_destroy(grpc_httpcli_parser *parser);
+void grpc_httpcli_parser_init(grpc_httpcli_parser* parser);
+void grpc_httpcli_parser_destroy(grpc_httpcli_parser* parser);
 
-int grpc_httpcli_parser_parse(grpc_httpcli_parser *parser, gpr_slice slice);
-int grpc_httpcli_parser_eof(grpc_httpcli_parser *parser);
+int grpc_httpcli_parser_parse(grpc_httpcli_parser* parser, gpr_slice slice);
+int grpc_httpcli_parser_eof(grpc_httpcli_parser* parser);
 
 #endif /* GRPC_INTERNAL_CORE_HTTPCLI_PARSER_H */

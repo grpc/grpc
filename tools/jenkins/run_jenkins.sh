@@ -54,50 +54,8 @@ if [ "$platform" == "linux" ]
 then
   echo "building $language on Linux"
 
-  cd `dirname $0`/../..
-  git_root=`pwd`
-  cd -
+  ./tools/run_tests/run_tests.py --use_docker -t -l $language -c $config -x report.xml $@ || true
 
-  mkdir -p /tmp/ccache
-
-  # Use image name based on Dockerfile checksum
-  DOCKER_IMAGE_NAME=grpc_jenkins_slave$docker_suffix_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
-
-  # Make sure docker image has been built. Should be instantaneous if so.
-  docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave$docker_suffix
-
-  # Create a local branch so the child Docker script won't complain
-  git branch jenkins-docker
-
-  # Make sure the CID file is gone.
-  rm -f docker.cid
-
-  # Run tests inside docker
-  docker run \
-    -e "config=$config" \
-    -e "language=$language" \
-    -e "arch=$arch" \
-    -e "GRPC_ZOOKEEPER_SERVER_TEST=grpc-jenkins-master:2181" \
-    -e CCACHE_DIR=/tmp/ccache \
-    -i \
-    -v "$git_root:/var/local/jenkins/grpc" \
-    -v /tmp/ccache:/tmp/ccache \
-    --cidfile=docker.cid \
-    $DOCKER_IMAGE_NAME \
-    bash -l /var/local/jenkins/grpc/tools/jenkins/docker_run_jenkins.sh || DOCKER_FAILED="true"
-
-  DOCKER_CID=`cat docker.cid`
-  # forcefully kill the instance if it's still running, otherwise
-  # continue 
-  # (failure to kill something that's already dead => things are dead)
-  docker kill $DOCKER_CID || true
-  docker cp $DOCKER_CID:/var/local/git/grpc/report.xml $git_root
-  # TODO(ctiller): why?
-  sleep 4
-  docker rm $DOCKER_CID || true
-elif [ "$platform" == "interop" ]
-then
-  python tools/run_tests/run_interops.py --language=$language
 elif [ "$platform" == "windows" ]
 then
   echo "building $language on Windows"
@@ -105,24 +63,32 @@ then
   # Prevent msbuild from picking up "platform" env variable, which would break the build
   unset platform
 
-  # TODO(jtattermusch): integrate nuget restore in a nicer way.
-  /cygdrive/c/nuget/nuget.exe restore vsprojects/grpc.sln
-  /cygdrive/c/nuget/nuget.exe restore src/csharp/Grpc.sln
-
-  python tools/run_tests/run_tests.py -t -l $language -x report.xml || true
+  python tools/run_tests/run_tests.py -t -l $language -x report.xml $@ || true
 
 elif [ "$platform" == "macos" ]
 then
   echo "building $language on MacOS"
 
-  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
+  ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || true
 
 elif [ "$platform" == "freebsd" ]
 then
   echo "building $language on FreeBSD"
 
-  MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml || true
+  MAKE=gmake ./tools/run_tests/run_tests.py -t -l $language -c $config -x report.xml $@ || true
+
+elif [ "$platform" == "interop" ]
+then
+  echo "building interop tests for language $language"
+
+  ./tools/run_tests/run_interop_tests.py --use_docker -t -l $language --cloud_to_prod --server all || true
 else
   echo "Unknown platform $platform"
   exit 1
+fi
+
+if [ ! -e reports/index.html ]
+then
+  mkdir -p reports
+  echo 'No reports generated.' > reports/index.html
 fi

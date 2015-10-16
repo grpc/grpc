@@ -1,0 +1,874 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\src\core\httpcli\httpcli_security_connector.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\base64.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\client_auth_filter.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\credentials.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\credentials_metadata.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\credentials_posix.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\credentials_win32.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\google_default_credentials.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\json_token.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\jwt_verifier.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\secure_endpoint.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\secure_transport_setup.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\security_connector.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\security_context.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\server_auth_filter.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\security\server_secure_chttp2.c">
+      <Filter>src\core\security</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\init_secure.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\secure_channel_create.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\tsi\fake_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\tsi\ssl_transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\tsi\transport_security.c">
+      <Filter>src\core\tsi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\grpc_context.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\grpc_filter.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\channel_args.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\channel_stack.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\client_channel.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\compress_filter.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\connected_channel.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\http_client_filter.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\http_server_filter.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\channel\noop_filter.c">
+      <Filter>src\core\channel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\client_config.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\connector.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\lb_policies\pick_first.c">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\lb_policy.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolver.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolver_factory.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolver_registry.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolvers\dns_resolver.c">
+      <Filter>src\core\client_config\resolvers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.c">
+      <Filter>src\core\client_config\resolvers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.c">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.c">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\client_config\uri_parser.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\compression\algorithm.c">
+      <Filter>src\core\compression</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\compression\message_compress.c">
+      <Filter>src\core\compression</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\debug\trace.c">
+      <Filter>src\core\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\format_request.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\httpcli.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\httpcli\parser.c">
+      <Filter>src\core\httpcli</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\alarm.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\alarm_heap.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\endpoint.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\endpoint_pair_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\endpoint_pair_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\fd_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iocp_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iomgr.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iomgr_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\iomgr_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_epoll.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_multipoller_with_poll_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_set_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\pollset_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\resolve_address_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\resolve_address_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\sockaddr_utils.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\socket_utils_common_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\socket_utils_linux.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\socket_utils_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\socket_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_client_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_client_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_server_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_server_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\tcp_windows.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\time_averaged_stats.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\udp_server.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_eventfd.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_nospecial.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_pipe.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\iomgr\wakeup_fd_posix.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_reader.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_string.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\json\json_writer.c">
+      <Filter>src\core\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\profiling\basic_timers.c">
+      <Filter>src\core\profiling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\profiling\stap_timers.c">
+      <Filter>src\core\profiling</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\api_trace.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\byte_buffer.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\byte_buffer_queue.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\byte_buffer_reader.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\call.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\call_details.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\call_log_batch.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\channel.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\channel_connectivity.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\channel_create.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\completion_queue.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\event_string.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\init.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\lame_client.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\metadata_array.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\server.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\server_chttp2.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\server_create.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\surface\version.c">
+      <Filter>src\core\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\alpn.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\bin_encoder.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\frame_data.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\frame_goaway.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\frame_ping.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\frame_rst_stream.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\frame_settings.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\frame_window_update.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\hpack_parser.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\hpack_table.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\huffsyms.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\incoming_metadata.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\parsing.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\status_conversion.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\stream_encoder.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\stream_lists.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\stream_map.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\timeout_encoding.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\varint.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2\writing.c">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\chttp2_transport.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\connectivity_state.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\metadata.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\stream_op.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\transport.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\transport\transport_op_string.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\context.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\initialize.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\core\census\record_stat.c">
+      <Filter>src\core\census</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\grpc\grpc_security.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\byte_buffer.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\byte_buffer_reader.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\compression.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\grpc.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\status.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\grpc\census.h">
+      <Filter>include\grpc</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\core\security\auth_filters.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\security\base64.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\security\credentials.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\security\json_token.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\security\jwt_verifier.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\security\secure_endpoint.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\security\secure_transport_setup.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\security\security_connector.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\security\security_context.h">
+      <Filter>src\core\security</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\tsi\fake_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\tsi\ssl_transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\tsi\transport_security.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\tsi\transport_security_interface.h">
+      <Filter>src\core\tsi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\census\grpc_filter.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\channel_args.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\channel_stack.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\client_channel.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\compress_filter.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\connected_channel.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\context.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\http_client_filter.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\http_server_filter.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\channel\noop_filter.h">
+      <Filter>src\core\channel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\client_config.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\connector.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\lb_policies\pick_first.h">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\lb_policy.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolver.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolver_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolver_registry.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolvers\dns_resolver.h">
+      <Filter>src\core\client_config\resolvers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\resolvers\sockaddr_resolver.h">
+      <Filter>src\core\client_config\resolvers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h">
+      <Filter>src\core\client_config\subchannel_factory_decorators</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\client_config\uri_parser.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\compression\message_compress.h">
+      <Filter>src\core\compression</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\debug\trace.h">
+      <Filter>src\core\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\format_request.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\httpcli.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\httpcli\parser.h">
+      <Filter>src\core\httpcli</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\alarm.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\alarm_heap.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\alarm_internal.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\endpoint.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\endpoint_pair.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\fd_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\iocp_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\iomgr.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\iomgr_internal.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\iomgr_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_set_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\pollset_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\resolve_address.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\sockaddr.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\sockaddr_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\sockaddr_utils.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\sockaddr_win32.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\socket_utils_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\socket_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\tcp_client.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\tcp_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\tcp_server.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\tcp_windows.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\time_averaged_stats.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\udp_server.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_pipe.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\iomgr\wakeup_fd_posix.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json_common.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json_reader.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\json\json_writer.h">
+      <Filter>src\core\json</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\profiling\timers.h">
+      <Filter>src\core\profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\profiling\timers_preciseclock.h">
+      <Filter>src\core\profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\statistics\census_interface.h">
+      <Filter>src\core\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\statistics\census_rpc_stats.h">
+      <Filter>src\core\statistics</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\api_trace.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\byte_buffer_queue.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\call.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\channel.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\completion_queue.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\event_string.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\init.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\server.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\surface\surface_trace.h">
+      <Filter>src\core\surface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\alpn.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\bin_encoder.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\frame.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\frame_data.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\frame_goaway.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\frame_ping.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\frame_rst_stream.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\frame_settings.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\frame_window_update.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\hpack_parser.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\hpack_table.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\http2_errors.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\huffsyms.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\incoming_metadata.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\internal.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\status_conversion.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\stream_encoder.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\stream_map.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\timeout_encoding.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2\varint.h">
+      <Filter>src\core\transport\chttp2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\chttp2_transport.h">
+      <Filter>src\core\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\connectivity_state.h">
+      <Filter>src\core\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\metadata.h">
+      <Filter>src\core\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\stream_op.h">
+      <Filter>src\core\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\transport.h">
+      <Filter>src\core\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\transport\transport_impl.h">
+      <Filter>src\core\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\census\context.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\core\census\rpc_stat_id.h">
+      <Filter>src\core\census</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{968de0a1-346d-b75a-6f19-6a55119b8235}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\grpc">
+      <UniqueIdentifier>{880c644d-b84f-cfca-98bd-e145f36232ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{d538af37-07b2-062b-fa2a-d9f882cb2737}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core">
+      <UniqueIdentifier>{ea745680-21ea-9c5e-679b-64dc40562d08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\census">
+      <UniqueIdentifier>{fb3aefc2-8205-b0bf-525f-ab5e339f7f76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\channel">
+      <UniqueIdentifier>{d897b6c3-c555-234e-a589-b4f008063615}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config">
+      <UniqueIdentifier>{e71e6928-b1e3-0616-0961-1505370458ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config\lb_policies">
+      <UniqueIdentifier>{a3eca4d5-f760-61a6-7251-556b828c8b44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config\resolvers">
+      <UniqueIdentifier>{6d97b8d9-2c15-927a-892a-709d073c02ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config\subchannel_factory_decorators">
+      <UniqueIdentifier>{428cdbb1-c777-2c64-79b3-43d6ee413061}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\compression">
+      <UniqueIdentifier>{263cb913-dfe6-42a4-096b-cac231f76305}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\debug">
+      <UniqueIdentifier>{1da7ef8a-a06d-5499-b3de-19fee4a4214d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\httpcli">
+      <UniqueIdentifier>{a9bc00ad-835f-c625-c6d9-6a1324f98b9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\iomgr">
+      <UniqueIdentifier>{1baf3894-af37-e647-bdbc-95dc17ed0073}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\json">
+      <UniqueIdentifier>{e665cc0e-b994-d7c5-cc18-2007392019f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\profiling">
+      <UniqueIdentifier>{87674b72-0f05-0469-481a-bd8c7af9ad80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\security">
+      <UniqueIdentifier>{1d850ac6-e639-4eab-5338-4ba40272fcc9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\statistics">
+      <UniqueIdentifier>{0ef49896-2313-4a3f-1ce2-716fa0e5c6ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\surface">
+      <UniqueIdentifier>{aeb18e82-5d25-0aad-8b02-a0a3470073ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\transport">
+      <UniqueIdentifier>{168fa1b1-1c18-eb55-9a4d-746bc58df2c1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\transport\chttp2">
+      <UniqueIdentifier>{b8b623c3-a168-a2b1-0d5f-b70a1f1cd8d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\tsi">
+      <UniqueIdentifier>{0b0f9ab1-efa4-7f03-e446-6fb9b5227e84}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

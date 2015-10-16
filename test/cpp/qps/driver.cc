@@ -82,9 +82,12 @@ static deque<string> get_hosts(const string& name) {
 namespace runsc {
 
 // ClientContext allocator
-static ClientContext* AllocContext(list<ClientContext>* contexts) {
+template <class T>
+static ClientContext* AllocContext(list<ClientContext>* contexts, T deadline) {
   contexts->emplace_back();
-  return &contexts->back();
+  auto context = &contexts->back();
+  context->set_deadline(deadline);
+  return context;
 }
 
 struct ServerData {
@@ -147,20 +150,25 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Trim to just what we need
   workers.resize(num_clients + num_servers);
 
+  gpr_timespec deadline =
+      gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                   gpr_time_from_seconds(
+                       warmup_seconds + benchmark_seconds + 20, GPR_TIMESPAN));
+
   // Start servers
   using runsc::ServerData;
   // servers is array rather than std::vector to avoid gcc-4.4 issues
   // where class contained in std::vector must have a copy constructor
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
-    servers[i].stub = std::move(
-        Worker::NewStub(CreateChannel(workers[i], InsecureCredentials())));
+    servers[i].stub =
+        Worker::NewStub(CreateChannel(workers[i], InsecureCredentials()));
     ServerArgs args;
     result_server_config = server_config;
     result_server_config.set_host(workers[i]);
     *args.mutable_setup() = server_config;
     servers[i].stream =
-        std::move(servers[i].stub->RunServer(runsc::AllocContext(&contexts)));
+        servers[i].stub->RunServer(runsc::AllocContext(&contexts, deadline));
     GPR_ASSERT(servers[i].stream->Write(args));
     ServerStatus init_status;
     GPR_ASSERT(servers[i].stream->Read(&init_status));
@@ -181,14 +189,14 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
-    clients[i].stub = std::move(Worker::NewStub(
-        CreateChannel(workers[i + num_servers], InsecureCredentials())));
+    clients[i].stub = Worker::NewStub(
+        CreateChannel(workers[i + num_servers], InsecureCredentials()));
     ClientArgs args;
     result_client_config = client_config;
     result_client_config.set_host(workers[i + num_servers]);
     *args.mutable_setup() = client_config;
     clients[i].stream =
-        std::move(clients[i].stub->RunTest(runsc::AllocContext(&contexts)));
+        clients[i].stub->RunTest(runsc::AllocContext(&contexts, deadline));
     GPR_ASSERT(clients[i].stream->Write(args));
     ClientStatus init_status;
     GPR_ASSERT(clients[i].stream->Read(&init_status));

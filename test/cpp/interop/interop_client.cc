@@ -196,36 +196,32 @@ void InteropClient::DoOauth2AuthToken(const grpc::string& username,
   AssertOkOrPrintErrorStatus(s);
   GPR_ASSERT(!response.username().empty());
   GPR_ASSERT(!response.oauth_scope().empty());
-  GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
+  GPR_ASSERT(username == response.username());
   const char* oauth_scope_str = response.oauth_scope().c_str();
   GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
   gpr_log(GPR_INFO, "Unary with oauth2 access token credentials done.");
 }
 
-void InteropClient::DoPerRpcCreds(const grpc::string& username,
-                                  const grpc::string& oauth_scope) {
-  gpr_log(GPR_INFO,
-          "Sending a unary rpc with per-rpc raw oauth2 access token ...");
+void InteropClient::DoPerRpcCreds(const grpc::string& json_key) {
+  gpr_log(GPR_INFO, "Sending a unary rpc with per-rpc JWT access token ...");
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
-  request.set_fill_oauth_scope(true);
   std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
 
   ClientContext context;
-  grpc::string access_token = GetOauth2AccessToken();
-  std::shared_ptr<Credentials> creds = AccessTokenCredentials(access_token);
+  std::chrono::seconds token_lifetime = std::chrono::hours(1);
+  std::shared_ptr<Credentials> creds =
+      ServiceAccountJWTAccessCredentials(json_key, token_lifetime.count());
+
   context.set_credentials(creds);
 
   Status s = stub->UnaryCall(&context, request, &response);
 
   AssertOkOrPrintErrorStatus(s);
   GPR_ASSERT(!response.username().empty());
-  GPR_ASSERT(!response.oauth_scope().empty());
-  GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
-  const char* oauth_scope_str = response.oauth_scope().c_str();
-  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != grpc::string::npos);
-  gpr_log(GPR_INFO, "Unary with per-rpc oauth2 access token done.");
+  GPR_ASSERT(json_key.find(response.username()) != grpc::string::npos);
+  gpr_log(GPR_INFO, "Unary with per-rpc JWT access token done.");
 }
 
 void InteropClient::DoJwtTokenCreds(const grpc::string& username) {
@@ -555,6 +551,22 @@ void InteropClient::DoTimeoutOnSleepingServer() {
   Status s = stream->Finish();
   GPR_ASSERT(s.error_code() == StatusCode::DEADLINE_EXCEEDED);
   gpr_log(GPR_INFO, "Pingpong streaming timeout done.");
+}
+
+void InteropClient::DoEmptyStream() {
+  gpr_log(GPR_INFO, "Starting empty_stream.");
+  std::unique_ptr<TestService::Stub> stub(TestService::NewStub(channel_));
+
+  ClientContext context;
+  std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
+                                     StreamingOutputCallResponse>>
+      stream(stub->FullDuplexCall(&context));
+  stream->WritesDone();
+  StreamingOutputCallResponse response;
+  GPR_ASSERT(stream->Read(&response) == false);
+  Status s = stream->Finish();
+  AssertOkOrPrintErrorStatus(s);
+  gpr_log(GPR_INFO, "empty_stream done.");
 }
 
 void InteropClient::DoStatusWithMessage() {

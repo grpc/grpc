@@ -40,6 +40,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/support/string.h"
+#include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/socket_utils_posix.h"
 
 #include "test/core/end2end/cq_verifier.h"
@@ -62,6 +63,7 @@ static void drain_cq(grpc_completion_queue *cq) {
 }
 
 static void do_nothing(void *ignored) {}
+
 void test_connect(const char *server_host, const char *client_host, int port,
                   int expect_ok) {
   char *client_hostport;
@@ -124,7 +126,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
         gpr_slice_new((char *)client_host, strlen(client_host), do_nothing);
     gpr_slice_buffer_init(&uri_parts);
     gpr_slice_split(uri_slice, ",", &uri_parts);
-    hosts_with_port = gpr_malloc(sizeof(char*) * uri_parts.count);
+    hosts_with_port = gpr_malloc(sizeof(char *) * uri_parts.count);
     for (i = 0; i < uri_parts.count; i++) {
       char *uri_part_str = gpr_dump_slice(uri_parts.slices[i], GPR_DUMP_ASCII);
       gpr_asprintf(&hosts_with_port[i], "%s:%d", uri_part_str, port);
@@ -186,7 +188,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (expect_ok) {
@@ -212,7 +214,7 @@ void test_connect(const char *server_host, const char *client_host, int port,
     op->data.recv_close_on_server.cancelled = &was_cancelled;
     op->flags = 0;
     op++;
-    error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
+    error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     cq_expect_completion(cqv, tag(102), 1);
@@ -247,9 +249,9 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   /* Destroy server. */
   grpc_server_shutdown_and_notify(server, cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
-                 .type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                                         NULL).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);
   drain_cq(cq);
@@ -261,6 +263,15 @@ void test_connect(const char *server_host, const char *client_host, int port,
 
   grpc_call_details_destroy(&call_details);
   gpr_free(details);
+}
+
+int external_dns_works(const char *host) {
+  grpc_resolved_addresses *res = grpc_blocking_resolve_address(host, "80");
+  if (res != NULL) {
+    grpc_resolved_addresses_destroy(res);
+    return 1;
+  }
+  return 0;
 }
 
 int main(int argc, char **argv) {
@@ -307,6 +318,25 @@ int main(int argc, char **argv) {
       test_connect("::1", "ipv6:[::1]", 0, 1);
       test_connect("::1", "ipv4:127.0.0.1", 0, 0);
       test_connect("127.0.0.1", "ipv6:[::1]", 0, 0);
+    }
+
+    if (!external_dns_works("loopback46.unittest.grpc.io")) {
+      gpr_log(GPR_INFO, "Skipping tests that depend on *.unittest.grpc.io.");
+    } else {
+      test_connect("loopback46.unittest.grpc.io", "loopback4.unittest.grpc.io",
+                   0, 1);
+      test_connect("loopback4.unittest.grpc.io", "loopback46.unittest.grpc.io",
+                   0, 1);
+      if (do_ipv6) {
+        test_connect("loopback46.unittest.grpc.io",
+                     "loopback6.unittest.grpc.io", 0, 1);
+        test_connect("loopback6.unittest.grpc.io",
+                     "loopback46.unittest.grpc.io", 0, 1);
+        test_connect("loopback4.unittest.grpc.io", "loopback6.unittest.grpc.io",
+                     0, 0);
+        test_connect("loopback6.unittest.grpc.io", "loopback4.unittest.grpc.io",
+                     0, 0);
+      }
     }
   }
 

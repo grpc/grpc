@@ -405,22 +405,6 @@ describe GRPC::RpcServer do
         t.join
       end
 
-      it 'should not receive metadata if the client times out', server: true do
-        service = SlowService.new
-        @srv.handle(service)
-        t = Thread.new { @srv.run }
-        @srv.wait_till_running
-        req = EchoMsg.new
-        stub = SlowStub.new(@host, **client_opts)
-        timeout = 0.1  # too short for SlowService to respond
-        blk = proc { stub.an_rpc(req, timeout: timeout, k1: 'v1', k2: 'v2') }
-        expect(&blk).to raise_error GRPC::BadStatus
-        wanted_md = []
-        expect(service.received_md).to eq(wanted_md)
-        @srv.stop
-        t.join
-      end
-
       it 'should handle cancellation correctly', server: true do
         service = SlowService.new
         @srv.handle(service)

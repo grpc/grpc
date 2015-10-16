@@ -37,6 +37,8 @@
 #include <poll.h>
 
 #include <grpc/support/sync.h>
+#include "src/core/iomgr/exec_ctx.h"
+#include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/wakeup_fd_posix.h"
 
 typedef struct grpc_pollset_vtable grpc_pollset_vtable;
@@ -48,6 +50,7 @@ struct grpc_fd;
 
 typedef struct grpc_pollset_worker {
   grpc_wakeup_fd wakeup_fd;
+  int reevaluate_polling_on_wakeup;
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
 } grpc_pollset_worker;
@@ -64,8 +67,8 @@ typedef struct grpc_pollset {
   int shutting_down;
   int called_shutdown;
   int kicked_without_pollers;
-  void (*shutdown_done_cb)(void *arg);
-  void *shutdown_done_arg;
+  grpc_closure *shutdown_done;
+  grpc_closure_list idle_jobs;
   union {
     int fd;
     void *ptr;
@@ -73,13 +76,13 @@ typedef struct grpc_pollset {
 } grpc_pollset;
 
 struct grpc_pollset_vtable {
-  void (*add_fd)(grpc_pollset *pollset, struct grpc_fd *fd,
-                 int and_unlock_pollset);
-  void (*del_fd)(grpc_pollset *pollset, struct grpc_fd *fd,
-                 int and_unlock_pollset);
-  void (*maybe_work)(grpc_pollset *pollset, grpc_pollset_worker *worker,
-                     gpr_timespec deadline, gpr_timespec now,
-                     int allow_synchronous_callback);
+  void (*add_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                 struct grpc_fd *fd, int and_unlock_pollset);
+  void (*del_fd)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                 struct grpc_fd *fd, int and_unlock_pollset);
+  void (*maybe_work_and_unlock)(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                                grpc_pollset_worker *worker,
+                                gpr_timespec deadline, gpr_timespec now);
   void (*finish_shutdown)(grpc_pollset *pollset);
   void (*destroy)(grpc_pollset *pollset);
 };
@@ -87,10 +90,12 @@ struct grpc_pollset_vtable {
 #define GRPC_POLLSET_MU(pollset) (&(pollset)->mu)
 
 /* Add an fd to a pollset */
-void grpc_pollset_add_fd(grpc_pollset *pollset, struct grpc_fd *fd);
+void grpc_pollset_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                         struct grpc_fd *fd);
 /* Force remove an fd from a pollset (normally they are removed on the next
    poll after an fd is orphaned) */
-void grpc_pollset_del_fd(grpc_pollset *pollset, struct grpc_fd *fd);
+void grpc_pollset_del_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
+                         struct grpc_fd *fd);
 
 /* Returns the fd to listen on for kicks */
 int grpc_kick_read_fd(grpc_pollset *p);
@@ -107,13 +112,25 @@ void grpc_kick_drain(grpc_pollset *p);
 int grpc_poll_deadline_to_millis_timeout(gpr_timespec deadline,
                                          gpr_timespec now);
 
+/* Allow kick to wakeup the currently polling worker */
+#define GRPC_POLLSET_CAN_KICK_SELF 1
+/* Force the wakee to repoll when awoken */
+#define GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP 2
+/* As per grpc_pollset_kick, with an extended set of flags (defined above)
+   -- mostly for fd_posix's use. */
+void grpc_pollset_kick_ext(grpc_pollset *p,
+                           grpc_pollset_worker *specific_worker,
+                           gpr_uint32 flags);
+
 /* turn a pollset into a multipoller: platform specific */
-typedef void (*grpc_platform_become_multipoller_type)(grpc_pollset *pollset,
+typedef void (*grpc_platform_become_multipoller_type)(grpc_exec_ctx *exec_ctx,
+                                                      grpc_pollset *pollset,
                                                       struct grpc_fd **fds,
                                                       size_t fd_count);
 extern grpc_platform_become_multipoller_type grpc_platform_become_multipoller;
 
-void grpc_poll_become_multipoller(grpc_pollset *pollset, struct grpc_fd **fds,
+void grpc_poll_become_multipoller(grpc_exec_ctx *exec_ctx,
+                                  grpc_pollset *pollset, struct grpc_fd **fds,
                                   size_t fd_count);
 
 /* Return 1 if the pollset has active threads in grpc_pollset_work (pollset must
@@ -123,5 +140,6 @@ int grpc_pollset_has_workers(grpc_pollset *pollset);
 /* override to allow tests to hook poll() usage */
 typedef int (*grpc_poll_function_type)(struct pollfd *, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
+extern grpc_wakeup_fd grpc_global_wakeup_fd;
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_POSIX_H */

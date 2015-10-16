@@ -50,19 +50,19 @@ extern "C" {
 typedef struct census_trace_annotation {
   gpr_timespec ts;                            /* timestamp of the annotation */
   char txt[CENSUS_MAX_ANNOTATION_LENGTH + 1]; /* actual txt annotation */
-  struct census_trace_annotation* next;
+  struct census_trace_annotation *next;
 } census_trace_annotation;
 
 typedef struct census_trace_obj {
   census_op_id id;
   gpr_timespec ts;
   census_rpc_stats rpc_stats;
-  char* method;
-  census_trace_annotation* annotations;
+  char *method;
+  census_trace_annotation *annotations;
 } census_trace_obj;
 
 /* Deletes trace object. */
-void census_trace_obj_destroy(census_trace_obj* obj);
+void census_trace_obj_destroy(census_trace_obj *obj);
 
 /* Initializes trace store. This function is thread safe. */
 void census_tracing_init(void);
@@ -73,7 +73,7 @@ void census_tracing_shutdown(void);
 /* Gets trace obj corresponding to the input op_id. Returns NULL if trace store
    is not initialized or trace obj is not found. Requires trace store being
    locked before calling this function. */
-census_trace_obj* census_get_trace_obj_locked(census_op_id op_id);
+census_trace_obj *census_get_trace_obj_locked(census_op_id op_id);
 
 /* The following two functions acquire and release the trace store global lock.
    They are for census internal use only. */
@@ -81,13 +81,13 @@ void census_internal_lock_trace_store(void);
 void census_internal_unlock_trace_store(void);
 
 /* Gets method name associated with the input trace object. */
-const char* census_get_trace_method_name(const census_trace_obj* trace);
+const char *census_get_trace_method_name(const census_trace_obj *trace);
 
 /* Returns an array of pointers to trace objects of currently active operations
    and fills in number of active operations. Returns NULL if there are no active
    operations.
    Caller owns the returned objects. */
-census_trace_obj** census_get_active_ops(int* num_active_ops);
+census_trace_obj **census_get_active_ops(int *num_active_ops);
 
 #ifdef __cplusplus
 }

@@ -36,22 +36,24 @@
 #include "src/core/channel/http_server_filter.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/iomgr/tcp_server.h"
+#include "src/core/surface/api_trace.h"
 #include "src/core/surface/server.h"
 #include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-static void setup_transport(void *server, grpc_transport *transport,
-                            grpc_mdctx *mdctx) {
+static void setup_transport(grpc_exec_ctx *exec_ctx, void *server,
+                            grpc_transport *transport, grpc_mdctx *mdctx) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
-  grpc_server_setup_transport(server, transport, extra_filters,
+  grpc_server_setup_transport(exec_ctx, server, transport, extra_filters,
                               GPR_ARRAY_SIZE(extra_filters), mdctx,
                               grpc_server_get_channel_args(server));
 }
 
-static void new_transport(void *server, grpc_endpoint *tcp) {
+static void new_transport(grpc_exec_ctx *exec_ctx, void *server,
+                          grpc_endpoint *tcp) {
   /*
    * Beware that the call to grpc_create_chttp2_transport() has to happen before
    * grpc_tcp_server_destroy(). This is fine here, but similar code
@@ -61,23 +63,25 @@ static void new_transport(void *server, grpc_endpoint *tcp) {
    */
   grpc_mdctx *mdctx = grpc_mdctx_create();
   grpc_transport *transport = grpc_create_chttp2_transport(
-      grpc_server_get_channel_args(server), tcp, mdctx, 0);
-  setup_transport(server, transport, mdctx);
-  grpc_chttp2_transport_start_reading(transport, NULL, 0);
+      exec_ctx, grpc_server_get_channel_args(server), tcp, mdctx, 0);
+  setup_transport(exec_ctx, server, transport, mdctx);
+  grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
 }
 
 /* Server callback: start listening on our ports */
-static void start(grpc_server *server, void *tcpp, grpc_pollset **pollsets,
-                  size_t pollset_count) {
+static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
+                  grpc_pollset **pollsets, size_t pollset_count) {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_start(tcp, pollsets, pollset_count, new_transport, server);
+  grpc_tcp_server_start(exec_ctx, tcp, pollsets, pollset_count, new_transport,
+                        server);
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
-static void destroy(grpc_server *server, void *tcpp) {
+static void destroy(grpc_exec_ctx *exec_ctx, grpc_server *server, void *tcpp,
+                    grpc_closure *destroy_done) {
   grpc_tcp_server *tcp = tcpp;
-  grpc_tcp_server_destroy(tcp, grpc_server_listener_destroy_done, server);
+  grpc_tcp_server_destroy(exec_ctx, tcp, destroy_done);
 }
 
 int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
@@ -87,6 +91,10 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   unsigned count = 0;
   int port_num = -1;
   int port_temp;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+
+  GRPC_API_TRACE("grpc_server_add_insecure_http2_port(server=%p, addr=%s)", 2,
+                 (server, addr));
 
   resolved = grpc_blocking_resolve_address(addr, "http");
   if (!resolved) {
@@ -123,9 +131,8 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   grpc_resolved_addresses_destroy(resolved);
 
   /* Register with the server only upon success */
-  grpc_server_add_listener(server, tcp, start, destroy);
-
-  return port_num;
+  grpc_server_add_listener(&exec_ctx, server, tcp, start, destroy);
+  goto done;
 
 /* Error path: cleanup and return */
 error:
@@ -133,7 +140,11 @@ error:
     grpc_resolved_addresses_destroy(resolved);
   }
   if (tcp) {
-    grpc_tcp_server_destroy(tcp, NULL, NULL);
+    grpc_tcp_server_destroy(&exec_ctx, tcp, NULL);
   }
-  return 0;
+  port_num = 0;
+
+done:
+  grpc_exec_ctx_finish(&exec_ctx);
+  return port_num;
 }

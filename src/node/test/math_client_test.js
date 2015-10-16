@@ -36,7 +36,7 @@
 var assert = require('assert');
 
 var grpc = require('..');
-var math = grpc.load(__dirname + '/../examples/math.proto').math;
+var math = grpc.load(__dirname + '/math/math.proto').math;
 
 /**
  * Client to use to make requests to a running server.
@@ -46,7 +46,7 @@ var math_client;
 /**
  * Server to test against
  */
-var getServer = require('../examples/math_server.js');
+var getServer = require('./math/math_server.js');
 
 var server = getServer();
 
@@ -56,7 +56,7 @@ describe('Math client', function() {
                                grpc.ServerCredentials.createInsecure());
     server.start();
     math_client = new math.Math('localhost:' + port_num,
-                                grpc.Credentials.createInsecure());
+                                grpc.credentials.createInsecure());
     done();
   });
   after(function() {
