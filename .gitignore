@@ -45,3 +45,31 @@ portlog.txt
 # gyp generated make files
 *-gyp.mk
 out
+
+# XCode
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+*.DS_Store
+
+# Objective-C generated files
+*.pbobjc.*
+*.pbrpc.*
+
+# Cocoapods artifacts
+# Podfile.lock and the workspace file are tracked, to ease deleting them. That's
+# needed to trigger "pod install" to rerun the preinstall commands.
+Pods/
