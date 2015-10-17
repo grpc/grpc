@@ -338,6 +338,17 @@ def _timeout_on_sleeping_server(stub):
       raise ValueError('expected call to exceed deadline')
 
 
+def _empty_stream(stub):
+  with stub, _Pipe() as pipe:
+    response_iterator = stub.FullDuplexCall(pipe, _TIMEOUT)
+    pipe.close()
+    try:
+      next(response_iterator)
+      raise ValueError('expected exactly 0 responses')
+    except StopIteration:
+      pass
+
+
 def _compute_engine_creds(stub, args):
   response = _large_unary_common_behavior(stub, True, True)
   if args.default_service_account != response.username:
@@ -368,6 +379,7 @@ class TestCase(enum.Enum):
   PING_PONG = 'ping_pong'
   CANCEL_AFTER_BEGIN = 'cancel_after_begin'
   CANCEL_AFTER_FIRST_RESPONSE = 'cancel_after_first_response'
+  EMPTY_STREAM = 'empty_stream'
   COMPUTE_ENGINE_CREDS = 'compute_engine_creds'
   OAUTH2_AUTH_TOKEN = 'oauth2_auth_token'
   TIMEOUT_ON_SLEEPING_SERVER = 'timeout_on_sleeping_server'
@@ -389,6 +401,8 @@ class TestCase(enum.Enum):
       _cancel_after_first_response(stub)
     elif self is TestCase.TIMEOUT_ON_SLEEPING_SERVER:
       _timeout_on_sleeping_server(stub)
+    elif self is TestCase.EMPTY_STREAM:
+      _empty_stream(stub)
     elif self is TestCase.COMPUTE_ENGINE_CREDS:
       _compute_engine_creds(stub, args)
     elif self is TestCase.OAUTH2_AUTH_TOKEN:
