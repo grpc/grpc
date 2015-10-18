@@ -72,17 +72,6 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Creates a new instance of <c>ChannelCredentials</c> by wrapping
-        /// an instance of <c>CallCredentials</c>.
-        /// </summary>
-        /// <param name="callCredentials">Call credentials.</param>
-        /// <returns>The <c>ChannelCredentials</c> wrapping given call credentials.</returns>
-        public static ChannelCredentials Create(CallCredentials callCredentials)
-        {
-            return new WrappedCallCredentials(callCredentials);
-        }
-
-        /// <summary>
         /// Creates native object for the credentials. May return null if insecure channel
         /// should be created.
         /// </summary>
@@ -211,28 +200,6 @@ namespace Grpc.Core
                 }
                 return nativeComposite;
             }
-        }
-    }
-
-    /// <summary>
-    /// Credentials wrapping <see cref="CallCredentials"/> as <see cref="ChannelCredentials"/>.
-    /// </summary>
-    internal sealed class WrappedCallCredentials : ChannelCredentials
-    {
-        readonly CallCredentials callCredentials;
-
-        /// <summary>
-        /// Wraps instance of <c>CallCredentials</c> as <c>ChannelCredentials</c>.
-        /// </summary>
-        /// <param name="callCredentials">credentials to wrap</param>
-        public WrappedCallCredentials(CallCredentials callCredentials)
-        {
-            this.callCredentials = Preconditions.CheckNotNull(callCredentials);
-        }
-
-        internal override CredentialsSafeHandle ToNativeCredentials()
-        {
-            return callCredentials.ToNativeCredentials();
         }
     }
 }

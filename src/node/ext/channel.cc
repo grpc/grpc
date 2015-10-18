@@ -71,6 +71,72 @@ using v8::Value;
 Callback *Channel::constructor;
 Persistent<FunctionTemplate> Channel::fun_tpl;
 
+bool ParseChannelArgs(Local<Value> args_val,
+                      grpc_channel_args **channel_args_ptr) {
+  if (args_val->IsUndefined() || args_val->IsNull()) {
+    *channel_args_ptr = NULL;
+    return true;
+  }
+  if (!args_val->IsObject()) {
+    *channel_args_ptr = NULL;
+    return false;
+  }
+  grpc_channel_args *channel_args = reinterpret_cast<grpc_channel_args*>(
+      malloc(sizeof(channel_args)));
+  *channel_args_ptr = channel_args;
+  Local<Object> args_hash = Nan::To<Object>(args_val).ToLocalChecked();
+  Local<Array> keys = Nan::GetOwnPropertyNames(args_hash).ToLocalChecked();
+  channel_args->num_args = keys->Length();
+  channel_args->args = reinterpret_cast<grpc_arg *>(
+      calloc(channel_args->num_args, sizeof(grpc_arg)));
+  for (unsigned int i = 0; i < channel_args->num_args; i++) {
+    Local<Value> key = Nan::Get(keys, i).ToLocalChecked();
+    Utf8String key_str(key);
+    if (*key_str == NULL) {
+      // Key string onversion failed
+      return false;
+    }
+    Local<Value> value = Nan::Get(args_hash, key).ToLocalChecked();
+    if (value->IsInt32()) {
+      channel_args->args[i].type = GRPC_ARG_INTEGER;
+      channel_args->args[i].value.integer = Nan::To<int32_t>(value).FromJust();
+    } else if (value->IsString()) {
+      Utf8String val_str(value);
+      channel_args->args[i].type = GRPC_ARG_STRING;
+      channel_args->args[i].value.string = reinterpret_cast<char*>(
+          calloc(val_str.length() + 1,sizeof(char)));
+      memcpy(channel_args->args[i].value.string,
+             *val_str, val_str.length() + 1);
+    } else {
+      // The value does not match either of the accepted types
+      return false;
+    }
+    channel_args->args[i].key = reinterpret_cast<char*>(
+        calloc(key_str.length() + 1, sizeof(char)));
+    memcpy(channel_args->args[i].key, *key_str, key_str.length() + 1);
+  }
+  return true;
+}
+
+void DeallocateChannelArgs(grpc_channel_args *channel_args) {
+  if (channel_args == NULL) {
+    return;
+  }
+  for (size_t i = 0; i < channel_args->num_args; i++) {
+    if (channel_args->args[i].key == NULL) {
+      /* NULL key implies that this argument and all subsequent arguments failed
+       * to parse */
+      break;
+    }
+    free(channel_args->args[i].key);
+    if (channel_args->args[i].type == GRPC_ARG_STRING) {
+      free(channel_args->args[i].value.string);
+    }
+  }
+  free(channel_args->args);
+  free(channel_args);
+}
+
 Channel::Channel(grpc_channel *channel) : wrapped_channel(channel) {}
 
 Channel::~Channel() {
@@ -119,49 +185,11 @@ NAN_METHOD(Channel::New) {
     ChannelCredentials *creds_object = ObjectWrap::Unwrap<ChannelCredentials>(
         Nan::To<Object>(info[1]).ToLocalChecked());
     creds = creds_object->GetWrappedCredentials();
-    grpc_channel_args *channel_args_ptr;
-    if (info[2]->IsUndefined()) {
-      channel_args_ptr = NULL;
-      wrapped_channel = grpc_insecure_channel_create(*host, NULL, NULL);
-    } else if (info[2]->IsObject()) {
-      Local<Object> args_hash = Nan::To<Object>(info[2]).ToLocalChecked();
-      Local<Array> keys(Nan::GetOwnPropertyNames(args_hash).ToLocalChecked());
-      grpc_channel_args channel_args;
-      channel_args.num_args = keys->Length();
-      channel_args.args = reinterpret_cast<grpc_arg *>(
-          calloc(channel_args.num_args, sizeof(grpc_arg)));
-      /* These are used to keep all strings until then end of the block, then
-         destroy them */
-      std::vector<Nan::Utf8String *> key_strings(keys->Length());
-      std::vector<Nan::Utf8String *> value_strings(keys->Length());
-      for (unsigned int i = 0; i < channel_args.num_args; i++) {
-        MaybeLocal<String> maybe_key = Nan::To<String>(
-            Nan::Get(keys, i).ToLocalChecked());
-        if (maybe_key.IsEmpty()) {
-          free(channel_args.args);
-          return Nan::ThrowTypeError("Arg keys must be strings");
-        }
-        Local<String> current_key = maybe_key.ToLocalChecked();
-        Local<Value> current_value = Nan::Get(args_hash,
-                                               current_key).ToLocalChecked();
-        key_strings[i] = new Nan::Utf8String(current_key);
-        channel_args.args[i].key = **key_strings[i];
-        if (current_value->IsInt32()) {
-          channel_args.args[i].type = GRPC_ARG_INTEGER;
-          channel_args.args[i].value.integer = Nan::To<int32_t>(
-              current_value).FromJust();
-        } else if (current_value->IsString()) {
-          channel_args.args[i].type = GRPC_ARG_STRING;
-          value_strings[i] = new Nan::Utf8String(current_value);
-          channel_args.args[i].value.string = **value_strings[i];
-        } else {
-          free(channel_args.args);
-          return Nan::ThrowTypeError("Arg values must be strings");
-        }
-      }
-      channel_args_ptr = &channel_args;
-    } else {
-      return Nan::ThrowTypeError("Channel expects a string and an object");
+    grpc_channel_args *channel_args_ptr = NULL;
+    if (!ParseChannelArgs(info[2], &channel_args_ptr)) {
+      DeallocateChannelArgs(channel_args_ptr);
+      return Nan::ThrowTypeError("Channel options must be an object with "
+                                 "string keys and integer or string values");
     }
     if (creds == NULL) {
       wrapped_channel = grpc_insecure_channel_create(*host, channel_args_ptr,
@@ -170,9 +198,7 @@ NAN_METHOD(Channel::New) {
       wrapped_channel =
           grpc_secure_channel_create(creds, *host, channel_args_ptr, NULL);
     }
-    if (channel_args_ptr != NULL) {
-      free(channel_args_ptr->args);
-    }
+    DeallocateChannelArgs(channel_args_ptr);
     Channel *channel = new Channel(wrapped_channel);
     channel->Wrap(info.This());
     info.GetReturnValue().Set(info.This());

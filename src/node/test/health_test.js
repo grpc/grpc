@@ -45,11 +45,13 @@ describe('Health Checking', function() {
     'grpc.test.TestServiceNotServing': 'NOT_SERVING',
     'grpc.test.TestServiceServing': 'SERVING'
   };
-  var healthServer = new grpc.Server();
-  healthServer.addProtoService(health.service,
-                               new health.Implementation(statusMap));
+  var healthServer;
+  var healthImpl;
   var healthClient;
   before(function() {
+    healthServer = new grpc.Server();
+    healthImpl = new health.Implementation(statusMap);
+    healthServer.addProtoService(health.service, healthImpl);
     var port_num = healthServer.bind('0.0.0.0:0',
                                      grpc.ServerCredentials.createInsecure());
     healthServer.start();
@@ -87,6 +89,18 @@ describe('Health Checking', function() {
       assert(err);
       assert.strictEqual(err.code, grpc.status.NOT_FOUND);
       done();
+    });
+  });
+  it('should get a different response if the status changes', function(done) {
+    healthClient.check({service: 'transient'}, function(err, response) {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.NOT_FOUND);
+      healthImpl.setStatus('transient', 'SERVING');
+      healthClient.check({service: 'transient'}, function(err, response) {
+        assert.ifError(err);
+        assert.strictEqual(response.status, 'SERVING');
+        done();
+      });
     });
   });
 });
