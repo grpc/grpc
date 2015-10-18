@@ -126,16 +126,9 @@ NAN_METHOD(CallCredentials::New) {
     info.GetReturnValue().Set(info.This());
     return;
   } else {
-    const int argc = 1;
-    Local<Value> argv[argc] = {info[0]};
-    MaybeLocal<Object> maybe_instance = constructor->GetFunction()->NewInstance(
-        argc, argv);
-    if (maybe_instance.IsEmpty()) {
-      // There's probably a pending exception
-      return;
-    } else {
-      info.GetReturnValue().Set(maybe_instance.ToLocalChecked());
-    }
+    // This should never be called directly
+    return Nan::ThrowTypeError(
+        "CallCredentials can only be created with the provided functions");
   }
 }
 

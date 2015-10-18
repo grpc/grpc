@@ -163,12 +163,6 @@
     <ClCompile Include="..\..\..\src\core\httpcli\parser.c">
       <Filter>src\core\httpcli</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\iomgr\alarm.c">
-      <Filter>src\core\iomgr</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\iomgr\alarm_heap.c">
-      <Filter>src\core\iomgr</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\closure.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
@@ -259,6 +253,12 @@
     <ClCompile Include="..\..\..\src\core\iomgr\time_averaged_stats.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\timer.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\timer_heap.c">
+      <Filter>src\core\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\udp_server.c">
       <Filter>src\core\iomgr</Filter>
     </ClCompile>
@@ -291,12 +291,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\json\json_writer.c">
       <Filter>src\core\json</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\basic_timers.c">
-      <Filter>src\core\profiling</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\profiling\stap_timers.c">
-      <Filter>src\core\profiling</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\api_trace.c">
       <Filter>src\core\surface</Filter>
@@ -605,15 +599,6 @@
     <ClInclude Include="..\..\..\src\core\httpcli\parser.h">
       <Filter>src\core\httpcli</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm_heap.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\iomgr\alarm_internal.h">
-      <Filter>src\core\iomgr</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\core\iomgr\closure.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -695,6 +680,15 @@
     <ClInclude Include="..\..\..\src\core\iomgr\time_averaged_stats.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\timer.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\timer_heap.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\iomgr\timer_internal.h">
+      <Filter>src\core\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\iomgr\udp_server.h">
       <Filter>src\core\iomgr</Filter>
     </ClInclude>
@@ -724,9 +718,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\json\json_writer.h">
       <Filter>src\core\json</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\profiling\timers.h">
-      <Filter>src\core\profiling</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
@@ -898,9 +889,6 @@
     </Filter>
     <Filter Include="src\core\json">
       <UniqueIdentifier>{e665cc0e-b994-d7c5-cc18-2007392019f0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\core\profiling">
-      <UniqueIdentifier>{87674b72-0f05-0469-481a-bd8c7af9ad80}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\security">
       <UniqueIdentifier>{1d850ac6-e639-4eab-5338-4ba40272fcc9}</UniqueIdentifier>

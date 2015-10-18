@@ -43,6 +43,8 @@ import re
 import socket
 import subprocess
 import sys
+import tempfile
+import traceback
 import time
 import xml.etree.cElementTree as ET
 import urllib2
@@ -71,16 +73,17 @@ def platform_string():
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
 class SimpleConfig(object):
 
-  def __init__(self, config, environ=None, timeout_seconds=5*60):
+  def __init__(self, config, environ=None, timeout_multiplier=1):
     if environ is None:
       environ = {}
     self.build_config = config
     self.allow_hashing = (config != 'gcov')
     self.environ = environ
     self.environ['CONFIG'] = config
-    self.timeout_seconds = timeout_seconds
+    self.timeout_multiplier = timeout_multiplier
 
-  def job_spec(self, cmdline, hash_targets, shortname=None, environ={}):
+  def job_spec(self, cmdline, hash_targets, timeout_seconds=5*60,
+               shortname=None, environ={}):
     """Construct a jobset.JobSpec for a test under this config
 
        Args:
@@ -98,10 +101,11 @@ class SimpleConfig(object):
     return jobset.JobSpec(cmdline=cmdline,
                           shortname=shortname,
                           environ=actual_environ,
-                          timeout_seconds=self.timeout_seconds,
+                          timeout_seconds=self.timeout_multiplier * timeout_seconds,
                           hash_targets=hash_targets
                               if self.allow_hashing else None,
-                          flake_retries=5 if args.allow_flakes else 0)
+                          flake_retries=5 if args.allow_flakes else 0,
+                          timeout_retries=3 if args.allow_flakes else 0)
 
 
 # ValgrindConfig: compile with some CONFIG=config, but use valgrind to run
@@ -121,7 +125,7 @@ class ValgrindConfig(object):
                           shortname='valgrind %s' % cmdline[0],
                           hash_targets=None,
                           flake_retries=5 if args.allow_flakes else 0,
-                          timeout_retries=2 if args.allow_flakes else 0)
+                          timeout_retries=3 if args.allow_flakes else 0)
 
 
 def get_c_tests(travis, test_lang) :
@@ -175,6 +179,12 @@ class CLanguage(object):
   def build_steps(self):
     return []
 
+  def post_tests_steps(self):
+    if self.platform == 'windows':
+      return []
+    else:
+      return [['tools/run_tests/post_tests_c.sh']]
+
   def makefile_name(self):
     return 'Makefile'
 
@@ -191,13 +201,17 @@ class NodeLanguage(object):
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
-    return []
+    # Default to 1 week cache expiration
+    return [['tools/run_tests/pre_build_node.sh']]
 
   def make_targets(self):
     return []
 
   def build_steps(self):
     return [['tools/run_tests/build_node.sh']]
+
+  def post_tests_steps(self):
+    return []
 
   def makefile_name(self):
     return 'Makefile'
@@ -224,6 +238,9 @@ class PhpLanguage(object):
   def build_steps(self):
     return [['tools/run_tests/build_php.sh']]
 
+  def post_tests_steps(self):
+    return []
+
   def makefile_name(self):
     return 'Makefile'
 
@@ -248,6 +265,7 @@ class PythonLanguage(object):
         None,
         environ=environment,
         shortname='py.test',
+        timeout_seconds=15*60
     )]
 
   def pre_build_steps(self):
@@ -269,6 +287,9 @@ class PythonLanguage(object):
         jobset.message('WARNING', 'Missing Python ' + python_version,
                        do_newline=True)
     return commands
+
+  def post_tests_steps(self):
+    return []
 
   def makefile_name(self):
     return 'Makefile'
@@ -294,6 +315,9 @@ class RubyLanguage(object):
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
+
+  def post_tests_steps(self):
+    return []
 
   def makefile_name(self):
     return 'Makefile'
@@ -343,6 +367,9 @@ class CSharpLanguage(object):
     else:
       return [['tools/run_tests/build_csharp.sh']]
 
+  def post_tests_steps(self):
+    return []
+
   def makefile_name(self):
     return 'Makefile'
 
@@ -368,6 +395,9 @@ class ObjCLanguage(object):
   def build_steps(self):
     return [['src/objective-c/tests/build_tests.sh']]
 
+  def post_tests_steps(self):
+    return []
+
   def makefile_name(self):
     return 'Makefile'
 
@@ -391,6 +421,9 @@ class Sanity(object):
     return ['run_dep_checks']
 
   def build_steps(self):
+    return []
+
+  def post_tests_steps(self):
     return []
 
   def makefile_name(self):
@@ -431,11 +464,11 @@ class Build(object):
 _CONFIGS = {
     'dbg': SimpleConfig('dbg'),
     'opt': SimpleConfig('opt'),
-    'tsan': SimpleConfig('tsan', timeout_seconds=10*60, environ={
+    'tsan': SimpleConfig('tsan', timeout_multiplier=2, environ={
         'TSAN_OPTIONS': 'suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1'}),
-    'msan': SimpleConfig('msan', timeout_seconds=7*60),
+    'msan': SimpleConfig('msan', timeout_multiplier=1.5),
     'ubsan': SimpleConfig('ubsan'),
-    'asan': SimpleConfig('asan', timeout_seconds=7*60, environ={
+    'asan': SimpleConfig('asan', timeout_multiplier=1.5, environ={
         'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt',
         'LSAN_OPTIONS': 'report_objects=1'}),
     'asan-noleaks': SimpleConfig('asan', environ={
@@ -573,7 +606,7 @@ run_configs = set(_CONFIGS[cfg]
 build_configs = set(cfg.build_config for cfg in run_configs)
 
 if args.travis:
-  _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'surface,batch'}
+  _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
 languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
@@ -631,6 +664,11 @@ build_steps.extend(set(
                    for l in languages
                    for cmdline in l.build_steps()))
 
+post_tests_steps = list(set(
+                        jobset.JobSpec(cmdline, environ={'CONFIG': cfg})
+                        for cfg in build_configs
+                        for l in languages
+                        for cmdline in l.post_tests_steps()))
 runs_per_test = args.runs_per_test
 forever = args.forever
 
@@ -700,35 +738,62 @@ def _start_port_server(port_server_port):
       urllib2.urlopen('http://localhost:%d/quitquitquit' % port_server_port).read()
       time.sleep(1)
   if not running:
-    print 'starting port_server'
-    port_log = open('portlog.txt', 'w')
-    port_server = subprocess.Popen(
-        [sys.executable, 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port],
-        stderr=subprocess.STDOUT,
-        stdout=port_log)
+    fd, logfile = tempfile.mkstemp()
+    os.close(fd)
+    print 'starting port_server, with log file %s' % logfile
+    args = [sys.executable, 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port, '-l', logfile]
+    env = dict(os.environ)
+    env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
+    if platform.system() == 'Windows':
+      port_server = subprocess.Popen(
+          args,
+          env=env,
+          creationflags = 0x00000008, # detached process
+          close_fds=True)
+    else:
+      port_server = subprocess.Popen(
+          args,
+          env=env,
+          preexec_fn=os.setsid,
+          close_fds=True)
+    time.sleep(1)
     # ensure port server is up
     waits = 0
     while True:
       if waits > 10:
+        print 'killing port server due to excessive start up waits'
         port_server.kill()
       if port_server.poll() is not None:
         print 'port_server failed to start'
-        port_log = open('portlog.txt', 'r').read()
-        print port_log
-        sys.exit(1)
+        # try one final time: maybe another build managed to start one
+        time.sleep(1)
+        try:
+          urllib2.urlopen('http://localhost:%d/get' % port_server_port,
+                          timeout=1).read()
+          print 'last ditch attempt to contact port server succeeded'
+          break
+        except:
+          traceback.print_exc();
+          port_log = open(logfile, 'r').read()
+          print port_log
+          sys.exit(1)
       try:
         urllib2.urlopen('http://localhost:%d/get' % port_server_port,
                         timeout=1).read()
+        print 'port server is up and ready'
         break
       except socket.timeout:
         print 'waiting for port_server: timeout'
-        time.sleep(0.5)
+        traceback.print_exc();
+        time.sleep(1)
         waits += 1
       except urllib2.URLError:
         print 'waiting for port_server: urlerror'
-        time.sleep(0.5)
+        traceback.print_exc();
+        time.sleep(1)
         waits += 1
       except:
+        traceback.print_exc();
         port_server.kill()
         raise
 
@@ -787,6 +852,10 @@ def _build_and_run(
     if xml_report:
       tree = ET.ElementTree(root)
       tree.write(xml_report, encoding='UTF-8')
+
+  if not jobset.run(post_tests_steps, maxjobs=1, stop_on_failure=True,
+                    newline_on_success=newline_on_success, travis=travis):
+    return 3
 
   if cache: cache.save()
 

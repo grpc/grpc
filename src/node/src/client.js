@@ -661,6 +661,7 @@ exports.waitForClientReady = function(client, deadline, callback) {
   var checkState = function(err) {
     if (err) {
       callback(new Error('Failed to connect before the deadline'));
+      return;
     }
     var new_state = client.$channel.getConnectivityState(true);
     if (new_state === grpc.connectivityState.READY) {
