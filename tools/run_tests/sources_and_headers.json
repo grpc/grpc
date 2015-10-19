@@ -13645,13 +13645,13 @@
       "test/cpp/qps/perf_db.pb.h", 
       "test/cpp/qps/perf_db_client.h", 
       "test/cpp/qps/qps_worker.h", 
-      "test/cpp/qps/qpstest.grpc.pb.h", 
-      "test/cpp/qps/qpstest.pb.h", 
       "test/cpp/qps/report.h", 
       "test/cpp/qps/server.h", 
       "test/cpp/qps/stats.h", 
       "test/cpp/qps/timer.h", 
-      "test/cpp/util/benchmark_config.h"
+      "test/cpp/util/benchmark_config.h", 
+      "test/proto/qpstest.grpc.pb.h", 
+      "test/proto/qpstest.pb.h"
     ], 
     "language": "c++", 
     "name": "qps", 

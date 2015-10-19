@@ -49,7 +49,7 @@
 #include <grpc++/security/server_credentials.h>
 #include <gtest/gtest.h>
 
-#include "test/cpp/qps/qpstest.grpc.pb.h"
+#include "test/proto/qpstest.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 
 namespace grpc {
