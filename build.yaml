@@ -141,6 +141,7 @@ filegroups:
   - src/core/iomgr/endpoint.h
   - src/core/iomgr/endpoint_pair.h
   - src/core/iomgr/exec_ctx.h
+  - src/core/iomgr/executor.h
   - src/core/iomgr/fd_posix.h
   - src/core/iomgr/iocp_windows.h
   - src/core/iomgr/iomgr.h
@@ -254,6 +255,7 @@ filegroups:
   - src/core/iomgr/endpoint_pair_posix.c
   - src/core/iomgr/endpoint_pair_windows.c
   - src/core/iomgr/exec_ctx.c
+  - src/core/iomgr/executor.c
   - src/core/iomgr/fd_posix.c
   - src/core/iomgr/iocp_windows.c
   - src/core/iomgr/iomgr.c
