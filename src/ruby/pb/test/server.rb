@@ -168,8 +168,9 @@ def parse_options
     opts.on('--port PORT', 'server port') do |v|
       options['port'] = v
     end
-    opts.on('-s', '--use_tls', 'require a secure connection?') do |v|
-      options['secure'] = v
+    opts.on('--use_tls USE_TLS', ['false', 'true'],
+            'require a secure connection?') do |v|
+      options['secure'] = v == 'true'
     end
   end.parse!
 

@@ -37,7 +37,7 @@
 
 #include <grpc/support/thd.h>
 
-#include "src/core/iomgr/alarm_internal.h"
+#include "src/core/iomgr/timer_internal.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/iocp_windows.h"
 #include "src/core/iomgr/pollset.h"
@@ -136,7 +136,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   worker->kicked = 0;
   worker->pollset = pollset;
   gpr_cv_init(&worker->cv);
-  if (grpc_alarm_check(exec_ctx, now, &deadline)) {
+  if (grpc_timer_check(exec_ctx, now, &deadline)) {
     goto done;
   }
   if (!pollset->kicked_without_pollers && !pollset->shutting_down) {

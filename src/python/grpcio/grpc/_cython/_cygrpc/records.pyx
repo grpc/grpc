@@ -87,28 +87,38 @@ cdef class Timespec:
 
   def __cinit__(self, time):
     if time is None:
-      self.c_time = grpc.gpr_now()
+      self.c_time = grpc.gpr_now(grpc.GPR_CLOCK_REALTIME)
     elif isinstance(time, float):
       if time == float("+inf"):
-        self.c_time = grpc.gpr_inf_future
+        self.c_time = grpc.gpr_inf_future(grpc.GPR_CLOCK_REALTIME)
       elif time == float("-inf"):
-        self.c_time = grpc.gpr_inf_past
+        self.c_time = grpc.gpr_inf_past(grpc.GPR_CLOCK_REALTIME)
       else:
         self.c_time.seconds = time
         self.c_time.nanoseconds = (time - float(self.c_time.seconds)) * 1e9
+        self.c_time.clock_type = grpc.GPR_CLOCK_REALTIME
     else:
       raise TypeError("expected time to be float")
 
   @property
   def seconds(self):
-    return self.c_time.seconds
+    # TODO(atash) ensure that everywhere a Timespec is created that it's
+    # converted to GPR_CLOCK_REALTIME then and not every time someone wants to
+    # read values off in Python.
+    cdef grpc.gpr_timespec real_time = (
+        grpc.gpr_convert_clock_type(self.c_time, grpc.GPR_CLOCK_REALTIME))
+    return real_time.seconds
 
   @property
   def nanoseconds(self):
-    return self.c_time.nanoseconds
+    cdef grpc.gpr_timespec real_time = (
+        grpc.gpr_convert_clock_type(self.c_time, grpc.GPR_CLOCK_REALTIME))
+    return real_time.nanoseconds
 
   def __float__(self):
-    return <double>self.c_time.seconds + <double>self.c_time.nanoseconds / 1e9
+    cdef grpc.gpr_timespec real_time = (
+        grpc.gpr_convert_clock_type(self.c_time, grpc.GPR_CLOCK_REALTIME))
+    return <double>real_time.seconds + <double>real_time.nanoseconds / 1e9
 
   infinite_future = Timespec(float("+inf"))
   infinite_past = Timespec(float("-inf"))
@@ -339,13 +349,16 @@ cdef class _MetadataIterator:
     self.i = 0
     self.metadata = metadata
 
+  def __iter__(self):
+    return self
+
   def __next__(self):
     if self.i < len(self.metadata):
       result = self.metadata[self.i]
       self.i = self.i + 1
       return result
     else:
-      raise StopIteration()
+      raise StopIteration
 
 
 cdef class Metadata:
@@ -536,13 +549,16 @@ cdef class _OperationsIterator:
     self.i = 0
     self.operations = operations
 
+  def __iter__(self):
+    return self
+
   def __next__(self):
     if self.i < len(self.operations):
       result = self.operations[self.i]
       self.i = self.i + 1
       return result
     else:
-      raise StopIteration()
+      raise StopIteration
 
 
 cdef class Operations:

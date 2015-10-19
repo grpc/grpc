@@ -53,6 +53,7 @@
     "src/core",
     "test/proto",
     "include",
+    "etc",
     "binding.gyp"
   ],
   "main": "src/node/index.js",

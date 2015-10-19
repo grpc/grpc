@@ -72,6 +72,16 @@ void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst) {
   src->head = src->tail = NULL;
 }
 
+grpc_closure *grpc_closure_list_pop(grpc_closure_list *list) {
+  grpc_closure *head;
+  if (list->head == NULL) {
+    return NULL;
+  }
+  head = list->head;
+  list->head = list->head->next;
+  return head;
+}
+
 typedef struct {
   grpc_iomgr_cb_func cb;
   void *cb_arg;

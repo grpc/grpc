@@ -99,6 +99,9 @@ exports.createFromMetadataGenerator = function(metadata_generator) {
         if (error.hasOwnProperty('code')) {
           code = error.code;
         }
+        if (!metadata) {
+          metadata = new Metadata();
+        }
       }
       callback(code, message, metadata._getCoreRepresentation());
     });

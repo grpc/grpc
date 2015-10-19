@@ -32,6 +32,7 @@ import unittest
 
 from grpc._cython import cygrpc
 from grpc_test._cython import test_utilities
+from grpc_test import test_common
 
 
 class TypeSmokeTest(unittest.TestCase):
@@ -139,7 +140,7 @@ class InsecureServerInsecureClient(unittest.TestCase):
     CLIENT_METADATA_BIN_VALUE = b'\0'*1000
     SERVER_INITIAL_METADATA_KEY = b'init_me_me_me'
     SERVER_INITIAL_METADATA_VALUE = b'whodawha?'
-    SERVER_TRAILING_METADATA_KEY = b'California_is_in_a_drought'
+    SERVER_TRAILING_METADATA_KEY = b'california_is_in_a_drought'
     SERVER_TRAILING_METADATA_VALUE = b'zomg it is'
     SERVER_STATUS_CODE = cygrpc.StatusCode.ok
     SERVER_STATUS_DETAILS = b'our work is never over'
@@ -158,8 +159,8 @@ class InsecureServerInsecureClient(unittest.TestCase):
     self.assertEqual(cygrpc.CallError.ok, request_call_result)
 
     client_call_tag = object()
-    client_call = self.client_channel.create_call(self.client_completion_queue,
-                                                  METHOD, HOST, cygrpc_deadline)
+    client_call = self.client_channel.create_call(
+        None, 0, self.client_completion_queue, METHOD, HOST, cygrpc_deadline)
     client_initial_metadata = cygrpc.Metadata([
         cygrpc.Metadatum(CLIENT_METADATA_ASCII_KEY,
                          CLIENT_METADATA_ASCII_VALUE),
@@ -182,8 +183,9 @@ class InsecureServerInsecureClient(unittest.TestCase):
     self.assertIsInstance(request_event.operation_call, cygrpc.Call)
     self.assertIs(server_request_tag, request_event.tag)
     self.assertEqual(0, len(request_event.batch_operations))
-    self.assertEqual(dict(client_initial_metadata),
-                      dict(request_event.request_metadata))
+    self.assertTrue(
+        test_common.metadata_transmitted(client_initial_metadata,
+                                         request_event.request_metadata))
     self.assertEqual(METHOD, request_event.request_call_details.method)
     self.assertEqual(HOST, request_event.request_call_details.host)
     self.assertLess(
@@ -218,13 +220,15 @@ class InsecureServerInsecureClient(unittest.TestCase):
       self.assertNotIn(client_result.type, found_client_op_types)
       found_client_op_types.add(client_result.type)
       if client_result.type == cygrpc.OperationType.receive_initial_metadata:
-        self.assertEqual(dict(server_initial_metadata),
-                         dict(client_result.received_metadata))
+        self.assertTrue(
+            test_common.metadata_transmitted(server_initial_metadata,
+                                             client_result.received_metadata))
       elif client_result.type == cygrpc.OperationType.receive_message:
         self.assertEqual(RESPONSE, client_result.received_message.bytes())
       elif client_result.type == cygrpc.OperationType.receive_status_on_client:
-        self.assertEqual(dict(server_trailing_metadata),
-                         dict(client_result.received_metadata))
+        self.assertTrue(
+            test_common.metadata_transmitted(server_trailing_metadata,
+                                             client_result.received_metadata))
         self.assertEqual(SERVER_STATUS_DETAILS,
                          client_result.received_status_details)
         self.assertEqual(SERVER_STATUS_CODE, client_result.received_status_code)

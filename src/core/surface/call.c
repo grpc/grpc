@@ -42,7 +42,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/channel/channel_stack.h"
-#include "src/core/iomgr/alarm.h"
+#include "src/core/iomgr/timer.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/api_trace.h"
@@ -237,7 +237,7 @@ struct grpc_call {
   grpc_call_context_element context[GRPC_CONTEXT_COUNT];
 
   /* Deadline alarm - if have_alarm is non-zero */
-  grpc_alarm alarm;
+  grpc_timer alarm;
 
   /* Call refcount - to keep the call alive during asynchronous operations */
   gpr_refcount internal_refcount;
@@ -539,12 +539,24 @@ grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
   return algorithm;
 }
 
-static void set_encodings_accepted_by_peer(
-    grpc_call *call, const gpr_slice accept_encoding_slice) {
+static void destroy_encodings_accepted_by_peer(void *p) { return; }
+
+static void set_encodings_accepted_by_peer(grpc_call *call, grpc_mdelem *mdel) {
   size_t i;
   grpc_compression_algorithm algorithm;
   gpr_slice_buffer accept_encoding_parts;
+  gpr_slice accept_encoding_slice;
+  void *accepted_user_data;
 
+  accepted_user_data =
+      grpc_mdelem_get_user_data(mdel, destroy_encodings_accepted_by_peer);
+  if (accepted_user_data != NULL) {
+    call->encodings_accepted_by_peer =
+        (gpr_uint32)(((gpr_uintptr)accepted_user_data) - 1);
+    return;
+  }
+
+  accept_encoding_slice = mdel->value->slice;
   gpr_slice_buffer_init(&accept_encoding_parts);
   gpr_slice_split(accept_encoding_slice, ",", &accept_encoding_parts);
 
@@ -568,6 +580,12 @@ static void set_encodings_accepted_by_peer(
       gpr_free(accept_encoding_entry_str);
     }
   }
+
+  gpr_slice_buffer_destroy(&accept_encoding_parts);
+
+  grpc_mdelem_set_user_data(
+      mdel, destroy_encodings_accepted_by_peer,
+      (void *)(((gpr_uintptr)call->encodings_accepted_by_peer) + 1));
 }
 
 gpr_uint32 grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call) {
@@ -1027,7 +1045,7 @@ static void call_on_done_recv(grpc_exec_ctx *exec_ctx, void *pc, int success) {
       GPR_ASSERT(call->read_state <= READ_STATE_STREAM_CLOSED);
       call->read_state = READ_STATE_STREAM_CLOSED;
       if (call->have_alarm) {
-        grpc_alarm_cancel(exec_ctx, &call->alarm);
+        grpc_timer_cancel(exec_ctx, &call->alarm);
       }
       /* propagate cancellation to any interested children */
       child_call = call->first_child;
@@ -1345,7 +1363,7 @@ void grpc_call_destroy(grpc_call *c) {
   GPR_ASSERT(!c->destroy_called);
   c->destroy_called = 1;
   if (c->have_alarm) {
-    grpc_alarm_cancel(&exec_ctx, &c->alarm);
+    grpc_timer_cancel(&exec_ctx, &c->alarm);
   }
   cancel = c->read_state != READ_STATE_STREAM_CLOSED;
   unlock(&exec_ctx, c);
@@ -1470,7 +1488,7 @@ static void set_deadline_alarm(grpc_exec_ctx *exec_ctx, grpc_call *call,
   GRPC_CALL_INTERNAL_REF(call, "alarm");
   call->have_alarm = 1;
   call->send_deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);
-  grpc_alarm_init(exec_ctx, &call->alarm, call->send_deadline, call_alarm, call,
+  grpc_timer_init(exec_ctx, &call->alarm, call->send_deadline, call_alarm, call,
                   gpr_now(GPR_CLOCK_MONOTONIC));
 }
 
@@ -1528,7 +1546,6 @@ static void recv_metadata(grpc_exec_ctx *exec_ctx, grpc_call *call,
   grpc_metadata_array *dest;
   grpc_metadata *mdusr;
   int is_trailing;
-  grpc_mdctx *mdctx = call->metadata_context;
 
   is_trailing = call->read_state >= READ_STATE_GOT_INITIAL_METADATA;
   for (l = md->list.head; l != NULL; l = l->next) {
@@ -1550,7 +1567,7 @@ static void recv_metadata(grpc_exec_ctx *exec_ctx, grpc_call *call,
     } else if (key == grpc_channel_get_encodings_accepted_by_peer_string(
                           call->channel)) {
       GPR_TIMER_BEGIN("encodings_accepted_by_peer", 0);
-      set_encodings_accepted_by_peer(call, mdel->value->slice);
+      set_encodings_accepted_by_peer(call, mdel);
       GPR_TIMER_END("encodings_accepted_by_peer", 0);
     } else {
       GPR_TIMER_BEGIN("report_up", 0);
@@ -1588,14 +1605,12 @@ static void recv_metadata(grpc_exec_ctx *exec_ctx, grpc_call *call,
     call->read_state = READ_STATE_GOT_INITIAL_METADATA;
   }
 
-  grpc_mdctx_lock(mdctx);
   for (l = md->list.head; l; l = l->next) {
-    if (l->md) GRPC_MDCTX_LOCKED_MDELEM_UNREF(mdctx, l->md);
+    if (l->md) GRPC_MDELEM_UNREF(l->md);
   }
   for (l = md->garbage.head; l; l = l->next) {
-    GRPC_MDCTX_LOCKED_MDELEM_UNREF(mdctx, l->md);
+    GRPC_MDELEM_UNREF(l->md);
   }
-  grpc_mdctx_unlock(mdctx);
 }
 
 grpc_call_stack *grpc_call_get_call_stack(grpc_call *call) {
