@@ -747,7 +747,7 @@ libs:
   - test/cpp/qps/timer.h
   - test/cpp/util/benchmark_config.h
   src:
-  - test/cpp/qps/qpstest.proto
+  - test/proto/qpstest.proto
   - test/cpp/qps/perf_db.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc

@@ -43,7 +43,7 @@
 #include <grpc++/server_context.h>
 #include <grpc++/security/server_credentials.h>
 
-#include "test/cpp/qps/qpstest.grpc.pb.h"
+#include "test/proto/qpstest.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/timer.h"
 
