@@ -416,6 +416,8 @@ module GRPC
       until stopped?
         begin
           an_rpc = @server.request_call(@cq, loop_tag, INFINITE_FUTURE)
+          break if (!an_rpc.nil?) && an_rpc.call.nil?
+
           c = new_active_server_call(an_rpc)
           unless c.nil?
             mth = an_rpc.method.to_sym

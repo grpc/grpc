@@ -42,7 +42,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/alarm_internal.h"
+#include "src/core/iomgr/timer_internal.h"
 #include "src/core/iomgr/fd_posix.h"
 #include "src/core/iomgr/iomgr_internal.h"
 #include "src/core/iomgr/socket_utils_posix.h"
@@ -255,7 +255,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
      each time through on every pollset.
      May update deadline to ensure timely wakeups.
      TODO(ctiller): can this work be localized? */
-  if (grpc_alarm_check(exec_ctx, now, &deadline)) {
+  if (grpc_timer_check(exec_ctx, now, &deadline)) {
     gpr_mu_unlock(&pollset->mu);
     locked = 0;
     goto done;
@@ -280,16 +280,15 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
       if (!added_worker) {
         push_front_worker(pollset, worker);
         added_worker = 1;
+        gpr_tls_set(&g_current_thread_worker, (gpr_intptr)worker);
       }
       gpr_tls_set(&g_current_thread_poller, (gpr_intptr)pollset);
-      gpr_tls_set(&g_current_thread_worker, (gpr_intptr)worker);
       GPR_TIMER_BEGIN("maybe_work_and_unlock", 0);
       pollset->vtable->maybe_work_and_unlock(exec_ctx, pollset, worker,
                                              deadline, now);
       GPR_TIMER_END("maybe_work_and_unlock", 0);
       locked = 0;
       gpr_tls_set(&g_current_thread_poller, 0);
-      gpr_tls_set(&g_current_thread_worker, 0);
     } else {
       pollset->kicked_without_pollers = 0;
     }
@@ -319,6 +318,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   }
   if (added_worker) {
     remove_worker(pollset, worker);
+    gpr_tls_set(&g_current_thread_worker, 0);
   }
   grpc_wakeup_fd_destroy(&worker->wakeup_fd);
   if (pollset->shutting_down) {

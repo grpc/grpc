@@ -46,19 +46,23 @@ def metadata_transmitted(original_metadata, transmitted_metadata):
   the same key.
 
   Args:
-    original_metadata: A metadata value used in a test of gRPC.
+    original_metadata: A metadata value used in a test of gRPC. An iterable over
+      iterables of length 2.
     transmitted_metadata: A metadata value corresponding to original_metadata
-      after having been transmitted via gRPC.
+      after having been transmitted via gRPC. An iterable over iterables of
+      length 2.
 
   Returns:
      A boolean indicating whether transmitted_metadata accurately reflects
       original_metadata after having been transmitted via gRPC.
   """
   original = collections.defaultdict(list)
-  for key, value in original_metadata:
+  for key_value_pair in original_metadata:
+    key, value = tuple(key_value_pair)
     original[key].append(value)
   transmitted = collections.defaultdict(list)
-  for key, value in transmitted_metadata:
+  for key_value_pair in transmitted_metadata:
+    key, value = tuple(key_value_pair)
     transmitted[key].append(value)
 
   for key, values in original.iteritems():

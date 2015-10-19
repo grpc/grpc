@@ -41,6 +41,11 @@
 namespace grpc {
 namespace node {
 
+bool ParseChannelArgs(v8::Local<v8::Value> args_val,
+                      grpc_channel_args **channel_args_ptr);
+
+void DeallocateChannelArgs(grpc_channel_args *channel_args);
+
 /* Wrapper class for grpc_channel structs */
 class Channel : public Nan::ObjectWrap {
  public:

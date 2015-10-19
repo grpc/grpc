@@ -87,12 +87,6 @@ RUN /bin/bash -l -c "gem install bundler --no-ri --no-rdoc"
 
 # Install dependencies
 
-RUN /bin/bash -l -c "echo 'deb http://packages.dotdeb.org wheezy-php55 all' \
-    >> /etc/apt/sources.list.d/dotdeb.list"
-RUN /bin/bash -l -c "echo 'deb-src http://packages.dotdeb.org wheezy-php55 all' \
-    >> /etc/apt/sources.list.d/dotdeb.list"
-RUN wget http://www.dotdeb.org/dotdeb.gpg -O- | apt-key add -
-
 RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip
 
@@ -101,8 +95,6 @@ RUN apt-get update && apt-get install -y \
 #
 # rake: a ruby version of make used to build the PHP Protobuf extension
 RUN /bin/bash -l -c "rvm all do gem install ronn rake"
-
-ENV DEBIAN_FRONTEND noniteractive
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php

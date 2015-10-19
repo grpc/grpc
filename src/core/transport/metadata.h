@@ -155,28 +155,6 @@ int grpc_mdstr_is_legal_header(grpc_mdstr *s);
 int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s);
 int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 
-/* Batch mode metadata functions.
-   These API's have equivalents above, but allow taking the mdctx just once,
-   performing a bunch of work, and then leaving the mdctx. */
-
-/* Lock the metadata context: it's only safe to call _locked_ functions against
-   this context from the calling thread until grpc_mdctx_unlock is called */
-void grpc_mdctx_lock(grpc_mdctx *ctx);
-#ifdef GRPC_METADATA_REFCOUNT_DEBUG
-#define GRPC_MDCTX_LOCKED_MDELEM_UNREF(ctx, elem) \
-  grpc_mdctx_locked_mdelem_unref((ctx), (elem), __FILE__, __LINE__)
-/* Unref a metadata element */
-void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *elem,
-                                    const char *file, int line);
-#else
-#define GRPC_MDCTX_LOCKED_MDELEM_UNREF(ctx, elem) \
-  grpc_mdctx_locked_mdelem_unref((ctx), (elem))
-/* Unref a metadata element */
-void grpc_mdctx_locked_mdelem_unref(grpc_mdctx *ctx, grpc_mdelem *elem);
-#endif
-/* Unlock the metadata context */
-void grpc_mdctx_unlock(grpc_mdctx *ctx);
-
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_METADATA_H */

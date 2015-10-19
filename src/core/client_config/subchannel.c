@@ -40,7 +40,7 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
-#include "src/core/iomgr/alarm.h"
+#include "src/core/iomgr/timer.h"
 #include "src/core/transport/connectivity_state.h"
 #include "src/core/surface/channel.h"
 
@@ -130,7 +130,7 @@ struct grpc_subchannel {
   /** do we have an active alarm? */
   int have_alarm;
   /** our alarm */
-  grpc_alarm alarm;
+  grpc_timer alarm;
   /** current random value */
   gpr_uint32 random;
 };
@@ -485,7 +485,7 @@ void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
   }
 
   if (cancel_alarm) {
-    grpc_alarm_cancel(exec_ctx, &c->alarm);
+    grpc_timer_cancel(exec_ctx, &c->alarm);
   }
 
   if (op->disconnect) {
@@ -704,7 +704,7 @@ static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
     GPR_ASSERT(!c->have_alarm);
     c->have_alarm = 1;
     connectivity_state_changed_locked(exec_ctx, c, "connect_failed");
-    grpc_alarm_init(exec_ctx, &c->alarm, c->next_attempt, on_alarm, c, now);
+    grpc_timer_init(exec_ctx, &c->alarm, c->next_attempt, on_alarm, c, now);
     gpr_mu_unlock(&c->mu);
   }
 }
