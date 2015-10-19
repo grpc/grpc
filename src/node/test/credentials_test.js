@@ -71,7 +71,7 @@ var fakeSuccessfulGoogleCredentials = {
 var fakeFailingGoogleCredentials = {
   getRequestMetadata: function(service_url, callback) {
     setTimeout(function() {
-      callback(new Error("Authorization failure"));
+      callback(new Error('Authorization failure'));
     }, 0);
   }
 };
