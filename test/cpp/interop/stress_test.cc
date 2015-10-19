@@ -141,7 +141,6 @@ bool ParseTestCasesString(const string& test_cases,
     string test_name = it->substr(0, colon_pos);
     int weight = std::stoi(it->substr(colon_pos + 1));
     TestCaseType test_case = GetTestTypeFromName(test_name);
-
     if (test_case == UNKNOWN_TEST) {
       gpr_log(GPR_ERROR, "Unknown test case: %s", test_name.c_str());
       is_success = false;
@@ -203,6 +202,7 @@ int main(int argc, char** argv) {
   WeightedRandomTestSelector test_selector(tests);
 
   gpr_log(GPR_INFO, "Starting test(s)..");
+
   vector<thread> test_threads;
   int thread_idx = 0;
   for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
