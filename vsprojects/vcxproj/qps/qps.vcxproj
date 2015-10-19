@@ -147,13 +147,13 @@
     <ClInclude Include="..\..\..\test\cpp\util\benchmark_config.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\test\cpp\qps\qpstest.pb.cc">
+    <ClCompile Include="..\..\..\test\proto\qpstest.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\cpp\qps\qpstest.pb.h">
+    <ClInclude Include="..\..\..\test\proto\qpstest.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\cpp\qps\qpstest.grpc.pb.cc">
+    <ClCompile Include="..\..\..\test\proto\qpstest.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\cpp\qps\qpstest.grpc.pb.h">
+    <ClInclude Include="..\..\..\test\proto\qpstest.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="..\..\..\test\cpp\qps\perf_db.pb.cc">
     </ClCompile>
