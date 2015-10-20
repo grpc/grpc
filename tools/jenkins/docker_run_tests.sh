@@ -62,4 +62,4 @@ cd ..
 
 zip -r reports.zip reports
 
-find . -name report.xml -exec zip report_xml.zip
+find . -name report.xml -print | zip report_xml.zip -@
