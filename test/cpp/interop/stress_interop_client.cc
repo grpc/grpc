@@ -92,7 +92,7 @@ StressTestInteropClient::StressTestInteropClient(
   // that won't work with InsecureCredentials()
   std::shared_ptr<Channel> channel(
       CreateChannel(server_address, InsecureCredentials()));
-  interop_client_.reset(new InteropClient(channel));
+  interop_client_.reset(new InteropClient(channel, false));
 }
 
 void StressTestInteropClient::MainLoop() {
