@@ -250,7 +250,7 @@ static grpc_closure *merge_into_waiting_op(grpc_call_element *elem,
   return consumed_op;
 }
 
-static char *cmc_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
+static char *cuc_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   channel_data *chand = elem->channel_data;
   grpc_subchannel_call *subchannel_call;
@@ -282,6 +282,10 @@ static void perform_transport_stream_op(grpc_exec_ctx *exec_ctx,
   GRPC_CALL_LOG_OP(GPR_INFO, elem, op);
 
   gpr_mu_lock(&calld->mu_state);
+  /* make sure the wrapped subchannel has been set (see
+   * grpc_client_uchannel_set_subchannel) */
+  GPR_ASSERT(chand->subchannel != NULL);
+
   switch (calld->state) {
     case CALL_ACTIVE:
       GPR_ASSERT(!continuation);
@@ -358,13 +362,13 @@ static void perform_transport_stream_op(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void cmc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
+static void cuc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
                                           grpc_call_element *elem,
                                           grpc_transport_stream_op *op) {
   perform_transport_stream_op(exec_ctx, elem, op, 0);
 }
 
-static void cmc_start_transport_op(grpc_exec_ctx *exec_ctx,
+static void cuc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                    grpc_channel_element *elem,
                                    grpc_transport_op *op) {
   channel_data *chand = elem->channel_data;
@@ -389,7 +393,7 @@ static void cmc_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for call_data */
-static void cmc_init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+static void cuc_init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                                const void *server_transport_data,
                                grpc_transport_stream_op *initial_op) {
   call_data *calld = elem->call_data;
@@ -407,7 +411,7 @@ static void cmc_init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 }
 
 /* Destructor for call_data */
-static void cmc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
+static void cuc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_call_element *elem) {
   call_data *calld = elem->call_data;
   grpc_subchannel_call *subchannel_call;
@@ -433,44 +437,26 @@ static void cmc_destroy_call_elem(grpc_exec_ctx *exec_ctx,
 }
 
 /* Constructor for channel_data */
-static void cmc_init_channel_elem(grpc_exec_ctx *exec_ctx,
+static void cuc_init_channel_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_channel_element *elem,
                                   grpc_channel *master,
                                   const grpc_channel_args *args,
                                   grpc_mdctx *metadata_context, int is_first,
                                   int is_last) {
-  size_t i;
-  int subchannel_pointer_arg_found = 0;
   channel_data *chand = elem->channel_data;
-
   memset(chand, 0, sizeof(*chand));
-
   grpc_closure_init(&chand->connectivity_cb, monitor_subchannel, chand);
   GPR_ASSERT(is_last);
   GPR_ASSERT(elem->filter == &grpc_client_uchannel_filter);
-
   chand->mdctx = metadata_context;
   chand->master = master;
-  for (i = 0; i < args->num_args; i++) {
-    if (args->args[i].type == GRPC_ARG_POINTER &&
-        strcmp(GRPC_MICROCHANNEL_SUBCHANNEL_ARG, args->args[i].key) == 0) {
-      subchannel_pointer_arg_found = 1;
-      break;
-    }
-  }
-  GPR_ASSERT(subchannel_pointer_arg_found != 0);
-  GPR_ASSERT(i < args->num_args);
-  GPR_ASSERT(args->args[i].value.pointer.p != NULL);
-  chand->subchannel = args->args[i].value.pointer.p;
-
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_uchannel");
-
   gpr_mu_init(&chand->mu_state);
 }
 
 /* Destructor for channel_data */
-static void cmc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
+static void cuc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
   grpc_subchannel_state_change_unsubscribe(exec_ctx, chand->subchannel,
@@ -480,15 +466,15 @@ static void cmc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 const grpc_channel_filter grpc_client_uchannel_filter = {
-    cmc_start_transport_stream_op,
-    cmc_start_transport_op,
+    cuc_start_transport_stream_op,
+    cuc_start_transport_op,
     sizeof(call_data),
-    cmc_init_call_elem,
-    cmc_destroy_call_elem,
+    cuc_init_call_elem,
+    cuc_destroy_call_elem,
     sizeof(channel_data),
-    cmc_init_channel_elem,
-    cmc_destroy_channel_elem,
-    cmc_get_peer,
+    cuc_init_channel_elem,
+    cuc_destroy_channel_elem,
+    cuc_get_peer,
     "client-uchannel",
 };
 
@@ -524,9 +510,11 @@ void grpc_client_uchannel_watch_connectivity_state(
 grpc_pollset_set *grpc_client_uchannel_get_connecting_pollset_set(
     grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
-  grpc_channel_element *parent_elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(
-          grpc_subchannel_get_master(chand->subchannel)));
+  grpc_channel_element *parent_elem;
+  gpr_mu_lock(&chand->mu_state);
+  parent_elem = grpc_channel_stack_last_element(grpc_channel_get_channel_stack(
+      grpc_subchannel_get_master(chand->subchannel)));
+  gpr_mu_unlock(&chand->mu_state);
   return grpc_client_channel_get_connecting_pollset_set(parent_elem);
 }
 
@@ -556,8 +544,6 @@ grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
   char *target = grpc_channel_get_target(master);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 0;
-  grpc_arg tmp;
-  grpc_channel_args *args_with_subchannel;
 
   grpc_mdctx_ref(mdctx);
   if (grpc_channel_args_is_census_enabled(args)) {
@@ -567,16 +553,20 @@ grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
   filters[n++] = &grpc_client_uchannel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 
-  tmp.type = GRPC_ARG_POINTER;
-  tmp.key = GRPC_MICROCHANNEL_SUBCHANNEL_ARG;
-  tmp.value.pointer.p = subchannel;
-  tmp.value.pointer.copy = NULL;
-  tmp.value.pointer.destroy = NULL;
-  args_with_subchannel = grpc_channel_args_copy_and_add(args, &tmp, 1);
-
   channel = grpc_channel_create_from_filters(&exec_ctx, target, filters, n,
-                                             args_with_subchannel, mdctx, 1);
+                                             args, mdctx, 1);
+
   gpr_free(target);
-  grpc_channel_args_destroy(args_with_subchannel);
   return channel;
+}
+
+void grpc_client_uchannel_set_subchannel(grpc_channel *uchannel,
+                                         grpc_subchannel *subchannel) {
+  grpc_channel_element *elem =
+      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(uchannel));
+  channel_data *chand = elem->channel_data;
+  GPR_ASSERT(elem->filter == &grpc_client_uchannel_filter);
+  gpr_mu_lock(&chand->mu_state);
+  chand->subchannel = subchannel;
+  gpr_mu_unlock(&chand->mu_state);
 }
