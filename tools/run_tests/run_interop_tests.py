@@ -56,7 +56,7 @@ _CLOUD_TO_PROD_BASE_ARGS = [
 _CLOUD_TO_CLOUD_BASE_ARGS = [
     '--server_host_override=foo.test.google.fr']
 
-# TOOD(jtattermusch) wrapped languages use this variable for location 
+# TOOD(jtattermusch) wrapped languages use this variable for location
 # of roots.pem. We might want to use GRPC_DEFAULT_SSL_ROOTS_FILE_PATH
 # supported by C core SslCredentials instead.
 _SSL_CERT_ENV = { 'SSL_CERT_FILE':'/usr/local/share/grpc/roots.pem' }
@@ -87,6 +87,9 @@ class CXXLanguage:
   def server_args(self):
     return ['bins/opt/interop_server', '--use_tls=true']
 
+  def global_env(self):
+    return {}
+
   def __str__(self):
     return 'c++'
 
@@ -113,6 +116,9 @@ class CSharpLanguage:
   def server_args(self):
     return ['mono', 'Grpc.IntegrationTesting.Server.exe', '--use_tls=true']
 
+  def global_env(self):
+    return {}
+
   def __str__(self):
     return 'csharp'
 
@@ -138,6 +144,9 @@ class JavaLanguage:
 
   def server_args(self):
     return ['./run-test-server.sh', '--use_tls=true']
+
+  def global_env(self):
+    return {}
 
   def __str__(self):
     return 'java'
@@ -166,6 +175,9 @@ class GoLanguage:
   def server_args(self):
     return ['go', 'run', 'server.go', '--use_tls=true']
 
+  def global_env(self):
+    return {}
+
   def __str__(self):
     return 'go'
 
@@ -192,6 +204,9 @@ class NodeLanguage:
   def server_args(self):
     return ['node', 'src/node/interop/interop_server.js', '--use_tls=true']
 
+  def global_env(self):
+    return {}
+
   def __str__(self):
     return 'node'
 
@@ -205,14 +220,17 @@ class PHPLanguage:
 
   def cloud_to_prod_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
-            ['--use_tls'])
+            ['--use_tls=true'])
 
   def cloud_to_cloud_args(self):
     return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_tls', '--use_test_ca'])
+            ['--use_tls=true', '--use_test_ca=true'])
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
+
+  def global_env(self):
+    return {}
 
   def __str__(self):
     return 'php'
@@ -240,11 +258,42 @@ class RubyLanguage:
   def server_args(self):
     return ['ruby', 'src/ruby/bin/interop/interop_server.rb', '--use_tls']
 
+  def global_env(self):
+    return {}
+
   def __str__(self):
     return 'ruby'
 
 
-# TODO(jtattermusch): python once we get it working
+class PythonLanguage:
+
+  def __init__(self):
+    self.client_cmdline_base = ['python2.7_virtual_environment/bin/python', '-m', 'grpc_interop.client']
+    self.client_cwd = None
+    self.server_cwd = None
+    self.safename = str(self)
+
+  def cloud_to_prod_args(self):
+    return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
+            ['--use_tls=true'])
+
+  def cloud_to_cloud_args(self):
+    return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
+            ['--use_tls=true', '--use_test_ca=true'])
+
+  def cloud_to_prod_env(self):
+    return _SSL_CERT_ENV
+
+  def server_args(self):
+    return ['python2.7_virtual_environment/bin/python', '-m', 'grpc_interop.server', '--use_tls=true']
+
+  def global_env(self):
+    return {'LD_LIBRARY_PATH': 'libs/opt'}
+
+  def __str__(self):
+    return 'python'
+
+
 _LANGUAGES = {
     'c++' : CXXLanguage(),
     'csharp' : CSharpLanguage(),
@@ -253,15 +302,16 @@ _LANGUAGES = {
     'node' : NodeLanguage(),
     'php' :  PHPLanguage(),
     'ruby' : RubyLanguage(),
+    'python' : PythonLanguage(),
 }
 
 # languages supported as cloud_to_cloud servers
-_SERVERS = ['c++', 'node', 'csharp', 'java', 'go', 'ruby']
+_SERVERS = ['c++', 'node', 'csharp', 'java', 'go', 'ruby', 'python']
 
-# TODO(jtattermusch): add timeout_on_sleeping_server once java starts supporting it.
 _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
                'empty_stream', 'client_streaming', 'server_streaming',
-               'cancel_after_begin', 'cancel_after_first_response']
+               'cancel_after_begin', 'cancel_after_first_response',
+               'timeout_on_sleeping_server']
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
@@ -335,7 +385,7 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
   """Creates jobspec for cloud-to-prod interop test"""
   cmdline = language.cloud_to_prod_args() + ['--test_case=%s' % test_case]
   cwd = language.client_cwd
-  environ = language.cloud_to_prod_env()
+  environ = dict(language.cloud_to_prod_env(), **language.global_env())
   container_name = None
   if auth:
     cmdline, environ = add_auth_options(language, test_case, cmdline, environ)
@@ -374,10 +424,12 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                                 '--server_host=%s' % server_host,
                                 '--server_port=%s' % server_port ])
   cwd = language.client_cwd
+  environ = language.global_env()
   if docker_image:
     container_name = dockerjob.random_name('interop_client_%s' % language.safename)
     cmdline = docker_run_cmdline(cmdline,
                                  image=docker_image,
+                                 environ=environ,
                                  cwd=cwd,
                                  docker_args=['--net=host',
                                               '--name', container_name])
@@ -386,6 +438,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
   test_job = jobset.JobSpec(
           cmdline=cmdline,
           cwd=cwd,
+          environ=environ,
           shortname="cloud_to_cloud:%s:%s_server:%s" % (language, server_name,
                                                  test_case),
           timeout_seconds=2*60,
@@ -401,13 +454,16 @@ def server_jobspec(language, docker_image):
   container_name = dockerjob.random_name('interop_server_%s' % language.safename)
   cmdline = bash_login_cmdline(language.server_args() +
                                ['--port=%s' % _DEFAULT_SERVER_PORT])
+  environ = language.global_env()
   docker_cmdline = docker_run_cmdline(cmdline,
                                       image=docker_image,
                                       cwd=language.server_cwd,
+                                      environ=environ,
                                       docker_args=['-p', str(_DEFAULT_SERVER_PORT),
                                                    '--name', container_name])
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
+          environ=environ,
           shortname="interop_server_%s" % language,
           timeout_seconds=30*60)
   server_job.container_name = container_name
@@ -422,6 +478,12 @@ def build_interop_image_jobspec(language, tag=None):
          'BASE_NAME': 'grpc_interop_%s' % language.safename}
   if not args.travis:
     env['TTY_FLAG'] = '-t'
+  # This env variable is used to get around the github rate limit
+  # error when running the PHP `composer install` command
+  # TODO(stanleycheung): find a more elegant way to do this
+  if language.safename == 'php' and os.path.exists('/var/local/.composer/auth.json'):
+    env['BUILD_INTEROP_DOCKER_EXTRA_ARGS'] = \
+      "-v /var/local/.composer/auth.json:/root/.composer/auth.json:ro"
   build_job = jobset.JobSpec(
           cmdline=['tools/jenkins/build_interop_image.sh'],
           environ=env,

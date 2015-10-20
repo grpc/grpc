@@ -115,7 +115,7 @@ void grpc_init(void) {
         gpr_log(GPR_ERROR, "Could not initialize census.");
       }
     }
-    grpc_timers_global_init();
+    gpr_timers_global_init();
     for (i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != NULL) {
         g_all_of_the_plugins[i].init();
@@ -133,7 +133,7 @@ void grpc_shutdown(void) {
   if (--g_initializations == 0) {
     grpc_iomgr_shutdown();
     census_shutdown();
-    grpc_timers_global_destroy();
+    gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_resolver_registry_shutdown();
     for (i = 0; i < g_number_of_plugins; i++) {

@@ -37,6 +37,7 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/profiling/timers.h"
 #include "src/core/transport/chttp2/http2_errors.h"
 
 static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing);
@@ -180,6 +181,8 @@ void grpc_chttp2_perform_writes(
 static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
   grpc_chttp2_stream_writing *stream_writing;
 
+  GPR_TIMER_BEGIN("finalize_outbuf", 0);
+
   while (
       grpc_chttp2_list_pop_writing_stream(transport_writing, &stream_writing)) {
     if (stream_writing->sopb.nops > 0 ||
@@ -208,6 +211,8 @@ static void finalize_outbuf(grpc_chttp2_transport_writing *transport_writing) {
     }
     grpc_chttp2_list_add_written_stream(transport_writing, stream_writing);
   }
+
+  GPR_TIMER_END("finalize_outbuf", 0);
 }
 
 void grpc_chttp2_cleanup_writing(

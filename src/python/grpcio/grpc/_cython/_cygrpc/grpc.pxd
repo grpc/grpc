@@ -64,15 +64,25 @@ cdef extern from "grpc/support/port_platform.h":
 
 cdef extern from "grpc/support/time.h":
 
+  ctypedef enum gpr_clock_type:
+    GPR_CLOCK_MONOTONIC
+    GPR_CLOCK_REALTIME
+    GPR_CLOCK_PRECISE
+    GPR_TIMESPAN
+
   ctypedef struct gpr_timespec:
     libc.time.time_t seconds "tv_sec"
     int nanoseconds "tv_nsec"
+    gpr_clock_type clock_type
 
-  cdef gpr_timespec gpr_time_0
-  cdef gpr_timespec gpr_inf_future
-  cdef gpr_timespec gpr_inf_past
+  gpr_timespec gpr_time_0(gpr_clock_type type)
+  gpr_timespec gpr_inf_future(gpr_clock_type type)
+  gpr_timespec gpr_inf_past(gpr_clock_type type)
 
-  gpr_timespec gpr_now()
+  gpr_timespec gpr_now(gpr_clock_type clock)
+
+  gpr_timespec gpr_convert_clock_type(gpr_timespec t,
+                                      gpr_clock_type target_clock)
 
 
 cdef extern from "grpc/status.h":
@@ -255,38 +265,44 @@ cdef extern from "grpc/grpc.h":
   void grpc_init()
   void grpc_shutdown()
 
-  grpc_completion_queue *grpc_completion_queue_create()
+  grpc_completion_queue *grpc_completion_queue_create(void *reserved)
   grpc_event grpc_completion_queue_next(grpc_completion_queue *cq,
-                                        gpr_timespec deadline) nogil
+                                        gpr_timespec deadline,
+                                        void *reserved) nogil
   void grpc_completion_queue_shutdown(grpc_completion_queue *cq)
   void grpc_completion_queue_destroy(grpc_completion_queue *cq)
 
   grpc_call_error grpc_call_start_batch(grpc_call *call, const grpc_op *ops,
-                                        size_t nops, void *tag)
-  grpc_call_error grpc_call_cancel(grpc_call *call)
+                                        size_t nops, void *tag, void *reserved)
+  grpc_call_error grpc_call_cancel(grpc_call *call, void *reserved)
   grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
                                                grpc_status_code status,
-                                               const char *description)
+                                               const char *description,
+                                               void *reserved)
   void grpc_call_destroy(grpc_call *call)
 
 
-  grpc_channel *grpc_channel_create(const char *target,
-                                    const grpc_channel_args *args)
+  grpc_channel *grpc_insecure_channel_create(const char *target,
+                                             const grpc_channel_args *args,
+                                             void *reserved)
   grpc_call *grpc_channel_create_call(grpc_channel *channel,
+                                      grpc_call *parent_call,
+                                      gpr_uint32 propagation_mask,
                                       grpc_completion_queue *completion_queue,
                                       const char *method, const char *host,
-                                      gpr_timespec deadline)
+                                      gpr_timespec deadline, void *reserved)
   void grpc_channel_destroy(grpc_channel *channel)
 
-  grpc_server *grpc_server_create(const grpc_channel_args *args)
+  grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved)
   grpc_call_error grpc_server_request_call(
       grpc_server *server, grpc_call **call, grpc_call_details *details,
       grpc_metadata_array *request_metadata, grpc_completion_queue
       *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void
       *tag_new)
   void grpc_server_register_completion_queue(grpc_server *server,
-                                             grpc_completion_queue *cq)
-  int grpc_server_add_http2_port(grpc_server *server, const char *addr)
+                                             grpc_completion_queue *cq,
+                                             void *reserved)
+  int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr)
   void grpc_server_start(grpc_server *server)
   void grpc_server_shutdown_and_notify(
       grpc_server *server, grpc_completion_queue *cq, void *tag)
@@ -306,22 +322,27 @@ cdef extern from "grpc/grpc_security.h":
 
   grpc_credentials *grpc_google_default_credentials_create()
   grpc_credentials *grpc_ssl_credentials_create(
-      const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair)
+      const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
+      void *reserved)
 
   grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
-                                                      grpc_credentials *creds2)
-  grpc_credentials *grpc_compute_engine_credentials_create()
-  grpc_credentials *grpc_service_account_jwt_access_credentials_create(const char *json_key,
-                                                gpr_timespec token_lifetime)
-  grpc_credentials *grpc_refresh_token_credentials_create(
-      const char *json_refresh_token)
-  grpc_credentials *grpc_iam_credentials_create(const char *authorization_token,
-                                                const char *authority_selector)
+                                                      grpc_credentials *creds2,
+                                                      void *reserved)
+  grpc_credentials *grpc_google_compute_engine_credentials_create(
+      void *reserved)
+  grpc_credentials *grpc_service_account_jwt_access_credentials_create(
+      const char *json_key,
+      gpr_timespec token_lifetime, void *reserved)
+  grpc_credentials *grpc_google_refresh_token_credentials_create(
+      const char *json_refresh_token, void *reserved)
+  grpc_credentials *grpc_google_iam_credentials_create(
+      const char *authorization_token, const char *authority_selector,
+      void *reserved)
   void grpc_credentials_release(grpc_credentials *creds)
 
   grpc_channel *grpc_secure_channel_create(
       grpc_credentials *creds, const char *target,
-      const grpc_channel_args *args)
+      const grpc_channel_args *args, void *reserved)
 
   ctypedef struct grpc_server_credentials:
     # We don't care about the internals (and in fact don't know them)
@@ -330,7 +351,7 @@ cdef extern from "grpc/grpc_security.h":
   grpc_server_credentials *grpc_ssl_server_credentials_create(
       const char *pem_root_certs,
       grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-      size_t num_key_cert_pairs)
+      size_t num_key_cert_pairs, int force_client_auth, void *reserved)
   void grpc_server_credentials_release(grpc_server_credentials *creds)
 
   int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,

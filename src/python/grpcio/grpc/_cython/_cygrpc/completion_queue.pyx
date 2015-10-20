@@ -30,6 +30,7 @@
 cimport cpython
 
 from grpc._cython._cygrpc cimport call
+from grpc._cython._cygrpc cimport grpc
 from grpc._cython._cygrpc cimport records
 
 import threading
@@ -39,7 +40,7 @@ import time
 cdef class CompletionQueue:
 
   def __cinit__(self):
-    self.c_completion_queue = grpc.grpc_completion_queue_create()
+    self.c_completion_queue = grpc.grpc_completion_queue_create(NULL)
     self.is_shutting_down = False
     self.is_shutdown = False
     self.poll_condition = threading.Condition()
@@ -48,7 +49,8 @@ cdef class CompletionQueue:
   def poll(self, records.Timespec deadline=None):
     # We name this 'poll' to avoid problems with CPython's expectations for
     # 'special' methods (like next and __next__).
-    cdef grpc.gpr_timespec c_deadline = grpc.gpr_inf_future
+    cdef grpc.gpr_timespec c_deadline = grpc.gpr_inf_future(
+        grpc.GPR_CLOCK_REALTIME)
     cdef records.OperationTag tag = None
     cdef object user_tag = None
     cdef call.Call operation_call = None
@@ -66,7 +68,7 @@ cdef class CompletionQueue:
       self.is_polling = True
     with nogil:
       event = grpc.grpc_completion_queue_next(
-          self.c_completion_queue, c_deadline)
+          self.c_completion_queue, c_deadline, NULL)
     with self.poll_condition:
       self.is_polling = False
       self.poll_condition.notify()

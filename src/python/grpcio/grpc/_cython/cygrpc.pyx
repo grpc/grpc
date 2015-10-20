@@ -78,11 +78,13 @@ client_credentials_google_default = (
 client_credentials_ssl = credentials.client_credentials_ssl
 client_credentials_composite_credentials = (
     credentials.client_credentials_composite_credentials)
-client_credentials_compute_engine = (
-    credentials.client_credentials_compute_engine)
-client_credentials_jwt = credentials.client_credentials_jwt
-client_credentials_refresh_token = credentials.client_credentials_refresh_token
-client_credentials_iam = credentials.client_credentials_iam
+client_credentials_google_compute_engine = (
+    credentials.client_credentials_google_compute_engine)
+client_credentials_jwt_access = (
+    credentials.client_credentials_service_account_jwt_access)
+client_credentials_refresh_token = (
+    credentials.client_credentials_google_refresh_token)
+client_credentials_google_iam = credentials.client_credentials_google_iam
 server_credentials_ssl = credentials.server_credentials_ssl
 
 CompletionQueue = completion_queue.CompletionQueue

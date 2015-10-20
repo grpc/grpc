@@ -33,6 +33,14 @@
 
 'use strict';
 
+var path = require('path');
+
+var SSL_ROOTS_PATH = path.resolve(__dirname, '..', '..', 'etc', 'roots.pem');
+
+if (!process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH) {
+  process.env.GRPC_DEFAULT_SSL_ROOTS_FILE_PATH = SSL_ROOTS_PATH;
+}
+
 var _ = require('lodash');
 
 var ProtoBuf = require('protobufjs');

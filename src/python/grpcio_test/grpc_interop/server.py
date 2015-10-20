@@ -46,8 +46,8 @@ def serve():
   parser.add_argument(
       '--port', help='the port on which to serve', type=int)
   parser.add_argument(
-      '--use_tls', help='require a secure connection', dest='use_tls',
-      action='store_true')
+      '--use_tls', help='require a secure connection',
+      default=False, type=resources.parse_bool)
   args = parser.parse_args()
 
   if args.use_tls:

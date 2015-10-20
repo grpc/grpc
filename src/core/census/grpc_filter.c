@@ -132,6 +132,7 @@ static void client_init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_transport_stream_op *initial_op) {
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
+  memset(d, 0, sizeof(*d));
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
   if (initial_op) client_mutate_op(elem, initial_op);
 }
@@ -149,6 +150,7 @@ static void server_init_call_elem(grpc_exec_ctx *exec_ctx,
                                   grpc_transport_stream_op *initial_op) {
   call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
+  memset(d, 0, sizeof(*d));
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
   /* TODO(hongyu): call census_tracing_start_op here. */
   grpc_closure_init(d->on_done_recv, server_on_done_recv, elem);
