@@ -14,18 +14,21 @@ Prerequisite: PHP 5.5 or later, `phpunit`, `pecl`
 **Linux:**
 
 ```sh
-$ sudo apt-get install php5 php5-dev phpunit php-pear
+$ sudo apt-get install php5 php5-dev php-pear
 ```
 
 **Mac OS X:**
 
 ```sh
+$ curl -O http://pear.php.net/go-pear.phar
+$ sudo php -d detect_unicode=0 go-pear.phar
+```
+
+**PHPUnit: (Both Linux and Mac OS X)**
+```sh
 $ curl https://phar.phpunit.de/phpunit.phar -o phpunit.phar
 $ chmod +x phpunit.phar
 $ sudo mv phpunit.phar /usr/local/bin/phpunit
-
-$ curl -O http://pear.php.net/go-pear.phar
-$ sudo php -d detect_unicode=0 go-pear.phar
 ```
 
 ## Quick Install
