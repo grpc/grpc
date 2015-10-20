@@ -255,6 +255,12 @@ class NamedTests
   def per_rpc_creds
     auth_creds = Google::Auth.get_application_default(@args.oauth_scope)
     kw = auth_creds.updater_proc.call({})
+
+    # TODO(jtattermusch): downcase the metadata keys here to make sure
+    # they are not rejected by C core. This is a hotfix that should
+    # be addressed by introducing auto-downcasing logic.
+    kw = Hash[ kw.each_pair.map { |k, v|  [k.downcase, v] }]
+
     resp = perform_large_unary(fill_username: true,
                                fill_oauth_scope: true,
                                **kw)
