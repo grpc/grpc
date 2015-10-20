@@ -107,6 +107,23 @@ describe('call', function() {
         new grpc.Call(channel, 'method', 'now');
       }, TypeError);
     });
+    it('should succeed without the new keyword', function() {
+      assert.doesNotThrow(function() {
+        var call = grpc.Call(channel, 'method', new Date());
+        assert(call instanceof grpc.Call);
+      });
+    });
+  });
+  describe('deadline', function() {
+    it('should time out immediately with negative deadline', function(done) {
+      var call = new grpc.Call(channel, 'method', -Infinity);
+      var batch = {};
+      batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+      call.startBatch(batch, function(err, response) {
+        assert.strictEqual(response.status.code, grpc.status.DEADLINE_EXCEEDED);
+        done();
+      });
+    });
   });
   describe('startBatch', function() {
     it('should fail without an object and a function', function() {
@@ -190,6 +207,43 @@ describe('call', function() {
       assert.doesNotThrow(function() {
         call.cancel();
       });
+    });
+  });
+  describe('cancelWithStatus', function() {
+    it('should reject anything other than an integer and a string', function() {
+      assert.doesNotThrow(function() {
+        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        call.cancelWithStatus(1, 'details');
+      });
+      assert.throws(function() {
+        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        call.cancelWithStatus();
+      });
+      assert.throws(function() {
+        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        call.cancelWithStatus('');
+      });
+      assert.throws(function() {
+        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        call.cancelWithStatus(5, {});
+      });
+    });
+    it('should reject the OK status code', function() {
+      assert.throws(function() {
+        var call = new grpc.Call(channel, 'method', getDeadline(1));
+        call.cancelWithStatus(0, 'details');
+      });
+    });
+    it('should result in the call ending with a status', function(done) {
+      var call = new grpc.Call(channel, 'method', getDeadline(1));
+      var batch = {};
+      batch[grpc.opType.RECV_STATUS_ON_CLIENT] = true;
+      call.startBatch(batch, function(err, response) {
+        assert.strictEqual(response.status.code, 5);
+        assert.strictEqual(response.status.details, 'details');
+        done();
+      });
+      call.cancelWithStatus(5, 'details');
     });
   });
   describe('getPeer', function() {

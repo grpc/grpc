@@ -27,6 +27,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from grpc._cython._cygrpc cimport grpc
 from grpc._cython._cygrpc cimport records
 
 
@@ -81,13 +82,11 @@ def client_credentials_ssl(pem_root_certificates,
     credentials.references.append(pem_root_certificates)
   if ssl_pem_key_cert_pair is not None:
     credentials.c_credentials = grpc.grpc_ssl_credentials_create(
-        c_pem_root_certificates, &ssl_pem_key_cert_pair.c_pair
-    )
+        c_pem_root_certificates, &ssl_pem_key_cert_pair.c_pair, NULL)
     credentials.references.append(ssl_pem_key_cert_pair)
   else:
     credentials.c_credentials = grpc.grpc_ssl_credentials_create(
-      c_pem_root_certificates, NULL
-    )
+      c_pem_root_certificates, NULL, NULL)
 
 def client_credentials_composite_credentials(
     ClientCredentials credentials_1 not None,
@@ -96,18 +95,20 @@ def client_credentials_composite_credentials(
     raise ValueError("passed credentials must both be valid")
   cdef ClientCredentials credentials = ClientCredentials()
   credentials.c_credentials = grpc.grpc_composite_credentials_create(
-      credentials_1.c_credentials, credentials_2.c_credentials)
+      credentials_1.c_credentials, credentials_2.c_credentials, NULL)
   credentials.references.append(credentials_1)
   credentials.references.append(credentials_2)
   return credentials
 
-def client_credentials_compute_engine():
+def client_credentials_google_compute_engine():
   cdef ClientCredentials credentials = ClientCredentials()
-  credentials.c_credentials = grpc.grpc_compute_engine_credentials_create()
+  credentials.c_credentials = (
+      grpc.grpc_google_compute_engine_credentials_create(NULL))
   return credentials
 
 #TODO rename to something like client_credentials_service_account_jwt_access.
-def client_credentials_jwt(json_key, records.Timespec token_lifetime not None):
+def client_credentials_service_account_jwt_access(
+    json_key, records.Timespec token_lifetime not None):
   if isinstance(json_key, bytes):
     pass
   elif isinstance(json_key, basestring):
@@ -115,12 +116,13 @@ def client_credentials_jwt(json_key, records.Timespec token_lifetime not None):
   else:
     raise TypeError("expected json_key to be str or bytes")
   cdef ClientCredentials credentials = ClientCredentials()
-  credentials.c_credentials = grpc.grpc_service_account_jwt_access_credentials_create(
-      json_key, token_lifetime.c_time)
+  credentials.c_credentials = (
+      grpc.grpc_service_account_jwt_access_credentials_create(
+          json_key, token_lifetime.c_time, NULL))
   credentials.references.append(json_key)
   return credentials
 
-def client_credentials_refresh_token(json_refresh_token):
+def client_credentials_google_refresh_token(json_refresh_token):
   if isinstance(json_refresh_token, bytes):
     pass
   elif isinstance(json_refresh_token, basestring):
@@ -128,12 +130,12 @@ def client_credentials_refresh_token(json_refresh_token):
   else:
     raise TypeError("expected json_refresh_token to be str or bytes")
   cdef ClientCredentials credentials = ClientCredentials()
-  credentials.c_credentials = grpc.grpc_refresh_token_credentials_create(
-      json_refresh_token)
+  credentials.c_credentials = grpc.grpc_google_refresh_token_credentials_create(
+      json_refresh_token, NULL)
   credentials.references.append(json_refresh_token)
   return credentials
 
-def client_credentials_iam(authorization_token, authority_selector):
+def client_credentials_google_iam(authorization_token, authority_selector):
   if isinstance(authorization_token, bytes):
     pass
   elif isinstance(authorization_token, basestring):
@@ -147,13 +149,14 @@ def client_credentials_iam(authorization_token, authority_selector):
   else:
     raise TypeError("expected authority_selector to be str or bytes")
   cdef ClientCredentials credentials = ClientCredentials()
-  credentials.c_credentials = grpc.grpc_iam_credentials_create(
-      authorization_token, authority_selector)
+  credentials.c_credentials = grpc.grpc_google_iam_credentials_create(
+      authorization_token, authority_selector, NULL)
   credentials.references.append(authorization_token)
   credentials.references.append(authority_selector)
   return credentials
 
-def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs):
+def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
+                           bint force_client_auth):
   if pem_root_certs is None:
     pass
   elif isinstance(pem_root_certs, bytes):
@@ -181,7 +184,6 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs):
         (<records.SslPemKeyCertPair>pem_key_cert_pairs[i]).c_pair)
   credentials.c_credentials = grpc.grpc_ssl_server_credentials_create(
       pem_root_certs, credentials.c_ssl_pem_key_cert_pairs,
-      credentials.c_ssl_pem_key_cert_pairs_count
-  )
+      credentials.c_ssl_pem_key_cert_pairs_count, force_client_auth, NULL)
   return credentials
 

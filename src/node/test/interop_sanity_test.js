@@ -71,7 +71,7 @@ describe('Interop tests', function() {
     interop_client.runTest(port, name_override, 'server_streaming', true, true,
                            done);
   });
-  it.only('should pass ping_pong', function(done) {
+  it('should pass ping_pong', function(done) {
     interop_client.runTest(port, name_override, 'ping_pong', true, true, done);
   });
   it('should pass empty_stream', function(done) {

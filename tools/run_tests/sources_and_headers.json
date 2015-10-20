@@ -10,34 +10,6 @@
     ], 
     "headers": [], 
     "language": "c", 
-    "name": "alarm_heap_test", 
-    "src": [
-      "test/core/iomgr/alarm_heap_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "alarm_list_test", 
-    "src": [
-      "test/core/iomgr/alarm_list_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
     "name": "alpn_test", 
     "src": [
       "test/core/transport/chttp2/alpn_test.c"
@@ -966,6 +938,34 @@
     "name": "timeout_encoding_test", 
     "src": [
       "test/core/transport/chttp2/timeout_encoding_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "timer_heap_test", 
+    "src": [
+      "test/core/iomgr/timer_heap_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "timer_list_test", 
+    "src": [
+      "test/core/iomgr/timer_list_test.c"
     ]
   }, 
   {
@@ -12161,6 +12161,7 @@
       "include/grpc/support/tls_msvc.h", 
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
+      "src/core/profiling/timers.h", 
       "src/core/support/block_annotate.h", 
       "src/core/support/env.h", 
       "src/core/support/file.h", 
@@ -12201,6 +12202,9 @@
       "include/grpc/support/tls_msvc.h", 
       "include/grpc/support/tls_pthread.h", 
       "include/grpc/support/useful.h", 
+      "src/core/profiling/basic_timers.c", 
+      "src/core/profiling/stap_timers.c", 
+      "src/core/profiling/timers.h", 
       "src/core/support/alloc.c", 
       "src/core/support/block_annotate.h", 
       "src/core/support/cmdline.c", 
@@ -12244,6 +12248,7 @@
       "src/core/support/thd_win32.c", 
       "src/core/support/time.c", 
       "src/core/support/time_posix.c", 
+      "src/core/support/time_precise.c", 
       "src/core/support/time_precise.h", 
       "src/core/support/time_win32.c", 
       "src/core/support/tls_pthread.c"
@@ -12310,9 +12315,6 @@
       "src/core/httpcli/format_request.h", 
       "src/core/httpcli/httpcli.h", 
       "src/core/httpcli/parser.h", 
-      "src/core/iomgr/alarm.h", 
-      "src/core/iomgr/alarm_heap.h", 
-      "src/core/iomgr/alarm_internal.h", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
@@ -12340,6 +12342,9 @@
       "src/core/iomgr/tcp_server.h", 
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/timer.h", 
+      "src/core/iomgr/timer_heap.h", 
+      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
@@ -12350,7 +12355,6 @@
       "src/core/json/json_common.h", 
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
-      "src/core/profiling/timers.h", 
       "src/core/security/auth_filters.h", 
       "src/core/security/base64.h", 
       "src/core/security/credentials.h", 
@@ -12486,11 +12490,6 @@
       "src/core/httpcli/httpcli_security_connector.c", 
       "src/core/httpcli/parser.c", 
       "src/core/httpcli/parser.h", 
-      "src/core/iomgr/alarm.c", 
-      "src/core/iomgr/alarm.h", 
-      "src/core/iomgr/alarm_heap.c", 
-      "src/core/iomgr/alarm_heap.h", 
-      "src/core/iomgr/alarm_internal.h", 
       "src/core/iomgr/closure.c", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.c", 
@@ -12548,6 +12547,11 @@
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.c", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/timer.c", 
+      "src/core/iomgr/timer.h", 
+      "src/core/iomgr/timer_heap.c", 
+      "src/core/iomgr/timer_heap.h", 
+      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.c", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
@@ -12569,9 +12573,6 @@
       "src/core/json/json_string.c", 
       "src/core/json/json_writer.c", 
       "src/core/json/json_writer.h", 
-      "src/core/profiling/basic_timers.c", 
-      "src/core/profiling/stap_timers.c", 
-      "src/core/profiling/timers.h", 
       "src/core/security/auth_filters.h", 
       "src/core/security/base64.c", 
       "src/core/security/base64.h", 
@@ -12817,9 +12818,6 @@
       "src/core/httpcli/format_request.h", 
       "src/core/httpcli/httpcli.h", 
       "src/core/httpcli/parser.h", 
-      "src/core/iomgr/alarm.h", 
-      "src/core/iomgr/alarm_heap.h", 
-      "src/core/iomgr/alarm_internal.h", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
@@ -12847,6 +12845,9 @@
       "src/core/iomgr/tcp_server.h", 
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/timer.h", 
+      "src/core/iomgr/timer_heap.h", 
+      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_pipe.h", 
       "src/core/iomgr/wakeup_fd_posix.h", 
@@ -12857,7 +12858,6 @@
       "src/core/json/json_common.h", 
       "src/core/json/json_reader.h", 
       "src/core/json/json_writer.h", 
-      "src/core/profiling/timers.h", 
       "src/core/statistics/census_interface.h", 
       "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/api_trace.h", 
@@ -12978,11 +12978,6 @@
       "src/core/httpcli/httpcli.h", 
       "src/core/httpcli/parser.c", 
       "src/core/httpcli/parser.h", 
-      "src/core/iomgr/alarm.c", 
-      "src/core/iomgr/alarm.h", 
-      "src/core/iomgr/alarm_heap.c", 
-      "src/core/iomgr/alarm_heap.h", 
-      "src/core/iomgr/alarm_internal.h", 
       "src/core/iomgr/closure.c", 
       "src/core/iomgr/closure.h", 
       "src/core/iomgr/endpoint.c", 
@@ -13040,6 +13035,11 @@
       "src/core/iomgr/tcp_windows.h", 
       "src/core/iomgr/time_averaged_stats.c", 
       "src/core/iomgr/time_averaged_stats.h", 
+      "src/core/iomgr/timer.c", 
+      "src/core/iomgr/timer.h", 
+      "src/core/iomgr/timer_heap.c", 
+      "src/core/iomgr/timer_heap.h", 
+      "src/core/iomgr/timer_internal.h", 
       "src/core/iomgr/udp_server.c", 
       "src/core/iomgr/udp_server.h", 
       "src/core/iomgr/wakeup_fd_eventfd.c", 
@@ -13061,9 +13061,6 @@
       "src/core/json/json_string.c", 
       "src/core/json/json_writer.c", 
       "src/core/json/json_writer.h", 
-      "src/core/profiling/basic_timers.c", 
-      "src/core/profiling/stap_timers.c", 
-      "src/core/profiling/timers.h", 
       "src/core/statistics/census_interface.h", 
       "src/core/statistics/census_rpc_stats.h", 
       "src/core/surface/api_trace.c", 

@@ -41,10 +41,11 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/fd_posix.h"
-#include "src/core/support/block_annotate.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/iomgr/fd_posix.h"
+#include "src/core/support/block_annotate.h"
+#include "src/core/profiling/timers.h"
 
 typedef struct wakeup_fd_hdl {
   grpc_wakeup_fd wakeup_fd;
@@ -182,9 +183,11 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
 
   /* TODO(vpai): Consider first doing a 0 timeout poll here to avoid
      even going into the blocking annotation if possible */
+  GPR_TIMER_BEGIN("poll", 0);
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   poll_rv = grpc_poll_function(pfds, 2, timeout_ms);
   GRPC_SCHEDULING_END_BLOCKING_REGION;
+  GPR_TIMER_END("poll", 0);
 
   if (poll_rv < 0) {
     if (errno != EINTR) {

@@ -319,8 +319,9 @@ static tsi_result peer_from_x509(X509 *cert, int include_certificate_type,
   /* TODO(jboeuf): Maybe add more properties. */
   GENERAL_NAMES *subject_alt_names =
       X509_get_ext_d2i(cert, NID_subject_alt_name, 0, 0);
-  int subject_alt_name_count =
-      (subject_alt_names != NULL) ? sk_GENERAL_NAME_num(subject_alt_names) : 0;
+  int subject_alt_name_count = (subject_alt_names != NULL)
+                                   ? (int)sk_GENERAL_NAME_num(subject_alt_names)
+                                   : 0;
   size_t property_count;
   tsi_result result;
   GPR_ASSERT(subject_alt_name_count >= 0);
@@ -358,7 +359,7 @@ static void log_ssl_error_stack(void) {
   unsigned long err;
   while ((err = ERR_get_error()) != 0) {
     char details[256];
-    ERR_error_string_n(err, details, sizeof(details));
+    ERR_error_string_n((uint32_t)err, details, sizeof(details));
     gpr_log(GPR_ERROR, "%s", details);
   }
 }
@@ -668,7 +669,7 @@ static tsi_result ssl_protector_protect(tsi_frame_protector *self,
   tsi_result result = TSI_OK;
 
   /* First see if we have some pending data in the SSL BIO. */
-  int pending_in_ssl = BIO_pending(impl->from_ssl);
+  int pending_in_ssl = (int)BIO_pending(impl->from_ssl);
   if (pending_in_ssl > 0) {
     *unprotected_bytes_size = 0;
     GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
@@ -726,7 +727,7 @@ static tsi_result ssl_protector_protect_flush(
     impl->buffer_offset = 0;
   }
 
-  pending = BIO_pending(impl->from_ssl);
+  pending = (int)BIO_pending(impl->from_ssl);
   GPR_ASSERT(pending >= 0);
   *still_pending_size = (size_t)pending;
   if (*still_pending_size == 0) return TSI_OK;
@@ -739,7 +740,7 @@ static tsi_result ssl_protector_protect_flush(
     return TSI_INTERNAL_ERROR;
   }
   *protected_output_frames_size = (size_t)read_from_ssl;
-  pending = BIO_pending(impl->from_ssl);
+  pending = (int)BIO_pending(impl->from_ssl);
   GPR_ASSERT(pending >= 0);
   *still_pending_size = (size_t)pending;
   return TSI_OK;
