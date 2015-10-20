@@ -597,10 +597,6 @@ function Server(options) {
       throw new Error('Server is already running');
     }
     this.started = true;
-    console.log('Server starting');
-    _.each(handlers, function(handler, handler_name) {
-      console.log('Serving', handler_name);
-    });
     server.start();
     /**
      * Handles the SERVER_RPC_NEW event. If there is a handler associated with
