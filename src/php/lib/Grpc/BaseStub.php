@@ -123,7 +123,7 @@ class BaseStub {
    * Close the communication channel associated with this stub
    */
   public function close() {
-    $channel->close();
+    $this->channel->close();
   }
 
   /**
