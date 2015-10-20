@@ -350,7 +350,7 @@ def add_auth_options(language, test_case, cmdline, env):
   default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
 
   if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
-    if language in ['csharp', 'node', 'php', 'ruby']:
+    if language in ['csharp', 'node', 'php', 'python', 'ruby']:
       env['GOOGLE_APPLICATION_CREDENTIALS'] = key_filepath
     else:
       cmdline += [key_file_arg]

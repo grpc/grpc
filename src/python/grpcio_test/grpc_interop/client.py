@@ -71,12 +71,17 @@ def _oauth_access_token(args):
 def _stub(args):
   if args.oauth_scope:
     if args.test_case == 'oauth2_auth_token':
+      # TODO(jtattermusch): This testcase sets the auth metadata key-value
+      # manually, which also means that the user would need to do the same
+      # thing every time he/she would like to use and out of band oauth token.
+      # The transformer function that produces the metadata key-value from
+      # the access token should be provided by gRPC auth library.
       access_token = _oauth_access_token(args)
       metadata_transformer = lambda x: [
-          ('Authorization', 'Bearer %s' % access_token)]
+          ('authorization', 'Bearer %s' % access_token)]
     else:
       metadata_transformer = lambda x: [
-          ('Authorization', 'Bearer %s' % _oauth_access_token(args))]
+          ('authorization', 'Bearer %s' % _oauth_access_token(args))]
   else:
     metadata_transformer = lambda x: []
   if args.use_tls:
