@@ -264,6 +264,7 @@ static void chttp2_init_client_micro_fullstack(grpc_end2end_test_fixture *f,
   GPR_ASSERT(conn_state == GRPC_CHANNEL_IDLE);
   GPR_ASSERT(ffd->sniffed_subchannel != NULL);
   f->client = grpc_client_uchannel_create(ffd->sniffed_subchannel, client_args);
+  grpc_client_uchannel_set_subchannel(f->client, ffd->sniffed_subchannel);
   gpr_log(GPR_INFO, "CHANNEL WRAPPING SUBCHANNEL: %p(%p)", f->client,
           ffd->sniffed_subchannel);
 

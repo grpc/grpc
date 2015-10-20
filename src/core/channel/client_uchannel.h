@@ -39,12 +39,8 @@
 
 #define GRPC_MICROCHANNEL_SUBCHANNEL_ARG "grpc.microchannel_subchannel_key"
 
-/* XXX A client channel is a channel that begins disconnected, and can connect
-   to some endpoint on demand. If that endpoint disconnects, it will be
-   connected to again later.
-
-   Calls on a disconnected client channel are queued until a connection is
-   established. */
+/* A client microchannel (aka uchannel) is a channel wrapping a subchannel, for
+ * the purposes of lightweight RPC communications from within the core.*/
 
 extern const grpc_channel_filter grpc_client_uchannel_filter;
 
@@ -65,8 +61,10 @@ void grpc_client_uchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
                                                grpc_channel_element *channel,
                                                grpc_pollset *pollset);
 
-/** XXX args determine if we are using census, compression */
 grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
                                           grpc_channel_args *args);
+
+void grpc_client_uchannel_set_subchannel(grpc_channel *uchannel,
+                                         grpc_subchannel *subchannel);
 
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_MICROCHANNEL_H */
