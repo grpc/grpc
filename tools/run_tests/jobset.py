@@ -130,6 +130,14 @@ def which(filename):
   raise Exception('%s not found' % filename)
 
 
+def _filter_stdout(stdout):
+  """Filters out nonprintable and XML-illegal characters from stdout."""
+  # keep whitespaces but remove formfeed and vertical tab characters
+  # that make XML report unparseable.
+  return filter(lambda x: x in string.printable and x != '\f' and x != '\v',
+                stdout.decode(errors='ignore'))
+
+
 class JobSpec(object):
   """Specifies what to run for a job."""
 
@@ -206,7 +214,7 @@ class Job(object):
       elapsed = time.time() - self._start
       self._tempfile.seek(0)
       stdout = self._tempfile.read()
-      filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))
+      filtered_stdout = _filter_stdout(stdout)
       # TODO: looks like jenkins master is slow because parsing the junit results XMLs is not
       # implemented efficiently. This is an experiment to workaround the issue by making sure
       # results.xml file is small enough.
@@ -228,7 +236,7 @@ class Job(object):
                 self._spec.shortname, self._process.returncode, self._process.pid),
                 stdout, do_newline=True)
           if self._xml_test is not None:
-            ET.SubElement(self._xml_test, 'failure', message='Failure').text
+            ET.SubElement(self._xml_test, 'failure', message='Failure')
       else:
         self._state = _SUCCESS
         message('PASSED', '%s [time=%.1fsec; retries=%d;%d]' % (
@@ -239,7 +247,7 @@ class Job(object):
     elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
       self._tempfile.seek(0)
       stdout = self._tempfile.read()
-      filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))
+      filtered_stdout = _filter_stdout(stdout)
       if self._timeout_retries < self._spec.timeout_retries:
         message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
         self._timeout_retries += 1
