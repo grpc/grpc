@@ -300,7 +300,7 @@ static void print_histogram(gpr_histogram *histogram) {
 
 static double now(void) {
   gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
-  return 1e9 * tv.tv_sec + tv.tv_nsec;
+  return 1e9 * (double)tv.tv_sec + (double)tv.tv_nsec;
 }
 
 static void client_thread(thread_args *args) {
@@ -593,23 +593,23 @@ static int run_all_benchmarks(size_t msg_size) {
   int error = 0;
   size_t i;
   for (i = 0; i < GPR_ARRAY_SIZE(test_strategies); ++i) {
-    test_strategy *test_strategy = &test_strategies[i];
+    test_strategy *strategy = &test_strategies[i];
     size_t j;
     for (j = 0; j < GPR_ARRAY_SIZE(socket_types); ++j) {
       thread_args *client_args = malloc(sizeof(thread_args));
       thread_args *server_args = malloc(sizeof(thread_args));
       char *socket_type = socket_types[j];
 
-      client_args->read_bytes = test_strategy->read_strategy;
+      client_args->read_bytes = strategy->read_strategy;
       client_args->write_bytes = blocking_write_bytes;
-      client_args->setup = test_strategy->setup;
+      client_args->setup = strategy->setup;
       client_args->msg_size = msg_size;
-      client_args->strategy_name = test_strategy->name;
-      server_args->read_bytes = test_strategy->read_strategy;
+      client_args->strategy_name = strategy->name;
+      server_args->read_bytes = strategy->read_strategy;
       server_args->write_bytes = blocking_write_bytes;
-      server_args->setup = test_strategy->setup;
+      server_args->setup = strategy->setup;
       server_args->msg_size = msg_size;
-      server_args->strategy_name = test_strategy->name;
+      server_args->strategy_name = strategy->name;
       error = run_benchmark(socket_type, client_args, server_args);
       if (error < 0) {
         return error;
@@ -626,7 +626,7 @@ int main(int argc, char **argv) {
   char *read_strategy = NULL;
   char *socket_type = NULL;
   size_t i;
-  const test_strategy *test_strategy = NULL;
+  const test_strategy *strategy = NULL;
   int error = 0;
 
   gpr_cmdline *cmdline =
@@ -660,22 +660,22 @@ int main(int argc, char **argv) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(test_strategies); ++i) {
     if (strcmp(test_strategies[i].name, read_strategy) == 0) {
-      test_strategy = &test_strategies[i];
+      strategy = &test_strategies[i];
     }
   }
-  if (test_strategy == NULL) {
+  if (strategy == NULL) {
     fprintf(stderr, "Invalid read strategy %s\n", read_strategy);
     return -1;
   }
 
-  client_args->read_bytes = test_strategy->read_strategy;
+  client_args->read_bytes = strategy->read_strategy;
   client_args->write_bytes = blocking_write_bytes;
-  client_args->setup = test_strategy->setup;
+  client_args->setup = strategy->setup;
   client_args->msg_size = (size_t)msg_size;
   client_args->strategy_name = read_strategy;
-  server_args->read_bytes = test_strategy->read_strategy;
+  server_args->read_bytes = strategy->read_strategy;
   server_args->write_bytes = blocking_write_bytes;
-  server_args->setup = test_strategy->setup;
+  server_args->setup = strategy->setup;
   server_args->msg_size = (size_t)msg_size;
   server_args->strategy_name = read_strategy;
 
