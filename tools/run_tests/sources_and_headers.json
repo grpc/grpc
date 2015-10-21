@@ -13656,8 +13656,12 @@
       "test/cpp/qps/stats.h", 
       "test/cpp/qps/timer.h", 
       "test/cpp/util/benchmark_config.h", 
-      "test/proto/qpstest.grpc.pb.h", 
-      "test/proto/qpstest.pb.h"
+      "test/proto/messages.grpc.pb.h", 
+      "test/proto/messages.pb.h", 
+      "test/proto/perf_control.grpc.pb.h", 
+      "test/proto/perf_control.pb.h", 
+      "test/proto/perf_stats.grpc.pb.h", 
+      "test/proto/perf_stats.pb.h"
     ], 
     "language": "c++", 
     "name": "qps", 

@@ -52,7 +52,7 @@
 #include <grpc++/security/server_credentials.h>
 
 #include "test/core/util/grpc_profiler.h"
-#include "test/proto/qpstest.pb.h"
+#include "test/proto/perf_control.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"
@@ -94,8 +94,8 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
   explicit WorkerImpl(int server_port)
       : server_port_(server_port), acquired_(false) {}
 
-  Status RunTest(ServerContext* ctx,
-                 ServerReaderWriter<ClientStatus, ClientArgs>* stream)
+  Status RunClient(ServerContext* ctx,
+		   ServerReaderWriter<ClientStatus, ClientArgs>* stream)
       GRPC_OVERRIDE {
     InstanceGuard g(this);
     if (!g.Acquired()) {
@@ -103,7 +103,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
     }
 
     grpc_profiler_start("qps_client.prof");
-    Status ret = RunTestBody(ctx, stream);
+    Status ret = RunClientBody(ctx, stream);
     grpc_profiler_stop();
     return ret;
   }
@@ -154,8 +154,8 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
     acquired_ = false;
   }
 
-  Status RunTestBody(ServerContext* ctx,
-                     ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
+  Status RunClientBody(ServerContext* ctx,
+		       ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
     ClientArgs args;
     if (!stream->Read(&args)) {
       return Status(StatusCode::INVALID_ARGUMENT, "");

@@ -40,7 +40,7 @@
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
-#include "test/proto/qpstest.grpc.pb.h"
+#include "test/proto/perf_control.grpc.pb.h"
 #include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {

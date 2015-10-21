@@ -35,7 +35,7 @@
 #define TEST_QPS_SERVER_H
 
 #include "test/cpp/qps/timer.h"
-#include "test/proto/qpstest.grpc.pb.h"
+#include "test/proto/perf_control.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
