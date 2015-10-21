@@ -54,14 +54,15 @@
       to run on all cores).
    4) Each thread checks what core it is running on, and marks that core
       as "used" in the test.
-   5) Check that all cores were "used"
+   5) Count number of "used" cores.
 
    The test will fail if:
    1) gpr_cpu_num_cores() == 0
-   2) The result of gpr_cpu_current_cpu() >= gpr_cpu_num_cores()
-   3) Not all cores are used/seen in the test. If a system does not exhibit
-      this property (e.g. some cores reserved/unusable), then this condition
-      will have to be rethought.
+   2) Any result from gpr_cpu_current_cpu() >= gpr_cpu_num_cores()
+   3) Ideally, we would fail if not all cores were seen as used. Unfortunately,
+      this is only probabilistically true, and depends on the OS, it's
+      scheduler, etc. So we just print out an indication of how many were seen;
+      hopefully developers can use this to sanity check their system.
 */
 
 /* Status shared across threads */
@@ -92,7 +93,6 @@ static void worker_thread(void *arg) {
     gpr_mu_unlock(&ct->mu);
   }
   gpr_mu_lock(&ct->mu);
-  fprintf(stderr, "thread done on core %d\n", cpu);
   ct->r = r; /* make it look like we care about r's value... */
   ct->nthreads--;
   if (ct->nthreads == 0) {
@@ -104,11 +104,11 @@ static void worker_thread(void *arg) {
 
 static void cpu_test(void) {
   gpr_uint32 i;
+  int cores_seen = 0;
   struct cpu_test ct;
   gpr_thd_id thd;
   ct.ncores = gpr_cpu_num_cores();
   GPR_ASSERT(ct.ncores > 0);
-  fprintf(stderr, "#cores = %d\n", ct.ncores);
   ct.nthreads = (int)ct.ncores * 3;
   ct.used = gpr_malloc(ct.ncores * sizeof(int));
   memset(ct.used, 0, ct.ncores * sizeof(int));
@@ -124,8 +124,11 @@ static void cpu_test(void) {
   }
   gpr_mu_unlock(&ct.mu);
   for (i = 0; i < ct.ncores; i++) {
-    GPR_ASSERT(ct.used[i]);
+    if (ct.used[i]) {
+      cores_seen++;
+    }
   }
+  fprintf(stderr, "Saw %d/%d cores\n", cores_seen, ct.ncores);
 }
 
 int main(int argc, char *argv[]) {
