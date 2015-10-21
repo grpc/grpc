@@ -114,7 +114,9 @@ class BaseStub {
       return true;
     }
     if ($new_state == \Grpc\CHANNEL_FATAL_FAILURE) {
+      // @codeCoverageIgnoreStart
       throw new \Exception('Failed to connect to server');
+      // @codeCoverageIgnoreEnd
     }
     return false;
   }
@@ -132,7 +134,7 @@ class BaseStub {
   private function _get_jwt_aud_uri($method) {
     $last_slash_idx = strrpos($method, '/');
     if ($last_slash_idx === false) {
-      return false;
+      throw new \InvalidArgumentException('service name must have a slash');
     }
     $service_name = substr($method, 0, $last_slash_idx);
     return "https://" . $this->hostname . $service_name;
