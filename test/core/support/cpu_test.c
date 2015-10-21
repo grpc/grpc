@@ -123,12 +123,14 @@ static void cpu_test(void) {
     gpr_cv_wait(&ct.done_cv, &ct.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&ct.mu);
+  fprintf(stderr, "Saw cores [");
   for (i = 0; i < ct.ncores; i++) {
     if (ct.used[i]) {
+      fprintf(stderr, "%d,", i);
       cores_seen++;
     }
   }
-  fprintf(stderr, "Saw %d/%d cores\n", cores_seen, ct.ncores);
+  fprintf(stderr, "] (%d/%d)\n", cores_seen, ct.ncores);
 }
 
 int main(int argc, char *argv[]) {
