@@ -131,6 +131,7 @@ static void cpu_test(void) {
     }
   }
   fprintf(stderr, "] (%d/%d)\n", cores_seen, ct.ncores);
+  gpr_free(ct.used);
 }
 
 int main(int argc, char *argv[]) {
