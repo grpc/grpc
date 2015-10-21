@@ -196,7 +196,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     result_client_config.set_host(workers[i + num_servers]);
     *args.mutable_setup() = client_config;
     clients[i].stream =
-        clients[i].stub->RunTest(runsc::AllocContext(&contexts, deadline));
+        clients[i].stub->RunClient(runsc::AllocContext(&contexts, deadline));
     GPR_ASSERT(clients[i].stream->Write(args));
     ClientStatus init_status;
     GPR_ASSERT(clients[i].stream->Read(&init_status));
