@@ -91,9 +91,9 @@ int main(int argc, char **argv) {
   grpc_pollset_init(&sync.pollset);
   sync.is_done = 0;
 
-  grpc_call_credentials_get_request_metadata(&exec_ctx, creds->call_creds,
-                                             &sync.pollset, service_url,
-                                             on_metadata_response, &sync);
+  grpc_call_credentials_get_request_metadata(
+      &exec_ctx, ((grpc_composite_channel_credentials *)creds)->call_creds,
+      &sync.pollset, service_url, on_metadata_response, &sync);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   while (!sync.is_done) {

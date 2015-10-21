@@ -100,16 +100,15 @@ typedef struct {
   void (*destruct)(grpc_channel_credentials *c);
 
   grpc_security_status (*create_security_connector)(
-      grpc_channel_credentials *c, const char *target,
-      const grpc_channel_args *args, grpc_channel_security_connector **sc,
-      grpc_channel_args **new_args);
+      grpc_channel_credentials *c, grpc_call_credentials *call_creds,
+      const char *target, const grpc_channel_args *args,
+      grpc_channel_security_connector **sc, grpc_channel_args **new_args);
 } grpc_channel_credentials_vtable;
 
 struct grpc_channel_credentials {
   const grpc_channel_credentials_vtable *vtable;
   const char *type;
   gpr_refcount refcount;
-  grpc_call_credentials *call_creds;
 };
 
 grpc_channel_credentials *grpc_channel_credentials_ref(
@@ -188,7 +187,7 @@ typedef struct {
   size_t num_creds;
 } grpc_call_credentials_array;
 
-const grpc_call_credentials_array *grpc_composite_credentials_get_credentials(
+const grpc_call_credentials_array *grpc_composite_call_credentials_get_credentials(
     grpc_call_credentials *composite_creds);
 
 /* Returns creds if creds is of the specified type or the inner creds of the
@@ -273,6 +272,14 @@ typedef struct {
   grpc_ssl_server_config config;
 } grpc_ssl_server_credentials;
 
+/* -- Channel composite credentials. -- */
+
+typedef struct {
+  grpc_channel_credentials base;
+  grpc_channel_credentials *inner_creds;
+  grpc_call_credentials *call_creds;
+} grpc_composite_channel_credentials;
+
 /* -- Jwt credentials -- */
 
 typedef struct {
@@ -349,7 +356,7 @@ typedef struct {
 typedef struct {
   grpc_call_credentials base;
   grpc_call_credentials_array inner;
-} grpc_composite_credentials;
+} grpc_composite_call_credentials;
 
 /* -- Plugin credentials. -- */
 
