@@ -34,7 +34,7 @@ set -e
 # Clone just the grpc-go source code without any dependencies.
 # We are cloning from a local git repo that contains the right revision
 # to test instead of using "go get" to download from Github directly.
-git clone --recursive /var/local/jenkins/grpc-go src/gooogle.golang.org/grpc
+git clone --recursive /var/local/jenkins/grpc-go src/google.golang.org/grpc
 
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true
