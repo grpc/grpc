@@ -51,20 +51,18 @@ grpc_client_config *grpc_client_config_create() {
 
 void grpc_client_config_ref(grpc_client_config *c) { gpr_ref(&c->refs); }
 
-void grpc_client_config_unref(grpc_client_config *c) {
+void grpc_client_config_unref(grpc_exec_ctx *exec_ctx, grpc_client_config *c) {
   if (gpr_unref(&c->refs)) {
-    GRPC_LB_POLICY_UNREF(c->lb_policy, "client_config");
+    GRPC_LB_POLICY_UNREF(exec_ctx, c->lb_policy, "client_config");
     gpr_free(c);
   }
 }
 
 void grpc_client_config_set_lb_policy(grpc_client_config *c,
                                       grpc_lb_policy *lb_policy) {
+  GPR_ASSERT(c->lb_policy == NULL);
   if (lb_policy) {
     GRPC_LB_POLICY_REF(lb_policy, "client_config");
-  }
-  if (c->lb_policy) {
-    GRPC_LB_POLICY_UNREF(c->lb_policy, "client_config");
   }
   c->lb_policy = lb_policy;
 }

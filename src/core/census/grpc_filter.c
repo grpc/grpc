@@ -48,65 +48,67 @@
 
 typedef struct call_data {
   census_op_id op_id;
-  census_context* ctxt;
+  census_context *ctxt;
   gpr_timespec start_ts;
   int error;
 
   /* recv callback */
-  grpc_stream_op_buffer* recv_ops;
-  grpc_iomgr_closure* on_done_recv;
+  grpc_stream_op_buffer *recv_ops;
+  grpc_closure *on_done_recv;
 } call_data;
 
 typedef struct channel_data {
-  grpc_mdstr* path_str; /* pointer to meta data str with key == ":path" */
+  grpc_mdstr *path_str; /* pointer to meta data str with key == ":path" */
 } channel_data;
 
-static void extract_and_annotate_method_tag(grpc_stream_op_buffer* sopb,
-                                            call_data* calld,
-                                            channel_data* chand) {
-  grpc_linked_mdelem* m;
+static void extract_and_annotate_method_tag(grpc_stream_op_buffer *sopb,
+                                            call_data *calld,
+                                            channel_data *chand) {
+  grpc_linked_mdelem *m;
   size_t i;
   for (i = 0; i < sopb->nops; i++) {
-    grpc_stream_op* op = &sopb->ops[i];
+    grpc_stream_op *op = &sopb->ops[i];
     if (op->type != GRPC_OP_METADATA) continue;
     for (m = op->data.metadata.list.head; m != NULL; m = m->next) {
       if (m->md->key == chand->path_str) {
         gpr_log(GPR_DEBUG, "%s",
-                (const char*)GPR_SLICE_START_PTR(m->md->value->slice));
+                (const char *)GPR_SLICE_START_PTR(m->md->value->slice));
         /* Add method tag here */
       }
     }
   }
 }
 
-static void client_mutate_op(grpc_call_element* elem,
-                             grpc_transport_stream_op* op) {
-  call_data* calld = elem->call_data;
-  channel_data* chand = elem->channel_data;
+static void client_mutate_op(grpc_call_element *elem,
+                             grpc_transport_stream_op *op) {
+  call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   if (op->send_ops) {
     extract_and_annotate_method_tag(op->send_ops, calld, chand);
   }
 }
 
-static void client_start_transport_op(grpc_call_element* elem,
-                                      grpc_transport_stream_op* op) {
+static void client_start_transport_op(grpc_exec_ctx *exec_ctx,
+                                      grpc_call_element *elem,
+                                      grpc_transport_stream_op *op) {
   client_mutate_op(elem, op);
-  grpc_call_next_op(elem, op);
+  grpc_call_next_op(exec_ctx, elem, op);
 }
 
-static void server_on_done_recv(void* ptr, int success) {
-  grpc_call_element* elem = ptr;
-  call_data* calld = elem->call_data;
-  channel_data* chand = elem->channel_data;
+static void server_on_done_recv(grpc_exec_ctx *exec_ctx, void *ptr,
+                                int success) {
+  grpc_call_element *elem = ptr;
+  call_data *calld = elem->call_data;
+  channel_data *chand = elem->channel_data;
   if (success) {
     extract_and_annotate_method_tag(calld->recv_ops, calld, chand);
   }
-  calld->on_done_recv->cb(calld->on_done_recv->cb_arg, success);
+  calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, success);
 }
 
-static void server_mutate_op(grpc_call_element* elem,
-                             grpc_transport_stream_op* op) {
-  call_data* calld = elem->call_data;
+static void server_mutate_op(grpc_call_element *elem,
+                             grpc_transport_stream_op *op) {
+  call_data *calld = elem->call_data;
   if (op->recv_ops) {
     /* substitute our callback for the op callback */
     calld->recv_ops = op->recv_ops;
@@ -115,56 +117,65 @@ static void server_mutate_op(grpc_call_element* elem,
   }
 }
 
-static void server_start_transport_op(grpc_call_element* elem,
-                                      grpc_transport_stream_op* op) {
-  call_data* calld = elem->call_data;
+static void server_start_transport_op(grpc_exec_ctx *exec_ctx,
+                                      grpc_call_element *elem,
+                                      grpc_transport_stream_op *op) {
+  call_data *calld = elem->call_data;
   GPR_ASSERT((calld->op_id.upper != 0) || (calld->op_id.lower != 0));
   server_mutate_op(elem, op);
-  grpc_call_next_op(elem, op);
+  grpc_call_next_op(exec_ctx, elem, op);
 }
 
-static void client_init_call_elem(grpc_call_element* elem,
-                                  const void* server_transport_data,
-                                  grpc_transport_stream_op* initial_op) {
-  call_data* d = elem->call_data;
+static void client_init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  const void *server_transport_data,
+                                  grpc_transport_stream_op *initial_op) {
+  call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
+  memset(d, 0, sizeof(*d));
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
   if (initial_op) client_mutate_op(elem, initial_op);
 }
 
-static void client_destroy_call_elem(grpc_call_element* elem) {
-  call_data* d = elem->call_data;
+static void client_destroy_call_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_call_element *elem) {
+  call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
   /* TODO(hongyu): record rpc client stats and census_rpc_end_op here */
 }
 
-static void server_init_call_elem(grpc_call_element* elem,
-                                  const void* server_transport_data,
-                                  grpc_transport_stream_op* initial_op) {
-  call_data* d = elem->call_data;
+static void server_init_call_elem(grpc_exec_ctx *exec_ctx,
+                                  grpc_call_element *elem,
+                                  const void *server_transport_data,
+                                  grpc_transport_stream_op *initial_op) {
+  call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
+  memset(d, 0, sizeof(*d));
   d->start_ts = gpr_now(GPR_CLOCK_REALTIME);
   /* TODO(hongyu): call census_tracing_start_op here. */
-  grpc_iomgr_closure_init(d->on_done_recv, server_on_done_recv, elem);
+  grpc_closure_init(d->on_done_recv, server_on_done_recv, elem);
   if (initial_op) server_mutate_op(elem, initial_op);
 }
 
-static void server_destroy_call_elem(grpc_call_element* elem) {
-  call_data* d = elem->call_data;
+static void server_destroy_call_elem(grpc_exec_ctx *exec_ctx,
+                                     grpc_call_element *elem) {
+  call_data *d = elem->call_data;
   GPR_ASSERT(d != NULL);
   /* TODO(hongyu): record rpc server stats and census_tracing_end_op here */
 }
 
-static void init_channel_elem(grpc_channel_element* elem, grpc_channel* master,
-                              const grpc_channel_args* args, grpc_mdctx* mdctx,
+static void init_channel_elem(grpc_exec_ctx *exec_ctx,
+                              grpc_channel_element *elem, grpc_channel *master,
+                              const grpc_channel_args *args, grpc_mdctx *mdctx,
                               int is_first, int is_last) {
-  channel_data* chand = elem->channel_data;
+  channel_data *chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
-  chand->path_str = grpc_mdstr_from_string(mdctx, ":path", 0);
+  chand->path_str = grpc_mdstr_from_string(mdctx, ":path");
 }
 
-static void destroy_channel_elem(grpc_channel_element* elem) {
-  channel_data* chand = elem->channel_data;
+static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
+                                 grpc_channel_element *elem) {
+  channel_data *chand = elem->channel_data;
   GPR_ASSERT(chand != NULL);
   if (chand->path_str != NULL) {
     GRPC_MDSTR_UNREF(chand->path_str);

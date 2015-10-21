@@ -36,11 +36,15 @@
 
 #include <string.h>
 
-void grpc_call_details_init(grpc_call_details *cd) {
+#include "src/core/surface/api_trace.h"
+
+void grpc_call_details_init(grpc_call_details* cd) {
+  GRPC_API_TRACE("grpc_call_details_init(cd=%p)", 1, (cd));
   memset(cd, 0, sizeof(*cd));
 }
 
-void grpc_call_details_destroy(grpc_call_details *cd) {
+void grpc_call_details_destroy(grpc_call_details* cd) {
+  GRPC_API_TRACE("grpc_call_details_destroy(cd=%p)", 1, (cd));
   gpr_free(cd->method);
   gpr_free(cd->host);
 }

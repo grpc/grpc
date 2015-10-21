@@ -153,8 +153,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
         GPR_ASSERT((*req)->in_flight_);
         return true;
     }
-    gpr_log(GPR_ERROR, "Should never reach here");
-    abort();
+    GPR_UNREACHABLE_CODE(return false);
   }
 
   void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
@@ -252,28 +251,36 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
   grpc_completion_queue* cq_;
 };
 
-static grpc_server* CreateServer(int max_message_size) {
+static grpc_server* CreateServer(
+    int max_message_size, const grpc_compression_options& compression_options) {
+  grpc_arg args[2];
+  size_t args_idx = 0;
   if (max_message_size > 0) {
-    grpc_arg arg;
-    arg.type = GRPC_ARG_INTEGER;
-    arg.key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
-    arg.value.integer = max_message_size;
-    grpc_channel_args args = {1, &arg};
-    return grpc_server_create(&args, nullptr);
-  } else {
-    return grpc_server_create(nullptr, nullptr);
+    args[args_idx].type = GRPC_ARG_INTEGER;
+    args[args_idx].key = const_cast<char*>(GRPC_ARG_MAX_MESSAGE_LENGTH);
+    args[args_idx].value.integer = max_message_size;
+    args_idx++;
   }
+
+  args[args_idx].type = GRPC_ARG_INTEGER;
+  args[args_idx].key = const_cast<char*>(GRPC_COMPRESSION_ALGORITHM_STATE_ARG);
+  args[args_idx].value.integer = compression_options.enabled_algorithms_bitset;
+  args_idx++;
+
+  grpc_channel_args channel_args = {args_idx, args};
+  return grpc_server_create(&channel_args, nullptr);
 }
 
 Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
-               int max_message_size)
+               int max_message_size,
+               grpc_compression_options compression_options)
     : max_message_size_(max_message_size),
       started_(false),
       shutdown_(false),
       num_running_cb_(0),
       sync_methods_(new std::list<SyncRequest>),
       has_generic_service_(false),
-      server_(CreateServer(max_message_size)),
+      server_(CreateServer(max_message_size, compression_options)),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
   grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
@@ -317,7 +324,7 @@ bool Server::RegisterAsyncService(const grpc::string* host,
   GPR_ASSERT(service->server_ == nullptr &&
              "Can only register an asynchronous service against one server.");
   service->server_ = this;
-  service->request_args_ = new void*[service->method_count_];
+  service->request_args_ = new void* [service->method_count_];
   for (size_t i = 0; i < service->method_count_; ++i) {
     void* tag = grpc_server_register_method(server_, service->method_names_[i],
                                             host ? host->c_str() : nullptr);
@@ -533,6 +540,7 @@ void Server::ScheduleCallback() {
 void Server::RunRpc() {
   // Wait for one more incoming rpc.
   bool ok;
+  GPR_TIMER_SCOPE("Server::RunRpc", 0);
   auto* mrd = SyncRequest::Wait(&cq_, &ok);
   if (mrd) {
     ScheduleCallback();
@@ -548,6 +556,7 @@ void Server::RunRpc() {
           mrd->TeardownRequest();
         }
       }
+      GPR_TIMER_SCOPE("cd.Run()", 0);
       cd.Run();
     }
   }

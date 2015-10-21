@@ -42,23 +42,23 @@
 #include "src/core/profiling/stap_probes.h"
 
 /* Latency profiler API implementation. */
-void grpc_timer_add_mark(int tag, const char* tagstr, void* id,
-                         const char* file, int line) {
+void gpr_timer_add_mark(int tag, const char *tagstr, void *id, const char *file,
+                        int line) {
   _STAP_ADD_MARK(tag);
 }
 
-void grpc_timer_add_important_mark(int tag, const char* tagstr, void* id,
-                                   const char* file, int line) {
+void gpr_timer_add_important_mark(int tag, const char *tagstr, void *id,
+                                  const char *file, int line) {
   _STAP_ADD_IMPORTANT_MARK(tag);
 }
 
-void grpc_timer_begin(int tag, const char* tagstr, void* id, const char* file,
-                      int line) {
+void gpr_timer_begin(int tag, const char *tagstr, void *id, const char *file,
+                     int line) {
   _STAP_TIMING_NS_BEGIN(tag);
 }
 
-void grpc_timer_end(int tag, const char* tagstr, void* id, const char* file,
-                    int line) {
+void gpr_timer_end(int tag, const char *tagstr, void *id, const char *file,
+                   int line) {
   _STAP_TIMING_NS_END(tag);
 }
 

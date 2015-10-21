@@ -52,7 +52,7 @@
 #include <grpc++/security/server_credentials.h>
 
 #include "test/core/util/grpc_profiler.h"
-#include "test/cpp/qps/qpstest.pb.h"
+#include "test/proto/qpstest.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"
@@ -229,7 +229,7 @@ QpsWorker::QpsWorker(int driver_port, int server_port) {
 
   gpr_free(server_address);
 
-  server_ = std::move(builder.BuildAndStart());
+  server_ = builder.BuildAndStart();
 }
 
 QpsWorker::~QpsWorker() {}

@@ -77,9 +77,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
-                 .type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                                         NULL).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -101,7 +101,7 @@ static void end_test(grpc_end2end_test_fixture *f) {
 
 /* Cancel after invoke, no payload */
 static void test_cancel_after_invoke(grpc_end2end_test_config config,
-                                     cancellation_mode mode, int test_ops) {
+                                     cancellation_mode mode, size_t test_ops) {
   grpc_op ops[6];
   grpc_op *op;
   grpc_call *c;

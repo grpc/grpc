@@ -52,6 +52,9 @@ class _ServicerContext(face.ServicerContext):
   def cancel(self):
     self._rendezvous.cancel()
 
+  def protocol_context(self):
+    return self._rendezvous.protocol_context()
+
   def invocation_metadata(self):
     return self._rendezvous.initial_metadata()
 
@@ -71,10 +74,12 @@ class _ServicerContext(face.ServicerContext):
 def _adaptation(pool, in_pool):
   def adaptation(operator, operation_context):
     rendezvous = _control.Rendezvous(operator, operation_context)
+    subscription = utilities.full_subscription(
+        rendezvous, _control.protocol_receiver(rendezvous))
     outcome = operation_context.add_termination_callback(rendezvous.set_outcome)
     if outcome is None:
       pool.submit(_control.pool_wrap(in_pool, operation_context), rendezvous)
-      return utilities.full_subscription(rendezvous)
+      return subscription
     else:
       raise abandonment.Abandoned()
   return adaptation
@@ -151,6 +156,8 @@ def adapt_event_stream_stream(method, pool):
 def adapt_multi_method(multi_method, pool):
   def adaptation(group, method, operator, operation_context):
     rendezvous = _control.Rendezvous(operator, operation_context)
+    subscription = utilities.full_subscription(
+        rendezvous, _control.protocol_receiver(rendezvous))
     outcome = operation_context.add_termination_callback(rendezvous.set_outcome)
     if outcome is None:
       def in_pool():
@@ -160,7 +167,7 @@ def adapt_multi_method(multi_method, pool):
           request_consumer.consume(request)
         request_consumer.terminate()
       pool.submit(_control.pool_wrap(in_pool, operation_context), rendezvous)
-      return utilities.full_subscription(rendezvous)
+      return subscription
     else:
       raise abandonment.Abandoned()
   return adaptation

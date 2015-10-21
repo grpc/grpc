@@ -49,35 +49,39 @@ static grpc_pollset g_pollset;
 static int g_number_of_reads = 0;
 static int g_number_of_bytes_read = 0;
 
-static void on_connect(void *arg, grpc_endpoint *udp) {}
-
-static void on_read(int fd, grpc_udp_server_cb new_transport_cb, void *cb_arg) {
+static void on_read(grpc_exec_ctx *exec_ctx, grpc_fd *emfd,
+                    grpc_server *server) {
   char read_buffer[512];
-  int byte_count;
+  ssize_t byte_count;
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
-  byte_count = recv(fd, read_buffer, sizeof(read_buffer), 0);
+  byte_count = recv(emfd->fd, read_buffer, sizeof(read_buffer), 0);
 
   g_number_of_reads++;
-  g_number_of_bytes_read += byte_count;
+  g_number_of_bytes_read += (int)byte_count;
 
   grpc_pollset_kick(&g_pollset, NULL);
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
 static void test_no_op(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_udp_server *s = grpc_udp_server_create();
-  grpc_udp_server_destroy(s, NULL, NULL);
+  grpc_udp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op_with_start(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_udp_server *s = grpc_udp_server_create();
   LOG_TEST("test_no_op_with_start");
-  grpc_udp_server_start(s, NULL, 0, on_connect, NULL);
-  grpc_udp_server_destroy(s, NULL, NULL);
+  grpc_udp_server_start(&exec_ctx, s, NULL, 0, NULL);
+  grpc_udp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op_with_port(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_udp_server *s = grpc_udp_server_create();
   LOG_TEST("test_no_op_with_port");
@@ -87,10 +91,12 @@ static void test_no_op_with_port(void) {
   GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
                                       on_read));
 
-  grpc_udp_server_destroy(s, NULL, NULL);
+  grpc_udp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_no_op_with_port_and_start(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_in addr;
   grpc_udp_server *s = grpc_udp_server_create();
   LOG_TEST("test_no_op_with_port_and_start");
@@ -100,12 +106,14 @@ static void test_no_op_with_port_and_start(void) {
   GPR_ASSERT(grpc_udp_server_add_port(s, (struct sockaddr *)&addr, sizeof(addr),
                                       on_read));
 
-  grpc_udp_server_start(s, NULL, 0, on_connect, NULL);
+  grpc_udp_server_start(&exec_ctx, s, NULL, 0, NULL);
 
-  grpc_udp_server_destroy(s, NULL, NULL);
+  grpc_udp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static void test_receive(int number_of_clients) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   struct sockaddr_storage addr;
   socklen_t addr_len = sizeof(addr);
   int clifd, svrfd;
@@ -130,7 +138,7 @@ static void test_receive(int number_of_clients) {
   GPR_ASSERT(addr_len <= sizeof(addr));
 
   pollsets[0] = &g_pollset;
-  grpc_udp_server_start(s, pollsets, 1, on_connect, NULL);
+  grpc_udp_server_start(&exec_ctx, s, pollsets, 1, NULL);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
 
@@ -146,8 +154,11 @@ static void test_receive(int number_of_clients) {
     while (g_number_of_reads == number_of_reads_before &&
            gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0) {
       grpc_pollset_worker worker;
-      grpc_pollset_work(&g_pollset, &worker, gpr_now(GPR_CLOCK_MONOTONIC),
-                        deadline);
+      grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                        gpr_now(GPR_CLOCK_MONOTONIC), deadline);
+      gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+      grpc_exec_ctx_finish(&exec_ctx);
+      gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
     }
     GPR_ASSERT(g_number_of_reads == number_of_reads_before + 1);
     close(clifd);
@@ -156,12 +167,17 @@ static void test_receive(int number_of_clients) {
 
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
-  grpc_udp_server_destroy(s, NULL, NULL);
+  grpc_udp_server_destroy(&exec_ctx, s, NULL);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void destroy_pollset(void *p) { grpc_pollset_destroy(p); }
+static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *p, int success) {
+  grpc_pollset_destroy(p);
+}
 
 int main(int argc, char **argv) {
+  grpc_closure destroyed;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_test_init(argc, argv);
   grpc_iomgr_init();
   grpc_pollset_init(&g_pollset);
@@ -173,7 +189,9 @@ int main(int argc, char **argv) {
   test_receive(1);
   test_receive(10);
 
-  grpc_pollset_shutdown(&g_pollset, destroy_pollset, &g_pollset);
+  grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
+  grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
+  grpc_exec_ctx_finish(&exec_ctx);
   grpc_iomgr_shutdown();
   return 0;
 }

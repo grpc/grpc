@@ -46,20 +46,21 @@ typedef struct grpc_fd_watcher {
   struct grpc_fd_watcher *next;
   struct grpc_fd_watcher *prev;
   grpc_pollset *pollset;
+  grpc_pollset_worker *worker;
   grpc_fd *fd;
 } grpc_fd_watcher;
 
 struct grpc_fd {
   int fd;
   /* refst format:
-       bit0:   1=active/0=orphaned
-       bit1-n: refcount
+     bit0:   1=active/0=orphaned
+     bit1-n: refcount
      meaning that mostly we ref by two to avoid altering the orphaned bit,
      and just unref by 1 when we're ready to flag the object as orphaned */
   gpr_atm refst;
 
-  gpr_mu set_state_mu;
-  gpr_atm shutdown;
+  gpr_mu mu;
+  int shutdown;
   int closed;
 
   /* The watcher list.
@@ -84,18 +85,16 @@ struct grpc_fd {
      If at a later time there becomes need of a poller to poll, one of
      the inactive pollers may be kicked out of their poll loops to take
      that responsibility. */
-  gpr_mu watcher_mu;
   grpc_fd_watcher inactive_watcher_root;
   grpc_fd_watcher *read_watcher;
   grpc_fd_watcher *write_watcher;
 
-  gpr_atm readst;
-  gpr_atm writest;
+  grpc_closure *read_closure;
+  grpc_closure *write_closure;
 
   struct grpc_fd *freelist_next;
 
-  grpc_iomgr_closure *on_done_closure;
-  grpc_iomgr_closure *shutdown_closures[2];
+  grpc_closure *on_done_closure;
 
   grpc_iomgr_object iomgr_object;
 };
@@ -111,7 +110,7 @@ grpc_fd *grpc_fd_create(int fd, const char *name);
    Requires: *fd initialized; no outstanding notify_on_read or
    notify_on_write.
    MUST NOT be called with a pollset lock taken */
-void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,
+void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
                     const char *reason);
 
 /* Begin polling on an fd.
@@ -126,17 +125,20 @@ void grpc_fd_orphan(grpc_fd *fd, grpc_iomgr_closure *on_done,
    fd's current interest (such as epoll) do not need to call this function.
    MUST NOT be called with a pollset lock taken */
 gpr_uint32 grpc_fd_begin_poll(grpc_fd *fd, grpc_pollset *pollset,
-                              gpr_uint32 read_mask, gpr_uint32 write_mask,
-                              grpc_fd_watcher *rec);
+                              grpc_pollset_worker *worker, gpr_uint32 read_mask,
+                              gpr_uint32 write_mask, grpc_fd_watcher *rec);
 /* Complete polling previously started with grpc_fd_begin_poll
-   MUST NOT be called with a pollset lock taken */
-void grpc_fd_end_poll(grpc_fd_watcher *rec, int got_read, int got_write);
+   MUST NOT be called with a pollset lock taken
+   if got_read or got_write are 1, also does the become_{readable,writable} as
+   appropriate. */
+void grpc_fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *rec,
+                      int got_read, int got_write);
 
 /* Return 1 if this fd is orphaned, 0 otherwise */
 int grpc_fd_is_orphaned(grpc_fd *fd);
 
 /* Cause any current callbacks to error out with GRPC_CALLBACK_CANCELLED. */
-void grpc_fd_shutdown(grpc_fd *fd);
+void grpc_fd_shutdown(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
 
 /* Register read interest, causing read_cb to be called once when fd becomes
    readable, on deadline specified by deadline, or on shutdown triggered by
@@ -151,17 +153,19 @@ void grpc_fd_shutdown(grpc_fd *fd);
    underlying platform. This means that users must drain fd in read_cb before
    calling notify_on_read again. Users are also expected to handle spurious
    events, i.e read_cb is called while nothing can be readable from fd  */
-void grpc_fd_notify_on_read(grpc_fd *fd, grpc_iomgr_closure *closure);
+void grpc_fd_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                            grpc_closure *closure);
 
 /* Exactly the same semantics as above, except based on writable events.  */
-void grpc_fd_notify_on_write(grpc_fd *fd, grpc_iomgr_closure *closure);
+void grpc_fd_notify_on_write(grpc_exec_ctx *exec_ctx, grpc_fd *fd,
+                             grpc_closure *closure);
 
 /* Notification from the poller to an fd that it has become readable or
    writable.
    If allow_synchronous_callback is 1, allow running the fd callback inline
    in this callstack, otherwise register an asynchronous callback and return */
-void grpc_fd_become_readable(grpc_fd *fd, int allow_synchronous_callback);
-void grpc_fd_become_writable(grpc_fd *fd, int allow_synchronous_callback);
+void grpc_fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
+void grpc_fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
 
 /* Reference counting for fds */
 #ifdef GRPC_FD_REF_COUNT_DEBUG

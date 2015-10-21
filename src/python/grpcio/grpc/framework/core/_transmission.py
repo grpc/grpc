@@ -34,11 +34,15 @@ import enum
 
 from grpc.framework.core import _constants
 from grpc.framework.core import _interfaces
+from grpc.framework.core import _utilities
 from grpc.framework.foundation import callable_util
 from grpc.framework.interfaces.base import base
 from grpc.framework.interfaces.links import links
 
 _TRANSMISSION_EXCEPTION_LOG_MESSAGE = 'Exception during transmission!'
+
+_TRANSMISSION_FAILURE_OUTCOME = _utilities.Outcome(
+    base.Outcome.Kind.TRANSMISSION_FAILURE, None, None)
 
 
 def _explode_completion(completion):
@@ -194,7 +198,7 @@ class TransmissionManager(_interfaces.TransmissionManager):
           with self._lock:
             self._abort = _ABORTED_NO_NOTIFY
             if self._termination_manager.outcome is None:
-              self._termination_manager.abort(base.Outcome.TRANSMISSION_FAILURE)
+              self._termination_manager.abort(_TRANSMISSION_FAILURE_OUTCOME)
               self._expiration_manager.terminate()
             return
 
@@ -203,18 +207,19 @@ class TransmissionManager(_interfaces.TransmissionManager):
     self._transmitting = True
 
   def kick_off(
-      self, group, method, timeout, initial_metadata, payload, completion,
-      allowance):
+      self, group, method, timeout, protocol_options, initial_metadata,
+      payload, completion, allowance):
     """See _interfaces.TransmissionManager.kickoff for specification."""
     # TODO(nathaniel): Support other subscriptions.
     subscription = links.Ticket.Subscription.FULL
     terminal_metadata, code, message, termination = _explode_completion(
         completion)
     self._remote_allowance = 1 if payload is None else 0
+    protocol = links.Protocol(links.Protocol.Kind.CALL_OPTION, protocol_options)
     ticket = links.Ticket(
         self._operation_id, 0, group, method, subscription, timeout, allowance,
         initial_metadata, payload, terminal_metadata, code, message,
-        termination, None)
+        termination, protocol)
     self._lowest_unused_sequence_number = 1
     self._transmit(ticket)
 
@@ -307,19 +312,24 @@ class TransmissionManager(_interfaces.TransmissionManager):
     self._remote_complete = True
     self._local_allowance = 0
 
-  def abort(self, outcome, code, message):
+  def abort(self, outcome):
     """See _interfaces.TransmissionManager.abort for specification."""
     if self._abort.kind is _Abort.Kind.NOT_ABORTED:
-      termination = _constants.ABORTION_OUTCOME_TO_TICKET_TERMINATION.get(
-          outcome)
-      if termination is None:
+      if outcome is None:
         self._abort = _ABORTED_NO_NOTIFY
-      elif self._transmitting:
-        self._abort = _Abort(
-            _Abort.Kind.ABORTED_NOTIFY_NEEDED, termination, code, message)
       else:
-        ticket = links.Ticket(
-            self._operation_id, self._lowest_unused_sequence_number, None,
-            None, None, None, None, None, None, None, code, message,
-            termination, None)
-        self._transmit(ticket)
+        termination = _constants.ABORTION_OUTCOME_TO_TICKET_TERMINATION.get(
+            outcome.kind)
+        if termination is None:
+          self._abort = _ABORTED_NO_NOTIFY
+        elif self._transmitting:
+          self._abort = _Abort(
+              _Abort.Kind.ABORTED_NOTIFY_NEEDED, termination, outcome.code,
+              outcome.details)
+        else:
+          ticket = links.Ticket(
+              self._operation_id, self._lowest_unused_sequence_number, None,
+              None, None, None, None, None, None, None, outcome.code,
+              outcome.details, termination, None)
+          self._transmit(ticket)
+          self._abort = _ABORTED_NO_NOTIFY

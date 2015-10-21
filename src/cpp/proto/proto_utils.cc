@@ -36,10 +36,13 @@
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/support/log.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 #include <grpc++/support/config.h>
+
+#include "src/core/profiling/timers.h"
 
 const int kMaxBufferLength = 8192;
 
@@ -111,7 +114,8 @@ class GrpcBufferReader GRPC_FINAL
     if (backup_count_ > 0) {
       *data = GPR_SLICE_START_PTR(slice_) + GPR_SLICE_LENGTH(slice_) -
               backup_count_;
-      *size = backup_count_;
+      GPR_ASSERT(backup_count_ <= INT_MAX);
+      *size = (int)backup_count_;
       backup_count_ = 0;
       return true;
     }
@@ -156,14 +160,26 @@ namespace grpc {
 
 Status SerializeProto(const grpc::protobuf::Message& msg,
                       grpc_byte_buffer** bp) {
-  GrpcBufferWriter writer(bp);
-  return msg.SerializeToZeroCopyStream(&writer)
-             ? Status::OK
-             : Status(StatusCode::INTERNAL, "Failed to serialize message");
+  GPR_TIMER_SCOPE("SerializeProto", 0);
+  int byte_size = msg.ByteSize();
+  if (byte_size <= kMaxBufferLength) {
+    gpr_slice slice = gpr_slice_malloc(byte_size);
+    GPR_ASSERT(GPR_SLICE_END_PTR(slice) ==
+               msg.SerializeWithCachedSizesToArray(GPR_SLICE_START_PTR(slice)));
+    *bp = grpc_raw_byte_buffer_create(&slice, 1);
+    gpr_slice_unref(slice);
+    return Status::OK;
+  } else {
+    GrpcBufferWriter writer(bp);
+    return msg.SerializeToZeroCopyStream(&writer)
+               ? Status::OK
+               : Status(StatusCode::INTERNAL, "Failed to serialize message");
+  }
 }
 
 Status DeserializeProto(grpc_byte_buffer* buffer, grpc::protobuf::Message* msg,
                         int max_message_size) {
+  GPR_TIMER_SCOPE("DeserializeProto", 0);
   if (!buffer) {
     return Status(StatusCode::INTERNAL, "No payload");
   }

@@ -42,7 +42,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "src/core/iomgr/alarm.h"
+#include "src/core/iomgr/timer.h"
 #include "src/core/iomgr/iomgr_posix.h"
 #include "src/core/iomgr/pollset_posix.h"
 #include "src/core/iomgr/sockaddr_utils.h"
@@ -54,17 +54,19 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+extern int grpc_tcp_trace;
+
 typedef struct {
-  void (*cb)(void *arg, grpc_endpoint *tcp);
-  void *cb_arg;
   gpr_mu mu;
   grpc_fd *fd;
   gpr_timespec deadline;
-  grpc_alarm alarm;
+  grpc_timer alarm;
   int refs;
-  grpc_iomgr_closure write_closure;
+  grpc_closure write_closure;
   grpc_pollset_set *interested_parties;
   char *addr_str;
+  grpc_endpoint **ep;
+  grpc_closure *closure;
 } async_connect;
 
 static int prepare_socket(const struct sockaddr *addr, int fd) {
@@ -89,12 +91,16 @@ error:
   return 0;
 }
 
-static void tc_on_alarm(void *acp, int success) {
+static void tc_on_alarm(grpc_exec_ctx *exec_ctx, void *acp, int success) {
   int done;
   async_connect *ac = acp;
+  if (grpc_tcp_trace) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: success=%d", ac->addr_str,
+            success);
+  }
   gpr_mu_lock(&ac->mu);
   if (ac->fd != NULL) {
-    grpc_fd_shutdown(ac->fd);
+    grpc_fd_shutdown(exec_ctx, ac->fd);
   }
   done = (--ac->refs == 0);
   gpr_mu_unlock(&ac->mu);
@@ -105,16 +111,20 @@ static void tc_on_alarm(void *acp, int success) {
   }
 }
 
-static void on_writable(void *acp, int success) {
+static void on_writable(grpc_exec_ctx *exec_ctx, void *acp, int success) {
   async_connect *ac = acp;
   int so_error = 0;
   socklen_t so_error_size;
   int err;
   int done;
-  grpc_endpoint *ep = NULL;
-  void (*cb)(void *arg, grpc_endpoint *tcp) = ac->cb;
-  void *cb_arg = ac->cb_arg;
+  grpc_endpoint **ep = ac->ep;
+  grpc_closure *closure = ac->closure;
   grpc_fd *fd;
+
+  if (grpc_tcp_trace) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_writable: success=%d",
+            ac->addr_str, success);
+  }
 
   gpr_mu_lock(&ac->mu);
   GPR_ASSERT(ac->fd);
@@ -122,7 +132,7 @@ static void on_writable(void *acp, int success) {
   ac->fd = NULL;
   gpr_mu_unlock(&ac->mu);
 
-  grpc_alarm_cancel(&ac->alarm);
+  grpc_timer_cancel(exec_ctx, &ac->alarm);
 
   gpr_mu_lock(&ac->mu);
   if (success) {
@@ -131,7 +141,8 @@ static void on_writable(void *acp, int success) {
       err = getsockopt(fd->fd, SOL_SOCKET, SO_ERROR, &so_error, &so_error_size);
     } while (err < 0 && errno == EINTR);
     if (err < 0) {
-      gpr_log(GPR_ERROR, "getsockopt(ERROR): %s", strerror(errno));
+      gpr_log(GPR_ERROR, "failed to connect to '%s': getsockopt(ERROR): %s",
+              ac->addr_str, strerror(errno));
       goto finish;
     } else if (so_error != 0) {
       if (so_error == ENOBUFS) {
@@ -151,36 +162,41 @@ static void on_writable(void *acp, int success) {
            don't do that! */
         gpr_log(GPR_ERROR, "kernel out of buffers");
         gpr_mu_unlock(&ac->mu);
-        grpc_fd_notify_on_write(fd, &ac->write_closure);
+        grpc_fd_notify_on_write(exec_ctx, fd, &ac->write_closure);
         return;
       } else {
         switch (so_error) {
           case ECONNREFUSED:
-            gpr_log(GPR_ERROR, "socket error: connection refused");
+            gpr_log(
+                GPR_ERROR,
+                "failed to connect to '%s': socket error: connection refused",
+                ac->addr_str);
             break;
           default:
-            gpr_log(GPR_ERROR, "socket error: %d", so_error);
+            gpr_log(GPR_ERROR, "failed to connect to '%s': socket error: %d",
+                    ac->addr_str, so_error);
             break;
         }
         goto finish;
       }
     } else {
-      grpc_pollset_set_del_fd(ac->interested_parties, fd);
-      ep = grpc_tcp_create(fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, ac->addr_str);
+      grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
+      *ep = grpc_tcp_create(fd, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, ac->addr_str);
       fd = NULL;
       goto finish;
     }
   } else {
-    gpr_log(GPR_ERROR, "on_writable failed during connect");
+    gpr_log(GPR_ERROR, "failed to connect to '%s': timeout occurred",
+            ac->addr_str);
     goto finish;
   }
 
-  abort();
+  GPR_UNREACHABLE_CODE(return );
 
 finish:
   if (fd != NULL) {
-    grpc_pollset_set_del_fd(ac->interested_parties, fd);
-    grpc_fd_orphan(fd, NULL, "tcp_client_orphan");
+    grpc_pollset_set_del_fd(exec_ctx, ac->interested_parties, fd);
+    grpc_fd_orphan(exec_ctx, fd, NULL, "tcp_client_orphan");
     fd = NULL;
   }
   done = (--ac->refs == 0);
@@ -190,12 +206,13 @@ finish:
     gpr_free(ac->addr_str);
     gpr_free(ac);
   }
-  cb(cb_arg, ep);
+  grpc_exec_ctx_enqueue(exec_ctx, closure, *ep != NULL);
 }
 
-void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
-                             void *arg, grpc_pollset_set *interested_parties,
-                             const struct sockaddr *addr, int addr_len,
+void grpc_tcp_client_connect(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
+                             grpc_endpoint **ep,
+                             grpc_pollset_set *interested_parties,
+                             const struct sockaddr *addr, size_t addr_len,
                              gpr_timespec deadline) {
   int fd;
   grpc_dualstack_mode dsmode;
@@ -206,6 +223,8 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   grpc_fd *fdobj;
   char *name;
   char *addr_str;
+
+  *ep = NULL;
 
   /* Use dualstack sockets where available. */
   if (grpc_sockaddr_to_v4mapped(addr, &addr6_v4mapped)) {
@@ -224,12 +243,13 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
     addr_len = sizeof(addr4_copy);
   }
   if (!prepare_socket(addr, fd)) {
-    cb(arg, NULL);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
     return;
   }
 
   do {
-    err = connect(fd, addr, addr_len);
+    GPR_ASSERT(addr_len < ~(socklen_t)0);
+    err = connect(fd, addr, (socklen_t)addr_len);
   } while (err < 0 && errno == EINTR);
 
   addr_str = grpc_sockaddr_to_uri(addr);
@@ -238,22 +258,23 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   fdobj = grpc_fd_create(fd, name);
 
   if (err >= 0) {
-    cb(arg, grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str));
+    *ep = grpc_tcp_create(fdobj, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, addr_str);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, 1);
     goto done;
   }
 
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
     gpr_log(GPR_ERROR, "connect error to '%s': %s", addr_str, strerror(errno));
-    grpc_fd_orphan(fdobj, NULL, "tcp_client_connect_error");
-    cb(arg, NULL);
+    grpc_fd_orphan(exec_ctx, fdobj, NULL, "tcp_client_connect_error");
+    grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
     goto done;
   }
 
-  grpc_pollset_set_add_fd(interested_parties, fdobj);
+  grpc_pollset_set_add_fd(exec_ctx, interested_parties, fdobj);
 
   ac = gpr_malloc(sizeof(async_connect));
-  ac->cb = cb;
-  ac->cb_arg = arg;
+  ac->closure = closure;
+  ac->ep = ep;
   ac->fd = fdobj;
   ac->interested_parties = interested_parties;
   ac->addr_str = addr_str;
@@ -263,11 +284,16 @@ void grpc_tcp_client_connect(void (*cb)(void *arg, grpc_endpoint *ep),
   ac->write_closure.cb = on_writable;
   ac->write_closure.cb_arg = ac;
 
+  if (grpc_tcp_trace) {
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
+            ac->addr_str);
+  }
+
   gpr_mu_lock(&ac->mu);
-  grpc_alarm_init(&ac->alarm,
+  grpc_timer_init(exec_ctx, &ac->alarm,
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                   tc_on_alarm, ac, gpr_now(GPR_CLOCK_MONOTONIC));
-  grpc_fd_notify_on_write(ac->fd, &ac->write_closure);
+  grpc_fd_notify_on_write(exec_ctx, ac->fd, &ac->write_closure);
   gpr_mu_unlock(&ac->mu);
 
 done:

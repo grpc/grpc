@@ -35,13 +35,13 @@
 #define GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H
 
 #include <grpc/grpc.h>
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/exec_ctx.h"
 
 typedef struct grpc_connectivity_state_watcher {
   /** we keep watchers in a linked list */
   struct grpc_connectivity_state_watcher *next;
   /** closure to notify on change */
-  grpc_iomgr_closure *notify;
+  grpc_closure *notify;
   /** the current state as believed by the watcher */
   grpc_connectivity_state *current;
 } grpc_connectivity_state_watcher;
@@ -60,22 +60,29 @@ extern int grpc_connectivity_state_trace;
 void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
                                   grpc_connectivity_state init_state,
                                   const char *name);
-void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker *tracker);
+void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
+                                     grpc_connectivity_state_tracker *tracker);
 
-void grpc_connectivity_state_set(grpc_connectivity_state_tracker *tracker,
+/** Set connectivity state; not thread safe; access must be serialized with an
+ * external lock */
+void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
+                                 grpc_connectivity_state_tracker *tracker,
                                  grpc_connectivity_state state,
                                  const char *reason);
-void grpc_connectivity_state_set_with_scheduler(
-    grpc_connectivity_state_tracker *tracker, grpc_connectivity_state state,
-    void (*scheduler)(void *arg, grpc_iomgr_closure *closure), void *arg,
-    const char *reason);
 
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker);
 
 /** Return 1 if the channel should start connecting, 0 otherwise */
 int grpc_connectivity_state_notify_on_state_change(
-    grpc_connectivity_state_tracker *tracker, grpc_connectivity_state *current,
-    grpc_iomgr_closure *notify);
+    grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
+    grpc_connectivity_state *current, grpc_closure *notify);
+
+/** Remove \a subscribed_notify from the list of closures to be called on a
+ * state change if present, returning 1. Otherwise, nothing is done and return
+ * 0. */
+int grpc_connectivity_state_change_unsubscribe(
+    grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
+    grpc_closure *subscribed_notify);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H */

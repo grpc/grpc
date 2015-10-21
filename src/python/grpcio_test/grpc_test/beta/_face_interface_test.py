@@ -32,8 +32,8 @@
 import collections
 import unittest
 
-from grpc._adapter import _intermediary_low
-from grpc.beta import beta
+from grpc.beta import implementations
+from grpc.beta import interfaces
 from grpc_test import resources
 from grpc_test import test_common as grpc_test_common
 from grpc_test.beta import test_utilities
@@ -81,25 +81,26 @@ class _Implementation(test_interfaces.Implementation):
         method: method_object.cardinality()
         for (group, method), method_object in methods.iteritems()}
 
-    server_options = beta.server_options(
+    server_options = implementations.server_options(
         request_deserializers=serialization_behaviors.request_deserializers,
         response_serializers=serialization_behaviors.response_serializers,
         thread_pool_size=test_constants.POOL_SIZE)
-    server = beta.server(method_implementations, options=server_options)
-    server_credentials = beta.ssl_server_credentials(
+    server = implementations.server(
+        method_implementations, options=server_options)
+    server_credentials = implementations.ssl_server_credentials(
         [(resources.private_key(), resources.certificate_chain(),),])
     port = server.add_secure_port('[::]:0', server_credentials)
     server.start()
-    client_credentials = beta.ssl_client_credentials(
+    client_credentials = implementations.ssl_client_credentials(
         resources.test_root_certificates(), None, None)
-    channel = test_utilities.create_not_really_secure_channel(
+    channel = test_utilities.not_really_secure_channel(
         'localhost', port, client_credentials, _SERVER_HOST_OVERRIDE)
-    stub_options = beta.stub_options(
+    stub_options = implementations.stub_options(
         request_serializers=serialization_behaviors.request_serializers,
         response_deserializers=serialization_behaviors.response_deserializers,
         thread_pool_size=test_constants.POOL_SIZE)
-    generic_stub = beta.generic_stub(channel, options=stub_options)
-    dynamic_stub = beta.dynamic_stub(
+    generic_stub = implementations.generic_stub(channel, options=stub_options)
+    dynamic_stub = implementations.dynamic_stub(
         channel, service, cardinalities, options=stub_options)
     return generic_stub, {service: dynamic_stub}, server
 
@@ -116,7 +117,7 @@ class _Implementation(test_interfaces.Implementation):
     return grpc_test_common.SERVICE_TERMINAL_METADATA
 
   def code(self):
-    return _intermediary_low.Code.OK
+    return interfaces.StatusCode.OK
 
   def details(self):
     return grpc_test_common.DETAILS

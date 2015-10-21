@@ -43,7 +43,7 @@ extern const grpc_channel_filter grpc_connected_channel_filter;
 
 /* Post construction fixup: set the transport in the connected channel.
    Must be called before any call stack using this filter is used. */
-void grpc_connected_channel_bind_transport(grpc_channel_stack *channel_stack,
-                                           grpc_transport *transport);
+void grpc_connected_channel_bind_transport(grpc_channel_stack* channel_stack,
+                                           grpc_transport* transport);
 
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CONNECTED_CHANNEL_H */

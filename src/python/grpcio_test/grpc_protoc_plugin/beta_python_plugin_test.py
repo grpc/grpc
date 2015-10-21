@@ -42,7 +42,7 @@ import threading
 import time
 import unittest
 
-from grpc.beta import beta
+from grpc.beta import implementations
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
 from grpc_test.framework.common import test_constants
@@ -170,7 +170,7 @@ def _CreateService(test_pb2):
   server = getattr(test_pb2, SERVER_FACTORY_IDENTIFIER)(servicer)
   port = server.add_insecure_port('[::]:0')
   server.start()
-  channel = beta.create_insecure_channel('localhost', port)
+  channel = implementations.insecure_channel('localhost', port)
   stub = getattr(test_pb2, STUB_FACTORY_IDENTIFIER)(channel)
   yield servicer_methods, stub
   server.stop(0)

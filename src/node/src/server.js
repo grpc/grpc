@@ -40,7 +40,7 @@
 
 var _ = require('lodash');
 
-var grpc = require('bindings')('grpc.node');
+var grpc = require('bindings')('grpc_node');
 
 var common = require('./common');
 
@@ -276,6 +276,7 @@ function ServerWritableStream(call, serialize) {
 function _write(chunk, encoding, callback) {
   /* jshint validthis: true */
   var batch = {};
+  var self = this;
   if (!this.call.metadataSent) {
     batch[grpc.opType.SEND_INITIAL_METADATA] =
         (new Metadata())._getCoreRepresentation();
@@ -290,7 +291,7 @@ function _write(chunk, encoding, callback) {
   batch[grpc.opType.SEND_MESSAGE] = message;
   this.call.startBatch(batch, function(err, value) {
     if (err) {
-      this.emit('error', err);
+      self.emit('error', err);
       return;
     }
     callback();
@@ -305,6 +306,7 @@ ServerWritableStream.prototype._write = _write;
  */
 function sendMetadata(responseMetadata) {
   /* jshint validthis: true */
+  var self = this;
   if (!this.call.metadataSent) {
     this.call.metadataSent = true;
     var batch = [];
@@ -312,7 +314,7 @@ function sendMetadata(responseMetadata) {
         responseMetadata._getCoreRepresentation();
     this.call.startBatch(batch, function(err) {
       if (err) {
-        this.emit('error', err);
+        self.emit('error', err);
         return;
       }
     });
@@ -595,10 +597,6 @@ function Server(options) {
       throw new Error('Server is already running');
     }
     this.started = true;
-    console.log('Server starting');
-    _.each(handlers, function(handler, handler_name) {
-      console.log('Serving', handler_name);
-    });
     server.start();
     /**
      * Handles the SERVER_RPC_NEW event. If there is a handler associated with
@@ -627,7 +625,7 @@ function Server(options) {
             (new Metadata())._getCoreRepresentation();
         batch[grpc.opType.SEND_STATUS_FROM_SERVER] = {
           code: grpc.status.UNIMPLEMENTED,
-          details: 'This method is not available on this server.',
+          details: '',
           metadata: {}
         };
         batch[grpc.opType.RECV_CLOSE_ON_SERVER] = true;

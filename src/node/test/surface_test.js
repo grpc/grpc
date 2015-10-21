@@ -41,7 +41,7 @@ var ProtoBuf = require('protobufjs');
 
 var grpc = require('..');
 
-var math_proto = ProtoBuf.loadProtoFile(__dirname + '/../examples/math.proto');
+var math_proto = ProtoBuf.loadProtoFile(__dirname + '/math/math.proto');
 
 var mathService = math_proto.lookup('math.Math');
 
@@ -90,6 +90,31 @@ describe('File loader', function() {
     assert.throws(function() {
       grpc.load(__dirname + '/test_service.proto', 'fake_format');
     });
+  });
+});
+describe('surface Server', function() {
+  var server;
+  beforeEach(function() {
+    server = new grpc.Server();
+  });
+  afterEach(function() {
+    server.forceShutdown();
+  });
+  it('should error if started twice', function() {
+    server.start();
+    assert.throws(function() {
+      server.start();
+    });
+  });
+  it('should error if a port is bound after the server starts', function() {
+    server.start();
+    assert.throws(function() {
+      server.bind('localhost:0', grpc.ServerCredentials.createInsecure());
+    });
+  });
+  it('should successfully shutdown if tryShutdown is called', function(done) {
+    server.start();
+    server.tryShutdown(done);
   });
 });
 describe('Server.prototype.addProtoService', function() {
@@ -163,7 +188,7 @@ describe('waitForClientReady', function() {
     Client = surface_client.makeProtobufClientConstructor(mathService);
   });
   beforeEach(function() {
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
   });
   after(function() {
     server.forceShutdown();
@@ -202,6 +227,16 @@ describe('waitForClientReady', function() {
       });
     });
   });
+  it('should time out if the server does not exist', function(done) {
+    var bad_client = new Client('nonexistent_hostname',
+                                grpc.credentials.createInsecure());
+    var deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + 1);
+    grpc.waitForClientReady(bad_client, deadline, function(error) {
+      assert(error);
+      done();
+    });
+  });
 });
 describe('Echo service', function() {
   var server;
@@ -217,7 +252,7 @@ describe('Echo service', function() {
     });
     var port = server.bind('localhost:0', server_insecure_creds);
     var Client = surface_client.makeProtobufClientConstructor(echo_service);
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
   after(function() {
@@ -263,7 +298,7 @@ describe('Generic client and server', function() {
       server.start();
       var Client = grpc.makeGenericClientConstructor(string_service_attrs);
       client = new Client('localhost:' + port,
-                          grpc.Credentials.createInsecure());
+                          grpc.credentials.createInsecure());
     });
     after(function() {
       server.forceShutdown();
@@ -311,7 +346,7 @@ describe('Echo metadata', function() {
     });
     var port = server.bind('localhost:0', server_insecure_creds);
     var Client = surface_client.makeProtobufClientConstructor(test_service);
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
     metadata = new grpc.Metadata();
     metadata.set('key', 'value');
@@ -356,7 +391,7 @@ describe('Echo metadata', function() {
     call.end();
   });
   it('shows the correct user-agent string', function(done) {
-    var version = require('../package.json').version;
+    var version = require('../../../package.json').version;
     var call = client.unary({}, function(err, data) { assert.ifError(err); },
                             metadata);
     call.on('metadata', function(metadata) {
@@ -364,6 +399,123 @@ describe('Echo metadata', function() {
                           'grpc-node/' + version));
       done();
     });
+  });
+  it('properly handles duplicate values', function(done) {
+    var dup_metadata = metadata.clone();
+    dup_metadata.add('key', 'value2');
+    var call = client.unary({}, function(err, data) {assert.ifError(err); },
+                            dup_metadata);
+    call.on('metadata', function(resp_metadata) {
+      // Two arrays are equal iff their symmetric difference is empty
+      assert.deepEqual(_.xor(dup_metadata.get('key'), resp_metadata.get('key')),
+                       []);
+      done();
+    });
+  });
+});
+describe('Client malformed response handling', function() {
+  var server;
+  var client;
+  var badArg = new Buffer([0xFF]);
+  before(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    var test_service = test_proto.lookup('TestService');
+    var malformed_test_service = {
+      unary: {
+        path: '/TestService/Unary',
+        requestStream: false,
+        responseStream: false,
+        requestDeserialize: _.identity,
+        responseSerialize: _.identity
+      },
+      clientStream: {
+        path: '/TestService/ClientStream',
+        requestStream: true,
+        responseStream: false,
+        requestDeserialize: _.identity,
+        responseSerialize: _.identity
+      },
+      serverStream: {
+        path: '/TestService/ServerStream',
+        requestStream: false,
+        responseStream: true,
+        requestDeserialize: _.identity,
+        responseSerialize: _.identity
+      },
+      bidiStream: {
+        path: '/TestService/BidiStream',
+        requestStream: true,
+        responseStream: true,
+        requestDeserialize: _.identity,
+        responseSerialize: _.identity
+      }
+    };
+    server = new grpc.Server();
+    server.addService(malformed_test_service, {
+      unary: function(call, cb) {
+        cb(null, badArg);
+      },
+      clientStream: function(stream, cb) {
+        stream.on('data', function() {/* Ignore requests */});
+        stream.on('end', function() {
+          cb(null, badArg);
+        });
+      },
+      serverStream: function(stream) {
+        stream.write(badArg);
+        stream.end();
+      },
+      bidiStream: function(stream) {
+        stream.on('data', function() {
+          // Ignore requests
+          stream.write(badArg);
+        });
+        stream.on('end', function() {
+          stream.end();
+        });
+      }
+    });
+    var port = server.bind('localhost:0', server_insecure_creds);
+    var Client = surface_client.makeProtobufClientConstructor(test_service);
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
+    server.start();
+  });
+  after(function() {
+    server.forceShutdown();
+  });
+  it('should get an INTERNAL status with a unary call', function(done) {
+    client.unary({}, function(err, data) {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+  });
+  it('should get an INTERNAL status with a client stream call', function(done) {
+    var call = client.clientStream(function(err, data) {
+      assert(err);
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+    call.write({});
+    call.end();
+  });
+  it('should get an INTERNAL status with a server stream call', function(done) {
+    var call = client.serverStream({});
+    call.on('data', function(){});
+    call.on('error', function(err) {
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+  });
+  it('should get an INTERNAL status with a bidi stream call', function(done) {
+    var call = client.bidiStream();
+    call.on('data', function(){});
+    call.on('error', function(err) {
+      assert.strictEqual(err.code, grpc.status.INTERNAL);
+      done();
+    });
+    call.write({});
+    call.end();
   });
 });
 describe('Other conditions', function() {
@@ -382,7 +534,8 @@ describe('Other conditions', function() {
       unary: function(call, cb) {
         var req = call.request;
         if (req.error) {
-          cb(new Error('Requested error'), null, trailer_metadata);
+          cb({code: grpc.status.UNKNOWN,
+              details: 'Requested error'}, null, trailer_metadata);
         } else {
           cb(null, {count: 1}, trailer_metadata);
         }
@@ -407,7 +560,8 @@ describe('Other conditions', function() {
       serverStream: function(stream) {
         var req = stream.request;
         if (req.error) {
-          var err = new Error('Requested error');
+          var err = {code: grpc.status.UNKNOWN,
+                     details: 'Requested error'};
           err.metadata = trailer_metadata;
           stream.emit('error', err);
         } else {
@@ -437,7 +591,7 @@ describe('Other conditions', function() {
     });
     port = server.bind('localhost:0', server_insecure_creds);
     Client = surface_client.makeProtobufClientConstructor(test_service);
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
   after(function() {
@@ -446,6 +600,23 @@ describe('Other conditions', function() {
   it('channel.getTarget should be available', function() {
     assert.strictEqual(typeof grpc.getClientChannel(client).getTarget(),
                        'string');
+  });
+  it('client should be able to pause and resume a stream', function(done) {
+    var call = client.bidiStream();
+    call.on('data', function(data) {
+      assert(data.count < 3);
+      call.pause();
+      setTimeout(function() {
+        call.resume();
+      }, 10);
+    });
+    call.on('end', function() {
+      done();
+    });
+    call.write({});
+    call.write({});
+    call.write({});
+    call.end();
   });
   describe('Server recieving bad input', function() {
     var misbehavingClient;
@@ -484,7 +655,7 @@ describe('Other conditions', function() {
       var Client = surface_client.makeClientConstructor(test_service_attrs,
                                                         'TestService');
       misbehavingClient = new Client('localhost:' + port,
-                                     grpc.Credentials.createInsecure());
+                                     grpc.credentials.createInsecure());
     });
     it('should respond correctly to a unary call', function(done) {
       misbehavingClient.unary(badArg, function(err, data) {
@@ -690,165 +861,187 @@ describe('Other conditions', function() {
       });
     });
   });
-  describe('Call propagation', function() {
-    var proxy;
-    var proxy_impl;
-    beforeEach(function() {
-      proxy = new grpc.Server();
-      proxy_impl = {
-        unary: function(call) {},
-        clientStream: function(stream) {},
-        serverStream: function(stream) {},
-        bidiStream: function(stream) {}
+});
+describe('Call propagation', function() {
+  var proxy;
+  var proxy_impl;
+
+  var test_service;
+  var Client;
+  var client;
+  var server;
+  before(function() {
+    var test_proto = ProtoBuf.loadProtoFile(__dirname + '/test_service.proto');
+    test_service = test_proto.lookup('TestService');
+    server = new grpc.Server();
+    server.addProtoService(test_service, {
+      unary: function(call) {},
+      clientStream: function(stream) {},
+      serverStream: function(stream) {},
+      bidiStream: function(stream) {}
+    });
+    var port = server.bind('localhost:0', server_insecure_creds);
+    Client = surface_client.makeProtobufClientConstructor(test_service);
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
+    server.start();
+  });
+  after(function() {
+    server.forceShutdown();
+  });
+  beforeEach(function() {
+    proxy = new grpc.Server();
+    proxy_impl = {
+      unary: function(call) {},
+      clientStream: function(stream) {},
+      serverStream: function(stream) {},
+      bidiStream: function(stream) {}
+    };
+  });
+  afterEach(function() {
+    proxy.forceShutdown();
+  });
+  describe('Cancellation', function() {
+    it('With a unary call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.unary = function(parent, callback) {
+        client.unary(parent.request, function(err, value) {
+          try {
+            assert(err);
+            assert.strictEqual(err.code, grpc.status.CANCELLED);
+          } finally {
+            callback(err, value);
+            done();
+          }
+        }, null, {parent: parent});
+        call.cancel();
       };
-    });
-    afterEach(function() {
-      console.log('Shutting down server');
-      proxy.forceShutdown();
-    });
-    describe('Cancellation', function() {
-      it('With a unary call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.unary = function(parent, callback) {
-          client.unary(parent.request, function(err, value) {
-            try {
-              assert(err);
-              assert.strictEqual(err.code, grpc.status.CANCELLED);
-            } finally {
-              callback(err, value);
-              done();
-            }
-          }, null, {parent: parent});
-          call.cancel();
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var call = proxy_client.unary({}, function(err, value) {
-          done();
-        });
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.credentials.createInsecure());
+      var call = proxy_client.unary({}, function(err, value) {
+        done();
       });
-      it('With a client stream call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.clientStream = function(parent, callback) {
-          client.clientStream(function(err, value) {
-            try {
-              assert(err);
-              assert.strictEqual(err.code, grpc.status.CANCELLED);
-            } finally {
-              callback(err, value);
-              done();
-            }
-          }, null, {parent: parent});
-          call.cancel();
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var call = proxy_client.clientStream(function(err, value) {
-          done();
-        });
-      });
-      it('With a server stream call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.serverStream = function(parent) {
-          var child = client.serverStream(parent.request, null,
-                                          {parent: parent});
-          child.on('error', function(err) {
+    });
+    it('With a client stream call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.clientStream = function(parent, callback) {
+        client.clientStream(function(err, value) {
+          try {
             assert(err);
             assert.strictEqual(err.code, grpc.status.CANCELLED);
+          } finally {
+            callback(err, value);
             done();
-          });
-          call.cancel();
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var call = proxy_client.serverStream({});
-        call.on('error', function(err) {
-          done();
-        });
-      });
-      it('With a bidi stream call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.bidiStream = function(parent) {
-          var child = client.bidiStream(null, {parent: parent});
-          child.on('error', function(err) {
-            assert(err);
-            assert.strictEqual(err.code, grpc.status.CANCELLED);
-            done();
-          });
-          call.cancel();
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var call = proxy_client.bidiStream();
-        call.on('error', function(err) {
-          done();
-        });
+          }
+        }, null, {parent: parent});
+        call.cancel();
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.credentials.createInsecure());
+      var call = proxy_client.clientStream(function(err, value) {
+        done();
       });
     });
-    describe('Deadline', function() {
-      /* jshint bitwise:false */
-      var deadline_flags = (grpc.propagate.DEFAULTS &
-          ~grpc.propagate.CANCELLATION);
-      it('With a client stream call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.clientStream = function(parent, callback) {
-          client.clientStream(function(err, value) {
-            try {
-              assert(err);
-              assert(err.code === grpc.status.DEADLINE_EXCEEDED ||
-                  err.code === grpc.status.INTERNAL);
-            } finally {
-              callback(err, value);
-              done();
-            }
-          }, null, {parent: parent, propagate_flags: deadline_flags});
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var deadline = new Date();
-        deadline.setSeconds(deadline.getSeconds() + 1);
-        proxy_client.clientStream(function(err, value) {
+    it('With a server stream call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.serverStream = function(parent) {
+        var child = client.serverStream(parent.request, null,
+                                        {parent: parent});
+        child.on('error', function(err) {
+          assert(err);
+          assert.strictEqual(err.code, grpc.status.CANCELLED);
           done();
-        }, null, {deadline: deadline});
+        });
+        call.cancel();
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.credentials.createInsecure());
+      var call = proxy_client.serverStream({});
+      call.on('error', function(err) {
+        done();
       });
-      it('With a bidi stream call', function(done) {
-        done = multiDone(done, 2);
-        proxy_impl.bidiStream = function(parent) {
-          var child = client.bidiStream(
-              null, {parent: parent, propagate_flags: deadline_flags});
-          child.on('error', function(err) {
+    });
+    it('With a bidi stream call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.bidiStream = function(parent) {
+        var child = client.bidiStream(null, {parent: parent});
+        child.on('error', function(err) {
+          assert(err);
+          assert.strictEqual(err.code, grpc.status.CANCELLED);
+          done();
+        });
+        call.cancel();
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.credentials.createInsecure());
+      var call = proxy_client.bidiStream();
+      call.on('error', function(err) {
+        done();
+      });
+    });
+  });
+  describe('Deadline', function() {
+    /* jshint bitwise:false */
+    var deadline_flags = (grpc.propagate.DEFAULTS &
+        ~grpc.propagate.CANCELLATION);
+    it('With a client stream call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.clientStream = function(parent, callback) {
+        client.clientStream(function(err, value) {
+          try {
             assert(err);
             assert(err.code === grpc.status.DEADLINE_EXCEEDED ||
                 err.code === grpc.status.INTERNAL);
+          } finally {
+            callback(err, value);
             done();
-          });
-        };
-        proxy.addProtoService(test_service, proxy_impl);
-        var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
-        proxy.start();
-        var proxy_client = new Client('localhost:' + proxy_port,
-                                      grpc.Credentials.createInsecure());
-        var deadline = new Date();
-        deadline.setSeconds(deadline.getSeconds() + 1);
-        var call = proxy_client.bidiStream(null, {deadline: deadline});
-        call.on('error', function(err) {
+          }
+        }, null, {parent: parent, propagate_flags: deadline_flags});
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.credentials.createInsecure());
+      var deadline = new Date();
+      deadline.setSeconds(deadline.getSeconds() + 1);
+      proxy_client.clientStream(function(err, value) {
+        done();
+      }, null, {deadline: deadline});
+    });
+    it('With a bidi stream call', function(done) {
+      done = multiDone(done, 2);
+      proxy_impl.bidiStream = function(parent) {
+        var child = client.bidiStream(
+            null, {parent: parent, propagate_flags: deadline_flags});
+        child.on('error', function(err) {
+          assert(err);
+          assert(err.code === grpc.status.DEADLINE_EXCEEDED ||
+              err.code === grpc.status.INTERNAL);
           done();
         });
+      };
+      proxy.addProtoService(test_service, proxy_impl);
+      var proxy_port = proxy.bind('localhost:0', server_insecure_creds);
+      proxy.start();
+      var proxy_client = new Client('localhost:' + proxy_port,
+                                    grpc.credentials.createInsecure());
+      var deadline = new Date();
+      deadline.setSeconds(deadline.getSeconds() + 1);
+      var call = proxy_client.bidiStream(null, {deadline: deadline});
+      call.on('error', function(err) {
+        done();
       });
     });
   });
@@ -866,7 +1059,7 @@ describe('Cancelling surface client', function() {
     });
     var port = server.bind('localhost:0', server_insecure_creds);
     var Client = surface_client.makeProtobufClientConstructor(mathService);
-    client = new Client('localhost:' + port, grpc.Credentials.createInsecure());
+    client = new Client('localhost:' + port, grpc.credentials.createInsecure());
     server.start();
   });
   after(function() {

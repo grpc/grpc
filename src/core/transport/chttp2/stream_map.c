@@ -149,7 +149,8 @@ static void **find(grpc_chttp2_stream_map *map, gpr_uint32 key) {
       min_idx = mid_idx + 1;
     } else if (mid_key > key) {
       max_idx = mid_idx;
-    } else /* mid_key == key */ {
+    } else /* mid_key == key */
+    {
       return &values[mid_idx];
     }
   }

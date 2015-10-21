@@ -144,4 +144,65 @@ std::shared_ptr<Credentials> CompositeCredentials(
   return nullptr;
 }
 
+void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
+  if (wrapper == nullptr) return;
+  MetadataCredentialsPluginWrapper* w =
+      reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
+  delete w;
+}
+
+void MetadataCredentialsPluginWrapper::GetMetadata(
+    void* wrapper, const char* service_url,
+    grpc_credentials_plugin_metadata_cb cb, void* user_data) {
+  GPR_ASSERT(wrapper);
+  MetadataCredentialsPluginWrapper* w =
+      reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
+  if (!w->plugin_) {
+    cb(user_data, NULL, 0, GRPC_STATUS_OK, NULL);
+    return;
+  }
+  if (w->plugin_->IsBlocking()) {
+    w->thread_pool_->Add(
+        std::bind(&MetadataCredentialsPluginWrapper::InvokePlugin, w,
+                  service_url, cb, user_data));
+  } else {
+    w->InvokePlugin(service_url, cb, user_data);
+  }
+}
+
+void MetadataCredentialsPluginWrapper::InvokePlugin(
+    const char* service_url, grpc_credentials_plugin_metadata_cb cb,
+    void* user_data) {
+  std::multimap<grpc::string, grpc::string> metadata;
+  Status status = plugin_->GetMetadata(service_url, &metadata);
+  std::vector<grpc_metadata> md;
+  for (auto it = metadata.begin(); it != metadata.end(); ++it) {
+    grpc_metadata md_entry;
+    md_entry.key = it->first.c_str();
+    md_entry.value = it->second.data();
+    md_entry.value_length = it->second.size();
+    md_entry.flags = 0;
+    md.push_back(md_entry);
+  }
+  cb(user_data, md.empty() ? nullptr : &md[0], md.size(),
+     static_cast<grpc_status_code>(status.error_code()),
+     status.error_message().c_str());
+}
+
+MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(
+    std::unique_ptr<MetadataCredentialsPlugin> plugin)
+    : thread_pool_(CreateDefaultThreadPool()), plugin_(std::move(plugin)) {}
+
+std::shared_ptr<Credentials> MetadataCredentialsFromPlugin(
+    std::unique_ptr<MetadataCredentialsPlugin> plugin) {
+  GrpcLibrary init;  // To call grpc_init().
+  MetadataCredentialsPluginWrapper* wrapper =
+      new MetadataCredentialsPluginWrapper(std::move(plugin));
+  grpc_metadata_credentials_plugin c_plugin = {
+      MetadataCredentialsPluginWrapper::GetMetadata,
+      MetadataCredentialsPluginWrapper::Destroy, wrapper};
+  return WrapCredentials(
+      grpc_metadata_credentials_create_from_plugin(c_plugin, nullptr));
+}
+
 }  // namespace grpc

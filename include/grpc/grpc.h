@@ -47,16 +47,17 @@ extern "C" {
 
 /*! \mainpage GRPC Core
  *
- * \section intro_sec The GRPC Core library is a low-level library designed
- * to be wrapped by higher level libraries.
- *
- * The top-level API is provided in grpc.h.
- * Security related functionality lives in grpc_security.h.
+ * The GRPC Core library is a low-level library designed to be wrapped by higher
+ * level libraries. The top-level API is provided in grpc.h. Security related
+ * functionality lives in grpc_security.h.
  */
 
 /** Completion Queues enable notification of the completion of asynchronous
     actions. */
 typedef struct grpc_completion_queue grpc_completion_queue;
+
+/** An alarm associated with a completion queue. */
+typedef struct grpc_alarm grpc_alarm;
 
 /** The Channel interface allows creation of Call objects. */
 typedef struct grpc_channel grpc_channel;
@@ -477,6 +478,22 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cq);
     drained and no threads are executing grpc_completion_queue_next */
 void grpc_completion_queue_destroy(grpc_completion_queue *cq);
 
+/** Create a completion queue alarm instance associated to \a cq.
+ *
+ * Once the alarm expires (at \a deadline) or it's cancelled (see \a
+ * grpc_alarm_cancel), an event with tag \a tag will be added to \a cq. If the
+ * alarm expired, the event's success bit will be true, false otherwise (ie,
+ * upon cancellation). */
+grpc_alarm *grpc_alarm_create(grpc_completion_queue *cq, gpr_timespec deadline,
+                              void *tag);
+
+/** Cancel a completion queue alarm. Calling this function over an alarm that
+ * has already fired has no effect. */
+void grpc_alarm_cancel(grpc_alarm *alarm);
+
+/** Destroy the given completion queue alarm, cancelling it in the process. */
+void grpc_alarm_destroy(grpc_alarm *alarm);
+
 /** Check the connectivity state of a channel. */
 grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel *channel, int try_to_connect);
@@ -597,8 +614,8 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call *call,
 void grpc_call_destroy(grpc_call *call);
 
 /** Request notification of a new call.
-    Once a call is received, a notification tagged with \a tag_new is added to 
-    \a cq_for_notification. \a call, \a details and \a request_metadata are 
+    Once a call is received, a notification tagged with \a tag_new is added to
+    \a cq_for_notification. \a call, \a details and \a request_metadata are
     updated with the appropriate call information. \a cq_bound_to_call is bound
     to \a call, and batch operation notifications for that call will be posted
     to \a cq_bound_to_call.

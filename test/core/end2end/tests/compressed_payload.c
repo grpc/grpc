@@ -46,7 +46,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/compress_filter.h"
-#include "src/core/surface/call.h"
+#include "src/core/surface/call_test_only.h"
 
 enum { TIMEOUT = 200000 };
 
@@ -80,9 +80,9 @@ static void drain_cq(grpc_completion_queue *cq) {
 static void shutdown_server(grpc_end2end_test_fixture *f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(
-                 f->cq, tag(1000), GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5), NULL)
-                 .type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(1000),
+                                         GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5),
+                                         NULL).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->server);
   f->server = NULL;
 }
@@ -186,7 +186,7 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(c, ops, op - ops, tag(1), NULL);
+  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -196,12 +196,13 @@ static void request_with_payload_template(
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
 
-  GPR_ASSERT(GPR_BITCOUNT(grpc_call_get_encodings_accepted_by_peer(s)) == 3);
-  GPR_ASSERT(GPR_BITGET(grpc_call_get_encodings_accepted_by_peer(s),
+  GPR_ASSERT(
+      GPR_BITCOUNT(grpc_call_test_only_get_encodings_accepted_by_peer(s)) == 3);
+  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_NONE) != 0);
-  GPR_ASSERT(GPR_BITGET(grpc_call_get_encodings_accepted_by_peer(s),
+  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_DEFLATE) != 0);
-  GPR_ASSERT(GPR_BITGET(grpc_call_get_encodings_accepted_by_peer(s),
+  GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_GZIP) != 0);
 
   op = ops;
@@ -215,7 +216,7 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(s, ops, op - ops, tag(102), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(102), 1);
@@ -234,7 +235,7 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(s, ops, op - ops, tag(103), NULL);
+  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   cq_expect_completion(cqv, tag(103), 1);
