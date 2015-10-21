@@ -237,6 +237,18 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "gpr_cpu_test", 
+    "src": [
+      "test/core/support/cpu_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "gpr_env_test", 
     "src": [
       "test/core/support/env_test.c"
