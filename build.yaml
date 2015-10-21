@@ -969,6 +969,14 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+- name: gpr_cpu_test
+  build: test
+  language: c
+  src:
+  - test/core/support/cpu_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_env_test
   build: test
   language: c
