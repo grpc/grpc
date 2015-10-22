@@ -103,10 +103,10 @@ TestService::Stub* InteropClient::ServiceStub::Get() {
 void InteropClient::ServiceStub::Reset(std::shared_ptr<Channel> channel) {
   channel_ = channel;
 
-  // Update stub_ as well. Note: If new_stub_every_call_ is true, we can set
-  // stub_ to nullptr since the next call to Get() will create a new stub
+  // Update stub_ as well. Note: If new_stub_every_call_ is true, we can reset
+  // the stub_ since the next call to Get() will create a new stub
   if (new_stub_every_call_) {
-    stub_.reset(nullptr);
+    stub_.reset();
   } else {
     stub_ = TestService::NewStub(channel);
   }
