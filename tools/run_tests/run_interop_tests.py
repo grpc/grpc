@@ -48,17 +48,6 @@ os.chdir(ROOT)
 
 _DEFAULT_SERVER_PORT=8080
 
-_CLOUD_TO_PROD_BASE_ARGS = [
-    '--server_host_override=grpc-test.sandbox.google.com',
-    '--server_host=grpc-test.sandbox.google.com',
-    '--server_port=443',
-    '--use_tls=true']
-
-_CLOUD_TO_CLOUD_BASE_ARGS = [
-    '--server_host_override=foo.test.google.fr',
-    '--use_tls=true',
-    '--use_test_ca=true']
-
 # TOOD(jtattermusch) wrapped languages use this variable for location
 # of roots.pem. We might want to use GRPC_DEFAULT_SSL_ROOTS_FILE_PATH
 # supported by C core SslCredentials instead.
@@ -68,16 +57,12 @@ _SSL_CERT_ENV = { 'SSL_CERT_FILE':'/usr/local/share/grpc/roots.pem' }
 class CXXLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['bins/opt/interop_client']
     self.client_cwd = None
     self.server_cwd = None
     self.safename = 'cxx'
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['bins/opt/interop_client']
 
   def cloud_to_prod_env(self):
     return {}
@@ -95,16 +80,12 @@ class CXXLanguage:
 class CSharpLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['mono', 'Grpc.IntegrationTesting.Client.exe']
     self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug'
     self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug'
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['mono', 'Grpc.IntegrationTesting.Client.exe']
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -122,16 +103,12 @@ class CSharpLanguage:
 class JavaLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['./run-test-client.sh']
     self.client_cwd = '../grpc-java'
     self.server_cwd = '../grpc-java'
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['./run-test-client.sh']
 
   def cloud_to_prod_env(self):
     return {}
@@ -149,17 +126,13 @@ class JavaLanguage:
 class GoLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['go', 'run', 'client.go']
     # TODO: this relies on running inside docker
     self.client_cwd = '/go/src/google.golang.org/grpc/interop/client'
     self.server_cwd = '/go/src/google.golang.org/grpc/interop/server'
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['go', 'run', 'client.go']
 
   def cloud_to_prod_env(self):
     return {}
@@ -177,16 +150,12 @@ class GoLanguage:
 class NodeLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['node', 'src/node/interop/interop_client.js']
     self.client_cwd = None
     self.server_cwd = None
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['node', 'src/node/interop/interop_client.js']
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -204,15 +173,11 @@ class NodeLanguage:
 class PHPLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['src/php/bin/interop_client.sh']
     self.client_cwd = None
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['src/php/bin/interop_client.sh']
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -227,16 +192,12 @@ class PHPLanguage:
 class RubyLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['ruby', 'src/ruby/bin/interop/interop_client.rb']
     self.client_cwd = None
     self.server_cwd = None
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['ruby', 'src/ruby/bin/interop/interop_client.rb']
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -254,16 +215,12 @@ class RubyLanguage:
 class PythonLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['python2.7_virtual_environment/bin/python', '-m', 'grpc_interop.client']
     self.client_cwd = None
     self.server_cwd = None
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['python2.7_virtual_environment/bin/python', '-m', 'grpc_interop.client']
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -367,7 +324,12 @@ def _job_kill_handler(job):
 
 def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
   """Creates jobspec for cloud-to-prod interop test"""
-  cmdline = language.cloud_to_prod_args() + ['--test_case=%s' % test_case]
+  cmdline = language.client_args() + [
+      '--server_host_override=grpc-test.sandbox.google.com',
+      '--server_host=grpc-test.sandbox.google.com',
+      '--server_port=443',
+      '--use_tls=true',
+      '--test_case=%s' % test_case]
   cwd = language.client_cwd
   environ = dict(language.cloud_to_prod_env(), **language.global_env())
   container_name = None
@@ -403,10 +365,13 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
 def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                            server_port, docker_image=None):
   """Creates jobspec for cloud-to-cloud interop test"""
-  cmdline = bash_login_cmdline(language.cloud_to_cloud_args() +
-                               ['--test_case=%s' % test_case,
+  cmdline = bash_login_cmdline(language.client_args() +
+                               ['--server_host_override=foo.test.google.fr',
+                                '--use_tls=true',
+                                '--use_test_ca=true',
+                                '--test_case=%s' % test_case,
                                 '--server_host=%s' % server_host,
-                                '--server_port=%s' % server_port ])
+                                '--server_port=%s' % server_port])
   cwd = language.client_cwd
   environ = language.global_env()
   if docker_image:
