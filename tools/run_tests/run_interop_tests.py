@@ -501,10 +501,11 @@ def fill_one_test_result(shortname, resultset, html_str):
   return html_str
 
 
-def render_html_report(test_cases, client_langs, server_langs, resultset,
+def render_html_report(client_langs, server_langs, resultset,
                        num_failures):
   """Generate html report."""
-  sorted_test_cases = sorted(test_cases)
+  sorted_test_cases = sorted(_TEST_CASES)
+  sorted_auth_test_cases = sorted(_AUTH_TEST_CASES)
   sorted_client_langs = sorted(client_langs)
   sorted_server_langs = sorted(server_langs)
   html_str = ('<!DOCTYPE html>\n'
@@ -532,14 +533,14 @@ def render_html_report(test_cases, client_langs, server_langs, resultset,
     for client_lang in sorted_client_langs:
       html_str = '%s<th>%s\n' % (html_str, client_lang)
     html_str = '%s</tr>\n' % html_str
-    for test_case in sorted_test_cases:
+    for test_case in sorted_test_cases + sorted_auth_test_cases:
       html_str = '%s<tr><td><b>%s</b></td>\n' % (html_str, test_case)
       for client_lang in sorted_client_langs:
-        if args.cloud_to_prod:
+        if not test_case in sorted_auth_test_cases:
           shortname = 'cloud_to_prod:%s:%s' % (client_lang, test_case)
         else:
           shortname = 'cloud_to_prod_auth:%s:%s' % (client_lang, test_case)
-        html_str = fill_one_test_result(shortname, resultset, html_str)       
+        html_str = fill_one_test_result(shortname, resultset, html_str)
       html_str = '%s</tr>\n' % html_str 
     html_str = '%s</table>\n' % html_str
   if servers:
@@ -744,7 +745,7 @@ try:
   tree.write('report.xml', encoding='UTF-8')
   
   # Generate HTML report.
-  render_html_report(_TEST_CASES, set([str(l) for l in languages]), servers, 
+  render_html_report(set([str(l) for l in languages]), servers,
                      resultset, num_failures)
 
 finally:
