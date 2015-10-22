@@ -56,7 +56,8 @@ _CLOUD_TO_PROD_BASE_ARGS = [
 
 _CLOUD_TO_CLOUD_BASE_ARGS = [
     '--server_host_override=foo.test.google.fr',
-    '--use_tls=true']
+    '--use_tls=true',
+    '--use_test_ca=true']
 
 # TOOD(jtattermusch) wrapped languages use this variable for location
 # of roots.pem. We might want to use GRPC_DEFAULT_SSL_ROOTS_FILE_PATH
@@ -76,8 +77,7 @@ class CXXLanguage:
     return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
 
   def cloud_to_cloud_args(self):
-    return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_test_ca=true'])
+    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
 
   def cloud_to_prod_env(self):
     return {}
@@ -104,8 +104,7 @@ class CSharpLanguage:
     return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
 
   def cloud_to_cloud_args(self):
-    return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_test_ca=true'])
+    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -132,8 +131,7 @@ class JavaLanguage:
     return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
 
   def cloud_to_cloud_args(self):
-    return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_test_ca=true'])
+    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
 
   def cloud_to_prod_env(self):
     return {}
@@ -158,9 +156,7 @@ class GoLanguage:
     self.safename = str(self)
 
   def cloud_to_prod_args(self):
-    # TODO(jtattermusch) go uses --tls_ca_file instead of --use_test_ca
-    return (self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS +
-            ['--tls_ca_file=""'])
+    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
 
   def cloud_to_cloud_args(self):
     return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
@@ -190,8 +186,7 @@ class NodeLanguage:
     return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
 
   def cloud_to_cloud_args(self):
-    return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_test_ca=true'])
+    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -217,8 +212,7 @@ class PHPLanguage:
     return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
 
   def cloud_to_cloud_args(self):
-    return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_test_ca=true'])
+    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -242,8 +236,7 @@ class RubyLanguage:
     return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
 
   def cloud_to_cloud_args(self):
-    return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_test_ca=true'])
+    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -270,8 +263,7 @@ class PythonLanguage:
     return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
 
   def cloud_to_cloud_args(self):
-    return (self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS +
-            ['--use_test_ca=true'])
+    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -399,7 +391,7 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
           cmdline=cmdline,
           cwd=cwd,
           environ=environ,
-          shortname="%s:%s:%s" % (suite_name, language, test_case),
+          shortname='%s:%s:%s' % (suite_name, language, test_case),
           timeout_seconds=2*60,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
@@ -431,7 +423,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
           cmdline=cmdline,
           cwd=cwd,
           environ=environ,
-          shortname="cloud_to_cloud:%s:%s_server:%s" % (language, server_name,
+          shortname='cloud_to_cloud:%s:%s_server:%s' % (language, server_name,
                                                  test_case),
           timeout_seconds=2*60,
           flake_retries=5 if args.allow_flakes else 0,
@@ -456,7 +448,7 @@ def server_jobspec(language, docker_image):
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
           environ=environ,
-          shortname="interop_server_%s" % language,
+          shortname='interop_server_%s' % language,
           timeout_seconds=30*60)
   server_job.container_name = container_name
   return server_job
@@ -475,14 +467,130 @@ def build_interop_image_jobspec(language, tag=None):
   # TODO(stanleycheung): find a more elegant way to do this
   if language.safename == 'php' and os.path.exists('/var/local/.composer/auth.json'):
     env['BUILD_INTEROP_DOCKER_EXTRA_ARGS'] = \
-      "-v /var/local/.composer/auth.json:/root/.composer/auth.json:ro"
+      '-v /var/local/.composer/auth.json:/root/.composer/auth.json:ro'
   build_job = jobset.JobSpec(
           cmdline=['tools/jenkins/build_interop_image.sh'],
           environ=env,
-          shortname="build_docker_%s" % (language),
+          shortname='build_docker_%s' % (language),
           timeout_seconds=30*60)
   build_job.tag = tag
   return build_job
+
+
+# TODO(adelez): Use mako template.
+def fill_one_test_result(shortname, resultset, html_str):
+  if shortname in resultset:
+    result = resultset[shortname]
+    if result.state == 'PASSED':
+      html_str = '%s<td bgcolor=\"green\">PASS</td>\n' % html_str
+    else:
+      tooltip = ''
+      if result.returncode > 0 or result.message:
+        if result.returncode > 0:
+          tooltip = 'returncode: %d ' % result.returncode
+        if result.message:
+          tooltip = '%smessage: %s' % (tooltip, result.message)     
+      if result.state == 'FAILED':
+        html_str = '%s<td bgcolor=\"red\">' % html_str
+        if tooltip:  
+          html_str = ('%s<a href=\"#\" data-toggle=\"tooltip\" '
+                      'data-placement=\"auto\" title=\"%s\">FAIL</a></td>\n' % 
+                      (html_str, tooltip))
+        else:
+          html_str = '%sFAIL</td>\n' % html_str
+      elif result.state == 'TIMEOUT':
+        html_str = '%s<td bgcolor=\"yellow\">' % html_str
+        if tooltip:
+          html_str = ('%s<a href=\"#\" data-toggle=\"tooltip\" '
+                      'data-placement=\"auto\" title=\"%s\">TIMEOUT</a></td>\n' 
+                      % (html_str, tooltip))
+        else:
+          html_str = '%sTIMEOUT</td>\n' % html_str
+  else:
+    html_str = '%s<td bgcolor=\"magenta\">Not implemented</td>\n' % html_str
+  
+  return html_str
+
+
+def render_html_report(test_cases, client_langs, server_langs, resultset,
+                       num_failures):
+  """Generate html report."""
+  sorted_test_cases = sorted(test_cases)
+  sorted_client_langs = sorted(client_langs)
+  print sorted_client_langs
+  sorted_server_langs = sorted(server_langs)
+  html_str = ('<!DOCTYPE html>\n'
+              '<html lang=\"en\">\n'
+              '<head><title>Interop Test Result</title></head>\n'
+              '<body>\n')
+  if num_failures > 1:
+    html_str = (
+        '%s<p><h2><font color=\"red\">%d tests failed!</font></h2></p>\n' % 
+        (html_str, num_failures))
+  elif num_failures:
+    html_str = (
+        '%s<p><h2><font color=\"red\">%d test failed!</font></h2></p>\n' % 
+        (html_str, num_failures))
+  else:
+    html_str = (
+        '%s<p><h2><font color=\"green\">All tests passed!</font></h2></p>\n' % 
+        html_str)
+  if args.cloud_to_prod_auth or args.cloud_to_prod:
+    # Each column header is the client language.
+    html_str = ('%s<h2>Cloud to Prod</h2>\n' 
+                '<table style=\"width:100%%\" border=\"1\">\n'
+                '<tr bgcolor=\"#00BFFF\">\n'
+                '<th/>\n') % html_str
+    for client_lang in sorted_client_langs:
+      html_str = '%s<th>%s\n' % (html_str, client_lang)
+    html_str = '%s</tr>\n' % html_str
+    for test_case in sorted_test_cases:
+      html_str = '%s<tr><td><b>%s</b></td>\n' % (html_str, test_case)
+      for client_lang in sorted_client_langs:
+        if args.cloud_to_prod:
+          shortname = 'cloud_to_prod:%s:%s' % (client_lang, test_case)
+        else:
+          shortname = 'cloud_to_prod_auth:%s:%s' % (client_lang, test_case)
+        html_str = fill_one_test_result(shortname, resultset, html_str)       
+      html_str = '%s</tr>\n' % html_str 
+    html_str = '%s</table>\n' % html_str
+  if servers:
+    for test_case in sorted_test_cases:
+      # Each column header is the client language.
+      html_str = ('%s<h2>%s</h2>\n' 
+                  '<table style=\"width:100%%\" border=\"1\">\n'
+                  '<tr bgcolor=\"#00BFFF\">\n'
+                  '<th/>\n') % (html_str, test_case)
+      for client_lang in sorted_client_langs:
+        html_str = '%s<th>%s\n' % (html_str, client_lang)
+      html_str = '%s</tr>\n' % html_str
+      # Each row head is the server language.
+      for server_lang in sorted_server_langs:
+        html_str = '%s<tr><td><b>%s</b></td>\n' % (html_str, server_lang)
+        # Fill up the cells with test result.
+        for client_lang in sorted_client_langs:
+          shortname = 'cloud_to_cloud:%s:%s_server:%s' % (
+              client_lang, server_lang, test_case)
+          html_str = fill_one_test_result(shortname, resultset, html_str)
+        html_str = '%s</tr>\n' % html_str
+      html_str = '%s</table>\n' % html_str
+
+  html_str = ('%s\n'
+              '<script>\n'
+              '$(document).ready(function(){'
+              '$(\'[data-toggle=\"tooltip\"]\').tooltip();\n'   
+              '});\n'
+              '</script>\n'
+              '</body>\n'
+              '</html>') % html_str  
+  
+  # Write to reports/index.html as set up in Jenkins plugin.
+  html_report_dir = 'reports'
+  if not os.path.exists(html_report_dir):
+    os.mkdir(html_report_dir)
+  html_file_path = os.path.join(html_report_dir, 'index.html')
+  with open(html_file_path, 'w') as f:
+    f.write(html_str)
 
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
@@ -511,7 +619,7 @@ argp.add_argument('-s', '--server',
                   default=[])
 argp.add_argument('--override_server',
                   action='append',
-                  type=lambda kv: kv.split("="),
+                  type=lambda kv: kv.split('='),
                   help='Use servername=HOST:PORT to explicitly specify a server. E.g. csharp=localhost:50000',
                   default=[])
 argp.add_argument('-t', '--travis',
@@ -529,7 +637,7 @@ argp.add_argument('--allow_flakes',
                   default=False,
                   action='store_const',
                   const=True,
-                  help="Allow flaky tests to show as passing (re-runs failed tests up to five times)")
+                  help='Allow flaky tests to show as passing (re-runs failed tests up to five times)')
 args = argp.parse_args()
 
 servers = set(s for s in itertools.chain.from_iterable(_SERVERS
@@ -546,7 +654,7 @@ if args.use_docker:
     time.sleep(5)
 
 if not args.use_docker and servers:
-  print "Running interop servers is only supported with --use_docker option enabled."
+  print 'Running interop servers is only supported with --use_docker option enabled.'
   sys.exit(1)
 
 languages = set(_LANGUAGES[l]
@@ -568,10 +676,14 @@ if args.use_docker:
 
   if build_jobs:
     jobset.message('START', 'Building interop docker images.', do_newline=True)
-    if jobset.run(build_jobs, newline_on_success=True, maxjobs=args.jobs):
-      jobset.message('SUCCESS', 'All docker images built successfully.', do_newline=True)
+    num_failures, _ = jobset.run(
+        build_jobs, newline_on_success=True, maxjobs=args.jobs)
+    if num_failures == 0:
+      jobset.message('SUCCESS', 'All docker images built successfully.', 
+                     do_newline=True)
     else:
-      jobset.message('FAILED', 'Failed to build interop docker images.', do_newline=True)
+      jobset.message('FAILED', 'Failed to build interop docker images.', 
+                     do_newline=True)
       for image in docker_images.itervalues():
         dockerjob.remove_image(image, skip_nonexistent=True)
       exit(1);
@@ -622,7 +734,7 @@ try:
         jobs.append(test_job)
 
   if not jobs:
-    print "No jobs to run."
+    print 'No jobs to run.'
     for image in docker_images.itervalues():
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
@@ -630,13 +742,19 @@ try:
   root = ET.Element('testsuites')
   testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests')
 
-  if jobset.run(jobs, newline_on_success=True, maxjobs=args.jobs, xml_report=testsuite):
-    jobset.message('SUCCESS', 'All tests passed', do_newline=True)
-  else:
+  num_failures, resultset = jobset.run(jobs, newline_on_success=True, 
+                                       maxjobs=args.jobs, xml_report=testsuite)
+  if num_failures:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
+  else:
+    jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
   tree = ET.ElementTree(root)
   tree.write('report.xml', encoding='UTF-8')
+  
+  # Generate HTML report.
+  render_html_report(_TEST_CASES, set([str(l) for l in languages]), servers, 
+                     resultset, num_failures)
 
 finally:
   # Check if servers are still running.
