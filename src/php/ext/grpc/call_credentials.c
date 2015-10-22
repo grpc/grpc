@@ -31,7 +31,7 @@
  *
  */
 
-#include "credentials.h"
+#include "channel_credentials.h"
 #include "call_credentials.h"
 
 #ifdef HAVE_CONFIG_H
@@ -95,9 +95,9 @@ zval *grpc_php_wrap_call_credentials(grpc_call_credentials *wrapped) {
 
 /**
  * Create composite credentials from two existing credentials.
- * @param Credentials cred1 The first credential
- * @param Credentials cred2 The second credential
- * @return Credentials The new composite credentials object
+ * @param CallCredentials cred1 The first credential
+ * @param CallCredentials cred2 The second credential
+ * @return CallCredentials The new composite credentials object
  */
 PHP_METHOD(CallCredentials, createComposite) {
   zval *cred1_obj;

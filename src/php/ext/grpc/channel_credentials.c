@@ -31,7 +31,7 @@
  *
  */
 
-#include "credentials.h"
+#include "channel_credentials.h"
 #include "call_credentials.h"
 
 #ifdef HAVE_CONFIG_H
