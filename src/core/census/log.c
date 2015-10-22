@@ -74,7 +74,7 @@
    writer allocates a new block for the current core and updates
    core_local_block accordingly.
 
-   Simultaneous read and write access is allowed. Reader can safely read up to
+   Simultaneous read and write access is allowed. Readers can safely read up to
    committed bytes (bytes_committed).
 
    reader_lock protects the block, currently being read, from getting recycled.
@@ -89,34 +89,34 @@
    include the name of the structure, which will be passed as the first
    argument. E.g. cl_block_initialize() will initialize a cl_block.
 */
-#include "src/core/statistics/census_log.h"
-#include <string.h>
+
+#include "src/core/census/log.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/useful.h>
+#include <string.h>
 
 /* End of platform specific code */
 
 typedef struct census_log_block_list_struct {
-  struct census_log_block_list_struct *next;
-  struct census_log_block_list_struct *prev;
-  struct census_log_block *block;
+  struct census_log_block_list_struct* next;
+  struct census_log_block_list_struct* prev;
+  struct census_log_block* block;
 } cl_block_list_struct;
 
 typedef struct census_log_block {
   /* Pointer to underlying buffer */
-  char *buffer;
+  char* buffer;
   gpr_atm writer_lock;
   gpr_atm reader_lock;
   /* Keeps completely written bytes. Declared atomic because accessed
      simultaneously by reader and writer. */
   gpr_atm bytes_committed;
   /* Bytes already read */
-  gpr_int32 bytes_read;
+  size_t bytes_read;
   /* Links for list */
   cl_block_list_struct link;
 /* We want this structure to be cacheline aligned. We assume the following
@@ -124,7 +124,7 @@ typedef struct census_log_block {
    type                 32b size    64b size
    char*                   4           8
    3x gpr_atm             12          24
-   gpr_int32               4           8 (assumes padding)
+   size_t                  4           8
    cl_block_list_struct   12          24
    TOTAL                  32          64
 
@@ -175,9 +175,9 @@ struct census_log {
   /* Number of cores (aka hardware-contexts) */
   unsigned num_cores;
   /* number of CENSUS_LOG_2_MAX_RECORD_SIZE blocks in log */
-  gpr_int32 num_blocks;
-  cl_block *blocks;                       /* Block metadata. */
-  cl_core_local_block *core_local_blocks; /* Keeps core to block mappings. */
+  gpr_uint32 num_blocks;
+  cl_block* blocks;                       /* Block metadata. */
+  cl_core_local_block* core_local_blocks; /* Keeps core to block mappings. */
   gpr_mu lock;
   int initialized; /* has log been initialized? */
   /* Keeps the state of the reader iterator. A value of 0 indicates that
@@ -186,10 +186,10 @@ struct census_log {
   gpr_uint32 read_iterator_state;
   /* Points to the block being read. If non-NULL, the block is locked for
      reading (block_being_read_->reader_lock is held). */
-  cl_block *block_being_read;
+  cl_block* block_being_read;
   /* A non-zero value indicates that log is full. */
   gpr_atm is_full;
-  char *buffer;
+  char* buffer;
   cl_block_list free_block_list;
   cl_block_list dirty_block_list;
   gpr_atm out_of_space_count;
@@ -201,44 +201,44 @@ static struct census_log g_log;
 /* Functions that operate on an atomic memory location used as a lock */
 
 /* Returns non-zero if lock is acquired */
-static int cl_try_lock(gpr_atm *lock) { return gpr_atm_acq_cas(lock, 0, 1); }
+static int cl_try_lock(gpr_atm* lock) { return gpr_atm_acq_cas(lock, 0, 1); }
 
-static void cl_unlock(gpr_atm *lock) { gpr_atm_rel_store(lock, 0); }
+static void cl_unlock(gpr_atm* lock) { gpr_atm_rel_store(lock, 0); }
 
 /* Functions that operate on cl_core_local_block's */
 
-static void cl_core_local_block_set_block(cl_core_local_block *clb,
-                                          cl_block *block) {
+static void cl_core_local_block_set_block(cl_core_local_block* clb,
+                                          cl_block* block) {
   gpr_atm_rel_store(&clb->block, (gpr_atm)block);
 }
 
-static cl_block *cl_core_local_block_get_block(cl_core_local_block *clb) {
-  return (cl_block *)gpr_atm_acq_load(&clb->block);
+static cl_block* cl_core_local_block_get_block(cl_core_local_block* clb) {
+  return (cl_block*)gpr_atm_acq_load(&clb->block);
 }
 
 /* Functions that operate on cl_block_list_struct's */
 
-static void cl_block_list_struct_initialize(cl_block_list_struct *bls,
-                                            cl_block *block) {
+static void cl_block_list_struct_initialize(cl_block_list_struct* bls,
+                                            cl_block* block) {
   bls->next = bls->prev = bls;
   bls->block = block;
 }
 
 /* Functions that operate on cl_block_list's */
 
-static void cl_block_list_initialize(cl_block_list *list) {
+static void cl_block_list_initialize(cl_block_list* list) {
   list->count = 0;
   cl_block_list_struct_initialize(&list->ht, NULL);
 }
 
 /* Returns head of *this, or NULL if empty. */
-static cl_block *cl_block_list_head(cl_block_list *list) {
+static cl_block* cl_block_list_head(cl_block_list* list) {
   return list->ht.next->block;
 }
 
 /* Insert element *e after *pos. */
-static void cl_block_list_insert(cl_block_list *list, cl_block_list_struct *pos,
-                                 cl_block_list_struct *e) {
+static void cl_block_list_insert(cl_block_list* list, cl_block_list_struct* pos,
+                                 cl_block_list_struct* e) {
   list->count++;
   e->next = pos->next;
   e->prev = pos;
@@ -247,17 +247,17 @@ static void cl_block_list_insert(cl_block_list *list, cl_block_list_struct *pos,
 }
 
 /* Insert block at the head of the list */
-static void cl_block_list_insert_at_head(cl_block_list *list, cl_block *block) {
+static void cl_block_list_insert_at_head(cl_block_list* list, cl_block* block) {
   cl_block_list_insert(list, &list->ht, &block->link);
 }
 
 /* Insert block at the tail of the list */
-static void cl_block_list_insert_at_tail(cl_block_list *list, cl_block *block) {
+static void cl_block_list_insert_at_tail(cl_block_list* list, cl_block* block) {
   cl_block_list_insert(list, list->ht.prev, &block->link);
 }
 
 /* Removes block *b. Requires *b be in the list. */
-static void cl_block_list_remove(cl_block_list *list, cl_block *b) {
+static void cl_block_list_remove(cl_block_list* list, cl_block* b) {
   list->count--;
   b->link.next->prev = b->link.prev;
   b->link.prev->next = b->link.next;
@@ -265,7 +265,7 @@ static void cl_block_list_remove(cl_block_list *list, cl_block *b) {
 
 /* Functions that operate on cl_block's */
 
-static void cl_block_initialize(cl_block *block, char *buffer) {
+static void cl_block_initialize(cl_block* block, char* buffer) {
   block->buffer = buffer;
   gpr_atm_rel_store(&block->writer_lock, 0);
   gpr_atm_rel_store(&block->reader_lock, 0);
@@ -275,13 +275,13 @@ static void cl_block_initialize(cl_block *block, char *buffer) {
 }
 
 /* Guards against exposing partially written buffer to the reader. */
-static void cl_block_set_bytes_committed(cl_block *block,
-                                         gpr_int32 bytes_committed) {
-  gpr_atm_rel_store(&block->bytes_committed, bytes_committed);
+static void cl_block_set_bytes_committed(cl_block* block,
+                                         size_t bytes_committed) {
+  gpr_atm_rel_store(&block->bytes_committed, (gpr_atm)bytes_committed);
 }
 
-static gpr_int32 cl_block_get_bytes_committed(cl_block *block) {
-  return gpr_atm_acq_load(&block->bytes_committed);
+static size_t cl_block_get_bytes_committed(cl_block* block) {
+  return (size_t)gpr_atm_acq_load(&block->bytes_committed);
 }
 
 /* Tries to disable future read/write access to this block. Succeeds if:
@@ -291,7 +291,7 @@ static gpr_int32 cl_block_get_bytes_committed(cl_block *block) {
    On success, clears the block state and returns with writer_lock_ and
    reader_lock_ held. These locks are released by a subsequent
    cl_block_access_enable() call. */
-static int cl_block_try_disable_access(cl_block *block, int discard_data) {
+static int cl_block_try_disable_access(cl_block* block, int discard_data) {
   if (!cl_try_lock(&block->writer_lock)) {
     return 0;
   }
@@ -310,14 +310,14 @@ static int cl_block_try_disable_access(cl_block *block, int discard_data) {
   return 1;
 }
 
-static void cl_block_enable_access(cl_block *block) {
+static void cl_block_enable_access(cl_block* block) {
   cl_unlock(&block->reader_lock);
   cl_unlock(&block->writer_lock);
 }
 
 /* Returns with writer_lock held. */
-static void *cl_block_start_write(cl_block *block, size_t size) {
-  gpr_int32 bytes_committed;
+static void* cl_block_start_write(cl_block* block, size_t size) {
+  size_t bytes_committed;
   if (!cl_try_lock(&block->writer_lock)) {
     return NULL;
   }
@@ -332,7 +332,7 @@ static void *cl_block_start_write(cl_block *block, size_t size) {
 /* Releases writer_lock and increments committed bytes by 'bytes_written'.
   'bytes_written' must be <= 'size' specified in the corresponding
   StartWrite() call. This function is thread-safe. */
-static void cl_block_end_write(cl_block *block, size_t bytes_written) {
+static void cl_block_end_write(cl_block* block, size_t bytes_written) {
   cl_block_set_bytes_committed(
       block, cl_block_get_bytes_committed(block) + bytes_written);
   cl_unlock(&block->writer_lock);
@@ -343,14 +343,17 @@ static void cl_block_end_write(cl_block *block, size_t bytes_written) {
    released by a subsequent cl_block_end_read() call. Returns NULL if:
    - read in progress
    - no data available */
-static void *cl_block_start_read(cl_block *block, size_t *bytes_available) {
-  void *record;
+static void* cl_block_start_read(cl_block* block, size_t* bytes_available) {
+  void* record;
+  size_t bytes_committed;
   if (!cl_try_lock(&block->reader_lock)) {
     return NULL;
   }
   /* bytes_committed may change from under us. Use bytes_available to update
      bytes_read below. */
-  *bytes_available = cl_block_get_bytes_committed(block) - block->bytes_read;
+  bytes_committed = cl_block_get_bytes_committed(block);
+  GPR_ASSERT(bytes_committed >= block->bytes_read);
+  *bytes_available = bytes_committed - block->bytes_read;
   if (*bytes_available == 0) {
     cl_unlock(&block->reader_lock);
     return NULL;
@@ -360,7 +363,7 @@ static void *cl_block_start_read(cl_block *block, size_t *bytes_available) {
   return record;
 }
 
-static void cl_block_end_read(cl_block *block) {
+static void cl_block_end_read(cl_block* block) {
   cl_unlock(&block->reader_lock);
 }
 
@@ -368,8 +371,8 @@ static void cl_block_end_read(cl_block *block) {
 
 /* Allocates a new free block (or recycles an available dirty block if log is
    configured to discard old records). Returns NULL if out-of-space. */
-static cl_block *cl_allocate_block(void) {
-  cl_block *block = cl_block_list_head(&g_log.free_block_list);
+static cl_block* cl_allocate_block(void) {
+  cl_block* block = cl_block_list_head(&g_log.free_block_list);
   if (block != NULL) {
     cl_block_list_remove(&g_log.free_block_list, block);
     return block;
@@ -395,11 +398,11 @@ static cl_block *cl_allocate_block(void) {
    - allocated a new block OR
    - 'core_id' => 'old_block' mapping changed (another thread allocated a
      block before lock was acquired). */
-static int cl_allocate_core_local_block(gpr_int32 core_id,
-                                        cl_block *old_block) {
+static int cl_allocate_core_local_block(gpr_uint32 core_id,
+                                        cl_block* old_block) {
   /* Now that we have the lock, check if core-local mapping has changed. */
-  cl_core_local_block *core_local_block = &g_log.core_local_blocks[core_id];
-  cl_block *block = cl_core_local_block_get_block(core_local_block);
+  cl_core_local_block* core_local_block = &g_log.core_local_blocks[core_id];
+  cl_block* block = cl_core_local_block_get_block(core_local_block);
   if ((block != NULL) && (block != old_block)) {
     return 1;
   }
@@ -417,16 +420,16 @@ static int cl_allocate_core_local_block(gpr_int32 core_id,
   return 1;
 }
 
-static cl_block *cl_get_block(void *record) {
-  gpr_uintptr p = (gpr_uintptr)((char *)record - g_log.buffer);
+static cl_block* cl_get_block(void* record) {
+  gpr_uintptr p = (gpr_uintptr)((char*)record - g_log.buffer);
   gpr_uintptr index = p >> CENSUS_LOG_2_MAX_RECORD_SIZE;
   return &g_log.blocks[index];
 }
 
 /* Gets the next block to read and tries to free 'prev' block (if not NULL).
    Returns NULL if reached the end. */
-static cl_block *cl_next_block_to_read(cl_block *prev) {
-  cl_block *block = NULL;
+static cl_block* cl_next_block_to_read(cl_block* prev) {
+  cl_block* block = NULL;
   if (g_log.read_iterator_state == g_log.num_cores) {
     /* We are traversing dirty list; find the next dirty block. */
     if (prev != NULL) {
@@ -458,37 +461,42 @@ static cl_block *cl_next_block_to_read(cl_block *prev) {
   return NULL;
 }
 
+#define CL_LOG_2_MB 20 /* 2^20 = 1MB */
+
 /* External functions: primary stats_log interface */
 void census_log_initialize(size_t size_in_mb, int discard_old_records) {
-  gpr_int32 ix;
+  gpr_uint32 i;
   /* Check cacheline alignment. */
   GPR_ASSERT(sizeof(cl_block) % GPR_CACHELINE_SIZE == 0);
   GPR_ASSERT(sizeof(cl_core_local_block) % GPR_CACHELINE_SIZE == 0);
   GPR_ASSERT(!g_log.initialized);
   g_log.discard_old_records = discard_old_records;
   g_log.num_cores = gpr_cpu_num_cores();
+  /* Ensure that we will not get any overflow in calaculating num_blocks */
+  GPR_ASSERT(CL_LOG_2_MB >= CENSUS_LOG_2_MAX_RECORD_SIZE);
+  GPR_ASSERT(size_in_mb < 1000);
   /* Ensure at least as many blocks as there are cores. */
-  g_log.num_blocks = GPR_MAX(
-      g_log.num_cores, (size_in_mb << 20) >> CENSUS_LOG_2_MAX_RECORD_SIZE);
+  g_log.num_blocks =
+      (gpr_uint32)GPR_MAX(g_log.num_cores, (size_in_mb << CL_LOG_2_MB) >>
+                                               CENSUS_LOG_2_MAX_RECORD_SIZE);
   gpr_mu_init(&g_log.lock);
   g_log.read_iterator_state = 0;
   g_log.block_being_read = NULL;
   gpr_atm_rel_store(&g_log.is_full, 0);
-  g_log.core_local_blocks = (cl_core_local_block *)gpr_malloc_aligned(
+  g_log.core_local_blocks = (cl_core_local_block*)gpr_malloc_aligned(
       g_log.num_cores * sizeof(cl_core_local_block), GPR_CACHELINE_SIZE_LOG);
   memset(g_log.core_local_blocks, 0,
          g_log.num_cores * sizeof(cl_core_local_block));
-  g_log.blocks = (cl_block *)gpr_malloc_aligned(
+  g_log.blocks = (cl_block*)gpr_malloc_aligned(
       g_log.num_blocks * sizeof(cl_block), GPR_CACHELINE_SIZE_LOG);
   memset(g_log.blocks, 0, g_log.num_blocks * sizeof(cl_block));
   g_log.buffer = gpr_malloc(g_log.num_blocks * CENSUS_LOG_MAX_RECORD_SIZE);
   memset(g_log.buffer, 0, g_log.num_blocks * CENSUS_LOG_MAX_RECORD_SIZE);
   cl_block_list_initialize(&g_log.free_block_list);
   cl_block_list_initialize(&g_log.dirty_block_list);
-  for (ix = 0; ix < g_log.num_blocks; ++ix) {
-    cl_block *block = g_log.blocks + ix;
-    cl_block_initialize(block,
-                        g_log.buffer + (CENSUS_LOG_MAX_RECORD_SIZE * ix));
+  for (i = 0; i < g_log.num_blocks; ++i) {
+    cl_block* block = g_log.blocks + i;
+    cl_block_initialize(block, g_log.buffer + (CENSUS_LOG_MAX_RECORD_SIZE * i));
     cl_block_try_disable_access(block, 1 /* discard data */);
     cl_block_list_insert_at_tail(&g_log.free_block_list, block);
   }
@@ -508,19 +516,19 @@ void census_log_shutdown(void) {
   g_log.initialized = 0;
 }
 
-void *census_log_start_write(size_t size) {
+void* census_log_start_write(size_t size) {
   /* Used to bound number of times block allocation is attempted. */
-  gpr_int32 attempts_remaining = g_log.num_blocks;
-  /* TODO(aveitch): move this inside the do loop when current_cpu is fixed */
-  gpr_int32 core_id = gpr_cpu_current_cpu();
+  gpr_uint32 attempts_remaining = g_log.num_blocks;
+  gpr_uint32 core_id = gpr_cpu_current_cpu();
+  GPR_ASSERT(size > 0);
   GPR_ASSERT(g_log.initialized);
   if (size > CENSUS_LOG_MAX_RECORD_SIZE) {
     return NULL;
   }
   do {
     int allocated;
-    void *record = NULL;
-    cl_block *block =
+    void* record = NULL;
+    cl_block* block =
         cl_core_local_block_get_block(&g_log.core_local_blocks[core_id]);
     if (block && (record = cl_block_start_write(block, size))) {
       return record;
@@ -546,7 +554,7 @@ void *census_log_start_write(size_t size) {
   return NULL;
 }
 
-void census_log_end_write(void *record, size_t bytes_written) {
+void census_log_end_write(void* record, size_t bytes_written) {
   GPR_ASSERT(g_log.initialized);
   cl_block_end_write(cl_get_block(record), bytes_written);
 }
@@ -563,7 +571,7 @@ void census_log_init_reader(void) {
   gpr_mu_unlock(&g_log.lock);
 }
 
-const void *census_log_read_next(size_t *bytes_available) {
+const void* census_log_read_next(size_t* bytes_available) {
   GPR_ASSERT(g_log.initialized);
   gpr_mu_lock(&g_log.lock);
   if (g_log.block_being_read != NULL) {
@@ -572,7 +580,7 @@ const void *census_log_read_next(size_t *bytes_available) {
   do {
     g_log.block_being_read = cl_next_block_to_read(g_log.block_being_read);
     if (g_log.block_being_read != NULL) {
-      void *record =
+      void* record =
           cl_block_start_read(g_log.block_being_read, bytes_available);
       if (record != NULL) {
         gpr_mu_unlock(&g_log.lock);
@@ -592,13 +600,14 @@ size_t census_log_remaining_space(void) {
     /* Remaining space is not meaningful; just return the entire log space. */
     space = g_log.num_blocks << CENSUS_LOG_2_MAX_RECORD_SIZE;
   } else {
-    space = g_log.free_block_list.count * CENSUS_LOG_MAX_RECORD_SIZE;
+    GPR_ASSERT(g_log.free_block_list.count >= 0);
+    space = (size_t)g_log.free_block_list.count * CENSUS_LOG_MAX_RECORD_SIZE;
   }
   gpr_mu_unlock(&g_log.lock);
   return space;
 }
 
-int census_log_out_of_space_count(void) {
+gpr_int64 census_log_out_of_space_count(void) {
   GPR_ASSERT(g_log.initialized);
   return gpr_atm_acq_load(&g_log.out_of_space_count);
 }

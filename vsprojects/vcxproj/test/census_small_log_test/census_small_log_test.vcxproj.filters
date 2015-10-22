@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\census\small_log_test.c">
+      <Filter>test\core\census</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{affd37c9-8aed-620c-00ba-1bda1b22fb39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{3a5f6f02-aa41-7de5-b513-0e2b805d32e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\census">
+      <UniqueIdentifier>{a430c4b7-ce60-2050-aa6b-a4f69b6dac1b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

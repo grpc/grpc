@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\census\multiple_writers_log_test.c">
+      <Filter>test\core\census</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{a467926d-4228-b21e-7616-47aab4757c6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{d85ed769-9189-7b12-6112-26b753a3197c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\census">
+      <UniqueIdentifier>{7291c6dc-a890-4700-2ee4-4754b6213847}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
