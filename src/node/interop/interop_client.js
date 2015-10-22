@@ -562,11 +562,11 @@ function runTest(address, host_override, test_case, tls, test_ca, done, extra) {
     var ca_path;
     if (test_ca) {
       ca_path = path.join(__dirname, '../test/data/ca.pem');
+      var ca_data = fs.readFileSync(ca_path);
+      creds = grpc.credentials.createSsl(ca_data);
     } else {
-      ca_path = process.env.SSL_CERT_FILE;
+      creds = grpc.credentials.createSsl();
     }
-    var ca_data = fs.readFileSync(ca_path);
-    creds = grpc.credentials.createSsl(ca_data);
     if (host_override) {
       options['grpc.ssl_target_name_override'] = host_override;
       options['grpc.default_authority'] = host_override;
