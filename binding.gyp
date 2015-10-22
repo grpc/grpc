@@ -73,16 +73,6 @@
          ]
         ]
       }],
-      ['OS=="mac"', {
-        'xcode_settings': {
-          'MACOSX_DEPLOYMENT_TARGET': '10.9',
-          'OTHER_CFLAGS': [
-            '-fno-strict-aliasing',
-            '-std=c++11',
-            '-stdlib=libc++'
-          ]
-        }
-      }]
     ]
   },
   'targets': [
@@ -133,6 +123,16 @@
         'src/core/support/time_precise.c',
         'src/core/support/time_win32.c',
         'src/core/support/tls_pthread.c',
+      ],
+      "conditions": [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9',
+            'OTHER_CFLAGS': [
+              '-stdlib=libc++'
+            ]
+          }
+        }]
       ],
     },
     {
@@ -291,6 +291,16 @@
         'src/core/census/initialize.c',
         'src/core/census/operation.c',
         'src/core/census/tracing.c',
+      ],
+      "conditions": [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9',
+            'OTHER_CFLAGS': [
+              '-stdlib=libc++'
+            ]
+          }
+        }]
       ],
     },
     {
