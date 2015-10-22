@@ -31,6 +31,8 @@
  *is % allowed in string
  */
 
+#include "test/cpp/interop/stress_interop_client.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -38,7 +40,6 @@
 #include <grpc++/create_channel.h>
 
 #include "test/cpp/interop/interop_client.h"
-#include "test/cpp/interop/stress_interop_client.h"
 
 namespace grpc {
 namespace testing {

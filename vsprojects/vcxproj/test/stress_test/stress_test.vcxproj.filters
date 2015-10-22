@@ -21,6 +21,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\cpp\interop\client_helper.h">
+      <Filter>test\cpp\interop</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\..\test\cpp\interop\interop_client.h">
       <Filter>test\cpp\interop</Filter>
     </ClInclude>

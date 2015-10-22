@@ -1665,6 +1665,7 @@
       "grpc_test_util"
     ], 
     "headers": [
+      "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.h", 
       "test/cpp/interop/stress_interop_client.h", 
       "test/proto/empty.grpc.pb.h", 
@@ -1677,6 +1678,7 @@
     "language": "c++", 
     "name": "stress_test", 
     "src": [
+      "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.cc", 
       "test/cpp/interop/interop_client.h", 
       "test/cpp/interop/stress_interop_client.cc", 
