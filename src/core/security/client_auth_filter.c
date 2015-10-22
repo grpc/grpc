@@ -203,7 +203,8 @@ static void auth_start_transport_op(grpc_call_element *elem,
   size_t i;
   grpc_client_security_context *sec_ctx = NULL;
 
-  if (calld->security_context_set == 0) {
+  if (calld->security_context_set == 0 &&
+      op->cancel_with_status == GRPC_STATUS_OK) {
     calld->security_context_set = 1;
     GPR_ASSERT(op->context);
     if (op->context[GRPC_CONTEXT_SECURITY].value == NULL) {
@@ -218,11 +219,11 @@ static void auth_start_transport_op(grpc_call_element *elem,
         chand->security_connector->base.auth_context, "client_auth_filter");
   }
 
-  if (op->bind_pollset) {
+  if (op->bind_pollset != NULL) {
     calld->pollset = op->bind_pollset;
   }
 
-  if (op->send_ops && !calld->sent_initial_metadata) {
+  if (op->send_ops != NULL && !calld->sent_initial_metadata) {
     size_t nops = op->send_ops->nops;
     grpc_stream_op *ops = op->send_ops->ops;
     for (i = 0; i < nops; i++) {
