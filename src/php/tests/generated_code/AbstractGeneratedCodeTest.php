@@ -32,7 +32,8 @@
  *
  */
 require_once realpath(dirname(__FILE__) . '/../../vendor/autoload.php');
-require 'math.php';
+require_once dirname(__FILE__) . '/math.php';
+
 abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase {
   /* These tests require that a server exporting the math service must be
    * running on $GRPC_TEST_HOST */
@@ -47,8 +48,22 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase {
     $this->assertTrue(self::$client->waitForReady(250000));
   }
 
+  public function testAlreadyReady() {
+    $this->assertTrue(self::$client->waitForReady(250000));
+    $this->assertTrue(self::$client->waitForReady(100));
+  }
+
   public function testGetTarget() {
     $this->assertTrue(is_string(self::$client->getTarget()));
+  }
+
+  /**
+   * @expectedException InvalidArgumentException
+   */
+  public function testClose() {
+    self::$client->close();
+    $div_arg = new math\DivArgs();
+    $call = self::$client->Div($div_arg);
   }
 
   /**
@@ -57,6 +72,36 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase {
   public function testInvalidMetadata() {
     $div_arg = new math\DivArgs();
     $call = self::$client->Div($div_arg, array(' ' => 'abc123'));
+  }
+
+  public function testGetCallMetadata() {
+    $div_arg = new math\DivArgs();
+    $call = self::$client->Div($div_arg);
+    $this->assertTrue(is_array($call->getMetadata()));
+  }
+
+  public function testTimeout() {
+    $div_arg = new math\DivArgs();
+    $call = self::$client->Div($div_arg, array('timeout' => 100));
+    list($response, $status) = $call->wait();
+    $this->assertSame(\Grpc\STATUS_DEADLINE_EXCEEDED, $status->code);
+  }
+
+  public function testCancel() {
+    $div_arg = new math\DivArgs();
+    $call = self::$client->Div($div_arg);
+    $call->cancel();
+    list($response, $status) = $call->wait();
+    $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
+  }
+
+  /**
+   * @expectedException InvalidArgumentException
+   */
+  public function testInvalidMethodName() {
+    $invalid_client = new DummyInvalidClient('host', array());
+    $div_arg = new math\DivArgs();
+    $invalid_client->InvalidUnaryCall($div_arg);
   }
 
   public function testWriteFlags() {
@@ -68,6 +113,36 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase {
     list($response, $status) = $call->wait();
     $this->assertSame(1, $response->getQuotient());
     $this->assertSame(3, $response->getRemainder());
+    $this->assertSame(\Grpc\STATUS_OK, $status->code);
+  }
+
+  public function testWriteFlagsServerStreaming() {
+    $fib_arg = new math\FibArgs();
+    $fib_arg->setLimit(7);
+    $call = self::$client->Fib($fib_arg, array(), array('flags' => Grpc\WRITE_NO_COMPRESS));
+    $result_array = iterator_to_array($call->responses());
+    $status = $call->getStatus();
+    $this->assertSame(\Grpc\STATUS_OK, $status->code);
+  }
+
+  public function testWriteFlagsClientStreaming() {
+    $call = self::$client->Sum();
+    $num = new math\Num();
+    $num->setNum(1);
+    $call->write($num, array('flags' => Grpc\WRITE_NO_COMPRESS));
+    list($response, $status) = $call->wait();
+    $this->assertSame(\Grpc\STATUS_OK, $status->code);
+  }
+
+  public function testWriteFlagsBidiStreaming() {
+    $call = self::$client->DivMany();
+    $div_arg = new math\DivArgs();
+    $div_arg->setDividend(7);
+    $div_arg->setDivisor(4);
+    $call->write($div_arg, array('flags' => Grpc\WRITE_NO_COMPRESS));
+    $response = $call->read();
+    $call->writesDone();
+    $status = $call->getStatus();
     $this->assertSame(\Grpc\STATUS_OK, $status->code);
   }
 
@@ -126,5 +201,14 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase {
     $call->writesDone();
     $status = $call->getStatus();
     $this->assertSame(\Grpc\STATUS_OK, $status->code);
+  }
+}
+
+class DummyInvalidClient extends \Grpc\BaseStub {
+  public function InvalidUnaryCall(\math\DivArgs $argument,
+                                   $metadata = array(),
+                                   $options = array()) {
+    return $this->_simpleRequest('invalidMethodName', $argument,
+                                 function() {}, $metadata, $options);
   }
 }

@@ -40,13 +40,14 @@ root=`pwd`
 if [ "$CONFIG" = "gcov" ]
 then
   ./node_modules/.bin/istanbul cover --dir reports/node_coverage \
-    ./node_modules/.bin/_mocha -- --timeout 8000 src/node/test
+    -x **/interop/* ./node_modules/.bin/_mocha -- --timeout 8000 src/node/test
   cd build
   gcov Release/obj.target/grpc/ext/*.o
   lcov --base-directory . --directory . -c -o coverage.info
+  lcov -e coverage.info '**/src/node/ext/*' -o coverage.info
   genhtml -o ../reports/node_ext_coverage --num-spaces 2 \
     -t 'Node gRPC test coverage' coverage.info --rc genhtml_hi_limit=95 \
-    --rc genhtml_med_limit=80
+    --rc genhtml_med_limit=80 --no-prefix
   echo '<html><head><meta http-equiv="refresh" content="0;URL=lcov-report/index.html"></head></html>' > \
     ../reports/node_coverage/index.html
 else

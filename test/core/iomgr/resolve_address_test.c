@@ -32,7 +32,7 @@
  */
 
 #include "src/core/iomgr/resolve_address.h"
-#include "src/core/iomgr/iomgr.h"
+#include "src/core/iomgr/executor.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -125,6 +125,7 @@ static void test_unparseable_hostports(void) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_executor_init();
   grpc_iomgr_init();
   test_localhost();
   test_default_port();
@@ -134,5 +135,6 @@ int main(int argc, char **argv) {
   test_invalid_ip_addresses();
   test_unparseable_hostports();
   grpc_iomgr_shutdown();
+  grpc_executor_shutdown();
   return 0;
 }

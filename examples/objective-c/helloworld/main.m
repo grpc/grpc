@@ -34,18 +34,24 @@
 #import <UIKit/UIKit.h>
 #import "AppDelegate.h"
 
+#import <GRPCClient/GRPCCall+Tests.h>
 #import <HelloWorld/Helloworld.pbrpc.h>
 
-static NSString * const kHostAddress = @"http://localhost:50051";
+static NSString * const kHostAddress = @"localhost:50051";
 
 int main(int argc, char * argv[]) {
   @autoreleasepool {
+    [GRPCCall useInsecureConnectionsForHost:kHostAddress];
+
     HLWGreeter *client = [[HLWGreeter alloc] initWithHost:kHostAddress];
+
     HLWHelloRequest *request = [HLWHelloRequest message];
     request.name = @"Objective-C";
+
     [client sayHelloWithRequest:request handler:^(HLWHelloReply *response, NSError *error) {
       NSLog(@"%@", response.message);
     }];
+    
     return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
   }
 }
