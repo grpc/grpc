@@ -4,8 +4,8 @@ nuget restore  || goto eof:
 
 
 setlocal
-rem First do a bit of hacking to make sure we have headers ready in ..\inc32
-cd ..
+rem First do a bit of hacking to make sure we have headers ready in openssl's inc32 directory
+cd ..\..\..\third_party\openssl
 call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" x86
 perl Configure no-asm VC-WIN32 || goto :eof
 perl util\mkfiles.pl >MINFO || goto :eof
