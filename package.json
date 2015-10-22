@@ -38,6 +38,7 @@
     "jshint": "^2.5.0",
     "minimist": "^1.1.0",
     "mocha": "~1.21.0",
+    "mocha-jenkins-reporter": "^0.1.9",
     "mustache": "^2.0.0"
   },
   "engines": {
