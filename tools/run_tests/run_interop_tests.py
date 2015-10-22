@@ -48,17 +48,6 @@ os.chdir(ROOT)
 
 _DEFAULT_SERVER_PORT=8080
 
-_CLOUD_TO_PROD_BASE_ARGS = [
-    '--server_host_override=grpc-test.sandbox.google.com',
-    '--server_host=grpc-test.sandbox.google.com',
-    '--server_port=443',
-    '--use_tls=true']
-
-_CLOUD_TO_CLOUD_BASE_ARGS = [
-    '--server_host_override=foo.test.google.fr',
-    '--use_tls=true',
-    '--use_test_ca=true']
-
 # TOOD(jtattermusch) wrapped languages use this variable for location
 # of roots.pem. We might want to use GRPC_DEFAULT_SSL_ROOTS_FILE_PATH
 # supported by C core SslCredentials instead.
@@ -68,16 +57,12 @@ _SSL_CERT_ENV = { 'SSL_CERT_FILE':'/usr/local/share/grpc/roots.pem' }
 class CXXLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['bins/opt/interop_client']
     self.client_cwd = None
     self.server_cwd = None
     self.safename = 'cxx'
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['bins/opt/interop_client']
 
   def cloud_to_prod_env(self):
     return {}
@@ -88,6 +73,9 @@ class CXXLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'c++'
 
@@ -95,16 +83,12 @@ class CXXLanguage:
 class CSharpLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['mono', 'Grpc.IntegrationTesting.Client.exe']
     self.client_cwd = 'src/csharp/Grpc.IntegrationTesting.Client/bin/Debug'
     self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug'
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['mono', 'Grpc.IntegrationTesting.Client.exe']
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -115,6 +99,9 @@ class CSharpLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'csharp'
 
@@ -122,16 +109,12 @@ class CSharpLanguage:
 class JavaLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['./run-test-client.sh']
     self.client_cwd = '../grpc-java'
     self.server_cwd = '../grpc-java'
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['./run-test-client.sh']
 
   def cloud_to_prod_env(self):
     return {}
@@ -142,6 +125,9 @@ class JavaLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'java'
 
@@ -149,17 +135,13 @@ class JavaLanguage:
 class GoLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['go', 'run', 'client.go']
     # TODO: this relies on running inside docker
     self.client_cwd = '/go/src/google.golang.org/grpc/interop/client'
     self.server_cwd = '/go/src/google.golang.org/grpc/interop/server'
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['go', 'run', 'client.go']
 
   def cloud_to_prod_env(self):
     return {}
@@ -170,6 +152,9 @@ class GoLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'go'
 
@@ -177,16 +162,12 @@ class GoLanguage:
 class NodeLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['node', 'src/node/interop/interop_client.js']
     self.client_cwd = None
     self.server_cwd = None
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['node', 'src/node/interop/interop_client.js']
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -197,6 +178,9 @@ class NodeLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'node'
 
@@ -204,21 +188,20 @@ class NodeLanguage:
 class PHPLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['src/php/bin/interop_client.sh']
     self.client_cwd = None
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['src/php/bin/interop_client.sh']
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
 
   def global_env(self):
     return {}
+
+  def unimplemented_test_cases(self):
+    return []
 
   def __str__(self):
     return 'php'
@@ -227,16 +210,12 @@ class PHPLanguage:
 class RubyLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['ruby', 'src/ruby/bin/interop/interop_client.rb']
     self.client_cwd = None
     self.server_cwd = None
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['ruby', 'src/ruby/bin/interop/interop_client.rb']
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -247,6 +226,9 @@ class RubyLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'ruby'
 
@@ -254,16 +236,12 @@ class RubyLanguage:
 class PythonLanguage:
 
   def __init__(self):
-    self.client_cmdline_base = ['python2.7_virtual_environment/bin/python', '-m', 'grpc_interop.client']
     self.client_cwd = None
     self.server_cwd = None
     self.safename = str(self)
 
-  def cloud_to_prod_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_PROD_BASE_ARGS
-
-  def cloud_to_cloud_args(self):
-    return self.client_cmdline_base + _CLOUD_TO_CLOUD_BASE_ARGS
+  def client_args(self):
+    return ['python2.7_virtual_environment/bin/python', '-m', 'grpc_interop.client']
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -273,6 +251,9 @@ class PythonLanguage:
 
   def global_env(self):
     return {'LD_LIBRARY_PATH': 'libs/opt'}
+
+  def unimplemented_test_cases(self):
+    return ['jwt_token_creds', 'per_rpc_creds']
 
   def __str__(self):
     return 'python'
@@ -367,7 +348,12 @@ def _job_kill_handler(job):
 
 def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
   """Creates jobspec for cloud-to-prod interop test"""
-  cmdline = language.cloud_to_prod_args() + ['--test_case=%s' % test_case]
+  cmdline = language.client_args() + [
+      '--server_host_override=grpc-test.sandbox.google.com',
+      '--server_host=grpc-test.sandbox.google.com',
+      '--server_port=443',
+      '--use_tls=true',
+      '--test_case=%s' % test_case]
   cwd = language.client_cwd
   environ = dict(language.cloud_to_prod_env(), **language.global_env())
   container_name = None
@@ -403,10 +389,13 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
 def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                            server_port, docker_image=None):
   """Creates jobspec for cloud-to-cloud interop test"""
-  cmdline = bash_login_cmdline(language.cloud_to_cloud_args() +
-                               ['--test_case=%s' % test_case,
+  cmdline = bash_login_cmdline(language.client_args() +
+                               ['--server_host_override=foo.test.google.fr',
+                                '--use_tls=true',
+                                '--use_test_ca=true',
+                                '--test_case=%s' % test_case,
                                 '--server_host=%s' % server_host,
-                                '--server_port=%s' % server_port ])
+                                '--server_port=%s' % server_port])
   cwd = language.client_cwd
   environ = language.global_env()
   if docker_image:
@@ -512,12 +501,12 @@ def fill_one_test_result(shortname, resultset, html_str):
   return html_str
 
 
-def render_html_report(test_cases, client_langs, server_langs, resultset,
+def render_html_report(client_langs, server_langs, resultset,
                        num_failures):
   """Generate html report."""
-  sorted_test_cases = sorted(test_cases)
+  sorted_test_cases = sorted(_TEST_CASES)
+  sorted_auth_test_cases = sorted(_AUTH_TEST_CASES)
   sorted_client_langs = sorted(client_langs)
-  print sorted_client_langs
   sorted_server_langs = sorted(server_langs)
   html_str = ('<!DOCTYPE html>\n'
               '<html lang=\"en\">\n'
@@ -544,14 +533,14 @@ def render_html_report(test_cases, client_langs, server_langs, resultset,
     for client_lang in sorted_client_langs:
       html_str = '%s<th>%s\n' % (html_str, client_lang)
     html_str = '%s</tr>\n' % html_str
-    for test_case in sorted_test_cases:
+    for test_case in sorted_test_cases + sorted_auth_test_cases:
       html_str = '%s<tr><td><b>%s</b></td>\n' % (html_str, test_case)
       for client_lang in sorted_client_langs:
-        if args.cloud_to_prod:
+        if not test_case in sorted_auth_test_cases:
           shortname = 'cloud_to_prod:%s:%s' % (client_lang, test_case)
         else:
           shortname = 'cloud_to_prod_auth:%s:%s' % (client_lang, test_case)
-        html_str = fill_one_test_result(shortname, resultset, html_str)       
+        html_str = fill_one_test_result(shortname, resultset, html_str)
       html_str = '%s</tr>\n' % html_str 
     html_str = '%s</table>\n' % html_str
   if servers:
@@ -704,17 +693,19 @@ try:
   if args.cloud_to_prod:
     for language in languages:
       for test_case in _TEST_CASES:
-        test_job = cloud_to_prod_jobspec(language, test_case,
-                                         docker_image=docker_images.get(str(language)))
-        jobs.append(test_job)
+        if not test_case in language.unimplemented_test_cases():
+          test_job = cloud_to_prod_jobspec(language, test_case,
+                                           docker_image=docker_images.get(str(language)))
+          jobs.append(test_job)
 
   if args.cloud_to_prod_auth:
     for language in languages:
       for test_case in _AUTH_TEST_CASES:
-        test_job = cloud_to_prod_jobspec(language, test_case,
-                                         docker_image=docker_images.get(str(language)),
-                                         auth=True)
-        jobs.append(test_job)
+        if not test_case in language.unimplemented_test_cases():
+          test_job = cloud_to_prod_jobspec(language, test_case,
+                                           docker_image=docker_images.get(str(language)),
+                                           auth=True)
+          jobs.append(test_job)
 
   for server in args.override_server:
     server_name = server[0]
@@ -725,13 +716,14 @@ try:
     (server_host, server_port) = server_address
     for language in languages:
       for test_case in _TEST_CASES:
-        test_job = cloud_to_cloud_jobspec(language,
-                                          test_case,
-                                          server_name,
-                                          server_host,
-                                          server_port,
-                                          docker_image=docker_images.get(str(language)))
-        jobs.append(test_job)
+        if not test_case in language.unimplemented_test_cases():
+          test_job = cloud_to_cloud_jobspec(language,
+                                            test_case,
+                                            server_name,
+                                            server_host,
+                                            server_port,
+                                            docker_image=docker_images.get(str(language)))
+          jobs.append(test_job)
 
   if not jobs:
     print 'No jobs to run.'
@@ -753,7 +745,7 @@ try:
   tree.write('report.xml', encoding='UTF-8')
   
   # Generate HTML report.
-  render_html_report(_TEST_CASES, set([str(l) for l in languages]), servers, 
+  render_html_report(set([str(l) for l in languages]), servers,
                      resultset, num_failures)
 
 finally:
