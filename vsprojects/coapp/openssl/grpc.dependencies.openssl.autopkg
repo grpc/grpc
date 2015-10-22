@@ -47,8 +47,8 @@ nuget {
 		
 		nestedInclude: {
 			#destination = "${d_include}\openssl";
-			#excludes : { ..\inc32\openssl\opensslconf.h };
-			"..\inc32\openssl\*";
+			#excludes : { ..\..\..\third_party\openssl\inc32\openssl\opensslconf.h };
+			"..\..\..\third_party\openssl\inc32\openssl\*";
 		};
 	
 		// TODO(jtattermusch): Visual Studio 2010 and 2012 Express (v100 and v110 toolsets) don't support x64,

@@ -18,6 +18,9 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <PropertyGroup>
+    <OpenSslPath>..\..\..\third_party\openssl</OpenSslPath>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7E05608D-A775-418F-946A-E9A0B84C6DFF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -48,7 +51,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;..\inc32;..\crypto;..\include;$(OutDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OpenSslPath);$(OpenSslPath)\inc32;$(OpenSslPath)\crypto;$(OpenSslPath)\include;$(OutDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <!-- <PreprocessorDefinitions>OPENSSL_USE_APPLINK;%(PreprocessorDefinitions)</PreprocessorDefinitions> -->
@@ -85,7 +88,7 @@
       <ModuleDefinitionFile>.\ssleay32.def</ModuleDefinitionFile>
     </Link>
     <ResourceCompile>
-      <AdditionalIncludeDirectories>..;..\inc32;..\crypto;..\include;$(OutDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OpenSslPath);$(OpenSslPath)\inc32;$(OpenSslPath)\crypto;$(OpenSslPath)\include;$(OutDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;L_ENDIAN;MK1MF_BUILD;WIN32_LEAN_AND_MEAN;OPENSSL_THREADS;ZLIB;OPENSSL_SYSNAME_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions>OPENSSL_BUILD_SHLIBSSL;OPENSSL_NO_IDEA;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions>DSO_WIN32;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -154,59 +157,59 @@
     <None Include="openssl.gyp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\ssl\s2_pkt.c" />
-    <ClCompile Include="..\ssl\s3_enc.c" />
-    <ClCompile Include="..\ssl\s23_pkt.c" />
-    <ClCompile Include="..\ssl\t1_meth.c" />
-    <ClCompile Include="..\ssl\ssl_lib.c" />
-    <ClCompile Include="..\ssl\ssl_asn1.c" />
-    <ClCompile Include="..\ssl\s23_lib.c" />
-    <ClCompile Include="..\ssl\tls_srp.c" />
-    <ClCompile Include="..\ssl\ssl_txt.c" />
-    <ClCompile Include="..\ssl\ssl_algs.c" />
-    <ClCompile Include="..\ssl\s23_srvr.c" />
-    <ClCompile Include="..\ssl\d1_both.c" />
-    <ClCompile Include="..\ssl\s3_meth.c" />
-    <ClCompile Include="..\ssl\ssl_err2.c" />
-    <ClCompile Include="..\ssl\bio_ssl.c" />
-    <ClCompile Include="..\ssl\s2_meth.c" />
-    <ClCompile Include="..\ssl\s3_clnt.c" />
-    <ClCompile Include="..\ssl\s3_lib.c" />
-    <ClCompile Include="..\ssl\kssl.c" />
-    <ClCompile Include="..\ssl\t1_enc.c" />
-    <ClCompile Include="..\ssl\d1_clnt.c" />
-    <ClCompile Include="..\ssl\t1_lib.c" />
-    <ClCompile Include="..\ssl\t1_srvr.c" />
-    <ClCompile Include="..\ssl\ssl_cert.c" />
-    <ClCompile Include="..\ssl\t1_clnt.c" />
-    <ClCompile Include="..\ssl\ssl_stat.c" />
-    <ClCompile Include="..\ssl\ssl_sess.c" />
-    <ClCompile Include="..\ssl\s3_both.c" />
-    <ClCompile Include="..\ssl\d1_srtp.c" />
-    <ClCompile Include="..\ssl\d1_pkt.c" />
-    <ClCompile Include="..\ssl\s23_clnt.c" />
-    <ClCompile Include="..\ssl\s2_lib.c" />
-    <ClCompile Include="..\ssl\t1_reneg.c" />
-    <ClCompile Include="..\ssl\s2_enc.c" />
-    <ClCompile Include="..\ssl\ssl_rsa.c" />
-    <ClCompile Include="..\ssl\s23_meth.c" />
-    <ClCompile Include="..\ssl\d1_lib.c" />
-    <ClCompile Include="..\ssl\ssl_ciph.c" />
-    <ClCompile Include="..\ssl\s2_srvr.c" />
-    <ClCompile Include="..\ssl\ssl_err.c" />
-    <ClCompile Include="..\ssl\ssl_utst.c" />
-    <ClCompile Include="..\ssl\s2_clnt.c" />
-    <ClCompile Include="..\ssl\s3_pkt.c" />
-    <ClCompile Include="..\ssl\d1_srvr.c" />
-    <ClCompile Include="..\ssl\s3_srvr.c" />
-    <ClCompile Include="..\ssl\s3_cbc.c" />
-    <ClCompile Include="..\ssl\d1_meth.c" />
-	<ClCompile Include="..\ssl\ssl_conf.c" />
-	<ClCompile Include="..\ssl\t1_ext.c" />
-	<ClCompile Include="..\ssl\t1_trce.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_pkt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s23_pkt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_meth.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s23_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\tls_srp.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_txt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_algs.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s23_srvr.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_both.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_meth.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_err2.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\bio_ssl.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_meth.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_clnt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\kssl.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_clnt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_srvr.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_cert.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_clnt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_stat.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_sess.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_both.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_srtp.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_pkt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s23_clnt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\t1_reneg.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_rsa.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s23_meth.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_ciph.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_srvr.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_err.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\ssl_utst.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s2_clnt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_pkt.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_srvr.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_srvr.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\s3_cbc.c" />
+    <ClCompile Include="$(OpenSslPath)\ssl\d1_meth.c" />
+	<ClCompile Include="$(OpenSslPath)\ssl\ssl_conf.c" />
+	<ClCompile Include="$(OpenSslPath)\ssl\t1_ext.c" />
+	<ClCompile Include="$(OpenSslPath)\ssl\t1_trce.c" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\ms\version32.rc" />
+    <ResourceCompile Include="$(OpenSslPath)\ms\version32.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Condition="exists('.\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets')" Project=".\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets" />
@@ -227,9 +230,9 @@
         Command="
             perl Configure no-rc5 no-idea enable-mdc2 threads $(Build-Perl-zlib) $(Build-Perl-dll) $(Build-Perl-asm) $(Build-Perl-platform)
             perl util\mkfiles.pl >MINFO
-            perl .\util\mkdef.pl 32 ssleay >.\COPKG\ssleay32.def
+            perl .\util\mkdef.pl 32 ssleay >..\..\vsprojects\coapp\openssl\ssleay32.def
         "
-        WorkingDirectory="$(MSBuildThisFileDirectory)..\" />
+        WorkingDirectory="$(MSBuildThisFileDirectory)$(OpenSslPath)\" />
   </Target>
   <PropertyGroup>
     <BuildDependsOn>PerlDefs;$(BuildDependsOn)</BuildDependsOn>
