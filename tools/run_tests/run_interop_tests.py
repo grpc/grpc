@@ -60,14 +60,14 @@ class CXXLanguage:
     self.server_cwd = None
     self.safename = 'cxx'
 
-  def client_args(self):
-    return ['bins/opt/interop_client']
+  def client_cmd(self, args):
+    return ['bins/opt/interop_client'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
-  def server_args(self):
-    return ['bins/opt/interop_server', '--use_tls=true']
+  def server_cmd(self, args):
+    return ['bins/opt/interop_server', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -86,14 +86,14 @@ class CSharpLanguage:
     self.server_cwd = 'src/csharp/Grpc.IntegrationTesting.Server/bin/Debug'
     self.safename = str(self)
 
-  def client_args(self):
-    return ['mono', 'Grpc.IntegrationTesting.Client.exe']
+  def client_cmd(self, args):
+    return ['mono', 'Grpc.IntegrationTesting.Client.exe'] + args
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
 
-  def server_args(self):
-    return ['mono', 'Grpc.IntegrationTesting.Server.exe', '--use_tls=true']
+  def server_cmd(self, args):
+    return ['mono', 'Grpc.IntegrationTesting.Server.exe', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -112,14 +112,14 @@ class JavaLanguage:
     self.server_cwd = '../grpc-java'
     self.safename = str(self)
 
-  def client_args(self):
-    return ['./run-test-client.sh']
+  def client_cmd(self, args):
+    return ['./run-test-client.sh'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
-  def server_args(self):
-    return ['./run-test-server.sh', '--use_tls=true']
+  def server_cmd(self, args):
+    return ['./run-test-server.sh', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -139,14 +139,14 @@ class GoLanguage:
     self.server_cwd = '/go/src/google.golang.org/grpc/interop/server'
     self.safename = str(self)
 
-  def client_args(self):
-    return ['go', 'run', 'client.go']
+  def client_cmd(self, args):
+    return ['go', 'run', 'client.go'] + args
 
   def cloud_to_prod_env(self):
     return {}
 
-  def server_args(self):
-    return ['go', 'run', 'server.go', '--use_tls=true']
+  def server_cmd(self, args):
+    return ['go', 'run', 'server.go', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -190,14 +190,14 @@ class NodeLanguage:
     self.server_cwd = None
     self.safename = str(self)
 
-  def client_args(self):
-    return ['node', 'src/node/interop/interop_client.js']
+  def client_cmd(self, args):
+    return ['node', 'src/node/interop/interop_client.js'] + args
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
 
-  def server_args(self):
-    return ['node', 'src/node/interop/interop_server.js', '--use_tls=true']
+  def server_cmd(self, args):
+    return ['node', 'src/node/interop/interop_server.js', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -215,8 +215,8 @@ class PHPLanguage:
     self.client_cwd = None
     self.safename = str(self)
 
-  def client_args(self):
-    return ['src/php/bin/interop_client.sh']
+  def client_cmd(self, args):
+    return ['src/php/bin/interop_client.sh'] + args
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
@@ -238,14 +238,14 @@ class RubyLanguage:
     self.server_cwd = None
     self.safename = str(self)
 
-  def client_args(self):
-    return ['ruby', 'src/ruby/bin/interop/interop_client.rb']
+  def client_cmd(self, args):
+    return ['ruby', 'src/ruby/bin/interop/interop_client.rb'] + args
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
 
-  def server_args(self):
-    return ['ruby', 'src/ruby/bin/interop/interop_server.rb', '--use_tls=true']
+  def server_cmd(self, args):
+    return ['ruby', 'src/ruby/bin/interop/interop_server.rb', '--use_tls=true'] + args
 
   def global_env(self):
     return {}
@@ -264,17 +264,29 @@ class PythonLanguage:
     self.server_cwd = None
     self.safename = str(self)
 
-  def client_args(self):
-    return ['python2.7_virtual_environment/bin/python', '-m', 'grpc_interop.client']
+  def client_cmd(self, args):
+    return [
+        'python2.7_virtual_environment/bin/python',
+        'src/python/grpcio/setup.py',
+        'run_interop',
+        '--client',
+        '--args=\'{}\''.format(' '.join(args))
+    ]
 
   def cloud_to_prod_env(self):
     return _SSL_CERT_ENV
 
-  def server_args(self):
-    return ['python2.7_virtual_environment/bin/python', '-m', 'grpc_interop.server', '--use_tls=true']
+  def server_cmd(self, args):
+    return [
+        'python2.7_virtual_environment/bin/python',
+        'src/python/grpcio/setup.py',
+        'run_interop',
+        '--server',
+        '--args=\'{}\''.format(' '.join(args) + ' --use_tls=true')
+    ]
 
   def global_env(self):
-    return {'LD_LIBRARY_PATH': 'libs/opt'}
+    return {'LD_LIBRARY_PATH': '{}/libs/opt'.format(DOCKER_WORKDIR_ROOT)}
 
   def unimplemented_test_cases(self):
     return ['jwt_token_creds', 'per_rpc_creds']
@@ -307,6 +319,8 @@ _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
 
 _HTTP2_TEST_CASES = ["tls", "framing"]
 
+DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
+
 def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   """Wraps given cmdline array to create 'docker run' cmdline from it."""
   docker_cmdline = ['docker', 'run', '-i', '--rm=true']
@@ -317,7 +331,7 @@ def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
       docker_cmdline += ['-e', '%s=%s' % (k,v)]
 
   # set working directory
-  workdir = '/var/local/git/grpc'
+  workdir = DOCKER_WORKDIR_ROOT
   if cwd:
     workdir = os.path.join(workdir, cwd)
   docker_cmdline += ['-w', workdir]
@@ -378,12 +392,12 @@ def _job_kill_handler(job):
 
 def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
   """Creates jobspec for cloud-to-prod interop test"""
-  cmdline = language.client_args() + [
+  cmdline = language.client_cmd([
       '--server_host_override=grpc-test.sandbox.google.com',
       '--server_host=grpc-test.sandbox.google.com',
       '--server_port=443',
       '--use_tls=true',
-      '--test_case=%s' % test_case]
+      '--test_case=%s' % test_case])
   cwd = language.client_cwd
   environ = dict(language.cloud_to_prod_env(), **language.global_env())
   container_name = None
@@ -419,13 +433,13 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
 def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
                            server_port, docker_image=None):
   """Creates jobspec for cloud-to-cloud interop test"""
-  cmdline = bash_login_cmdline(language.client_args() +
-                               ['--server_host_override=foo.test.google.fr',
-                                '--use_tls=true',
-                                '--use_test_ca=true',
-                                '--test_case=%s' % test_case,
-                                '--server_host=%s' % server_host,
-                                '--server_port=%s' % server_port])
+  cmdline = bash_login_cmdline(language.client_cmd([
+      '--server_host_override=foo.test.google.fr',
+      '--use_tls=true',
+      '--use_test_ca=true',
+      '--test_case=%s' % test_case,
+      '--server_host=%s' % server_host,
+      '--server_port=%s' % server_port]))
   cwd = language.client_cwd
   environ = language.global_env()
   if docker_image:
@@ -455,8 +469,8 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
 def server_jobspec(language, docker_image):
   """Create jobspec for running a server"""
   container_name = dockerjob.random_name('interop_server_%s' % language.safename)
-  cmdline = bash_login_cmdline(language.server_args() +
-                               ['--port=%s' % _DEFAULT_SERVER_PORT])
+  cmdline = bash_login_cmdline(
+      language.server_cmd(['--port=%s' % _DEFAULT_SERVER_PORT]))
   environ = language.global_env()
   docker_cmdline = docker_run_cmdline(cmdline,
                                       image=docker_image,
