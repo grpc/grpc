@@ -73,6 +73,9 @@ class CXXLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'c++'
 
@@ -96,6 +99,9 @@ class CSharpLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'csharp'
 
@@ -118,6 +124,9 @@ class JavaLanguage:
 
   def global_env(self):
     return {}
+
+  def unimplemented_test_cases(self):
+    return []
 
   def __str__(self):
     return 'java'
@@ -143,6 +152,9 @@ class GoLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'go'
 
@@ -166,6 +178,9 @@ class NodeLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'node'
 
@@ -184,6 +199,9 @@ class PHPLanguage:
 
   def global_env(self):
     return {}
+
+  def unimplemented_test_cases(self):
+    return []
 
   def __str__(self):
     return 'php'
@@ -208,6 +226,9 @@ class RubyLanguage:
   def global_env(self):
     return {}
 
+  def unimplemented_test_cases(self):
+    return []
+
   def __str__(self):
     return 'ruby'
 
@@ -230,6 +251,9 @@ class PythonLanguage:
 
   def global_env(self):
     return {'LD_LIBRARY_PATH': 'libs/opt'}
+
+  def unimplemented_test_cases(self):
+    return ['jwt_token_creds', 'per_rpc_creds']
 
   def __str__(self):
     return 'python'
@@ -669,17 +693,19 @@ try:
   if args.cloud_to_prod:
     for language in languages:
       for test_case in _TEST_CASES:
-        test_job = cloud_to_prod_jobspec(language, test_case,
-                                         docker_image=docker_images.get(str(language)))
-        jobs.append(test_job)
+        if not test_case in language.unimplemented_test_cases():
+          test_job = cloud_to_prod_jobspec(language, test_case,
+                                           docker_image=docker_images.get(str(language)))
+          jobs.append(test_job)
 
   if args.cloud_to_prod_auth:
     for language in languages:
       for test_case in _AUTH_TEST_CASES:
-        test_job = cloud_to_prod_jobspec(language, test_case,
-                                         docker_image=docker_images.get(str(language)),
-                                         auth=True)
-        jobs.append(test_job)
+        if not test_case in language.unimplemented_test_cases():
+          test_job = cloud_to_prod_jobspec(language, test_case,
+                                           docker_image=docker_images.get(str(language)),
+                                           auth=True)
+          jobs.append(test_job)
 
   for server in args.override_server:
     server_name = server[0]
@@ -690,13 +716,14 @@ try:
     (server_host, server_port) = server_address
     for language in languages:
       for test_case in _TEST_CASES:
-        test_job = cloud_to_cloud_jobspec(language,
-                                          test_case,
-                                          server_name,
-                                          server_host,
-                                          server_port,
-                                          docker_image=docker_images.get(str(language)))
-        jobs.append(test_job)
+        if not test_case in language.unimplemented_test_cases():
+          test_job = cloud_to_cloud_jobspec(language,
+                                            test_case,
+                                            server_name,
+                                            server_host,
+                                            server_port,
+                                            docker_image=docker_images.get(str(language)))
+          jobs.append(test_job)
 
   if not jobs:
     print 'No jobs to run.'
