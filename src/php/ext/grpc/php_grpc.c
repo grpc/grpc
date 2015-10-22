@@ -35,7 +35,7 @@
 #include "channel.h"
 #include "server.h"
 #include "timeval.h"
-#include "credentials.h"
+#include "channel_credentials.h"
 #include "call_credentials.h"
 #include "server_credentials.h"
 #include "completion_queue.h"
