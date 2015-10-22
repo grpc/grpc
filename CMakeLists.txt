@@ -18,162 +18,102 @@ function(_parse_build_yaml)
 
   # Regex
 
-  set(_section_regex "^[ \t]*([a-zA-Z]+)[ \t]*:[ \t]*$")
-
-  set(_version_regex          "^[ \t]*version[ \t]*:[ \t]*{")
-  string(APPEND _version_regex "[ \t]*major[ \t]*:[ \t]*([0-9]+)[ \t]*,")
-  string(APPEND _version_regex "[ \t]*minor[ \t]*:[ \t]*([0-9]+)[ \t]*,")
-  string(APPEND _version_regex "[ \t]*micro[ \t]*:[ \t]*([0-9]+)[ \t]*,")
-  string(APPEND _version_regex "[ \t]*build[ \t]*:[ \t]*([0-9]+)[ \t]*")
-  string(APPEND _version_regex "}[ \t]*$")
-
   set(_name_regex "^[ \t]*-[ \t]*name[ \t]*:[ \t]*([ +a-z_A-Z]+)[ \t]*$")
 
-  set(_group_regex "^[ \t]*([a-z_A-Z]+)[ \t]*:[ \t]*\\[([^]]+)\\][ \t]*$")
+  set(_section_regex "^([a-z_A-Z]+)[ \t]*:[ \t]*$")
+  set(_subsection_regex "^[ \t]+([a-z_A-Z]+)[ \t]*:[ \t]*$")
 
-  set(_value_regex "^[ \t]*([+a-z_A-Z]+)[ \t]*:[ \t]*([+a-z_A-Z]+)[ \t]*$")
+  set(_value_regex "^[ \t]+([+a-z_A-Z]+)[ \t]*:[ \t]*([^ \t$]+)[ \t]*$")
+  set(_subvalue_regex "^[ \t]+-[ \t]*([^ \t$]+)[ \t]*$")
 
   # Parsing
-  set(_section "none")
-  set(_gRPC_FILEGROUPS)
-  set(_gRPC_LIBS)
-  set(_gRPC_TARGETS)
+
   foreach(_string ${_strings})
     #message("_string:\n${_string}")
+
+    # Name
+    string(REGEX MATCH "${_name_regex}"
+      _name_string "${_string}")
+    if(_name_string)
+      string(REGEX REPLACE "${_name_regex}" "\\1" _name "${_name_string}")
+      #message("_name: ${_name}")
+      set(_name_arg "_${_name}")
+      list(APPEND _names ${_name})
+      set(gRPC${_section_arg} ${_names} PARENT_SCOPE)
+    endif()
 
     # Section
     string(REGEX MATCH "${_section_regex}"
       _section_string "${_string}")
     if(_section_string)
       string(REGEX REPLACE "${_section_regex}" "\\1" _section "${_section_string}")
-      string(TOLOWER "${_section}" _section)
+      string(TOUPPER "${_section}" _section)
+      #message("_section: ${_section}")
+      set(_section_arg "_${_section}")
+      set(_names)
     endif()
 
-    # Settings
-    if("${_section}" STREQUAL "settings")
+    # Subsection
+    string(REGEX MATCH "${_subsection_regex}"
+      _subsection_string "${_string}")
+    if(_subsection_string)
+      string(REGEX REPLACE "${_subsection_regex}" "\\1" _subsection "${_subsection_string}")
+      #message("_subsection: ${_subsection}")
+      set(_subsection_arg "_${_subsection}")
+      set(_subvalues)
+    endif()
 
-      string(REGEX MATCH "${_version_regex}"
-        _version_string "${_string}")
-      if(_version_string)
-        string(REGEX REPLACE "${_version_regex}" "\\1"
-          _version_major "${_version_string}")
-        set(gRPC_VERSION_MAJOR ${_version_major} PARENT_SCOPE)
-        string(REGEX REPLACE "${_version_regex}" "\\2"
-          _version_minor "${_version_string}")
-        set(gRPC_VERSION_MINOR ${_version_minor} PARENT_SCOPE)
-        string(REGEX REPLACE "${_version_regex}" "\\3"
-          _version_micro "${_version_string}")
-        set(gRPC_VERSION_MICRO ${_version_micro} PARENT_SCOPE)
-        string(REGEX REPLACE "${_version_regex}" "\\4"
-          _version_build "${_version_string}")
-        set(gRPC_VERSION_BUILD ${_version_build} PARENT_SCOPE)
+    # Value
+    string(REGEX MATCH "${_value_regex}"
+      _value_string "${_string}")
+    if(_value_string)
+      string(REGEX REPLACE "${_value_regex}" "\\1" _value_name "${_value_string}")
+      string(REGEX REPLACE "${_value_regex}" "\\2" _value_value "${_value_string}")
+      if(NOT "${_value_value}" STREQUAL "[]")
+        if(_name)
+          set(gRPC${_section_arg}${_name_arg}_${_value_name} ${_value_value} PARENT_SCOPE)
+          #message("gRPC${_section_arg}${_name_arg}_${_value_name} ${_value_value}")
+        else()
+          set(gRPC${_section_arg}${_name_arg}${_subsection_arg}_${_value_name} ${_value_value} PARENT_SCOPE)
+          #message("gRPC${_section_arg}${_name_arg}${_subsection_arg}_${_value_name} ${_value_value}")
+        endif()
       endif()
+    endif()
 
-    # Filegroups
-    elseif("${_section}" STREQUAL "filegroups")
-
-      #message("_string:\n${_string}")
-      # Name
-      string(REGEX MATCH "${_name_regex}"
-        _name_string "${_string}")
-      if(_name_string)
-        string(REGEX REPLACE "${_name_regex}" "\\1" _name "${_name_string}")
-        list(APPEND _gRPC_FILEGROUPS ${_name})
-      endif()
-      # Groups
-      string(REGEX MATCH "${_group_regex}"
-        _group_string "${_string}")
-      if(_group_string)
-        string(REGEX REPLACE "${_group_regex}" "\\1" _group_name "${_group_string}")
-        string(REGEX REPLACE "${_group_regex}" "\\2" _group_group "${_group_string}")
-        string(REPLACE " " "" _group_group "${_group_group}")
-        string(REPLACE "," ";" _group_group "${_group_group}")
-        string(REPLACE ";;" ";" _group_group "${_group_group}")
-        set(gRPC_FILEGROUP_${_name}_${_group_name} ${_group_group} PARENT_SCOPE)
-      endif()
-
-    # Libraries
-    elseif("${_section}" STREQUAL "libs")
-
-      # Name
-      string(REGEX MATCH "${_name_regex}"
-        _name_string "${_string}")
-      if(_name_string)
-        string(REGEX REPLACE "${_name_regex}" "\\1" _name "${_name_string}")
-        list(APPEND _gRPC_LIBS ${_name})
-      endif()
-      # Values
-      string(REGEX MATCH "${_value_regex}"
-        _value_string "${_string}")
-      if(_value_string)
-        string(REGEX REPLACE "${_value_regex}" "\\1" _value_name "${_value_string}")
-        string(REGEX REPLACE "${_value_regex}" "\\2" _value_value "${_value_string}")
-        set(gRPC_LIB_${_name}_${_value_name} ${_value_value} PARENT_SCOPE)
-      endif()
-      # Groups
-      string(REGEX MATCH "${_group_regex}"
-        _group_string "${_string}")
-      if(_group_string)
-        string(REGEX REPLACE "${_group_regex}" "\\1" _group_name "${_group_string}")
-        string(REGEX REPLACE "${_group_regex}" "\\2" _group_group "${_group_string}")
-        string(REPLACE " " "" _group_group "${_group_group}")
-        string(REPLACE "," ";" _group_group "${_group_group}")
-        string(REPLACE ";;" ";" _group_group "${_group_group}")
-        set(gRPC_LIB_${_name}_${_group_name} ${_group_group} PARENT_SCOPE)
-      endif()
-
-    # Targets
-    elseif("${_section}" STREQUAL "targets")
-
-      # Name
-      string(REGEX MATCH "${_name_regex}"
-        _name_string "${_string}")
-      if(_name_string)
-        string(REGEX REPLACE "${_name_regex}" "\\1" _name "${_name_string}")
-        list(APPEND _gRPC_TARGETS ${_name})
-      endif()
-      # Values
-      string(REGEX MATCH "${_value_regex}"
-        _value_string "${_string}")
-      if(_value_string)
-        string(REGEX REPLACE "${_value_regex}" "\\1" _value_name "${_value_string}")
-        string(REGEX REPLACE "${_value_regex}" "\\2" _value_value "${_value_string}")
-        set(gRPC_TARGET_${_name}_${_value_name} ${_value_value} PARENT_SCOPE)
-      endif()
-      # Groups
-      string(REGEX MATCH "${_group_regex}"
-        _group_string "${_string}")
-      if(_group_string)
-        string(REGEX REPLACE "${_group_regex}" "\\1" _group_name "${_group_string}")
-        string(REGEX REPLACE "${_group_regex}" "\\2" _group_group "${_group_string}")
-        string(REPLACE " " "" _group_group "${_group_group}")
-        string(REPLACE "," ";" _group_group "${_group_group}")
-        string(REPLACE ";;" ";" _group_group "${_group_group}")
-        set(gRPC_TARGET_${_name}_${_group_name} ${_group_group} PARENT_SCOPE)
-      endif()
-
+    # Subvalue
+    string(REGEX MATCH "${_subvalue_regex}"
+      _subvalue_string "${_string}")
+    if(_subvalue_string)
+      string(REGEX REPLACE "${_subvalue_regex}" "\\1" _subvalue "${_subvalue_string}")
+      list(APPEND _subvalues ${_subvalue})
+      set(gRPC${_section_arg}${_name_arg}${_subsection_arg} ${_subvalues} PARENT_SCOPE)
+      #message("gRPC${_section_arg}${_name_arg}${_subsection_arg}: ${_subvalue}")
     endif()
 
   endforeach()
-
-  set(gRPC_FILEGROUPS ${_gRPC_FILEGROUPS} PARENT_SCOPE)
-  set(gRPC_LIBS ${_gRPC_LIBS} PARENT_SCOPE)
-  set(gRPC_TARGETS ${_gRPC_TARGETS} PARENT_SCOPE)
 
 endfunction()
 
 _parse_build_yaml()
 
+set(gRPC_VERSION_MAJOR ${gRPC_SETTINGS_version_major})
+set(gRPC_VERSION_MINOR ${gRPC_SETTINGS_version_minor})
+set(gRPC_VERSION_MICRO ${gRPC_SETTINGS_version_micro})
+set(gRPC_VERSION_BUILD ${gRPC_SETTINGS_version_build})
+
+set(gRPC_VERSION_PATCH ${gRPC_VERSION_MICRO})
+set(gRPC_VERSION_TWEAK ${gRPC_VERSION_BUILD})
+
 set(gRPC_VERSION
   "${gRPC_VERSION_MAJOR}.${gRPC_VERSION_MINOR}.${gRPC_VERSION_MICRO}.${gRPC_VERSION_BUILD}")
 
 # Remove zookeeper (now not supported)
-list(REMOVE_ITEM gRPC_LIBS grpc_zookeeper)
-list(REMOVE_ITEM gRPC_TARGETS zookeeper_test)
+#list(REMOVE_ITEM gRPC_LIBS grpc_zookeeper)
+#list(REMOVE_ITEM gRPC_TARGETS zookeeper_test)
 
 # Statistics
 if(gRPC_VERBOSE)
-  message(STATUS "Project structure from build.yaml {")
+  message(STATUS "gRPC project structure from build.yaml {")
   message(STATUS "  gRPC_VERSION ${gRPC_VERSION}")
   message(STATUS "  gRPC_FILEGROUPS {")
   foreach(gRPC_FILEGROUP ${gRPC_FILEGROUPS})
@@ -182,16 +122,28 @@ if(gRPC_VERBOSE)
   message(STATUS "  }")
   message(STATUS "  gRPC_LIBS {")
   foreach(gRPC_LIB ${gRPC_LIBS})
-  message(STATUS "    ${gRPC_LIB} (${gRPC_LIB_${gRPC_LIB}_language}) - ${gRPC_LIB_${gRPC_LIB}_build}")
+  if(DEFINED gRPC_LIBS_${gRPC_LIB}_platforms)
+    set(_platforms " (${gRPC_LIBS_${gRPC_LIB}_platforms})")
+  else()
+    set(_platforms)
+  endif()
+  message(STATUS "    ${gRPC_LIB} (${gRPC_LIBS_${gRPC_LIB}_language}) - ${gRPC_LIBS_${gRPC_LIB}_build}${_platforms}")
   endforeach()
   message(STATUS "  }")
   message(STATUS "  gRPC_TARGETS {")
   foreach(gRPC_TARGET ${gRPC_TARGETS})
-  message(STATUS "    ${gRPC_TARGET} (${gRPC_TARGET_${gRPC_TARGET}_language}) - ${gRPC_TARGET_${gRPC_TARGET}_build}")
+  if(DEFINED gRPC_TARGETS_${gRPC_TARGET}_platforms)
+    set(_platforms " (${gRPC_TARGETS_${gRPC_TARGET}_platforms})")
+  else()
+    set(_platforms)
+  endif()
+  message(STATUS "    ${gRPC_TARGET} (${gRPC_TARGETS_${gRPC_TARGET}_language}) - ${gRPC_TARGETS_${gRPC_TARGET}_build}${_platforms}")
   endforeach()
   message(STATUS "  }")
   message(STATUS "}")
 endif()
+
+#return()
 
 # Find ZLIB
 find_package(ZLIB)
@@ -230,14 +182,33 @@ include_directories("." "include"
 # Standard paths
 include(GNUInstallDirs)
 
-# Manual build gpr
-#add_library(gpr ${gRPC_LIB_gpr_src})
+function(_check_platforms PREFIX VALUE)
+  if(DEFINED ${PREFIX}_platforms)
+    set(_result FALSE)
+    foreach(_platform ${${PREFIX}_platforms})
+      if("${_platform}" STREQUAL "mac")
+         if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")
+           set(_result TRUE)
+         endif()
+      elseif("${_platform}" STREQUAL "linux")
+         if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
+           set(_result TRUE)
+         endif()
+      elseif("${_platform}" STREQUAL "posix")
+         # Check this
+      endif()
+    endforeach()
+  else()
+    set(_result TRUE)
+  endif()
+  set(${VALUE} ${_result} PARENT_SCOPE)
+endfunction()
 
 # Libraries (now only ALL and non secure libraries)
 foreach(gRPC_LIB
   ${gRPC_LIBS})
   set(_lib ${gRPC_LIB})
-  set(_lib_ gRPC_LIB_${_lib})
+  set(_lib_ gRPC_LIBS_${_lib})
   if("${${_lib_}_language}" STREQUAL "c")
     set(_lib_c TRUE)
   else()
@@ -278,7 +249,11 @@ foreach(gRPC_LIB
   else()
     set(_lib_baselib FALSE)
   endif()
-  if((_lib_c OR _lib_cxx) AND (_lib_build_all OR _lib_build_protoc))
+  _check_platforms(${_lib_} _lib_platform)
+  #message("${_lib_}_platform: ${_lib_platform}")
+  if(_lib_platform
+    AND (_lib_c OR _lib_cxx)
+    AND (_lib_build_all OR _lib_build_protoc))
     set(_lib_type "STATIC")
     if(DEFINED ${_lib_}_dll AND "${${_lib_}_dll}" STREQUAL "yes")
       # Now is not work
@@ -288,11 +263,15 @@ foreach(gRPC_LIB
     set(_lib_public_headers ${${_lib_}_public_headers})
     if(DEFINED ${_lib_}_filegroups)
       foreach(_filegroup ${${_lib_}_filegroups})
-        list(APPEND _lib_src ${gRPC_FILEGROUP_${_filegroup}_src})
-        list(APPEND _lib_public_headers ${gRPC_FILEGROUP_${_filegroup}_public_headers})
+        list(APPEND _lib_src ${gRPC_FILEGROUPS_${_filegroup}_src})
+        list(APPEND _lib_public_headers ${gRPC_FILEGROUPS_${_filegroup}_public_headers})
       endforeach()
     endif()
     add_library(${_lib} ${_lib_type} ${_lib_src})
+    if(MSVC)
+      # Check this
+      target_compile_options(${_lib} PUBLIC -D_WIN32_WINNT=0x0600)
+    endif()
     if(DEFINED ${_lib_}_deps)
       target_link_libraries(${_lib} PUBLIC ${${_lib_}_deps})
     endif()
@@ -319,6 +298,7 @@ foreach(gRPC_LIB
       PROPERTY INTERFACE_INCLUDE_DIRECTORIES
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
     foreach(_hdr ${_lib_public_headers})
+      #message("_hdr: ${_hdr}")
       get_filename_component(_hdr_name "${_hdr}" NAME)
       get_filename_component(_hdr_path "${_hdr}" PATH)
       string(REPLACE "include/" "${CMAKE_INSTALL_INCLUDEDIR}/"
@@ -335,7 +315,7 @@ foreach(gRPC_TARGET
   ${gRPC_TARGETS}
   )
   set(_target ${gRPC_TARGET})
-  set(_target_ gRPC_TARGET_${_target})
+  set(_target_ gRPC_TARGETS_${_target})
   if("${${_target_}_language}" STREQUAL "c")
     set(_target_c TRUE)
   else()
@@ -361,7 +341,11 @@ foreach(gRPC_TARGET
   else()
     set(_target_secure_false FALSE)
   endif()
-  if((_target_c OR _target_cxx) AND _target_build_protoc)
+  _check_platforms(${_target_} _target_platform)
+  #message("${_target_}_platform: ${_target_platform}")
+  if(_target_platform
+    AND (_target_c OR _target_cxx)
+    AND _target_build_protoc)
     set(_target_src ${${_target_}_src})
     add_executable(${_target} ${_target_src})
     if(DEFINED ${_target_}_deps)
