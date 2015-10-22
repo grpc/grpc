@@ -506,7 +506,6 @@ def render_html_report(test_cases, client_langs, server_langs, resultset,
   """Generate html report."""
   sorted_test_cases = sorted(test_cases)
   sorted_client_langs = sorted(client_langs)
-  print sorted_client_langs
   sorted_server_langs = sorted(server_langs)
   html_str = ('<!DOCTYPE html>\n'
               '<html lang=\"en\">\n'
