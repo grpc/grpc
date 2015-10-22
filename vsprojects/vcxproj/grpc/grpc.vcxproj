@@ -270,6 +270,7 @@
     <ClInclude Include="..\..\..\src\core\channel\channel_args.h" />
     <ClInclude Include="..\..\..\src\core\channel\channel_stack.h" />
     <ClInclude Include="..\..\..\src\core\channel\client_channel.h" />
+    <ClInclude Include="..\..\..\src\core\channel\client_uchannel.h" />
     <ClInclude Include="..\..\..\src\core\channel\compress_filter.h" />
     <ClInclude Include="..\..\..\src\core\channel\connected_channel.h" />
     <ClInclude Include="..\..\..\src\core\channel\context.h" />
@@ -302,6 +303,7 @@
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\endpoint_pair.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\exec_ctx.h" />
+    <ClInclude Include="..\..\..\src\core\iomgr\executor.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\fd_posix.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\iocp_windows.h" />
     <ClInclude Include="..\..\..\src\core\iomgr\iomgr.h" />
@@ -433,6 +435,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\client_channel.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\channel\client_uchannel.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\compress_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\connected_channel.c">
@@ -498,6 +502,8 @@
     <ClCompile Include="..\..\..\src\core\iomgr\endpoint_pair_windows.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\exec_ctx.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\iomgr\executor.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\iomgr\fd_posix.c">
     </ClCompile>

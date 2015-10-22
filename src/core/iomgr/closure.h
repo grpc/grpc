@@ -83,9 +83,18 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg);
 #define GRPC_CLOSURE_LIST_INIT \
   { NULL, NULL }
 
+/** add \a closure to the end of \a list and set \a closure's success to \a
+ * success */
 void grpc_closure_list_add(grpc_closure_list *list, grpc_closure *closure,
                            int success);
+
+/** append all closures from \a src to \a dst and empty \a src. */
 void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst);
+
+/** pop (return and remove) the head closure from \a list. */
+grpc_closure *grpc_closure_list_pop(grpc_closure_list *list);
+
+/** return whether \a list is empty. */
 int grpc_closure_list_empty(grpc_closure_list list);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_CLOSURE_H */

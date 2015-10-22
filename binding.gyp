@@ -46,10 +46,11 @@
       # io.js always reports versions >0 and always exports ALPN symbols.
       # Therefore, Node's major version will be truthy if and only if it
       # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
-      # like "v4.1.1" in a recent version. We use grep to extract just the
-      # major version. "4", would be the output for the example.
+      # like "v4.1.1" in a recent version. We use cut to split by period and
+      # take the first field (resulting in "v[major]"), then use cut again
+      # to take all but the first character, removing the "v".
     'defines': [
-      'TSI_OPENSSL_ALPN_SUPPORT=<!(node -v | grep -oP "(?<=v)(\d+)(?=\.\d+\.\d+)")'
+      'TSI_OPENSSL_ALPN_SUPPORT=<!(node --version | cut -d. -f1 | cut -c2-)'
     ],
     'include_dirs': [
       '.',
@@ -158,6 +159,7 @@
         'src/core/channel/channel_args.c',
         'src/core/channel/channel_stack.c',
         'src/core/channel/client_channel.c',
+        'src/core/channel/client_uchannel.c',
         'src/core/channel/compress_filter.c',
         'src/core/channel/connected_channel.c',
         'src/core/channel/http_client_filter.c',
@@ -191,6 +193,7 @@
         'src/core/iomgr/endpoint_pair_posix.c',
         'src/core/iomgr/endpoint_pair_windows.c',
         'src/core/iomgr/exec_ctx.c',
+        'src/core/iomgr/executor.c',
         'src/core/iomgr/fd_posix.c',
         'src/core/iomgr/iocp_windows.c',
         'src/core/iomgr/iomgr.c',

@@ -784,6 +784,7 @@ src/core/census/grpc_filter.h \
 src/core/channel/channel_args.h \
 src/core/channel/channel_stack.h \
 src/core/channel/client_channel.h \
+src/core/channel/client_uchannel.h \
 src/core/channel/compress_filter.h \
 src/core/channel/connected_channel.h \
 src/core/channel/context.h \
@@ -816,6 +817,7 @@ src/core/iomgr/closure.h \
 src/core/iomgr/endpoint.h \
 src/core/iomgr/endpoint_pair.h \
 src/core/iomgr/exec_ctx.h \
+src/core/iomgr/executor.h \
 src/core/iomgr/fd_posix.h \
 src/core/iomgr/iocp_windows.h \
 src/core/iomgr/iomgr.h \
@@ -919,6 +921,7 @@ src/core/census/grpc_filter.c \
 src/core/channel/channel_args.c \
 src/core/channel/channel_stack.c \
 src/core/channel/client_channel.c \
+src/core/channel/client_uchannel.c \
 src/core/channel/compress_filter.c \
 src/core/channel/connected_channel.c \
 src/core/channel/http_client_filter.c \
@@ -952,6 +955,7 @@ src/core/iomgr/endpoint.c \
 src/core/iomgr/endpoint_pair_posix.c \
 src/core/iomgr/endpoint_pair_windows.c \
 src/core/iomgr/exec_ctx.c \
+src/core/iomgr/executor.c \
 src/core/iomgr/fd_posix.c \
 src/core/iomgr/iocp_windows.c \
 src/core/iomgr/iomgr.c \
