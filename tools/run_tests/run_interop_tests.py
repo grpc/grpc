@@ -344,6 +344,11 @@ def add_auth_options(language, test_case, cmdline, env):
 def _job_kill_handler(job):
   if job._spec.container_name:
     dockerjob.docker_kill(job._spec.container_name)
+    # When the job times out and we decide to kill it,
+    # we need to wait a before restarting the job
+    # to prevent "container name already in use" error.
+    # TODO(jtattermusch): figure out a cleaner way to to this.
+    time.sleep(2)
 
 
 def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
