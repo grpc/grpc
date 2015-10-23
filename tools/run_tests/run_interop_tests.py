@@ -383,7 +383,7 @@ def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
           cwd=cwd,
           environ=environ,
           shortname='%s:%s:%s' % (suite_name, language, test_case),
-          timeout_seconds=2*60,
+          timeout_seconds=90,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
@@ -419,7 +419,7 @@ def cloud_to_cloud_jobspec(language, test_case, server_name, server_host,
           environ=environ,
           shortname='cloud_to_cloud:%s:%s_server:%s' % (language, server_name,
                                                  test_case),
-          timeout_seconds=2*60,
+          timeout_seconds=90,
           flake_retries=5 if args.allow_flakes else 0,
           timeout_retries=2 if args.allow_flakes else 0,
           kill_handler=_job_kill_handler)
