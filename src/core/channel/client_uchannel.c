@@ -462,7 +462,7 @@ static void cuc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   grpc_subchannel_state_change_unsubscribe(exec_ctx, chand->subchannel,
                                            &chand->connectivity_cb);
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
-  gpr_mu_lock(&chand->mu_state);
+  gpr_mu_destroy(&chand->mu_state);
 }
 
 const grpc_channel_filter grpc_client_uchannel_filter = {
