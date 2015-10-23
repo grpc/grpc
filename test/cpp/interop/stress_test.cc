@@ -80,10 +80,10 @@ DEFINE_string(test_cases, "",
 
 using std::make_pair;
 using std::pair;
-using std::string;
 using std::thread;
 using std::vector;
 
+using grpc::string;
 using grpc::testing::kTestCaseList;
 using grpc::testing::StressTestInteropClient;
 using grpc::testing::TestCaseType;
