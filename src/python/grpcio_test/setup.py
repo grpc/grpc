@@ -77,7 +77,9 @@ _INSTALL_REQUIRES = (
 )
 
 _COMMAND_CLASS = {
-    'test': commands.RunTests
+    'test': commands.RunTests,
+    'build_proto_modules': commands.BuildProtoModules,
+    'build_py': commands.BuildPy,
 }
 
 setuptools.setup(

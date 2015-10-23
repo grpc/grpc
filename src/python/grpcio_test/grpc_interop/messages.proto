@@ -1,3 +1,4 @@
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,113 +28,140 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// An integration test service that covers all the method signature permutations
-// of unary/streaming requests/responses.
-// This file is duplicated around the code base. See GitHub issue #526.
-syntax = "proto2";
+// Message definitions to be used by integration test service definitions.
 
-package grpc_protoc_plugin;
+syntax = "proto3";
 
+package grpc.testing;
+
+// The type of payload that should be returned.
 enum PayloadType {
   // Compressable text format.
-  COMPRESSABLE= 1;
+  COMPRESSABLE = 0;
 
   // Uncompressable binary format.
-  UNCOMPRESSABLE = 2;
+  UNCOMPRESSABLE = 1;
 
   // Randomly chosen from all other formats defined in this enum.
-  RANDOM = 3;
+  RANDOM = 2;
 }
 
+// Compression algorithms
+enum CompressionType {
+  // No compression
+  NONE = 0;
+  GZIP = 1;
+  DEFLATE = 2;
+}
+
+// A block of data, to simply increase gRPC message size.
 message Payload {
-  required PayloadType payload_type = 1;
-  oneof payload_body {
-    string payload_compressable = 2;
-    bytes payload_uncompressable = 3;
-  }
+  // The type of data in body.
+  PayloadType type = 1;
+  // Primary contents of payload.
+  bytes body = 2;
 }
 
+// A protobuf representation for grpc status. This is used by test
+// clients to specify a status that the server should attempt to return.
+message EchoStatus {
+  int32 code = 1;
+  string message = 2;
+}
+
+// Unary request.
 message SimpleRequest {
   // Desired payload type in the response from the server.
   // If response_type is RANDOM, server randomly chooses one from other formats.
-  optional PayloadType response_type = 1 [default=COMPRESSABLE];
+  PayloadType response_type = 1;
 
   // Desired payload size in the response from the server.
   // If response_type is COMPRESSABLE, this denotes the size before compression.
-  optional int32 response_size = 2;
+  int32 response_size = 2;
 
   // Optional input payload sent along with the request.
-  optional Payload payload = 3;
+  Payload payload = 3;
+
+  // Whether SimpleResponse should include username.
+  bool fill_username = 4;
+
+  // Whether SimpleResponse should include OAuth scope.
+  bool fill_oauth_scope = 5;
+
+  // Compression algorithm to be used by the server for the response (stream)
+  CompressionType response_compression = 6;
+
+  // Whether server should return a given status
+  EchoStatus response_status = 7;
 }
 
+// Unary response, as configured by the request.
 message SimpleResponse {
-  optional Payload payload = 1;
+  // Payload to increase message size.
+  Payload payload = 1;
+  // The user the request came from, for verifying authentication was
+  // successful when the client expected it.
+  string username = 2;
+  // OAuth scope.
+  string oauth_scope = 3;
 }
 
+// Client-streaming request.
 message StreamingInputCallRequest {
   // Optional input payload sent along with the request.
-  optional Payload payload = 1;
+  Payload payload = 1;
 
   // Not expecting any payload from the response.
 }
 
+// Client-streaming response.
 message StreamingInputCallResponse {
   // Aggregated size of payloads received from the client.
-  optional int32 aggregated_payload_size = 1;
+  int32 aggregated_payload_size = 1;
 }
 
+// Configuration for a particular response.
 message ResponseParameters {
   // Desired payload sizes in responses from the server.
   // If response_type is COMPRESSABLE, this denotes the size before compression.
-  required int32 size = 1;
+  int32 size = 1;
 
   // Desired interval between consecutive responses in the response stream in
   // microseconds.
-  required int32 interval_us = 2;
+  int32 interval_us = 2;
 }
 
+// Server-streaming request.
 message StreamingOutputCallRequest {
   // Desired payload type in the response from the server.
   // If response_type is RANDOM, the payload from each response in the stream
   // might be of different types. This is to simulate a mixed type of payload
   // stream.
-  optional PayloadType response_type = 1 [default=COMPRESSABLE];
+  PayloadType response_type = 1;
 
+  // Configuration for each expected response message.
   repeated ResponseParameters response_parameters = 2;
 
   // Optional input payload sent along with the request.
-  optional Payload payload = 3;
+  Payload payload = 3;
+
+  // Compression algorithm to be used by the server for the response (stream)
+  CompressionType response_compression = 6;
+
+  // Whether server should return a given status
+  EchoStatus response_status = 7;
 }
 
+// Server-streaming response, as configured by the request and parameters.
 message StreamingOutputCallResponse {
-  optional Payload payload = 1;
+  // Payload to increase response size.
+  Payload payload = 1;
 }
 
-service TestService {
-  // One request followed by one response.
-  // The server returns the client payload as-is.
-  rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
-
-  // One request followed by a sequence of responses (streamed download).
-  // The server returns the payload with client desired type and sizes.
-  rpc StreamingOutputCall(StreamingOutputCallRequest)
-      returns (stream StreamingOutputCallResponse);
-
-  // A sequence of requests followed by one response (streamed upload).
-  // The server returns the aggregated size of client payload as the result.
-  rpc StreamingInputCall(stream StreamingInputCallRequest)
-      returns (StreamingInputCallResponse);
-
-  // A sequence of requests with each request served by the server immediately.
-  // As one request could lead to multiple responses, this interface
-  // demonstrates the idea of full duplexing.
-  rpc FullDuplexCall(stream StreamingOutputCallRequest)
-      returns (stream StreamingOutputCallResponse);
-
-  // A sequence of requests followed by a sequence of responses.
-  // The server buffers all the client requests and then serves them in order. A
-  // stream of responses are returned to the client when the server starts with
-  // first request.
-  rpc HalfDuplexCall(stream StreamingOutputCallRequest)
-      returns (stream StreamingOutputCallResponse);
+// For reconnect interop test only.
+// Server tells client whether its reconnects are following the spec and the
+// reconnect backoffs it saw.
+message ReconnectInfo {
+  bool passed = 1;
+  repeated int32 backoff_ms = 2;
 }
