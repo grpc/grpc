@@ -272,6 +272,8 @@ class Job(object):
         message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
         self._timeout_retries += 1
         self.result.retries = self._timeout_retries + self._retries
+        if self._spec.kill_handler:
+          self._spec.kill_handler(self)
         self._process.terminate()
         self.start()
       else:
