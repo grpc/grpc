@@ -2105,6 +2105,28 @@ targets:
   - mac
   - linux
   - posix
+- name: stress_test
+  build: test
+  language: c++
+  headers:
+  - test/cpp/interop/client_helper.h
+  - test/cpp/interop/interop_client.h
+  - test/cpp/interop/stress_interop_client.h
+  src:
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
+  - test/cpp/interop/interop_client.cc
+  - test/cpp/interop/stress_interop_client.cc
+  - test/cpp/interop/stress_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
 - name: sync_streaming_ping_pong_test
   build: test
   language: c++
