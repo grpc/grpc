@@ -5,6 +5,7 @@ dist/
 *.egg
 *.egg/
 *.eggs/
+*_pb2.py
 .coverage
 .coverage.*
 .cache/
