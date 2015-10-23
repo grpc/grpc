@@ -32,57 +32,45 @@
 #endregion
 
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Threading;
-using Grpc.Core.Internal;
+using System.Threading.Tasks;
+using Google.Protobuf;
+using Grpc.Core;
+using Grpc.Core.Utils;
 
-namespace Grpc.Core.Profiling
+namespace Grpc.Testing
 {
-    internal struct ProfilerEntry
+    /// <summary>
+    /// Implementation of BenchmarkService server
+    /// </summary>
+    public class BenchmarkServiceImpl : BenchmarkService.IBenchmarkService
     {
-        public enum Type
+        private readonly int responseSize;
+
+        public BenchmarkServiceImpl(int responseSize)
         {
-            BEGIN,
-            END,
-            MARK
+            this.responseSize = responseSize;
         }
 
-        public ProfilerEntry(Timespec timespec, Type type, string tag)
+        public Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
         {
-            this.timespec = timespec;
-            this.type = type;
-            this.tag = tag;
+            var response = new SimpleResponse { Payload = CreateZerosPayload(responseSize) };
+            return Task.FromResult(response);
         }
 
-        public Timespec timespec;
-        public Type type;
-        public string tag;
-
-        public override string ToString()
+        public async Task StreamingCall(IAsyncStreamReader<SimpleRequest> requestStream, IServerStreamWriter<SimpleResponse> responseStream, ServerCallContext context)
         {
-            // mimic the output format used by C core.
-            return string.Format(
-                "{{\"t\": {0}.{1}, \"thd\":\"unknown\", \"type\": \"{2}\", \"tag\": \"{3}\", " +
-                "\"file\": \"unknown\", \"line\": 0, \"imp\": 0}}",
-                timespec.TimevalSeconds, timespec.TimevalNanos.ToString("D9"),
-                GetTypeAbbreviation(type), tag);
-        }
-
-        internal static string GetTypeAbbreviation(Type type)
-        {
-            switch (type)
+            await requestStream.ForEachAsync(async request =>
             {
-                case Type.BEGIN:
-                    return "{";
+                var response = new SimpleResponse { Payload = CreateZerosPayload(responseSize) };
+                await responseStream.WriteAsync(response);
+            });
+        }
 
-                case Type.END:
-                    return "}";
-                
-                case Type.MARK:
-                    return ".";
-                default:
-                    throw new ArgumentException("Unknown type");
-            }
+        private static Payload CreateZerosPayload(int size)
+        {
+            return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
         }
     }
 }

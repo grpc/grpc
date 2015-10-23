@@ -32,57 +32,41 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using System.Threading;
-using Grpc.Core.Internal;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Google.Protobuf;
+using Grpc.Core;
+using Grpc.Core.Utils;
+using NUnit.Framework;
+using Grpc.Testing;
 
-namespace Grpc.Core.Profiling
+namespace Grpc.IntegrationTesting
 {
-    internal struct ProfilerEntry
+    /// <summary>
+    /// Abstract server runner.
+    /// </summary>
+    public interface IServerRunner
     {
-        public enum Type
-        {
-            BEGIN,
-            END,
-            MARK
-        }
+        /// <summary>
+        /// Port on which the server is listening.
+        /// </summary>
+        int BoundPort { get; }
+        
+        /// <summary>
+        /// Gets server stats.
+        /// </summary>
+        /// <returns>The stats.</returns>
+        ServerStats GetStats(bool reset);
 
-        public ProfilerEntry(Timespec timespec, Type type, string tag)
-        {
-            this.timespec = timespec;
-            this.type = type;
-            this.tag = tag;
-        }
-
-        public Timespec timespec;
-        public Type type;
-        public string tag;
-
-        public override string ToString()
-        {
-            // mimic the output format used by C core.
-            return string.Format(
-                "{{\"t\": {0}.{1}, \"thd\":\"unknown\", \"type\": \"{2}\", \"tag\": \"{3}\", " +
-                "\"file\": \"unknown\", \"line\": 0, \"imp\": 0}}",
-                timespec.TimevalSeconds, timespec.TimevalNanos.ToString("D9"),
-                GetTypeAbbreviation(type), tag);
-        }
-
-        internal static string GetTypeAbbreviation(Type type)
-        {
-            switch (type)
-            {
-                case Type.BEGIN:
-                    return "{";
-
-                case Type.END:
-                    return "}";
-                
-                case Type.MARK:
-                    return ".";
-                default:
-                    throw new ArgumentException("Unknown type");
-            }
-        }
+        /// <summary>
+        /// Asynchronously stops the server.
+        /// </summary>
+        /// <returns>Task that finishes when server has shutdown.</returns>
+        Task StopAsync();
     }
+        
 }
