@@ -111,21 +111,21 @@ PHP_METHOD(Credentials, createDefault) {
  * @return Credentials The new SSL credentials object
  */
 PHP_METHOD(Credentials, createSsl) {
-  char *pem_root_certs;
+  char *pem_root_certs = NULL;
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
 
-  int root_certs_length, private_key_length = 0, cert_chain_length = 0;
+  int root_certs_length = 0, private_key_length = 0, cert_chain_length = 0;
 
   pem_key_cert_pair.private_key = pem_key_cert_pair.cert_chain = NULL;
 
-  /* "s|s!s! == 1 string, 2 optional nullable strings */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s|s!s!",
+  /* "|s!s!s! == 3 optional nullable strings */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!s!",
                             &pem_root_certs, &root_certs_length,
                             &pem_key_cert_pair.private_key, &private_key_length,
                             &pem_key_cert_pair.cert_chain,
                             &cert_chain_length) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "createSsl expects 1 to 3 strings", 1 TSRMLS_CC);
+                         "createSsl expects 3 optional strings", 1 TSRMLS_CC);
     return;
   }
   grpc_credentials *creds = grpc_ssl_credentials_create(
