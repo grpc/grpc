@@ -1,0 +1,828 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup>
+    <OpenSslPath>..\..\..\third_party\openssl</OpenSslPath>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BE42CA67-7C48-4882-BE59-111CB41142BE}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>$(LibName)</RootNamespace>
+    <RestorePackages>true</RestorePackages>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="ConfigurationSettings">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>v110</PlatformToolset>
+    <CallingConvention>Cdecl</CallingConvention>
+    <NoASM>true</NoASM>
+    <OutputPath>output\$(PlatformToolset)\$(Platform)\$(Configuration)\$(UsesConfigurationType)\</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>
+  </PropertyGroup>
+  <Import Project="$(CoAppEtcDirectory)vcxproj.inc" Condition="Exists('$(CoAppEtcDirectory)vcxproj.inc')" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Condition="exists('.\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.props')" Project=".\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.props" />
+  <Import Condition="exists('.\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.props')" Project=".\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets">
+    <Import Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <LinkIncremental Condition="'$(Configuration)'=='Release'">false</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)'=='Debug'">true</LinkIncremental>
+    <CallingConvention-zlib>$(CallingConvention)</CallingConvention-zlib>
+    <Linkage-zlib>$(UsesConfigurationType)</Linkage-zlib>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(OpenSslPath);$(OpenSslPath)\inc32;$(OpenSslPath)\crypto;$(OpenSslPath)\crypto\asn1;$(OpenSslPath)\crypto\evp;$(OpenSslPath)\crypto\md2;$(OpenSslPath)\crypto\modes;$(OpenSslPath)\crypto\store;$(OpenSslPath)\include;$(OutDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;L_ENDIAN;MK1MF_BUILD;WIN32_LEAN_AND_MEAN;OPENSSL_THREADS;ZLIB;OPENSSL_SYSNAME_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OPENSSL_BUILD_SHLIBCRYPTO;OPENSSL_NO_IDEA;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DSO_WIN32;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='DynamicLibrary'">_WINDLL;_REENTRANT;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='StaticLibrary'">OPENSSL_NO_DYNAMIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Linkage-zlib)'=='dynamic'">ZLIB_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(NoASM)'=='true'">OPENSSL_NO_ASM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CallingConvention>%(CallingConvention)</CallingConvention>
+      <StringPooling>true</StringPooling>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TreatWarningAsError>false</TreatWarningAsError>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Lib>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>zlib$(OutNameSuffix).lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Lib>
+    <Link>
+      <AllowIsolation>true</AllowIsolation>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalDependencies>ws2_32.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>.\libeay32.def</ModuleDefinitionFile>
+    </Link>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(OpenSslPath);$(OpenSslPath)\inc32;$(OpenSslPath)\crypto;$(OpenSslPath)\crypto\asn1;$(OpenSslPath)\crypto\evp;$(OpenSslPath)\crypto\md2;$(OpenSslPath)\crypto\modes;$(OpenSslPath)\crypto\store;$(OpenSslPath)\include;$(OutDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;L_ENDIAN;MK1MF_BUILD;WIN32_LEAN_AND_MEAN;OPENSSL_THREADS;ZLIB;OPENSSL_SYSNAME_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OPENSSL_BUILD_SHLIBCRYPTO;OPENSSL_NO_IDEA;OPENSSL_NO_RC5;OPENSSL_NO_MD2;OPENSSL_NO_KRB5;OPENSSL_NO_JPAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DSO_WIN32;UNICODE;_UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='DynamicLibrary'">_WINDLL;_REENTRANT;OPENSSL_NO_STATIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='StaticLibrary'">OPENSSL_NO_DYNAMIC_ENGINE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(Linkage-zlib)'=='dynamic'">ZLIB_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OPENSSL_NO_ASM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>CRYPTO;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <AdditionalOptions>/Gs0 %(AdditionalOptions)</AdditionalOptions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <MinimalRebuild>false</MinimalRebuild>
+      <OmitFramePointers>false</OmitFramePointers>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>DEBUG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>DEBUG;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <AdditionalOptions>/MP %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>false</ExceptionHandling>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <Optimization>Full</Optimization>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <ResourceCompile>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary Condition="'$(Configuration)|$(Platform)'=='Release|x64'">MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>WIN64;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <None Include="openssl.gyp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(OpenSslPath)\ms\uplink.c" >
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\cversion.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ex_data.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\mem_clr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\mem_dbg.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\o_dir.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\o_fips.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\o_time.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cryptlib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\o_str.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\uid.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ebcdic.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\mem.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\o_init.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\fips_ers.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cpt_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\krb5\krb5_asn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rand\rand_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rand\rand_os2.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rand\rand_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rand\rand_win.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rand\rand_egd.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rand\rand_nw.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rand\randfile.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rand\rand_unix.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rand\md_rand.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_skey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_sxnet.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_ocsp.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_ncons.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\pcy_node.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_bcons.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_pci.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\pcy_data.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_ia5.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_utl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_cpols.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_conf.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_akeya.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_pku.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_addr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_int.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\pcy_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_pcons.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_genn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_purp.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\pcy_tree.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_enum.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_pmaps.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_alt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_bitst.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_crld.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\pcy_map.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_info.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_asid.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_prn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_akey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_pcia.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\pcy_cache.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_extku.c" />
+	<ClCompile Include="$(OpenSslPath)\crypto\x509v3\v3_scts.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\txt_db\txt_db.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ecdh\ech_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ecdh\ech_key.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ecdh\ech_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ecdh\ech_ossl.c" />
+	<ClCompile Include="$(OpenSslPath)\crypto\ecdh\ech_kdf.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\idea\i_cfb64.c" >
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\idea\i_skey.c" >
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\idea\i_cbc.c" >
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\idea\i_ofb64.c" >
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\idea\i_ecb.c" >
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_attr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_asn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_utl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_add.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_crt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_key.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_crpt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_p8d.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\pk12err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_decr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_mutl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_kiss.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_p8e.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_init.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs12\p12_npas.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\seed\seed_ecb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\seed\seed_cbc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\seed\seed_ofb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\seed\seed.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\seed\seed_cfb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\conf\conf_mod.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\conf\conf_def.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\conf\conf_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\conf\conf_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\conf\conf_mall.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\conf\conf_sap.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\conf\conf_api.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ocsp\ocsp_ext.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ocsp\ocsp_asn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ocsp\ocsp_cl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ocsp\ocsp_vfy.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ocsp\ocsp_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ocsp\ocsp_srv.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ocsp\ocsp_ht.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ocsp\ocsp_prn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ocsp\ocsp_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\sha\sha256.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\sha\sha1_one.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\sha\sha512.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\sha\sha1dgst.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\sha\sha_dgst.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\sha\sha_one.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\mdc2\mdc2dgst.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\mdc2\mdc2_one.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\camellia\cmll_ctr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\camellia\cmll_misc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\camellia\cmll_cfb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\camellia\cmll_ofb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\camellia\cmll_ecb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\camellia\camellia.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\camellia\cmll_utl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\camellia\cmll_cbc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_req_utils.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_rsp_verify.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_rsp_print.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_rsp_sign.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_conf.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_verify_ctx.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_rsp_utils.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ts\ts_req_print.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\evp_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_sig.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\n_pkey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_object.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\d2i_pr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\tasn_new.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_attrib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_info.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\t_spki.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_long.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_time.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\tasn_typ.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\asn1_gen.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_utctm.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\tasn_prn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_bignum.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_bool.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\t_bitst.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\asn_pack.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_algor.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\t_crl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_pkey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_bytes.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\t_req.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_set.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\bio_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_utf8.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\asn1_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\asn_mime.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_x509.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_enum.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_strex.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_sign.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_int.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_strnid.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\nsseq.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\i2d_pu.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\tasn_dec.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\p5_pbe.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_dup.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_nx509.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\t_pkey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_exten.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_x509a.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_octet.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\p8_pkey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_mbstr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\f_string.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\d2i_pu.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\tasn_fre.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_crl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_digest.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\f_int.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_i2d_fp.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\asn1_par.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\f_enum.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\t_x509a.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_d2i_fp.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\tasn_utl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_gentm.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\ameth_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\asn1_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_bitstr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_print.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_req.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\p5_pbev2.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_type.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_spki.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\bio_ndef.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\a_verify.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_pubkey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_name.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\i2d_pr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\asn_moid.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\tasn_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\x_val.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\asn1\t_x509.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_pk8.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_info.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_seal.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_x509.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_oth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_all.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_pkey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_xaux.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pvkfmt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_sign.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pem\pem_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\lhash\lh_stats.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\lhash\lhash.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ecdsa\ecs_sign.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ecdsa\ecs_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ecdsa\ecs_ossl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ecdsa\ecs_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ecdsa\ecs_vrf.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ecdsa\ecs_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\store\str_err.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\store\str_mem.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\store\str_lib.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\store\str_meth.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_key.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_gen.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_pmeth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_vrf.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_ossl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_ameth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_prn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_depr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dsa\dsa_sign.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_openssl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_list.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_rsa.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_cipher.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_asnmth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_ctrl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_dh.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_cryptodev.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_table.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_dyn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_pkey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_dsa.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_fat.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_store.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_digest.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_init.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_pkmeth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_rand.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_all.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_ecdh.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_rdrand.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\eng_cnf.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\engine\tb_ecdsa.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bio_cb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\b_print.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bss_bio.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bss_sock.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bf_buff.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bss_mem.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bf_null.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bss_acpt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bss_file.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bio_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bio_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bss_null.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bss_log.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\b_sock.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bss_fd.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\b_dump.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bf_nbio.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bss_dgram.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bio\bss_conn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bf\bf_ecb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bf\bf_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bf\bf_skey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bf\bf_cfb64.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bf\bf_ofb64.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\whrlpool\wp_dgst.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\whrlpool\wp_block.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dh\dh_ameth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dh\dh_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dh\dh_depr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dh\dh_check.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dh\dh_key.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dh\dh_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dh\dh_pmeth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dh\dh_prn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dh\dh_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dh\dh_gen.c" />
+	<ClCompile Include="$(OpenSslPath)\crypto\dh\dh_kdf.c" />
+	<ClCompile Include="$(OpenSslPath)\crypto\dh\dh_rfc5114.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_req.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_txt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\by_file.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_obj.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_vpm.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_d2.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_set.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509spki.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x_all.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509type.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_def.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_vfy.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_cmp.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_att.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_v3.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_lu.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_ext.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_r2x.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509rset.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\by_dir.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509name.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509_trs.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\x509\x509cset.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\comp\comp_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\comp\c_zlib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\comp\c_rle.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\comp\comp_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_gf2m.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_add.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_blind.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_kron.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_nist.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_gcd.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_word.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_mont.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_mod.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_exp2.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_exp.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_print.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_prime.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_mpi.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_sqrt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_mul.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_asm.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_x931p.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_recp.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_const.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_ctx.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_shift.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_sqr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_depr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_rand.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\bn\bn_div.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_depr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_pk1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_pmeth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_ssl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_crpt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_saos.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_gen.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_pss.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_none.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_null.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_x931.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_eay.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_sign.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_ameth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_oaep.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_chk.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rsa\rsa_prn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pqueue\pqueue.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\objects\o_names.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\objects\obj_xref.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\objects\obj_dat.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\objects\obj_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\objects\obj_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\buffer\buffer.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\buffer\buf_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\buffer\buf_str.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ecp_oct.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ecp_nistp224.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ecp_nist.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ecp_nistp256.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec2_mult.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_key.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_curve.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_ameth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\eck_prn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_oct.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec2_smpl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_check.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec2_oct.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ecp_smpl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ecp_nistputil.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_cvt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_pmeth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_mult.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ecp_mont.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ecp_nistp521.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ec\ec_print.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\md2\md2_dgst.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\md2\md2_one.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_vms.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_beos.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_dl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_null.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_openssl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_dlfcn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\dso\dso_win32.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\stack\stack.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\md4\md4_dgst.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\md4\md4_one.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\md5\md5_one.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\md5\md5_dgst.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cmac\cm_ameth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cmac\cm_pmeth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cmac\cmac.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\aes\aes_wrap.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\aes\aes_cbc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\aes\aes_ige.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\aes\aes_ecb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\aes\aes_cfb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\aes\aes_ctr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\aes\aes_misc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\aes\aes_ofb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\aes\aes_core.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ripemd\rmd_dgst.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ripemd\rmd_one.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\modes\cbc128.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\modes\xts128.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\modes\ofb128.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\modes\ccm128.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\modes\cfb128.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\modes\ctr128.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\modes\cts128.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\modes\gcm128.c" />
+	<ClCompile Include="$(OpenSslPath)\crypto\modes\wrap128.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\err\err_all.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\err\err_prn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\err\err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rc4\rc4_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rc4\rc4_skey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rc4\rc4_utl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\set_key.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\des_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\cfb64enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\cbc_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\ofb_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\enc_writ.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\fcrypt_b.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\read2pwd.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\rpc_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\fcrypt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\ecb3_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\cbc_cksm.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\cfb_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\xcbc_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\ecb_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\enc_read.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\des_old.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\ofb64ede.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\str2key.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\cfb64ede.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\ofb64enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\des_old2.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\pcbc_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\qud_cksm.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\rand_key.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\des\ede_cbcm_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rc2\rc2ofb64.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rc2\rc2cfb64.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rc2\rc2_cbc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rc2\rc2_ecb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\rc2\rc2_skey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs7\pk7_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs7\pkcs7err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs7\pk7_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs7\pk7_mime.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs7\pk7_attr.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs7\pk7_smime.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs7\bio_pk7.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\pkcs7\pk7_doit.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cast\c_ofb64.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cast\c_skey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cast\c_cfb64.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cast\c_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cast\c_ecb.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\srp\srp_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\srp\srp_vfy.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ui\ui_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ui\ui_compat.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ui\ui_util.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ui\ui_openssl.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\ui\ui_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\bio_b64.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\evp_cnf.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_wp.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\evp_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\bio_ok.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_dss1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\p_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_md4.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_bf.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_rc4_hmac_md5.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\p_sign.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\c_all.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\p_seal.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\evp_pkey.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_ecdsa.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_aes_cbc_hmac_sha1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_sha.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\p5_crpt2.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_seed.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_sha1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_old.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_dss.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_cast.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_des.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_ripemd.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\pmeth_gn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_null.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_des3.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_rc2.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_rc4.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\bio_md.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_md5.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\p_open.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_mdc2.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\evp_pbe.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\c_allc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\p5_crpt.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\p_verify.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_null.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\evp_err.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\evp_acnf.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_xcbc_d.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\names.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_idea.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\encode.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_camellia.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_sigver.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\evp_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\p_dec.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\bio_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\digest.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\evp_key.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_aes.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\p_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\pmeth_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\m_md2.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\c_alld.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\e_rc5.c" />
+	<ClCompile Include="$(OpenSslPath)\crypto\evp\e_aes_cbc_hmac_sha256.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\evp\pmeth_fn.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_io.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_cd.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_lib.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_att.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_asn1.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_enc.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_env.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_smime.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_dd.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_pwri.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_ess.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_sd.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\cms\cms_err.c" />
+	<ClCompile Include="$(OpenSslPath)\crypto\cms\cms_kari.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\hmac\hm_pmeth.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\hmac\hmac.c" />
+    <ClCompile Include="$(OpenSslPath)\crypto\hmac\hm_ameth.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="$(OpenSslPath)\ms\version32.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Condition="exists('.\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets')" Project=".\packages\grpc.dependencies.zlib.1.2.8.9\build\native\grpc.dependencies.zlib.targets" />
+  <Import Condition="exists('.\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets')" Project=".\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\native\grpc.dependencies.zlib.redist.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <PropertyGroup>
+    <Build-Perl-zlib Condition="'$(Linkage-zlib)'=='dynamic'">zlib-dynamic</Build-Perl-zlib>
+    <Build-Perl-zlib Condition="'$(Linkage-zlib)'=='static'">zlib</Build-Perl-zlib>
+    <Build-Perl-asm Condition="'$(NoASM)'=='true'">no-asm</Build-Perl-asm>
+    <Build-Perl-asm Condition="'$(NoASM)'=='false'"></Build-Perl-asm>
+    <Build-Perl-platform Condition="'$(Platform)'=='Win32'">VC-WIN32</Build-Perl-platform>
+    <Build-Perl-platform Condition="'$(Platform)'=='x64'">VC-WIN64A</Build-Perl-platform>
+    <Build-Perl-dll Condition="'$(ConfigurationType)'=='DynamicLibrary'">shared</Build-Perl-dll>
+    <Build-Perl-dll Condition="'$(ConfigurationType)'=='StaticLibrary'">no-shared</Build-Perl-dll>
+  </PropertyGroup>
+  <Target Name="PerlDefs">
+    <Exec 
+        Command="
+            perl Configure no-rc5 no-idea enable-mdc2 threads $(Build-Perl-zlib) $(Build-Perl-dll) $(Build-Perl-asm) $(Build-Perl-platform)
+            perl util\mkfiles.pl >MINFO
+            perl .\util\mkdef.pl 32 libeay >..\..\vsprojects\coapp\openssl\libeay32.def
+        "
+        WorkingDirectory="$(MSBuildThisFileDirectory)$(OpenSslPath)\" />
+    <Copy 
+        SourceFiles="$(MSBuildThisFileDirectory)$(OpenSslPath)\crypto\opensslconf.h"
+        DestinationFolder="$(OutDir)Include\openssl\" />
+  </Target>
+  <PropertyGroup>
+    <AA1 Condition="( $(PlatformToolset.ToLower().IndexOf('v110')) &gt; -1 Or '$(PlatformToolset.ToLower())' == 'windowskernelmodedriver8.0' Or '$(PlatformToolset.ToLower())' == 'windowsapplicationfordrivers8.0' Or '$(PlatformToolset.ToLower())' == 'windowsusermodedriver8.0' )">true</AA1>
+    <AA2 Condition="'$(Platform.ToLower())' == 'win32'">true</AA2>
+    <AA3 Condition="( $(Configuration.ToLower().IndexOf('debug')) == -1 )">true</AA3>
+    <AA4 Condition="'$(Linkage-zlib.ToLower())' == 'dynamic'">true</AA4>
+    <AA5 Condition="'$(CallingConvention-zlib.ToLower())' == 'cdecl'">true</AA5>
+  </PropertyGroup>
+  <Target Name="Info2" BeforeTargets="Build">
+    <Message Text="*******************************************************************************" Importance="high" />
+    <Message Text="*  PlatformToolset : '$(AA1)'" Importance="high" />
+    <Message Text="*  Platform        : '$(AA2)'" Importance="high" />
+    <Message Text="*  Configuration   : '$(AA3)'" Importance="high" />
+    <Message Text="*  Linkage         : '$(AA4)'" Importance="high" />
+    <Message Text="*  CallingConv     : '$(AA5)'" Importance="high" />
+    <Message Text="*******************************************************************************" Importance="high" />
+    <MakeDir Directories="$(OutDir);$(IntDir);$(TargetDir)"/>
+  </Target>
+  <PropertyGroup>
+    <BuildDependsOn>Info2;PerlDefs;$(BuildDependsOn)</BuildDependsOn>
+  </PropertyGroup>
+</Project>
