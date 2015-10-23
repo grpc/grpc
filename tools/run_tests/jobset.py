@@ -182,6 +182,7 @@ class JobResult(object):
     self.state = 'UNKNOWN'
     self.returncode = -1
     self.elapsed_time = 0
+    self.num_failures = 0
     self.retries = 0
     self.message = ''
     
@@ -243,6 +244,7 @@ class Job(object):
             self._spec.shortname, self._process.returncode, self._process.pid),
             stdout, do_newline=True)
           self._retries += 1
+          self.result.num_failures += 1
           self.result.retries = self._timeout_retries + self._retries
           self.start()
         else:
@@ -252,6 +254,7 @@ class Job(object):
                 self._spec.shortname, self._process.returncode, self._process.pid),
                 stdout, do_newline=True)
           self.result.state = 'FAILED'
+          self.result.num_failures += 1
           self.result.returncode = self._process.returncode
           if self._xml_test is not None:
             ET.SubElement(self._xml_test, 'failure', message='Failure')
@@ -271,6 +274,7 @@ class Job(object):
       if self._timeout_retries < self._spec.timeout_retries:
         message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
         self._timeout_retries += 1
+        self.result.num_failures += 1
         self.result.retries = self._timeout_retries + self._retries
         if self._spec.kill_handler:
           self._spec.kill_handler(self)
@@ -280,6 +284,7 @@ class Job(object):
         message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
         self.kill()
         self.result.state = 'TIMEOUT'
+        self.result.num_failures += 1
         if self._xml_test is not None:
           ET.SubElement(self._xml_test, 'system-out').text = filtered_stdout
           ET.SubElement(self._xml_test, 'error', message='Timeout')
@@ -294,7 +299,7 @@ class Job(object):
 
   def suppress_failure_message(self):
     self._suppress_failure_message = True
-
+    
 
 class Jobset(object):
   """Manages one run of jobs."""
@@ -347,7 +352,7 @@ class Jobset(object):
                 self._add_env,
                 self._xml_report)
       self._running.add(job)
-      self.resultset[job.GetSpec().shortname] = None
+      self.resultset[job.GetSpec().shortname] = []
     return True
 
   def reap(self):
@@ -367,7 +372,7 @@ class Jobset(object):
         break
       for job in dead:
         self._completed += 1
-        self.resultset[job.GetSpec().shortname] = job.result
+        self.resultset[job.GetSpec().shortname].append(job.result)
         self._running.remove(job)
       if dead: return
       if (not self._travis):
