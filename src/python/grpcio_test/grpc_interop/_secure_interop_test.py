@@ -31,11 +31,14 @@
 
 import unittest
 
-from grpc.early_adopter import implementations
+from grpc.beta import implementations
+
+from grpc_test.beta import test_utilities
 
 from grpc_interop import _interop_test_case
 from grpc_interop import methods
 from grpc_interop import resources
+from grpc_interop import test_pb2
 
 _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
@@ -45,19 +48,19 @@ class SecureInteropTest(
     unittest.TestCase):
 
   def setUp(self):
-    self.server = implementations.server(
-        methods.SERVICE_NAME, methods.SERVER_METHODS, 0,
-        private_key=resources.private_key(),
-        certificate_chain=resources.certificate_chain())
+    self.server = test_pb2.beta_create_TestService_server(methods.TestService())
+    port = self.server.add_secure_port(
+        '[::]:0', implementations.ssl_server_credentials(
+            [(resources.private_key(), resources.certificate_chain())]))
     self.server.start()
-    port = self.server.port()
-    self.stub = implementations.stub(
-        methods.SERVICE_NAME, methods.CLIENT_METHODS, 'localhost', port,
-        secure=True, root_certificates=resources.test_root_certificates(),
-        server_host_override=_SERVER_HOST_OVERRIDE)
+    self.stub = test_pb2.beta_create_TestService_stub(
+        test_utilities.not_really_secure_channel(
+            '[::]', port, implementations.ssl_client_credentials(
+                resources.test_root_certificates(), None, None),
+                _SERVER_HOST_OVERRIDE))
 
   def tearDown(self):
-    self.server.stop()
+    self.server.stop(0)
 
 
 if __name__ == '__main__':
