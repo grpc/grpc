@@ -13,7 +13,7 @@ nuget {
 		authors: {Mark J. Cox, Ralf S. Engelschall, Dr. Stephen Henson, Ben Laurie, Garrett Serack, Tim Rogers};
 		owners: {Jan Tattermusch};
 		licenseUrl: "http://www.openssl.org/source/license.html";
-		projectUrl: "http://github.com/jtattermusch/openssl";
+		projectUrl: "http://github.com/grpc/grpc";
 		iconUrl: "http://openssl.com/images/openssl-logo.png";
 		requireLicenseAcceptance:false;
 		summary: "An OpenSSL library";
