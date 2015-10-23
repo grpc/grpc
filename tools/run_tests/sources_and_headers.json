@@ -1672,6 +1672,38 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/interop/client_helper.h", 
+      "test/cpp/interop/interop_client.h", 
+      "test/cpp/interop/stress_interop_client.h", 
+      "test/proto/empty.grpc.pb.h", 
+      "test/proto/empty.pb.h", 
+      "test/proto/messages.grpc.pb.h", 
+      "test/proto/messages.pb.h", 
+      "test/proto/test.grpc.pb.h", 
+      "test/proto/test.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "stress_test", 
+    "src": [
+      "test/cpp/interop/client_helper.h", 
+      "test/cpp/interop/interop_client.cc", 
+      "test/cpp/interop/interop_client.h", 
+      "test/cpp/interop/stress_interop_client.cc", 
+      "test/cpp/interop/stress_interop_client.h", 
+      "test/cpp/interop/stress_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util", 
       "qps"
