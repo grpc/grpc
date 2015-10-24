@@ -839,14 +839,14 @@ def _build_and_run(
     root = ET.Element('testsuites') if xml_report else None
     testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests') if xml_report else None
 
-    if not jobset.run(all_runs, check_cancelled,
-                      newline_on_success=newline_on_success, travis=travis,
-                      infinite_runs=infinite_runs,
-                      maxjobs=args.jobs,
-                      stop_on_failure=args.stop_on_failure,
-                      cache=cache if not xml_report else None,
-                      xml_report=testsuite,
-                      add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port}):
+    number_failures, _ = jobset.run(
+        all_runs, check_cancelled, newline_on_success=newline_on_success, 
+        travis=travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
+        stop_on_failure=args.stop_on_failure, 
+        cache=cache if not xml_report else None,
+        xml_report=testsuite,
+        add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    if number_failures:
       return 2
   finally:
     for antagonist in antagonists:
@@ -855,8 +855,10 @@ def _build_and_run(
       tree = ET.ElementTree(root)
       tree.write(xml_report, encoding='UTF-8')
 
-  if not jobset.run(post_tests_steps, maxjobs=1, stop_on_failure=True,
-                    newline_on_success=newline_on_success, travis=travis):
+  number_failures, _ = jobset.run(
+      post_tests_steps, maxjobs=1, stop_on_failure=True,
+      newline_on_success=newline_on_success, travis=travis)
+  if number_failures:
     return 3
 
   if cache: cache.save()
