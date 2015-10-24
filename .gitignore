@@ -49,9 +49,6 @@ out
 # YCM config files
 .ycm_extra_conf.py
 
-# Core dump files
-core
-
 # XCode
 build/
 *.pbxuser
