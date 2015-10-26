@@ -1,0 +1,40 @@
+#!/bin/sh
+
+SRC_DIR=$2;
+DST_DIR=$3;
+DST_GRPC=$4;
+PROTOS=$1;
+if [ -z "$SRC_DIR" ]; then
+	SRC_DIR="./"
+fi
+if [ -z "$DST_DIR" ]; then
+	DST_DIR="./"
+fi
+if [ -z "$DST_GRPC" ]; then
+	DST_GRPC="./"
+fi
+
+if [ ! -d "$SRC_DIR" ]; then
+	echo "Source dir doesn't exist.";
+	return -1;
+fi
+
+if [ ! -d "$DST_DIR" ]; then
+	echo "Dest cpp dir doesn't exist. Dir created";	
+	mkdir $DST_DIR;
+fi
+
+if [ ! -d "$DST_GRPC" ]; then
+	echo "Dest grpc dir doesn't exist. Dir created";	
+	mkdir $DST_GRPC;
+fi
+
+if [ ! -f "$SRC_DIR/$PROTOS" ]; then
+	echo "Proto file doesn't exist";	
+	return -1;
+fi
+
+protoc -I=$SRC_DIR --cpp_out=$DST_DIR $SRC_DIR$PROTOS;
+
+protoc -I=$SRC_DIR --grpc_out=$DST_GRPC --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` $SRC_DIR$PROTOS
+
