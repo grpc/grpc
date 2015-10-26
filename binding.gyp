@@ -55,7 +55,8 @@
     'include_dirs': [
       '.',
       'include',
-      '<(node_root_dir)/deps/openssl/openssl/include'
+      '<(node_root_dir)/deps/openssl/openssl/include',
+      '<(node_root_dir)/deps/zlib'
     ],
     'conditions': [
       ['OS != "win"', {
