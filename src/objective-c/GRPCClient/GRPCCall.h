@@ -241,5 +241,5 @@ extern id const kGRPCTrailersKey;
  */
 - (void)cancel;
 
-/** TODO(jcanizales): Let specify a deadline. As a category of GRXWriter? */
+// TODO(jcanizales): Let specify a deadline. As a category of GRXWriter?
 @end
