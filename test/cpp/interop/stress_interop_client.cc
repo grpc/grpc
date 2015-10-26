@@ -45,7 +45,6 @@ namespace grpc {
 namespace testing {
 
 using std::pair;
-using std::string;
 using std::vector;
 
 WeightedRandomTestSelector::WeightedRandomTestSelector(
@@ -81,7 +80,7 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
 }
 
 StressTestInteropClient::StressTestInteropClient(
-    int test_id, const string& server_address,
+    int test_id, const grpc::string& server_address,
     const WeightedRandomTestSelector& test_selector, long test_duration_secs,
     long sleep_duration_ms)
     : test_id_(test_id),

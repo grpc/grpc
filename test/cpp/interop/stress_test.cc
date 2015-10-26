@@ -83,14 +83,13 @@ using std::pair;
 using std::thread;
 using std::vector;
 
-using grpc::string;
 using grpc::testing::kTestCaseList;
 using grpc::testing::StressTestInteropClient;
 using grpc::testing::TestCaseType;
 using grpc::testing::WeightedRandomTestSelector;
 using grpc::testing::UNKNOWN_TEST;
 
-TestCaseType GetTestTypeFromName(const string& test_name) {
+TestCaseType GetTestTypeFromName(const grpc::string& test_name) {
   TestCaseType test_case = UNKNOWN_TEST;
 
   for (auto it = kTestCaseList.begin(); it != kTestCaseList.end(); it++) {
@@ -104,12 +103,12 @@ TestCaseType GetTestTypeFromName(const string& test_name) {
 }
 
 // Converts a string of comma delimited tokens to a vector of tokens
-bool ParseCommaDelimitedString(const string& comma_delimited_str,
-                               vector<string>& tokens) {
+bool ParseCommaDelimitedString(const grpc::string& comma_delimited_str,
+                               vector<grpc::string>& tokens) {
   size_t bpos = 0;
-  size_t epos = string::npos;
+  size_t epos = grpc::string::npos;
 
-  while ((epos = comma_delimited_str.find(',', bpos)) != string::npos) {
+  while ((epos = comma_delimited_str.find(',', bpos)) != grpc::string::npos) {
     tokens.emplace_back(comma_delimited_str.substr(bpos, epos - bpos));
     bpos = epos + 1;
   }
@@ -122,23 +121,23 @@ bool ParseCommaDelimitedString(const string& comma_delimited_str,
 // Output:
 //   - Whether parsing was successful (return value)
 //   - Vector of (test_type_enum, weight) pairs returned via 'tests' parameter
-bool ParseTestCasesString(const string& test_cases,
+bool ParseTestCasesString(const grpc::string& test_cases,
                           vector<pair<TestCaseType, int>>& tests) {
   bool is_success = true;
 
-  vector<string> tokens;
+  vector<grpc::string> tokens;
   ParseCommaDelimitedString(test_cases, tokens);
 
   for (auto it = tokens.begin(); it != tokens.end(); it++) {
     // Token is in the form <test_name>:<test_weight>
     size_t colon_pos = it->find(':');
-    if (colon_pos == string::npos) {
+    if (colon_pos == grpc::string::npos) {
       gpr_log(GPR_ERROR, "Error in parsing test case string: %s", it->c_str());
       is_success = false;
       break;
     }
 
-    string test_name = it->substr(0, colon_pos);
+    grpc::string test_name = it->substr(0, colon_pos);
     int weight = std::stoi(it->substr(colon_pos + 1));
     TestCaseType test_case = GetTestTypeFromName(test_name);
     if (test_case == UNKNOWN_TEST) {
@@ -154,7 +153,7 @@ bool ParseTestCasesString(const string& test_cases,
 }
 
 // For debugging purposes
-void LogParameterInfo(const vector<string>& addresses,
+void LogParameterInfo(const vector<grpc::string>& addresses,
                       const vector<pair<TestCaseType, int>>& tests) {
   gpr_log(GPR_INFO, "server_addresses: %s", FLAGS_server_addresses.c_str());
   gpr_log(GPR_INFO, "test_cases : %s", FLAGS_test_cases.c_str());
@@ -181,7 +180,7 @@ int main(int argc, char** argv) {
   srand(time(NULL));
 
   // Parse the server addresses
-  vector<string> server_addresses;
+  vector<grpc::string> server_addresses;
   ParseCommaDelimitedString(FLAGS_server_addresses, server_addresses);
 
   // Parse test cases and weights

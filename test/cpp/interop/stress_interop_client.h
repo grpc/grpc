@@ -46,7 +46,6 @@ namespace grpc {
 namespace testing {
 
 using std::pair;
-using std::string;
 using std::vector;
 
 // TODO(sreek): Add more test cases here in future
@@ -60,7 +59,7 @@ enum TestCaseType {
   EMPTY_STREAM = 5
 };
 
-const vector<pair<TestCaseType, string>> kTestCaseList = {
+const vector<pair<TestCaseType, grpc::string>> kTestCaseList = {
     {EMPTY_UNARY, "empty_unary"},
     {LARGE_UNARY, "large_unary"},
     {LARGE_COMPRESSED_UNARY, "large_compressed_unary"},
@@ -84,7 +83,7 @@ class WeightedRandomTestSelector {
 
 class StressTestInteropClient {
  public:
-  StressTestInteropClient(int test_id, const string& server_address,
+  StressTestInteropClient(int test_id, const grpc::string& server_address,
                           const WeightedRandomTestSelector& test_selector,
                           long test_duration_secs, long sleep_duration_ms);
 
@@ -95,7 +94,7 @@ class StressTestInteropClient {
 
   int test_id_;
   std::unique_ptr<InteropClient> interop_client_;
-  const string& server_address_;
+  const grpc::string& server_address_;
   const WeightedRandomTestSelector& test_selector_;
   long test_duration_secs_;
   long sleep_duration_ms_;
