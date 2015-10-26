@@ -37,7 +37,7 @@
 
 // Returns NULL if the file at path couldn't be read. In that case, if errorPtr isn't NULL,
 // *errorPtr will be an object describing what went wrong.
-static grpc_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) {
+static grpc_channel_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) {
   // Files in PEM format can have non-ASCII characters in their comments (e.g. for the name of the
   // issuer). Load them as UTF8 and produce an ASCII equivalent.
   NSString *contentInUTF8 = [NSString stringWithContentsOfFile:path
@@ -62,7 +62,7 @@ static grpc_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) 
           pathToCertificates:(NSString *)path
             hostNameOverride:(NSString *)hostNameOverride {
   // Load default SSL certificates once.
-  static grpc_credentials *kDefaultCertificates;
+  static grpc_channel_credentials *kDefaultCertificates;
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
     NSString *defaultPath = @"gRPCCertificates.bundle/roots"; // .pem
@@ -79,7 +79,9 @@ static grpc_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) 
   });
 
   //TODO(jcanizales): Add NSError** parameter to the initializer.
-  grpc_credentials *certificates = path ? CertificatesAtPath(path, NULL) : kDefaultCertificates;
+  grpc_channel_credentials *certificates = path
+      ? CertificatesAtPath(path, NULL)
+      : kDefaultCertificates;
   if (!certificates) {
     return nil;
   }
@@ -99,7 +101,7 @@ static grpc_credentials *CertificatesAtPath(NSString *path, NSError **errorPtr) 
 }
 
 - (instancetype)initWithHost:(NSString *)host
-                 credentials:(grpc_credentials *)credentials
+                 credentials:(grpc_channel_credentials *)credentials
                         args:(grpc_channel_args *)args {
   return (self = [super
               initWithChannel:grpc_secure_channel_create(
