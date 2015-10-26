@@ -681,7 +681,7 @@ if args.use_docker:
                      do_newline=True)
       for image in docker_images.itervalues():
         dockerjob.remove_image(image, skip_nonexistent=True)
-      exit(1);
+      sys.exit(1)
 
 # Start interop servers.
 server_jobs={}
