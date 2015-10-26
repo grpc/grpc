@@ -61,7 +61,7 @@ extern NSString *const kGRPCErrorDomain;
  * server applications to produce.
  */
 typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
-  // The operation was cancelled (typically by the caller).
+  /** The operation was cancelled (typically by the caller). */
   GRPCErrorCodeCancelled = 1,
 
   /**
