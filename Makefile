@@ -3560,8 +3560,6 @@ test_cxx: test_zookeeper buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/status_test || ( echo test status_test failed ; exit 1 )
 	$(E) "[RUN]     Testing streaming_throughput_test"
 	$(Q) $(BINDIR)/$(CONFIG)/streaming_throughput_test || ( echo test streaming_throughput_test failed ; exit 1 )
-	$(E) "[RUN]     Testing stress_test"
-	$(Q) $(BINDIR)/$(CONFIG)/stress_test || ( echo test stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sync_streaming_ping_pong_test"
 	$(Q) $(BINDIR)/$(CONFIG)/sync_streaming_ping_pong_test || ( echo test sync_streaming_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sync_unary_ping_pong_test"
