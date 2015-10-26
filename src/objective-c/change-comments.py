@@ -36,7 +36,7 @@ import sys
 
 if len(sys.argv) < 2:
   print("Please provide at least one source file name as argument.")
-  quit()
+  sys.exit()
 
 for file_name in sys.argv[1:]:
 
