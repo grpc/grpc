@@ -342,10 +342,16 @@ class CSharpLanguage(object):
       cmd = 'tools\\run_tests\\run_csharp.bat'
     else:
       cmd = 'tools/run_tests/run_csharp.sh'
-    return [config.job_spec([cmd, assembly],
-            None, shortname=assembly,
-            environ=_FORCE_ENVIRON_FOR_WRAPPERS)
-            for assembly in assemblies]
+
+    if not config.build_config == 'gcov':
+      return [config.job_spec([cmd, assembly],
+              None, shortname=assembly,
+              environ=_FORCE_ENVIRON_FOR_WRAPPERS)
+              for assembly in assemblies]
+    else:
+      # For code coverage we need to run all tests in one suite.
+      return [config.job_spec([cmd], None,
+              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     if self.platform == 'windows':
