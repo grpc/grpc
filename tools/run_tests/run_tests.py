@@ -637,13 +637,16 @@ if platform.system() == 'Windows':
       for target in targets]
 else:
   def make_jobspec(cfg, targets, makefile='Makefile'):
-    return [jobset.JobSpec([os.getenv('MAKE', 'make'),
-                            '-f', makefile,
-                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
-                                args.slowdown,
-                            'CONFIG=%s' % cfg] + targets,
-                           timeout_seconds=30*60)]
+    if targets:
+      return [jobset.JobSpec([os.getenv('MAKE', 'make'),
+                              '-f', makefile,
+                              '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                              'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
+                              args.slowdown,
+                              'CONFIG=%s' % cfg] + targets,
+                             timeout_seconds=30*60)]
+    else:
+      return []
 make_targets = {}
 for l in languages:
   makefile = l.makefile_name()
@@ -840,9 +843,9 @@ def _build_and_run(
     testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests') if xml_report else None
 
     number_failures, _ = jobset.run(
-        all_runs, check_cancelled, newline_on_success=newline_on_success, 
+        all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
-        stop_on_failure=args.stop_on_failure, 
+        stop_on_failure=args.stop_on_failure,
         cache=cache if not xml_report else None,
         xml_report=testsuite,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
