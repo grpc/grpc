@@ -42,7 +42,7 @@ class ClientStreamingCall extends AbstractCall {
    * Start the call.
    * @param array $metadata Metadata to send with the call, if applicable
    */
-  public function start($metadata = array()) {
+  public function start($metadata = []) {
     $this->call->startBatch([OP_SEND_INITIAL_METADATA => $metadata]);
   }
 
@@ -53,7 +53,7 @@ class ClientStreamingCall extends AbstractCall {
    * @param array $options an array of options, possible keys:
    *              'flags' => a number
    */
-  public function write($data, $options = array()) {
+  public function write($data, $options = []) {
     $message_array = ['message' => $data->serialize()];
     if (isset($options['flags'])) {
       $message_array['flags'] = $options['flags'];
@@ -72,6 +72,6 @@ class ClientStreamingCall extends AbstractCall {
         OP_RECV_MESSAGE => true,
         OP_RECV_STATUS_ON_CLIENT => true]);
     $this->metadata = $event->metadata;
-    return array($this->deserializeResponse($event->message), $event->status);
+    return [$this->deserializeResponse($event->message), $event->status];
   }
 }
