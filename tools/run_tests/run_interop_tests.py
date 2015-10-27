@@ -485,7 +485,8 @@ def fill_one_test_result(shortname, resultset, html_str):
         if result.returncode > 0:
           tooltip = 'returncode: %d ' % result.returncode
         if result.message:
-          tooltip = '%smessage: %s' % (tooltip, result.message)     
+          escaped_msg = result.message.replace('"', '&quot;')
+          tooltip = '%smessage: %s' % (tooltip, escaped_msg)     
       if result.state == 'FAILED':
         html_str = '%s<td bgcolor=\"red\">' % html_str
         if tooltip:  
