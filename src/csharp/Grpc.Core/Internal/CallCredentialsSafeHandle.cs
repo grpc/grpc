@@ -36,50 +36,28 @@ using System.Threading.Tasks;
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// grpc_credentials from <c>grpc/grpc_security.h</c>
+    /// grpc_call_credentials from <c>grpc/grpc_security.h</c>
     /// </summary>
-    internal class CredentialsSafeHandle : SafeHandleZeroIsInvalid
+    internal class CallCredentialsSafeHandle : SafeHandleZeroIsInvalid
     {
-        [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
-        static extern CredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey);
+        [DllImport("grpc_csharp_ext.dll")]
+        static extern CallCredentialsSafeHandle grpcsharp_composite_call_credentials_create(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2);
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern CredentialsSafeHandle grpcsharp_composite_credentials_create(CredentialsSafeHandle creds1, CredentialsSafeHandle creds2);
+        static extern void grpcsharp_call_credentials_release(IntPtr credentials);
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_credentials_release(IntPtr credentials);
-
-        private CredentialsSafeHandle()
+        private CallCredentialsSafeHandle()
         {
         }
 
-        public static CredentialsSafeHandle CreateNullCredentials()
+        public static CallCredentialsSafeHandle CreateComposite(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2)
         {
-            var creds = new CredentialsSafeHandle();
-            creds.SetHandle(IntPtr.Zero);
-            return creds;
-        }
-
-        public static CredentialsSafeHandle CreateSslCredentials(string pemRootCerts, KeyCertificatePair keyCertPair)
-        {
-            if (keyCertPair != null)
-            {
-                return grpcsharp_ssl_credentials_create(pemRootCerts, keyCertPair.CertificateChain, keyCertPair.PrivateKey);
-            }
-            else
-            {
-                return grpcsharp_ssl_credentials_create(pemRootCerts, null, null);
-            }
-        }
-
-        public static CredentialsSafeHandle CreateComposite(CredentialsSafeHandle creds1, CredentialsSafeHandle creds2)
-        {
-            return grpcsharp_composite_credentials_create(creds1, creds2);
+            return grpcsharp_composite_call_credentials_create(creds1, creds2);
         }
 
         protected override bool ReleaseHandle()
         {
-            grpcsharp_credentials_release(handle);
+            grpcsharp_call_credentials_release(handle);
             return true;
         }
     }
