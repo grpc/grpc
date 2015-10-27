@@ -42,7 +42,7 @@ class BidiStreamingCall extends AbstractCall {
    * Start the call
    * @param array $metadata Metadata to send with the call, if applicable
    */
-  public function start($metadata = array()) {
+  public function start($metadata = []) {
     $this->call->startBatch([OP_SEND_INITIAL_METADATA => $metadata]);
   }
 
@@ -69,7 +69,7 @@ class BidiStreamingCall extends AbstractCall {
    * @param array $options an array of options, possible keys:
    *              'flags' => a number
    */
-  public function write($data, $options = array()) {
+  public function write($data, $options = []) {
     $message_array = ['message' => $data->serialize()];
     if (isset($options['flags'])) {
       $message_array['flags'] = $options['flags'];
