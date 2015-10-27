@@ -45,14 +45,14 @@ class CallCredentials : public Nan::ObjectWrap {
  public:
   static void Init(v8::Local<v8::Object> exports);
   static bool HasInstance(v8::Local<v8::Value> val);
-  /* Wrap a grpc_credentials struct in a javascript object */
-  static v8::Local<v8::Value> WrapStruct(grpc_credentials *credentials);
+  /* Wrap a grpc_call_credentials struct in a javascript object */
+  static v8::Local<v8::Value> WrapStruct(grpc_call_credentials *credentials);
 
-  /* Returns the grpc_credentials struct that this object wraps */
-  grpc_credentials *GetWrappedCredentials();
+  /* Returns the grpc_call_credentials struct that this object wraps */
+  grpc_call_credentials *GetWrappedCredentials();
 
  private:
-  explicit CallCredentials(grpc_credentials *credentials);
+  explicit CallCredentials(grpc_call_credentials *credentials);
   ~CallCredentials();
 
   // Prevent copying
@@ -68,7 +68,7 @@ class CallCredentials : public Nan::ObjectWrap {
   // Used for typechecking instances of this javascript class
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
-  grpc_credentials *wrapped_credentials;
+  grpc_call_credentials *wrapped_credentials;
 };
 
 /* Auth metadata plugin functionality */
