@@ -75,8 +75,8 @@ namespace Grpc.Core
             this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
 
             EnsureUserAgentChannelOption(this.options);
-            using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
-            using (ChannelArgsSafeHandle nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options))
+            using (var nativeCredentials = credentials.ToNativeCredentials())
+            using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options))
             {
                 if (nativeCredentials != null)
                 {
