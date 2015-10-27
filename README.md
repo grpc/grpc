@@ -1,5 +1,4 @@
 [![Build Status](https://grpc-testing.appspot.com/job/gRPC_master/badge/icon)](https://grpc-testing.appspot.com/job/gRPC_master)
-[![Coverage Status](https://img.shields.io/coveralls/grpc/grpc.svg)](https://coveralls.io/r/grpc/grpc?branch=master)
 
 [gRPC - An RPC library and framework](http://github.com/grpc/grpc)
 ===================================

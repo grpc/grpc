@@ -32,10 +32,13 @@
 import argparse
 from oauth2client import client as oauth2client_client
 
-from grpc.early_adopter import implementations
+from grpc.beta import implementations
+
+from grpc_test.beta import test_utilities
 
 from grpc_interop import methods
 from grpc_interop import resources
+from grpc_interop import test_pb2
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -90,15 +93,16 @@ def _stub(args):
     else:
       root_certificates = resources.prod_root_certificates()
 
-    stub = implementations.stub(
-        methods.SERVICE_NAME, methods.CLIENT_METHODS, args.server_host,
-        args.server_port, metadata_transformer=metadata_transformer,
-        secure=True, root_certificates=root_certificates,
-        server_host_override=args.server_host_override)
+    channel = test_utilities.not_really_secure_channel(
+        args.server_host, args.server_port,
+        implementations.ssl_client_credentials(root_certificates, None, None),
+        args.server_host_override)
+    stub = test_pb2.beta_create_TestService_stub(
+        channel, metadata_transformer=metadata_transformer)
   else:
-    stub = implementations.stub(
-        methods.SERVICE_NAME, methods.CLIENT_METHODS, args.server_host,
-        args.server_port, secure=False)
+    channel = implementations.insecure_channel(
+        args.server_host, args.server_port)
+    stub = test_pb2.beta_create_TestService_stub(channel)
   return stub
 
 

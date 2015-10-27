@@ -1,6 +1,9 @@
 source 'https://github.com/CocoaPods/Specs.git'
 platform :ios, '8.0'
 
+pod 'Protobuf', :path => "../../../third_party/protobuf"
+pod 'gRPC', :path => "../../.."
+
 target 'AuthSample' do
   # Depend on the generated AuthTestService library.
   pod 'AuthTestService', :path => '.'

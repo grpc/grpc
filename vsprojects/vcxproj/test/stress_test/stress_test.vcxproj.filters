@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\proto\empty.proto">
+      <Filter>test\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\proto\messages.proto">
+      <Filter>test\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\proto\test.proto">
+      <Filter>test\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\cpp\interop\interop_client.cc">
+      <Filter>test\cpp\interop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\cpp\interop\stress_interop_client.cc">
+      <Filter>test\cpp\interop</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\cpp\interop\stress_test.cc">
+      <Filter>test\cpp\interop</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\cpp\interop\client_helper.h">
+      <Filter>test\cpp\interop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\cpp\interop\interop_client.h">
+      <Filter>test\cpp\interop</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\cpp\interop\stress_interop_client.h">
+      <Filter>test\cpp\interop</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{0fddcdfd-8fd7-bb4b-e21d-f53728f4a766}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp">
+      <UniqueIdentifier>{a5c0e3f9-aa0c-45cd-87b0-b93b83e4ab9e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\cpp\interop">
+      <UniqueIdentifier>{7afcf5a8-556a-6be3-15d4-b00b2518f8fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\proto">
+      <UniqueIdentifier>{7172a335-47bf-8284-380d-a28a05c07311}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

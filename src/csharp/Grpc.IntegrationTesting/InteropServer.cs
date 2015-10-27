@@ -102,7 +102,7 @@ namespace Grpc.IntegrationTesting
             int port = options.Port;
             if (options.UseTls.Value)
             {
-                server.Ports.Add(host, port, TestCredentials.CreateTestServerCredentials());
+                server.Ports.Add(host, port, TestCredentials.CreateSslServerCredentials());
             }
             else
             {
