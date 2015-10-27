@@ -71,7 +71,7 @@ var fakeSuccessfulGoogleCredentials = {
 var fakeFailingGoogleCredentials = {
   getRequestMetadata: function(service_url, callback) {
     setTimeout(function() {
-      callback(new Error('Authorization failure'));
+      callback(new Error('Authentication failure'));
     }, 0);
   }
 };
@@ -246,7 +246,7 @@ describe('client credentials', function() {
                             client_options);
     client.unary({}, function(err, data) {
       assert(err);
-      assert.strictEqual(err.message, 'Authorization failure');
+      assert.strictEqual(err.message, 'Authentication failure');
       done();
     });
   });
