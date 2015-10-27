@@ -40,18 +40,18 @@ struct grpc_call;
 
 @property(nonatomic, readonly) NSString *address;
 
-// The following properties should only be modified for testing:
+/** The following properties should only be modified for testing: */
 
 @property(nonatomic, getter=isSecure) BOOL secure;
 
 @property(nonatomic, copy) NSString *pathToCertificates;
 @property(nonatomic, copy) NSString *hostNameOverride;
 
-// Host objects initialized with the same address are the same.
+/** Host objects initialized with the same address are the same. */
 + (instancetype)hostWithAddress:(NSString *)address;
 - (instancetype)initWithAddress:(NSString *)address NS_DESIGNATED_INITIALIZER;
 
-// Create a grpc_call object to the provided path on this host.
+/** Create a grpc_call object to the provided path on this host. */
 - (struct grpc_call *)unmanagedCallWithPath:(NSString *)path
                             completionQueue:(GRPCCompletionQueue *)queue;
 
