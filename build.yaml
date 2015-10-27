@@ -1937,6 +1937,7 @@ targets:
   - posix
 - name: qps_openloop_test
   build: test
+  run: false
   language: c++
   src:
   - test/cpp/qps/qps_openloop_test.cc
