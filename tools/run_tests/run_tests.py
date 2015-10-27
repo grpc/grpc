@@ -450,6 +450,9 @@ class Build(object):
   def build_steps(self):
     return []
 
+  def post_tests_steps(self):
+    return []
+
   def makefile_name(self):
     return 'Makefile'
 
