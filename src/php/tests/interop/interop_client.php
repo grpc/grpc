@@ -392,12 +392,11 @@ $opts = [];
 
 if ($use_tls) {
   if ($use_test_ca) {
-    $ssl_cert_file = dirname(__FILE__) . '/../data/ca.pem';
+    $ssl_credentials = Grpc\Credentials::createSsl(
+        file_get_contents(dirname(__FILE__) . '/../data/ca.pem'));
   } else {
-    $ssl_cert_file = getenv('SSL_CERT_FILE');
+    $ssl_credentials = Grpc\Credentials::createSsl();
   }
-  $ssl_credentials = Grpc\Credentials::createSsl(
-      file_get_contents($ssl_cert_file));
   $opts['credentials'] = $ssl_credentials;
   $opts['grpc.ssl_target_name_override'] = $host_override;
 }
