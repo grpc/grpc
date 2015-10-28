@@ -155,21 +155,21 @@
     </ClCompile>
     <ClInclude Include="..\..\..\test\proto\messages.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\proto\perf_control.pb.cc">
+    <ClCompile Include="..\..\..\test\proto\perf_tests\perf_control.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\proto\perf_control.pb.h">
+    <ClInclude Include="..\..\..\test\proto\perf_tests\perf_control.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\proto\perf_control.grpc.pb.cc">
+    <ClCompile Include="..\..\..\test\proto\perf_tests\perf_control.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\proto\perf_control.grpc.pb.h">
+    <ClInclude Include="..\..\..\test\proto\perf_tests\perf_control.grpc.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\proto\perf_stats.pb.cc">
+    <ClCompile Include="..\..\..\test\proto\perf_tests\perf_stats.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\proto\perf_stats.pb.h">
+    <ClInclude Include="..\..\..\test\proto\perf_tests\perf_stats.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\test\proto\perf_stats.grpc.pb.cc">
+    <ClCompile Include="..\..\..\test\proto\perf_tests\perf_stats.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\test\proto\perf_stats.grpc.pb.h">
+    <ClInclude Include="..\..\..\test\proto\perf_tests\perf_stats.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="..\..\..\test\cpp\qps\perf_db.pb.cc">
     </ClCompile>

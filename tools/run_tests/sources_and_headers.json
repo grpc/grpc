@@ -13658,10 +13658,10 @@
       "test/cpp/util/benchmark_config.h", 
       "test/proto/messages.grpc.pb.h", 
       "test/proto/messages.pb.h", 
-      "test/proto/perf_control.grpc.pb.h", 
-      "test/proto/perf_control.pb.h", 
-      "test/proto/perf_stats.grpc.pb.h", 
-      "test/proto/perf_stats.pb.h"
+      "test/proto/perf_tests/perf_control.grpc.pb.h", 
+      "test/proto/perf_tests/perf_control.pb.h", 
+      "test/proto/perf_tests/perf_stats.grpc.pb.h", 
+      "test/proto/perf_tests/perf_stats.pb.h"
     ], 
     "language": "c++", 
     "name": "qps", 

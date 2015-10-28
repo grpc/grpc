@@ -56,7 +56,7 @@ static void RunQPS() {
 
   ClientConfig client_config;
   client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_enable_ssl(false);
+  client_config.set_use_tls(false);
   client_config.set_outstanding_rpcs_per_channel(1000);
   client_config.set_client_channels(8);
   client_config.set_payload_size(1);
@@ -65,7 +65,7 @@ static void RunQPS() {
 
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_enable_ssl(false);
+  server_config.set_use_tls(false);
   server_config.set_threads(4);
 
   const auto result =

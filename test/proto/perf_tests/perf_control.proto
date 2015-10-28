@@ -32,7 +32,7 @@
 syntax = "proto3";
 
 import "test/proto/messages.proto";
-import "test/proto/perf_stats.proto";
+import "test/proto/perf_tests/perf_stats.proto";
 
 package grpc.testing;
 
@@ -49,14 +49,6 @@ enum ServerType {
 enum RpcType {
   UNARY = 0;
   STREAMING = 1;
-}
-
-enum LoadType {
-  CLOSED_LOOP = 0;
-  POISSON = 1;
-  UNIFORM = 2;
-  DETERMINISTIC = 3;
-  PARETO = 4;
 }
 
 message PoissonParams {
@@ -83,13 +75,15 @@ message LoadParams {
     UniformParams uniform = 2;
     DeterministicParams determ = 3;
     ParetoParams pareto = 4;
+    // No need to separately specify Closed-Loop as that
+    // will just be the absence of any of the above
   };
 }
 
 message ClientConfig {
   repeated string server_targets = 1;
   ClientType client_type = 2;
-  bool enable_ssl = 3;
+  bool use_tls = 3;
   int32 outstanding_rpcs_per_channel = 4;
   int32 client_channels = 5;
   int32 payload_size = 6;
@@ -97,7 +91,6 @@ message ClientConfig {
   int32 async_client_threads = 7;
   RpcType rpc_type = 8;
   string host = 9;
-  LoadType load_type = 10;
   LoadParams load_params = 11;
 }
 
@@ -119,7 +112,7 @@ message ClientArgs {
 message ServerConfig {
   ServerType server_type = 1;
   int32 threads = 2;
-  bool enable_ssl = 3;
+  bool use_tls = 3;
   string host = 4;
 }
 

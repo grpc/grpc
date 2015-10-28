@@ -52,7 +52,7 @@ static void RunAsyncStreamingPingPong() {
 
   ClientConfig client_config;
   client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_enable_ssl(false);
+  client_config.set_use_tls(false);
   client_config.set_outstanding_rpcs_per_channel(1);
   client_config.set_client_channels(1);
   client_config.set_payload_size(1);
@@ -61,7 +61,7 @@ static void RunAsyncStreamingPingPong() {
 
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_enable_ssl(false);
+  server_config.set_use_tls(false);
   server_config.set_threads(1);
 
   const auto result =
