@@ -32,6 +32,7 @@
  */
 
 #import <UIKit/UIKit.h>
+#import <GRPCClient/GRPCCall+Tests.h>
 #import <RouteGuide/RouteGuide.pbrpc.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
@@ -90,7 +91,7 @@ static NSString * const kHostAddress = @"localhost:50051";
   // This only needs to be done once per host, before creating service objects for that host.
   [GRPCCall useInsecureConnectionsForHost:kHostAddress];
 
-  RTGRouteGuide *service = [RTGRouteGuide serviceWithHost:kHostAddress];
+  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
   void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
     if (response.name.length) {
@@ -127,7 +128,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  RTGRouteGuide *service = [RTGRouteGuide serviceWithHost:kHostAddress];
+  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
   RTGRectangle *rectangle = [RTGRectangle message];
   rectangle.lo.latitude = 405E6;
@@ -177,7 +178,7 @@ static NSString * const kHostAddress = @"localhost:50051";
     return location;
   }];
 
-  RTGRouteGuide *service = [RTGRouteGuide serviceWithHost:kHostAddress];
+  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
   [service recordRouteWithRequestsWriter:locations
                                  handler:^(RTGRouteSummary *response, NSError *error) {
@@ -218,7 +219,7 @@ static NSString * const kHostAddress = @"localhost:50051";
     return note;
   }];
 
-  RTGRouteGuide *service = [RTGRouteGuide serviceWithHost:kHostAddress];
+  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
   [service routeChatWithRequestsWriter:notesWriter
                           eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
