@@ -44,7 +44,15 @@
 
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/interop/stress_interop_client.h"
+#include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
+#include "test/proto/metrics.grpc.pb.h"
+#include "test/proto/metrics.pb.h"
+
+DEFINE_int32(metrics_port, 8081, "The metrics server port.");
+
+DEFINE_int32(metrics_collection_interval_secs, 5,
+             "How often (in seconds) should metrics be recorded.");
 
 DEFINE_int32(sleep_duration_ms, 0,
              "The duration (in millisec) between two"
@@ -60,6 +68,11 @@ DEFINE_string(server_addresses, "localhost:8080",
               " addresses in the format:\n"
               " \"<name_1>:<port_1>,<name_2>:<port_1>...<name_N>:<port_N>\"\n"
               " Note: <name> can be servername or IP address.");
+
+DEFINE_int32(num_stubs_per_channel, 1,
+             "Number of stubs per each channels to server. This number also "
+             "indicates the max number of parallel RPC calls on each channel "
+             "at any given time.");
 
 // TODO(sreek): Add more test cases here in future
 DEFINE_string(test_cases, "",
@@ -84,10 +97,12 @@ using std::thread;
 using std::vector;
 
 using grpc::testing::kTestCaseList;
+using grpc::testing::MetricsService;
+using grpc::testing::MetricsServiceImpl;
 using grpc::testing::StressTestInteropClient;
 using grpc::testing::TestCaseType;
-using grpc::testing::WeightedRandomTestSelector;
 using grpc::testing::UNKNOWN_TEST;
+using grpc::testing::WeightedRandomTestSelector;
 
 TestCaseType GetTestTypeFromName(const grpc::string& test_name) {
   TestCaseType test_case = UNKNOWN_TEST;
@@ -199,23 +214,47 @@ int main(int argc, char** argv) {
   LogParameterInfo(server_addresses, tests);
 
   WeightedRandomTestSelector test_selector(tests);
+  MetricsServiceImpl metrics_service;
 
   gpr_log(GPR_INFO, "Starting test(s)..");
 
   vector<thread> test_threads;
+
   int thread_idx = 0;
   for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
-    StressTestInteropClient* client = new StressTestInteropClient(
-        ++thread_idx, *it, test_selector, FLAGS_test_duration_secs,
-        FLAGS_sleep_duration_ms);
+    // TODO(sreek): This will change once we add support for other tests
+    // that won't work with InsecureCredentials()
+    std::shared_ptr<grpc::Channel> channel(
+        CreateChannel(*it, grpc::InsecureCredentials()));
 
-    test_threads.emplace_back(
-        thread(&StressTestInteropClient::MainLoop, client));
+    // Make multiple stubs (as defined by num_stubs_per_channel flag) to use the
+    // same channel. This is to test calling multiple RPC calls in parallel on
+    // each channel.
+    for (int i = 0; i < FLAGS_num_stubs_per_channel; i++) {
+      StressTestInteropClient* client = new StressTestInteropClient(
+          ++thread_idx, *it, channel, test_selector, FLAGS_test_duration_secs,
+          FLAGS_sleep_duration_ms, FLAGS_metrics_collection_interval_secs);
+
+      bool is_already_created;
+      grpc::string metricName = "/stress_test/rps/thread/" + std::to_string(i);
+      test_threads.emplace_back(
+          thread(&StressTestInteropClient::MainLoop, client,
+                 metrics_service.CreateGuage(metricName, is_already_created)));
+
+      // The Guage should not have been already created
+      GPR_ASSERT(!is_already_created);
+    }
   }
 
+  // Start metrics server before waiting for the stress test threads
+  std::unique_ptr<grpc::Server> metrics_server =
+      metrics_service.StartServer(FLAGS_metrics_port);
+
+  // Wait for the stress test threads to complete
   for (auto it = test_threads.begin(); it != test_threads.end(); it++) {
     it->join();
   }
 
+  metrics_server->Wait();
   return 0;
 }
