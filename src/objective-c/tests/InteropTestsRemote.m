@@ -35,23 +35,16 @@
 
 #import "InteropTests.h"
 
-static NSString * const kLocalCleartextHost = @"localhost:5050";
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.google.com";
 
-/** Tests in InteropTests.m, sending the RPCs to a local cleartext server. */
-@interface InteropTestsLocalCleartext : InteropTests
+/** Tests in InteropTests.m, sending the RPCs to a remote SSL server. */
+@interface InteropTestsRemote : InteropTests
 @end
 
-@implementation InteropTestsLocalCleartext
+@implementation InteropTestsRemote
 
 + (NSString *)host {
-  return kLocalCleartextHost;
-}
-
-- (void)setUp {
-  // Register test server as non-SSL.
-  [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
-
-  [super setUp];
+  return kRemoteSSLHost;
 }
 
 @end
