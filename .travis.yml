@@ -9,15 +9,15 @@ before_install:
   - brew install gflags
   # Pod install does this too, but we don't want the output.
   - pod repo update --silent
-  - make grpc_objective_c_plugin
-  - make interop_server
 install:
+  - make grpc_objective_c_plugin
   - pushd src/objective-c/tests
   # Needs to be verbose, or otherwise OpenSSL's prepare_command makes Travis
   # time out:
   - pod install --verbose
   - popd
 before_script:
+  - make interop_server
   - bins/$CONFIG/interop_server --port=5050 &
   - bins/$CONFIG/interop_server --port=5051 --use_tls &
 xcode_workspace: src/objective-c/tests/Tests.xcworkspace
