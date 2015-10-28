@@ -343,15 +343,17 @@ class CSharpLanguage(object):
     else:
       cmd = 'tools/run_tests/run_csharp.sh'
 
-    if not config.build_config == 'gcov':
+    if config.build_config == 'gcov' and self.platform == 'windows':
+      # For C# code coverage we need to:
+      # 1) Run all tests as one suite.
+      # 2) Need to be on Windows.
+      return [config.job_spec([cmd], None,
+              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+    else:
       return [config.job_spec([cmd, assembly],
               None, shortname=assembly,
               environ=_FORCE_ENVIRON_FOR_WRAPPERS)
               for assembly in assemblies]
-    else:
-      # For code coverage we need to run all tests in one suite.
-      return [config.job_spec([cmd], None,
-              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     if self.platform == 'windows':
