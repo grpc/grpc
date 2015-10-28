@@ -31,13 +31,22 @@
  *
  */
 
-#import <XCTest/XCTest.h>
+// Repeat of the tests in InteropTests.m, but sending the RPCs to a local SSL server instead of the
+// remote one.
 
-// Implements tests as described here:
-// https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
+#import <GRPCClient/GRPCCall+Tests.h>
 
-@interface InteropTests : XCTestCase
-// Returns nil, and as a consequence all tests of the superclass are skipped.
-// Override in a subclass to perform these tests against a specific address.
-+ (NSString *)host;
+#import "InteropTests.h"
+
+static NSString * const kRemoteSSLHost = @"grpc-test.sandbox.google.com";
+
+@interface InteropTestsRemote : InteropTests
+@end
+
+@implementation InteropTestsRemote
+
++ (NSString *)host {
+  return kRemoteSSLHost;
+}
+
 @end
