@@ -23,7 +23,7 @@
  <tr style="height: 56px;">
   <td style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">0.10.0.0</span>
+   &#160;<span id="projectnumber">0.11.0.0</span>
    </div>
   </td>
  </tr>
@@ -72,6 +72,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions.html"><span>All</span></a></li>
       <li class="current"><a href="functions_func.html"><span>Functions</span></a></li>
       <li><a href="functions_vars.html"><span>Variables</span></a></li>
+      <li><a href="functions_type.html"><span>Typedefs</span></a></li>
       <li><a href="functions_enum.html"><span>Enumerations</span></a></li>
       <li><a href="functions_eval.html"><span>Enumerator</span></a></li>
       <li><a href="functions_rela.html"><span>Related&#160;Functions</span></a></li>
@@ -108,7 +109,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
      onmouseover="return searchBox.OnSearchSelectShow()"
      onmouseout="return searchBox.OnSearchSelectHide()"
      onkeydown="return searchBox.OnSearchSelectKey(event)">
-<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Macros</a></div>
+<a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(0)"><span class="SelectionMark">&#160;</span>All</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(1)"><span class="SelectionMark">&#160;</span>Data Structures</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(2)"><span class="SelectionMark">&#160;</span>Namespaces</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(3)"><span class="SelectionMark">&#160;</span>Files</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(4)"><span class="SelectionMark">&#160;</span>Functions</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(5)"><span class="SelectionMark">&#160;</span>Variables</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(6)"><span class="SelectionMark">&#160;</span>Typedefs</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(7)"><span class="SelectionMark">&#160;</span>Enumerations</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(8)"><span class="SelectionMark">&#160;</span>Enumerator</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(9)"><span class="SelectionMark">&#160;</span>Friends</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(10)"><span class="SelectionMark">&#160;</span>Macros</a><a class="SelectItem" href="javascript:void(0)" onclick="searchBox.OnSelectItem(11)"><span class="SelectionMark">&#160;</span>Pages</a></div>
 
 <!-- iframe showing the search results (closed by default) -->
 <div id="MSearchResultsWindow">
@@ -128,10 +129,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 : <a class="el" href="classgrpc_1_1_server.html#a6f1ec2700c94637813178a5b5f71d6d5">grpc::Server</a>
 </li>
 <li>WaitForInitialMetadata()
-: <a class="el" href="classgrpc_1_1_client_reader.html#ad471c81c02db253508b9fd599beab93e">grpc::ClientReader&lt; R &gt;</a>
+: <a class="el" href="classgrpc_1_1_client_reader.html#aafa93fe8a65edb12a4742c067d90bec1">grpc::ClientReader&lt; R &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_reader_interface.html#aee87dd6e3e8a40853207ceb53b590b19">grpc::ClientReaderInterface&lt; R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_reader_writer.html#af19ce81004b69300aa18d9ce14be29be">grpc::ClientReaderWriter&lt; R, W &gt;</a>
+, <a class="el" href="classgrpc_1_1_client_reader_writer.html#afcd96d23de5ec56f2ea84791bf16245a">grpc::ClientReaderWriter&lt; R, W &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_reader_writer_interface.html#a6ead554cc1b991f2289b26fb80fdde5e">grpc::ClientReaderWriterInterface&lt; W, R &gt;</a>
+</li>
+<li>WaitForStateChange()
+: <a class="el" href="classgrpc_1_1_channel.html#a4c54940cb0c353033cb86a004b1fa338">grpc::Channel</a>
 </li>
 <li>Write()
 : <a class="el" href="classgrpc_1_1_async_writer_interface.html#a40c1091ac5cb5243c874da725ae291b4">grpc::AsyncWriterInterface&lt; W &gt;</a>
@@ -143,10 +147,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="classgrpc_1_1_server_async_writer.html#a7027a65f3d84ff275b130cf9a0f170f5">grpc::ServerAsyncWriter&lt; W &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_reader_writer.html#ab416079f6464c056c772f7a1ecb69467">grpc::ServerReaderWriter&lt; R, W &gt;</a>
 , <a class="el" href="classgrpc_1_1_server_writer.html#a995e4cbb3661bfdb2cf51ec2b5975a1a">grpc::ServerWriter&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1_writer_interface.html#a5ddbce2a74455afea61fc21e16b01c6a">grpc::WriterInterface&lt; W &gt;</a>
+, <a class="el" href="classgrpc_1_1_writer_interface.html#aa6b2aeb8957265b62bdc063b48f15d44">grpc::WriterInterface&lt; W &gt;</a>
 </li>
 <li>WriteOptions()
-: <a class="el" href="classgrpc_1_1_write_options.html#a4d7753bbd8d9d61e2c6d3e49e29be021">grpc::WriteOptions</a>
+: <a class="el" href="classgrpc_1_1_write_options.html#a6a4e429313200ed6c017c5d306e26e93">grpc::WriteOptions</a>
 </li>
 <li>WritesDone()
 : <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#ae431aa00a64f2685b60ec853334e6637">grpc::ClientAsyncReaderWriter&lt; R, W &gt;</a>
@@ -162,7 +166,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Aug 5 2015 08:17:06 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 27 2015 21:07:30 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.6
 </small></address>
