@@ -41,8 +41,8 @@
 #include "rb_grpc.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
+#include "rb_channel_credentials.h"
 #include "rb_completion_queue.h"
-#include "rb_credentials.h"
 #include "rb_server.h"
 
 /* id_channel is the name of the hidden ivar that preserves a reference to the
@@ -134,8 +134,8 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   VALUE credentials = Qnil;
   VALUE target = Qnil;
   grpc_rb_channel *wrapper = NULL;
-  grpc_credentials *creds = NULL;
   grpc_channel *ch = NULL;
+  grpc_channel_credentials *creds = NULL;
   char *target_chars = NULL;
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
@@ -149,7 +149,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE *argv, VALUE self) {
   if (credentials == Qnil) {
     ch = grpc_insecure_channel_create(target_chars, &args, NULL);
   } else {
-    creds = grpc_rb_get_wrapped_credentials(credentials);
+    creds = grpc_rb_get_wrapped_channel_credentials(credentials);
     ch = grpc_secure_channel_create(creds, target_chars, &args, NULL);
   }
   if (args.args != NULL) {
