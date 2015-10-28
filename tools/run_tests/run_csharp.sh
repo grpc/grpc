@@ -34,7 +34,7 @@ CONFIG=${CONFIG:-opt}
 
 NUNIT_CONSOLE="mono packages/NUnit.Runners.2.6.4/tools/nunit-console.exe"
 
-if [ "$CONFIG" = "dbg" ]
+if [ "$CONFIG" = "dbg" ] || [ "$CONFIG" = "gcov" ]
 then
   MSBUILD_CONFIG="Debug"
 else
@@ -45,10 +45,20 @@ fi
 cd $(dirname $0)/../..
 
 root=`pwd`
-cd src/csharp
-
 export LD_LIBRARY_PATH=$root/libs/$CONFIG
 
-$NUNIT_CONSOLE -labels "$1/bin/$MSBUILD_CONFIG/$1.dll"
+if [ "$CONFIG" = "gcov" ]
+then
+  (cd src/csharp; $NUNIT_CONSOLE -labels "Grpc.Core.Tests/bin/$MSBUILD_CONFIG/Grpc.Core.Tests.dll")
+
+  gcov objs/gcov/src/csharp/ext/*.o
+  lcov --base-directory . --directory . -c -o coverage.info
+  lcov -e coverage.info '**/src/csharp/ext/*' -o coverage.info
+  genhtml -o reports/csharp_ext_coverage --num-spaces 2 \
+    -t 'gRPC C# native extension test coverage' coverage.info \
+    --rc genhtml_hi_limit=95 --rc genhtml_med_limit=80 --no-prefix
+else
+  (cd src/csharp; $NUNIT_CONSOLE -labels "$1/bin/$MSBUILD_CONFIG/$1.dll")
+fi
 
 
