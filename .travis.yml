@@ -1,4 +1,5 @@
 language: objective-c
+osx_image: xcode7.1
 env:
   global:
     - CONFIG=opt
