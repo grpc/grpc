@@ -8,7 +8,12 @@ before_install:
   - brew install gflags
   - make grpc_objective_c_plugin
   - make interop_server
-podfile: src/objective-c/tests/Podfile
+install:
+  - pushd src/objective-c/tests
+  # Needs to be verbose, or otherwise OpenSSL's prepare_command makes Travis
+  # time out:
+  - pod install --verbose
+  - popd
 before_script:
   - bins/$CONFIG/interop_server --port=5050 &
   - bins/$CONFIG/interop_server --port=5051 --use_tls &
