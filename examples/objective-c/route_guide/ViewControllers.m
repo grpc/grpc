@@ -38,7 +38,7 @@
 
 static NSString * const kHostAddress = @"localhost:50051";
 
-// Category to override RTGPoint's description.
+/** Category to override RTGPoint's description. */
 @interface RTGPoint (Description)
 - (NSString *)description;
 @end
@@ -53,7 +53,7 @@ static NSString * const kHostAddress = @"localhost:50051";
 }
 @end
 
-// Category to give RTGRouteNote a convenience constructor.
+/** Category to give RTGRouteNote a convenience constructor. */
 @interface RTGRouteNote (Constructors)
 + (instancetype)noteWithMessage:(NSString *)message
                        latitude:(float)latitude
@@ -75,9 +75,10 @@ static NSString * const kHostAddress = @"localhost:50051";
 
 #pragma mark Demo: Get Feature
 
-// Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
-// not to have a feature.
-
+/**
+ * Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
+ * not to have a feature.
+ */
 @interface GetFeatureViewController : UIViewController
 @end
 
@@ -114,9 +115,10 @@ static NSString * const kHostAddress = @"localhost:50051";
 
 #pragma mark Demo: List Features
 
-// Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
-// the pre-generated database. Prints each response as it comes in.
-
+/**
+ * Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
+ * the pre-generated database. Prints each response as it comes in.
+ */
 @interface ListFeaturesViewController : UIViewController
 @end
 
@@ -149,10 +151,11 @@ static NSString * const kHostAddress = @"localhost:50051";
 
 #pragma mark Demo: Record Route
 
-// Run the recordRoute demo. Sends several randomly chosen points from the pre-generated feature
-// database with a variable delay in between. Prints the statistics when they are sent from the
-// server.
-
+/**
+ * Run the recordRoute demo. Sends several randomly chosen points from the pre-generated feature
+ * database with a variable delay in between. Prints the statistics when they are sent from the
+ * server.
+ */
 @interface RecordRouteViewController : UIViewController
 @end
 
@@ -194,9 +197,10 @@ static NSString * const kHostAddress = @"localhost:50051";
 
 #pragma mark Demo: Route Chat
 
-// Run the routeChat demo. Send some chat messages, and print any chat messages that are sent from
-// the server.
-
+/**
+ * Run the routeChat demo. Send some chat messages, and print any chat messages that are sent from
+ * the server.
+ */
 @interface RouteChatViewController : UIViewController
 @end
 
