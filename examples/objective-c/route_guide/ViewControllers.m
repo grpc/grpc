@@ -36,7 +36,7 @@
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
 
-static NSString * const kHostAddress = @"http://localhost:50051";
+static NSString * const kHostAddress = @"localhost:50051";
 
 // Category to override RTGPoint's description.
 @interface RTGPoint (Description)
@@ -86,7 +86,10 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  // This only needs to be done once per host, before creating service objects for that host.
+  [GRPCCall useInsecureConnectionsForHost:kHostAddress];
+
+  RTGRouteGuide *service = [RTGRouteGuide serviceWithHost:kHostAddress];
 
   void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
     if (response.name.length) {
@@ -102,8 +105,8 @@ static NSString * const kHostAddress = @"http://localhost:50051";
   point.latitude = 409146138;
   point.longitude = -746188906;
 
-  [client getFeatureWithRequest:point handler:handler];
-  [client getFeatureWithRequest:[RTGPoint message] handler:handler];
+  [service getFeatureWithRequest:point handler:handler];
+  [service getFeatureWithRequest:[RTGPoint message] handler:handler];
 }
 
 @end
@@ -122,7 +125,7 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  RTGRouteGuide *service = [RTGRouteGuide serviceWithHost:kHostAddress];
 
   RTGRectangle *rectangle = [RTGRectangle message];
   rectangle.lo.latitude = 405E6;
@@ -131,8 +134,8 @@ static NSString * const kHostAddress = @"http://localhost:50051";
   rectangle.hi.longitude = -745E6;
 
   NSLog(@"Looking for features between %@ and %@", rectangle.lo, rectangle.hi);
-  [client listFeaturesWithRequest:rectangle
-                     eventHandler:^(BOOL done, RTGFeature *response, NSError *error) {
+  [service listFeaturesWithRequest:rectangle
+                      eventHandler:^(BOOL done, RTGFeature *response, NSError *error) {
     if (response) {
       NSLog(@"Found feature at %@ called %@.", response.location, response.name);
     } else if (error) {
@@ -171,9 +174,10 @@ static NSString * const kHostAddress = @"http://localhost:50051";
     return location;
   }];
 
-  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  RTGRouteGuide *service = [RTGRouteGuide serviceWithHost:kHostAddress];
 
-  [client recordRouteWithRequestsWriter:locations handler:^(RTGRouteSummary *response, NSError *error) {
+  [service recordRouteWithRequestsWriter:locations
+                                 handler:^(RTGRouteSummary *response, NSError *error) {
     if (response) {
       NSLog(@"Finished trip with %i points", response.pointCount);
       NSLog(@"Passed %i features", response.featureCount);
@@ -210,10 +214,10 @@ static NSString * const kHostAddress = @"http://localhost:50051";
     return note;
   }];
 
-  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  RTGRouteGuide *service = [RTGRouteGuide serviceWithHost:kHostAddress];
 
-  [client routeChatWithRequestsWriter:notesWriter
-                         eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
+  [service routeChatWithRequestsWriter:notesWriter
+                          eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
     if (note) {
       NSLog(@"Got message %@ at %@", note.message, note.location);
     } else if (error) {
