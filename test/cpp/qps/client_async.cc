@@ -48,7 +48,7 @@
 #include <gflags/gflags.h>
 #include <grpc++/client_context.h>
 
-#include "test/proto/perf_control.grpc.pb.h"
+#include "test/proto/perf_tests/perf_control.grpc.pb.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/util/create_test_channel.h"
@@ -439,8 +439,8 @@ class AsyncStreamingClient GRPC_FINAL : public AsyncClient {
  public:
   explicit AsyncStreamingClient(const ClientConfig& config)
       : AsyncClient(config, SetupCtx) {
-    // async streaming currently only supported closed loop
-    GPR_ASSERT(config.load_type() == CLOSED_LOOP);
+    // async streaming currently only supports closed loop
+    GPR_ASSERT(closed_loop_);
 
     StartThreads(config.async_client_threads());
   }

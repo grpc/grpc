@@ -37,7 +37,7 @@
 #include <memory>
 
 #include "test/cpp/qps/histogram.h"
-#include "test/proto/perf_control.grpc.pb.h"
+#include "test/proto/perf_tests/perf_control.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

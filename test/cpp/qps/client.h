@@ -40,7 +40,7 @@
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
-#include "test/proto/perf_control.grpc.pb.h"
+#include "test/proto/perf_tests/perf_control.grpc.pb.h"
 #include "test/cpp/util/create_test_channel.h"
 
 namespace grpc {
@@ -122,7 +122,7 @@ class Client {
       // We have to use a 2-phase init like this with a default
       // constructor followed by an initializer function to make
       // old compilers happy with using this in std::vector
-      channel_ = CreateTestChannel(target, config.enable_ssl());
+      channel_ = CreateTestChannel(target, config.use_tls());
       stub_ = TestService::NewStub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }
@@ -146,37 +146,31 @@ class Client {
 
   void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
     // Set up the load distribution based on the number of threads
-    if (config.load_type() == CLOSED_LOOP) {
+    const auto& load = config.load_params();
+
+    std::unique_ptr<RandomDist> random_dist;
+    if (load.has_poisson()) {
+      random_dist.reset(new ExpDist(load.poisson().offered_load() /
+				    num_threads));
+    } else if (load.has_uniform()) {
+      random_dist.reset(new UniformDist(load.uniform().interarrival_lo() *
+					num_threads,
+					load.uniform().interarrival_hi() *
+					num_threads));
+    } else if (load.has_determ()) {
+      random_dist.reset(new DetDist(num_threads / load.determ().offered_load()));
+    } else if (load.has_pareto()) {
+      random_dist.reset(new ParetoDist(load.pareto().interarrival_base() * num_threads,
+				       load.pareto().alpha()));
+    } else { // No load parameters, so must be closed-loop
+    }
+
+    // Set closed_loop_ based on whether or not random_dist is set
+    if (!random_dist) {
       closed_loop_ = true;
     } else {
       closed_loop_ = false;
-
-      std::unique_ptr<RandomDist> random_dist;
-      const auto& load = config.load_params();
-      switch (config.load_type()) {
-        case POISSON:
-          random_dist.reset(
-              new ExpDist(load.poisson().offered_load() / num_threads));
-          break;
-        case UNIFORM:
-          random_dist.reset(
-              new UniformDist(load.uniform().interarrival_lo() * num_threads,
-                              load.uniform().interarrival_hi() * num_threads));
-          break;
-        case DETERMINISTIC:
-          random_dist.reset(
-              new DetDist(num_threads / load.determ().offered_load()));
-          break;
-        case PARETO:
-          random_dist.reset(
-              new ParetoDist(load.pareto().interarrival_base() * num_threads,
-                             load.pareto().alpha()));
-          break;
-        default:
-          GPR_ASSERT(false);
-          break;
-      }
-
+      // set up interarrival timer according to random dist
       interarrival_timer_.init(*random_dist, num_threads);
       for (size_t i = 0; i < num_threads; i++) {
         next_time_.push_back(

@@ -52,19 +52,18 @@ static void RunQPS() {
 
   ClientConfig client_config;
   client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_enable_ssl(false);
+  client_config.set_use_tls(false);
   client_config.set_outstanding_rpcs_per_channel(1000);
   client_config.set_client_channels(8);
   client_config.set_payload_size(1);
   client_config.set_async_client_threads(8);
   client_config.set_rpc_type(UNARY);
-  client_config.set_load_type(POISSON);
   client_config.mutable_load_params()->mutable_poisson()->set_offered_load(
       1000.0);
 
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_enable_ssl(false);
+  server_config.set_use_tls(false);
   server_config.set_threads(4);
 
   const auto result =
