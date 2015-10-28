@@ -1,4 +1,6 @@
 language: objective-c
+before_install:
+  - brew install gflags
 env:
   global:
     - CONFIG=opt
