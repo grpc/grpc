@@ -71,8 +71,28 @@ struct grpc_completion_queue {
   int is_server_cq;
   int num_pluckers;
   plucker pluckers[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
-  grpc_closure pollset_destroy_done;
+  grpc_closure pollset_shutdown_done;
+
+  grpc_completion_queue *next_free;
 };
+
+static gpr_mu g_freelist_mu;
+grpc_completion_queue *g_freelist;
+
+static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *cc,
+                                     int success);
+
+void grpc_cq_global_init(void) { gpr_mu_init(&g_freelist_mu); }
+
+void grpc_cq_global_shutdown(void) {
+  gpr_mu_destroy(&g_freelist_mu);
+  while (g_freelist) {
+    grpc_completion_queue *next = g_freelist->next_free;
+    grpc_pollset_destroy(&g_freelist->pollset);
+    gpr_free(g_freelist);
+    g_freelist = next;
+  }
+}
 
 struct grpc_cq_alarm {
   grpc_timer alarm;
@@ -83,22 +103,36 @@ struct grpc_cq_alarm {
   void *tag;
 };
 
-static void on_pollset_destroy_done(grpc_exec_ctx *exec_ctx, void *cc,
-                                    int success);
-
 grpc_completion_queue *grpc_completion_queue_create(void *reserved) {
-  grpc_completion_queue *cc = gpr_malloc(sizeof(grpc_completion_queue));
-  GRPC_API_TRACE("grpc_completion_queue_create(reserved=%p)", 1, (reserved));
+  grpc_completion_queue *cc;
   GPR_ASSERT(!reserved);
-  memset(cc, 0, sizeof(*cc));
+
+  GRPC_API_TRACE("grpc_completion_queue_create(reserved=%p)", 1, (reserved));
+
+  gpr_mu_lock(&g_freelist_mu);
+  if (g_freelist == NULL) {
+    gpr_mu_unlock(&g_freelist_mu);
+
+    cc = gpr_malloc(sizeof(grpc_completion_queue));
+    grpc_pollset_init(&cc->pollset);
+  } else {
+    cc = g_freelist;
+    g_freelist = g_freelist->next_free;
+    gpr_mu_unlock(&g_freelist_mu);
+    /* pollset already initialized */
+  }
+
   /* Initial ref is dropped by grpc_completion_queue_shutdown */
   gpr_ref_init(&cc->pending_events, 1);
   /* One for destroy(), one for pollset_shutdown */
   gpr_ref_init(&cc->owning_refs, 2);
-  grpc_pollset_init(&cc->pollset);
   cc->completed_tail = &cc->completed_head;
   cc->completed_head.next = (gpr_uintptr)cc->completed_tail;
-  grpc_closure_init(&cc->pollset_destroy_done, on_pollset_destroy_done, cc);
+  cc->shutdown = 0;
+  cc->shutdown_called = 0;
+  cc->is_server_cq = 0;
+  cc->num_pluckers = 0;
+  grpc_closure_init(&cc->pollset_shutdown_done, on_pollset_shutdown_done, cc);
   return cc;
 }
 
@@ -113,8 +147,8 @@ void grpc_cq_internal_ref(grpc_completion_queue *cc) {
   gpr_ref(&cc->owning_refs);
 }
 
-static void on_pollset_destroy_done(grpc_exec_ctx *exec_ctx, void *arg,
-                                    int success) {
+static void on_pollset_shutdown_done(grpc_exec_ctx *exec_ctx, void *arg,
+                                     int success) {
   grpc_completion_queue *cc = arg;
   GRPC_CQ_INTERNAL_UNREF(cc, "pollset_destroy");
 }
@@ -129,8 +163,11 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc) {
 #endif
   if (gpr_unref(&cc->owning_refs)) {
     GPR_ASSERT(cc->completed_head.next == (gpr_uintptr)&cc->completed_head);
-    grpc_pollset_destroy(&cc->pollset);
-    gpr_free(cc);
+    grpc_pollset_reset(&cc->pollset);
+    gpr_mu_lock(&g_freelist_mu);
+    cc->next_free = g_freelist;
+    g_freelist = cc;
+    gpr_mu_unlock(&g_freelist_mu);
   }
 }
 
@@ -186,7 +223,7 @@ void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
     GPR_ASSERT(cc->shutdown_called);
     cc->shutdown = 1;
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-    grpc_pollset_shutdown(exec_ctx, &cc->pollset, &cc->pollset_destroy_done);
+    grpc_pollset_shutdown(exec_ctx, &cc->pollset, &cc->pollset_shutdown_done);
   }
 
   GPR_TIMER_END("grpc_cq_end_op", 0);
@@ -379,7 +416,7 @@ void grpc_completion_queue_shutdown(grpc_completion_queue *cc) {
     GPR_ASSERT(!cc->shutdown);
     cc->shutdown = 1;
     gpr_mu_unlock(GRPC_POLLSET_MU(&cc->pollset));
-    grpc_pollset_shutdown(&exec_ctx, &cc->pollset, &cc->pollset_destroy_done);
+    grpc_pollset_shutdown(&exec_ctx, &cc->pollset, &cc->pollset_shutdown_done);
   }
   grpc_exec_ctx_finish(&exec_ctx);
 }

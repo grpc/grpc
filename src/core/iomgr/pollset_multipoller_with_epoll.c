@@ -47,11 +47,6 @@
 #include "src/core/support/block_annotate.h"
 #include "src/core/profiling/timers.h"
 
-typedef struct wakeup_fd_hdl {
-  grpc_wakeup_fd wakeup_fd;
-  struct wakeup_fd_hdl *next;
-} wakeup_fd_hdl;
-
 typedef struct {
   grpc_pollset *pollset;
   grpc_fd *fd;
@@ -60,7 +55,6 @@ typedef struct {
 
 typedef struct {
   int epoll_fd;
-  wakeup_fd_hdl *free_wakeup_fds;
 } pollset_hdr;
 
 static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
@@ -174,7 +168,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
 
   timeout_ms = grpc_poll_deadline_to_millis_timeout(deadline, now);
 
-  pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker->wakeup_fd);
+  pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker->wakeup_fd->fd);
   pfds[0].events = POLLIN;
   pfds[0].revents = 0;
   pfds[1].fd = h->epoll_fd;
@@ -197,7 +191,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
     /* do nothing */
   } else {
     if (pfds[0].revents) {
-      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd);
+      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd);
     }
     if (pfds[1].revents) {
       do {
