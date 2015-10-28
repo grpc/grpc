@@ -42,9 +42,9 @@
 #include <grpc/support/time.h>
 #include "rb_call.h"
 #include "rb_channel.h"
+#include "rb_channel_credentials.h"
 #include "rb_completion_queue.h"
 #include "rb_server.h"
-#include "rb_credentials.h"
 #include "rb_server_credentials.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;
@@ -300,7 +300,7 @@ void Init_grpc() {
   Init_grpc_channel();
   Init_grpc_completion_queue();
   Init_grpc_call();
-  Init_grpc_credentials();
+  Init_grpc_channel_credentials();
   Init_grpc_server();
   Init_grpc_server_credentials();
   Init_grpc_status_codes();
