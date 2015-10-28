@@ -6,6 +6,8 @@ env:
     - JOBS=1
 before_install:
   - brew install gflags
+  # Pod install does this too, but we don't want the output.
+  - pod repo update --silent
   - make grpc_objective_c_plugin
   - make interop_server
 install:
