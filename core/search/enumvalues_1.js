@@ -1,6 +1,7 @@
 var searchData=
 [
   ['gpr_5fclock_5fmonotonic',['GPR_CLOCK_MONOTONIC',['../time_8h.html#a2441bd1fbe80e86ff741e0757725b281a6ddd11813c5172c7b3e0e46e5ce7f01c',1,'time.h']]],
+  ['gpr_5fclock_5fprecise',['GPR_CLOCK_PRECISE',['../time_8h.html#a2441bd1fbe80e86ff741e0757725b281a6f43783fbe61877c4b9f9b6767a28bf6',1,'time.h']]],
   ['gpr_5fclock_5frealtime',['GPR_CLOCK_REALTIME',['../time_8h.html#a2441bd1fbe80e86ff741e0757725b281a685c67eccb0b9e3de6311b1e1330a746',1,'time.h']]],
   ['gpr_5flog_5fseverity_5fdebug',['GPR_LOG_SEVERITY_DEBUG',['../log_8h.html#af10334b4085ac6985a2af9c08478ad48af7d2a0ad91b0787398220ddcd91f06d6',1,'log.h']]],
   ['gpr_5flog_5fseverity_5ferror',['GPR_LOG_SEVERITY_ERROR',['../log_8h.html#af10334b4085ac6985a2af9c08478ad48a52b957eb23ac2207b5e1dcf15c2b3dd4',1,'log.h']]],
@@ -14,7 +15,9 @@ var searchData=
   ['grpc_5fcall_5ferror_5falready_5faccepted',['GRPC_CALL_ERROR_ALREADY_ACCEPTED',['../grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba2f6f332e63eb94df8abedfddb96ae63a',1,'grpc.h']]],
   ['grpc_5fcall_5ferror_5falready_5ffinished',['GRPC_CALL_ERROR_ALREADY_FINISHED',['../grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba21256301a6038a6a03fc8444ddd08c63',1,'grpc.h']]],
   ['grpc_5fcall_5ferror_5falready_5finvoked',['GRPC_CALL_ERROR_ALREADY_INVOKED',['../grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba042165aa26653c844a846d188f722857',1,'grpc.h']]],
+  ['grpc_5fcall_5ferror_5fbatch_5ftoo_5fbig',['GRPC_CALL_ERROR_BATCH_TOO_BIG',['../grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba906d5d530b249b5b853595e424ec400b',1,'grpc.h']]],
   ['grpc_5fcall_5ferror_5finvalid_5fflags',['GRPC_CALL_ERROR_INVALID_FLAGS',['../grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785bae915786320e24eff4f1e05852d40f861',1,'grpc.h']]],
+  ['grpc_5fcall_5ferror_5finvalid_5fmessage',['GRPC_CALL_ERROR_INVALID_MESSAGE',['../grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba7dfc7fe11288dd7a30a8f07b890c9c5b',1,'grpc.h']]],
   ['grpc_5fcall_5ferror_5finvalid_5fmetadata',['GRPC_CALL_ERROR_INVALID_METADATA',['../grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba13f469c7761a672240ddfe29f85729bd',1,'grpc.h']]],
   ['grpc_5fcall_5ferror_5fnot_5finvoked',['GRPC_CALL_ERROR_NOT_INVOKED',['../grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba6113860606450e3a3fa40ddf46749296',1,'grpc.h']]],
   ['grpc_5fcall_5ferror_5fnot_5fon_5fclient',['GRPC_CALL_ERROR_NOT_ON_CLIENT',['../grpc_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785ba7ba38ea119e00e8b4d10211f4ced9ef6',1,'grpc.h']]],

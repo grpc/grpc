@@ -1,7 +1,5 @@
 var searchData=
 [
-  ['gpr_5fcancellable',['gpr_cancellable',['../structgpr__cancellable.html',1,'']]],
-  ['gpr_5fcancellable_5flist_5f',['gpr_cancellable_list_',['../structgpr__cancellable__list__.html',1,'']]],
   ['gpr_5fevent',['gpr_event',['../structgpr__event.html',1,'']]],
   ['gpr_5fgcc_5fthread_5flocal',['gpr_gcc_thread_local',['../structgpr__gcc__thread__local.html',1,'']]],
   ['gpr_5flog_5ffunc_5fargs',['gpr_log_func_args',['../structgpr__log__func__args.html',1,'']]],
@@ -16,12 +14,14 @@ var searchData=
   ['gpr_5fthd_5foptions',['gpr_thd_options',['../structgpr__thd__options.html',1,'']]],
   ['gpr_5ftimespec',['gpr_timespec',['../structgpr__timespec.html',1,'']]],
   ['grpc_5farg',['grpc_arg',['../structgrpc__arg.html',1,'']]],
+  ['grpc_5fauth_5fmetadata_5fprocessor',['grpc_auth_metadata_processor',['../structgrpc__auth__metadata__processor.html',1,'']]],
   ['grpc_5fauth_5fproperty',['grpc_auth_property',['../structgrpc__auth__property.html',1,'']]],
   ['grpc_5fauth_5fproperty_5fiterator',['grpc_auth_property_iterator',['../structgrpc__auth__property__iterator.html',1,'']]],
   ['grpc_5fbyte_5fbuffer',['grpc_byte_buffer',['../structgrpc__byte__buffer.html',1,'']]],
   ['grpc_5fbyte_5fbuffer_5freader',['grpc_byte_buffer_reader',['../structgrpc__byte__buffer__reader.html',1,'']]],
   ['grpc_5fcall_5fdetails',['grpc_call_details',['../structgrpc__call__details.html',1,'']]],
   ['grpc_5fchannel_5fargs',['grpc_channel_args',['../structgrpc__channel__args.html',1,'']]],
+  ['grpc_5fcompression_5foptions',['grpc_compression_options',['../structgrpc__compression__options.html',1,'']]],
   ['grpc_5fevent',['grpc_event',['../structgrpc__event.html',1,'']]],
   ['grpc_5fmetadata',['grpc_metadata',['../structgrpc__metadata.html',1,'']]],
   ['grpc_5fmetadata_5farray',['grpc_metadata_array',['../structgrpc__metadata__array.html',1,'']]],
