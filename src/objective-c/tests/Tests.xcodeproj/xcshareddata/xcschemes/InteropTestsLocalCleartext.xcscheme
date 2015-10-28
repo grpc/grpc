@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "0630"
+   LastUpgradeVersion = "0700"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "63423F431B150A5F006CF63C"
-               BuildableName = "AllTests.xctest"
-               BlueprintName = "AllTests"
+               BlueprintIdentifier = "63DC84421BE152B5000708E8"
+               BuildableName = "InteropTestsLocalCleartext.xctest"
+               BlueprintName = "InteropTestsLocalCleartext"
                ReferencedContainer = "container:Tests.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -32,9 +32,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "63423F431B150A5F006CF63C"
-               BuildableName = "AllTests.xctest"
-               BlueprintName = "AllTests"
+               BlueprintIdentifier = "63DC84421BE152B5000708E8"
+               BuildableName = "InteropTestsLocalCleartext.xctest"
+               BlueprintName = "InteropTestsLocalCleartext"
                ReferencedContainer = "container:Tests.xcodeproj">
             </BuildableReference>
             <SkippedTests>
@@ -47,24 +47,9 @@
                <Test
                   Identifier = "InteropTests">
                </Test>
-               <Test
-                  Identifier = "LocalClearTextTests">
-               </Test>
-               <Test
-                  Identifier = "LocalClearTextTests/testConnectionToLocalServer">
-               </Test>
             </SkippedTests>
          </TestableReference>
       </Testables>
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "63423F431B150A5F006CF63C"
-            BuildableName = "AllTests.xctest"
-            BlueprintName = "AllTests"
-            ReferencedContainer = "container:Tests.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>
@@ -81,9 +66,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "63423F431B150A5F006CF63C"
-            BuildableName = "AllTests.xctest"
-            BlueprintName = "AllTests"
+            BlueprintIdentifier = "63DC84421BE152B5000708E8"
+            BuildableName = "InteropTestsLocalCleartext.xctest"
+            BlueprintName = "InteropTestsLocalCleartext"
             ReferencedContainer = "container:Tests.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -99,9 +84,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "63423F431B150A5F006CF63C"
-            BuildableName = "AllTests.xctest"
-            BlueprintName = "AllTests"
+            BlueprintIdentifier = "63DC84421BE152B5000708E8"
+            BuildableName = "InteropTestsLocalCleartext.xctest"
+            BlueprintName = "InteropTestsLocalCleartext"
             ReferencedContainer = "container:Tests.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
