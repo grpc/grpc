@@ -108,10 +108,12 @@ def fill_one_test_result(shortname, resultset, html_str):
 
 
 def render_html_report(client_langs, server_langs, test_cases, auth_test_cases,
-                       resultset, num_failures, cloud_to_prod):
+                       http2_cases, resultset, num_failures, cloud_to_prod, 
+                       http2_interop):
   """Generate html report."""
   sorted_test_cases = sorted(test_cases)
   sorted_auth_test_cases = sorted(auth_test_cases)
+  sorted_http2_cases = sorted(http2_cases)
   sorted_client_langs = sorted(client_langs)
   sorted_server_langs = sorted(server_langs)
   html_str = ('<!DOCTYPE html>\n'
@@ -170,6 +172,30 @@ def render_html_report(client_langs, server_langs, test_cases, auth_test_cases,
           html_str = fill_one_test_result(shortname, resultset, html_str)
         html_str = '%s</tr>\n' % html_str
       html_str = '%s</table>\n' % html_str
+  if http2_interop:
+    # Each column header is the server language.
+    html_str = ('%s<h2>HTTP/2 Interop</h2>\n' 
+                '<table style=\"width:100%%\" border=\"1\">\n'
+                '<tr bgcolor=\"#00BFFF\">\n'
+                '<th>Servers &#9658;<br/>'
+                'Test Cases &#9660;</th>\n') % html_str
+    for server_lang in sorted_server_langs:
+      html_str = '%s<th>%s\n' % (html_str, server_lang)
+    if cloud_to_prod:
+      html_str = '%s<th>%s\n' % (html_str, "prod")
+    html_str = '%s</tr>\n' % html_str
+    for test_case in sorted_http2_cases:
+      html_str = '%s<tr><td><b>%s</b></td>\n' % (html_str, test_case)
+      # Fill up the cells with test result.
+      for server_lang in sorted_server_langs:
+        shortname = 'cloud_to_cloud:%s:%s_server:%s' % (
+            "http2", server_lang, test_case)
+        html_str = fill_one_test_result(shortname, resultset, html_str)
+      if cloud_to_prod:
+        shortname = 'cloud_to_prod:%s:%s' % ("http2", test_case)
+        html_str = fill_one_test_result(shortname, resultset, html_str)
+      html_str = '%s</tr>\n' % html_str
+    html_str = '%s</table>\n' % html_str
 
   html_str = ('%s\n'
               '<script>\n'
