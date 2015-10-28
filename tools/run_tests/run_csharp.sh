@@ -49,7 +49,11 @@ export LD_LIBRARY_PATH=$root/libs/$CONFIG
 
 if [ "$CONFIG" = "gcov" ]
 then
-  (cd src/csharp; $NUNIT_CONSOLE -labels "Grpc.Core.Tests/bin/$MSBUILD_CONFIG/Grpc.Core.Tests.dll")
+  (cd src/csharp; $NUNIT_CONSOLE -labels \
+      "Grpc.Core.Tests/bin/$MSBUILD_CONFIG/Grpc.Core.Tests.dll" \
+      "Grpc.Examples.Tests/bin/$MSBUILD_CONFIG/Grpc.Examples.Tests.dll" \
+      "Grpc.HealthCheck.Tests/bin/$MSBUILD_CONFIG/Grpc.HealthCheck.Tests.dll" \
+      "Grpc.IntegrationTesting/bin/$MSBUILD_CONFIG/Grpc.IntegrationTesting.dll")
 
   gcov objs/gcov/src/csharp/ext/*.o
   lcov --base-directory . --directory . -c -o coverage.info
