@@ -343,10 +343,10 @@ class CSharpLanguage(object):
     else:
       cmd = 'tools/run_tests/run_csharp.sh'
 
-    if config.build_config == 'gcov' and self.platform == 'windows':
-      # For C# code coverage we need to:
-      # 1) Run all tests as one suite.
-      # 2) Need to be on Windows.
+    if config.build_config == 'gcov':
+      # On Windows, we only collect C# code coverage.
+      # On Linux, we only collect coverage for native extension.
+      # For code coverage all tests need to run as one suite.
       return [config.job_spec([cmd], None,
               environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
     else:
