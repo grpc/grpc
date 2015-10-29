@@ -76,13 +76,12 @@ std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   abort();
 }
 
-std::unique_ptr<Server> CreateServer(const ServerConfig& config,
-                                     int server_port) {
+std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   switch (config.server_type()) {
     case ServerType::SYNCHRONOUS_SERVER:
-      return CreateSynchronousServer(config, server_port);
+      return CreateSynchronousServer(config);
     case ServerType::ASYNC_SERVER:
-      return CreateAsyncServer(config, server_port);
+      return CreateAsyncServer(config);
     default:
       abort();
   }
@@ -91,8 +90,7 @@ std::unique_ptr<Server> CreateServer(const ServerConfig& config,
 
 class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
  public:
-  explicit WorkerServiceImpl(int server_port)
-      : server_port_(server_port), acquired_(false) {}
+  explicit WorkerServiceImpl() : acquired_(false) {}
 
   Status RunClient(ServerContext* ctx,
 		   ServerReaderWriter<ClientStatus, ClientArgs>* stream)
@@ -191,12 +189,12 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
-    auto server = CreateServer(args.setup(), server_port_);
+    auto server = CreateServer(args.setup());
     if (!server) {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
     ServerStatus status;
-    status.set_port(server_port_);
+    status.set_port(server->Port());
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "");
     }
@@ -211,14 +209,12 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     return Status::OK;
   }
 
-  const int server_port_;
-
   std::mutex mu_;
   bool acquired_;
 };
 
-QpsWorker::QpsWorker(int driver_port, int server_port) {
-  impl_.reset(new WorkerServiceImpl(server_port));
+QpsWorker::QpsWorker(int driver_port) {
+  impl_.reset(new WorkerServiceImpl());
 
   char* server_address = NULL;
   gpr_join_host_port(&server_address, "::", driver_port);
