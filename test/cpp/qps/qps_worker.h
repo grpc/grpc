@@ -42,7 +42,7 @@ class Server;
 
 namespace testing {
 
-class WorkerImpl;
+class WorkerServiceImpl;
 
 class QpsWorker {
  public:
@@ -50,7 +50,7 @@ class QpsWorker {
   ~QpsWorker();
 
  private:
-  std::unique_ptr<WorkerImpl> impl_;
+  std::unique_ptr<WorkerServiceImpl> impl_;
   std::unique_ptr<Server> server_;
 };
 

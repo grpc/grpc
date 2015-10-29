@@ -13660,6 +13660,8 @@
       "test/proto/messages.pb.h", 
       "test/proto/perf_tests/perf_control.grpc.pb.h", 
       "test/proto/perf_tests/perf_control.pb.h", 
+      "test/proto/perf_tests/perf_services.grpc.pb.h", 
+      "test/proto/perf_tests/perf_services.pb.h", 
       "test/proto/perf_tests/perf_stats.grpc.pb.h", 
       "test/proto/perf_tests/perf_stats.pb.h"
     ], 

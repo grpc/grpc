@@ -48,6 +48,7 @@
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
+#include "test/proto/perf_tests/perf_services.grpc.pb.h"
 
 using std::list;
 using std::thread;
@@ -91,12 +92,12 @@ static ClientContext* AllocContext(list<ClientContext>* contexts, T deadline) {
 }
 
 struct ServerData {
-  unique_ptr<Worker::Stub> stub;
+  unique_ptr<WorkerService::Stub> stub;
   unique_ptr<ClientReaderWriter<ServerArgs, ServerStatus>> stream;
 };
 
 struct ClientData {
-  unique_ptr<Worker::Stub> stub;
+  unique_ptr<WorkerService::Stub> stub;
   unique_ptr<ClientReaderWriter<ClientArgs, ClientStatus>> stream;
 };
 }  // namespace runsc
@@ -162,7 +163,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
     servers[i].stub =
-        Worker::NewStub(CreateChannel(workers[i], InsecureCredentials()));
+        WorkerService::NewStub(CreateChannel(workers[i], InsecureCredentials()));
     ServerArgs args;
     result_server_config = server_config;
     result_server_config.set_host(workers[i]);
@@ -189,7 +190,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
-    clients[i].stub = Worker::NewStub(
+    clients[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i + num_servers], InsecureCredentials()));
     ClientArgs args;
     result_client_config = client_config;
@@ -211,9 +212,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Start a run
   gpr_log(GPR_INFO, "Starting");
   ServerArgs server_mark;
-  server_mark.mutable_mark();
+  server_mark.mutable_mark()->set_reset(true);
   ClientArgs client_mark;
-  client_mark.mutable_mark();
+  client_mark.mutable_mark()->set_reset(true);
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Write(server_mark));
   }

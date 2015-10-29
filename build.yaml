@@ -751,6 +751,7 @@ libs:
   src:
   - test/proto/messages.proto
   - test/proto/perf_tests/perf_control.proto
+  - test/proto/perf_tests/perf_services.proto
   - test/proto/perf_tests/perf_stats.proto
   - test/cpp/qps/perf_db.proto
   - test/cpp/qps/client_async.cc

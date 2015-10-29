@@ -49,8 +49,8 @@
 #include <grpc++/security/server_credentials.h>
 #include <gtest/gtest.h>
 
-#include "test/proto/perf_tests/perf_control.grpc.pb.h"
 #include "test/cpp/qps/server.h"
+#include "test/proto/perf_tests/perf_services.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -76,10 +76,10 @@ class AsyncQpsServerTest : public Server {
     for (int i = 0; i < 10000 / config.threads(); i++) {
       for (int j = 0; j < config.threads(); j++) {
         auto request_unary = std::bind(
-            &TestService::AsyncService::RequestUnaryCall, &async_service_, _1,
+            &BenchmarkService::AsyncService::RequestUnaryCall, &async_service_, _1,
             _2, _3, srv_cqs_[j].get(), srv_cqs_[j].get(), _4);
         auto request_streaming = std::bind(
-            &TestService::AsyncService::RequestStreamingCall, &async_service_,
+            &BenchmarkService::AsyncService::RequestStreamingCall, &async_service_,
             _1, _2, srv_cqs_[j].get(), srv_cqs_[j].get(), _3);
         contexts_.push_front(
             new ServerRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
@@ -309,7 +309,7 @@ class AsyncQpsServerTest : public Server {
   std::vector<std::thread> threads_;
   std::unique_ptr<grpc::Server> server_;
   std::vector<std::unique_ptr<grpc::ServerCompletionQueue>> srv_cqs_;
-  TestService::AsyncService async_service_;
+  BenchmarkService::AsyncService async_service_;
   std::forward_list<ServerRpcContext *> contexts_;
 
   class PerThreadShutdownState {

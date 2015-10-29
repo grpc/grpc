@@ -72,8 +72,6 @@ DEFINE_double(determ_load, -1.0, "Deterministic offered load (qps)");
 DEFINE_double(pareto_base, -1.0, "Pareto base interarrival time (us)");
 DEFINE_double(pareto_alpha, -1.0, "Pareto alpha value");
 
-DEFINE_string(load_type, "CLOSED_LOOP", "Load type");
-
 using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
 using grpc::testing::ClientType;
@@ -119,8 +117,8 @@ static void QpsDriver() {
     pareto->set_interarrival_base(FLAGS_pareto_base / 1e6);
     pareto->set_alpha(FLAGS_pareto_alpha);
   } else {
-    // Default is closed loop
-    // No need to set up any other load parameters here
+    client_config.mutable_load_params()->mutable_closed();
+    // No further load parameters to set up for closed loop
   }
 
   ServerConfig server_config;

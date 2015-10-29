@@ -3601,6 +3601,21 @@ $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc: test/proto/perf_tests/p
 endif
 
 ifeq ($(NO_PROTOC),true)
+$(GENDIR)/test/proto/perf_tests/perf_services.pb.cc: protoc_dep_error
+$(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc: protoc_dep_error
+else
+$(GENDIR)/test/proto/perf_tests/perf_services.pb.cc: test/proto/perf_tests/perf_services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc: test/proto/perf_tests/perf_services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+endif
+
+ifeq ($(NO_PROTOC),true)
 $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc: protoc_dep_error
 $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc: protoc_dep_error
 else
@@ -5206,6 +5221,7 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/server.o: $(GENDIR)/test/proto/empty.pb.cc 
 LIBQPS_SRC = \
     $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc \
     $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc \
+    $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc \
     $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc \
     $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc \
     test/cpp/qps/client_async.cc \
@@ -5261,16 +5277,16 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBQPS_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.pb.cc $(GENDIR)/test/proto/perf_tests/perf_control.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.pb.cc $(GENDIR)/test/proto/perf_tests/perf_services.grpc.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.pb.cc $(GENDIR)/test/proto/perf_tests/perf_stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
 
 
 LIBGRPC_CSHARP_EXT_SRC = \
