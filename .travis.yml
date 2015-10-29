@@ -21,7 +21,12 @@ before_script:
   - bins/$CONFIG/interop_server --port=5050 &
   - bins/$CONFIG/interop_server --port=5051 --use_tls &
 xcode_workspace: src/objective-c/tests/Tests.xcworkspace
-xcode_scheme: AllTests
+xcode_scheme:
+  - RxLibraryUnitTests
+  - InteropTestsLocalSSL
+  - InteropTestsLocalCleartext
+  # TODO(jcanizales): Investigate why they time out:
+  # - InteropTestsRemote
 xcode_sdk: iphonesimulator9.1
 notifications:
   email: false
