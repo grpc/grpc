@@ -116,6 +116,7 @@ message ServerConfig {
   int32 threads = 2;
   bool use_tls = 3;
   string host = 4;
+  int32 port = 5;
 }
 
 message ServerArgs {

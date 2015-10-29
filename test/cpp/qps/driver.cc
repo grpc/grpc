@@ -132,8 +132,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
 
     int driver_port = grpc_pick_unused_port_or_die();
-    int benchmark_port = grpc_pick_unused_port_or_die();
-    local_workers.emplace_back(new QpsWorker(driver_port, benchmark_port));
+    local_workers.emplace_back(new QpsWorker(driver_port));
     char addr[256];
     sprintf(addr, "localhost:%d", driver_port);
     if (spawn_local_worker_count < 0) {

@@ -84,30 +84,28 @@ class BenchmarkServiceImpl GRPC_FINAL : public BenchmarkService::Service {
 
 class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
  public:
-  SynchronousServer(const ServerConfig& config, int port)
-      : impl_(MakeImpl(port)) {}
-
- private:
-  std::unique_ptr<grpc::Server> MakeImpl(int port) {
+  explicit SynchronousServer(const ServerConfig& config)
+    : Server(config) {
     ServerBuilder builder;
 
     char* server_address = NULL;
-    gpr_join_host_port(&server_address, "::", port);
+
+    gpr_join_host_port(&server_address, "::", Port());
     builder.AddListeningPort(server_address, InsecureServerCredentials());
     gpr_free(server_address);
 
     builder.RegisterService(&service_);
 
-    return builder.BuildAndStart();
+    impl_ = builder.BuildAndStart();
   }
-
+ private:
   BenchmarkServiceImpl service_;
   std::unique_ptr<grpc::Server> impl_;
 };
 
 std::unique_ptr<grpc::testing::Server> CreateSynchronousServer(
-    const ServerConfig& config, int port) {
-  return std::unique_ptr<Server>(new SynchronousServer(config, port));
+    const ServerConfig& config) {
+  return std::unique_ptr<Server>(new SynchronousServer(config));
 }
 
 }  // namespace testing

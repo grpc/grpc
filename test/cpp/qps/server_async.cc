@@ -57,9 +57,10 @@ namespace testing {
 
 class AsyncQpsServerTest : public Server {
  public:
-  AsyncQpsServerTest(const ServerConfig &config, int port) {
+  explicit AsyncQpsServerTest(const ServerConfig &config): Server(config) {
     char *server_address = NULL;
-    gpr_join_host_port(&server_address, "::", port);
+
+    gpr_join_host_port(&server_address, "::", Port());
 
     ServerBuilder builder;
     builder.AddListeningPort(server_address, InsecureServerCredentials());
@@ -333,9 +334,8 @@ class AsyncQpsServerTest : public Server {
   std::vector<std::unique_ptr<PerThreadShutdownState>> shutdown_state_;
 };
 
-std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config,
-                                          int port) {
-  return std::unique_ptr<Server>(new AsyncQpsServerTest(config, port));
+std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config) {
+  return std::unique_ptr<Server>(new AsyncQpsServerTest(config));
 }
 
 }  // namespace testing

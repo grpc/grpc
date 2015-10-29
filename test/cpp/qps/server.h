@@ -34,6 +34,7 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
+#include "test/core/util/port.h"
 #include "test/cpp/qps/timer.h"
 #include "test/proto/messages.grpc.pb.h"
 #include "test/proto/perf_tests/perf_control.grpc.pb.h"
@@ -43,7 +44,13 @@ namespace testing {
 
 class Server {
  public:
-  Server() : timer_(new Timer) {}
+  explicit Server(const ServerConfig& config) : timer_(new Timer) {
+    if (config.port()) {
+      port_ = config.port();
+    } else {
+      port_ = grpc_pick_unused_port_or_die();
+    }
+  }
   virtual ~Server() {}
 
   ServerStats Mark(bool reset) {
@@ -75,13 +82,14 @@ class Server {
     return true;
   }
 
+  int Port() const {return port_;}
  private:
+  int port_;
   std::unique_ptr<Timer> timer_;
 };
 
-std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config,
-                                                int port);
-std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config, int port);
+std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
+std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config);
 
 }  // namespace testing
 }  // namespace grpc
