@@ -81,9 +81,9 @@ static void worker_thread(void *arg) {
   gpr_uint32 cpu;
   int r = 12345678;
   int i, j;
-  for (i = 0; i < 1000; i++) {
+  for (i = 0; i < 1000 / GRPC_TEST_SLOWDOWN_FACTOR; i++) {
     /* run for a bit - just calculate something random. */
-    for (j = 0; j < 1000000; j++) {
+    for (j = 0; j < 1000000 / GRPC_TEST_SLOWDOWN_FACTOR; j++) {
       r = (r * 17) & ((r - i) | (r * i));
     }
     cpu = gpr_cpu_current_cpu();
