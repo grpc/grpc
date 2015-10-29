@@ -21,7 +21,7 @@ end
 target 'RxLibraryUnitTests' do
 end
 
-target 'InteropTests' do
+target 'InteropTestsRemote' do
 end
 
 target 'InteropTestsLocalSSL' do
