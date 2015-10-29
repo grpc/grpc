@@ -163,6 +163,14 @@
     </ClCompile>
     <ClInclude Include="..\..\..\test\proto\perf_tests\perf_control.grpc.pb.h">
     </ClInclude>
+    <ClCompile Include="..\..\..\test\proto\perf_tests\perf_services.pb.cc">
+    </ClCompile>
+    <ClInclude Include="..\..\..\test\proto\perf_tests\perf_services.pb.h">
+    </ClInclude>
+    <ClCompile Include="..\..\..\test\proto\perf_tests\perf_services.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="..\..\..\test\proto\perf_tests\perf_services.grpc.pb.h">
+    </ClInclude>
     <ClCompile Include="..\..\..\test\proto\perf_tests\perf_stats.pb.cc">
     </ClCompile>
     <ClInclude Include="..\..\..\test\proto\perf_tests\perf_stats.pb.h">

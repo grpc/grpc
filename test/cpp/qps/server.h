@@ -35,6 +35,7 @@
 #define TEST_QPS_SERVER_H
 
 #include "test/cpp/qps/timer.h"
+#include "test/proto/messages.grpc.pb.h"
 #include "test/proto/perf_tests/perf_control.grpc.pb.h"
 
 namespace grpc {
@@ -45,11 +46,15 @@ class Server {
   Server() : timer_(new Timer) {}
   virtual ~Server() {}
 
-  ServerStats Mark() {
-    std::unique_ptr<Timer> timer(new Timer);
-    timer.swap(timer_);
-
-    auto timer_result = timer->Mark();
+  ServerStats Mark(bool reset) {
+    Timer::Result timer_result;
+    if (reset) {
+      std::unique_ptr<Timer> timer(new Timer);
+      timer.swap(timer_);
+      timer_result = timer->Mark();
+    } else {
+      timer_result = timer_->Mark();
+    }
 
     ServerStats stats;
     stats.set_time_elapsed(timer_result.wall);

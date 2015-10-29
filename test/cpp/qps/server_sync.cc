@@ -43,14 +43,14 @@
 #include <grpc++/server_context.h>
 #include <grpc++/security/server_credentials.h>
 
-#include "test/proto/perf_tests/perf_control.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/timer.h"
+#include "test/proto/perf_tests/perf_services.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
 
-class TestServiceImpl GRPC_FINAL : public TestService::Service {
+class BenchmarkServiceImpl GRPC_FINAL : public BenchmarkService::Service {
  public:
   Status UnaryCall(ServerContext* context, const SimpleRequest* request,
                    SimpleResponse* response) GRPC_OVERRIDE {
@@ -101,7 +101,7 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
     return builder.BuildAndStart();
   }
 
-  TestServiceImpl service_;
+  BenchmarkServiceImpl service_;
   std::unique_ptr<grpc::Server> impl_;
 };
 

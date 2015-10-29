@@ -61,7 +61,7 @@ Timer::Result Timer::Sample() {
   return r;
 }
 
-Timer::Result Timer::Mark() {
+Timer::Result Timer::Mark() const {
   Result s = Sample();
   Result r;
   r.wall = s.wall - start_.wall;

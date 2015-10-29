@@ -58,6 +58,7 @@ static void RunAsyncUnaryPingPong() {
   client_config.set_payload_size(1);
   client_config.set_async_client_threads(1);
   client_config.set_rpc_type(UNARY);
+  client_config.mutable_load_params()->mutable_closed();
 
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);

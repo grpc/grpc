@@ -52,10 +52,10 @@
 #include <grpc++/security/server_credentials.h>
 
 #include "test/core/util/grpc_profiler.h"
-#include "test/proto/perf_tests/perf_control.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"
+#include "test/proto/perf_tests/perf_services.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -89,9 +89,9 @@ std::unique_ptr<Server> CreateServer(const ServerConfig& config,
   abort();
 }
 
-class WorkerImpl GRPC_FINAL : public Worker::Service {
+class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
  public:
-  explicit WorkerImpl(int server_port)
+  explicit WorkerServiceImpl(int server_port)
       : server_port_(server_port), acquired_(false) {}
 
   Status RunClient(ServerContext* ctx,
@@ -126,7 +126,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
   // Protect against multiple clients using this worker at once.
   class InstanceGuard {
    public:
-    InstanceGuard(WorkerImpl* impl)
+    InstanceGuard(WorkerServiceImpl* impl)
         : impl_(impl), acquired_(impl->TryAcquireInstance()) {}
     ~InstanceGuard() {
       if (acquired_) {
@@ -137,7 +137,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
     bool Acquired() const { return acquired_; }
 
    private:
-    WorkerImpl* const impl_;
+    WorkerServiceImpl* const impl_;
     const bool acquired_;
   };
 
@@ -175,7 +175,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
       if (!args.has_mark()) {
         return Status(StatusCode::INVALID_ARGUMENT, "");
       }
-      *status.mutable_stats() = client->Mark();
+      *status.mutable_stats() = client->Mark(args.mark().reset());
       stream->Write(status);
     }
 
@@ -204,7 +204,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
       if (!args.has_mark()) {
         return Status(StatusCode::INVALID_ARGUMENT, "");
       }
-      *status.mutable_stats() = server->Mark();
+      *status.mutable_stats() = server->Mark(args.mark().reset());
       stream->Write(status);
     }
 
@@ -218,7 +218,7 @@ class WorkerImpl GRPC_FINAL : public Worker::Service {
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port) {
-  impl_.reset(new WorkerImpl(server_port));
+  impl_.reset(new WorkerServiceImpl(server_port));
 
   char* server_address = NULL;
   gpr_join_host_port(&server_address, "::", driver_port);

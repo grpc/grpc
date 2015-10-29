@@ -57,6 +57,7 @@ static void RunSynchronousStreamingPingPong() {
   client_config.set_client_channels(1);
   client_config.set_payload_size(1);
   client_config.set_rpc_type(STREAMING);
+  client_config.mutable_load_params()->mutable_closed();
 
   ServerConfig server_config;
   server_config.set_server_type(SYNCHRONOUS_SERVER);

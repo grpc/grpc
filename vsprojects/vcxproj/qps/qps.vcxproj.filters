@@ -7,6 +7,9 @@
     <ClCompile Include="..\..\..\test\proto\perf_tests\perf_control.proto">
       <Filter>test\proto\perf_tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\test\proto\perf_tests\perf_services.proto">
+      <Filter>test\proto\perf_tests</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\test\proto\perf_tests\perf_stats.proto">
       <Filter>test\proto\perf_tests</Filter>
     </ClCompile>
