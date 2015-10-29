@@ -812,6 +812,23 @@ def _start_port_server(port_server_port):
         raise
 
 
+def _calculate_num_runs_failures(list_of_results):
+  """Caculate number of runs and failures for a particular test.
+
+  Args:
+    list_of_results: (List) of JobResult object.
+  Returns:
+    A tuple of total number of runs and failures.
+  """
+  num_runs = len(list_of_results)  # By default, there is 1 run per JobResult.
+  num_failures = 0
+  for jobresult in list_of_results:
+    if jobresult.retries > 0:
+      num_runs += jobresult.retries
+    if jobresult.num_failures > 0:
+      num_failures += jobresult.num_failures
+  return num_runs, num_failures
+
 def _build_and_run(
     check_cancelled, newline_on_success, travis, cache, xml_report=None):
   """Do one pass of building & running tests."""
@@ -853,13 +870,24 @@ def _build_and_run(
     root = ET.Element('testsuites') if xml_report else None
     testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests') if xml_report else None
 
-    number_failures, _ = jobset.run(
-        all_runs, check_cancelled, newline_on_success=newline_on_success,
+    number_failures, resultset = jobset.run(
+        all_runs, check_cancelled, newline_on_success=newline_on_success, 
         travis=travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
         cache=cache if not xml_report else None,
         xml_report=testsuite,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    if resultset:
+      for k, v in resultset.iteritems():
+        num_runs, num_failures = _calculate_num_runs_failures(v)
+        if num_failures == num_runs:  # what about infinite_runs???
+          jobset.message('FAILED', k, do_newline=True)
+        elif num_failures > 0:
+          jobset.message(
+              'FLAKE', '%s [%d/%d runs flaked]' % (k, num_failures, num_runs),
+              do_newline=True)
+        else:
+          jobset.message('PASSED', k, do_newline=True)
     if number_failures:
       return 2
   finally:
