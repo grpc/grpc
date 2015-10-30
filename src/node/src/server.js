@@ -33,6 +33,17 @@
 
 /**
  * Server module
+ *
+ * This module contains all the server code for Node gRPC: both the Server
+ * class itself and the method handler code for all types of methods.
+ *
+ * For example, to create a Server, add a service, and start it:
+ *
+ * var server = new server_module.Server();
+ * server.addProtoService(protobuf_service_descriptor, service_implementation);
+ * server.bind('address:port', server_credential);
+ * server.start();
+ *
  * @module
  */
 
@@ -746,8 +757,8 @@ Server.prototype.addProtoService = function(service, implementation) {
  * Binds the server to the given port, with SSL enabled if creds is given
  * @param {string} port The port that the server should bind on, in the format
  *     "address:port"
- * @param {boolean=} creds Server credential object to be used for SSL. Pass
- *     nothing for an insecure port
+ * @param {ServerCredentials=} creds Server credential object to be used for
+ *     SSL. Pass an insecure credentials object for an insecure port.
  */
 Server.prototype.bind = function(port, creds) {
   if (this.started) {

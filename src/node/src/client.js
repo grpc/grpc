@@ -33,6 +33,17 @@
 
 /**
  * Client module
+ *
+ * This module contains the factory method for creating Client classes, and the
+ * method calling code for all types of methods.
+ *
+ * For example, to create a client and call a method on it:
+ *
+ * var proto_obj = grpc.load(proto_file_path);
+ * var Client = proto_obj.package.subpackage.ServiceName;
+ * var client = new Client(server_address, client_credentials);
+ * var call = client.unaryMethod(arguments, callback);
+ *
  * @module
  */
 
