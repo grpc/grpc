@@ -1,3 +1,4 @@
+[![Nuget](https://img.shields.io/nuget/v/Grpc.svg)](http://www.nuget.org/packages/Grpc/)
 gRPC C#
 =======
 
