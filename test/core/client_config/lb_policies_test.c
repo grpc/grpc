@@ -211,29 +211,32 @@ static void teardown_servers(servers_fixture *f) {
   gpr_free(f);
 }
 
+typedef struct request_data {
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  char *details;
+  size_t details_capacity;
+  grpc_status_code status;
+  grpc_call_details *call_details;
+} request_data;
+
 /** Returns connection sequence (server indices), which must be freed */
 int *perform_request(servers_fixture *f, grpc_channel *client,
-                     const test_spec *spec) {
+                     request_data *rdata, const test_spec *spec) {
   grpc_call *c;
   int s_idx;
   int *s_valid;
   gpr_timespec deadline;
   grpc_op ops[6];
   grpc_op *op;
-  grpc_status_code status;
-  char *details;
-  size_t details_capacity;
   int was_cancelled;
-  grpc_call_details *call_details;
   size_t i, iter_num;
   grpc_event ev;
   int read_tag;
   int *connection_sequence;
-  grpc_metadata_array initial_metadata_recv;
-  grpc_metadata_array trailing_metadata_recv;
 
   s_valid = gpr_malloc(sizeof(int) * f->num_servers);
-  call_details = gpr_malloc(sizeof(grpc_call_details) * f->num_servers);
+  rdata->call_details = gpr_malloc(sizeof(grpc_call_details) * f->num_servers);
   connection_sequence = gpr_malloc(sizeof(int) * spec->num_iters);
 
   /* Send a trivial request. */
@@ -241,8 +244,8 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
 
   for (iter_num = 0; iter_num < spec->num_iters; iter_num++) {
     cq_verifier *cqv = cq_verifier_create(f->cq);
-    details = NULL;
-    details_capacity = 0;
+    rdata->details = NULL;
+    rdata->details_capacity = 0;
     was_cancelled = 2;
 
     for (i = 0; i < f->num_servers; i++) {
@@ -255,11 +258,11 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
     }
 
     connection_sequence[iter_num] = -1;
-    grpc_metadata_array_init(&initial_metadata_recv);
-    grpc_metadata_array_init(&trailing_metadata_recv);
+    grpc_metadata_array_init(&rdata->initial_metadata_recv);
+    grpc_metadata_array_init(&rdata->trailing_metadata_recv);
 
     for (i = 0; i < f->num_servers; i++) {
-      grpc_call_details_init(&call_details[i]);
+      grpc_call_details_init(&rdata->call_details[i]);
     }
     memset(s_valid, 0, f->num_servers * sizeof(int));
 
@@ -278,15 +281,15 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
-    op->data.recv_initial_metadata = &initial_metadata_recv;
+    op->data.recv_initial_metadata = &rdata->initial_metadata_recv;
     op->flags = 0;
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
-    op->data.recv_status_on_client.status = &status;
-    op->data.recv_status_on_client.status_details = &details;
-    op->data.recv_status_on_client.status_details_capacity = &details_capacity;
+    op->data.recv_status_on_client.trailing_metadata = &rdata->trailing_metadata_recv;
+    op->data.recv_status_on_client.status = &rdata->status;
+    op->data.recv_status_on_client.status_details = &rdata->details;
+    op->data.recv_status_on_client.status_details_capacity = &rdata->details_capacity;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -299,7 +302,7 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
       if (f->servers[i] != NULL) {
         GPR_ASSERT(GRPC_CALL_OK ==
                    grpc_server_request_call(f->servers[i], &f->server_calls[i],
-                                            &call_details[i],
+                                            &rdata->call_details[i],
                                             &f->request_metadata_recv[i], f->cq,
                                             f->cq, tag(1000 + (int)i)));
       }
@@ -348,11 +351,12 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
       cq_expect_completion(cqv, tag(1), 1);
       cq_verify(cqv);
 
-      GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
-      GPR_ASSERT(0 == strcmp(details, "xyz"));
-      GPR_ASSERT(0 == strcmp(call_details[s_idx].method, "/foo"));
-      GPR_ASSERT(0 == strcmp(call_details[s_idx].host, "foo.test.google.fr"));
+      GPR_ASSERT(rdata->status == GRPC_STATUS_UNIMPLEMENTED);
+      GPR_ASSERT(0 == strcmp(rdata->details, "xyz"));
+      GPR_ASSERT(0 == strcmp(rdata->call_details[s_idx].method, "/foo"));
+      GPR_ASSERT(0 == strcmp(rdata->call_details[s_idx].host, "foo.test.google.fr"));
       GPR_ASSERT(was_cancelled == 1);
+    } else {
     }
 
     for (i = 0; i < f->num_servers; i++) {
@@ -361,20 +365,20 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
       }
       grpc_metadata_array_destroy(&f->request_metadata_recv[i]);
     }
-    grpc_metadata_array_destroy(&initial_metadata_recv);
-    grpc_metadata_array_destroy(&trailing_metadata_recv);
+    grpc_metadata_array_destroy(&rdata->initial_metadata_recv);
+    grpc_metadata_array_destroy(&rdata->trailing_metadata_recv);
 
     cq_verifier_destroy(cqv);
 
     grpc_call_destroy(c);
 
     for (i = 0; i < f->num_servers; i++) {
-      grpc_call_details_destroy(&call_details[i]);
+      grpc_call_details_destroy(&rdata->call_details[i]);
     }
-    gpr_free(details);
+    gpr_free(rdata->details);
   }
 
-  gpr_free(call_details);
+  gpr_free(rdata->call_details);
   gpr_free(s_valid);
 
   return connection_sequence;
@@ -436,6 +440,7 @@ void run_spec(const test_spec *spec) {
   char *client_hostport;
   char *servers_hostports_str;
   int *actual_connection_sequence;
+  request_data rdata;
   servers_fixture *f = setup_servers("127.0.0.1", spec->num_servers);
 
   /* Create client. */
@@ -448,7 +453,7 @@ void run_spec(const test_spec *spec) {
   gpr_log(GPR_INFO, "Testing '%s' with servers=%s client=%s", spec->description,
           servers_hostports_str, client_hostport);
 
-  actual_connection_sequence = perform_request(f, client, spec);
+  actual_connection_sequence = perform_request(f, client, &rdata, spec);
 
   spec->verifier(f, client, actual_connection_sequence, spec->num_iters);
 
