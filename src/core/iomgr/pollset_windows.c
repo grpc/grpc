@@ -112,7 +112,6 @@ void grpc_pollset_init(grpc_pollset *pollset) {
 
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure) {
-  gpr_mu_lock(&grpc_polling_mu);
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
@@ -120,10 +119,11 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   } else {
     pollset->on_shutdown = closure;
   }
-  gpr_mu_unlock(&grpc_polling_mu);
 }
 
 void grpc_pollset_destroy(grpc_pollset *pollset) {}
+
+void grpc_pollset_reset(grpc_pollset *pollset) {}
 
 void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                        grpc_pollset_worker *worker, gpr_timespec now,
