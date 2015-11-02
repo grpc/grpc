@@ -31,12 +31,12 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_ENCODER_H
-#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_ENCODER_H
+#ifndef GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H
+#define GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H
 
 #include "src/core/transport/chttp2/frame.h"
 #include "src/core/transport/metadata.h"
-#include "src/core/transport/stream_op.h"
+#include "src/core/transport/metadata_batch.h"
 #include <grpc/support/port_platform.h>
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
@@ -78,16 +78,8 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
                                        grpc_mdctx *mdctx);
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c);
 
-/* select stream ops to be encoded, moving them from inops to outops, and
-   moving subsequent ops in inops forward in the queue */
-gpr_uint32 grpc_chttp2_preencode(grpc_stream_op *inops, size_t *inops_count,
-                                 gpr_uint32 max_flow_controlled_bytes,
-                                 grpc_stream_op_buffer *outops);
+void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, gpr_uint32 id,
+                               grpc_metadata_batch *metadata, int is_eof,
+                               gpr_slice_buffer *outbuf);
 
-/* encode stream ops to output */
-void grpc_chttp2_encode(grpc_stream_op *ops, size_t ops_count, int eof,
-                        gpr_uint32 stream_id,
-                        grpc_chttp2_hpack_compressor *compressor,
-                        gpr_slice_buffer *output);
-
-#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_STREAM_ENCODER_H */
+#endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_HPACK_ENCODER_H */
