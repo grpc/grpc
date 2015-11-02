@@ -30,7 +30,23 @@
 """Generate XML and HTML test reports."""
 
 import os
+import string
 import xml.etree.cElementTree as ET
+
+
+def _filter_msg(msg, output_format):
+  """Filters out nonprintable and illegal characters from the message."""
+  if output_format in ['XML', 'HTML']:
+    # keep whitespaces but remove formfeed and vertical tab characters
+    # that make XML report unparseable.
+    filtered_msg = filter(
+        lambda x: x in string.printable and x != '\f' and x != '\v',
+        msg.decode(errors='ignore'))
+    if output_format == 'HTML':
+      filtered_msg = filtered_msg.replace('"', '&quot;')
+    return filtered_msg
+  else:
+    return msg
 
 
 def render_xml_report(resultset, xml_report):
@@ -43,7 +59,8 @@ def render_xml_report(resultset, xml_report):
       xml_test = ET.SubElement(testsuite, 'testcase', name=shortname) 
       if result.elapsed_time:
         xml_test.set('time', str(result.elapsed_time))
-      ET.SubElement(xml_test, 'system-out').text = result.message
+      ET.SubElement(xml_test, 'system-out').text = _filter_msg(result.message,
+                                                               'XML')
       if result.state == 'FAILED':
         ET.SubElement(xml_test, 'failure', message='Failure')
       elif result.state == 'TIMEOUT':
@@ -66,7 +83,7 @@ def fill_one_test_result(shortname, resultset, html_str):
         if result.returncode > 0:
           tooltip = 'returncode: %d ' % result.returncode
         if result.message:
-          escaped_msg = result.message.replace('"', '&quot;')
+          escaped_msg = _filter_msg(result.message, 'HTML')
           tooltip = '%smessage: %s' % (tooltip, escaped_msg)       
       if result.state == 'FAILED':
         html_str = '%s<td bgcolor=\"red\">' % html_str
