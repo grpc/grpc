@@ -324,8 +324,7 @@ grpc_arg grpc_auth_context_to_arg(grpc_auth_context *p) {
   return arg;
 }
 
-grpc_auth_context *grpc_auth_context_from_arg(
-    const grpc_arg *arg) {
+grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg) {
   if (strcmp(arg->key, GRPC_AUTH_CONTEXT_ARG) != 0) return NULL;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
@@ -340,8 +339,7 @@ grpc_auth_context *grpc_find_auth_context_in_args(
   size_t i;
   if (args == NULL) return NULL;
   for (i = 0; i < args->num_args; i++) {
-    grpc_auth_context *p =
-        grpc_auth_context_from_arg(&args->args[i]);
+    grpc_auth_context *p = grpc_auth_context_from_arg(&args->args[i]);
     if (p != NULL) return p;
   }
   return NULL;
