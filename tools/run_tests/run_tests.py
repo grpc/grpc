@@ -48,8 +48,8 @@ import traceback
 import time
 import urllib2
 
-import generate_reports
 import jobset
+import report_utils
 import watch_dirs
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -890,7 +890,7 @@ def _build_and_run(
     for antagonist in antagonists:
       antagonist.kill()
     if xml_report:
-      generate_reports.render_xml_report(resultset, xml_report)
+      report_utils.render_xml_report(resultset, xml_report)
 
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,

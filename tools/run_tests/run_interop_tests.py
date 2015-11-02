@@ -33,10 +33,10 @@
 import argparse
 import dockerjob
 import itertools
-import generate_reports
 import jobset
 import multiprocessing
 import os
+import report_utils
 import subprocess
 import sys
 import tempfile
@@ -627,11 +627,9 @@ try:
   else:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
-  # Generate XML report.
-  generate_reports.render_xml_report(resultset, 'report.xml')
+  report_utils.render_xml_report(resultset, 'report.xml')
   
-  # Generate HTML report.
-  generate_reports.render_html_report(
+  report_utils.render_html_report(
       set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES, 
       resultset, num_failures, args.cloud_to_prod_auth or args.cloud_to_prod)
 
