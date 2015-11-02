@@ -59,7 +59,7 @@ namespace Grpc.IntegrationTesting
             server = new Server
             {
                 Services = { TestService.BindService(new TestServiceImpl()) },
-                Ports = { { Host, ServerPort.PickUnused, TestCredentials.CreateTestServerCredentials() } }
+                Ports = { { Host, ServerPort.PickUnused, TestCredentials.CreateSslServerCredentials() } }
             };
             server.Start();
 
@@ -68,7 +68,7 @@ namespace Grpc.IntegrationTesting
                 new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
             };
             int port = server.Ports.Single().BoundPort;
-            channel = new Channel(Host, port, TestCredentials.CreateTestClientCredentials(true), options);
+            channel = new Channel(Host, port, TestCredentials.CreateSslCredentials(), options);
             client = TestService.NewClient(channel);
         }
 

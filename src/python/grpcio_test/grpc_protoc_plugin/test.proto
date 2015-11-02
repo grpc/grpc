@@ -32,7 +32,7 @@
 // This file is duplicated around the code base. See GitHub issue #526.
 syntax = "proto2";
 
-package grpc.testing;
+package grpc_protoc_plugin;
 
 enum PayloadType {
   // Compressable text format.

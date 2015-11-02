@@ -54,7 +54,9 @@
     ],
     'include_dirs': [
       '.',
-      'include'
+      'include',
+      '<(node_root_dir)/deps/openssl/openssl/include',
+      '<(node_root_dir)/deps/zlib'
     ],
     'conditions': [
       ['OS != "win"', {
@@ -73,6 +75,15 @@
          ]
         ]
       }],
+      ["target_arch=='ia32'", {
+          "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+      }],
+      ["target_arch=='x64'", {
+          "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+      }],
+      ["target_arch=='arm'", {
+          "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+      }]
     ]
   },
   'targets': [
@@ -124,6 +135,13 @@
         'src/core/support/time_win32.c',
         'src/core/support/tls_pthread.c',
       ],
+      "conditions": [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
+      ],
     },
     {
       'target_name': 'grpc',
@@ -159,6 +177,7 @@
         'src/core/channel/channel_args.c',
         'src/core/channel/channel_stack.c',
         'src/core/channel/client_channel.c',
+        'src/core/channel/client_uchannel.c',
         'src/core/channel/compress_filter.c',
         'src/core/channel/connected_channel.c',
         'src/core/channel/http_client_filter.c',
@@ -280,6 +299,13 @@
         'src/core/census/initialize.c',
         'src/core/census/operation.c',
         'src/core/census/tracing.c',
+      ],
+      "conditions": [
+        ['OS == "mac"', {
+          'xcode_settings': {
+            'MACOSX_DEPLOYMENT_TARGET': '10.9'
+          }
+        }]
       ],
     },
     {

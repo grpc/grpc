@@ -16,7 +16,7 @@ nuget {
 		authors: {Jean-loup Gailly, Mark Adler, Garrett Serack, Tim Rogers};
 		owners: {Jan Tattermusch};
 		licenseUrl: "http://zlib.net/zlib-license.html";
-		projectUrl: "http://github.com/jtattermusch/zlib";
+		projectUrl: "http://github.com/grpc/grpc";
 		iconUrl: "http://zlib.net/images/zlib3d-b1.png";
 		requireLicenseAcceptance:false;
 		summary:A zlib library;

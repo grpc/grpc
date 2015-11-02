@@ -29,11 +29,14 @@
 
 """Provides distutils command classes for the GRPC Python test setup process."""
 
+import distutils
 import os
 import os.path
+import subprocess
 import sys
 
 import setuptools
+from setuptools.command import build_py
 
 
 class RunTests(setuptools.Command):
@@ -52,6 +55,52 @@ class RunTests(setuptools.Command):
     # We import here to ensure that setup.py has had a chance to install the
     # relevant package eggs first.
     import pytest
+
+    self.run_command('build_proto_modules')
     result = pytest.main(self.pytest_args)
     if result != 0:
       raise SystemExit(result)
+
+
+class BuildProtoModules(setuptools.Command):
+  """Command to generate project *_pb2.py modules from proto files."""
+
+  description = ''
+  user_options = []
+
+  def initialize_options(self):
+    pass
+
+  def finalize_options(self):
+    self.protoc_command = distutils.spawn.find_executable('protoc')
+    self.grpc_python_plugin_command = distutils.spawn.find_executable(
+        'grpc_python_plugin')
+
+  def run(self):
+    paths = []
+    root_directory = os.getcwd()
+    for walk_root, directories, filenames in os.walk(root_directory):
+      for filename in filenames:
+        if filename.endswith('.proto'):
+          paths.append(os.path.join(walk_root, filename))
+    command = [
+        self.protoc_command,
+        '--plugin=protoc-gen-python-grpc={}'.format(
+            self.grpc_python_plugin_command),
+        '-I {}'.format(root_directory),
+        '--python_out={}'.format(root_directory),
+        '--python-grpc_out={}'.format(root_directory),
+    ] + paths
+    try:
+      subprocess.check_output(' '.join(command), cwd=root_directory, shell=True,
+                              stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+      raise Exception('{}\nOutput:\n{}'.format(e.message, e.output))
+
+
+class BuildPy(build_py.build_py):
+  """Custom project build command."""
+
+  def run(self):
+    self.run_command('build_proto_modules')
+    build_py.build_py.run(self)

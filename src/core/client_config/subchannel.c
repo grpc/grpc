@@ -312,6 +312,29 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   return c;
 }
 
+void grpc_subchannel_cancel_waiting_call(grpc_exec_ctx *exec_ctx,
+                                         grpc_subchannel *subchannel,
+                                         int iomgr_success) {
+  waiting_for_connect *w4c;
+  gpr_mu_lock(&subchannel->mu);
+  w4c = subchannel->waiting;
+  subchannel->waiting = NULL;
+  gpr_mu_unlock(&subchannel->mu);
+  while (w4c != NULL) {
+    waiting_for_connect *next = w4c->next;
+    grpc_subchannel_del_interested_party(exec_ctx, w4c->subchannel,
+                                         w4c->pollset);
+    if (w4c->notify) {
+      w4c->notify->cb(exec_ctx, w4c->notify->cb_arg, iomgr_success);
+    }
+
+    GRPC_SUBCHANNEL_UNREF(exec_ctx, w4c->subchannel, "waiting_for_connect");
+    gpr_free(w4c);
+
+    w4c = next;
+  }
+}
+
 static void continue_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   grpc_connect_in_args args;
 
@@ -659,24 +682,12 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
     iomgr_success = 0;
   }
   connectivity_state_changed_locked(exec_ctx, c, "alarm");
+  gpr_mu_unlock(&c->mu);
   if (iomgr_success) {
-    gpr_mu_unlock(&c->mu);
     update_reconnect_parameters(c);
     continue_connect(exec_ctx, c);
   } else {
-    waiting_for_connect *w4c;
-    w4c = c->waiting;
-    c->waiting = NULL;
-    gpr_mu_unlock(&c->mu);
-    while (w4c != NULL) {
-      waiting_for_connect *next = w4c->next;
-      grpc_subchannel_del_interested_party(exec_ctx, w4c->subchannel,
-                                           w4c->pollset);
-      w4c->notify->cb(exec_ctx, w4c->notify->cb_arg, 0);
-      GRPC_SUBCHANNEL_UNREF(exec_ctx, w4c->subchannel, "waiting_for_connect");
-      gpr_free(w4c);
-      w4c = next;
-    }
+    grpc_subchannel_cancel_waiting_call(exec_ctx, c, iomgr_success);
     GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->master, "connecting");
     GRPC_SUBCHANNEL_UNREF(exec_ctx, c, "connecting");
   }
@@ -783,4 +794,12 @@ static grpc_subchannel_call *create_call(grpc_exec_ctx *exec_ctx,
   gpr_ref_init(&call->refs, 1);
   grpc_call_stack_init(exec_ctx, chanstk, NULL, NULL, callstk);
   return call;
+}
+
+grpc_mdctx *grpc_subchannel_get_mdctx(grpc_subchannel *subchannel) {
+  return subchannel->mdctx;
+}
+
+grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel) {
+  return subchannel->master;
 }

@@ -48,6 +48,7 @@ uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=Fal
 END2END_FIXTURES = {
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
     'h2_full': default_unsecure_fixture_options,
+    'h2_uchannel': default_unsecure_fixture_options,
     'h2_compress': default_unsecure_fixture_options,
     'h2_uds': uds_fixture_options,
     'h2_uds+poll': uds_fixture_options._replace(platforms=['linux']),

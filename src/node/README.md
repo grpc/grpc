@@ -1,3 +1,4 @@
+[![npm](https://img.shields.io/npm/v/grpc.svg)](https://www.npmjs.com/package/grpc)
 # Node.js gRPC Library
 
 ## Status
