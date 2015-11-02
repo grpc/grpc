@@ -388,6 +388,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     shutdown_ = true;
     grpc_server_shutdown_and_notify(server_, cq_.cq(), new ShutdownRequest());
     cq_.Shutdown();
+    lock.unlock();
     // Spin, eating requests until the completion queue is completely shutdown.
     // If the deadline expires then cancel anything that's pending and keep
     // spinning forever until the work is actually drained.
@@ -403,6 +404,7 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
         SyncRequest::CallData call_data(this, request);
       }
     }
+    lock.lock();
 
     // Wait for running callbacks to finish.
     while (num_running_cb_ != 0) {
