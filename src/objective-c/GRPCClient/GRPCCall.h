@@ -161,6 +161,9 @@ extern id const kGRPCTrailersKey;
 
 #pragma mark GRPCCall
 
+/** Represents a single gRPC remote call. */
+@interface GRPCCall : GRXWriter
+
 /**
  * The container of the request headers of an RPC conforms to this protocol, which is a subset of
  * NSMutableDictionary's interface. It will become a NSMutableDictionary later on.
@@ -170,21 +173,6 @@ extern id const kGRPCTrailersKey;
  * A header value is a NSString object (with only ASCII characters), unless the header name has the
  * suffix "-bin", in which case the value has to be a NSData object.
  */
-@protocol GRPCRequestHeaders <NSObject>
-
-@property(nonatomic, readonly) NSUInteger count;
-
-- (id)objectForKeyedSubscript:(NSString *)key;
-- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
-
-- (void)removeAllObjects;
-- (void)removeObjectForKey:(NSString *)key;
-
-@end
-
-/** Represents a single gRPC remote call. */
-@interface GRPCCall : GRXWriter
-
 /**
  * These HTTP headers will be passed to the server as part of this call. Each HTTP header is a
  * name-value pair with string names and either string or binary values.
@@ -200,7 +188,7 @@ extern id const kGRPCTrailersKey;
  *
  * The property is initialized to an empty NSMutableDictionary.
  */
-@property(atomic, readonly) id<GRPCRequestHeaders> requestHeaders;
+@property(atomic, readonly) NSMutableDictionary *requestHeaders;
 
 /**
  * This dictionary is populated with the HTTP headers received from the server. This happens before
