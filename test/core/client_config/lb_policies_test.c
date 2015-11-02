@@ -234,13 +234,13 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
   grpc_event ev;
   int read_tag;
   int *connection_sequence;
+  int completed_client;
 
   s_valid = gpr_malloc(sizeof(int) * f->num_servers);
   rdata->call_details = gpr_malloc(sizeof(grpc_call_details) * f->num_servers);
   connection_sequence = gpr_malloc(sizeof(int) * spec->num_iters);
 
   /* Send a trivial request. */
-  deadline = n_seconds_time(60);
 
   for (iter_num = 0; iter_num < spec->num_iters; iter_num++) {
     cq_verifier *cqv = cq_verifier_create(f->cq);
@@ -266,9 +266,11 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
     }
     memset(s_valid, 0, f->num_servers * sizeof(int));
 
+    deadline = n_seconds_time(1);
     c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
                                  "/foo", "foo.test.google.fr", deadline, NULL);
     GPR_ASSERT(c);
+    completed_client = 0;
 
     op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -286,10 +288,12 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata = &rdata->trailing_metadata_recv;
+    op->data.recv_status_on_client.trailing_metadata =
+        &rdata->trailing_metadata_recv;
     op->data.recv_status_on_client.status = &rdata->status;
     op->data.recv_status_on_client.status_details = &rdata->details;
-    op->data.recv_status_on_client.status_details_capacity = &rdata->details_capacity;
+    op->data.recv_status_on_client.status_details_capacity =
+        &rdata->details_capacity;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -310,8 +314,9 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
 
     s_idx = -1;
     while ((ev = grpc_completion_queue_next(
-                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)).type !=
+                f->cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(300), NULL)).type !=
            GRPC_QUEUE_TIMEOUT) {
+      GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(gpr_intptr)ev.tag);
       gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%d",
               ev.success, ev.type, read_tag, iter_num);
@@ -321,6 +326,9 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
         s_idx = read_tag - 1000;
         s_valid[s_idx] = 1;
         connection_sequence[iter_num] = s_idx;
+      } else if (read_tag == 1) {
+        GPR_ASSERT(ev.success);
+        completed_client = 1;
       }
     }
 
@@ -348,15 +356,22 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
                                                        tag(102), NULL));
 
       cq_expect_completion(cqv, tag(102), 1);
-      cq_expect_completion(cqv, tag(1), 1);
+      if (!completed_client) {
+        cq_expect_completion(cqv, tag(1), 1);
+      }
       cq_verify(cqv);
 
       GPR_ASSERT(rdata->status == GRPC_STATUS_UNIMPLEMENTED);
       GPR_ASSERT(0 == strcmp(rdata->details, "xyz"));
       GPR_ASSERT(0 == strcmp(rdata->call_details[s_idx].method, "/foo"));
-      GPR_ASSERT(0 == strcmp(rdata->call_details[s_idx].host, "foo.test.google.fr"));
+      GPR_ASSERT(0 ==
+                 strcmp(rdata->call_details[s_idx].host, "foo.test.google.fr"));
       GPR_ASSERT(was_cancelled == 1);
     } else {
+      if (!completed_client) {
+        cq_expect_completion(cqv, tag(1), 1);
+        cq_verify(cqv);
+      }
     }
 
     for (i = 0; i < f->num_servers; i++) {
