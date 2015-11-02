@@ -51,6 +51,7 @@ struct grpc_fd;
 typedef struct grpc_pollset_worker {
   grpc_wakeup_fd wakeup_fd;
   int reevaluate_polling_on_wakeup;
+  int kicked_specifically;
   struct grpc_pollset_worker *next;
   struct grpc_pollset_worker *prev;
 } grpc_pollset_worker;
