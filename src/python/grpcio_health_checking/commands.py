@@ -50,7 +50,7 @@ class BuildProtoModules(setuptools.Command):
     pass
 
   def finalize_options(self):
-    self.protoc_command = 'protoc'
+    self.protoc_command = distutils.spawn.find_executable('protoc')
     self.grpc_python_plugin_command = distutils.spawn.find_executable(
         'grpc_python_plugin')
 
@@ -69,7 +69,11 @@ class BuildProtoModules(setuptools.Command):
         '--python_out={}'.format(root_directory),
         '--python-grpc_out={}'.format(root_directory),
     ] + paths
-    subprocess.check_call(' '.join(command), cwd=root_directory, shell=True)
+    try:
+      subprocess.check_output(' '.join(command), cwd=root_directory, shell=True,
+                              stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+      raise Exception('{}\nOutput:\n{}'.format(e.message, e.output))
 
 
 class BuildPy(build_py.build_py):

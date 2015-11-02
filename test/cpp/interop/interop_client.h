@@ -39,6 +39,7 @@
 #include <grpc/grpc.h>
 #include <grpc++/channel.h>
 #include "test/proto/messages.grpc.pb.h"
+#include "test/proto/test.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -46,9 +47,14 @@ namespace testing {
 class InteropClient {
  public:
   explicit InteropClient(std::shared_ptr<Channel> channel);
+  explicit InteropClient(
+      std::shared_ptr<Channel> channel,
+      bool new_stub_every_test_case);  // If new_stub_every_test_case is true,
+                                       // a new TestService::Stub object is
+                                       // created for every test case below
   ~InteropClient() {}
 
-  void Reset(std::shared_ptr<Channel> channel) { channel_ = channel; }
+  void Reset(std::shared_ptr<Channel> channel);
 
   void DoEmpty();
   void DoLargeUnary();
@@ -76,10 +82,26 @@ class InteropClient {
   void DoPerRpcCreds(const grpc::string& json_key);
 
  private:
+  class ServiceStub {
+   public:
+    // If new_stub_every_call = true, pointer to a new instance of
+    // TestServce::Stub is returned by Get() everytime it is called
+    ServiceStub(std::shared_ptr<Channel> channel, bool new_stub_every_call);
+
+    TestService::Stub* Get();
+
+    void Reset(std::shared_ptr<Channel> channel);
+
+   private:
+    std::unique_ptr<TestService::Stub> stub_;
+    std::shared_ptr<Channel> channel_;
+    bool new_stub_every_call_;  // If true, a new stub is returned by every
+                                // Get() call
+  };
+
   void PerformLargeUnary(SimpleRequest* request, SimpleResponse* response);
   void AssertOkOrPrintErrorStatus(const Status& s);
-
-  std::shared_ptr<Channel> channel_;
+  ServiceStub serviceStub_;
 };
 
 }  // namespace testing

@@ -31,10 +31,12 @@
 
 import unittest
 
-from grpc.early_adopter import implementations
+from grpc.beta import implementations
 
 from grpc_interop import _interop_test_case
 from grpc_interop import methods
+from grpc_interop import server
+from grpc_interop import test_pb2
 
 
 class InsecureInteropTest(
@@ -42,15 +44,14 @@ class InsecureInteropTest(
     unittest.TestCase):
 
   def setUp(self):
-    self.server = implementations.server(
-        methods.SERVICE_NAME, methods.SERVER_METHODS, 0)
+    self.server = test_pb2.beta_create_TestService_server(methods.TestService())
+    port = self.server.add_insecure_port('[::]:0')
     self.server.start()
-    port = self.server.port()
-    self.stub = implementations.stub(
-        methods.SERVICE_NAME, methods.CLIENT_METHODS, 'localhost', port)
+    self.stub = test_pb2.beta_create_TestService_stub(
+        implementations.insecure_channel('[::]', port))
 
   def tearDown(self):
-    self.server.stop()
+    self.server.stop(0)
 
 
 if __name__ == '__main__':

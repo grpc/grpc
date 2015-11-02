@@ -31,47 +31,61 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+
 namespace Grpc;
 
 /**
  * Represents an active call that sends a stream of messages and then gets a
  * single response.
  */
-class ClientStreamingCall extends AbstractCall {
-  /**
-   * Start the call.
-   * @param array $metadata Metadata to send with the call, if applicable
-   */
-  public function start($metadata = array()) {
-    $this->call->startBatch([OP_SEND_INITIAL_METADATA => $metadata]);
-  }
-
-  /**
-   * Write a single message to the server. This cannot be called after
-   * wait is called.
-   * @param ByteBuffer $data The data to write
-   * @param array $options an array of options, possible keys:
-   *              'flags' => a number
-   */
-  public function write($data, $options = array()) {
-    $message_array = ['message' => $data->serialize()];
-    if (isset($options['flags'])) {
-      $message_array['flags'] = $options['flags'];
+class ClientStreamingCall extends AbstractCall
+{
+    /**
+     * Start the call.
+     *
+     * @param array $metadata Metadata to send with the call, if applicable
+     */
+    public function start($metadata = [])
+    {
+        $this->call->startBatch([
+            OP_SEND_INITIAL_METADATA => $metadata,
+        ]);
     }
-    $this->call->startBatch([OP_SEND_MESSAGE => $message_array]);
-  }
 
-  /**
-   * Wait for the server to respond with data and a status
-   * @return [response data, status]
-   */
-  public function wait() {
-    $event = $this->call->startBatch([
-        OP_SEND_CLOSE_FROM_CLIENT => true,
-        OP_RECV_INITIAL_METADATA => true,
-        OP_RECV_MESSAGE => true,
-        OP_RECV_STATUS_ON_CLIENT => true]);
-    $this->metadata = $event->metadata;
-    return array($this->deserializeResponse($event->message), $event->status);
-  }
+    /**
+     * Write a single message to the server. This cannot be called after
+     * wait is called.
+     *
+     * @param ByteBuffer $data    The data to write
+     * @param array      $options an array of options, possible keys:
+     *                            'flags' => a number
+     */
+    public function write($data, $options = [])
+    {
+        $message_array = ['message' => $data->serialize()];
+        if (isset($options['flags'])) {
+            $message_array['flags'] = $options['flags'];
+        }
+        $this->call->startBatch([
+            OP_SEND_MESSAGE => $message_array,
+        ]);
+    }
+
+    /**
+     * Wait for the server to respond with data and a status.
+     *
+     * @return [response data, status]
+     */
+    public function wait()
+    {
+        $event = $this->call->startBatch([
+            OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_RECV_INITIAL_METADATA => true,
+            OP_RECV_MESSAGE => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
+        $this->metadata = $event->metadata;
+
+        return [$this->deserializeResponse($event->message), $event->status];
+    }
 }
