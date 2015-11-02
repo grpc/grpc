@@ -47,7 +47,7 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_status_conversion_test", 
+    "name": "chttp2_hpack_encoder_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -65,7 +65,7 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "chttp2_stream_encoder_test", 
+    "name": "chttp2_status_conversion_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -666,24 +666,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "grpc_security_connector_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "grpc_stream_op_test", 
     "platforms": [
       "linux", 
       "mac", 
