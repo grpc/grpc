@@ -752,9 +752,9 @@ libs:
   - test/cpp/util/benchmark_config.h
   src:
   - test/proto/messages.proto
-  - test/proto/perf_tests/perf_control.proto
-  - test/proto/perf_tests/perf_services.proto
-  - test/proto/perf_tests/perf_stats.proto
+  - test/proto/benchmarks/control.proto
+  - test/proto/benchmarks/services.proto
+  - test/proto/benchmarks/stats.proto
   - test/cpp/qps/perf_db.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
