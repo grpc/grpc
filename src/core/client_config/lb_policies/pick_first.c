@@ -130,6 +130,30 @@ void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   }
 }
 
+static void pf_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                           grpc_subchannel **target) {
+  pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
+  pending_pick *pp;
+  gpr_mu_lock(&p->mu);
+  pp = p->pending_picks;
+  p->pending_picks = NULL;
+  while (pp != NULL) {
+    pending_pick *next = pp->next;
+    if (pp->target == target) {
+      grpc_subchannel_del_interested_party(
+          exec_ctx, p->subchannels[p->checking_subchannel], pp->pollset);
+      *target = NULL;
+      grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, 0);
+      gpr_free(pp);
+    } else {
+      pp->next = p->pending_picks;
+      p->pending_picks = pp;
+    }
+    pp = next;
+  }
+  gpr_mu_unlock(&p->mu);
+}
+
 static void start_picking(grpc_exec_ctx *exec_ctx, pick_first_lb_policy *p) {
   p->started_picking = 1;
   p->checking_subchannel = 0;
@@ -149,16 +173,16 @@ void pf_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_mu_unlock(&p->mu);
 }
 
-void pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-             grpc_pollset *pollset, grpc_metadata_batch *initial_metadata,
-             grpc_subchannel **target, grpc_closure *on_complete) {
+int pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
+            grpc_metadata_batch *initial_metadata, grpc_subchannel **target,
+            grpc_closure *on_complete) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
   gpr_mu_lock(&p->mu);
   if (p->selected) {
     gpr_mu_unlock(&p->mu);
     *target = p->selected;
-    grpc_exec_ctx_enqueue(exec_ctx, on_complete, 1);
+    return 1;
   } else {
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
@@ -172,6 +196,7 @@ void pf_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp->on_complete = on_complete;
     p->pending_picks = pp;
     gpr_mu_unlock(&p->mu);
+    return 0;
   }
 }
 
@@ -365,8 +390,8 @@ void pf_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 }
 
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
-    pf_destroy, pf_shutdown, pf_pick, pf_exit_idle, pf_broadcast,
-    pf_check_connectivity, pf_notify_on_state_change};
+    pf_destroy, pf_shutdown, pf_pick, pf_cancel_pick, pf_exit_idle,
+    pf_broadcast, pf_check_connectivity, pf_notify_on_state_change};
 
 static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}
 
