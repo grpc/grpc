@@ -31,26 +31,102 @@
 // of unary/streaming requests/responses.
 syntax = "proto3";
 
-import "test/proto/messages.proto";
-import "test/proto/perf_tests/perf_stats.proto";
-import "test/proto/perf_tests/perf_control.proto";
+import "test/proto/benchmarks/stats.proto";
 
 package grpc.testing;
 
-service BenchmarkService {
-  // One request followed by one response.
-  // The server returns the client payload as-is.
-  rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
-
-  // One request followed by one response.
-  // The server returns the client payload as-is.
-  rpc StreamingCall(stream SimpleRequest) returns (stream SimpleResponse);
+enum ClientType {
+  SYNC_CLIENT = 0;
+  ASYNC_CLIENT = 1;
 }
 
-service WorkerService {
-  // Start server with specified workload
-  rpc RunServer(stream ServerArgs) returns (stream ServerStatus);
+enum ServerType {
+  SYNC_SERVER = 0;
+  ASYNC_SERVER = 1;
+}
 
-  // Start client with specified workload
-  rpc RunClient(stream ClientArgs) returns (stream ClientStatus);
+enum RpcType {
+  UNARY = 0;
+  STREAMING = 1;
+}
+
+message PoissonParams {
+  double offered_load = 1;
+}
+
+message UniformParams {
+  double interarrival_lo = 1;
+  double interarrival_hi = 2;
+}
+
+message DeterministicParams {
+  double offered_load = 1;
+}
+
+message ParetoParams {
+  double interarrival_base = 1;
+  double alpha = 2;
+}
+
+message ClosedLoopParams {
+}
+
+message LoadParams {
+  oneof load {
+    ClosedLoopParams closed_loop = 1;
+    PoissonParams poisson = 2;
+    UniformParams uniform = 3;
+    DeterministicParams determ = 4;
+    ParetoParams pareto = 5;
+  };
+}
+
+message ClientConfig {
+  repeated string server_targets = 1;
+  ClientType client_type = 2;
+  bool use_tls = 3;
+  int32 outstanding_rpcs_per_channel = 4;
+  int32 client_channels = 5;
+  int32 payload_size = 6;
+  // only for async client:
+  int32 async_client_threads = 7;
+  RpcType rpc_type = 8;
+  string host = 9;
+  LoadParams load_params = 11;
+}
+
+message ClientStatus {
+  ClientStats stats = 1;
+}
+
+// Request current stats
+message Mark {
+  bool reset = 1;
+}
+
+message ClientArgs {
+  oneof argtype {
+    ClientConfig setup = 1;
+    Mark mark = 2;
+  }
+}
+
+message ServerConfig {
+  ServerType server_type = 1;
+  int32 threads = 2;
+  bool use_tls = 3;
+  string host = 4;
+  int32 port = 5;
+}
+
+message ServerArgs {
+  oneof argtype {
+    ServerConfig setup = 1;
+    Mark mark = 2;
+  }
+}
+
+message ServerStatus {
+  ServerStats stats = 1;
+  int32 port = 2;
 }

@@ -4,14 +4,14 @@
     <ClCompile Include="..\..\..\test\proto\messages.proto">
       <Filter>test\proto</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\proto\perf_tests\perf_control.proto">
-      <Filter>test\proto\perf_tests</Filter>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\control.proto">
+      <Filter>test\proto\benchmarks</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\proto\perf_tests\perf_services.proto">
-      <Filter>test\proto\perf_tests</Filter>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\services.proto">
+      <Filter>test\proto\benchmarks</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\proto\perf_tests\perf_stats.proto">
-      <Filter>test\proto\perf_tests</Filter>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\stats.proto">
+      <Filter>test\proto\benchmarks</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\test\cpp\qps\perf_db.proto">
       <Filter>test\cpp\qps</Filter>
@@ -99,8 +99,8 @@
     <Filter Include="test\proto">
       <UniqueIdentifier>{44e63a33-67f4-0575-e87a-711a7c9111e2}</UniqueIdentifier>
     </Filter>
-    <Filter Include="test\proto\perf_tests">
-      <UniqueIdentifier>{cf788def-630c-8a5f-9a8c-6abdd500d712}</UniqueIdentifier>
+    <Filter Include="test\proto\benchmarks">
+      <UniqueIdentifier>{4180a094-39b4-e46c-1576-940bfe87d284}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
