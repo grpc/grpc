@@ -34,7 +34,6 @@ import multiprocessing
 import os
 import platform
 import signal
-import string
 import subprocess
 import sys
 import tempfile
@@ -42,6 +41,7 @@ import time
 
 
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
+_MAX_RESULT_SIZE = 8192
 
 
 # setup a signal handler so that signal.pause registers 'something'
@@ -129,14 +129,6 @@ def which(filename):
   raise Exception('%s not found' % filename)
 
 
-def _filter_stdout(stdout):
-  """Filters out nonprintable and XML-illegal characters from stdout."""
-  # keep whitespaces but remove formfeed and vertical tab characters
-  # that make XML report unparseable.
-  return filter(lambda x: x in string.printable and x != '\f' and x != '\v',
-                stdout.decode(errors='ignore'))
-
-
 class JobSpec(object):
   """Specifies what to run for a job."""
 
@@ -221,16 +213,11 @@ class Job(object):
 
   def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
+    self._tempfile.seek(0)
+    stdout = self._tempfile.read()
+    self.result.message = stdout[-_MAX_RESULT_SIZE:]
     if self._state == _RUNNING and self._process.poll() is not None:
       elapsed = time.time() - self._start
-      self._tempfile.seek(0)
-      stdout = self._tempfile.read()
-      filtered_stdout = _filter_stdout(stdout)
-      # TODO: looks like jenkins master is slow because parsing the junit 
-      # results XMLs is not implemented efficiently. This is an experiment to 
-      # workaround the issue by making sure results.xml file is small enough.
-      filtered_stdout = filtered_stdout[-128:]
-      self.result.message = filtered_stdout
       self.result.elapsed_time = elapsed
       if self._process.returncode != 0:
         if self._retries < self._spec.flake_retries:
@@ -259,10 +246,6 @@ class Job(object):
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
-      self._tempfile.seek(0)
-      stdout = self._tempfile.read()
-      filtered_stdout = _filter_stdout(stdout)
-      self.result.message = filtered_stdout
       if self._timeout_retries < self._spec.timeout_retries:
         message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
         self._timeout_retries += 1
