@@ -1026,18 +1026,13 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
     stream_global->seen_error = 1;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
-  if (stream_global->published_trailing_metadata &&
-      stream_global->recv_trailing_metadata_finished != NULL) {
-    /* last chance replacement: we've received trailing metadata,
-       but something more important has become available to signal
-       to the upper layers - drop what we've got, and then publish
-       what we want - which is safe because we haven't told anyone
-       about the metadata yet */
-    grpc_chttp2_incoming_metadata_buffer_reset(
-        &stream_global->received_trailing_metadata);
-    stream_global->published_trailing_metadata = 0;
-  }
-  if (!stream_global->published_trailing_metadata) {
+  /* stream_global->recv_trailing_metadata_finished gives us a
+     last chance replacement: we've received trailing metadata,
+     but something more important has become available to signal
+     to the upper layers - drop what we've got, and then publish
+     what we want - which is safe because we haven't told anyone
+     about the metadata yet */
+  if (!stream_global->published_trailing_metadata || stream_global->recv_trailing_metadata_finished != NULL) {
     grpc_mdctx *mdctx =
         TRANSPORT_FROM_GLOBAL(transport_global)->metadata_context;
     char status_string[GPR_LTOA_MIN_BUFSIZE];
