@@ -2021,6 +2021,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_compress_negative_deadline_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_compress_no_op_test", 
     "platforms": [
       "linux", 
@@ -2577,6 +2595,23 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_fakesec_metadata_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_fakesec_negative_deadline_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -3176,6 +3211,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_full_negative_deadline_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_full_no_op_test", 
     "platforms": [
       "linux", 
@@ -3630,6 +3683,18 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_full+poll_metadata_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_full+poll_negative_deadline_test", 
     "platforms": [
       "linux"
     ]
@@ -4128,6 +4193,23 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_oauth2_metadata_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_oauth2_negative_deadline_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -4654,6 +4736,23 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_proxy_negative_deadline_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_proxy_no_op_test", 
     "platforms": [
       "linux", 
@@ -5131,6 +5230,23 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_metadata_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_negative_deadline_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -5659,6 +5775,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_sockpair+trace_negative_deadline_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_sockpair+trace_no_op_test", 
     "platforms": [
       "linux", 
@@ -6146,6 +6280,23 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_metadata_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_negative_deadline_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -6728,6 +6879,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_ssl_negative_deadline_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_ssl_no_op_test", 
     "platforms": [
       "linux", 
@@ -7193,6 +7362,18 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_ssl+poll_negative_deadline_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_ssl+poll_no_op_test", 
     "platforms": [
       "linux"
@@ -7629,6 +7810,23 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_ssl_proxy_metadata_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_ssl_proxy_negative_deadline_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -8211,6 +8409,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_uchannel_negative_deadline_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_uchannel_no_op_test", 
     "platforms": [
       "linux", 
@@ -8746,6 +8962,22 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_uds_negative_deadline_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_uds_no_op_test", 
     "platforms": [
       "linux", 
@@ -9165,6 +9397,18 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_uds+poll_metadata_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds+poll_negative_deadline_test", 
     "platforms": [
       "linux"
     ]
@@ -9666,6 +9910,24 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_compress_metadata_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_compress_negative_deadline_nosec_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -10259,6 +10521,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_full_negative_deadline_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_full_no_op_nosec_test", 
     "platforms": [
       "linux", 
@@ -10712,6 +10992,18 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_full+poll_negative_deadline_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_full+poll_no_op_nosec_test", 
     "platforms": [
       "linux"
@@ -11131,6 +11423,23 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_proxy_metadata_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_proxy_negative_deadline_nosec_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -11607,6 +11916,23 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_metadata_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_negative_deadline_nosec_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -12117,6 +12443,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_sockpair+trace_negative_deadline_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_sockpair+trace_no_op_nosec_test", 
     "platforms": [
       "linux", 
@@ -12587,6 +12931,23 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair_1byte_metadata_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_sockpair_1byte_negative_deadline_nosec_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -13151,6 +13512,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_uchannel_negative_deadline_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_uchannel_no_op_nosec_test", 
     "platforms": [
       "linux", 
@@ -13670,6 +14049,22 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "h2_uds_negative_deadline_nosec_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "h2_uds_no_op_nosec_test", 
     "platforms": [
       "linux", 
@@ -14077,6 +14472,18 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_uds+poll_metadata_nosec_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_uds+poll_negative_deadline_nosec_test", 
     "platforms": [
       "linux"
     ]
