@@ -34,18 +34,18 @@ syntax = "proto3";
 
 package grpc.testing;
 
-message GuageResponse {
+message GaugeResponse {
   string name = 1;
   int64 value = 2;
 }
 
-message GuageRequest {
+message GaugeRequest {
   string name = 1;
 }
 
 message EmptyMessage {}
 
 service MetricsService {
-  rpc GetAllGuages(EmptyMessage) returns (stream GuageResponse);
-  rpc GetGuage(GuageRequest) returns (GuageResponse);
+  rpc GetAllGauges(EmptyMessage) returns (stream GaugeResponse);
+  rpc GetGauge(GaugeRequest) returns (GaugeResponse);
 }

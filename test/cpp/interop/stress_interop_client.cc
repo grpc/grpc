@@ -94,7 +94,7 @@ StressTestInteropClient::StressTestInteropClient(
       sleep_duration_ms_(sleep_duration_ms),
       metrics_collection_interval_secs_(metrics_collection_interval_secs) {}
 
-void StressTestInteropClient::MainLoop(std::shared_ptr<Guage> rps_guage) {
+void StressTestInteropClient::MainLoop(std::shared_ptr<Gauge> qps_gauge) {
   gpr_log(GPR_INFO, "Running test %d. ServerAddr: %s", test_id_,
           server_address_.c_str());
 
@@ -120,7 +120,7 @@ void StressTestInteropClient::MainLoop(std::shared_ptr<Guage> rps_guage) {
     // See if its time to collect stats yet
     current_time = gpr_now(GPR_CLOCK_REALTIME);
     if (gpr_time_cmp(next_stat_collection_time, current_time) < 0) {
-      rps_guage->Set(num_calls_per_interval /
+      qps_gauge->Set(num_calls_per_interval /
                      metrics_collection_interval_secs_);
 
       num_calls_per_interval = 0;

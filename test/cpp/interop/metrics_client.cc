@@ -46,7 +46,7 @@ DEFINE_string(metrics_server_address, "",
               "The metrics server addresses in the fomrat <hostname>:<port>");
 
 using grpc::testing::EmptyMessage;
-using grpc::testing::GuageResponse;
+using grpc::testing::GaugeResponse;
 using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
 
@@ -60,19 +60,19 @@ void PrintMetrics(grpc::string& server_address) {
   grpc::ClientContext context;
   EmptyMessage message;
 
-  std::unique_ptr<grpc::ClientReader<GuageResponse>> reader(
-      stub->GetAllGuages(&context, message));
+  std::unique_ptr<grpc::ClientReader<GaugeResponse>> reader(
+      stub->GetAllGauges(&context, message));
 
-  GuageResponse guage_response;
-  long overall_rps = 0;
+  GaugeResponse gauge_response;
+  long overall_qps = 0;
   int idx = 0;
-  while (reader->Read(&guage_response)) {
-    gpr_log(GPR_INFO, "Guage: %d (%s: %ld)", ++idx,
-            guage_response.name().c_str(), guage_response.value());
-    overall_rps += guage_response.value();
+  while (reader->Read(&gauge_response)) {
+    gpr_log(GPR_INFO, "Gauge: %d (%s: %ld)", ++idx,
+            gauge_response.name().c_str(), gauge_response.value());
+    overall_qps += gauge_response.value();
   }
 
-  gpr_log(GPR_INFO, "OVERALL: %ld", overall_rps);
+  gpr_log(GPR_INFO, "OVERALL: %ld", overall_qps);
 
   const grpc::Status status = reader->Finish();
   if (!status.ok()) {

@@ -45,37 +45,37 @@ namespace testing {
 
 using std::vector;
 
-Guage::Guage(long initial_val) : val_(initial_val) {}
+Gauge::Gauge(long initial_val) : val_(initial_val) {}
 
-void Guage::Set(long new_val) {
+void Gauge::Set(long new_val) {
   val_.store(new_val, std::memory_order_relaxed);
 }
 
-long Guage::Get() { return val_.load(std::memory_order_relaxed); }
+long Gauge::Get() { return val_.load(std::memory_order_relaxed); }
 
-grpc::Status MetricsServiceImpl::GetAllGuages(
+grpc::Status MetricsServiceImpl::GetAllGauges(
     ServerContext* context, const EmptyMessage* request,
-    ServerWriter<GuageResponse>* writer) {
-  gpr_log(GPR_INFO, "GetAllGuages called");
+    ServerWriter<GaugeResponse>* writer) {
+  gpr_log(GPR_INFO, "GetAllGauges called");
 
   std::lock_guard<std::mutex> lock(mu_);
-  for (auto it = guages_.begin(); it != guages_.end(); it++) {
-    GuageResponse resp;
-    resp.set_name(it->first);           // Guage name
-    resp.set_value(it->second->Get());  // Guage value
+  for (auto it = gauges_.begin(); it != gauges_.end(); it++) {
+    GaugeResponse resp;
+    resp.set_name(it->first);           // Gauge name
+    resp.set_value(it->second->Get());  // Gauge value
     writer->Write(resp);
   }
 
   return Status::OK;
 }
 
-grpc::Status MetricsServiceImpl::GetGuage(ServerContext* context,
-                                          const GuageRequest* request,
-                                          GuageResponse* response) {
+grpc::Status MetricsServiceImpl::GetGauge(ServerContext* context,
+                                          const GaugeRequest* request,
+                                          GaugeResponse* response) {
   std::lock_guard<std::mutex> lock(mu_);
 
-  auto it = guages_.find(request->name());
-  if (it != guages_.end()) {
+  auto it = gauges_.find(request->name());
+  if (it != gauges_.end()) {
     response->set_name(it->first);
     response->set_value(it->second->Get());
   }
@@ -83,15 +83,15 @@ grpc::Status MetricsServiceImpl::GetGuage(ServerContext* context,
   return Status::OK;
 }
 
-std::shared_ptr<Guage> MetricsServiceImpl::CreateGuage(string name,
+std::shared_ptr<Gauge> MetricsServiceImpl::CreateGauge(string name,
                                                        bool& already_present) {
   std::lock_guard<std::mutex> lock(mu_);
 
-  std::shared_ptr<Guage> guage(new Guage(0));
-  auto p = guages_.emplace(name, guage);
+  std::shared_ptr<Gauge> gauge(new Gauge(0));
+  auto p = gauges_.emplace(name, gauge);
 
-  // p.first is an iterator pointing to <name, shared_ptr<Guage>> pair. p.second
-  // is a boolean indicating if the Guage is already present in the map
+  // p.first is an iterator pointing to <name, shared_ptr<Gauge>> pair. p.second
+  // is a boolean indicating if the Gauge is already present in the map
   already_present = !p.second;
   return p.first->second;
 }
