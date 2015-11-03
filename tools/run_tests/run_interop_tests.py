@@ -33,10 +33,10 @@
 import argparse
 import dockerjob
 import itertools
-import xml.etree.cElementTree as ET
 import jobset
 import multiprocessing
 import os
+import report_utils
 import subprocess
 import sys
 import tempfile
@@ -471,126 +471,6 @@ def build_interop_image_jobspec(language, tag=None):
   return build_job
 
 
-# TODO(adelez): Use mako template.
-def fill_one_test_result(shortname, resultset, html_str):
-  if shortname in resultset:
-    # Because interop tests does not have runs_per_test flag, each test is run
-    # once. So there should only be one element for each result.
-    result = resultset[shortname][0] 
-    if result.state == 'PASSED':
-      html_str = '%s<td bgcolor=\"green\">PASS</td>\n' % html_str
-    else:
-      tooltip = ''
-      if result.returncode > 0 or result.message:
-        if result.returncode > 0:
-          tooltip = 'returncode: %d ' % result.returncode
-        if result.message:
-          escaped_msg = result.message.replace('"', '&quot;')
-          tooltip = '%smessage: %s' % (tooltip, escaped_msg)     
-      if result.state == 'FAILED':
-        html_str = '%s<td bgcolor=\"red\">' % html_str
-        if tooltip:  
-          html_str = ('%s<a href=\"#\" data-toggle=\"tooltip\" '
-                      'data-placement=\"auto\" title=\"%s\">FAIL</a></td>\n' % 
-                      (html_str, tooltip))
-        else:
-          html_str = '%sFAIL</td>\n' % html_str
-      elif result.state == 'TIMEOUT':
-        html_str = '%s<td bgcolor=\"yellow\">' % html_str
-        if tooltip:
-          html_str = ('%s<a href=\"#\" data-toggle=\"tooltip\" '
-                      'data-placement=\"auto\" title=\"%s\">TIMEOUT</a></td>\n' 
-                      % (html_str, tooltip))
-        else:
-          html_str = '%sTIMEOUT</td>\n' % html_str
-  else:
-    html_str = '%s<td bgcolor=\"magenta\">Not implemented</td>\n' % html_str
-  
-  return html_str
-
-
-def render_html_report(client_langs, server_langs, resultset,
-                       num_failures):
-  """Generate html report."""
-  sorted_test_cases = sorted(_TEST_CASES)
-  sorted_auth_test_cases = sorted(_AUTH_TEST_CASES)
-  sorted_client_langs = sorted(client_langs)
-  sorted_server_langs = sorted(server_langs)
-  html_str = ('<!DOCTYPE html>\n'
-              '<html lang=\"en\">\n'
-              '<head><title>Interop Test Result</title></head>\n'
-              '<body>\n')
-  if num_failures > 1:
-    html_str = (
-        '%s<p><h2><font color=\"red\">%d tests failed!</font></h2></p>\n' % 
-        (html_str, num_failures))
-  elif num_failures:
-    html_str = (
-        '%s<p><h2><font color=\"red\">%d test failed!</font></h2></p>\n' % 
-        (html_str, num_failures))
-  else:
-    html_str = (
-        '%s<p><h2><font color=\"green\">All tests passed!</font></h2></p>\n' % 
-        html_str)
-  if args.cloud_to_prod_auth or args.cloud_to_prod:
-    # Each column header is the client language.
-    html_str = ('%s<h2>Cloud to Prod</h2>\n' 
-                '<table style=\"width:100%%\" border=\"1\">\n'
-                '<tr bgcolor=\"#00BFFF\">\n'
-                '<th>Client languages &#9658;</th>\n') % html_str
-    for client_lang in sorted_client_langs:
-      html_str = '%s<th>%s\n' % (html_str, client_lang)
-    html_str = '%s</tr>\n' % html_str
-    for test_case in sorted_test_cases + sorted_auth_test_cases:
-      html_str = '%s<tr><td><b>%s</b></td>\n' % (html_str, test_case)
-      for client_lang in sorted_client_langs:
-        if not test_case in sorted_auth_test_cases:
-          shortname = 'cloud_to_prod:%s:%s' % (client_lang, test_case)
-        else:
-          shortname = 'cloud_to_prod_auth:%s:%s' % (client_lang, test_case)
-        html_str = fill_one_test_result(shortname, resultset, html_str)
-      html_str = '%s</tr>\n' % html_str 
-    html_str = '%s</table>\n' % html_str
-  if servers:
-    for test_case in sorted_test_cases:
-      # Each column header is the client language.
-      html_str = ('%s<h2>%s</h2>\n' 
-                  '<table style=\"width:100%%\" border=\"1\">\n'
-                  '<tr bgcolor=\"#00BFFF\">\n'
-                  '<th>Client languages &#9658;<br/>'
-                  'Server languages &#9660;</th>\n') % (html_str, test_case)
-      for client_lang in sorted_client_langs:
-        html_str = '%s<th>%s\n' % (html_str, client_lang)
-      html_str = '%s</tr>\n' % html_str
-      # Each row head is the server language.
-      for server_lang in sorted_server_langs:
-        html_str = '%s<tr><td><b>%s</b></td>\n' % (html_str, server_lang)
-        # Fill up the cells with test result.
-        for client_lang in sorted_client_langs:
-          shortname = 'cloud_to_cloud:%s:%s_server:%s' % (
-              client_lang, server_lang, test_case)
-          html_str = fill_one_test_result(shortname, resultset, html_str)
-        html_str = '%s</tr>\n' % html_str
-      html_str = '%s</table>\n' % html_str
-
-  html_str = ('%s\n'
-              '<script>\n'
-              '$(document).ready(function(){'
-              '$(\'[data-toggle=\"tooltip\"]\').tooltip();\n'   
-              '});\n'
-              '</script>\n'
-              '</body>\n'
-              '</html>') % html_str  
-  
-  # Write to reports/index.html as set up in Jenkins plugin.
-  html_report_dir = 'reports'
-  if not os.path.exists(html_report_dir):
-    os.mkdir(html_report_dir)
-  html_file_path = os.path.join(html_report_dir, 'index.html')
-  with open(html_file_path, 'w') as f:
-    f.write(html_str)
-
-
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-l', '--language',
                   choices=['all'] + sorted(_LANGUAGES),
@@ -740,22 +620,18 @@ try:
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
 
-  root = ET.Element('testsuites')
-  testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests')
-
   num_failures, resultset = jobset.run(jobs, newline_on_success=True, 
-                                       maxjobs=args.jobs, xml_report=testsuite)
+                                       maxjobs=args.jobs)
   if num_failures:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
   else:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
-  tree = ET.ElementTree(root)
-  tree.write('report.xml', encoding='UTF-8')
+  report_utils.render_xml_report(resultset, 'report.xml')
   
-  # Generate HTML report.
-  render_html_report(set([str(l) for l in languages]), servers,
-                     resultset, num_failures)
+  report_utils.render_html_report(
+      set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES, 
+      resultset, num_failures, args.cloud_to_prod_auth or args.cloud_to_prod)
 
 finally:
   # Check if servers are still running.
