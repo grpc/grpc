@@ -77,6 +77,7 @@ END2END_TESTS = {
     'cancel_after_invoke': default_test_options,
     'cancel_before_invoke': default_test_options,
     'cancel_in_a_vacuum': default_test_options,
+    'cancel_with_status': default_test_options,
     'census_simple_request': default_test_options,
     'channel_connectivity': connectivity_test_options._replace(proxyable=False),
     'compressed_payload': default_test_options._replace(proxyable=False),
