@@ -43,16 +43,16 @@
 
 /*
  * This implements a Metrics server defined in test/proto/metrics.proto. Any
- * test service can use this to export Metrics (TODO (sreek): Only Guages for
+ * test service can use this to export Metrics (TODO (sreek): Only Gauges for
  * now).
  *
  * Example:
  *    MetricsServiceImpl metricsImpl;
  *    ..
- *    // Create Guage(s). Note: Guages can be created even after calling
+ *    // Create Gauge(s). Note: Gauges can be created even after calling
  *    // 'StartServer'.
- *    Guage guage1 = metricsImpl.CreateGuage("foo",is_present);
- *    // guage1 can now be used anywhere in the program to set values.
+ *    Gauge gauge1 = metricsImpl.CreateGauge("foo",is_present);
+ *    // gauge1 can now be used anywhere in the program to set values.
  *    ...
  *    // Create the metrics server
  *    std::unique_ptr<grpc::Server> server = metricsImpl.StartServer(port);
@@ -64,9 +64,9 @@ namespace testing {
 using std::map;
 using std::vector;
 
-class Guage {
+class Gauge {
  public:
-  Guage(long initial_val);
+  Gauge(long initial_val);
   void Set(long new_val);
   long Get();
 
@@ -76,22 +76,22 @@ class Guage {
 
 class MetricsServiceImpl GRPC_FINAL : public MetricsService::Service {
  public:
-  grpc::Status GetAllGuages(ServerContext* context, const EmptyMessage* request,
-                            ServerWriter<GuageResponse>* writer) GRPC_OVERRIDE;
+  grpc::Status GetAllGauges(ServerContext* context, const EmptyMessage* request,
+                            ServerWriter<GaugeResponse>* writer) GRPC_OVERRIDE;
 
-  grpc::Status GetGuage(ServerContext* context, const GuageRequest* request,
-                        GuageResponse* response) GRPC_OVERRIDE;
+  grpc::Status GetGauge(ServerContext* context, const GaugeRequest* request,
+                        GaugeResponse* response) GRPC_OVERRIDE;
 
-  // Create a Guage with name 'name'. is_present is set to true if the Guage
+  // Create a Gauge with name 'name'. is_present is set to true if the Gauge
   // is already present in the map.
-  // NOTE: CreateGuage can be called anytime (i.e before or after calling
+  // NOTE: CreateGauge can be called anytime (i.e before or after calling
   // StartServer).
-  std::shared_ptr<Guage> CreateGuage(string name, bool& is_present);
+  std::shared_ptr<Gauge> CreateGauge(string name, bool& is_present);
 
   std::unique_ptr<grpc::Server> StartServer(int port);
 
  private:
-  std::map<string, std::shared_ptr<Guage>> guages_;
+  std::map<string, std::shared_ptr<Gauge>> gauges_;
   std::mutex mu_;
 };
 

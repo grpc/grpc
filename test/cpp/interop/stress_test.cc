@@ -236,12 +236,12 @@ int main(int argc, char** argv) {
           FLAGS_sleep_duration_ms, FLAGS_metrics_collection_interval_secs);
 
       bool is_already_created;
-      grpc::string metricName = "/stress_test/rps/thread/" + std::to_string(i);
+      grpc::string metricName = "/stress_test/qps/thread/" + std::to_string(i);
       test_threads.emplace_back(
           thread(&StressTestInteropClient::MainLoop, client,
-                 metrics_service.CreateGuage(metricName, is_already_created)));
+                 metrics_service.CreateGauge(metricName, is_already_created)));
 
-      // The Guage should not have been already created
+      // The Gauge should not have been already created
       GPR_ASSERT(!is_already_created);
     }
   }

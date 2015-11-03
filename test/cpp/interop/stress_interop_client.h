@@ -91,8 +91,8 @@ class StressTestInteropClient {
                           long metrics_collection_interval_secs);
 
   // The main funciton. Use this as the thread entry point.
-  // rps_guage is the Guage to record the request per second metric
-  void MainLoop(std::shared_ptr<Guage> rps_guage);
+  // qps_gauge is the Gauge to record the requests per second metric
+  void MainLoop(std::shared_ptr<Gauge> qps_gauge);
 
  private:
   void RunTest(TestCaseType test_case);
