@@ -91,8 +91,7 @@ message ClientConfig {
   // only for async client:
   int32 async_client_threads = 7;
   RpcType rpc_type = 8;
-  string host = 9;
-  LoadParams load_params = 11;
+  LoadParams load_params = 10;
 }
 
 message ClientStatus {
@@ -113,10 +112,12 @@ message ClientArgs {
 
 message ServerConfig {
   ServerType server_type = 1;
-  int32 threads = 2;
-  bool use_tls = 3;
-  string host = 4;
-  int32 port = 5;
+  bool use_tls = 2;
+  int32 port = 4;
+  // only for async server
+  int32 async_server_threads = 7;
+  // restrict core usage
+  int32 core_limit = 8;
 }
 
 message ServerArgs {
@@ -129,4 +130,5 @@ message ServerArgs {
 message ServerStatus {
   ServerStats stats = 1;
   int32 port = 2;
+  int32 cores = 3;
 }

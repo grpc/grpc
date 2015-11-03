@@ -58,12 +58,12 @@ static void RunAsyncUnaryPingPong() {
   client_config.set_payload_size(1);
   client_config.set_async_client_threads(1);
   client_config.set_rpc_type(UNARY);
-  client_config.mutable_load_params()->mutable_closed();
+  client_config.mutable_load_params()->mutable_closed_loop();
 
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);
   server_config.set_use_tls(false);
-  server_config.set_threads(1);
+  server_config.set_async_server_threads(1);
 
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);

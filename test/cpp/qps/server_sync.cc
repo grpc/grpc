@@ -45,7 +45,7 @@
 
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/timer.h"
-#include "test/proto/perf_tests/perf_services.grpc.pb.h"
+#include "test/proto/benchmarks/services.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

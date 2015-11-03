@@ -54,15 +54,15 @@ DEFINE_bool(use_tls, false, "Use TLS");
 DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
 
 // Server config
-DEFINE_int32(server_threads, 1, "Number of server threads");
-DEFINE_string(server_type, "SYNCHRONOUS_SERVER", "Server type");
+DEFINE_int32(async_server_threads, 1, "Number of threads for async servers");
+DEFINE_string(server_type, "SYNC_SERVER", "Server type");
 
 // Client config
 DEFINE_int32(outstanding_rpcs_per_channel, 1,
              "Number of outstanding rpcs per channel");
 DEFINE_int32(client_channels, 1, "Number of client channels");
 DEFINE_int32(payload_size, 1, "Payload size");
-DEFINE_string(client_type, "SYNCHRONOUS_CLIENT", "Client type");
+DEFINE_string(client_type, "SYNC_CLIENT", "Client type");
 DEFINE_int32(async_client_threads, 1, "Async client threads");
 
 DEFINE_double(poisson_load, -1.0, "Poisson offered load (qps)");
@@ -117,23 +117,14 @@ static void QpsDriver() {
     pareto->set_interarrival_base(FLAGS_pareto_base / 1e6);
     pareto->set_alpha(FLAGS_pareto_alpha);
   } else {
-    client_config.mutable_load_params()->mutable_closed();
+    client_config.mutable_load_params()->mutable_closed_loop();
     // No further load parameters to set up for closed loop
   }
 
   ServerConfig server_config;
   server_config.set_server_type(server_type);
-  server_config.set_threads(FLAGS_server_threads);
   server_config.set_use_tls(FLAGS_use_tls);
-
-  // If we're running a sync-server streaming test, make sure
-  // that we have at least as many threads as the active streams
-  // or else threads will be blocked from forward progress and the
-  // client will deadlock on a timer.
-  GPR_ASSERT(!(server_type == grpc::testing::SYNCHRONOUS_SERVER &&
-               rpc_type == grpc::testing::STREAMING &&
-               FLAGS_server_threads <
-                   FLAGS_client_channels * FLAGS_outstanding_rpcs_per_channel));
+  server_config.set_async_server_threads(FLAGS_async_server_threads);
 
   const auto result = RunScenario(
       client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,

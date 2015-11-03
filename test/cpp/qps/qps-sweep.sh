@@ -39,9 +39,9 @@ bins=`find . .. ../.. ../../.. -name bins | head -1`
 
 for channels in 1 2 4 8
 do
-  for client in SYNCHRONOUS_CLIENT ASYNC_CLIENT
+  for client in SYNC_CLIENT ASYNC_CLIENT
   do
-    for server in SYNCHRONOUS_SERVER ASYNC_SERVER
+    for server in SYNC_SERVER ASYNC_SERVER
     do
       for rpc in UNARY STREAMING
       do
