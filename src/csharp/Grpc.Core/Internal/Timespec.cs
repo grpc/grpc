@@ -239,6 +239,19 @@ namespace Grpc.Core.Internal
             }
         }
 
+        /// <summary>
+        /// Gets current timestamp using <c>GPRClockType.Precise</c>.
+        /// Only available internally because core needs to be compiled with 
+        /// GRPC_TIMERS_RDTSC support for this to use RDTSC.
+        /// </summary>
+        internal static Timespec PreciseNow
+        {
+            get
+            {
+                return gprsharp_now(GPRClockType.Precise);
+            }
+        }
+
         internal static int NativeSize
         {
             get
