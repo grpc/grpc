@@ -57,7 +57,7 @@
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
-#include "test/proto/perf_tests/perf_services.grpc.pb.h"
+#include "test/proto/benchmarks/services.grpc.pb.h"
 
 #include "src/core/profiling/timers.h"
 

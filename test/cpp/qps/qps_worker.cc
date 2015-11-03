@@ -55,14 +55,14 @@
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"
-#include "test/proto/perf_tests/perf_services.pb.h"
+#include "test/proto/benchmarks/services.pb.h"
 
 namespace grpc {
 namespace testing {
 
-std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
+static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   switch (config.client_type()) {
-    case ClientType::SYNCHRONOUS_CLIENT:
+    case ClientType::SYNC_CLIENT:
       return (config.rpc_type() == RpcType::UNARY)
                  ? CreateSynchronousUnaryClient(config)
                  : CreateSynchronousStreamingClient(config);
@@ -76,9 +76,15 @@ std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   abort();
 }
 
-std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
+static void LimitCores(int cores) {
+}
+
+static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
+  if (config.core_limit() > 0) {
+    LimitCores(config.core_limit());
+  }
   switch (config.server_type()) {
-    case ServerType::SYNCHRONOUS_SERVER:
+    case ServerType::SYNC_SERVER:
       return CreateSynchronousServer(config);
     case ServerType::ASYNC_SERVER:
       return CreateAsyncServer(config);
@@ -195,6 +201,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
     }
     ServerStatus status;
     status.set_port(server->Port());
+    status.set_cores(server->Cores());
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "");
     }

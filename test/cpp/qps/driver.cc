@@ -48,7 +48,7 @@
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
-#include "test/proto/perf_tests/perf_services.grpc.pb.h"
+#include "test/proto/benchmarks/services.grpc.pb.h"
 
 using std::list;
 using std::thread;
@@ -165,7 +165,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
         WorkerService::NewStub(CreateChannel(workers[i], InsecureCredentials()));
     ServerArgs args;
     result_server_config = server_config;
-    result_server_config.set_host(workers[i]);
     *args.mutable_setup() = server_config;
     servers[i].stream =
         servers[i].stub->RunServer(runsc::AllocContext(&contexts, deadline));
@@ -193,7 +192,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
         CreateChannel(workers[i + num_servers], InsecureCredentials()));
     ClientArgs args;
     result_client_config = client_config;
-    result_client_config.set_host(workers[i + num_servers]);
     *args.mutable_setup() = client_config;
     clients[i].stream =
         clients[i].stub->RunClient(runsc::AllocContext(&contexts, deadline));
@@ -250,15 +248,18 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Read(&server_status));
     const auto& stats = server_status.stats();
-    result->server_resources.emplace_back(
-        stats.time_elapsed(), stats.time_user(), stats.time_system());
+    result->server_resources.emplace_back(stats.time_elapsed(),
+					  stats.time_user(),
+					  stats.time_system(),
+					  server_status.cores());
   }
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
     const auto& stats = client_status.stats();
     result->latencies.MergeProto(stats.latencies());
-    result->client_resources.emplace_back(
-        stats.time_elapsed(), stats.time_user(), stats.time_system());
+    result->client_resources.emplace_back(stats.time_elapsed(),
+					  stats.time_user(),
+					  stats.time_system(), -1);
   }
 
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {

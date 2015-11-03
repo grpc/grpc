@@ -50,7 +50,7 @@
 #include <gtest/gtest.h>
 
 #include "test/cpp/qps/server.h"
-#include "test/proto/perf_tests/perf_services.grpc.pb.h"
+#include "test/proto/benchmarks/services.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -67,15 +67,15 @@ class AsyncQpsServerTest : public Server {
     gpr_free(server_address);
 
     builder.RegisterAsyncService(&async_service_);
-    for (int i = 0; i < config.threads(); i++) {
+    for (int i = 0; i < config.async_server_threads(); i++) {
       srv_cqs_.emplace_back(builder.AddCompletionQueue());
     }
 
     server_ = builder.BuildAndStart();
 
     using namespace std::placeholders;
-    for (int i = 0; i < 10000 / config.threads(); i++) {
-      for (int j = 0; j < config.threads(); j++) {
+    for (int i = 0; i < 10000 / config.async_server_threads(); i++) {
+      for (int j = 0; j < config.async_server_threads(); j++) {
         auto request_unary = std::bind(
             &BenchmarkService::AsyncService::RequestUnaryCall, &async_service_, _1,
             _2, _3, srv_cqs_[j].get(), srv_cqs_[j].get(), _4);
@@ -90,10 +90,10 @@ class AsyncQpsServerTest : public Server {
                 request_streaming, ProcessRPC));
       }
     }
-    for (int i = 0; i < config.threads(); i++) {
+    for (int i = 0; i < config.async_server_threads(); i++) {
       shutdown_state_.emplace_back(new PerThreadShutdownState());
     }
-    for (int i = 0; i < config.threads(); i++) {
+    for (int i = 0; i < config.async_server_threads(); i++) {
       threads_.emplace_back(&AsyncQpsServerTest::ThreadFunc, this, i);
     }
   }

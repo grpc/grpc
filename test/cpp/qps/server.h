@@ -34,10 +34,12 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
+#include <grpc/support/cpu.h>
+
 #include "test/core/util/port.h"
 #include "test/cpp/qps/timer.h"
 #include "test/proto/messages.grpc.pb.h"
-#include "test/proto/perf_tests/perf_control.grpc.pb.h"
+#include "test/proto/benchmarks/control.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -83,6 +85,7 @@ class Server {
   }
 
   int Port() const {return port_;}
+  int Cores() const {return gpr_cpu_num_cores();}
  private:
   int port_;
   std::unique_ptr<Timer> timer_;

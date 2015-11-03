@@ -41,7 +41,7 @@
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/util/create_test_channel.h"
-#include "test/proto/perf_tests/perf_services.grpc.pb.h"
+#include "test/proto/benchmarks/services.grpc.pb.h"
 
 namespace grpc {
 
@@ -171,7 +171,7 @@ class Client {
     } else if (load.has_pareto()) {
       random_dist.reset(new ParetoDist(load.pareto().interarrival_base() * num_threads,
 				       load.pareto().alpha()));
-    } else if (load.has_closed()) {
+    } else if (load.has_closed_loop()) {
       // Closed-loop doesn't use random dist at all
     } else { // invalid load type
       GPR_ASSERT(false);
