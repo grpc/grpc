@@ -901,8 +901,8 @@ static int parse_lithdr_nvridx_v(grpc_chttp2_hpack_parser *p,
 static int finish_max_tbl_size(grpc_chttp2_hpack_parser *p,
                                const gpr_uint8 *cur, const gpr_uint8 *end) {
   gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
-  abort(); /* not implemented */
-  return parse_begin(p, cur, end);
+  /* not implemented */
+  return 0;
 }
 
 /* parse a max table size change, max size < 15 */
