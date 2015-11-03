@@ -1851,6 +1851,11 @@
   endif
   % endif
   % endif
+  % for src in tgt.src:
+  % if not proto_re.match(src) and any(proto_re.match(src2) for src2 in tgt.src):
+  $(OBJDIR)/$(CONFIG)/${os.path.splitext(src)[0]}.o: ${' '.join(proto_to_cc(src2) for src2 in tgt.src if proto_re.match(src2))}
+  % endif
+  % endfor
   </%def>
 
   ifneq ($(OPENSSL_DEP),)
