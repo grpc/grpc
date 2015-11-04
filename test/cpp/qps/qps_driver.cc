@@ -108,10 +108,8 @@ static void QpsDriver() {
       params->set_req_size(FLAGS_simple_req_size);
     }
   } else {
-    // choose a reasonable default
-    auto params =
-        client_config.mutable_payload_config()->mutable_simple_params();
-    params->set_resp_size(1);
+    // set a reasonable default: proto but no payload
+    client_config.mutable_payload_config()->mutable_simple_params();
   }
 
   client_config.set_async_client_threads(FLAGS_async_client_threads);
