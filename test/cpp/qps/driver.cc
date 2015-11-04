@@ -161,8 +161,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
-    servers[i].stub =
-        WorkerService::NewStub(CreateChannel(workers[i], InsecureCredentials()));
+    servers[i].stub = WorkerService::NewStub(
+        CreateChannel(workers[i], InsecureCredentials()));
     ServerArgs args;
     result_server_config = server_config;
     *args.mutable_setup() = server_config;
@@ -248,18 +248,16 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Read(&server_status));
     const auto& stats = server_status.stats();
-    result->server_resources.emplace_back(stats.time_elapsed(),
-					  stats.time_user(),
-					  stats.time_system(),
-					  server_status.cores());
+    result->server_resources.emplace_back(
+        stats.time_elapsed(), stats.time_user(), stats.time_system(),
+        server_status.cores());
   }
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
     const auto& stats = client_status.stats();
     result->latencies.MergeProto(stats.latencies());
-    result->client_resources.emplace_back(stats.time_elapsed(),
-					  stats.time_user(),
-					  stats.time_system(), -1);
+    result->client_resources.emplace_back(
+        stats.time_elapsed(), stats.time_user(), stats.time_system(), -1);
   }
 
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {

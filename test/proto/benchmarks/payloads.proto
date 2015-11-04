@@ -42,8 +42,8 @@ message SimpleProtoParams {
 }
 
 message ComplexProtoParams {
-// TODO (vpai): Fill this in once the details of complex, representative
-//              protos are decided
+  // TODO (vpai): Fill this in once the details of complex, representative
+  //              protos are decided
 }
 
 message PayloadConfig {
@@ -53,4 +53,3 @@ message PayloadConfig {
     ComplexProtoParams complex_params = 3;
   }
 }
-
