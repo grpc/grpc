@@ -34,6 +34,7 @@
 using System;
 using System.Runtime.InteropServices;
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 using NUnit.Framework;
 
 namespace Grpc.Core.Internal.Tests
@@ -197,6 +198,24 @@ namespace Grpc.Core.Internal.Tests
             {
                 Console.WriteLine("Test cannot be run on this platform, skipping the test.");
             }
+        }
+            
+        // Test attribute commented out to prevent running as part of the default test suite.
+        // [Test]
+        // [Category("Performance")]
+        public void NowBenchmark() 
+        {
+            // approx Timespec.Now latency <33ns
+            BenchmarkUtil.RunBenchmark(10000000, 1000000000, () => { var now = Timespec.Now; });
+        }
+
+        // Test attribute commented out to prevent running as part of the default test suite.
+        // [Test]
+        // [Category("Performance")]
+        public void PreciseNowBenchmark()
+        {
+            // approx Timespec.PreciseNow latency <18ns (when compiled with GRPC_TIMERS_RDTSC)
+            BenchmarkUtil.RunBenchmark(10000000, 1000000000, () => { var now = Timespec.PreciseNow; });
         }
     }
 }
