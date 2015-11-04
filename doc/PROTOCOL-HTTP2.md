@@ -10,17 +10,17 @@ Production rules are using <a href="http://tools.ietf.org/html/rfc5234">ABNF syn
 
 The following is the general sequence of message atoms in a GRPC request & response message stream
 
-* Request → Request-Headers *Delimited-Message EOS
-* Response → (Response-Headers *Delimited-Message Trailers) / Trailers-Only
+* Request → Request-Headers \*Delimited-Message EOS
+* Response → (Response-Headers \*Delimited-Message Trailers) / Trailers-Only
 
 
 ### Requests
 
-* Request → Request-Headers *Delimited-Message EOS
+* Request → Request-Headers \*Delimited-Message EOS
 
 Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
-* **Request-Headers** → Call-Definition *Custom-Metadata
+* **Request-Headers** → Call-Definition \*Custom-Metadata
 * **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] [Content-Type] [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
 * **Method** →  “:method POST”
 * **Scheme** → “:scheme ”  (“http” / “https”)
@@ -39,13 +39,13 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Content-Type** → “content-type” “application/grpc” [(“+proto” / “+json” / {_custom_})]
 * **Content-Coding** → “gzip” / “deflate” / “snappy” / {_custom_}
 * **Message-Encoding** → “grpc-encoding” Content-Coding
-* **Message-Accept-Encoding** → “grpc-accept-encoding” Content-Coding *("," Content-Coding)
+* **Message-Accept-Encoding** → “grpc-accept-encoding” Content-Coding \*("," Content-Coding)
 * **User-Agent** → “user-agent” {_structured user-agent string_}
 * **Message-Type** → “grpc-message-type” {_type name for message schema_}
 * **Custom-Metadata** → Binary-Header / ASCII-Header
 * **Binary-Header** → {Header-Name “-bin” } {_base64 encoded value_}
 * **ASCII-Header** → Header-Name {_value_}
-* **Header-Name** → 1*( %x30-39 / %x61-7A / “_” / “-”) ; 0-9 a-z 
+* **Header-Name** → 1\*( %x30-39 / %x61-7A / “\_” / “-”) ; 0-9 a-z
 
 
 HTTP2 requires that reserved headers, ones starting with “:” appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
@@ -61,7 +61,7 @@ The repeated sequence of **Delimited-Message** items is delivered in DATA frames
 * **Delimited-Message** → Compressed-Flag Message-Length Message
 * **Compressed-Flag** → 0 / 1   # encoded as 1 byte unsigned integer
 * **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer
-* **Message** → *{binary octet}
+* **Message** → \*{binary octet}
 
 A **Compressed-Flag** value of 1 indicates that the binary octet sequence of **Message** is compressed using the mechanism declared by the **Message-Encoding** header. A value of 0 indicates that no encoding of **Message** bytes has occurred. Compression contexts are NOT maintained over message boundaries, implementations must create a new context for each message in the stream. If the **Message-Encoding** header is omitted then the **Compressed-Flag** must be 0.
 
@@ -69,10 +69,10 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 
 ###Responses
 
-* **Response** → (Response-Headers *Delimited-Message Trailers) / Trailers-Only
-* **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type *Custom-Metadata
+* **Response** → (Response-Headers \*Delimited-Message Trailers) / Trailers-Only
+* **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type \*Custom-Metadata
 * **Trailers-Only** → HTTP-Status Content-Type Trailers
-* **Trailers** → Status [Status-Message] *Custom-Metadata
+* **Trailers** → Status [Status-Message] \*Custom-Metadata
 * **HTTP-Status** → “:status 200”
 * **Status** → “grpc-status” <status-code-as-ASCII-string>
 * **Status-Message** → “grpc-message” <descriptive text for status as ASCII string>
