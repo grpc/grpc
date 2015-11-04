@@ -258,6 +258,12 @@
     <ClInclude Include="..\..\..\src\core\channel\noop_filter.h" />
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\load_balancer.pb.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_common.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_decode.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_encode.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h" />
@@ -389,6 +395,16 @@
     <ClCompile Include="..\..\..\src\core\client_config\client_config.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\load_balancer.pb.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_common.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_decode.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_encode.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
     </ClCompile>
