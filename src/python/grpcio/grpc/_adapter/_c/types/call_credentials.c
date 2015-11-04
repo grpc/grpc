@@ -39,31 +39,28 @@
 #include <grpc/grpc_security.h>
 
 
-PyMethodDef pygrpc_ClientCredentials_methods[] = {
-    {"google_default", (PyCFunction)pygrpc_ClientCredentials_google_default,
+PyMethodDef pygrpc_CallCredentials_methods[] = {
+    {"composite", (PyCFunction)pygrpc_CallCredentials_composite,
+     METH_CLASS|METH_KEYWORDS, ""},
+    {"compute_engine", (PyCFunction)pygrpc_CallCredentials_compute_engine,
      METH_CLASS|METH_NOARGS, ""},
-    {"ssl", (PyCFunction)pygrpc_ClientCredentials_ssl,
+    {"jwt", (PyCFunction)pygrpc_CallCredentials_jwt,
      METH_CLASS|METH_KEYWORDS, ""},
-    {"composite", (PyCFunction)pygrpc_ClientCredentials_composite,
+    {"refresh_token", (PyCFunction)pygrpc_CallCredentials_refresh_token,
      METH_CLASS|METH_KEYWORDS, ""},
-    {"compute_engine", (PyCFunction)pygrpc_ClientCredentials_compute_engine,
-     METH_CLASS|METH_NOARGS, ""},
-    {"jwt", (PyCFunction)pygrpc_ClientCredentials_jwt,
-     METH_CLASS|METH_KEYWORDS, ""},
-    {"refresh_token", (PyCFunction)pygrpc_ClientCredentials_refresh_token,
-     METH_CLASS|METH_KEYWORDS, ""},
-    {"iam", (PyCFunction)pygrpc_ClientCredentials_iam,
+    {"iam", (PyCFunction)pygrpc_CallCredentials_iam,
      METH_CLASS|METH_KEYWORDS, ""},
     {NULL}
 };
-const char pygrpc_ClientCredentials_doc[] = "";
-PyTypeObject pygrpc_ClientCredentials_type = {
+
+const char pygrpc_CallCredentials_doc[] = "";
+PyTypeObject pygrpc_CallCredentials_type = {
     PyObject_HEAD_INIT(NULL)
     0,                                        /* ob_size */
-    "ClientCredentials",                      /* tp_name */
-    sizeof(ClientCredentials),                /* tp_basicsize */
+    "CallCredentials",                        /* tp_name */
+    sizeof(CallCredentials),                  /* tp_basicsize */
     0,                                        /* tp_itemsize */
-    (destructor)pygrpc_ClientCredentials_dealloc, /* tp_dealloc */
+    (destructor)pygrpc_CallCredentials_dealloc, /* tp_dealloc */
     0,                                        /* tp_print */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
@@ -79,14 +76,14 @@ PyTypeObject pygrpc_ClientCredentials_type = {
     0,                                        /* tp_setattro */
     0,                                        /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    pygrpc_ClientCredentials_doc,             /* tp_doc */
+    pygrpc_CallCredentials_doc,             /* tp_doc */
     0,                                        /* tp_traverse */
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
     0,                                        /* tp_iter */
     0,                                        /* tp_iternext */
-    pygrpc_ClientCredentials_methods,         /* tp_methods */
+    pygrpc_CallCredentials_methods,         /* tp_methods */
     0,                                        /* tp_members */
     0,                                        /* tp_getset */
     0,                                        /* tp_base */
@@ -99,67 +96,26 @@ PyTypeObject pygrpc_ClientCredentials_type = {
     0                                         /* tp_new */
 };
 
-void pygrpc_ClientCredentials_dealloc(ClientCredentials *self) {
-  grpc_credentials_release(self->c_creds);
+void pygrpc_CallCredentials_dealloc(CallCredentials *self) {
+  grpc_call_credentials_release(self->c_creds);
   self->ob_type->tp_free((PyObject *)self);
 }
 
-ClientCredentials *pygrpc_ClientCredentials_google_default(
-    PyTypeObject *type, PyObject *ignored) {
-  ClientCredentials *self = (ClientCredentials *)type->tp_alloc(type, 0);
-  self->c_creds = grpc_google_default_credentials_create();
-  if (!self->c_creds) {
-    Py_DECREF(self);
-    PyErr_SetString(PyExc_RuntimeError,
-                    "couldn't create Google default credentials");
-    return NULL;
-  }
-  return self;
-}
-
-ClientCredentials *pygrpc_ClientCredentials_ssl(
+CallCredentials *pygrpc_CallCredentials_composite(
     PyTypeObject *type, PyObject *args, PyObject *kwargs) {
-  ClientCredentials *self;
-  const char *root_certs;
-  const char *private_key = NULL;
-  const char *cert_chain = NULL;
-  grpc_ssl_pem_key_cert_pair key_cert_pair;
-  static char *keywords[] = {"root_certs", "private_key", "cert_chain", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "z|zz:ssl", keywords,
-        &root_certs, &private_key, &cert_chain)) {
-    return NULL;
-  }
-  self = (ClientCredentials *)type->tp_alloc(type, 0);
-  if (private_key && cert_chain) {
-    key_cert_pair.private_key = private_key;
-    key_cert_pair.cert_chain = cert_chain;
-    self->c_creds =
-        grpc_ssl_credentials_create(root_certs, &key_cert_pair, NULL);
-  } else {
-    self->c_creds = grpc_ssl_credentials_create(root_certs, NULL, NULL);
-  }
-  if (!self->c_creds) {
-    Py_DECREF(self);
-    PyErr_SetString(PyExc_RuntimeError, "couldn't create ssl credentials");
-    return NULL;
-  }
-  return self;
-}
-
-ClientCredentials *pygrpc_ClientCredentials_composite(
-    PyTypeObject *type, PyObject *args, PyObject *kwargs) {
-  ClientCredentials *self;
-  ClientCredentials *creds1;
-  ClientCredentials *creds2;
+  CallCredentials *self;
+  CallCredentials *creds1;
+  CallCredentials *creds2;
   static char *keywords[] = {"creds1", "creds2", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!:composite", keywords,
-        &pygrpc_ClientCredentials_type, &creds1,
-        &pygrpc_ClientCredentials_type, &creds2)) {
+        &pygrpc_CallCredentials_type, &creds1,
+        &pygrpc_CallCredentials_type, &creds2)) {
     return NULL;
   }
-  self = (ClientCredentials *)type->tp_alloc(type, 0);
+  self = (CallCredentials *)type->tp_alloc(type, 0);
   self->c_creds =
-      grpc_composite_credentials_create(creds1->c_creds, creds2->c_creds, NULL);
+      grpc_composite_call_credentials_create(
+          creds1->c_creds, creds2->c_creds, NULL);
   if (!self->c_creds) {
     Py_DECREF(self);
     PyErr_SetString(PyExc_RuntimeError, "couldn't create composite credentials");
@@ -168,9 +124,9 @@ ClientCredentials *pygrpc_ClientCredentials_composite(
   return self;
 }
 
-ClientCredentials *pygrpc_ClientCredentials_compute_engine(
+CallCredentials *pygrpc_CallCredentials_compute_engine(
     PyTypeObject *type, PyObject *ignored) {
-  ClientCredentials *self = (ClientCredentials *)type->tp_alloc(type, 0);
+  CallCredentials *self = (CallCredentials *)type->tp_alloc(type, 0);
   self->c_creds = grpc_google_compute_engine_credentials_create(NULL);
   if (!self->c_creds) {
     Py_DECREF(self);
@@ -182,9 +138,9 @@ ClientCredentials *pygrpc_ClientCredentials_compute_engine(
 }
 
 /* TODO: Rename this credentials to something like service_account_jwt_access */
-ClientCredentials *pygrpc_ClientCredentials_jwt(
+CallCredentials *pygrpc_CallCredentials_jwt(
     PyTypeObject *type, PyObject *args, PyObject *kwargs) {
-  ClientCredentials *self;
+  CallCredentials *self;
   const char *json_key;
   double lifetime;
   static char *keywords[] = {"json_key", "token_lifetime", NULL};
@@ -192,7 +148,7 @@ ClientCredentials *pygrpc_ClientCredentials_jwt(
         &json_key, &lifetime)) {
     return NULL;
   }
-  self = (ClientCredentials *)type->tp_alloc(type, 0);
+  self = (CallCredentials *)type->tp_alloc(type, 0);
   self->c_creds = grpc_service_account_jwt_access_credentials_create(
       json_key, pygrpc_cast_double_to_gpr_timespec(lifetime), NULL);
   if (!self->c_creds) {
@@ -203,16 +159,16 @@ ClientCredentials *pygrpc_ClientCredentials_jwt(
   return self;
 }
 
-ClientCredentials *pygrpc_ClientCredentials_refresh_token(
+CallCredentials *pygrpc_CallCredentials_refresh_token(
     PyTypeObject *type, PyObject *args, PyObject *kwargs) {
-  ClientCredentials *self;
+  CallCredentials *self;
   const char *json_refresh_token;
   static char *keywords[] = {"json_refresh_token", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s:refresh_token", keywords,
         &json_refresh_token)) {
     return NULL;
   }
-  self = (ClientCredentials *)type->tp_alloc(type, 0);
+  self = (CallCredentials *)type->tp_alloc(type, 0);
   self->c_creds =
       grpc_google_refresh_token_credentials_create(json_refresh_token, NULL);
   if (!self->c_creds) {
@@ -224,9 +180,9 @@ ClientCredentials *pygrpc_ClientCredentials_refresh_token(
   return self;
 }
 
-ClientCredentials *pygrpc_ClientCredentials_iam(
+CallCredentials *pygrpc_CallCredentials_iam(
     PyTypeObject *type, PyObject *args, PyObject *kwargs) {
-  ClientCredentials *self;
+  CallCredentials *self;
   const char *authorization_token;
   const char *authority_selector;
   static char *keywords[] = {"authorization_token", "authority_selector", NULL};
@@ -234,7 +190,7 @@ ClientCredentials *pygrpc_ClientCredentials_iam(
         &authorization_token, &authority_selector)) {
     return NULL;
   }
-  self = (ClientCredentials *)type->tp_alloc(type, 0);
+  self = (CallCredentials *)type->tp_alloc(type, 0);
   self->c_creds = grpc_google_iam_credentials_create(authorization_token,
                                                      authority_selector, NULL);
   if (!self->c_creds) {
