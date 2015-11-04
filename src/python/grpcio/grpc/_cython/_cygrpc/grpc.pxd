@@ -316,32 +316,40 @@ cdef extern from "grpc/grpc_security.h":
     const char *private_key
     const char *certificate_chain "cert_chain"
 
-  ctypedef struct grpc_credentials:
+  ctypedef struct grpc_channel_credentials:
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  grpc_credentials *grpc_google_default_credentials_create()
-  grpc_credentials *grpc_ssl_credentials_create(
+  ctypedef struct grpc_call_credentials:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  grpc_channel_credentials *grpc_google_default_credentials_create()
+  grpc_channel_credentials *grpc_ssl_credentials_create(
       const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
       void *reserved)
-
-  grpc_credentials *grpc_composite_credentials_create(grpc_credentials *creds1,
-                                                      grpc_credentials *creds2,
-                                                      void *reserved)
-  grpc_credentials *grpc_google_compute_engine_credentials_create(
+  grpc_channel_credentials *grpc_composite_channel_credentials_create(
+      grpc_channel_credentials *creds1, grpc_call_credentials *creds2,
       void *reserved)
-  grpc_credentials *grpc_service_account_jwt_access_credentials_create(
+  void grpc_channel_credentials_release(grpc_channel_credentials *creds)
+
+  grpc_call_credentials *grpc_composite_call_credentials_create(
+      grpc_call_credentials *creds1, grpc_call_credentials *creds2,
+      void *reserved)
+  grpc_call_credentials *grpc_google_compute_engine_credentials_create(
+      void *reserved)
+  grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
       const char *json_key,
       gpr_timespec token_lifetime, void *reserved)
-  grpc_credentials *grpc_google_refresh_token_credentials_create(
+  grpc_call_credentials *grpc_google_refresh_token_credentials_create(
       const char *json_refresh_token, void *reserved)
-  grpc_credentials *grpc_google_iam_credentials_create(
+  grpc_call_credentials *grpc_google_iam_credentials_create(
       const char *authorization_token, const char *authority_selector,
       void *reserved)
-  void grpc_credentials_release(grpc_credentials *creds)
+  void grpc_call_credentials_release(grpc_call_credentials *creds)
 
   grpc_channel *grpc_secure_channel_create(
-      grpc_credentials *creds, const char *target,
+      grpc_channel_credentials *creds, const char *target,
       const grpc_channel_args *args, void *reserved)
 
   ctypedef struct grpc_server_credentials:
@@ -358,4 +366,4 @@ cdef extern from "grpc/grpc_security.h":
                                         grpc_server_credentials *creds)
 
   grpc_call_error grpc_call_set_credentials(grpc_call *call,
-                                            grpc_credentials *creds)
+                                            grpc_call_credentials *creds)
