@@ -236,7 +236,8 @@ int main(int argc, char** argv) {
           FLAGS_sleep_duration_ms, FLAGS_metrics_collection_interval_secs);
 
       bool is_already_created;
-      grpc::string metricName = "/stress_test/qps/thread/" + std::to_string(i);
+      grpc::string metricName =
+          "/stress_test/qps/thread/" + std::to_string(thread_idx);
       test_threads.emplace_back(
           thread(&StressTestInteropClient::MainLoop, client,
                  metrics_service.CreateGauge(metricName, is_already_created)));
