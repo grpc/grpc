@@ -86,8 +86,8 @@ class Server {
     return true;
   }
 
-  int Port() const { return port_; }
-  int Cores() const { return gpr_cpu_num_cores(); }
+  int port() const { return port_; }
+  int cores() const { return gpr_cpu_num_cores(); }
   static std::shared_ptr<ServerCredentials> CreateServerCredentials(
       const ServerConfig& config) {
     if (config.has_security_params()) {

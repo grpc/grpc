@@ -60,7 +60,7 @@ class AsyncQpsServerTest : public Server {
   explicit AsyncQpsServerTest(const ServerConfig &config) : Server(config) {
     char *server_address = NULL;
 
-    gpr_join_host_port(&server_address, "::", Port());
+    gpr_join_host_port(&server_address, "::", port());
 
     ServerBuilder builder;
     builder.AddListeningPort(server_address,

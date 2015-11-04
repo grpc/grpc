@@ -35,8 +35,6 @@
 
 #include <grpc/support/log.h>
 
-#include <signal.h>
-
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
 #include "test/cpp/util/benchmark_config.h"
@@ -54,9 +52,6 @@ static void RunAsyncUnaryPingPong() {
   client_config.set_client_type(ASYNC_CLIENT);
   client_config.set_outstanding_rpcs_per_channel(1);
   client_config.set_client_channels(1);
-  client_config.mutable_payload_config()
-      ->mutable_simple_params()
-      ->set_resp_size(1);
   client_config.set_async_client_threads(1);
   client_config.set_rpc_type(UNARY);
   client_config.mutable_load_params()->mutable_closed_loop();
@@ -76,7 +71,6 @@ static void RunAsyncUnaryPingPong() {
 
 int main(int argc, char** argv) {
   grpc::testing::InitBenchmark(&argc, &argv, true);
-  signal(SIGPIPE, SIG_IGN);
 
   grpc::testing::RunAsyncUnaryPingPong();
   return 0;

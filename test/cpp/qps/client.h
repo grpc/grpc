@@ -90,7 +90,11 @@ class Client {
     } else if (config.payload_config().has_complex_params()) {
       GPR_ASSERT(false);  // not yet implemented
     } else {
-      GPR_ASSERT(false);  // badly configured
+      // default should be simple proto without payloads
+      request_.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
+      request_.set_response_size(0);
+      request_.mutable_payload()->set_type(
+          grpc::testing::PayloadType::COMPRESSABLE);
     }
   }
   virtual ~Client() {}
@@ -176,23 +180,29 @@ class Client {
     const auto& load = config.load_params();
 
     std::unique_ptr<RandomDist> random_dist;
-    if (load.has_poisson()) {
+    switch (load.load_case()) {
+    case LoadParams::kClosedLoop:
+      // Closed-loop doesn't use random dist at all
+      break;
+    case LoadParams::kPoisson:
       random_dist.reset(
           new ExpDist(load.poisson().offered_load() / num_threads));
-    } else if (load.has_uniform()) {
+      break;
+    case LoadParams::kUniform:
       random_dist.reset(
           new UniformDist(load.uniform().interarrival_lo() * num_threads,
                           load.uniform().interarrival_hi() * num_threads));
-    } else if (load.has_determ()) {
+      break;
+    case LoadParams::kDeterm:
       random_dist.reset(
           new DetDist(num_threads / load.determ().offered_load()));
-    } else if (load.has_pareto()) {
+      break;
+    case LoadParams::kPareto:
       random_dist.reset(
           new ParetoDist(load.pareto().interarrival_base() * num_threads,
                          load.pareto().alpha()));
-    } else if (load.has_closed_loop()) {
-      // Closed-loop doesn't use random dist at all
-    } else {  // invalid load type
+      break;
+    default:
       GPR_ASSERT(false);
     }
 

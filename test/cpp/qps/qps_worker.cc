@@ -199,8 +199,8 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
       return Status(StatusCode::INVALID_ARGUMENT, "");
     }
     ServerStatus status;
-    status.set_port(server->Port());
-    status.set_cores(server->Cores());
+    status.set_port(server->port());
+    status.set_cores(server->cores());
     if (!stream->Write(status)) {
       return Status(StatusCode::UNKNOWN, "");
     }
