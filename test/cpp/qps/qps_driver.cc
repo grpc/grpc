@@ -108,7 +108,10 @@ static void QpsDriver() {
       params->set_req_size(FLAGS_simple_req_size);
     }
   } else {
-    GPR_ASSERT(false);  // not yet implemented
+    // choose a reasonable default
+    auto params =
+        client_config.mutable_payload_config()->mutable_simple_params();
+    params->set_resp_size(1);
   }
 
   client_config.set_async_client_threads(FLAGS_async_client_threads);
