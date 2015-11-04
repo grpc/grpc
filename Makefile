@@ -10287,6 +10287,7 @@ ifneq ($(NO_DEPS),true)
 -include $(RECONNECT_INTEROP_CLIENT_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_client.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
 
 
 RECONNECT_INTEROP_SERVER_SRC = \
@@ -10333,6 +10334,7 @@ ifneq ($(NO_DEPS),true)
 -include $(RECONNECT_INTEROP_SERVER_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_server.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
 
 
 SECURE_AUTH_CONTEXT_TEST_SRC = \
@@ -10663,6 +10665,9 @@ ifneq ($(NO_DEPS),true)
 -include $(STRESS_TEST_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/interop_client.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_interop_client.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_test.o: $(GENDIR)/test/proto/empty.pb.cc $(GENDIR)/test/proto/empty.grpc.pb.cc $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/test.pb.cc $(GENDIR)/test/proto/test.grpc.pb.cc
 
 
 SYNC_STREAMING_PING_PONG_TEST_SRC = \
