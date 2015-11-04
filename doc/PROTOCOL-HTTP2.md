@@ -10,13 +10,13 @@ Production rules are using <a href="http://tools.ietf.org/html/rfc5234">ABNF syn
 
 The following is the general sequence of message atoms in a GRPC request & response message stream
 
-* Request → Request-Headers \*Delimited-Message EOS
-* Response → (Response-Headers \*Delimited-Message Trailers) / Trailers-Only
+* Request → Request-Headers \*Length-Prefixed-Message EOS
+* Response → (Response-Headers \*Length-Prefixed-Message Trailers) / Trailers-Only
 
 
 ### Requests
 
-* Request → Request-Headers \*Delimited-Message EOS
+* Request → Request-Headers \*Length-Prefixed-Message EOS
 
 Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
@@ -56,9 +56,9 @@ If **Timeout** is omitted a server should assume an infinite timeout. Client imp
 
 Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per https://tools.ietf.org/html/rfc4648#section-4. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with "-bin". Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding & decoding as headers are sent and received.
 
-The repeated sequence of **Delimited-Message** items is delivered in DATA frames
+The repeated sequence of **Length-Prefixed-Message** items is delivered in DATA frames
 
-* **Delimited-Message** → Compressed-Flag Message-Length Message
+* **Length-Prefixed-Message** → Compressed-Flag Message-Length Message
 * **Compressed-Flag** → 0 / 1   # encoded as 1 byte unsigned integer
 * **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer
 * **Message** → \*{binary octet}
@@ -69,7 +69,7 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 
 ###Responses
 
-* **Response** → (Response-Headers \*Delimited-Message Trailers) / Trailers-Only
+* **Response** → (Response-Headers \*Length-Prefixed-Message Trailers) / Trailers-Only
 * **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type \*Custom-Metadata
 * **Trailers-Only** → HTTP-Status Content-Type Trailers
 * **Trailers** → Status [Status-Message] \*Custom-Metadata
@@ -101,7 +101,7 @@ grpc-encoding = gzip
 authorization = Bearer y235.wef315yfh138vh31hv93hv8h3v
 
 DATA (flags = END_STREAM)
-<Delimited Message>
+<Length-Prefixed Message>
 ```
 **Response**
 ```
@@ -110,7 +110,7 @@ HEADERS (flags = END_HEADERS)
 grpc-encoding = gzip
 
 DATA
-<Delimited Message>
+<Length-Prefixed Message>
 
 HEADERS (flags = END_STREAM, END_HEADERS)
 grpc-status = 0 # OK
@@ -136,7 +136,7 @@ grpc-java-android/0.9.1 (gingerbread/1.2.4; nexus5; tmobile)
 All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as call identifiers in this scheme. NOTE: These id’s are contextual to an open HTTP2 session and will not be unique within a given process that is handling more than one HTTP2 session nor can they be used as GUIDs.
 
 #####Data Frames
-DATA frame boundaries have no relation to **Delimited-Message** boundaries and implementations should make no assumptions about their alignment.
+DATA frame boundaries have no relation to **Length-Prefixed-Message** boundaries and implementations should make no assumptions about their alignment.
 
 #####Errors
 
