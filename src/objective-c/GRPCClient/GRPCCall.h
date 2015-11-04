@@ -231,3 +231,20 @@ extern id const kGRPCTrailersKey;
 
 // TODO(jcanizales): Let specify a deadline. As a category of GRXWriter?
 @end
+
+#pragma mark Backwards compatibiity
+
+/** This protocol is kept for backwards compatibility with existing code. */
+@protocol GRPCRequestHeaders <NSObject>
+@property(nonatomic, readonly) NSUInteger count;
+
+- (id)objectForKeyedSubscript:(NSString *)key;
+- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key;
+
+- (void)removeAllObjects;
+- (void)removeObjectForKey:(NSString *)key;
+@end
+
+/** This is only needed for backwards-compatibility. */
+@interface NSMutableDictionary (GRPCRequestHeaders) <GRPCRequestHeaders>
+@end
