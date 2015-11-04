@@ -33,7 +33,6 @@
 
 #include <memory>
 #include <set>
-#include <signal.h>
 
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
@@ -167,7 +166,6 @@ static void QpsDriver() {
 int main(int argc, char** argv) {
   grpc::testing::InitBenchmark(&argc, &argv, true);
 
-  signal(SIGPIPE, SIG_IGN);
   grpc::testing::QpsDriver();
 
   return 0;

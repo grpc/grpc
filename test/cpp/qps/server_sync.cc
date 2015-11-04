@@ -89,7 +89,7 @@ class SynchronousServer GRPC_FINAL : public grpc::testing::Server {
 
     char* server_address = NULL;
 
-    gpr_join_host_port(&server_address, "::", Port());
+    gpr_join_host_port(&server_address, "::", port());
     builder.AddListeningPort(server_address,
                              Server::CreateServerCredentials(config));
     gpr_free(server_address);

@@ -39,38 +39,47 @@
 #include "test/cpp/qps/report.h"
 #include "test/cpp/util/benchmark_config.h"
 
+extern "C" {
+#include "src/core/iomgr/pollset_posix.h"
+}
+
 namespace grpc {
 namespace testing {
 
 static const int WARMUP = 5;
-static const int BENCHMARK = 10;
+static const int BENCHMARK = 5;
 
-static void RunSynchronousStreamingPingPong() {
-  gpr_log(GPR_INFO, "Running Synchronous Streaming Ping Pong");
+static void RunQPS() {
+  gpr_log(GPR_INFO, "Running QPS test");
 
   ClientConfig client_config;
-  client_config.set_client_type(SYNC_CLIENT);
-  client_config.set_outstanding_rpcs_per_channel(1);
-  client_config.set_client_channels(1);
-  client_config.set_rpc_type(STREAMING);
+  client_config.set_client_type(ASYNC_CLIENT);
+  client_config.set_outstanding_rpcs_per_channel(1000);
+  client_config.set_client_channels(8);
+  client_config.set_async_client_threads(8);
+  client_config.set_rpc_type(UNARY);
   client_config.mutable_load_params()->mutable_closed_loop();
 
   ServerConfig server_config;
-  server_config.set_server_type(SYNC_SERVER);
+  server_config.set_server_type(ASYNC_SERVER);
+  server_config.set_async_server_threads(4);
 
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
 
-  GetReporter()->ReportQPS(*result);
+  GetReporter()->ReportQPSPerCore(*result);
   GetReporter()->ReportLatency(*result);
 }
+
 }  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {
   grpc::testing::InitBenchmark(&argc, &argv, true);
 
-  grpc::testing::RunSynchronousStreamingPingPong();
+  grpc_platform_become_multipoller = grpc_poll_become_multipoller;
+
+  grpc::testing::RunQPS();
 
   return 0;
 }
