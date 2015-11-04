@@ -41,6 +41,7 @@ using System.Threading.Tasks;
 
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
+using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
@@ -167,16 +168,19 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected bool ReleaseResourcesIfPossible()
         {
-            if (!disposed && call != null)
+            using (Profilers.ForCurrentThread().NewScope("AsyncCallBase.ReleaseResourcesIfPossible"))
             {
-                bool noMoreSendCompletions = sendCompletionDelegate == null && (halfcloseRequested || cancelRequested || finished);
-                if (noMoreSendCompletions && readingDone && finished)
+                if (!disposed && call != null)
                 {
-                    ReleaseResources();
-                    return true;
+                    bool noMoreSendCompletions = sendCompletionDelegate == null && (halfcloseRequested || cancelRequested || finished);
+                    if (noMoreSendCompletions && readingDone && finished)
+                    {
+                        ReleaseResources();
+                        return true;
+                    }
                 }
+                return false;
             }
-            return false;
         }
 
         protected abstract bool IsClient
@@ -228,7 +232,10 @@ namespace Grpc.Core.Internal
 
         protected byte[] UnsafeSerialize(TWrite msg)
         {
-            return serializer(msg);
+            using (Profilers.ForCurrentThread().NewScope("AsyncCallBase.UnsafeSerialize"))
+            {
+                return serializer(msg);
+            }
         }
 
         protected Exception TrySerialize(TWrite msg, out byte[] payload)
@@ -247,15 +254,20 @@ namespace Grpc.Core.Internal
 
         protected Exception TryDeserialize(byte[] payload, out TRead msg)
         {
-            try
+            using (Profilers.ForCurrentThread().NewScope("AsyncCallBase.TryDeserialize"))
             {
-                msg = deserializer(payload);
-                return null;
-            } 
-            catch (Exception e)
-            {
-                msg = default(TRead);
-                return e;
+                try
+                {
+                
+                    msg = deserializer(payload);
+                    return null;
+             
+                }
+                catch (Exception e)
+                {
+                    msg = default(TRead);
+                    return e;
+                }
             }
         }
 
