@@ -119,6 +119,10 @@
     <Compile Include="CompressionLevel.cs" />
     <Compile Include="WriteOptions.cs" />
     <Compile Include="ContextPropagationToken.cs" />
+    <Compile Include="Profiling\ProfilerEntry.cs" />
+    <Compile Include="Profiling\ProfilerScope.cs" />
+    <Compile Include="Profiling\IProfiler.cs" />
+    <Compile Include="Profiling\Profilers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Grpc.Core.nuspec" />
@@ -150,4 +154,7 @@
   <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets')" />
   <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets')" />
   <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Profiling\" />
+  </ItemGroup>
 </Project>

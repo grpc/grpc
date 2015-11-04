@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,65 +28,72 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
-using System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core;
+using Grpc.Core.Internal;
 using Grpc.Core.Profiling;
+using Grpc.Core.Utils;
+using NUnit.Framework;
 
-namespace Grpc.Core.Internal
+namespace Grpc.Core.Tests
 {
-    /// <summary>
-    /// grpc_completion_queue from <c>grpc/grpc.h</c>
-    /// </summary>
-    internal class CompletionQueueSafeHandle : SafeHandleZeroIsInvalid
+    public class PerformanceTest
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create();
+        const string Host = "127.0.0.1";
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq);
+        MockServiceHelper helper;
+        Server server;
+        Channel channel;
 
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CompletionQueueEvent grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CompletionQueueEvent grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_completion_queue_destroy(IntPtr cq);
-
-        private CompletionQueueSafeHandle()
+        [SetUp]
+        public void Init()
         {
+            helper = new MockServiceHelper(Host);
+            server = helper.GetServer();
+            server.Start();
+            channel = helper.GetChannel();
         }
 
-        public static CompletionQueueSafeHandle Create()
+        [TearDown]
+        public void Cleanup()
         {
-            return grpcsharp_completion_queue_create();
+            channel.ShutdownAsync().Wait();
+            server.ShutdownAsync().Wait();
         }
 
-        public CompletionQueueEvent Next()
+        // Test attribute commented out to prevent running as part of the default test suite.
+        //[Test]
+        //[Category("Performance")]
+        public void UnaryCallPerformance()
         {
-            return grpcsharp_completion_queue_next(this);
-        }
+            var profiler = new BasicProfiler();
+            Profilers.SetForCurrentThread(profiler);
 
-        public CompletionQueueEvent Pluck(IntPtr tag)
-        {
-            using (Profilers.ForCurrentThread().NewScope("CompletionQueueSafeHandle.Pluck"))
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
-                return grpcsharp_completion_queue_pluck(this, tag);
+                return request;
+            });
+
+            var callDetails = helper.CreateUnaryCall();
+            for(int i = 0; i < 3000; i++)
+            {
+                Calls.BlockingUnaryCall(callDetails, "ABC");
             }
-        }
 
-        public void Shutdown()
-        {
-            grpcsharp_completion_queue_shutdown(this);
-        }
+            profiler.Reset();
 
-        protected override bool ReleaseHandle()
-        {
-            grpcsharp_completion_queue_destroy(handle);
-            return true;
+            for(int i = 0; i < 3000; i++)
+            {
+                Calls.BlockingUnaryCall(callDetails, "ABC");
+            }
+            profiler.Dump("latency_trace_csharp.txt");
         }
     }
 }
