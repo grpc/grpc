@@ -44,7 +44,7 @@ namespace testing {
 class ResourceUsage {
  public:
   ResourceUsage(double w, double u, double s, int c)
-    : wall_time_(w), user_time_(u), system_time_(s), cores_(c) {}
+      : wall_time_(w), user_time_(u), system_time_(s), cores_(c) {}
   double wall_time() const { return wall_time_; }
   double user_time() const { return user_time_; }
   double system_time() const { return system_time_; }

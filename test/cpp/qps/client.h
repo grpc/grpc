@@ -77,18 +77,20 @@ class Client {
                         config);
     }
     if (config.payload_config().has_bytebuf_params()) {
-      GPR_ASSERT(false); // not yet implemented
+      GPR_ASSERT(false);  // not yet implemented
     } else if (config.payload_config().has_simple_params()) {
       request_.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
-      request_.set_response_size(config.payload_config().simple_params().resp_size());
-      request_.mutable_payload()->set_type(grpc::testing::PayloadType::COMPRESSABLE);
+      request_.set_response_size(
+          config.payload_config().simple_params().resp_size());
+      request_.mutable_payload()->set_type(
+          grpc::testing::PayloadType::COMPRESSABLE);
       int size = config.payload_config().simple_params().req_size();
       std::unique_ptr<char[]> body(new char[size]);
       request_.mutable_payload()->set_body(body.get(), size);
     } else if (config.payload_config().has_complex_params()) {
-      GPR_ASSERT(false); // not yet implemented
+      GPR_ASSERT(false);  // not yet implemented
     } else {
-      GPR_ASSERT(false); // badly configured
+      GPR_ASSERT(false);  // badly configured
     }
   }
   virtual ~Client() {}
@@ -101,20 +103,20 @@ class Client {
     if (reset) {
       Histogram* to_merge = new Histogram[threads_.size()];
       for (size_t i = 0; i < threads_.size(); i++) {
-	threads_[i]->BeginSwap(&to_merge[i]);
+        threads_[i]->BeginSwap(&to_merge[i]);
       }
       std::unique_ptr<Timer> timer(new Timer);
       timer_.swap(timer);
       for (size_t i = 0; i < threads_.size(); i++) {
-	threads_[i]->EndSwap();
-	latencies.Merge(to_merge[i]);
+        threads_[i]->EndSwap();
+        latencies.Merge(to_merge[i]);
       }
       delete[] to_merge;
       timer_result = timer->Mark();
     } else {
       // merge snapshots of each thread histogram
       for (size_t i = 0; i < threads_.size(); i++) {
-	threads_[i]->MergeStatsInto(&latencies);
+        threads_[i]->MergeStatsInto(&latencies);
       }
       timer_result = timer_->Mark();
     }
@@ -144,11 +146,10 @@ class Client {
       // We have to use a 2-phase init like this with a default
       // constructor followed by an initializer function to make
       // old compilers happy with using this in std::vector
-      channel_ =
-	CreateTestChannel(target,
-			  config.security_params().server_host_override(),
-			  config.has_security_params(),
-			  !config.security_params().use_test_ca());
+      channel_ = CreateTestChannel(
+          target, config.security_params().server_host_override(),
+          config.has_security_params(),
+          !config.security_params().use_test_ca());
       stub_ = BenchmarkService::NewStub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }
@@ -176,21 +177,22 @@ class Client {
 
     std::unique_ptr<RandomDist> random_dist;
     if (load.has_poisson()) {
-      random_dist.reset(new ExpDist(load.poisson().offered_load() /
-				    num_threads));
+      random_dist.reset(
+          new ExpDist(load.poisson().offered_load() / num_threads));
     } else if (load.has_uniform()) {
-      random_dist.reset(new UniformDist(load.uniform().interarrival_lo() *
-					num_threads,
-					load.uniform().interarrival_hi() *
-					num_threads));
+      random_dist.reset(
+          new UniformDist(load.uniform().interarrival_lo() * num_threads,
+                          load.uniform().interarrival_hi() * num_threads));
     } else if (load.has_determ()) {
-      random_dist.reset(new DetDist(num_threads / load.determ().offered_load()));
+      random_dist.reset(
+          new DetDist(num_threads / load.determ().offered_load()));
     } else if (load.has_pareto()) {
-      random_dist.reset(new ParetoDist(load.pareto().interarrival_base() * num_threads,
-				       load.pareto().alpha()));
+      random_dist.reset(
+          new ParetoDist(load.pareto().interarrival_base() * num_threads,
+                         load.pareto().alpha()));
     } else if (load.has_closed_loop()) {
       // Closed-loop doesn't use random dist at all
-    } else { // invalid load type
+    } else {  // invalid load type
       GPR_ASSERT(false);
     }
 

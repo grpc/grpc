@@ -57,4 +57,3 @@ message ClientStats {
   double time_user = 3;
   double time_system = 4;
 }
-

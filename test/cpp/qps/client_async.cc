@@ -358,7 +358,8 @@ class AsyncUnaryClient GRPC_FINAL : public AsyncClient {
            const SimpleRequest& request, CompletionQueue* cq) {
     return stub->AsyncUnaryCall(ctx, request, cq);
   };
-  static ClientRpcContext* SetupCtx(int channel_id, BenchmarkService::Stub* stub,
+  static ClientRpcContext* SetupCtx(int channel_id,
+                                    BenchmarkService::Stub* stub,
                                     const SimpleRequest& req) {
     return new ClientRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
         channel_id, stub, req, AsyncUnaryClient::StartReq,
@@ -371,9 +372,10 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
  public:
   ClientRpcContextStreamingImpl(
       int channel_id, BenchmarkService::Stub* stub, const RequestType& req,
-      std::function<std::unique_ptr<grpc::ClientAsyncReaderWriter<
-          RequestType, ResponseType>>(BenchmarkService::Stub*, grpc::ClientContext*,
-                                      CompletionQueue*, void*)> start_req,
+      std::function<std::unique_ptr<
+          grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
+          BenchmarkService::Stub*, grpc::ClientContext*, CompletionQueue*,
+          void*)> start_req,
       std::function<void(grpc::Status, ResponseType*)> on_done)
       : ClientRpcContext(channel_id),
         context_(),
@@ -427,8 +429,8 @@ class ClientRpcContextStreamingImpl : public ClientRpcContext {
   std::function<void(grpc::Status, ResponseType*)> callback_;
   std::function<
       std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>(
-          BenchmarkService::Stub*, grpc::ClientContext*, CompletionQueue*, void*)>
-      start_req_;
+          BenchmarkService::Stub*, grpc::ClientContext*, CompletionQueue*,
+          void*)> start_req_;
   grpc::Status status_;
   double start_;
   std::unique_ptr<grpc::ClientAsyncReaderWriter<RequestType, ResponseType>>
@@ -456,7 +458,8 @@ class AsyncStreamingClient GRPC_FINAL : public AsyncClient {
     auto stream = stub->AsyncStreamingCall(ctx, cq, tag);
     return stream;
   };
-  static ClientRpcContext* SetupCtx(int channel_id, BenchmarkService::Stub* stub,
+  static ClientRpcContext* SetupCtx(int channel_id,
+                                    BenchmarkService::Stub* stub,
                                     const SimpleRequest& req) {
     return new ClientRpcContextStreamingImpl<SimpleRequest, SimpleResponse>(
         channel_id, stub, req, AsyncStreamingClient::StartReq,

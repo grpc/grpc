@@ -76,8 +76,7 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
   abort();
 }
 
-static void LimitCores(int cores) {
-}
+static void LimitCores(int cores) {}
 
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
   if (config.core_limit() > 0) {
@@ -99,7 +98,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
   explicit WorkerServiceImpl() : acquired_(false) {}
 
   Status RunClient(ServerContext* ctx,
-		   ServerReaderWriter<ClientStatus, ClientArgs>* stream)
+                   ServerReaderWriter<ClientStatus, ClientArgs>* stream)
       GRPC_OVERRIDE {
     InstanceGuard g(this);
     if (!g.Acquired()) {
@@ -159,7 +158,7 @@ class WorkerServiceImpl GRPC_FINAL : public WorkerService::Service {
   }
 
   Status RunClientBody(ServerContext* ctx,
-		       ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
+                       ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
     ClientArgs args;
     if (!stream->Read(&args)) {
       return Status(StatusCode::INVALID_ARGUMENT, "");

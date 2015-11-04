@@ -101,16 +101,16 @@ static void QpsDriver() {
 
   // Decide which type to use based on the response type
   if (FLAGS_simple_resp_size >= 0) {
-    auto params = client_config.mutable_payload_config()->mutable_simple_params();
+    auto params =
+        client_config.mutable_payload_config()->mutable_simple_params();
     params->set_resp_size(FLAGS_simple_resp_size);
     if (FLAGS_simple_req_size >= 0) {
       params->set_req_size(FLAGS_simple_req_size);
     }
   } else {
-    GPR_ASSERT(false); // not yet implemented
+    GPR_ASSERT(false);  // not yet implemented
   }
 
-  
   client_config.set_async_client_threads(FLAGS_async_client_threads);
   client_config.set_rpc_type(rpc_type);
 

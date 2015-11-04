@@ -82,8 +82,8 @@ message LoadParams {
 
 // presence of SecurityParams implies use of TLS
 message SecurityParams {
-    bool use_test_ca = 1;
-    string server_host_override = 2;
+  bool use_test_ca = 1;
+  string server_host_override = 2;
 }
 
 message ClientConfig {

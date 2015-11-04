@@ -86,12 +86,13 @@ class Server {
     return true;
   }
 
-  int Port() const {return port_;}
-  int Cores() const {return gpr_cpu_num_cores();}
-  static std::shared_ptr<ServerCredentials> CreateServerCredentials(const ServerConfig &config) {
+  int Port() const { return port_; }
+  int Cores() const { return gpr_cpu_num_cores(); }
+  static std::shared_ptr<ServerCredentials> CreateServerCredentials(
+      const ServerConfig& config) {
     if (config.has_security_params()) {
       SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-							  test_server1_cert};
+                                                          test_server1_cert};
       SslServerCredentialsOptions ssl_opts;
       ssl_opts.pem_root_certs = "";
       ssl_opts.pem_key_cert_pairs.push_back(pkcp);
@@ -100,6 +101,7 @@ class Server {
       return InsecureServerCredentials();
     }
   }
+
  private:
   int port_;
   std::unique_ptr<Timer> timer_;
