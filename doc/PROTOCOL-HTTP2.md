@@ -21,7 +21,7 @@ The following is the general sequence of message atoms in a GRPC request & respo
 Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
 * **Request-Headers** → Call-Definition \*Custom-Metadata
-* **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] [Content-Type] [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
+* **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
 * **Method** →  ":method POST"
 * **Scheme** → ":scheme "  ("http" / "https")
 * **Path** → ":path"  {_path identifying method within exposed API_}
