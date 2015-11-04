@@ -22,39 +22,39 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
 * **Request-Headers** → Call-Definition \*Custom-Metadata
 * **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] [Content-Type] [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
-* **Method** →  “:method POST”
-* **Scheme** → “:scheme ”  (“http” / “https”)
-* **Path** → “:path”  {_path identifying method within exposed API_}
-* **Authority** → “:authority” {_virtual host name of authority_}
-* **TE** → “te” “trailers”  # Used to detect incompatible proxies
-* **Timeout** → “grpc-timeout” TimeoutValue TimeoutUnit
+* **Method** →  ":method POST"
+* **Scheme** → ":scheme "  ("http" / "https")
+* **Path** → ":path"  {_path identifying method within exposed API_}
+* **Authority** → ":authority" {_virtual host name of authority_}
+* **TE** → "te" "trailers"  # Used to detect incompatible proxies
+* **Timeout** → "grpc-timeout" TimeoutValue TimeoutUnit
 * **TimeoutValue** → {_positive integer as ASCII string of at most 8 digits_}
 * **TimeoutUnit** → Hour / Minute / Second / Millisecond / Microsecond / Nanosecond
-* **Hour** → “H”
-* **Minute** → “M”
-* **Second** → “S”
-* **Millisecond** → “m”
-* **Microsecond** → “u”
-* **Nanosecond** → “n”
-* **Content-Type** → “content-type” “application/grpc” [(“+proto” / “+json” / {_custom_})]
-* **Content-Coding** → “gzip” / “deflate” / “snappy” / {_custom_}
-* **Message-Encoding** → “grpc-encoding” Content-Coding
-* **Message-Accept-Encoding** → “grpc-accept-encoding” Content-Coding \*("," Content-Coding)
-* **User-Agent** → “user-agent” {_structured user-agent string_}
-* **Message-Type** → “grpc-message-type” {_type name for message schema_}
+* **Hour** → "H"
+* **Minute** → "M"
+* **Second** → "S"
+* **Millisecond** → "m"
+* **Microsecond** → "u"
+* **Nanosecond** → "n"
+* **Content-Type** → "content-type" "application/grpc" [("+proto" / "+json" / {_custom_})]
+* **Content-Coding** → "gzip" / "deflate" / "snappy" / {_custom_}
+* **Message-Encoding** → "grpc-encoding" Content-Coding
+* **Message-Accept-Encoding** → "grpc-accept-encoding" Content-Coding \*("," Content-Coding)
+* **User-Agent** → "user-agent" {_structured user-agent string_}
+* **Message-Type** → "grpc-message-type" {_type name for message schema_}
 * **Custom-Metadata** → Binary-Header / ASCII-Header
-* **Binary-Header** → {Header-Name “-bin” } {_base64 encoded value_}
+* **Binary-Header** → {Header-Name "-bin" } {_base64 encoded value_}
 * **ASCII-Header** → Header-Name {_value_}
-* **Header-Name** → 1\*( %x30-39 / %x61-7A / “\_” / “-”) ; 0-9 a-z
+* **Header-Name** → 1\*( %x30-39 / %x61-7A / "\_" / "-") ; 0-9 a-z
 
 
-HTTP2 requires that reserved headers, ones starting with “:” appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
+HTTP2 requires that reserved headers, ones starting with ":" appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
 
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 
-**Custom-Metadata** is an arbitrary set of key-value pairs defined by the application layer. Aside from transport limits on the total length of HTTP2 HEADERS the only other constraint is that header names starting with “grpc-” are reserved for future use.
+**Custom-Metadata** is an arbitrary set of key-value pairs defined by the application layer. Aside from transport limits on the total length of HTTP2 HEADERS the only other constraint is that header names starting with "grpc-" are reserved for future use.
 
-Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per https://tools.ietf.org/html/rfc4648#section-4. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with “-bin”. Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding & decoding as headers are sent and received.
+Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per https://tools.ietf.org/html/rfc4648#section-4. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with "-bin". Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding & decoding as headers are sent and received.
 
 The repeated sequence of **Delimited-Message** items is delivered in DATA frames
 
@@ -73,9 +73,9 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 * **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type \*Custom-Metadata
 * **Trailers-Only** → HTTP-Status Content-Type Trailers
 * **Trailers** → Status [Status-Message] \*Custom-Metadata
-* **HTTP-Status** → “:status 200”
-* **Status** → “grpc-status” <status-code-as-ASCII-string>
-* **Status-Message** → “grpc-message” <descriptive text for status as ASCII string>
+* **HTTP-Status** → ":status 200"
+* **Status** → "grpc-status" <status-code-as-ASCII-string>
+* **Status-Message** → "grpc-message" <descriptive text for status as ASCII string>
 
 **Response-Headers** & **Trailers-Only** are each delivered in a single HTTP2 HEADERS frame block. Most responses are expected to have both headers and trailers but **Trailers-Only** is permitted for calls that produce an immediate error. Status must be sent in **Trailers** even if the status code is OK.
 
@@ -120,7 +120,7 @@ trace-proto-bin = jher831yy13JHy3hc
 
 While the protocol does not require a user-agent to function it is recommended that clients provide a structured user-agent string that provides a basic description of the calling library, version & platform to facilitate issue diagnosis in heterogeneous environments. The following structure is recommended to library developers
 ```
-User-Agent → “grpc-” Language ?(“-” Variant) “/” Version ?( “ (“  *(AdditionalProperty “;”) “)” )
+User-Agent → "grpc-" Language ?("-" Variant) "/" Version ?( " ("  *(AdditionalProperty ";") ")" )
 ```
 E.g.
 
