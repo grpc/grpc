@@ -74,12 +74,15 @@ DEFINE_double(determ_load, -1.0, "Deterministic offered load (qps)");
 DEFINE_double(pareto_base, -1.0, "Pareto base interarrival time (us)");
 DEFINE_double(pareto_alpha, -1.0, "Pareto alpha value");
 
+DEFINE_bool(secure_test, false, "Run a secure test");
+
 using grpc::testing::ClientConfig;
 using grpc::testing::ServerConfig;
 using grpc::testing::ClientType;
 using grpc::testing::ServerType;
 using grpc::testing::RpcType;
 using grpc::testing::ResourceUsage;
+using grpc::testing::SecurityParams;
 
 namespace grpc {
 namespace testing {
@@ -138,6 +141,15 @@ static void QpsDriver() {
   ServerConfig server_config;
   server_config.set_server_type(server_type);
   server_config.set_async_server_threads(FLAGS_async_server_threads);
+
+  if (FLAGS_secure_test) {
+    // Set up security params
+    SecurityParams security;
+    security.set_use_test_ca(true);
+    security.set_server_host_override("foo.test.google.fr");
+    client_config.mutable_security_params()->CopyFrom(security);
+    server_config.mutable_security_params()->CopyFrom(security);
+  }
 
   const auto result = RunScenario(
       client_config, FLAGS_num_clients, server_config, FLAGS_num_servers,
