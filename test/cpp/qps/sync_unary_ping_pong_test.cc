@@ -52,16 +52,14 @@ static void RunSynchronousUnaryPingPong() {
 
   ClientConfig client_config;
   client_config.set_client_type(SYNC_CLIENT);
-  client_config.set_use_tls(false);
   client_config.set_outstanding_rpcs_per_channel(1);
   client_config.set_client_channels(1);
-  client_config.set_payload_size(1);
+  client_config.mutable_payload_config()->mutable_simple_params()->set_resp_size(1);
   client_config.set_rpc_type(UNARY);
   client_config.mutable_load_params()->mutable_closed_loop();
 
   ServerConfig server_config;
   server_config.set_server_type(SYNC_SERVER);
-  server_config.set_use_tls(false);
 
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);

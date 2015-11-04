@@ -14651,6 +14651,8 @@
       "test/cpp/util/benchmark_config.h", 
       "test/proto/benchmarks/control.grpc.pb.h", 
       "test/proto/benchmarks/control.pb.h", 
+      "test/proto/benchmarks/payloads.grpc.pb.h", 
+      "test/proto/benchmarks/payloads.pb.h", 
       "test/proto/benchmarks/services.grpc.pb.h", 
       "test/proto/benchmarks/services.pb.h", 
       "test/proto/benchmarks/stats.grpc.pb.h", 

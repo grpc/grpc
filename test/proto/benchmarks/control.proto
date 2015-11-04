@@ -27,10 +27,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// An integration test service that covers all the method signature permutations
-// of unary/streaming requests/responses.
 syntax = "proto3";
 
+import "test/proto/benchmarks/payloads.proto";
 import "test/proto/benchmarks/stats.proto";
 
 package grpc.testing;
@@ -81,17 +80,23 @@ message LoadParams {
   };
 }
 
+// presence of SecurityParams implies use of TLS
+message SecurityParams {
+    bool use_test_ca = 1;
+    string server_host_override = 2;
+}
+
 message ClientConfig {
   repeated string server_targets = 1;
   ClientType client_type = 2;
-  bool use_tls = 3;
+  SecurityParams security_params = 3;
   int32 outstanding_rpcs_per_channel = 4;
   int32 client_channels = 5;
-  int32 payload_size = 6;
   // only for async client:
   int32 async_client_threads = 7;
   RpcType rpc_type = 8;
   LoadParams load_params = 10;
+  PayloadConfig payload_config = 11;
 }
 
 message ClientStatus {
@@ -112,12 +117,13 @@ message ClientArgs {
 
 message ServerConfig {
   ServerType server_type = 1;
-  bool use_tls = 2;
+  SecurityParams security_params = 2;
   int32 port = 4;
   // only for async server
   int32 async_server_threads = 7;
   // restrict core usage
   int32 core_limit = 8;
+  PayloadConfig payload_config = 9;
 }
 
 message ServerArgs {

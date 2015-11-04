@@ -50,7 +50,6 @@ DEFINE_int32(benchmark_seconds, 30, "Benchmark time (in seconds)");
 DEFINE_int32(local_workers, 0, "Number of local workers to start");
 
 // Common config
-DEFINE_bool(use_tls, false, "Use TLS");
 DEFINE_string(rpc_type, "UNARY", "Type of RPC: UNARY or STREAMING");
 
 // Server config
@@ -61,7 +60,10 @@ DEFINE_string(server_type, "SYNC_SERVER", "Server type");
 DEFINE_int32(outstanding_rpcs_per_channel, 1,
              "Number of outstanding rpcs per channel");
 DEFINE_int32(client_channels, 1, "Number of client channels");
-DEFINE_int32(payload_size, 1, "Payload size");
+
+DEFINE_int32(simple_req_size, -1, "Simple proto request payload size");
+DEFINE_int32(simple_resp_size, -1, "Simple proto response payload size");
+
 DEFINE_string(client_type, "SYNC_CLIENT", "Client type");
 DEFINE_int32(async_client_threads, 1, "Async client threads");
 
@@ -93,11 +95,22 @@ static void QpsDriver() {
 
   ClientConfig client_config;
   client_config.set_client_type(client_type);
-  client_config.set_use_tls(FLAGS_use_tls);
   client_config.set_outstanding_rpcs_per_channel(
       FLAGS_outstanding_rpcs_per_channel);
   client_config.set_client_channels(FLAGS_client_channels);
-  client_config.set_payload_size(FLAGS_payload_size);
+
+  // Decide which type to use based on the response type
+  if (FLAGS_simple_resp_size >= 0) {
+    auto params = client_config.mutable_payload_config()->mutable_simple_params();
+    params->set_resp_size(FLAGS_simple_resp_size);
+    if (FLAGS_simple_req_size >= 0) {
+      params->set_req_size(FLAGS_simple_req_size);
+    }
+  } else {
+    GPR_ASSERT(false); // not yet implemented
+  }
+
+  
   client_config.set_async_client_threads(FLAGS_async_client_threads);
   client_config.set_rpc_type(rpc_type);
 
@@ -123,7 +136,6 @@ static void QpsDriver() {
 
   ServerConfig server_config;
   server_config.set_server_type(server_type);
-  server_config.set_use_tls(FLAGS_use_tls);
   server_config.set_async_server_threads(FLAGS_async_server_threads);
 
   const auto result = RunScenario(

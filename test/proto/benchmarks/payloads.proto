@@ -31,30 +31,26 @@ syntax = "proto3";
 
 package grpc.testing;
 
-message ServerStats {
-  // wall clock time
-  double time_elapsed = 1;
-
-  // user time used by the server process and threads
-  double time_user = 2;
-
-  // server time used by the server process and all threads
-  double time_system = 3;
+message ByteBufferParams {
+  int32 req_size = 1;
+  int32 resp_size = 2;
 }
 
-message HistogramData {
-  repeated uint32 bucket = 1;
-  double min_seen = 2;
-  double max_seen = 3;
-  double sum = 4;
-  double sum_of_squares = 5;
-  double count = 6;
+message SimpleProtoParams {
+  int32 req_size = 1;
+  int32 resp_size = 2;
 }
 
-message ClientStats {
-  HistogramData latencies = 1;
-  double time_elapsed = 2;
-  double time_user = 3;
-  double time_system = 4;
+message ComplexProtoParams {
+// TODO (vpai): Fill this in once the details of complex, representative
+//              protos are decided
+}
+
+message PayloadConfig {
+  oneof payload {
+    ByteBufferParams bytebuf_params = 1;
+    SimpleProtoParams simple_params = 2;
+    ComplexProtoParams complex_params = 3;
+  }
 }
 
