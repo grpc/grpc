@@ -103,6 +103,21 @@
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\load_balancer.pb.c">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.c">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_common.c">
+      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_decode.c">
+      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_encode.c">
+      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClCompile>
@@ -548,6 +563,24 @@
     <ClInclude Include="..\..\..\src\core\client_config\connector.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\load_balancer.pb.h">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.h">
+      <Filter>src\core\client_config\lb_policies</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb.h">
+      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_common.h">
+      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_decode.h">
+      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_encode.h">
+      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClInclude>
@@ -880,6 +913,9 @@
     </Filter>
     <Filter Include="src\core\client_config\lb_policies">
       <UniqueIdentifier>{a3eca4d5-f760-61a6-7251-556b828c8b44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\core\client_config\lb_policies\nanopb">
+      <UniqueIdentifier>{4ee25827-b6cd-5ebb-0b05-855fd0cdbe31}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\core\client_config\resolvers">
       <UniqueIdentifier>{6d97b8d9-2c15-927a-892a-709d073c02ab}</UniqueIdentifier>
