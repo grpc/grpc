@@ -2042,6 +2042,23 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: secure_sync_unary_ping_pong_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/qps/secure_sync_unary_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: server_crash_test
   build: test
   language: c++
