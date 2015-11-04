@@ -163,6 +163,14 @@
     </ClCompile>
     <ClInclude Include="..\..\..\test\proto\benchmarks\control.grpc.pb.h">
     </ClInclude>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\payloads.pb.cc">
+    </ClCompile>
+    <ClInclude Include="..\..\..\test\proto\benchmarks\payloads.pb.h">
+    </ClInclude>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\payloads.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="..\..\..\test\proto\benchmarks\payloads.grpc.pb.h">
+    </ClInclude>
     <ClCompile Include="..\..\..\test\proto\benchmarks\services.pb.cc">
     </ClCompile>
     <ClInclude Include="..\..\..\test\proto\benchmarks\services.pb.h">

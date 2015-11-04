@@ -41,6 +41,7 @@
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
 #include "test/cpp/util/create_test_channel.h"
+#include "test/proto/benchmarks/payloads.grpc.pb.h"
 #include "test/proto/benchmarks/services.grpc.pb.h"
 
 namespace grpc {
@@ -75,8 +76,20 @@ class Client {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
                         config);
     }
-    request_.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
-    request_.set_response_size(config.payload_size());
+    if (config.payload_config().has_bytebuf_params()) {
+      GPR_ASSERT(false); // not yet implemented
+    } else if (config.payload_config().has_simple_params()) {
+      request_.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
+      request_.set_response_size(config.payload_config().simple_params().resp_size());
+      request_.mutable_payload()->set_type(grpc::testing::PayloadType::COMPRESSABLE);
+      int size = config.payload_config().simple_params().req_size();
+      std::unique_ptr<char[]> body(new char[size]);
+      request_.mutable_payload()->set_body(body.get(), size);
+    } else if (config.payload_config().has_complex_params()) {
+      GPR_ASSERT(false); // not yet implemented
+    } else {
+      GPR_ASSERT(false); // badly configured
+    }
   }
   virtual ~Client() {}
 
@@ -131,7 +144,11 @@ class Client {
       // We have to use a 2-phase init like this with a default
       // constructor followed by an initializer function to make
       // old compilers happy with using this in std::vector
-      channel_ = CreateTestChannel(target, config.use_tls());
+      channel_ =
+	CreateTestChannel(target,
+			  config.security_params().server_host_override(),
+			  config.has_security_params(),
+			  !config.security_params().use_test_ca());
       stub_ = BenchmarkService::NewStub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }

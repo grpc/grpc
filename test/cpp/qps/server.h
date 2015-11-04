@@ -35,7 +35,9 @@
 #define TEST_QPS_SERVER_H
 
 #include <grpc/support/cpu.h>
+#include <grpc++/security/server_credentials.h>
 
+#include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/cpp/qps/timer.h"
 #include "test/proto/messages.grpc.pb.h"
@@ -86,6 +88,18 @@ class Server {
 
   int Port() const {return port_;}
   int Cores() const {return gpr_cpu_num_cores();}
+  static std::shared_ptr<ServerCredentials> CreateServerCredentials(const ServerConfig &config) {
+    if (config.has_security_params()) {
+      SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
+							  test_server1_cert};
+      SslServerCredentialsOptions ssl_opts;
+      ssl_opts.pem_root_certs = "";
+      ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+      return SslServerCredentials(ssl_opts);
+    } else {
+      return InsecureServerCredentials();
+    }
+  }
  private:
   int port_;
   std::unique_ptr<Timer> timer_;
