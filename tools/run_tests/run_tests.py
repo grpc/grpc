@@ -46,10 +46,10 @@ import sys
 import tempfile
 import traceback
 import time
-import xml.etree.cElementTree as ET
 import urllib2
 
 import jobset
+import report_utils
 import watch_dirs
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -867,15 +867,11 @@ def _build_and_run(
                      else itertools.repeat(massaged_one_run, runs_per_test))
     all_runs = itertools.chain.from_iterable(runs_sequence)
 
-    root = ET.Element('testsuites') if xml_report else None
-    testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests') if xml_report else None
-
     number_failures, resultset = jobset.run(
-        all_runs, check_cancelled, newline_on_success=newline_on_success, 
+        all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
         cache=cache if not xml_report else None,
-        xml_report=testsuite,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
     if resultset:
       for k, v in resultset.iteritems():
@@ -894,8 +890,7 @@ def _build_and_run(
     for antagonist in antagonists:
       antagonist.kill()
     if xml_report:
-      tree = ET.ElementTree(root)
-      tree.write(xml_report, encoding='UTF-8')
+      report_utils.render_xml_report(resultset, xml_report)
 
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,

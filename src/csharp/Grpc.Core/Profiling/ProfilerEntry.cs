@@ -1,4 +1,5 @@
 #region Copyright notice and license
+
 // Copyright 2015, Google Inc.
 // All rights reserved.
 //
@@ -27,65 +28,60 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 #endregion
+
 using System;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Grpc.Core.Profiling;
+using System.IO;
+using System.Threading;
+using Grpc.Core.Internal;
 
-namespace Grpc.Core.Internal
+namespace Grpc.Core.Profiling
 {
-    /// <summary>
-    /// grpc_completion_queue from <c>grpc/grpc.h</c>
-    /// </summary>
-    internal class CompletionQueueSafeHandle : SafeHandleZeroIsInvalid
+    internal struct ProfilerEntry
     {
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CompletionQueueSafeHandle grpcsharp_completion_queue_create();
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CompletionQueueEvent grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern CompletionQueueEvent grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag);
-
-        [DllImport("grpc_csharp_ext.dll")]
-        static extern void grpcsharp_completion_queue_destroy(IntPtr cq);
-
-        private CompletionQueueSafeHandle()
-        {
+        public enum Type {
+            BEGIN,
+            END,
+            MARK
         }
 
-        public static CompletionQueueSafeHandle Create()
+        public ProfilerEntry(Timespec timespec, Type type, string tag)
         {
-            return grpcsharp_completion_queue_create();
+            this.timespec = timespec;
+            this.type = type;
+            this.tag = tag;
         }
 
-        public CompletionQueueEvent Next()
+        public Timespec timespec;
+        public Type type;
+        public string tag;
+
+        public override string ToString()
         {
-            return grpcsharp_completion_queue_next(this);
+            // mimic the output format used by C core.
+            return string.Format(
+                "{{\"t\": {0}.{1}, \"thd\":\"unknown\", \"type\": \"{2}\", \"tag\": \"{3}\", " +
+                "\"file\": \"unknown\", \"line\": 0, \"imp\": 0}}",
+                timespec.TimevalSeconds, timespec.TimevalNanos.ToString("D9"),
+                GetTypeAbbreviation(type), tag);
         }
 
-        public CompletionQueueEvent Pluck(IntPtr tag)
+        internal static string GetTypeAbbreviation(Type type)
         {
-            using (Profilers.ForCurrentThread().NewScope("CompletionQueueSafeHandle.Pluck"))
+            switch (type)
             {
-                return grpcsharp_completion_queue_pluck(this, tag);
+                case Type.BEGIN:
+                    return "{";
+
+                case Type.END:
+                    return "}";
+                
+                case Type.MARK:
+                    return ".";
+                default:
+                    throw new ArgumentException("Unknown type");
             }
-        }
-
-        public void Shutdown()
-        {
-            grpcsharp_completion_queue_shutdown(this);
-        }
-
-        protected override bool ReleaseHandle()
-        {
-            grpcsharp_completion_queue_destroy(handle);
-            return true;
         }
     }
 }
