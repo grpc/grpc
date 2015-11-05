@@ -759,9 +759,13 @@ def _start_port_server(port_server_port):
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
     if platform.system() == 'Windows':
+      # Working directory of port server needs to be outside of Jenkins
+      # workspace to prevent file lock issues.
+      tempdir = tempfile.mkdtemp()
       port_server = subprocess.Popen(
           args,
           env=env,
+          cwd=tempdir,
           creationflags = 0x00000008, # detached process
           close_fds=True)
     else:
