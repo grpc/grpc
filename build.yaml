@@ -751,7 +751,11 @@ libs:
   - test/cpp/qps/timer.h
   - test/cpp/util/benchmark_config.h
   src:
-  - test/proto/qpstest.proto
+  - test/proto/messages.proto
+  - test/proto/benchmarks/control.proto
+  - test/proto/benchmarks/payloads.proto
+  - test/proto/benchmarks/services.proto
+  - test/proto/benchmarks/stats.proto
   - test/cpp/qps/perf_db.proto
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
@@ -2038,6 +2042,23 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: secure_sync_unary_ping_pong_test
+  build: test
+  language: c++
+  src:
+  - test/cpp/qps/secure_sync_unary_ping_pong_test.cc
+  deps:
+  - qps
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: server_crash_test
   build: test
   language: c++

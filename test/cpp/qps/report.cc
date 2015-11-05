@@ -43,6 +43,7 @@ namespace testing {
 static double WallTime(ResourceUsage u) { return u.wall_time(); }
 static double UserTime(ResourceUsage u) { return u.user_time(); }
 static double SystemTime(ResourceUsage u) { return u.system_time(); }
+static int Cores(ResourceUsage u) { return u.cores(); }
 
 void CompositeReporter::add(std::unique_ptr<Reporter> reporter) {
   reporters_.emplace_back(std::move(reporter));
@@ -83,7 +84,7 @@ void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
       result.latencies.Count() / average(result.client_resources, WallTime);
 
   gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", qps,
-          qps / result.server_config.threads());
+          qps / sum(result.server_resources, Cores));
 }
 
 void GprLogReporter::ReportLatency(const ScenarioResult& result) {
@@ -123,10 +124,10 @@ void PerfDbReporter::ReportQPSPerCore(const ScenarioResult& result) {
   auto qps =
       result.latencies.Count() / average(result.client_resources, WallTime);
 
-  auto qpsPerCore = qps / result.server_config.threads();
+  auto qps_per_core = qps / sum(result.server_resources, Cores);
 
   perf_db_client_.setQps(qps);
-  perf_db_client_.setQpsPerCore(qpsPerCore);
+  perf_db_client_.setQpsPerCore(qps_per_core);
   perf_db_client_.setConfigs(result.client_config, result.server_config);
 }
 

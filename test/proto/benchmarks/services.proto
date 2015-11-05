@@ -27,45 +27,29 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// An integration test service that covers all the method signature permutations
+// of unary/streaming requests/responses.
 syntax = "proto3";
 
+import "test/proto/messages.proto";
 import "test/proto/benchmarks/control.proto";
 
 package grpc.testing;
 
-service PerfDbTransfer {
-  // Sends client info
-  rpc RecordSingleClientData(SingleUserRecordRequest)
-      returns (SingleUserRecordReply) {
-  }
+service BenchmarkService {
+  // One request followed by one response.
+  // The server returns the client payload as-is.
+  rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
+
+  // One request followed by one response.
+  // The server returns the client payload as-is.
+  rpc StreamingCall(stream SimpleRequest) returns (stream SimpleResponse);
 }
 
-// Metrics to be stored
-message Metrics {
-  double qps = 1;
-  double qps_per_core = 2;
-  double perc_lat_50 = 3;
-  double perc_lat_90 = 4;
-  double perc_lat_95 = 5;
-  double perc_lat_99 = 6;
-  double perc_lat_99_point_9 = 7;
-  double server_system_time = 8;
-  double server_user_time = 9;
-  double client_system_time = 10;
-  double client_user_time = 11;
-}
+service WorkerService {
+  // Start server with specified workload
+  rpc RunServer(stream ServerArgs) returns (stream ServerStatus);
 
-// Request for storing a single user's data
-message SingleUserRecordRequest {
-  string hashed_id = 1;
-  string test_name = 2;
-  string sys_info = 3;
-  string tag = 4;
-  Metrics metrics = 5;
-  ClientConfig client_config = 6;
-  ServerConfig server_config = 7;
-}
-
-// Reply to request for storing single user's data
-message SingleUserRecordReply {
+  // Start client with specified workload
+  rpc RunClient(stream ClientArgs) returns (stream ClientStatus);
 }

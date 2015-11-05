@@ -1594,6 +1594,23 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_test_util", 
+      "qps"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "secure_sync_unary_ping_pong_test", 
+    "src": [
+      "test/cpp/qps/secure_sync_unary_ping_pong_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -14649,8 +14666,16 @@
       "test/cpp/qps/stats.h", 
       "test/cpp/qps/timer.h", 
       "test/cpp/util/benchmark_config.h", 
-      "test/proto/qpstest.grpc.pb.h", 
-      "test/proto/qpstest.pb.h"
+      "test/proto/benchmarks/control.grpc.pb.h", 
+      "test/proto/benchmarks/control.pb.h", 
+      "test/proto/benchmarks/payloads.grpc.pb.h", 
+      "test/proto/benchmarks/payloads.pb.h", 
+      "test/proto/benchmarks/services.grpc.pb.h", 
+      "test/proto/benchmarks/services.pb.h", 
+      "test/proto/benchmarks/stats.grpc.pb.h", 
+      "test/proto/benchmarks/stats.pb.h", 
+      "test/proto/messages.grpc.pb.h", 
+      "test/proto/messages.pb.h"
     ], 
     "language": "c++", 
     "name": "qps", 
