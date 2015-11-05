@@ -52,9 +52,15 @@ HTTP2 requires that reserved headers, ones starting with ":" appear before all o
 
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 
-**Custom-Metadata** is an arbitrary set of key-value pairs defined by the application layer. Aside from transport limits on the total length of HTTP2 HEADERS the only other constraint is that header names starting with "grpc-" are reserved for future use.
+**Custom-Metadata** is an arbitrary set of key-value pairs defined by the application layer. Header names starting with "grpc-" but not listed here are reserved for future GRPC use and should not be used by applications as **Custom-Metadata**.
 
 Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per https://tools.ietf.org/html/rfc4648#section-4. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with "-bin". Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding & decoding as headers are sent and received.
+
+Servers may limit the size of **Request-Headers**, with a default of 8 KiB
+suggested.  Implementations are encouraged to compute total header size like
+HTTP/2's `SETTINGS_MAX_HEADER_LIST_SIZE`: the sum of all header fields, for each
+field the sum of the uncompressed field name and value lengths plus 32, with
+binary values' lengths being post-Base64.
 
 The repeated sequence of **Length-Prefixed-Message** items is delivered in DATA frames
 
@@ -82,6 +88,9 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 For responses end-of-stream is indicated by the presence of the END_STREAM flag on the last received HEADERS frame that carries **Trailers**.
 
 Implementations should expect broken deployments to send non-200 HTTP status codes in responses as well as a variety of non-GRPC content-types and to omit **Status** & **Status-Message**. Implementations must synthesize a **Status** & **Status-Message** to propagate to the application layer when this occurs.
+
+Clients may limit the size of **Response-Headers**, **Trailers**, and
+**Trailers-Only**, with a default of 8 KiB each suggested.
 
 ####Example
 
