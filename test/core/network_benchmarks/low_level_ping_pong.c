@@ -82,9 +82,9 @@ typedef struct thread_args {
 /* Basic call to read() */
 static int read_bytes(int fd, char *buf, size_t read_size, int spin) {
   size_t bytes_read = 0;
-  int err;
+  ssize_t err;
   do {
-    err = (int)read(fd, buf + bytes_read, read_size - bytes_read);
+    err = read(fd, buf + bytes_read, read_size - bytes_read);
     if (err < 0) {
       if (errno == EINTR) {
         continue;
@@ -115,6 +115,7 @@ static int poll_read_bytes(int fd, char *buf, size_t read_size, int spin) {
   struct pollfd pfd;
   size_t bytes_read = 0;
   int err;
+  ssize_t err2;
 
   pfd.fd = fd;
   pfd.events = POLLIN;
@@ -132,13 +133,13 @@ static int poll_read_bytes(int fd, char *buf, size_t read_size, int spin) {
     GPR_ASSERT(err == 1);
     GPR_ASSERT(pfd.revents == POLLIN);
     do {
-      err = (int)read(fd, buf + bytes_read, read_size - bytes_read);
-    } while (err < 0 && errno == EINTR);
-    if (err < 0 && errno != EAGAIN) {
+      err2 = read(fd, buf + bytes_read, read_size - bytes_read);
+    } while (err2 < 0 && errno == EINTR);
+    if (err2 < 0 && errno != EAGAIN) {
       gpr_log(GPR_ERROR, "Read failed: %s", strerror(errno));
       return -1;
     }
-    bytes_read += (size_t)err;
+    bytes_read += (size_t) err2;
   } while (bytes_read < read_size);
   return 0;
 }
@@ -157,6 +158,7 @@ static int epoll_read_bytes(struct thread_args *args, char *buf, int spin) {
   struct epoll_event ev;
   size_t bytes_read = 0;
   int err;
+  ssize_t err2;
   size_t read_size = args->msg_size;
 
   do {
@@ -172,11 +174,11 @@ static int epoll_read_bytes(struct thread_args *args, char *buf, int spin) {
     GPR_ASSERT(ev.data.fd == args->fds.read_fd);
     do {
       do {
-        err = (int)read(args->fds.read_fd, buf + bytes_read,
-                        read_size - bytes_read);
-      } while (err < 0 && errno == EINTR);
+        err2 = read(args->fds.read_fd, buf + bytes_read,
+		    read_size - bytes_read);
+      } while (err2 < 0 && errno == EINTR);
       if (errno == EAGAIN) break;
-      bytes_read += (size_t)err;
+      bytes_read += (size_t) err2;
       /* TODO(klempner): This should really be doing an extra call after we are
          done to ensure we see an EAGAIN */
     } while (bytes_read < read_size);
@@ -200,11 +202,11 @@ static int epoll_read_bytes_spin(struct thread_args *args, char *buf) {
  */
 static int blocking_write_bytes(struct thread_args *args, char *buf) {
   size_t bytes_written = 0;
-  int err;
+  ssize_t err;
   size_t write_size = args->msg_size;
   do {
-    err = (int)write(args->fds.write_fd, buf + bytes_written,
-                     write_size - bytes_written);
+    err = write(args->fds.write_fd, buf + bytes_written,
+                write_size - bytes_written);
     if (err < 0) {
       if (errno == EINTR) {
         continue;
@@ -298,7 +300,7 @@ static void print_histogram(gpr_histogram *histogram) {
 
 static double now(void) {
   gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
-  return 1e9 * (double)tv.tv_sec + tv.tv_nsec;
+  return 1e9 * (double)tv.tv_sec + (double)tv.tv_nsec;
 }
 
 static void client_thread(thread_args *args) {
@@ -374,7 +376,7 @@ error:
   return -1;
 }
 
-static int connect_client(struct sockaddr *addr, int len) {
+static int connect_client(struct sockaddr *addr, socklen_t len) {
   int fd = socket(addr->sa_family, SOCK_STREAM, 0);
   int err;
   if (fd < 0) {
@@ -388,7 +390,7 @@ static int connect_client(struct sockaddr *addr, int len) {
   }
 
   do {
-    err = (int)connect(fd, addr, (socklen_t)len);
+    err = connect(fd, addr, len);
   } while (err < 0 && errno == EINTR);
 
   if (err < 0) {
@@ -587,27 +589,27 @@ static int run_benchmark(char *socket_type, thread_args *client_args,
   return 0;
 }
 
-static int run_all_benchmarks(int msg_size) {
+static int run_all_benchmarks(size_t msg_size) {
   int error = 0;
   size_t i;
   for (i = 0; i < GPR_ARRAY_SIZE(test_strategies); ++i) {
-    test_strategy *ts = &test_strategies[i];
+    test_strategy *strategy = &test_strategies[i];
     size_t j;
     for (j = 0; j < GPR_ARRAY_SIZE(socket_types); ++j) {
       thread_args *client_args = malloc(sizeof(thread_args));
       thread_args *server_args = malloc(sizeof(thread_args));
       char *socket_type = socket_types[j];
 
-      client_args->read_bytes = ts->read_strategy;
+      client_args->read_bytes = strategy->read_strategy;
       client_args->write_bytes = blocking_write_bytes;
-      client_args->setup = ts->setup;
-      client_args->msg_size = (size_t)msg_size;
-      client_args->strategy_name = ts->name;
-      server_args->read_bytes = ts->read_strategy;
+      client_args->setup = strategy->setup;
+      client_args->msg_size = msg_size;
+      client_args->strategy_name = strategy->name;
+      server_args->read_bytes = strategy->read_strategy;
       server_args->write_bytes = blocking_write_bytes;
-      server_args->setup = ts->setup;
-      server_args->msg_size = (size_t)msg_size;
-      server_args->strategy_name = ts->name;
+      server_args->setup = strategy->setup;
+      server_args->msg_size = msg_size;
+      server_args->strategy_name = strategy->name;
       error = run_benchmark(socket_type, client_args, server_args);
       if (error < 0) {
         return error;
@@ -624,7 +626,7 @@ int main(int argc, char **argv) {
   char *read_strategy = NULL;
   char *socket_type = NULL;
   size_t i;
-  const test_strategy *ts = NULL;
+  const test_strategy *strategy = NULL;
   int error = 0;
 
   gpr_cmdline *cmdline =
@@ -644,7 +646,7 @@ int main(int argc, char **argv) {
 
   if (read_strategy == NULL) {
     gpr_log(GPR_INFO, "No strategy specified, running all benchmarks");
-    return run_all_benchmarks(msg_size);
+    return run_all_benchmarks((size_t)msg_size);
   }
 
   if (socket_type == NULL) {
@@ -658,22 +660,22 @@ int main(int argc, char **argv) {
 
   for (i = 0; i < GPR_ARRAY_SIZE(test_strategies); ++i) {
     if (strcmp(test_strategies[i].name, read_strategy) == 0) {
-      ts = &test_strategies[i];
+      strategy = &test_strategies[i];
     }
   }
-  if (ts == NULL) {
+  if (strategy == NULL) {
     fprintf(stderr, "Invalid read strategy %s\n", read_strategy);
     return -1;
   }
 
-  client_args->read_bytes = ts->read_strategy;
+  client_args->read_bytes = strategy->read_strategy;
   client_args->write_bytes = blocking_write_bytes;
-  client_args->setup = ts->setup;
+  client_args->setup = strategy->setup;
   client_args->msg_size = (size_t)msg_size;
   client_args->strategy_name = read_strategy;
-  server_args->read_bytes = ts->read_strategy;
+  server_args->read_bytes = strategy->read_strategy;
   server_args->write_bytes = blocking_write_bytes;
-  server_args->setup = ts->setup;
+  server_args->setup = strategy->setup;
   server_args->msg_size = (size_t)msg_size;
   server_args->strategy_name = read_strategy;
 

@@ -29,43 +29,27 @@
 
 syntax = "proto3";
 
-import "test/proto/benchmarks/control.proto";
-
 package grpc.testing;
 
-service PerfDbTransfer {
-  // Sends client info
-  rpc RecordSingleClientData(SingleUserRecordRequest)
-      returns (SingleUserRecordReply) {
+message ByteBufferParams {
+  int32 req_size = 1;
+  int32 resp_size = 2;
+}
+
+message SimpleProtoParams {
+  int32 req_size = 1;
+  int32 resp_size = 2;
+}
+
+message ComplexProtoParams {
+  // TODO (vpai): Fill this in once the details of complex, representative
+  //              protos are decided
+}
+
+message PayloadConfig {
+  oneof payload {
+    ByteBufferParams bytebuf_params = 1;
+    SimpleProtoParams simple_params = 2;
+    ComplexProtoParams complex_params = 3;
   }
-}
-
-// Metrics to be stored
-message Metrics {
-  double qps = 1;
-  double qps_per_core = 2;
-  double perc_lat_50 = 3;
-  double perc_lat_90 = 4;
-  double perc_lat_95 = 5;
-  double perc_lat_99 = 6;
-  double perc_lat_99_point_9 = 7;
-  double server_system_time = 8;
-  double server_user_time = 9;
-  double client_system_time = 10;
-  double client_user_time = 11;
-}
-
-// Request for storing a single user's data
-message SingleUserRecordRequest {
-  string hashed_id = 1;
-  string test_name = 2;
-  string sys_info = 3;
-  string tag = 4;
-  Metrics metrics = 5;
-  ClientConfig client_config = 6;
-  ServerConfig server_config = 7;
-}
-
-// Reply to request for storing single user's data
-message SingleUserRecordReply {
 }

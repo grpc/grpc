@@ -31,30 +31,54 @@
  *
  */
 
-#ifndef QPS_WORKER_H
-#define QPS_WORKER_H
+#include <set>
 
-#include <memory>
+#include <grpc/support/log.h>
+
+#include "test/cpp/qps/driver.h"
+#include "test/cpp/qps/report.h"
+#include "test/cpp/util/benchmark_config.h"
 
 namespace grpc {
-
-class Server;
-
 namespace testing {
 
-class WorkerServiceImpl;
+static const int WARMUP = 5;
+static const int BENCHMARK = 10;
 
-class QpsWorker {
- public:
-  explicit QpsWorker(int driver_port);
-  ~QpsWorker();
+static void RunSynchronousUnaryPingPong() {
+  gpr_log(GPR_INFO, "Running Synchronous Unary Ping Pong");
 
- private:
-  std::unique_ptr<WorkerServiceImpl> impl_;
-  std::unique_ptr<Server> server_;
-};
+  ClientConfig client_config;
+  client_config.set_client_type(SYNC_CLIENT);
+  client_config.set_outstanding_rpcs_per_channel(1);
+  client_config.set_client_channels(1);
+  client_config.set_rpc_type(UNARY);
+  client_config.mutable_load_params()->mutable_closed_loop();
+
+  ServerConfig server_config;
+  server_config.set_server_type(SYNC_SERVER);
+
+  // Set up security params
+  SecurityParams security;
+  security.set_use_test_ca(true);
+  security.set_server_host_override("foo.test.google.fr");
+  client_config.mutable_security_params()->CopyFrom(security);
+  server_config.mutable_security_params()->CopyFrom(security);
+
+  const auto result =
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
+
+  GetReporter()->ReportQPS(*result);
+  GetReporter()->ReportLatency(*result);
+}
 
 }  // namespace testing
 }  // namespace grpc
 
-#endif
+int main(int argc, char** argv) {
+  grpc::testing::InitBenchmark(&argc, &argv, true);
+
+  grpc::testing::RunSynchronousUnaryPingPong();
+
+  return 0;
+}

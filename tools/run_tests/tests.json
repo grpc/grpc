@@ -1524,6 +1524,22 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c++", 
+    "name": "secure_sync_unary_ping_pong_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
     "name": "server_crash_test", 
     "platforms": [
       "linux", 

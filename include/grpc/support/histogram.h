@@ -50,7 +50,7 @@ void gpr_histogram_add(gpr_histogram *h, double x);
 /* The following merges the second histogram into the first. It only works
    if they have the same buckets and resolution. Returns 0 on failure, 1
    on success */
-int gpr_histogram_merge(gpr_histogram *dst, gpr_histogram *src);
+int gpr_histogram_merge(gpr_histogram *dst, const gpr_histogram *src);
 
 double gpr_histogram_percentile(gpr_histogram *histogram, double percentile);
 double gpr_histogram_mean(gpr_histogram *histogram);
