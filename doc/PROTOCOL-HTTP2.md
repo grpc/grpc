@@ -44,8 +44,9 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Message-Type** → "grpc-message-type" {_type name for message schema_}
 * **Custom-Metadata** → Binary-Header / ASCII-Header
 * **Binary-Header** → {Header-Name "-bin" } {_base64 encoded value_}
-* **ASCII-Header** → Header-Name {_value_}
+* **ASCII-Header** → Header-Name ASCII-Value
 * **Header-Name** → 1\*( %x30-39 / %x61-7A / "\_" / "-") ; 0-9 a-z \_ -
+* **ASCII-Value** → 1\*( %x20-%x7E ) ; space and printable ASCII
 
 
 HTTP2 requires that reserved headers, ones starting with ":" appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
@@ -55,6 +56,23 @@ If **Timeout** is omitted a server should assume an infinite timeout. Client imp
 **Custom-Metadata** is an arbitrary set of key-value pairs defined by the application layer. Header names starting with "grpc-" but not listed here are reserved for future GRPC use and should not be used by applications as **Custom-Metadata**.
 
 Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per https://tools.ietf.org/html/rfc4648#section-4. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with "-bin". Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding & decoding as headers are sent and received.
+
+**Custom-Metadata** header order is not guaranteed to be preserved except for
+values with duplicate header names. Duplicate header names may have their values
+joined with "," as the delimiter and be considered semantically equivalent.
+Implementations must split **Binary-Header**s on "," before decoding the
+Base64-encoded values.
+
+**ASCII-Value** should not have leading or trailing whitespace. If it contains
+leading or trailing whitespace, it may be stripped. The **ASCII-Value**
+character range defined is more strict than HTTP. Implementations must not error
+due to receiving an invalid **ASCII-Value** but value valid in HTTP, but the
+precise behavior is not strictly defined: they may throw the value away or
+accept the value. If accepted, care must be taken to make sure that the
+application is permitted to echo the value back as metadata. For example, if the
+metadata is provided to the application as a list in a request, the application
+should not trigger an error by providing that same list as the metadata in the
+response.
 
 Servers may limit the size of **Request-Headers**, with a default of 8 KiB
 suggested.  Implementations are encouraged to compute total header size like
