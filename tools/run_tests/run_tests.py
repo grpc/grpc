@@ -902,7 +902,7 @@ def _build_and_run(
     for antagonist in antagonists:
       antagonist.kill()
     if xml_report and resultset:
-      report_utils.render_xml_report(resultset, xml_report)
+      report_utils.render_junit_xml_report(resultset, xml_report)
 
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,
