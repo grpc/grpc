@@ -203,13 +203,18 @@ class Job(object):
     env.update(self._spec.environ)
     env.update(self._add_env)
     self._start = time.time()
-    self._process = subprocess.Popen(args=self._spec.cmdline,
-                                     stderr=subprocess.STDOUT,
-                                     stdout=self._tempfile,
-                                     cwd=self._spec.cwd,
-                                     shell=self._spec.shell,
-                                     env=env)
-    self._state = _RUNNING
+    try:
+      self._process = subprocess.Popen(args=self._spec.cmdline,
+                                       stderr=subprocess.STDOUT,
+                                       stdout=self._tempfile,
+                                       cwd=self._spec.cwd,
+                                       shell=self._spec.shell,
+                                       env=env)
+      self._state = _RUNNING
+    except OSError, e:
+      print '\nCaught OSError %s.\nCommand line: %s' % (e, 
+                                                        str(self._spec.cmdline))
+      self._state = _FAILURE
 
   def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
