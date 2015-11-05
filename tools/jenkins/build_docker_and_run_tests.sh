@@ -63,6 +63,7 @@ docker run \
   -e "arch=$arch" \
   -e CCACHE_DIR=/tmp/ccache \
   -e XDG_CACHE_HOME=/tmp/xdg-cache-home \
+  -e THIS_IS_REALLY_NEEDED='                           ' \
   -i $TTY_FLAG \
   -v "$git_root:/var/local/jenkins/grpc" \
   -v /tmp/ccache:/tmp/ccache \
