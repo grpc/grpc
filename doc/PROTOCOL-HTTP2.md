@@ -45,7 +45,7 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Custom-Metadata** → Binary-Header / ASCII-Header
 * **Binary-Header** → {Header-Name "-bin" } {_base64 encoded value_}
 * **ASCII-Header** → Header-Name {_value_}
-* **Header-Name** → 1\*( %x30-39 / %x61-7A / "\_" / "-") ; 0-9 a-z
+* **Header-Name** → 1\*( %x30-39 / %x61-7A / "\_" / "-") ; 0-9 a-z \_ -
 
 
 HTTP2 requires that reserved headers, ones starting with ":" appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
