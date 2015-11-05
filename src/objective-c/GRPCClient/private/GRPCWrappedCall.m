@@ -244,6 +244,8 @@
     static dispatch_once_t initialization;
     dispatch_once(&initialization, ^{
       grpc_init();
+      grpc_tracer_set_enabled("api", 1);
+      grpc_tracer_set_enabled("tcp", 1);
     });
 
     // Each completion queue consumes one thread. There's a trade to be made between creating and
