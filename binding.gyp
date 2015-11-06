@@ -185,6 +185,8 @@
         'src/core/channel/noop_filter.c',
         'src/core/client_config/client_config.c',
         'src/core/client_config/connector.c',
+        'src/core/client_config/default_initial_connect_string.c',
+        'src/core/client_config/initial_connect_string.c',
         'src/core/client_config/lb_policies/pick_first.c',
         'src/core/client_config/lb_policies/round_robin.c',
         'src/core/client_config/lb_policy.c',

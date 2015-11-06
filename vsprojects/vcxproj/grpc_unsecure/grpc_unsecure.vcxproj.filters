@@ -43,6 +43,12 @@
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\default_initial_connect_string.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\initial_connect_string.c">
+      <Filter>src\core\client_config</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
       <Filter>src\core\client_config\lb_policies</Filter>
     </ClCompile>
@@ -444,6 +450,9 @@
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\connector.h">
+      <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\client_config\initial_connect_string.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h">

@@ -51,6 +51,8 @@ typedef struct {
   /** address to connect to */
   const struct sockaddr *addr;
   size_t addr_len;
+  /** initial connect string to send */
+  gpr_slice initial_connect_string;
   /** deadline for connection */
   gpr_timespec deadline;
   /** channel arguments (to be passed to transport) */
