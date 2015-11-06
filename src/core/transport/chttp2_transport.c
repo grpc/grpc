@@ -512,7 +512,7 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   GPR_ASSERT(s->global.recv_initial_metadata_finished == NULL);
   GPR_ASSERT(s->global.recv_message_ready == NULL);
   GPR_ASSERT(s->global.recv_trailing_metadata_finished == NULL);
-  grpc_chttp2_data_parser_destroy(&s->parsing.data_parser);
+  grpc_chttp2_data_parser_destroy(exec_ctx, &s->parsing.data_parser);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->parsing.metadata_buffer[0]);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->parsing.metadata_buffer[1]);
   grpc_chttp2_incoming_metadata_buffer_destroy(
