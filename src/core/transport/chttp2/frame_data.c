@@ -198,8 +198,8 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
       }
       p->parsing_frame = incoming_byte_stream =
           grpc_chttp2_incoming_byte_stream_create(
-              transport_parsing, stream_parsing, p->frame_size, message_flags,
-              &p->incoming_frames);
+              exec_ctx, transport_parsing, stream_parsing, p->frame_size,
+              message_flags, &p->incoming_frames);
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FRAME:
       if (cur == end) {
