@@ -133,7 +133,7 @@ class TestCase(test_coverage.Coverage, unittest.TestCase):
 
     Overriding implementations must call this implementation.
     """
-    self._invoker = None
+    del self._invoker
     self.implementation.destantiate(self._memo)
     self._digest_pool.shutdown(wait=True)
 

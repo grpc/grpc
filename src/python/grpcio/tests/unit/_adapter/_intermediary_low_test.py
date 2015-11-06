@@ -119,7 +119,10 @@ class EchoTest(unittest.TestCase):
     self.client_completion_queue.stop()
     self.server_completion_queue_thread.join()
     self.client_completion_queue_thread.join()
+    del self.channel
     del self.server
+    del self.client_completion_queue
+    del self.server_completion_queue
 
   def _perform_echo_test(self, test_data):
     method = 'test method'
@@ -339,7 +342,10 @@ class CancellationTest(unittest.TestCase):
     self.client_completion_queue.stop()
     self.server_completion_queue_thread.join()
     self.client_completion_queue_thread.join()
+    del self.channel
     del self.server
+    del self.client_completion_queue
+    del self.server_completion_queue
 
   def testCancellation(self):
     method = 'test method'

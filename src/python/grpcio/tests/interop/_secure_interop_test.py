@@ -60,7 +60,9 @@ class SecureInteropTest(
                 _SERVER_HOST_OVERRIDE))
 
   def tearDown(self):
+    del self.stub
     self.server.stop(0)
+    del self.server
 
 
 if __name__ == '__main__':

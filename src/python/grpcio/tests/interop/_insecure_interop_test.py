@@ -51,7 +51,9 @@ class InsecureInteropTest(
         implementations.insecure_channel('[::]', port))
 
   def tearDown(self):
+    del self.stub
     self.server.stop(0)
+    del self.server
 
 
 if __name__ == '__main__':

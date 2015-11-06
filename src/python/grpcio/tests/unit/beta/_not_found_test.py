@@ -47,8 +47,9 @@ class NotFoundTest(unittest.TestCase):
     self._server.start()
 
   def tearDown(self):
+    del self._generic_stub
     self._server.stop(0).wait()
-    self._generic_stub = None
+    del self._server
 
   def test_blocking_unary_unary_not_found(self):
     with self.assertRaises(face.LocalError) as exception_assertion_context:

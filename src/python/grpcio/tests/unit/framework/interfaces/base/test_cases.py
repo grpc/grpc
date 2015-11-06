@@ -173,6 +173,7 @@ class _OperationTest(unittest.TestCase):
       self._pool.shutdown(wait=True)
     else:
       self._pool = None
+    del self._controller
 
   def test_operation(self):
     invocation = self._controller.invocation()

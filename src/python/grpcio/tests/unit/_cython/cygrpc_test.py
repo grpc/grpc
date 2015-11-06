@@ -127,6 +127,7 @@ class InsecureServerInsecureClient(unittest.TestCase):
     self.client_channel = cygrpc.Channel('localhost:{}'.format(self.port))
 
   def tearDown(self):
+    del self.client_channel
     del self.server
     del self.client_completion_queue
     del self.server_completion_queue

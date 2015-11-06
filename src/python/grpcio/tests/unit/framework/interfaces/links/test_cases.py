@@ -282,6 +282,10 @@ class TransmissionTest(object):
 
   def tearDown(self):
     self.destroy_transmitting_links(self._invocation_link, self._service_link)
+    del self._service_mate
+    del self._invocation_mate
+    del self._invocation_link
+    del self._service_link
 
   def testSimplestRoundTrip(self):
     """Tests transmission of one ticket in each direction."""

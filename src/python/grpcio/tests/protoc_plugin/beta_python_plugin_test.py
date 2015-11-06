@@ -173,7 +173,9 @@ def _CreateService(test_pb2):
   channel = implementations.insecure_channel('localhost', port)
   stub = getattr(test_pb2, STUB_FACTORY_IDENTIFIER)(channel)
   yield servicer_methods, stub
+  del stub
   server.stop(0)
+  del server
 
 
 def _streaming_input_request_iterator(test_pb2):

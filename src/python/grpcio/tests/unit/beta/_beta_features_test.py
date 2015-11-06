@@ -177,8 +177,9 @@ class BetaFeaturesTest(unittest.TestCase):
         channel, _GROUP, cardinalities, options=stub_options)
 
   def tearDown(self):
-    self._dynamic_stub = None
+    del self._dynamic_stub
     self._server.stop(test_constants.SHORT_TIMEOUT).wait()
+    del self._server
 
   def test_unary_unary(self):
     call_options = interfaces.grpc_call_options(disable_compression=True)
