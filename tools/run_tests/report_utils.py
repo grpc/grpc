@@ -151,27 +151,6 @@ def render_html_report(client_langs, server_langs, test_cases, auth_test_cases,
         html_str = fill_one_test_result(shortname, resultset, html_str)
       html_str = '%s</tr>\n' % html_str 
     html_str = '%s</table>\n' % html_str
-  if server_langs:
-    for test_case in sorted_test_cases:
-      # Each column header is the client language.
-      html_str = ('%s<h2>%s</h2>\n' 
-                  '<table style=\"width:100%%\" border=\"1\">\n'
-                  '<tr bgcolor=\"#00BFFF\">\n'
-                  '<th>Client languages &#9658;<br/>'
-                  'Server languages &#9660;</th>\n') % (html_str, test_case)
-      for client_lang in sorted_client_langs:
-        html_str = '%s<th>%s\n' % (html_str, client_lang)
-      html_str = '%s</tr>\n' % html_str
-      # Each row head is the server language.
-      for server_lang in sorted_server_langs:
-        html_str = '%s<tr><td><b>%s</b></td>\n' % (html_str, server_lang)
-        # Fill up the cells with test result.
-        for client_lang in sorted_client_langs:
-          shortname = 'cloud_to_cloud:%s:%s_server:%s' % (
-              client_lang, server_lang, test_case)
-          html_str = fill_one_test_result(shortname, resultset, html_str)
-        html_str = '%s</tr>\n' % html_str
-      html_str = '%s</table>\n' % html_str
   if http2_interop:
     # Each column header is the server language.
     html_str = ('%s<h2>HTTP/2 Interop</h2>\n' 
@@ -196,6 +175,27 @@ def render_html_report(client_langs, server_langs, test_cases, auth_test_cases,
         html_str = fill_one_test_result(shortname, resultset, html_str)
       html_str = '%s</tr>\n' % html_str
     html_str = '%s</table>\n' % html_str
+  if server_langs:
+    for test_case in sorted_test_cases:
+      # Each column header is the client language.
+      html_str = ('%s<h2>%s</h2>\n' 
+                  '<table style=\"width:100%%\" border=\"1\">\n'
+                  '<tr bgcolor=\"#00BFFF\">\n'
+                  '<th>Client languages &#9658;<br/>'
+                  'Server languages &#9660;</th>\n') % (html_str, test_case)
+      for client_lang in sorted_client_langs:
+        html_str = '%s<th>%s\n' % (html_str, client_lang)
+      html_str = '%s</tr>\n' % html_str
+      # Each row head is the server language.
+      for server_lang in sorted_server_langs:
+        html_str = '%s<tr><td><b>%s</b></td>\n' % (html_str, server_lang)
+        # Fill up the cells with test result.
+        for client_lang in sorted_client_langs:
+          shortname = 'cloud_to_cloud:%s:%s_server:%s' % (
+              client_lang, server_lang, test_case)
+          html_str = fill_one_test_result(shortname, resultset, html_str)
+        html_str = '%s</tr>\n' % html_str
+      html_str = '%s</table>\n' % html_str
 
   html_str = ('%s\n'
               '<script>\n'
