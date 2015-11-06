@@ -806,7 +806,8 @@ static void perform_stream_op_locked(
     }
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_trailing_metadata_finished, 0);
+          exec_ctx, &stream_global->send_trailing_metadata_finished, 
+          grpc_metadata_batch_is_empty(op->send_trailing_metadata));
     } else if (stream_global->id != 0) {
       /* TODO(ctiller): check if there's flow control for any outstanding
          bytes before going writable */
