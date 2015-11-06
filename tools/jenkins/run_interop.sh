@@ -34,4 +34,4 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
-tools/run_tests/run_interop_tests.py -l all -s all --cloud_to_prod --cloud_to_prod_auth --use_docker -t -j 12 $@ || true
+tools/run_tests/run_interop_tests.py -l all -s all --cloud_to_prod --cloud_to_prod_auth --use_docker --http2_interop -t -j 12 $@ || true
