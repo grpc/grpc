@@ -738,7 +738,7 @@ void grpc_chttp2_stream_unref(grpc_exec_ctx *exec_ctx,
 #endif
 
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
-    grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_uint32 frame_size,
     gpr_uint32 flags, grpc_chttp2_incoming_frame_queue *add_to_queue);
 void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,

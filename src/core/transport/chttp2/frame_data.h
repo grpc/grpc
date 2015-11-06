@@ -80,7 +80,8 @@ grpc_byte_stream *grpc_chttp2_incoming_frame_queue_pop(
 grpc_chttp2_parse_error grpc_chttp2_data_parser_init(
     grpc_chttp2_data_parser *parser);
 
-void grpc_chttp2_data_parser_destroy(grpc_chttp2_data_parser *parser);
+void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_data_parser *parser);
 
 /* start processing a new data frame */
 grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame(
