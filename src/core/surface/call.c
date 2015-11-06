@@ -944,12 +944,12 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                                   batch_control *bctl) {
   grpc_call *call = bctl->call;
   if (bctl->is_notify_tag_closure) {
+    grpc_exec_ctx_enqueue(exec_ctx, bctl->notify_tag, bctl->success);
     gpr_mu_lock(&call->mu);
     bctl->call->used_batches =
         (gpr_uint8)(bctl->call->used_batches &
                     ~(gpr_uint8)(1 << (bctl - bctl->call->active_batches)));
     gpr_mu_unlock(&call->mu);
-    grpc_exec_ctx_enqueue(exec_ctx, bctl->notify_tag, bctl->success);
     GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
   } else {
     grpc_cq_end_op(exec_ctx, bctl->call->cq, bctl->notify_tag, bctl->success,
