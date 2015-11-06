@@ -612,7 +612,15 @@ exports.makeClientConstructor = function(methods, serviceName) {
     if (!options) {
       options = {};
     }
-    options['grpc.primary_user_agent'] = 'grpc-node/' + version;
+    /* Append the grpc-node user agent string after the application user agent
+     * string, and put the combination at the beginning of the user agent string
+     */
+    if (options['grpc.primary_user_agent']) {
+      options['grpc.primary_user_agent'] += ' ';
+    } else {
+      options['grpc.primary_user_agent'] = '';
+    }
+    options['grpc.primary_user_agent'] += 'grpc-node/' + version;
     /* Private fields use $ as a prefix instead of _ because it is an invalid
      * prefix of a method name */
     this.$channel = new grpc.Channel(address, credentials, options);
