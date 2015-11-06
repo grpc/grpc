@@ -203,12 +203,23 @@ class Job(object):
     env.update(self._spec.environ)
     env.update(self._add_env)
     self._start = time.time()
-    self._process = subprocess.Popen(args=self._spec.cmdline,
-                                     stderr=subprocess.STDOUT,
-                                     stdout=self._tempfile,
-                                     cwd=self._spec.cwd,
-                                     shell=self._spec.shell,
-                                     env=env)
+    try_start = lambda: subprocess.Popen(args=self._spec.cmdline,
+                                         stderr=subprocess.STDOUT,
+                                         stdout=self._tempfile,
+                                         cwd=self._spec.cwd,
+                                         shell=self._spec.shell,
+                                         env=env)
+    delay = 0.3
+    for i in range(0, 4):
+      try:
+        self._process = try_start()
+        break
+      except OSError:
+        message('WARNING', 'Failed to start %s, retrying in %f seconds' % (self._spec.shortname, delay))
+        time.sleep(delay)
+        delay *= 2
+    else:
+      self._process = try_start()
     self._state = _RUNNING
 
   def state(self, update_cache):
