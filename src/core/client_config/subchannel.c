@@ -40,6 +40,7 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
+#include "src/core/client_config/initial_connect_string.h"
 #include "src/core/iomgr/timer.h"
 #include "src/core/transport/connectivity_state.h"
 #include "src/core/surface/channel.h"
@@ -85,6 +86,8 @@ struct grpc_subchannel {
   /** address to connect to */
   struct sockaddr *addr;
   size_t addr_len;
+  /** initial string to send to peer */
+  gpr_slice initial_connect_string;
   /** metadata context */
   grpc_mdctx *mdctx;
   /** master channel - the grpc_channel instance that ultimately owns
@@ -261,6 +264,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   gpr_free((void *)c->filters);
   grpc_channel_args_destroy(c->args);
   gpr_free(c->addr);
+  gpr_slice_unref(c->initial_connect_string);
   grpc_mdctx_unref(c->mdctx);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
@@ -299,6 +303,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   c->addr = gpr_malloc(args->addr_len);
   memcpy(c->addr, args->addr, args->addr_len);
   c->addr_len = args->addr_len;
+  grpc_set_initial_connect_string(&c->addr, &c->addr_len,
+                                  &c->initial_connect_string);
   c->args = grpc_channel_args_copy(args->args);
   c->mdctx = args->mdctx;
   c->master = args->master;
@@ -343,6 +349,7 @@ static void continue_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   args.addr_len = c->addr_len;
   args.deadline = compute_connect_deadline(c);
   args.channel_args = c->args;
+  args.initial_connect_string = c->initial_connect_string;
 
   grpc_connector_connect(exec_ctx, c->connector, &args, &c->connecting_result,
                          &c->connected);

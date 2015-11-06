@@ -37,6 +37,8 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/slice.h>
+#include <grpc/support/slice_buffer.h>
 
 #include "src/core/census/grpc_filter.h"
 #include "src/core/channel/channel_args.h"
@@ -61,6 +63,8 @@ typedef struct {
   grpc_closure *notify;
   grpc_connect_in_args args;
   grpc_connect_out_args *result;
+  grpc_closure initial_string_sent;
+  gpr_slice_buffer initial_string_buffer;
 
   gpr_mu mu;
   grpc_endpoint *connecting_endpoint;
@@ -80,6 +84,7 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
     grpc_mdctx_unref(c->mdctx);
+    /* c->initial_string_buffer does not need to be destroyed */
     gpr_free(c);
   }
 }
@@ -118,6 +123,14 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
   notify->cb(exec_ctx, notify->cb_arg, 1);
 }
 
+static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
+                                           int success) {
+  connector *c = arg;
+  grpc_security_connector_do_handshake(exec_ctx, &c->security_connector->base,
+                                       c->connecting_endpoint,
+                                       on_secure_handshake_done, c);
+}
+
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   connector *c = arg;
   grpc_closure *notify;
@@ -127,8 +140,19 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
     GPR_ASSERT(c->connecting_endpoint == NULL);
     c->connecting_endpoint = tcp;
     gpr_mu_unlock(&c->mu);
-    grpc_security_connector_do_handshake(exec_ctx, &c->security_connector->base,
-                                         tcp, on_secure_handshake_done, c);
+    if (!GPR_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
+      grpc_closure_init(&c->initial_string_sent, on_initial_connect_string_sent,
+                        c);
+      gpr_slice_buffer_init(&c->initial_string_buffer);
+      gpr_slice_buffer_add(&c->initial_string_buffer,
+                           c->args.initial_connect_string);
+      grpc_endpoint_write(exec_ctx, tcp, &c->initial_string_buffer,
+                          &c->initial_string_sent);
+    } else {
+      grpc_security_connector_do_handshake(exec_ctx,
+                                           &c->security_connector->base, tcp,
+                                           on_secure_handshake_done, c);
+    }
   } else {
     memset(c->result, 0, sizeof(*c->result));
     notify = c->notify;
