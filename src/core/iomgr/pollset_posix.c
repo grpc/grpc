@@ -194,6 +194,7 @@ void grpc_pollset_init(grpc_pollset *pollset) {
   pollset->in_flight_cbs = 0;
   pollset->shutting_down = 0;
   pollset->called_shutdown = 0;
+  pollset->kicked_without_pollers = 0;
   pollset->idle_jobs.head = pollset->idle_jobs.tail = NULL;
   become_basic_pollset(pollset, NULL);
 }
