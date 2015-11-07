@@ -104,6 +104,11 @@ static void reset_addr_and_set_magic_string(struct sockaddr **addr,
   memcpy(*addr, &target, sizeof(target));
 }
 
+static gpr_timespec n_sec_deadline(int seconds) {
+  return gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                      gpr_time_from_seconds(seconds, GPR_TIMESPAN));
+}
+
 static void start_rpc(int use_creds, int target_port) {
   state.done = 0;
   state.cq = grpc_completion_queue_create(NULL);
@@ -128,23 +133,25 @@ static void start_rpc(int use_creds, int target_port) {
   state.op.reserved = NULL;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(state.call, &state.op,
                                                    (size_t)(1), NULL, NULL));
-  grpc_completion_queue_next(
-      state.cq, gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                             gpr_time_from_seconds(1, GPR_TIMESPAN)),
-      NULL);
+  grpc_completion_queue_next(state.cq, n_sec_deadline(1), NULL);
 }
 
 static void cleanup_rpc(void) {
+  grpc_event ev;
   gpr_slice_buffer_destroy(&state.incoming_buffer);
-  grpc_completion_queue_destroy(state.cq);
+  grpc_credentials_unref(state.creds);
   grpc_call_destroy(state.call);
+  grpc_completion_queue_shutdown(state.cq);
+  do {
+    ev = grpc_completion_queue_next(state.cq, n_sec_deadline(1), NULL);
+  } while (ev.type != GRPC_QUEUE_SHUTDOWN);
+  grpc_completion_queue_destroy(state.cq);
   grpc_channel_destroy(state.channel);
   gpr_free(state.target);
 }
 
 static void poll_server_until_read_done(test_tcp_server *server) {
-  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                       gpr_time_from_seconds(5, GPR_TIMESPAN));
+  gpr_timespec deadline = n_sec_deadline(5);
   while (state.done == 0 &&
          gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0) {
     test_tcp_server_poll(server, 1);
