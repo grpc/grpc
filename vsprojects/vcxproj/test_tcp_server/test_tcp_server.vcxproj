@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{929C90AE-483F-AC80-EF93-226199F9E428}</ProjectGuid>
+    <ProjectGuid>{E3110C46-A148-FF65-08FD-3324829BE7FE}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
@@ -52,10 +52,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>reconnect_server</TargetName>
+    <TargetName>test_tcp_server</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>reconnect_server</TargetName>
+    <TargetName>test_tcp_server</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -134,16 +134,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\test\core\util\reconnect_server.h" />
+    <ClInclude Include="..\..\..\test\core\util\test_tcp_server.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\test\core\util\reconnect_server.c">
+    <ClCompile Include="..\..\..\test\core\util\test_tcp_server.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\vsprojects\vcxproj\.\test_tcp_server\test_tcp_server.vcxproj">
-      <Project>{E3110C46-A148-FF65-08FD-3324829BE7FE}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
     </ProjectReference>

@@ -580,6 +580,19 @@ libs:
   src:
   - test/core/util/reconnect_server.c
   deps:
+  - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: test_tcp_server
+  build: private
+  language: c
+  headers:
+  - test/core/util/test_tcp_server.h
+  src:
+  - test/core/util/test_tcp_server.c
+  deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
@@ -1437,6 +1450,17 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: set_initial_connect_string_test
+  build: test
+  language: c
+  src:
+  - test/core/client_config/set_initial_connect_string_test.c
+  deps:
+  - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: sockaddr_utils_test
   build: test
   language: c
@@ -2026,6 +2050,7 @@ targets:
   - test/cpp/interop/reconnect_interop_server.cc
   deps:
   - reconnect_server
+  - test_tcp_server
   - grpc++_test_util
   - grpc_test_util
   - grpc++
