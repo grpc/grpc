@@ -873,6 +873,21 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_test_util", 
+      "test_tcp_server"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "set_initial_connect_string_test", 
+    "src": [
+      "test/core/client_config/set_initial_connect_string_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -1555,7 +1570,8 @@
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
-      "reconnect_server"
+      "reconnect_server", 
+      "test_tcp_server"
     ], 
     "headers": [
       "test/proto/empty.grpc.pb.h", 
@@ -14193,7 +14209,8 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_test_util"
+      "grpc_test_util", 
+      "test_tcp_server"
     ], 
     "headers": [
       "test/core/util/reconnect_server.h"
@@ -14203,6 +14220,23 @@
     "src": [
       "test/core/util/reconnect_server.c", 
       "test/core/util/reconnect_server.h"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/util/test_tcp_server.h"
+    ], 
+    "language": "c", 
+    "name": "test_tcp_server", 
+    "src": [
+      "test/core/util/test_tcp_server.c", 
+      "test/core/util/test_tcp_server.h"
     ]
   }, 
   {
