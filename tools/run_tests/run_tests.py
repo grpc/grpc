@@ -147,9 +147,9 @@ class CLanguage(object):
     self.platform = platform_string()
     self.test_lang = test_lang
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     out = []
-    binaries = get_c_tests(travis, self.test_lang)
+    binaries = get_c_tests(args.travis, self.test_lang)
     for target in binaries:
       if config.build_config in target['exclude_configs']:
         continue
@@ -160,11 +160,16 @@ class CLanguage(object):
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
       if os.path.isfile(binary):
         out.append(config.job_spec([binary], [binary]))
-      else:
+      elif args.regex == '.*' or platform_string() == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
+    if platform_string() != 'windows' and test_regex != '.*':
+      # use the regex to minimize the number of things to build
+      return [target['name']
+              for target in get_c_tests(False, self.test_lang)
+              if re.search(test_regex, target['name'])]
     if platform_string() == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
@@ -196,7 +201,7 @@ class CLanguage(object):
 
 class NodeLanguage(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return [config.job_spec(['tools/run_tests/run_node.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
@@ -204,7 +209,7 @@ class NodeLanguage(object):
     # Default to 1 week cache expiration
     return [['tools/run_tests/pre_build_node.sh']]
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return []
 
   def build_steps(self):
@@ -225,14 +230,14 @@ class NodeLanguage(object):
 
 class PhpLanguage(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return [config.job_spec(['src/php/bin/run_tests.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['static_c', 'shared_c']
 
   def build_steps(self):
@@ -257,7 +262,7 @@ class PythonLanguage(object):
     self._build_python_versions = ['2.7']
     self._has_python_versions = []
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
     environment['PYVER'] = '2.7'
     return [config.job_spec(
@@ -271,7 +276,7 @@ class PythonLanguage(object):
   def pre_build_steps(self):
     return []
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
 
   def build_steps(self):
@@ -303,14 +308,14 @@ class PythonLanguage(object):
 
 class RubyLanguage(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return [['tools/run_tests/pre_build_ruby.sh']]
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['static_c']
 
   def build_steps(self):
@@ -333,7 +338,7 @@ class CSharpLanguage(object):
   def __init__(self):
     self.platform = platform_string()
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     assemblies = ['Grpc.Core.Tests',
                   'Grpc.Examples.Tests',
                   'Grpc.HealthCheck.Tests',
@@ -361,7 +366,7 @@ class CSharpLanguage(object):
     else:
       return [['tools/run_tests/pre_build_csharp.sh']]
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     # For Windows, this target doesn't really build anything,
     # everything is build by buildall script later.
     if self.platform == 'windows':
@@ -390,14 +395,14 @@ class CSharpLanguage(object):
 
 class ObjCLanguage(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return [config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['grpc_objective_c_plugin', 'interop_server']
 
   def build_steps(self):
@@ -418,14 +423,14 @@ class ObjCLanguage(object):
 
 class Sanity(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return [config.job_spec(['tools/run_tests/run_sanity.sh'], None),
             config.job_spec(['tools/run_tests/check_sources_and_headers.py'], None)]
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['run_dep_checks']
 
   def build_steps(self):
@@ -446,13 +451,13 @@ class Sanity(object):
 
 class Build(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return []
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['static']
 
   def build_steps(self):
@@ -662,7 +667,7 @@ make_targets = {}
 for l in languages:
   makefile = l.makefile_name()
   make_targets[makefile] = make_targets.get(makefile, set()).union(
-      set(l.make_targets()))
+      set(l.make_targets(args.regex)))
 
 build_steps = list(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg}, flake_retries=5)
@@ -830,12 +835,12 @@ def _calculate_num_runs_failures(list_of_results):
   return num_runs, num_failures
 
 def _build_and_run(
-    check_cancelled, newline_on_success, travis, cache, xml_report=None):
+    check_cancelled, newline_on_success, cache, xml_report=None):
   """Do one pass of building & running tests."""
   # build latest sequentially
   num_failures, _ = jobset.run(
       build_steps, maxjobs=1, stop_on_failure=True,
-      newline_on_success=newline_on_success, travis=travis)
+      newline_on_success=newline_on_success, travis=args.travis)
   if num_failures:
     return 1
 
@@ -851,11 +856,11 @@ def _build_and_run(
       spec
       for config in run_configs
       for language in languages
-      for spec in language.test_specs(config, args.travis)
+      for spec in language.test_specs(config, args)
       if re.search(args.regex, spec.shortname))
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.
-    if travis:
+    if args.travis:
       massaged_one_run = sorted(one_run, key=lambda x: x.shortname)
     else:
       # whereas otherwise, we want to shuffle things up to give all tests a
@@ -870,7 +875,7 @@ def _build_and_run(
 
     number_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
-        travis=travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
+        travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
         cache=cache if not xml_report else None,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
@@ -895,7 +900,7 @@ def _build_and_run(
 
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,
-      newline_on_success=newline_on_success, travis=travis)
+      newline_on_success=newline_on_success, travis=args.travis)
   if number_failures:
     return 3
 
@@ -916,7 +921,6 @@ if forever:
     previous_success = success
     success = _build_and_run(check_cancelled=have_files_changed,
                              newline_on_success=False,
-                             travis=args.travis,
                              cache=test_cache) == 0
     if not previous_success and success:
       jobset.message('SUCCESS',
@@ -928,7 +932,6 @@ if forever:
 else:
   result = _build_and_run(check_cancelled=lambda: False,
                           newline_on_success=args.newline_on_success,
-                          travis=args.travis,
                           cache=test_cache,
                           xml_report=args.xml_report)
   if result == 0:
