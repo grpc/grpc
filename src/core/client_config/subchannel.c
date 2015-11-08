@@ -22,7 +22,7 @@
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
  * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
  * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMA`S (INCLUDING, BUT NOT
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
  * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
  * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -395,12 +395,12 @@ static void start_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
 
 static void continue_creating_call(grpc_exec_ctx *exec_ctx, void *arg,
                                    int iomgr_success) {
-  int call_creation_status;
+  int call_creation_finished_ok;
   waiting_for_connect *w4c = arg;
   grpc_subchannel_del_interested_party(exec_ctx, w4c->subchannel, w4c->pollset);
-  call_creation_status = grpc_subchannel_create_call(
+  call_creation_finished_ok = grpc_subchannel_create_call(
       exec_ctx, w4c->subchannel, w4c->pollset, w4c->target, w4c->notify);
-  GPR_ASSERT(call_creation_status == 1);
+  GPR_ASSERT(call_creation_finished_ok == 1);
   w4c->notify->cb(exec_ctx, w4c->notify->cb_arg, iomgr_success);
   GRPC_SUBCHANNEL_UNREF(exec_ctx, w4c->subchannel, "waiting_for_connect");
   gpr_free(w4c);
