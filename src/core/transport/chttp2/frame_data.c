@@ -45,11 +45,16 @@
 grpc_chttp2_parse_error grpc_chttp2_data_parser_init(
     grpc_chttp2_data_parser *parser) {
   parser->state = GRPC_CHTTP2_DATA_FH_0;
+  parser->parsing_frame = NULL;
   return GRPC_CHTTP2_PARSE_OK;
 }
 
-void grpc_chttp2_data_parser_destroy(grpc_chttp2_data_parser *parser) {
+void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_data_parser *parser) {
   grpc_byte_stream *bs;
+  if (parser->parsing_frame) {
+    grpc_chttp2_incoming_byte_stream_finished(exec_ctx, parser->parsing_frame);
+  }
   while (
       (bs = grpc_chttp2_incoming_frame_queue_pop(&parser->incoming_frames))) {
     grpc_byte_stream_destroy(bs);
@@ -198,8 +203,8 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
       }
       p->parsing_frame = incoming_byte_stream =
           grpc_chttp2_incoming_byte_stream_create(
-              transport_parsing, stream_parsing, p->frame_size, message_flags,
-              &p->incoming_frames);
+              exec_ctx, transport_parsing, stream_parsing, p->frame_size,
+              message_flags, &p->incoming_frames);
     /* fallthrough */
     case GRPC_CHTTP2_DATA_FRAME:
       if (cur == end) {
@@ -214,6 +219,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
             exec_ctx, p->parsing_frame,
             gpr_slice_sub(slice, (size_t)(cur - beg), (size_t)(end - beg)));
         grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame);
+        p->parsing_frame = NULL;
         p->state = GRPC_CHTTP2_DATA_FH_0;
         return GRPC_CHTTP2_PARSE_OK;
       } else if ((gpr_uint32)(end - cur) > p->frame_size) {
@@ -222,6 +228,7 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
             gpr_slice_sub(slice, (size_t)(cur - beg),
                           (size_t)(cur + p->frame_size - beg)));
         grpc_chttp2_incoming_byte_stream_finished(exec_ctx, p->parsing_frame);
+        p->parsing_frame = NULL;
         cur += p->frame_size;
         goto fh_0; /* loop */
       } else {

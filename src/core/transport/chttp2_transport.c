@@ -512,7 +512,7 @@ static void destroy_stream(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   GPR_ASSERT(s->global.recv_initial_metadata_finished == NULL);
   GPR_ASSERT(s->global.recv_message_ready == NULL);
   GPR_ASSERT(s->global.recv_trailing_metadata_finished == NULL);
-  grpc_chttp2_data_parser_destroy(&s->parsing.data_parser);
+  grpc_chttp2_data_parser_destroy(exec_ctx, &s->parsing.data_parser);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->parsing.metadata_buffer[0]);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->parsing.metadata_buffer[1]);
   grpc_chttp2_incoming_metadata_buffer_destroy(
@@ -806,7 +806,8 @@ static void perform_stream_op_locked(
     }
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_trailing_metadata_finished, 0);
+          exec_ctx, &stream_global->send_trailing_metadata_finished, 
+          grpc_metadata_batch_is_empty(op->send_trailing_metadata));
     } else if (stream_global->id != 0) {
       /* TODO(ctiller): check if there's flow control for any outstanding
          bytes before going writable */
@@ -1364,6 +1365,46 @@ static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
  * BYTE STREAM
  */
 
+static void incoming_byte_stream_update_flow_control(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global, size_t max_size_hint,
+    size_t have_already) {
+  gpr_uint32 max_recv_bytes;
+
+  /* clamp max recv hint to an allowable size */
+  if (max_size_hint >= GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD) {
+    max_recv_bytes = GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD;
+  } else {
+    max_recv_bytes = (gpr_uint32)max_size_hint;
+  }
+
+  /* account for bytes already received but unknown to higher layers */
+  if (max_recv_bytes >= have_already) {
+    max_recv_bytes -= (gpr_uint32)have_already;
+  } else {
+    max_recv_bytes = 0;
+  }
+
+  /* add some small lookahead to keep pipelines flowing */
+  GPR_ASSERT(max_recv_bytes <= GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD);
+  max_recv_bytes += GRPC_CHTTP2_STREAM_LOOKAHEAD;
+  if (stream_global->max_recv_bytes < max_recv_bytes) {
+    gpr_uint32 add_max_recv_bytes =
+        max_recv_bytes - stream_global->max_recv_bytes;
+    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", transport_global, stream_global,
+                                   max_recv_bytes, add_max_recv_bytes);
+    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", transport_global, stream_global,
+                                   unannounced_incoming_window_for_parse,
+                                   add_max_recv_bytes);
+    GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", transport_global, stream_global,
+                                   unannounced_incoming_window_for_writing,
+                                   add_max_recv_bytes);
+    grpc_chttp2_list_add_unannounced_incoming_window_available(transport_global,
+                                                               stream_global);
+    grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
+  }
+}
+
 static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
                                      grpc_byte_stream *byte_stream,
                                      gpr_slice *slice, size_t max_size_hint,
@@ -1372,41 +1413,11 @@ static int incoming_byte_stream_next(grpc_exec_ctx *exec_ctx,
       (grpc_chttp2_incoming_byte_stream *)byte_stream;
   grpc_chttp2_transport_global *transport_global = &bs->transport->global;
   grpc_chttp2_stream_global *stream_global = &bs->stream->global;
-  gpr_uint32 max_recv_bytes;
 
   lock(bs->transport);
   if (bs->is_tail) {
-    /* clamp max recv hint to an allowable size */
-    if (max_size_hint >= GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD) {
-      max_recv_bytes = GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD;
-    } else {
-      max_recv_bytes = (gpr_uint32)max_size_hint;
-    }
-
-    /* account for bytes already received but unknown to higher layers */
-    if (max_recv_bytes >= bs->slices.length) {
-      max_recv_bytes -= (gpr_uint32)bs->slices.length;
-    } else {
-      max_recv_bytes = 0;
-    }
-    /* add some small lookahead to keep pipelines flowing */
-    GPR_ASSERT(max_recv_bytes <= GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD);
-    max_recv_bytes += GRPC_CHTTP2_STREAM_LOOKAHEAD;
-    if (stream_global->max_recv_bytes < max_recv_bytes) {
-      gpr_uint32 add_max_recv_bytes =
-          max_recv_bytes - stream_global->max_recv_bytes;
-      GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", transport_global, stream_global,
-                                     max_recv_bytes, add_max_recv_bytes);
-      GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", transport_global, stream_global,
-                                     unannounced_incoming_window_for_parse,
-                                     add_max_recv_bytes);
-      GRPC_CHTTP2_FLOW_CREDIT_STREAM("op", transport_global, stream_global,
-                                     unannounced_incoming_window_for_writing,
-                                     add_max_recv_bytes);
-      grpc_chttp2_list_add_unannounced_incoming_window_available(
-          transport_global, stream_global);
-      grpc_chttp2_list_add_writable_stream(transport_global, stream_global);
-    }
+    incoming_byte_stream_update_flow_control(transport_global, stream_global,
+                                             max_size_hint, bs->slices.length);
   }
   if (bs->slices.count > 0) {
     *slice = gpr_slice_buffer_take_first(&bs->slices);
@@ -1451,7 +1462,7 @@ void grpc_chttp2_incoming_byte_stream_finished(
 }
 
 grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
-    grpc_chttp2_transport_parsing *transport_parsing,
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_uint32 frame_size,
     gpr_uint32 flags, grpc_chttp2_incoming_frame_queue *add_to_queue) {
   grpc_chttp2_incoming_byte_stream *incoming_byte_stream =
@@ -1474,6 +1485,13 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
     add_to_queue->tail->next_message = incoming_byte_stream;
   }
   add_to_queue->tail = incoming_byte_stream;
+  if (frame_size == 0) {
+    lock(TRANSPORT_FROM_PARSING(transport_parsing));
+    incoming_byte_stream_update_flow_control(
+        &TRANSPORT_FROM_PARSING(transport_parsing)->global,
+        &STREAM_FROM_PARSING(stream_parsing)->global, 0, 0);
+    unlock(exec_ctx, TRANSPORT_FROM_PARSING(transport_parsing));
+  }
   return incoming_byte_stream;
 }
 
