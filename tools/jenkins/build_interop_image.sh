@@ -84,6 +84,7 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 # Prepare image for interop tests, commit it on success.
 (docker run \
   -e CCACHE_DIR=/tmp/ccache \
+  -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -i $TTY_FLAG \
   $MOUNT_ARGS \
   $BUILD_INTEROP_DOCKER_EXTRA_ARGS \

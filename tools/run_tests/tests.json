@@ -1503,22 +1503,6 @@
       "mac", 
       "posix"
     ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "qps_openloop_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
     "exclude_configs": [
       "tsan"
     ], 
@@ -1547,6 +1531,22 @@
       "mac", 
       "posix", 
       "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c++", 
+    "name": "secure_sync_unary_ping_pong_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
     ]
   }, 
   {
@@ -1615,24 +1615,6 @@
       "linux", 
       "mac", 
       "posix"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c++", 
-    "name": "stress_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
     ]
   }, 
   {

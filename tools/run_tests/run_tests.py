@@ -46,10 +46,10 @@ import sys
 import tempfile
 import traceback
 import time
-import xml.etree.cElementTree as ET
 import urllib2
 
 import jobset
+import report_utils
 import watch_dirs
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
@@ -342,10 +342,18 @@ class CSharpLanguage(object):
       cmd = 'tools\\run_tests\\run_csharp.bat'
     else:
       cmd = 'tools/run_tests/run_csharp.sh'
-    return [config.job_spec([cmd, assembly],
-            None, shortname=assembly,
-            environ=_FORCE_ENVIRON_FOR_WRAPPERS)
-            for assembly in assemblies]
+
+    if config.build_config == 'gcov':
+      # On Windows, we only collect C# code coverage.
+      # On Linux, we only collect coverage for native extension.
+      # For code coverage all tests need to run as one suite.
+      return [config.job_spec([cmd], None,
+              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+    else:
+      return [config.job_spec([cmd, assembly],
+              None, shortname=assembly,
+              environ=_FORCE_ENVIRON_FOR_WRAPPERS)
+              for assembly in assemblies]
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -411,8 +419,8 @@ class ObjCLanguage(object):
 class Sanity(object):
 
   def test_specs(self, config, travis):
-    return [config.job_spec('tools/run_tests/run_sanity.sh', None),
-            config.job_spec('tools/run_tests/check_sources_and_headers.py', None)]
+    return [config.job_spec(['tools/run_tests/run_sanity.sh'], None),
+            config.job_spec(['tools/run_tests/check_sources_and_headers.py'], None)]
 
   def pre_build_steps(self):
     return []
@@ -448,6 +456,9 @@ class Build(object):
     return ['static']
 
   def build_steps(self):
+    return []
+
+  def post_tests_steps(self):
     return []
 
   def makefile_name(self):
@@ -637,13 +648,16 @@ if platform.system() == 'Windows':
       for target in targets]
 else:
   def make_jobspec(cfg, targets, makefile='Makefile'):
-    return [jobset.JobSpec([os.getenv('MAKE', 'make'),
-                            '-f', makefile,
-                            '-j', '%d' % (multiprocessing.cpu_count() + 1),
-                            'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
-                                args.slowdown,
-                            'CONFIG=%s' % cfg] + targets,
-                           timeout_seconds=30*60)]
+    if targets:
+      return [jobset.JobSpec([os.getenv('MAKE', 'make'),
+                              '-f', makefile,
+                              '-j', '%d' % (multiprocessing.cpu_count() + 1),
+                              'EXTRA_DEFINES=GRPC_TEST_SLOWDOWN_MACHINE_FACTOR=%f' %
+                              args.slowdown,
+                              'CONFIG=%s' % cfg] + targets,
+                             timeout_seconds=30*60)]
+    else:
+      return []
 make_targets = {}
 for l in languages:
   makefile = l.makefile_name()
@@ -730,7 +744,8 @@ def _start_port_server(port_server_port):
     running = False
   if running:
     current_version = int(subprocess.check_output(
-        [sys.executable, 'tools/run_tests/port_server.py', 'dump_version']))
+        [sys.executable, os.path.abspath('tools/run_tests/port_server.py'),
+         'dump_version']))
     print 'my port server is version %d' % current_version
     running = (version >= current_version)
     if not running:
@@ -741,13 +756,18 @@ def _start_port_server(port_server_port):
     fd, logfile = tempfile.mkstemp()
     os.close(fd)
     print 'starting port_server, with log file %s' % logfile
-    args = [sys.executable, 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port, '-l', logfile]
+    args = [sys.executable, os.path.abspath('tools/run_tests/port_server.py'),
+            '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
     if platform.system() == 'Windows':
+      # Working directory of port server needs to be outside of Jenkins
+      # workspace to prevent file lock issues.
+      tempdir = tempfile.mkdtemp()
       port_server = subprocess.Popen(
           args,
           env=env,
+          cwd=tempdir,
           creationflags = 0x00000008, # detached process
           close_fds=True)
     else:
@@ -798,6 +818,23 @@ def _start_port_server(port_server_port):
         raise
 
 
+def _calculate_num_runs_failures(list_of_results):
+  """Caculate number of runs and failures for a particular test.
+
+  Args:
+    list_of_results: (List) of JobResult object.
+  Returns:
+    A tuple of total number of runs and failures.
+  """
+  num_runs = len(list_of_results)  # By default, there is 1 run per JobResult.
+  num_failures = 0
+  for jobresult in list_of_results:
+    if jobresult.retries > 0:
+      num_runs += jobresult.retries
+    if jobresult.num_failures > 0:
+      num_failures += jobresult.num_failures
+  return num_runs, num_failures
+
 def _build_and_run(
     check_cancelled, newline_on_success, travis, cache, xml_report=None):
   """Do one pass of building & running tests."""
@@ -813,6 +850,7 @@ def _build_and_run(
                  for _ in range(0, args.antagonists)]
   port_server_port = 32767
   _start_port_server(port_server_port)
+  resultset = None
   try:
     infinite_runs = runs_per_test == 0
     one_run = set(
@@ -836,24 +874,30 @@ def _build_and_run(
                      else itertools.repeat(massaged_one_run, runs_per_test))
     all_runs = itertools.chain.from_iterable(runs_sequence)
 
-    root = ET.Element('testsuites') if xml_report else None
-    testsuite = ET.SubElement(root, 'testsuite', id='1', package='grpc', name='tests') if xml_report else None
-
-    number_failures, _ = jobset.run(
-        all_runs, check_cancelled, newline_on_success=newline_on_success, 
+    number_failures, resultset = jobset.run(
+        all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
-        stop_on_failure=args.stop_on_failure, 
+        stop_on_failure=args.stop_on_failure,
         cache=cache if not xml_report else None,
-        xml_report=testsuite,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
+    if resultset:
+      for k, v in resultset.iteritems():
+        num_runs, num_failures = _calculate_num_runs_failures(v)
+        if num_failures == num_runs:  # what about infinite_runs???
+          jobset.message('FAILED', k, do_newline=True)
+        elif num_failures > 0:
+          jobset.message(
+              'FLAKE', '%s [%d/%d runs flaked]' % (k, num_failures, num_runs),
+              do_newline=True)
+        else:
+          jobset.message('PASSED', k, do_newline=True)
     if number_failures:
       return 2
   finally:
     for antagonist in antagonists:
       antagonist.kill()
-    if xml_report:
-      tree = ET.ElementTree(root)
-      tree.write(xml_report, encoding='UTF-8')
+    if xml_report and resultset:
+      report_utils.render_xml_report(resultset, xml_report)
 
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,

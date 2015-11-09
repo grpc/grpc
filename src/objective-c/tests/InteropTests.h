@@ -33,11 +33,17 @@
 
 #import <XCTest/XCTest.h>
 
-// Implements tests as described here:
-// https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
-
+/**
+ * Implements tests as described here:
+ * https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
+ *
+ * This is an abstract class that needs to be subclassed. See |+host|.
+ */
 @interface InteropTests : XCTestCase
-// Returns @"grpc-test.sandbox.google.com".
-// Override in a subclass to perform the same tests against a different address.
+/**
+ * Host to send the RPCs to. The base implementation returns nil, which would make all tests to
+ * fail.
+ * Override in a subclass to perform these tests against a specific address.
+ */
 + (NSString *)host;
 @end

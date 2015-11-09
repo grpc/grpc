@@ -75,7 +75,6 @@ class ByteBuffer GRPC_FINAL {
   // takes ownership
   void set_buffer(grpc_byte_buffer* buf) {
     if (buffer_) {
-      gpr_log(GPR_ERROR, "Overriding existing buffer");
       Clear();
     }
     buffer_ = buf;

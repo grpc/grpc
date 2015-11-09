@@ -42,7 +42,7 @@
 using grpc::testing::RandomDist;
 using grpc::testing::InterarrivalTimer;
 
-void RunTest(RandomDist &&r, int threads, std::string title) {
+static void RunTest(RandomDist &&r, int threads, std::string title) {
   InterarrivalTimer timer;
   timer.init(r, threads);
   gpr_histogram *h(gpr_histogram_create(0.01, 60e9));

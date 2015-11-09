@@ -32,13 +32,14 @@
  */
 
 #import <UIKit/UIKit.h>
+#import <GRPCClient/GRPCCall+Tests.h>
 #import <RouteGuide/RouteGuide.pbrpc.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
 
-static NSString * const kHostAddress = @"http://localhost:50051";
+static NSString * const kHostAddress = @"localhost:50051";
 
-// Category to override RTGPoint's description.
+/** Category to override RTGPoint's description. */
 @interface RTGPoint (Description)
 - (NSString *)description;
 @end
@@ -53,7 +54,7 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 }
 @end
 
-// Category to give RTGRouteNote a convenience constructor.
+/** Category to give RTGRouteNote a convenience constructor. */
 @interface RTGRouteNote (Constructors)
 + (instancetype)noteWithMessage:(NSString *)message
                        latitude:(float)latitude
@@ -75,9 +76,10 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 #pragma mark Demo: Get Feature
 
-// Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
-// not to have a feature.
-
+/**
+ * Run the getFeature demo. Calls getFeature with a point known to have a feature and a point known
+ * not to have a feature.
+ */
 @interface GetFeatureViewController : UIViewController
 @end
 
@@ -86,7 +88,10 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  // This only needs to be done once per host, before creating service objects for that host.
+  [GRPCCall useInsecureConnectionsForHost:kHostAddress];
+
+  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
   void (^handler)(RTGFeature *response, NSError *error) = ^(RTGFeature *response, NSError *error) {
     if (response.name.length) {
@@ -102,8 +107,8 @@ static NSString * const kHostAddress = @"http://localhost:50051";
   point.latitude = 409146138;
   point.longitude = -746188906;
 
-  [client getFeatureWithRequest:point handler:handler];
-  [client getFeatureWithRequest:[RTGPoint message] handler:handler];
+  [service getFeatureWithRequest:point handler:handler];
+  [service getFeatureWithRequest:[RTGPoint message] handler:handler];
 }
 
 @end
@@ -111,9 +116,10 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 #pragma mark Demo: List Features
 
-// Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
-// the pre-generated database. Prints each response as it comes in.
-
+/**
+ * Run the listFeatures demo. Calls listFeatures with a rectangle containing all of the features in
+ * the pre-generated database. Prints each response as it comes in.
+ */
 @interface ListFeaturesViewController : UIViewController
 @end
 
@@ -122,7 +128,7 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
   RTGRectangle *rectangle = [RTGRectangle message];
   rectangle.lo.latitude = 405E6;
@@ -131,8 +137,8 @@ static NSString * const kHostAddress = @"http://localhost:50051";
   rectangle.hi.longitude = -745E6;
 
   NSLog(@"Looking for features between %@ and %@", rectangle.lo, rectangle.hi);
-  [client listFeaturesWithRequest:rectangle
-                     eventHandler:^(BOOL done, RTGFeature *response, NSError *error) {
+  [service listFeaturesWithRequest:rectangle
+                      eventHandler:^(BOOL done, RTGFeature *response, NSError *error) {
     if (response) {
       NSLog(@"Found feature at %@ called %@.", response.location, response.name);
     } else if (error) {
@@ -146,10 +152,11 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 #pragma mark Demo: Record Route
 
-// Run the recordRoute demo. Sends several randomly chosen points from the pre-generated feature
-// database with a variable delay in between. Prints the statistics when they are sent from the
-// server.
-
+/**
+ * Run the recordRoute demo. Sends several randomly chosen points from the pre-generated feature
+ * database with a variable delay in between. Prints the statistics when they are sent from the
+ * server.
+ */
 @interface RecordRouteViewController : UIViewController
 @end
 
@@ -171,9 +178,10 @@ static NSString * const kHostAddress = @"http://localhost:50051";
     return location;
   }];
 
-  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
-  [client recordRouteWithRequestsWriter:locations handler:^(RTGRouteSummary *response, NSError *error) {
+  [service recordRouteWithRequestsWriter:locations
+                                 handler:^(RTGRouteSummary *response, NSError *error) {
     if (response) {
       NSLog(@"Finished trip with %i points", response.pointCount);
       NSLog(@"Passed %i features", response.featureCount);
@@ -190,9 +198,10 @@ static NSString * const kHostAddress = @"http://localhost:50051";
 
 #pragma mark Demo: Route Chat
 
-// Run the routeChat demo. Send some chat messages, and print any chat messages that are sent from
-// the server.
-
+/**
+ * Run the routeChat demo. Send some chat messages, and print any chat messages that are sent from
+ * the server.
+ */
 @interface RouteChatViewController : UIViewController
 @end
 
@@ -210,10 +219,10 @@ static NSString * const kHostAddress = @"http://localhost:50051";
     return note;
   }];
 
-  RTGRouteGuide *client = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
+  RTGRouteGuide *service = [[RTGRouteGuide alloc] initWithHost:kHostAddress];
 
-  [client routeChatWithRequestsWriter:notesWriter
-                         eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
+  [service routeChatWithRequestsWriter:notesWriter
+                          eventHandler:^(BOOL done, RTGRouteNote *note, NSError *error) {
     if (note) {
       NSLog(@"Got message %@ at %@", note.message, note.location);
     } else if (error) {
