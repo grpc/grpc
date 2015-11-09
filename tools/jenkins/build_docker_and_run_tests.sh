@@ -82,6 +82,7 @@ then
 fi
 
 docker cp "$CONTAINER_NAME:/var/local/git/grpc/reports.zip" $git_root || true
+rm -rf reports
 unzip $git_root/reports.zip -d $git_root || true
 rm -f reports.zip
 
