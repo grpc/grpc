@@ -169,8 +169,8 @@ class Http2Client:
     self.client_cwd = None
     self.safename = str(self)
 
-  def client_args(self):
-    return ['tools/http2_interop/http2_interop.test']
+  def client_cmd(self, args):
+    return ['tools/http2_interop/http2_interop.test', '-test.v'] + args
 
   def cloud_to_prod_env(self):
     return {}
@@ -349,12 +349,12 @@ def bash_login_cmdline(cmdline):
   return ['bash', '-l', '-c', ' '.join(cmdline)]
 
 
-def add_auth_options(language, test_case, cmdline, env):
+def auth_options(language, test_case):
   """Returns (cmdline, env) tuple with cloud_to_prod_auth test options."""
 
   language = str(language)
-  cmdline = list(cmdline)
-  env = env.copy()
+  cmdargs = []
+  env = {}
 
   # TODO(jtattermusch): this file path only works inside docker
   key_filepath = '/root/service_account/stubbyCloudTestingTest-ee3fce360ac5.json'
@@ -366,19 +366,19 @@ def add_auth_options(language, test_case, cmdline, env):
     if language in ['csharp', 'node', 'php', 'python', 'ruby']:
       env['GOOGLE_APPLICATION_CREDENTIALS'] = key_filepath
     else:
-      cmdline += [key_file_arg]
+      cmdargs += [key_file_arg]
 
   if test_case in ['per_rpc_creds', 'oauth2_auth_token']:
-    cmdline += [oauth_scope_arg]
+    cmdargs += [oauth_scope_arg]
 
   if test_case == 'oauth2_auth_token' and language == 'c++':
     # C++ oauth2 test uses GCE creds and thus needs to know the default account
-    cmdline += [default_account_arg]
+    cmdargs += [default_account_arg]
 
   if test_case == 'compute_engine_creds':
-    cmdline += [oauth_scope_arg, default_account_arg]
+    cmdargs += [oauth_scope_arg, default_account_arg]
 
-  return (cmdline, env)
+  return (cmdargs, env)
 
 
 def _job_kill_handler(job):
@@ -393,18 +393,20 @@ def _job_kill_handler(job):
 
 def cloud_to_prod_jobspec(language, test_case, docker_image=None, auth=False):
   """Creates jobspec for cloud-to-prod interop test"""
-  cmdline = language.client_cmd([
+  container_name = None
+  cmdargs = [
       '--server_host_override=grpc-test.sandbox.google.com',
       '--server_host=grpc-test.sandbox.google.com',
       '--server_port=443',
       '--use_tls=true',
-      '--test_case=%s' % test_case])
-  cwd = language.client_cwd
+      '--test_case=%s' % test_case]
   environ = dict(language.cloud_to_prod_env(), **language.global_env())
-  container_name = None
   if auth:
-    cmdline, environ = add_auth_options(language, test_case, cmdline, environ)
-  cmdline = bash_login_cmdline(cmdline)
+    auth_cmdargs, auth_env = auth_options(language, test_case)
+    cmdargs += auth_cmdargs
+    environ.update(auth_env)
+  cmdline = bash_login_cmdline(language.client_cmd(cmdargs))
+  cwd = language.client_cwd
 
   if docker_image:
     container_name = dockerjob.random_name('interop_client_%s' % language.safename)
@@ -562,7 +564,7 @@ argp.add_argument('--http2_interop',
                   action='store_const',
                   const=True,
                   help='Enable HTTP/2 interop tests')
-                  
+
 args = argp.parse_args()
 
 servers = set(s for s in itertools.chain.from_iterable(_SERVERS
@@ -586,7 +588,7 @@ languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
                       _LANGUAGES.iterkeys() if x == 'all' else [x]
                       for x in args.language))
-                      
+
 http2Interop = Http2Client() if args.http2_interop else None
 
 docker_images={}
@@ -608,10 +610,10 @@ if args.use_docker:
     num_failures, _ = jobset.run(
         build_jobs, newline_on_success=True, maxjobs=args.jobs)
     if num_failures == 0:
-      jobset.message('SUCCESS', 'All docker images built successfully.', 
+      jobset.message('SUCCESS', 'All docker images built successfully.',
                      do_newline=True)
     else:
-      jobset.message('FAILED', 'Failed to build interop docker images.', 
+      jobset.message('FAILED', 'Failed to build interop docker images.',
                      do_newline=True)
       for image in docker_images.itervalues():
         dockerjob.remove_image(image, skip_nonexistent=True)
@@ -637,7 +639,7 @@ try:
           test_job = cloud_to_prod_jobspec(language, test_case,
                                            docker_image=docker_images.get(str(language)))
           jobs.append(test_job)
-          
+
     # TODO(carl-mastrangelo): Currently prod TLS terminators aren't spec compliant. Reenable
     # this once a better solution is in place.
     if args.http2_interop and False:
@@ -645,7 +647,7 @@ try:
         test_job = cloud_to_prod_jobspec(http2Interop, test_case,
                                          docker_image=docker_images.get(str(http2Interop)))
         jobs.append(test_job)
-     
+
 
   if args.cloud_to_prod_auth:
     for language in languages:
@@ -673,12 +675,12 @@ try:
                                             server_port,
                                             docker_image=docker_images.get(str(language)))
           jobs.append(test_job)
-          
+
     if args.http2_interop:
       for test_case in _HTTP2_TEST_CASES:
         if server_name == "go":
           # TODO(carl-mastrangelo): Reenable after https://github.com/grpc/grpc-go/issues/434
-          continue 
+          continue
         test_job = cloud_to_cloud_jobspec(http2Interop,
                                           test_case,
                                           server_name,
@@ -693,7 +695,7 @@ try:
       dockerjob.remove_image(image, skip_nonexistent=True)
     sys.exit(1)
 
-  num_failures, resultset = jobset.run(jobs, newline_on_success=True, 
+  num_failures, resultset = jobset.run(jobs, newline_on_success=True,
                                        maxjobs=args.jobs)
   if num_failures:
     jobset.message('FAILED', 'Some tests failed', do_newline=True)
@@ -701,9 +703,9 @@ try:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
   report_utils.render_xml_report(resultset, 'report.xml')
-  
+
   report_utils.render_html_report(
-      set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES, 
+      set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES,
       _HTTP2_TEST_CASES, resultset, num_failures,
       args.cloud_to_prod_auth or args.cloud_to_prod, args.http2_interop)
 
