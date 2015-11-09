@@ -35,7 +35,6 @@
 
 #import <AuthTestService/AuthSample.pbrpc.h>
 #import <Google/SignIn.h>
-#include <grpc/status.h>
 #import <ProtoRPC/ProtoRPC.h>
 
 NSString * const kTestScope = @"https://www.googleapis.com/auth/xapi.zoo";
@@ -49,10 +48,10 @@ static NSString * const kTestHostAddress = @"grpc-test.sandbox.google.com";
 
 @implementation NSError (AuthSample)
 - (NSString *)UIDescription {
-  if (self.code == GRPC_STATUS_UNAUTHENTICATED) {
+  if (self.code == GRPCErrorCodeUnauthenticated) {
     // Authentication error. OAuth2 specifies we'll receive a challenge header.
-    // |userInfo[kGRPCStatusMetadataKey]| is the dictionary of response metadata.
-    NSString *challengeHeader = self.userInfo[kGRPCStatusMetadataKey][@"www-authenticate"] ?: @"";
+    // |userInfo[kGRPCHeadersKey]| is the dictionary of response headers.
+    NSString *challengeHeader = self.userInfo[kGRPCHeadersKey][@"www-authenticate"] ?: @"";
     return [@"Invalid credentials. Server challenge:\n" stringByAppendingString:challengeHeader];
   } else {
     // Any other error.
@@ -89,7 +88,7 @@ static NSString * const kTestHostAddress = @"grpc-test.sandbox.google.com";
 
   // Set the access token to be used.
   NSString *accessToken = GIDSignIn.sharedInstance.currentUser.authentication.accessToken;
-  call.requestMetadata[@"Authorization"] = [@"Bearer " stringByAppendingString:accessToken];
+  call.requestHeaders[@"Authorization"] = [@"Bearer " stringByAppendingString:accessToken];
 
   // Start the RPC.
   [call start];

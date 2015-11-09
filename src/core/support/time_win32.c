@@ -66,13 +66,11 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
       now_tv.tv_nsec = now_tb.millitm * 1000000;
       break;
     case GPR_CLOCK_MONOTONIC:
+    case GPR_CLOCK_PRECISE:
       QueryPerformanceCounter(&timestamp);
       now_dbl = (timestamp.QuadPart - g_start_time.QuadPart) * g_time_scale;
       now_tv.tv_sec = (time_t)now_dbl;
       now_tv.tv_nsec = (int)((now_dbl - (double)now_tv.tv_sec) * 1e9);
-      break;
-    case GPR_CLOCK_PRECISE:
-      gpr_precise_clock_now(&now_tv);
       break;
   }
   return now_tv;

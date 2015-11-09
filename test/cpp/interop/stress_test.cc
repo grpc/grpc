@@ -186,14 +186,7 @@ int main(int argc, char** argv) {
   // Parse test cases and weights
   if (FLAGS_test_cases.length() == 0) {
     gpr_log(GPR_INFO, "Not running tests. The 'test_cases' string is empty");
-
-    // TODO(sreek): stress_tests is currently being run by run_tests.py in
-    // jenkins. There does not seem to be a straightforward way to skip this.
-    // So, for now, return 0 (i.e success) to keep jenkins build happy. Moreover
-    // we don't want to run stress_tests (for now) in jenkins anyway.
-    // Once we figure out a good way to skip this tests in run_tests.py, I will
-    // change this to 'return 1'
-    return 0;
+    return 1;
   }
 
   vector<pair<TestCaseType, int>> tests;

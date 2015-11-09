@@ -121,12 +121,14 @@ void grpc_pollset_kick_ext(grpc_pollset *p,
       if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
         specific_worker->reevaluate_polling_on_wakeup = 1;
       }
+      specific_worker->kicked_specifically = 1;
       grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
     } else if ((flags & GRPC_POLLSET_CAN_KICK_SELF) != 0) {
       GPR_TIMER_MARK("kick_yoself", 0);
       if ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP) != 0) {
         specific_worker->reevaluate_polling_on_wakeup = 1;
       }
+      specific_worker->kicked_specifically = 1;
       grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd);
     }
   } else if (gpr_tls_get(&g_current_thread_poller) != (gpr_intptr)p) {
@@ -242,6 +244,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   /* this must happen before we (potentially) drop pollset->mu */
   worker->next = worker->prev = NULL;
   worker->reevaluate_polling_on_wakeup = 0;
+  worker->kicked_specifically = 0;
   /* TODO(ctiller): pool these */
   grpc_wakeup_fd_init(&worker->wakeup_fd);
   /* If there's work waiting for the pollset to be idle, and the
@@ -308,7 +311,7 @@ void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
     if (worker->reevaluate_polling_on_wakeup) {
       worker->reevaluate_polling_on_wakeup = 0;
       pollset->kicked_without_pollers = 0;
-      if (queued_work) {
+      if (queued_work || worker->kicked_specifically) {
         /* If there's queued work on the list, then set the deadline to be
            immediate so we get back out of the polling loop quickly */
         deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);

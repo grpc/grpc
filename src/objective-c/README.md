@@ -1,3 +1,4 @@
+[![Cocoapods](https://img.shields.io/cocoapods/v/gRPC.svg)](https://cocoapods.org/pods/gRPC)
 # gRPC for Objective-C
 
 - [Install protoc with the gRPC plugin](#install)

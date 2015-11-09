@@ -38,6 +38,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Internal;
+using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
 using NUnit.Framework;
 
@@ -199,19 +200,6 @@ namespace Grpc.Core.Tests
 
             Assert.AreEqual(headers[1].Key, trailers[1].Key);
             CollectionAssert.AreEqual(headers[1].ValueBytes, trailers[1].ValueBytes);
-        }
-
-        [Test]
-        public void UnaryCallPerformance()
-        {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
-            {
-                return request;
-            });
-
-            var callDetails = helper.CreateUnaryCall();
-            BenchmarkUtil.RunBenchmark(1, 10,
-                                       () => { Calls.BlockingUnaryCall(callDetails, "ABC"); });
         }
             
         [Test]
