@@ -151,7 +151,8 @@ static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser_destroy(&parser);
 
   grpc_chttp2_hpack_parser_init(&parser, mdctx);
-  parser.table.max_bytes = 256;
+grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
+grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
   /* D.5.1 */
   test_vector(&parser, mode,
               "4803 3330 3258 0770 7269 7661 7465 611d"

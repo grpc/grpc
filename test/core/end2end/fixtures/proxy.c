@@ -146,7 +146,6 @@ void grpc_end2end_proxy_destroy(grpc_end2end_proxy *proxy) {
 }
 
 static void unrefpc(proxy_call *pc, const char *reason) {
-  gpr_log(GPR_DEBUG, "PROXY UNREF %s", reason);
   if (gpr_unref(&pc->refs)) {
     grpc_call_destroy(pc->c2p);
     grpc_call_destroy(pc->p2s);
@@ -159,7 +158,6 @@ static void unrefpc(proxy_call *pc, const char *reason) {
 }
 
 static void refpc(proxy_call *pc, const char *reason) {
-  gpr_log(GPR_DEBUG, "PROXY   REF %s", reason);
   gpr_ref(&pc->refs);
 }
 
