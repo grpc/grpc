@@ -226,7 +226,7 @@ static void evict1(grpc_chttp2_hptbl *tbl) {
                       GPR_SLICE_LENGTH(first_ent->value->slice) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   GPR_ASSERT(elem_bytes <= tbl->mem_used);
-  tbl->mem_used -= elem_bytes;
+  tbl->mem_used -= (gpr_uint32)elem_bytes;
   tbl->first_ent =
       ((tbl->first_ent + 1) % tbl->cap_entries);
   tbl->num_ents--;
@@ -322,7 +322,7 @@ int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   tbl->last_ent =
       ((tbl->last_ent + 1) % tbl->cap_entries);
   tbl->num_ents++;
-  tbl->mem_used += elem_bytes;
+  tbl->mem_used += (gpr_uint32)elem_bytes;
   return 1;
 }
 
