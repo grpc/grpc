@@ -88,14 +88,17 @@ typedef struct {
 /* initialize a hpack table */
 void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx);
 void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl *tbl);
-void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl *tbl, gpr_uint32 max_bytes);
-int grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl *tbl, gpr_uint32 bytes);
+void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl *tbl,
+                                     gpr_uint32 max_bytes);
+int grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl *tbl,
+                                             gpr_uint32 bytes);
 
 /* lookup a table entry based on its hpack index */
 grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
                                       gpr_uint32 index);
 /* add a table entry to the index */
-int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) GRPC_MUST_USE_RESULT;
+int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl,
+                          grpc_mdelem *md) GRPC_MUST_USE_RESULT;
 /* Find a key/value pair in the table... returns the index in the table of the
    most similar entry, or 0 if the value was not found */
 typedef struct {
