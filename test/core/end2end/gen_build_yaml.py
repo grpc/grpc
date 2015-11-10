@@ -85,6 +85,7 @@ END2END_TESTS = {
     'disappearing_server': connectivity_test_options,
     'empty_batch': default_test_options,
     'graceful_server_shutdown': default_test_options,
+    'hpack_size': default_test_options,
     'high_initial_seqno': default_test_options,
     'invoke_large_request': default_test_options,
     'large_metadata': default_test_options,

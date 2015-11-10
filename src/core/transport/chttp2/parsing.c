@@ -78,6 +78,7 @@ void grpc_chttp2_prepare_to_read(
   GPR_TIMER_BEGIN("grpc_chttp2_prepare_to_read", 0);
 
   transport_parsing->next_stream_id = transport_global->next_stream_id;
+  transport_parsing->last_sent_max_table_size = transport_global->settings[GRPC_SENT_SETTINGS][GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE];
 
   /* update the parsing view of incoming window */
   while (grpc_chttp2_list_pop_unannounced_incoming_window_available(
@@ -127,6 +128,7 @@ void grpc_chttp2_publish_reads(
            transport_global->settings[GRPC_SENT_SETTINGS],
            GRPC_CHTTP2_NUM_SETTINGS * sizeof(gpr_uint32));
     transport_parsing->settings_ack_received = 0;
+    transport_global->sent_local_settings = 0;
   }
 
   /* move goaway to the global state if we received one (it will be
@@ -819,6 +821,7 @@ static int init_settings_frame_parser(
   }
   if (transport_parsing->incoming_frame_flags & GRPC_CHTTP2_FLAG_ACK) {
     transport_parsing->settings_ack_received = 1;
+    grpc_chttp2_hptbl_set_max_bytes(&transport_parsing->hpack_parser.table, transport_parsing->last_sent_max_table_size);
   }
   transport_parsing->parser = grpc_chttp2_settings_parser_parse;
   transport_parsing->parser_data = &transport_parsing->simple.settings;

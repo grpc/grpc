@@ -43,14 +43,26 @@
 
 #define GRPC_CHTTP2_HPACKC_NUM_FILTERS 256
 #define GRPC_CHTTP2_HPACKC_NUM_VALUES 256
-#define GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS (4096 / 32)
+/* initial table size, per spec */
+#define GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE 4096
+/* maximum table size we'll actually use */
+#define GRPC_CHTTP2_HPACKC_MAX_TABLE_SIZE (1024*1024)
 
 typedef struct {
   gpr_uint32 filter_elems_sum;
+  gpr_uint32 max_table_size;
+  gpr_uint32 max_table_elems;
+  gpr_uint32 cap_table_elems;
+  /** if non-zero, advertise to the decoder that we'll start using a table
+      of this size */
+  gpr_uint8 advertise_table_size_change;
+  /** maximum number of bytes we'll use for the decode table (to guard against
+      peers ooming us by setting decode table size high) */
+  gpr_uint32 max_usable_size;
   /* one before the lowest usable table index */
   gpr_uint32 tail_remote_index;
-  gpr_uint16 table_size;
-  gpr_uint16 table_elems;
+  gpr_uint32 table_size;
+  gpr_uint32 table_elems;
 
   /* filter tables for elems: this tables provides an approximate
      popularity count for particular hashes, and are used to determine whether
@@ -71,12 +83,14 @@ typedef struct {
   gpr_uint32 indices_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
   gpr_uint32 indices_elems[GRPC_CHTTP2_HPACKC_NUM_VALUES];
 
-  gpr_uint16 table_elem_size[GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS];
+  gpr_uint16 *table_elem_size;
 } grpc_chttp2_hpack_compressor;
 
 void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
                                        grpc_mdctx *mdctx);
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c);
+void grpc_chttp2_hpack_compressor_set_max_table_size(grpc_chttp2_hpack_compressor *c, gpr_uint32 max_table_size);
+void grpc_chttp2_hpack_compressor_set_max_usable_size(grpc_chttp2_hpack_compressor *c, gpr_uint32 max_table_size);
 
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, gpr_uint32 id,
                                grpc_metadata_batch *metadata, int is_eof,
