@@ -627,7 +627,6 @@ static const gpr_uint8 inverse_base64[256] = {
 static int on_hdr(grpc_chttp2_hpack_parser *p, grpc_mdelem *md,
                    int add_to_table) {
   if (add_to_table) {
-    GRPC_MDELEM_REF(md);
     if (!grpc_chttp2_hptbl_add(&p->table, md)) {
       return 0;
     }
