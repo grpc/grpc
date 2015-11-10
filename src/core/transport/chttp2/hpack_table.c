@@ -316,7 +316,7 @@ int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   }
 
   /* copy the finalized entry in */
-  tbl->ents[tbl->last_ent] = md;
+  tbl->ents[tbl->last_ent] = GRPC_MDELEM_REF(md);
 
   /* update accounting values */
   tbl->last_ent =
