@@ -121,4 +121,3 @@ gpr_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader *reader) {
   }
   return out_slice;
 }
-

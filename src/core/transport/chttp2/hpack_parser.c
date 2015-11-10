@@ -75,7 +75,7 @@ static int parse_begin(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
 static int parse_error(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
                        const gpr_uint8 *end);
 static int parse_illegal_op(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
-                       const gpr_uint8 *end);
+                            const gpr_uint8 *end);
 
 static int parse_string_prefix(grpc_chttp2_hpack_parser *p,
                                const gpr_uint8 *cur, const gpr_uint8 *end);
@@ -625,7 +625,7 @@ static const gpr_uint8 inverse_base64[256] = {
 
 /* emission helpers */
 static int on_hdr(grpc_chttp2_hpack_parser *p, grpc_mdelem *md,
-                   int add_to_table) {
+                  int add_to_table) {
   if (add_to_table) {
     if (!grpc_chttp2_hptbl_add(&p->table, md)) {
       return 0;
@@ -750,19 +750,20 @@ static int finish_lithdr_incidx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   return on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              GRPC_MDSTR_REF(md->key),
-                                              take_string(p, &p->value)),
-         1) && parse_begin(p, cur, end);
+                                                     GRPC_MDSTR_REF(md->key),
+                                                     take_string(p, &p->value)),
+                1) &&
+         parse_begin(p, cur, end);
 }
 
 /* finish a literal header with incremental indexing with no index */
 static int finish_lithdr_incidx_v(grpc_chttp2_hpack_parser *p,
                                   const gpr_uint8 *cur, const gpr_uint8 *end) {
   return on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              take_string(p, &p->key),
-                                              take_string(p, &p->value)),
-         1) &&
-   parse_begin(p, cur, end);
+                                                     take_string(p, &p->key),
+                                                     take_string(p, &p->value)),
+                1) &&
+         parse_begin(p, cur, end);
 }
 
 /* parse a literal header with incremental indexing; index < 63 */
@@ -802,19 +803,20 @@ static int finish_lithdr_notidx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   return on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              GRPC_MDSTR_REF(md->key),
-                                              take_string(p, &p->value)),
-         0) &&
-  parse_begin(p, cur, end);
+                                                     GRPC_MDSTR_REF(md->key),
+                                                     take_string(p, &p->value)),
+                0) &&
+         parse_begin(p, cur, end);
 }
 
 /* finish a literal header without incremental indexing with index = 0 */
 static int finish_lithdr_notidx_v(grpc_chttp2_hpack_parser *p,
                                   const gpr_uint8 *cur, const gpr_uint8 *end) {
   return on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              take_string(p, &p->key),
-                                              take_string(p, &p->value)),
-         0) && parse_begin(p, cur, end);
+                                                     take_string(p, &p->key),
+                                                     take_string(p, &p->value)),
+                0) &&
+         parse_begin(p, cur, end);
 }
 
 /* parse a literal header without incremental indexing; index < 15 */
@@ -854,20 +856,20 @@ static int finish_lithdr_nvridx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   return on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              GRPC_MDSTR_REF(md->key),
-                                              take_string(p, &p->value)),
-         0) &&
-  parse_begin(p, cur, end);
+                                                     GRPC_MDSTR_REF(md->key),
+                                                     take_string(p, &p->value)),
+                0) &&
+         parse_begin(p, cur, end);
 }
 
 /* finish a literal header that is never indexed with an extra value */
 static int finish_lithdr_nvridx_v(grpc_chttp2_hpack_parser *p,
                                   const gpr_uint8 *cur, const gpr_uint8 *end) {
   return on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              take_string(p, &p->key),
-                                              take_string(p, &p->value)),
-         0) &&
-  parse_begin(p, cur, end);
+                                                     take_string(p, &p->key),
+                                                     take_string(p, &p->value)),
+                0) &&
+         parse_begin(p, cur, end);
 }
 
 /* parse a literal header that is never indexed; index < 15 */
@@ -906,7 +908,8 @@ static int parse_lithdr_nvridx_v(grpc_chttp2_hpack_parser *p,
 static int finish_max_tbl_size(grpc_chttp2_hpack_parser *p,
                                const gpr_uint8 *cur, const gpr_uint8 *end) {
   gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
-  return grpc_chttp2_hptbl_set_current_table_size(&p->table, p->index) && parse_begin(p, cur, end);
+  return grpc_chttp2_hptbl_set_current_table_size(&p->table, p->index) &&
+         parse_begin(p, cur, end);
 }
 
 /* parse a max table size change, max size < 15 */
@@ -934,7 +937,8 @@ static int parse_error(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
   return 0;
 }
 
-static int parse_illegal_op(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur, const gpr_uint8 *end) {
+static int parse_illegal_op(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
+                            const gpr_uint8 *end) {
   GPR_ASSERT(cur != end);
   gpr_log(GPR_DEBUG, "Illegal hpack op code %d", *cur);
   return parse_error(p, cur, end);

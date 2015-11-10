@@ -46,7 +46,7 @@
 /* initial table size, per spec */
 #define GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE 4096
 /* maximum table size we'll actually use */
-#define GRPC_CHTTP2_HPACKC_MAX_TABLE_SIZE (1024*1024)
+#define GRPC_CHTTP2_HPACKC_MAX_TABLE_SIZE (1024 * 1024)
 
 typedef struct {
   gpr_uint32 filter_elems_sum;
@@ -89,8 +89,10 @@ typedef struct {
 void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
                                        grpc_mdctx *mdctx);
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c);
-void grpc_chttp2_hpack_compressor_set_max_table_size(grpc_chttp2_hpack_compressor *c, gpr_uint32 max_table_size);
-void grpc_chttp2_hpack_compressor_set_max_usable_size(grpc_chttp2_hpack_compressor *c, gpr_uint32 max_table_size);
+void grpc_chttp2_hpack_compressor_set_max_table_size(
+    grpc_chttp2_hpack_compressor *c, gpr_uint32 max_table_size);
+void grpc_chttp2_hpack_compressor_set_max_usable_size(
+    grpc_chttp2_hpack_compressor *c, gpr_uint32 max_table_size);
 
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, gpr_uint32 id,
                                grpc_metadata_batch *metadata, int is_eof,
