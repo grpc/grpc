@@ -199,6 +199,7 @@ void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl *tbl) {
     GRPC_MDELEM_UNREF(
         tbl->ents[(tbl->first_ent + i) % tbl->cap_entries]);
   }
+  gpr_free(tbl->ents);
 }
 
 grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
