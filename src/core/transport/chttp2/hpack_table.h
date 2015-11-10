@@ -62,8 +62,6 @@ typedef struct {
   grpc_mdctx *mdctx;
   /* the first used entry in ents */
   gpr_uint32 first_ent;
-  /* the last used entry in ents */
-  gpr_uint32 last_ent;
   /* how many entries are in the table */
   gpr_uint32 num_ents;
   /* the amount of memory used by the table, according to the hpack algorithm */

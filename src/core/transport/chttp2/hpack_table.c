@@ -324,10 +324,9 @@ int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   }
 
   /* copy the finalized entry in */
-  tbl->ents[tbl->last_ent] = GRPC_MDELEM_REF(md);
+  tbl->ents[(tbl->first_ent + tbl->num_ents) % tbl->cap_entries] = GRPC_MDELEM_REF(md);
 
   /* update accounting values */
-  tbl->last_ent = ((tbl->last_ent + 1) % tbl->cap_entries);
   tbl->num_ents++;
   tbl->mem_used += (gpr_uint32)elem_bytes;
   return 1;
