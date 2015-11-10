@@ -240,6 +240,7 @@ static void rebuild_ents(grpc_chttp2_hptbl *tbl, gpr_uint32 new_cap) {
     ents[i] = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
   }
   gpr_free(tbl->ents);
+  tbl->ents = ents;
   tbl->cap_entries = new_cap;
   tbl->first_ent = 0;
 }
