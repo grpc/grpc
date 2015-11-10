@@ -338,6 +338,22 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
           t->global.next_stream_id =
               (gpr_uint32)channel_args->args[i].value.integer;
         }
+      } else if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer", GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
+        } else if (channel_args->args[i].value.integer < 0) {
+          gpr_log(GPR_DEBUG, "%s: must be non-negative", GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
+        } else {
+          push_setting(t, GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE, (gpr_uint32)channel_args->args[i].value.integer);
+        }
+      } else if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer", GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
+        } else if (channel_args->args[i].value.integer < 0) {
+          gpr_log(GPR_DEBUG, "%s: must be non-negative", GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
+        } else {
+          grpc_chttp2_hpack_compressor_set_max_usable_size(&t->writing.hpack_compressor, (gpr_uint32)channel_args->args[i].value.integer);
+        }
       }
     }
   }
@@ -563,7 +579,7 @@ static void lock(grpc_chttp2_transport *t) { gpr_mu_lock(&t->mu); }
 static void unlock(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   GPR_TIMER_BEGIN("unlock", 0);
   if (!t->writing_active && !t->closed &&
-      grpc_chttp2_unlocking_check_writes(&t->global, &t->writing)) {
+      grpc_chttp2_unlocking_check_writes(&t->global, &t->writing, t->parsing_active)) {
     t->writing_active = 1;
     REF_TRANSPORT(t, "writing");
     grpc_exec_ctx_enqueue(exec_ctx, &t->writing_action, 1);
@@ -735,6 +751,8 @@ static int contains_non_ok_status(
   return 0;
 }
 
+static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, int success) {}
+
 static void perform_stream_op_locked(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, grpc_transport_stream_op *op) {
@@ -743,6 +761,9 @@ static void perform_stream_op_locked(
   GPR_TIMER_BEGIN("perform_stream_op_locked", 0);
 
   on_complete = op->on_complete;
+  if (on_complete == NULL) {
+    on_complete = grpc_closure_create(do_nothing, NULL);
+  }
   /* use final_data as a barrier until enqueue time; the inital counter is
      dropped at the end of this function */
   on_complete->final_data = 2;

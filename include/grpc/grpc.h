@@ -127,6 +127,11 @@ typedef struct {
 /** Initial sequence number for http2 transports */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
+/** How much memory to use for hpack decoding */
+#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER \
+  "grpc.http2.hpack_table_size.decoder"
+#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
+  "grpc.http2.hpack_table_size.encoder"
 /** Default authority to pass if none specified on call construction */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
 /** Primary user agent: goes at the start of the user-agent metadata

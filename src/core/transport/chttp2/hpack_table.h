@@ -49,47 +49,58 @@
 #define GRPC_CHTTP2_MAX_HPACK_TABLE_SIZE GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE
 /* Per entry overhead bytes as per the spec */
 #define GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD 32
+#if 0
 /* Maximum number of entries we could possibly fit in the table, given defined
    overheads */
 #define GRPC_CHTTP2_MAX_TABLE_COUNT                                            \
   ((GRPC_CHTTP2_MAX_HPACK_TABLE_SIZE + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD - 1) / \
    GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD)
+#endif
 
 /* hpack decoder table */
 typedef struct {
   grpc_mdctx *mdctx;
   /* the first used entry in ents */
-  gpr_uint16 first_ent;
+  gpr_uint32 first_ent;
   /* the last used entry in ents */
-  gpr_uint16 last_ent;
+  gpr_uint32 last_ent;
   /* how many entries are in the table */
-  gpr_uint16 num_ents;
+  gpr_uint32 num_ents;
   /* the amount of memory used by the table, according to the hpack algorithm */
-  gpr_uint16 mem_used;
+  gpr_uint32 mem_used;
   /* the max memory allowed to be used by the table, according to the hpack
      algorithm */
-  gpr_uint16 max_bytes;
+  gpr_uint32 max_bytes;
+  /* the currently agreed size of the table, according to the hpack algorithm */
+  gpr_uint32 current_table_bytes;
+  /* Maximum number of entries we could possibly fit in the table, given defined
+     overheads */
+  gpr_uint32 max_entries;
+  /* Number of entries allocated in ents */
+  gpr_uint32 cap_entries;
   /* a circular buffer of headers - this is stored in the opposite order to
      what hpack specifies, in order to simplify table management a little...
      meaning lookups need to SUBTRACT from the end position */
-  grpc_mdelem *ents[GRPC_CHTTP2_MAX_TABLE_COUNT];
+  grpc_mdelem **ents;
   grpc_mdelem *static_ents[GRPC_CHTTP2_LAST_STATIC_ENTRY];
 } grpc_chttp2_hptbl;
 
 /* initialize a hpack table */
 void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx);
 void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl *tbl);
+void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl *tbl, gpr_uint32 max_bytes);
+int grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl *tbl, gpr_uint32 bytes);
 
 /* lookup a table entry based on its hpack index */
 grpc_mdelem *grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl *tbl,
                                       gpr_uint32 index);
 /* add a table entry to the index */
-void grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md);
+int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) GRPC_MUST_USE_RESULT;
 /* Find a key/value pair in the table... returns the index in the table of the
    most similar entry, or 0 if the value was not found */
 typedef struct {
-  gpr_uint16 index;
-  gpr_uint8 has_value;
+  gpr_uint32 index;
+  int has_value;
 } grpc_chttp2_hptbl_find_result;
 grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
     const grpc_chttp2_hptbl *tbl, grpc_mdelem *md);

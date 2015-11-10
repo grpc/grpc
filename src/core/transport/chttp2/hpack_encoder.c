@@ -36,8 +36,10 @@
 #include <assert.h>
 #include <string.h>
 
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
+
 #include "src/core/transport/chttp2/bin_encoder.h"
 #include "src/core/transport/chttp2/hpack_table.h"
 #include "src/core/transport/chttp2/timeout_encoding.h"
@@ -154,6 +156,20 @@ static gpr_uint8 *add_tiny_header_data(framer_state *st, size_t len) {
   return gpr_slice_buffer_tiny_add(st->output, len);
 }
 
+static void evict_entry(grpc_chttp2_hpack_compressor *c) {
+  c->tail_remote_index++;
+  GPR_ASSERT(c->tail_remote_index > 0);
+  GPR_ASSERT(c->table_size >=
+             c->table_elem_size[c->tail_remote_index %
+                                c->cap_table_elems]);
+  GPR_ASSERT(c->table_elems > 0);
+  c->table_size =
+      (gpr_uint16)(c->table_size -
+                   c->table_elem_size[c->tail_remote_index %
+                                      c->cap_table_elems]);
+  c->table_elems--;
+}
+
 /* add an element to the decoder table */
 static void add_elem(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem) {
   gpr_uint32 key_hash = elem->key->hash;
@@ -164,25 +180,21 @@ static void add_elem(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem) {
 
   GPR_ASSERT(elem_size < 65536);
 
+  if (elem_size > c->max_table_size) {
+    while (c->table_size > 0) {
+      evict_entry(c);
+    }
+    return;
+  }
+
   /* Reserve space for this element in the remote table: if this overflows
      the current table, drop elements until it fits, matching the decompressor
      algorithm */
-  /* TODO(ctiller): constant */
-  while (c->table_size + elem_size > 4096) {
-    c->tail_remote_index++;
-    GPR_ASSERT(c->tail_remote_index > 0);
-    GPR_ASSERT(c->table_size >=
-               c->table_elem_size[c->tail_remote_index %
-                                  GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS]);
-    GPR_ASSERT(c->table_elems > 0);
-    c->table_size =
-        (gpr_uint16)(c->table_size -
-                     c->table_elem_size[c->tail_remote_index %
-                                        GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS]);
-    c->table_elems--;
+  while (c->table_size + elem_size > c->max_table_size) {
+    evict_entry(c);
   }
-  GPR_ASSERT(c->table_elems < GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS);
-  c->table_elem_size[new_index % GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS] =
+  GPR_ASSERT(c->table_elems < c->max_table_size);
+  c->table_elem_size[new_index % c->cap_table_elems] =
       (gpr_uint16)elem_size;
   c->table_size = (gpr_uint16)(c->table_size + elem_size);
   c->table_elems++;
@@ -329,6 +341,12 @@ static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor *c,
   add_header_data(st, gpr_slice_ref(value_slice));
 }
 
+static void emit_advertise_table_size_change(grpc_chttp2_hpack_compressor *c, framer_state *st) {
+  gpr_uint32 len = GRPC_CHTTP2_VARINT_LENGTH(c->max_table_size, 3);
+  GRPC_CHTTP2_WRITE_VARINT(c->max_table_size, 3, 0x20, add_tiny_header_data(st, len), len);
+  c->advertise_table_size_change = 0;
+}
+
 static gpr_uint32 dynidx(grpc_chttp2_hpack_compressor *c,
                          gpr_uint32 elem_index) {
   return 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY + c->tail_remote_index +
@@ -447,11 +465,20 @@ gpr_slice grpc_chttp2_data_frame_create_empty_close(gpr_uint32 id) {
   return slice;
 }
 
+static gpr_uint32 elems_for_bytes(gpr_uint32 bytes) {
+  return (bytes + 31) / 32;
+}
+
 void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
                                        grpc_mdctx *ctx) {
   memset(c, 0, sizeof(*c));
   c->mdctx = ctx;
   c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout");
+  c->max_table_size = GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE;
+  c->cap_table_elems = c->max_table_elems = elems_for_bytes(c->max_table_size);
+  c->max_usable_size = GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE;
+  c->table_elem_size = gpr_malloc(sizeof(*c->table_elem_size) * c->cap_table_elems);
+  memset(c->table_elem_size, 0, sizeof(*c->table_elem_size) * c->cap_table_elems);
 }
 
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c) {
@@ -461,6 +488,38 @@ void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c) {
     if (c->entries_elems[i]) GRPC_MDELEM_UNREF(c->entries_elems[i]);
   }
   GRPC_MDSTR_UNREF(c->timeout_key_str);
+  gpr_free(c->table_elem_size);
+}
+
+void grpc_chttp2_hpack_compressor_set_max_usable_size(grpc_chttp2_hpack_compressor *c, gpr_uint32 max_table_size) {
+  c->max_usable_size = max_table_size;
+  grpc_chttp2_hpack_compressor_set_max_table_size(c, GPR_MIN(c->max_table_size, max_table_size));
+}
+
+static void rebuild_elems(grpc_chttp2_hpack_compressor *c, gpr_uint32 new_cap) {
+
+}
+
+void grpc_chttp2_hpack_compressor_set_max_table_size(grpc_chttp2_hpack_compressor *c, gpr_uint32 max_table_size) {
+  max_table_size = GPR_MIN(max_table_size, c->max_usable_size);
+  if (max_table_size == c->max_table_size) {
+    return;
+  }
+  while (c->table_size > 0 && c->table_size > max_table_size) {
+    evict_entry(c);
+  }
+  c->max_table_size = max_table_size;
+  c->max_table_elems = elems_for_bytes(max_table_size);
+  if (c->max_table_elems > c->cap_table_elems) {
+    rebuild_elems(c, GPR_MAX(c->max_table_elems, 2 * c->cap_table_elems));
+  } else if (c->max_table_elems < c->cap_table_elems / 3) {
+    gpr_uint32 new_cap = GPR_MIN(c->max_table_elems, 16);
+    if (new_cap != c->cap_table_elems) {
+      rebuild_elems(c, new_cap);
+    }
+  }
+  c->advertise_table_size_change = 1;
+  gpr_log(GPR_DEBUG, "set max table size from encoder to %d", max_table_size);
 }
 
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c,
@@ -483,6 +542,9 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c,
      slot. THIS MAY NOT BE THE SAME ELEMENT (if a decoder table slot got
      updated). After this loop, we'll do a batch unref of elements. */
   begin_frame(&st);
+  if (c->advertise_table_size_change != 0) {
+    emit_advertise_table_size_change(c, &st);
+  }
   grpc_metadata_batch_assert_ok(metadata);
   for (l = metadata->list.head; l; l = l->next) {
     hpack_enc(c, l->md, &st);
