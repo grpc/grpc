@@ -174,7 +174,7 @@ static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl *tbl,
 
 static void test_find(void) {
   grpc_chttp2_hptbl tbl;
-  int i;
+  gpr_uint32 i;
   char buffer[32];
   grpc_mdctx *mdctx;
   grpc_chttp2_hptbl_find_result r;
@@ -254,7 +254,7 @@ static void test_find(void) {
   GPR_ASSERT(r.has_value == 1);
 
   for (i = 0; i < tbl.num_ents; i++) {
-    int expect = 9999 - i;
+    gpr_uint32 expect = 9999 - i;
     gpr_ltoa(expect, buffer);
 
     r = find_simple(&tbl, "test", buffer);
