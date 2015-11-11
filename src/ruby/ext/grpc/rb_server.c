@@ -101,11 +101,14 @@ static const rb_data_type_t grpc_rb_server_data_type = {
      {NULL, NULL}},
     NULL,
     NULL,
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
     /* It is unsafe to specify RUBY_TYPED_FREE_IMMEDIATELY because the free function would block
      * and we might want to unlock GVL
      * TODO(yugui) Unlock GVL?
      */
-    0};
+    0,
+#endif
+};
 
 /* Allocates grpc_rb_server instances. */
 static VALUE grpc_rb_server_alloc(VALUE cls) {
