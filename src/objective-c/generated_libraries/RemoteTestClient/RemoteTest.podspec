@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.prepare_command = <<-CMD
     BINDIR=../../../../bins/$CONFIG
     PROTOC=$BINDIR/protobuf/protoc
-    PLUGIN=$BINDIR/grpc_objective_c_plugin
+    PLUGIN=$BINDIR/opt/grpc_objective_c_plugin
     $PROTOC --plugin=protoc-gen-grpc=$PLUGIN --objc_out=. --grpc_out=. *.proto
   CMD
 
