@@ -99,6 +99,7 @@ module RubyLogger
   end
 
   LOGGER = DebugIsTruncated.new(STDOUT)
+  LOGGER.level = Logger::WARN
 end
 
 # GRPC is the general RPC module
