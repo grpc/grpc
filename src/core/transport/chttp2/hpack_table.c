@@ -294,10 +294,10 @@ int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 
   if (tbl->current_table_bytes > tbl->max_bytes) {
-    gpr_log(
-        GPR_ERROR,
-        "HPACK max table size reduced to %d but not reflected by hpack stream",
-        tbl->max_bytes);
+    gpr_log(GPR_ERROR,
+            "HPACK max table size reduced to %d but not reflected by hpack "
+            "stream (still at %d)",
+            tbl->max_bytes, tbl->current_table_bytes);
     return 0;
   }
 
@@ -324,7 +324,8 @@ int grpc_chttp2_hptbl_add(grpc_chttp2_hptbl *tbl, grpc_mdelem *md) {
   }
 
   /* copy the finalized entry in */
-  tbl->ents[(tbl->first_ent + tbl->num_ents) % tbl->cap_entries] = GRPC_MDELEM_REF(md);
+  tbl->ents[(tbl->first_ent + tbl->num_ents) % tbl->cap_entries] =
+      GRPC_MDELEM_REF(md);
 
   /* update accounting values */
   tbl->num_ents++;
