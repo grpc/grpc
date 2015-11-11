@@ -29,6 +29,9 @@ coverage
 # emacs temp files
 *~
 
+# generated Makefile by cmake, gyp, etc
+Makefile
+
 # vim temp files
 .*.swp
 
