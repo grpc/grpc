@@ -157,9 +157,7 @@ static void unrefpc(proxy_call *pc, const char *reason) {
   }
 }
 
-static void refpc(proxy_call *pc, const char *reason) {
-  gpr_ref(&pc->refs);
-}
+static void refpc(proxy_call *pc, const char *reason) { gpr_ref(&pc->refs); }
 
 static void on_c2p_sent_initial_metadata(void *arg, int success) {
   proxy_call *pc = arg;
