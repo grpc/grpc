@@ -4865,23 +4865,6 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_proxy_hpack_size_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
     "name": "h2_proxy_invoke_large_request_test", 
     "platforms": [
       "linux", 
@@ -5934,24 +5917,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair+trace_high_initial_seqno_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_hpack_size_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -8137,23 +8102,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_ssl_proxy_high_initial_seqno_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl_proxy_hpack_size_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -11988,23 +11936,6 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_proxy_hpack_size_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
     "name": "h2_proxy_invoke_large_request_nosec_test", 
     "platforms": [
       "linux", 
@@ -13022,24 +12953,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_sockpair+trace_high_initial_seqno_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_hpack_size_nosec_test", 
     "platforms": [
       "linux", 
       "mac", 

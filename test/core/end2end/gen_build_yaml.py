@@ -37,8 +37,8 @@ import collections
 import hashlib
 
 
-FixtureOptions = collections.namedtuple('FixtureOptions', 'fullstack includes_proxy dns_resolver secure platforms ci_mac')
-default_unsecure_fixture_options = FixtureOptions(True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True)
+FixtureOptions = collections.namedtuple('FixtureOptions', 'fullstack includes_proxy dns_resolver secure platforms ci_mac tracing')
+default_unsecure_fixture_options = FixtureOptions(True, False, True, False, ['windows', 'linux', 'mac', 'posix'], True, False)
 socketpair_unsecure_fixture_options = default_unsecure_fixture_options._replace(fullstack=False, dns_resolver=False)
 default_secure_fixture_options = default_unsecure_fixture_options._replace(secure=True)
 uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=False, platforms=['linux', 'mac', 'posix'])
@@ -54,7 +54,7 @@ END2END_FIXTURES = {
     'h2_proxy': default_unsecure_fixture_options._replace(includes_proxy=True, ci_mac=False),
     'h2_sockpair_1byte': socketpair_unsecure_fixture_options._replace(ci_mac=False),
     'h2_sockpair': socketpair_unsecure_fixture_options._replace(ci_mac=False),
-    'h2_sockpair+trace': socketpair_unsecure_fixture_options,
+    'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(tracing=True),
     'h2_ssl': default_secure_fixture_options,
     'h2_ssl+poll': default_secure_fixture_options._replace(platforms=['linux']),
     'h2_ssl_proxy': default_secure_fixture_options._replace(includes_proxy=True, ci_mac=False),
@@ -63,8 +63,8 @@ END2END_FIXTURES = {
     'h2_uds': uds_fixture_options,
 }
 
-TestOptions = collections.namedtuple('TestOptions', 'needs_fullstack needs_dns proxyable flaky secure')
-default_test_options = TestOptions(False, False, True, False, False)
+TestOptions = collections.namedtuple('TestOptions', 'needs_fullstack needs_dns proxyable flaky secure traceable')
+default_test_options = TestOptions(False, False, True, False, False, True)
 connectivity_test_options = default_test_options._replace(needs_fullstack=True)
 
 # maps test names to options
@@ -85,7 +85,7 @@ END2END_TESTS = {
     'disappearing_server': connectivity_test_options,
     'empty_batch': default_test_options,
     'graceful_server_shutdown': default_test_options,
-    'hpack_size': default_test_options,
+    'hpack_size': default_test_options._replace(proxyable=False, traceable=False),
     'high_initial_seqno': default_test_options,
     'invoke_large_request': default_test_options,
     'large_metadata': default_test_options,
@@ -117,6 +117,9 @@ def compatible(f, t):
       return False
   if not END2END_TESTS[t].proxyable:
     if END2END_FIXTURES[f].includes_proxy:
+      return False
+  if not END2END_TESTS[t].traceable:
+    if END2END_FIXTURES[f].tracing:
       return False
   return True
 
