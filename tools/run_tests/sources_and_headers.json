@@ -4697,21 +4697,6 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_h2_proxy", 
-      "end2end_test_hpack_size", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_proxy_hpack_size_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_proxy", 
       "end2end_test_invoke_large_request", 
       "gpr", 
       "gpr_test_util", 
@@ -5636,21 +5621,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair+trace_high_initial_seqno_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_sockpair+trace", 
-      "end2end_test_hpack_size", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair+trace_hpack_size_test", 
     "src": []
   }, 
   {
@@ -7691,21 +7661,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_ssl_proxy_high_initial_seqno_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_ssl_proxy", 
-      "end2end_test_hpack_size", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_ssl_proxy_hpack_size_test", 
     "src": []
   }, 
   {
@@ -11207,20 +11162,6 @@
   {
     "deps": [
       "end2end_fixture_h2_proxy", 
-      "end2end_test_hpack_size", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_proxy_hpack_size_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_fixture_h2_proxy", 
       "end2end_test_invoke_large_request", 
       "gpr", 
       "gpr_test_util", 
@@ -12056,20 +11997,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair+trace_high_initial_seqno_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_fixture_h2_sockpair+trace", 
-      "end2end_test_hpack_size", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair+trace_hpack_size_nosec_test", 
     "src": []
   }, 
   {
