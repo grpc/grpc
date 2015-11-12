@@ -1,0 +1,13704 @@
+cmake_minimum_required (VERSION 2.8.4 FATAL_ERROR)
+
+
+
+set (PACKAGE_NAME      "grpc")
+set (PACKAGE_VERSION   "0.11.0")
+set (PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
+set (PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
+set (PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+set (CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+project (${PACKAGE_NAME} C CXX)
+
+#add_subdirectory(third_party/protobuf/cmake)
+
+set (PACKAGE_SOVERSION ${PACKAGE_VERSION_MAJOR})
+set (CMAKE_INCLUDE_CURRENT_DIR ON)
+set (CMAKE_VERBOSE_MAKEFILE ON)
+
+include_directories(include)
+
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else()
+        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
+
+find_package(ZLIB REQUIRED)
+if (ZLIB_FOUND)
+  include_directories(${ZLIB_INCLUDE_DIRS})
+endif(ZLIB_FOUND)
+
+find_package(OpenSSL REQUIRED)
+if (OPENSSL_FOUND)
+  include_directories(${OPENSSL_INCLUDE_DIRS})
+endif(OPENSSL_FOUND)
+
+include(CheckSymbolExists)
+check_symbol_exists(SSL_get0_alpn_selected openssl/ssl.h HAVE_ALPN)
+if(HAVE_ALPN)
+  add_definitions(-DTSI_OPENSSL_ALPN_SUPPORT=1)
+else()
+  add_definitions(-DTSI_OPENSSL_ALPN_SUPPORT=0)
+endif()
+
+add_library(gpr
+  src/core/profiling/basic_timers.c
+  src/core/profiling/stap_timers.c
+  src/core/support/alloc.c
+  src/core/support/cmdline.c
+  src/core/support/cpu_iphone.c
+  src/core/support/cpu_linux.c
+  src/core/support/cpu_posix.c
+  src/core/support/cpu_windows.c
+  src/core/support/env_linux.c
+  src/core/support/env_posix.c
+  src/core/support/env_win32.c
+  src/core/support/file.c
+  src/core/support/file_posix.c
+  src/core/support/file_win32.c
+  src/core/support/histogram.c
+  src/core/support/host_port.c
+  src/core/support/log.c
+  src/core/support/log_android.c
+  src/core/support/log_linux.c
+  src/core/support/log_posix.c
+  src/core/support/log_win32.c
+  src/core/support/murmur_hash.c
+  src/core/support/slice.c
+  src/core/support/slice_buffer.c
+  src/core/support/stack_lockfree.c
+  src/core/support/string.c
+  src/core/support/string_posix.c
+  src/core/support/string_win32.c
+  src/core/support/subprocess_posix.c
+  src/core/support/sync.c
+  src/core/support/sync_posix.c
+  src/core/support/sync_win32.c
+  src/core/support/thd.c
+  src/core/support/thd_posix.c
+  src/core/support/thd_win32.c
+  src/core/support/time.c
+  src/core/support/time_posix.c
+  src/core/support/time_precise.c
+  src/core/support/time_win32.c
+  src/core/support/tls_pthread.c
+)
+add_library(gpr_test_util
+  test/core/util/test_config.c
+)
+add_library(grpc
+  src/core/httpcli/httpcli_security_connector.c
+  src/core/security/base64.c
+  src/core/security/client_auth_filter.c
+  src/core/security/credentials.c
+  src/core/security/credentials_metadata.c
+  src/core/security/credentials_posix.c
+  src/core/security/credentials_win32.c
+  src/core/security/google_default_credentials.c
+  src/core/security/handshake.c
+  src/core/security/json_token.c
+  src/core/security/jwt_verifier.c
+  src/core/security/secure_endpoint.c
+  src/core/security/security_connector.c
+  src/core/security/security_context.c
+  src/core/security/server_auth_filter.c
+  src/core/security/server_secure_chttp2.c
+  src/core/surface/init_secure.c
+  src/core/surface/secure_channel_create.c
+  src/core/tsi/fake_transport_security.c
+  src/core/tsi/ssl_transport_security.c
+  src/core/tsi/transport_security.c
+  src/core/census/grpc_context.c
+  src/core/census/grpc_filter.c
+  src/core/channel/channel_args.c
+  src/core/channel/channel_stack.c
+  src/core/channel/client_channel.c
+  src/core/channel/client_uchannel.c
+  src/core/channel/compress_filter.c
+  src/core/channel/connected_channel.c
+  src/core/channel/http_client_filter.c
+  src/core/channel/http_server_filter.c
+  src/core/channel/noop_filter.c
+  src/core/client_config/client_config.c
+  src/core/client_config/connector.c
+  src/core/client_config/lb_policies/pick_first.c
+  src/core/client_config/lb_policies/round_robin.c
+  src/core/client_config/lb_policy.c
+  src/core/client_config/lb_policy_factory.c
+  src/core/client_config/lb_policy_registry.c
+  src/core/client_config/resolver.c
+  src/core/client_config/resolver_factory.c
+  src/core/client_config/resolver_registry.c
+  src/core/client_config/resolvers/dns_resolver.c
+  src/core/client_config/resolvers/sockaddr_resolver.c
+  src/core/client_config/subchannel.c
+  src/core/client_config/subchannel_factory.c
+  src/core/client_config/subchannel_factory_decorators/add_channel_arg.c
+  src/core/client_config/subchannel_factory_decorators/merge_channel_args.c
+  src/core/client_config/uri_parser.c
+  src/core/compression/algorithm.c
+  src/core/compression/message_compress.c
+  src/core/debug/trace.c
+  src/core/httpcli/format_request.c
+  src/core/httpcli/httpcli.c
+  src/core/httpcli/parser.c
+  src/core/iomgr/closure.c
+  src/core/iomgr/endpoint.c
+  src/core/iomgr/endpoint_pair_posix.c
+  src/core/iomgr/endpoint_pair_windows.c
+  src/core/iomgr/exec_ctx.c
+  src/core/iomgr/executor.c
+  src/core/iomgr/fd_posix.c
+  src/core/iomgr/iocp_windows.c
+  src/core/iomgr/iomgr.c
+  src/core/iomgr/iomgr_posix.c
+  src/core/iomgr/iomgr_windows.c
+  src/core/iomgr/pollset_multipoller_with_epoll.c
+  src/core/iomgr/pollset_multipoller_with_poll_posix.c
+  src/core/iomgr/pollset_posix.c
+  src/core/iomgr/pollset_set_posix.c
+  src/core/iomgr/pollset_set_windows.c
+  src/core/iomgr/pollset_windows.c
+  src/core/iomgr/resolve_address_posix.c
+  src/core/iomgr/resolve_address_windows.c
+  src/core/iomgr/sockaddr_utils.c
+  src/core/iomgr/socket_utils_common_posix.c
+  src/core/iomgr/socket_utils_linux.c
+  src/core/iomgr/socket_utils_posix.c
+  src/core/iomgr/socket_windows.c
+  src/core/iomgr/tcp_client_posix.c
+  src/core/iomgr/tcp_client_windows.c
+  src/core/iomgr/tcp_posix.c
+  src/core/iomgr/tcp_server_posix.c
+  src/core/iomgr/tcp_server_windows.c
+  src/core/iomgr/tcp_windows.c
+  src/core/iomgr/time_averaged_stats.c
+  src/core/iomgr/timer.c
+  src/core/iomgr/timer_heap.c
+  src/core/iomgr/udp_server.c
+  src/core/iomgr/wakeup_fd_eventfd.c
+  src/core/iomgr/wakeup_fd_nospecial.c
+  src/core/iomgr/wakeup_fd_pipe.c
+  src/core/iomgr/wakeup_fd_posix.c
+  src/core/iomgr/workqueue_posix.c
+  src/core/iomgr/workqueue_windows.c
+  src/core/json/json.c
+  src/core/json/json_reader.c
+  src/core/json/json_string.c
+  src/core/json/json_writer.c
+  src/core/surface/api_trace.c
+  src/core/surface/byte_buffer.c
+  src/core/surface/byte_buffer_queue.c
+  src/core/surface/byte_buffer_reader.c
+  src/core/surface/call.c
+  src/core/surface/call_details.c
+  src/core/surface/call_log_batch.c
+  src/core/surface/channel.c
+  src/core/surface/channel_connectivity.c
+  src/core/surface/channel_create.c
+  src/core/surface/completion_queue.c
+  src/core/surface/event_string.c
+  src/core/surface/init.c
+  src/core/surface/lame_client.c
+  src/core/surface/metadata_array.c
+  src/core/surface/server.c
+  src/core/surface/server_chttp2.c
+  src/core/surface/server_create.c
+  src/core/surface/version.c
+  src/core/transport/chttp2/alpn.c
+  src/core/transport/chttp2/bin_encoder.c
+  src/core/transport/chttp2/frame_data.c
+  src/core/transport/chttp2/frame_goaway.c
+  src/core/transport/chttp2/frame_ping.c
+  src/core/transport/chttp2/frame_rst_stream.c
+  src/core/transport/chttp2/frame_settings.c
+  src/core/transport/chttp2/frame_window_update.c
+  src/core/transport/chttp2/hpack_parser.c
+  src/core/transport/chttp2/hpack_table.c
+  src/core/transport/chttp2/huffsyms.c
+  src/core/transport/chttp2/incoming_metadata.c
+  src/core/transport/chttp2/parsing.c
+  src/core/transport/chttp2/status_conversion.c
+  src/core/transport/chttp2/stream_encoder.c
+  src/core/transport/chttp2/stream_lists.c
+  src/core/transport/chttp2/stream_map.c
+  src/core/transport/chttp2/timeout_encoding.c
+  src/core/transport/chttp2/varint.c
+  src/core/transport/chttp2/writing.c
+  src/core/transport/chttp2_transport.c
+  src/core/transport/connectivity_state.c
+  src/core/transport/metadata.c
+  src/core/transport/stream_op.c
+  src/core/transport/transport.c
+  src/core/transport/transport_op_string.c
+  src/core/census/context.c
+  src/core/census/initialize.c
+  src/core/census/operation.c
+  src/core/census/tracing.c
+)
+add_library(grpc_test_util
+  test/core/end2end/data/server1_cert.c
+  test/core/end2end/data/server1_key.c
+  test/core/end2end/data/test_root_cert.c
+  test/core/end2end/cq_verifier.c
+  test/core/end2end/fixtures/proxy.c
+  test/core/iomgr/endpoint_tests.c
+  test/core/security/oauth2_utils.c
+  test/core/util/grpc_profiler.c
+  test/core/util/parse_hexstring.c
+  test/core/util/port_posix.c
+  test/core/util/port_windows.c
+  test/core/util/slice_splitter.c
+)
+add_library(grpc_test_util_unsecure
+  test/core/end2end/cq_verifier.c
+  test/core/end2end/fixtures/proxy.c
+  test/core/iomgr/endpoint_tests.c
+  test/core/security/oauth2_utils.c
+  test/core/util/grpc_profiler.c
+  test/core/util/parse_hexstring.c
+  test/core/util/port_posix.c
+  test/core/util/port_windows.c
+  test/core/util/slice_splitter.c
+)
+add_library(grpc_unsecure
+  src/core/surface/init_unsecure.c
+  src/core/census/grpc_context.c
+  src/core/census/grpc_filter.c
+  src/core/channel/channel_args.c
+  src/core/channel/channel_stack.c
+  src/core/channel/client_channel.c
+  src/core/channel/client_uchannel.c
+  src/core/channel/compress_filter.c
+  src/core/channel/connected_channel.c
+  src/core/channel/http_client_filter.c
+  src/core/channel/http_server_filter.c
+  src/core/channel/noop_filter.c
+  src/core/client_config/client_config.c
+  src/core/client_config/connector.c
+  src/core/client_config/lb_policies/pick_first.c
+  src/core/client_config/lb_policies/round_robin.c
+  src/core/client_config/lb_policy.c
+  src/core/client_config/lb_policy_factory.c
+  src/core/client_config/lb_policy_registry.c
+  src/core/client_config/resolver.c
+  src/core/client_config/resolver_factory.c
+  src/core/client_config/resolver_registry.c
+  src/core/client_config/resolvers/dns_resolver.c
+  src/core/client_config/resolvers/sockaddr_resolver.c
+  src/core/client_config/subchannel.c
+  src/core/client_config/subchannel_factory.c
+  src/core/client_config/subchannel_factory_decorators/add_channel_arg.c
+  src/core/client_config/subchannel_factory_decorators/merge_channel_args.c
+  src/core/client_config/uri_parser.c
+  src/core/compression/algorithm.c
+  src/core/compression/message_compress.c
+  src/core/debug/trace.c
+  src/core/httpcli/format_request.c
+  src/core/httpcli/httpcli.c
+  src/core/httpcli/parser.c
+  src/core/iomgr/closure.c
+  src/core/iomgr/endpoint.c
+  src/core/iomgr/endpoint_pair_posix.c
+  src/core/iomgr/endpoint_pair_windows.c
+  src/core/iomgr/exec_ctx.c
+  src/core/iomgr/executor.c
+  src/core/iomgr/fd_posix.c
+  src/core/iomgr/iocp_windows.c
+  src/core/iomgr/iomgr.c
+  src/core/iomgr/iomgr_posix.c
+  src/core/iomgr/iomgr_windows.c
+  src/core/iomgr/pollset_multipoller_with_epoll.c
+  src/core/iomgr/pollset_multipoller_with_poll_posix.c
+  src/core/iomgr/pollset_posix.c
+  src/core/iomgr/pollset_set_posix.c
+  src/core/iomgr/pollset_set_windows.c
+  src/core/iomgr/pollset_windows.c
+  src/core/iomgr/resolve_address_posix.c
+  src/core/iomgr/resolve_address_windows.c
+  src/core/iomgr/sockaddr_utils.c
+  src/core/iomgr/socket_utils_common_posix.c
+  src/core/iomgr/socket_utils_linux.c
+  src/core/iomgr/socket_utils_posix.c
+  src/core/iomgr/socket_windows.c
+  src/core/iomgr/tcp_client_posix.c
+  src/core/iomgr/tcp_client_windows.c
+  src/core/iomgr/tcp_posix.c
+  src/core/iomgr/tcp_server_posix.c
+  src/core/iomgr/tcp_server_windows.c
+  src/core/iomgr/tcp_windows.c
+  src/core/iomgr/time_averaged_stats.c
+  src/core/iomgr/timer.c
+  src/core/iomgr/timer_heap.c
+  src/core/iomgr/udp_server.c
+  src/core/iomgr/wakeup_fd_eventfd.c
+  src/core/iomgr/wakeup_fd_nospecial.c
+  src/core/iomgr/wakeup_fd_pipe.c
+  src/core/iomgr/wakeup_fd_posix.c
+  src/core/iomgr/workqueue_posix.c
+  src/core/iomgr/workqueue_windows.c
+  src/core/json/json.c
+  src/core/json/json_reader.c
+  src/core/json/json_string.c
+  src/core/json/json_writer.c
+  src/core/surface/api_trace.c
+  src/core/surface/byte_buffer.c
+  src/core/surface/byte_buffer_queue.c
+  src/core/surface/byte_buffer_reader.c
+  src/core/surface/call.c
+  src/core/surface/call_details.c
+  src/core/surface/call_log_batch.c
+  src/core/surface/channel.c
+  src/core/surface/channel_connectivity.c
+  src/core/surface/channel_create.c
+  src/core/surface/completion_queue.c
+  src/core/surface/event_string.c
+  src/core/surface/init.c
+  src/core/surface/lame_client.c
+  src/core/surface/metadata_array.c
+  src/core/surface/server.c
+  src/core/surface/server_chttp2.c
+  src/core/surface/server_create.c
+  src/core/surface/version.c
+  src/core/transport/chttp2/alpn.c
+  src/core/transport/chttp2/bin_encoder.c
+  src/core/transport/chttp2/frame_data.c
+  src/core/transport/chttp2/frame_goaway.c
+  src/core/transport/chttp2/frame_ping.c
+  src/core/transport/chttp2/frame_rst_stream.c
+  src/core/transport/chttp2/frame_settings.c
+  src/core/transport/chttp2/frame_window_update.c
+  src/core/transport/chttp2/hpack_parser.c
+  src/core/transport/chttp2/hpack_table.c
+  src/core/transport/chttp2/huffsyms.c
+  src/core/transport/chttp2/incoming_metadata.c
+  src/core/transport/chttp2/parsing.c
+  src/core/transport/chttp2/status_conversion.c
+  src/core/transport/chttp2/stream_encoder.c
+  src/core/transport/chttp2/stream_lists.c
+  src/core/transport/chttp2/stream_map.c
+  src/core/transport/chttp2/timeout_encoding.c
+  src/core/transport/chttp2/varint.c
+  src/core/transport/chttp2/writing.c
+  src/core/transport/chttp2_transport.c
+  src/core/transport/connectivity_state.c
+  src/core/transport/metadata.c
+  src/core/transport/stream_op.c
+  src/core/transport/transport.c
+  src/core/transport/transport_op_string.c
+  src/core/census/context.c
+  src/core/census/initialize.c
+  src/core/census/operation.c
+  src/core/census/tracing.c
+)
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(grpc_zookeeper
+  src/core/client_config/resolvers/zookeeper_resolver.c
+)
+endif()
+add_library(reconnect_server
+  test/core/util/reconnect_server.c
+)
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_compress
+  test/core/end2end/fixtures/h2_compress.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_fakesec
+  test/core/end2end/fixtures/h2_fakesec.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_full
+  test/core/end2end/fixtures/h2_full.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(end2end_fixture_h2_full+poll
+  test/core/end2end/fixtures/h2_full+poll.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_oauth2
+  test/core/end2end/fixtures/h2_oauth2.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_proxy
+  test/core/end2end/fixtures/h2_proxy.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_sockpair
+  test/core/end2end/fixtures/h2_sockpair.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_sockpair+trace
+  test/core/end2end/fixtures/h2_sockpair+trace.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_sockpair_1byte
+  test/core/end2end/fixtures/h2_sockpair_1byte.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_ssl
+  test/core/end2end/fixtures/h2_ssl.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(end2end_fixture_h2_ssl+poll
+  test/core/end2end/fixtures/h2_ssl+poll.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_ssl_proxy
+  test/core/end2end/fixtures/h2_ssl_proxy.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_uchannel
+  test/core/end2end/fixtures/h2_uchannel.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_fixture_h2_uds
+  test/core/end2end/fixtures/h2_uds.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(end2end_fixture_h2_uds+poll
+  test/core/end2end/fixtures/h2_uds+poll.c
+)
+endif()
+add_library(end2end_test_bad_hostname
+  test/core/end2end/tests/bad_hostname.c
+)
+add_library(end2end_test_binary_metadata
+  test/core/end2end/tests/binary_metadata.c
+)
+add_library(end2end_test_call_creds
+  test/core/end2end/tests/call_creds.c
+)
+add_library(end2end_test_cancel_after_accept
+  test/core/end2end/tests/cancel_after_accept.c
+)
+add_library(end2end_test_cancel_after_client_done
+  test/core/end2end/tests/cancel_after_client_done.c
+)
+add_library(end2end_test_cancel_after_invoke
+  test/core/end2end/tests/cancel_after_invoke.c
+)
+add_library(end2end_test_cancel_before_invoke
+  test/core/end2end/tests/cancel_before_invoke.c
+)
+add_library(end2end_test_cancel_in_a_vacuum
+  test/core/end2end/tests/cancel_in_a_vacuum.c
+)
+add_library(end2end_test_census_simple_request
+  test/core/end2end/tests/census_simple_request.c
+)
+add_library(end2end_test_channel_connectivity
+  test/core/end2end/tests/channel_connectivity.c
+)
+add_library(end2end_test_compressed_payload
+  test/core/end2end/tests/compressed_payload.c
+)
+add_library(end2end_test_default_host
+  test/core/end2end/tests/default_host.c
+)
+add_library(end2end_test_disappearing_server
+  test/core/end2end/tests/disappearing_server.c
+)
+add_library(end2end_test_empty_batch
+  test/core/end2end/tests/empty_batch.c
+)
+add_library(end2end_test_graceful_server_shutdown
+  test/core/end2end/tests/graceful_server_shutdown.c
+)
+add_library(end2end_test_high_initial_seqno
+  test/core/end2end/tests/high_initial_seqno.c
+)
+add_library(end2end_test_invoke_large_request
+  test/core/end2end/tests/invoke_large_request.c
+)
+add_library(end2end_test_large_metadata
+  test/core/end2end/tests/large_metadata.c
+)
+add_library(end2end_test_max_concurrent_streams
+  test/core/end2end/tests/max_concurrent_streams.c
+)
+add_library(end2end_test_max_message_length
+  test/core/end2end/tests/max_message_length.c
+)
+add_library(end2end_test_metadata
+  test/core/end2end/tests/metadata.c
+)
+add_library(end2end_test_no_op
+  test/core/end2end/tests/no_op.c
+)
+add_library(end2end_test_payload
+  test/core/end2end/tests/payload.c
+)
+add_library(end2end_test_ping_pong_streaming
+  test/core/end2end/tests/ping_pong_streaming.c
+)
+add_library(end2end_test_registered_call
+  test/core/end2end/tests/registered_call.c
+)
+add_library(end2end_test_request_with_flags
+  test/core/end2end/tests/request_with_flags.c
+)
+add_library(end2end_test_request_with_payload
+  test/core/end2end/tests/request_with_payload.c
+)
+add_library(end2end_test_server_finishes_request
+  test/core/end2end/tests/server_finishes_request.c
+)
+add_library(end2end_test_shutdown_finishes_calls
+  test/core/end2end/tests/shutdown_finishes_calls.c
+)
+add_library(end2end_test_shutdown_finishes_tags
+  test/core/end2end/tests/shutdown_finishes_tags.c
+)
+add_library(end2end_test_simple_delayed_request
+  test/core/end2end/tests/simple_delayed_request.c
+)
+add_library(end2end_test_simple_request
+  test/core/end2end/tests/simple_request.c
+)
+add_library(end2end_test_trailing_metadata
+  test/core/end2end/tests/trailing_metadata.c
+)
+add_library(end2end_certs
+  test/core/end2end/data/test_root_cert.c
+  test/core/end2end/data/server1_cert.c
+  test/core/end2end/data/server1_key.c
+)
+add_library(bad_client_test
+  test/core/bad_client/bad_client.c
+)
+
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(alpn_test
+  test/core/transport/chttp2/alpn_test.c
+)
+target_link_libraries(alpn_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(bin_encoder_test
+  test/core/transport/chttp2/bin_encoder_test.c
+)
+target_link_libraries(bin_encoder_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(chttp2_status_conversion_test
+  test/core/transport/chttp2/status_conversion_test.c
+)
+target_link_libraries(chttp2_status_conversion_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(chttp2_stream_encoder_test
+  test/core/transport/chttp2/stream_encoder_test.c
+)
+target_link_libraries(chttp2_stream_encoder_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(chttp2_stream_map_test
+  test/core/transport/chttp2/stream_map_test.c
+)
+target_link_libraries(chttp2_stream_map_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(compression_test
+  test/core/compression/compression_test.c
+)
+target_link_libraries(compression_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(dualstack_socket_test
+  test/core/end2end/dualstack_socket_test.c
+)
+target_link_libraries(dualstack_socket_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(endpoint_pair_test
+  test/core/iomgr/endpoint_pair_test.c
+)
+target_link_libraries(endpoint_pair_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(fd_conservation_posix_test
+  test/core/iomgr/fd_conservation_posix_test.c
+)
+target_link_libraries(fd_conservation_posix_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(fd_posix_test
+  test/core/iomgr/fd_posix_test.c
+)
+target_link_libraries(fd_posix_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(fling_client
+  test/core/fling/client.c
+)
+target_link_libraries(fling_client
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(fling_server
+  test/core/fling/server.c
+)
+target_link_libraries(fling_server
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(fling_stream_test
+  test/core/fling/fling_stream_test.c
+)
+target_link_libraries(fling_stream_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(fling_test
+  test/core/fling/fling_test.c
+)
+target_link_libraries(fling_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gen_hpack_tables
+  tools/codegen/core/gen_hpack_tables.c
+)
+target_link_libraries(gen_hpack_tables
+  gpr
+  grpc
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gen_legal_metadata_characters
+  tools/codegen/core/gen_legal_metadata_characters.c
+)
+target_link_libraries(gen_legal_metadata_characters
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_cmdline_test
+  test/core/support/cmdline_test.c
+)
+target_link_libraries(gpr_cmdline_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_cpu_test
+  test/core/support/cpu_test.c
+)
+target_link_libraries(gpr_cpu_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_env_test
+  test/core/support/env_test.c
+)
+target_link_libraries(gpr_env_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_file_test
+  test/core/support/file_test.c
+)
+target_link_libraries(gpr_file_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_histogram_test
+  test/core/support/histogram_test.c
+)
+target_link_libraries(gpr_histogram_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_host_port_test
+  test/core/support/host_port_test.c
+)
+target_link_libraries(gpr_host_port_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_log_test
+  test/core/support/log_test.c
+)
+target_link_libraries(gpr_log_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_slice_buffer_test
+  test/core/support/slice_buffer_test.c
+)
+target_link_libraries(gpr_slice_buffer_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_slice_test
+  test/core/support/slice_test.c
+)
+target_link_libraries(gpr_slice_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_stack_lockfree_test
+  test/core/support/stack_lockfree_test.c
+)
+target_link_libraries(gpr_stack_lockfree_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_string_test
+  test/core/support/string_test.c
+)
+target_link_libraries(gpr_string_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_sync_test
+  test/core/support/sync_test.c
+)
+target_link_libraries(gpr_sync_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_thd_test
+  test/core/support/thd_test.c
+)
+target_link_libraries(gpr_thd_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_time_test
+  test/core/support/time_test.c
+)
+target_link_libraries(gpr_time_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_tls_test
+  test/core/support/tls_test.c
+)
+target_link_libraries(gpr_tls_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_useful_test
+  test/core/support/useful_test.c
+)
+target_link_libraries(gpr_useful_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_auth_context_test
+  test/core/security/auth_context_test.c
+)
+target_link_libraries(grpc_auth_context_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_base64_test
+  test/core/security/base64_test.c
+)
+target_link_libraries(grpc_base64_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_byte_buffer_reader_test
+  test/core/surface/byte_buffer_reader_test.c
+)
+target_link_libraries(grpc_byte_buffer_reader_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_channel_args_test
+  test/core/channel/channel_args_test.c
+)
+target_link_libraries(grpc_channel_args_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_channel_stack_test
+  test/core/channel/channel_stack_test.c
+)
+target_link_libraries(grpc_channel_stack_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_completion_queue_test
+  test/core/surface/completion_queue_test.c
+)
+target_link_libraries(grpc_completion_queue_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_create_jwt
+  test/core/security/create_jwt.c
+)
+target_link_libraries(grpc_create_jwt
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_credentials_test
+  test/core/security/credentials_test.c
+)
+target_link_libraries(grpc_credentials_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_fetch_oauth2
+  test/core/security/fetch_oauth2.c
+)
+target_link_libraries(grpc_fetch_oauth2
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(grpc_json_token_test
+  test/core/security/json_token_test.c
+)
+target_link_libraries(grpc_json_token_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_jwt_verifier_test
+  test/core/security/jwt_verifier_test.c
+)
+target_link_libraries(grpc_jwt_verifier_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_print_google_default_creds_token
+  test/core/security/print_google_default_creds_token.c
+)
+target_link_libraries(grpc_print_google_default_creds_token
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_security_connector_test
+  test/core/security/security_connector_test.c
+)
+target_link_libraries(grpc_security_connector_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_stream_op_test
+  test/core/transport/stream_op_test.c
+)
+target_link_libraries(grpc_stream_op_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_verify_jwt
+  test/core/security/verify_jwt.c
+)
+target_link_libraries(grpc_verify_jwt
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(hpack_parser_test
+  test/core/transport/chttp2/hpack_parser_test.c
+)
+target_link_libraries(hpack_parser_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(hpack_table_test
+  test/core/transport/chttp2/hpack_table_test.c
+)
+target_link_libraries(hpack_table_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(httpcli_format_request_test
+  test/core/httpcli/format_request_test.c
+)
+target_link_libraries(httpcli_format_request_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(httpcli_parser_test
+  test/core/httpcli/parser_test.c
+)
+target_link_libraries(httpcli_parser_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(httpcli_test
+  test/core/httpcli/httpcli_test.c
+)
+target_link_libraries(httpcli_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(json_rewrite
+  test/core/json/json_rewrite.c
+)
+target_link_libraries(json_rewrite
+  grpc
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(json_rewrite_test
+  test/core/json/json_rewrite_test.c
+)
+target_link_libraries(json_rewrite_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(json_test
+  test/core/json/json_test.c
+)
+target_link_libraries(json_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(lame_client_test
+  test/core/surface/lame_client_test.c
+)
+target_link_libraries(lame_client_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(lb_policies_test
+  test/core/client_config/lb_policies_test.c
+)
+target_link_libraries(lb_policies_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(low_level_ping_pong_benchmark
+  test/core/network_benchmarks/low_level_ping_pong.c
+)
+target_link_libraries(low_level_ping_pong_benchmark
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(message_compress_test
+  test/core/compression/message_compress_test.c
+)
+target_link_libraries(message_compress_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(multi_init_test
+  test/core/surface/multi_init_test.c
+)
+target_link_libraries(multi_init_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(multiple_server_queues_test
+  test/core/end2end/multiple_server_queues_test.c
+)
+target_link_libraries(multiple_server_queues_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(murmur_hash_test
+  test/core/support/murmur_hash_test.c
+)
+target_link_libraries(murmur_hash_test
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(no_server_test
+  test/core/end2end/no_server_test.c
+)
+target_link_libraries(no_server_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(resolve_address_test
+  test/core/iomgr/resolve_address_test.c
+)
+target_link_libraries(resolve_address_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(secure_endpoint_test
+  test/core/security/secure_endpoint_test.c
+)
+target_link_libraries(secure_endpoint_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(sockaddr_utils_test
+  test/core/iomgr/sockaddr_utils_test.c
+)
+target_link_libraries(sockaddr_utils_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(tcp_client_posix_test
+  test/core/iomgr/tcp_client_posix_test.c
+)
+target_link_libraries(tcp_client_posix_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(tcp_posix_test
+  test/core/iomgr/tcp_posix_test.c
+)
+target_link_libraries(tcp_posix_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(tcp_server_posix_test
+  test/core/iomgr/tcp_server_posix_test.c
+)
+target_link_libraries(tcp_server_posix_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(time_averaged_stats_test
+  test/core/iomgr/time_averaged_stats_test.c
+)
+target_link_libraries(time_averaged_stats_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(timeout_encoding_test
+  test/core/transport/chttp2/timeout_encoding_test.c
+)
+target_link_libraries(timeout_encoding_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(timer_heap_test
+  test/core/iomgr/timer_heap_test.c
+)
+target_link_libraries(timer_heap_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(timer_list_test
+  test/core/iomgr/timer_list_test.c
+)
+target_link_libraries(timer_list_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(timers_test
+  test/core/profiling/timers_test.c
+)
+target_link_libraries(timers_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(transport_metadata_test
+  test/core/transport/metadata_test.c
+)
+target_link_libraries(transport_metadata_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(transport_security_test
+  test/core/tsi/transport_security_test.c
+)
+target_link_libraries(transport_security_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(udp_server_test
+  test/core/iomgr/udp_server_test.c
+)
+target_link_libraries(udp_server_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(uri_parser_test
+  test/core/client_config/uri_parser_test.c
+)
+target_link_libraries(uri_parser_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(workqueue_test
+  test/core/iomgr/workqueue_test.c
+)
+target_link_libraries(workqueue_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_bad_hostname_test
+  end2end_fixture_h2_compress
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_binary_metadata_test
+  end2end_fixture_h2_compress
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_call_creds_test
+  end2end_fixture_h2_compress
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_after_accept_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_after_client_done_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_after_invoke_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_before_invoke_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_in_a_vacuum_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_census_simple_request_test
+  end2end_fixture_h2_compress
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_channel_connectivity_test
+  end2end_fixture_h2_compress
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_compressed_payload_test
+  end2end_fixture_h2_compress
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_default_host_test
+  end2end_fixture_h2_compress
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_disappearing_server_test
+  end2end_fixture_h2_compress
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_empty_batch_test
+  end2end_fixture_h2_compress
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_graceful_server_shutdown_test
+  end2end_fixture_h2_compress
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_high_initial_seqno_test
+  end2end_fixture_h2_compress
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_invoke_large_request_test
+  end2end_fixture_h2_compress
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_large_metadata_test
+  end2end_fixture_h2_compress
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_max_concurrent_streams_test
+  end2end_fixture_h2_compress
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_max_message_length_test
+  end2end_fixture_h2_compress
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_metadata_test
+  end2end_fixture_h2_compress
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_no_op_test
+  end2end_fixture_h2_compress
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_payload_test
+  end2end_fixture_h2_compress
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_ping_pong_streaming_test
+  end2end_fixture_h2_compress
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_registered_call_test
+  end2end_fixture_h2_compress
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_request_with_flags_test
+  end2end_fixture_h2_compress
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_request_with_payload_test
+  end2end_fixture_h2_compress
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_server_finishes_request_test
+  end2end_fixture_h2_compress
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_shutdown_finishes_calls_test
+  end2end_fixture_h2_compress
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_shutdown_finishes_tags_test
+  end2end_fixture_h2_compress
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_simple_delayed_request_test
+  end2end_fixture_h2_compress
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_simple_request_test
+  end2end_fixture_h2_compress
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_trailing_metadata_test
+  end2end_fixture_h2_compress
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_bad_hostname_test
+  end2end_fixture_h2_fakesec
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_binary_metadata_test
+  end2end_fixture_h2_fakesec
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_call_creds_test
+  end2end_fixture_h2_fakesec
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_cancel_after_accept_test
+  end2end_fixture_h2_fakesec
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_cancel_after_client_done_test
+  end2end_fixture_h2_fakesec
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_cancel_after_invoke_test
+  end2end_fixture_h2_fakesec
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_cancel_before_invoke_test
+  end2end_fixture_h2_fakesec
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_cancel_in_a_vacuum_test
+  end2end_fixture_h2_fakesec
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_census_simple_request_test
+  end2end_fixture_h2_fakesec
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_channel_connectivity_test
+  end2end_fixture_h2_fakesec
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_compressed_payload_test
+  end2end_fixture_h2_fakesec
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_default_host_test
+  end2end_fixture_h2_fakesec
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_disappearing_server_test
+  end2end_fixture_h2_fakesec
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_empty_batch_test
+  end2end_fixture_h2_fakesec
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_graceful_server_shutdown_test
+  end2end_fixture_h2_fakesec
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_high_initial_seqno_test
+  end2end_fixture_h2_fakesec
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_invoke_large_request_test
+  end2end_fixture_h2_fakesec
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_large_metadata_test
+  end2end_fixture_h2_fakesec
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_max_concurrent_streams_test
+  end2end_fixture_h2_fakesec
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_max_message_length_test
+  end2end_fixture_h2_fakesec
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_metadata_test
+  end2end_fixture_h2_fakesec
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_no_op_test
+  end2end_fixture_h2_fakesec
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_payload_test
+  end2end_fixture_h2_fakesec
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_ping_pong_streaming_test
+  end2end_fixture_h2_fakesec
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_registered_call_test
+  end2end_fixture_h2_fakesec
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_request_with_flags_test
+  end2end_fixture_h2_fakesec
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_request_with_payload_test
+  end2end_fixture_h2_fakesec
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_server_finishes_request_test
+  end2end_fixture_h2_fakesec
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_shutdown_finishes_calls_test
+  end2end_fixture_h2_fakesec
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_shutdown_finishes_tags_test
+  end2end_fixture_h2_fakesec
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_simple_delayed_request_test
+  end2end_fixture_h2_fakesec
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_simple_request_test
+  end2end_fixture_h2_fakesec
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_trailing_metadata_test
+  end2end_fixture_h2_fakesec
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_bad_hostname_test
+  end2end_fixture_h2_full
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_binary_metadata_test
+  end2end_fixture_h2_full
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_call_creds_test
+  end2end_fixture_h2_full
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_after_accept_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_after_client_done_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_after_invoke_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_before_invoke_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_in_a_vacuum_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_census_simple_request_test
+  end2end_fixture_h2_full
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_channel_connectivity_test
+  end2end_fixture_h2_full
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_compressed_payload_test
+  end2end_fixture_h2_full
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_default_host_test
+  end2end_fixture_h2_full
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_disappearing_server_test
+  end2end_fixture_h2_full
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_empty_batch_test
+  end2end_fixture_h2_full
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_graceful_server_shutdown_test
+  end2end_fixture_h2_full
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_high_initial_seqno_test
+  end2end_fixture_h2_full
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_invoke_large_request_test
+  end2end_fixture_h2_full
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_large_metadata_test
+  end2end_fixture_h2_full
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_max_concurrent_streams_test
+  end2end_fixture_h2_full
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_max_message_length_test
+  end2end_fixture_h2_full
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_metadata_test
+  end2end_fixture_h2_full
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_no_op_test
+  end2end_fixture_h2_full
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_payload_test
+  end2end_fixture_h2_full
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_ping_pong_streaming_test
+  end2end_fixture_h2_full
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_registered_call_test
+  end2end_fixture_h2_full
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_request_with_flags_test
+  end2end_fixture_h2_full
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_request_with_payload_test
+  end2end_fixture_h2_full
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_server_finishes_request_test
+  end2end_fixture_h2_full
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_shutdown_finishes_calls_test
+  end2end_fixture_h2_full
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_shutdown_finishes_tags_test
+  end2end_fixture_h2_full
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_simple_delayed_request_test
+  end2end_fixture_h2_full
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_simple_request_test
+  end2end_fixture_h2_full
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_trailing_metadata_test
+  end2end_fixture_h2_full
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_bad_hostname_test
+  end2end_fixture_h2_full+poll
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_binary_metadata_test
+  end2end_fixture_h2_full+poll
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_call_creds_test
+  end2end_fixture_h2_full+poll
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_after_accept_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_after_client_done_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_after_invoke_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_before_invoke_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_in_a_vacuum_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_census_simple_request_test
+  end2end_fixture_h2_full+poll
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_channel_connectivity_test
+  end2end_fixture_h2_full+poll
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_compressed_payload_test
+  end2end_fixture_h2_full+poll
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_default_host_test
+  end2end_fixture_h2_full+poll
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_disappearing_server_test
+  end2end_fixture_h2_full+poll
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_empty_batch_test
+  end2end_fixture_h2_full+poll
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_graceful_server_shutdown_test
+  end2end_fixture_h2_full+poll
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_high_initial_seqno_test
+  end2end_fixture_h2_full+poll
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_invoke_large_request_test
+  end2end_fixture_h2_full+poll
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_large_metadata_test
+  end2end_fixture_h2_full+poll
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_max_concurrent_streams_test
+  end2end_fixture_h2_full+poll
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_max_message_length_test
+  end2end_fixture_h2_full+poll
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_metadata_test
+  end2end_fixture_h2_full+poll
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_no_op_test
+  end2end_fixture_h2_full+poll
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_payload_test
+  end2end_fixture_h2_full+poll
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_ping_pong_streaming_test
+  end2end_fixture_h2_full+poll
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_registered_call_test
+  end2end_fixture_h2_full+poll
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_request_with_flags_test
+  end2end_fixture_h2_full+poll
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_request_with_payload_test
+  end2end_fixture_h2_full+poll
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_server_finishes_request_test
+  end2end_fixture_h2_full+poll
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_shutdown_finishes_calls_test
+  end2end_fixture_h2_full+poll
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_shutdown_finishes_tags_test
+  end2end_fixture_h2_full+poll
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_simple_delayed_request_test
+  end2end_fixture_h2_full+poll
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_simple_request_test
+  end2end_fixture_h2_full+poll
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_trailing_metadata_test
+  end2end_fixture_h2_full+poll
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_bad_hostname_test
+  end2end_fixture_h2_oauth2
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_binary_metadata_test
+  end2end_fixture_h2_oauth2
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_call_creds_test
+  end2end_fixture_h2_oauth2
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_cancel_after_accept_test
+  end2end_fixture_h2_oauth2
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_cancel_after_client_done_test
+  end2end_fixture_h2_oauth2
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_cancel_after_invoke_test
+  end2end_fixture_h2_oauth2
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_cancel_before_invoke_test
+  end2end_fixture_h2_oauth2
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_cancel_in_a_vacuum_test
+  end2end_fixture_h2_oauth2
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_census_simple_request_test
+  end2end_fixture_h2_oauth2
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_channel_connectivity_test
+  end2end_fixture_h2_oauth2
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_compressed_payload_test
+  end2end_fixture_h2_oauth2
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_default_host_test
+  end2end_fixture_h2_oauth2
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_disappearing_server_test
+  end2end_fixture_h2_oauth2
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_empty_batch_test
+  end2end_fixture_h2_oauth2
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_graceful_server_shutdown_test
+  end2end_fixture_h2_oauth2
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_high_initial_seqno_test
+  end2end_fixture_h2_oauth2
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_invoke_large_request_test
+  end2end_fixture_h2_oauth2
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_large_metadata_test
+  end2end_fixture_h2_oauth2
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_max_concurrent_streams_test
+  end2end_fixture_h2_oauth2
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_max_message_length_test
+  end2end_fixture_h2_oauth2
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_metadata_test
+  end2end_fixture_h2_oauth2
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_no_op_test
+  end2end_fixture_h2_oauth2
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_payload_test
+  end2end_fixture_h2_oauth2
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_ping_pong_streaming_test
+  end2end_fixture_h2_oauth2
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_registered_call_test
+  end2end_fixture_h2_oauth2
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_request_with_flags_test
+  end2end_fixture_h2_oauth2
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_request_with_payload_test
+  end2end_fixture_h2_oauth2
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_server_finishes_request_test
+  end2end_fixture_h2_oauth2
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_shutdown_finishes_calls_test
+  end2end_fixture_h2_oauth2
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_shutdown_finishes_tags_test
+  end2end_fixture_h2_oauth2
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_simple_delayed_request_test
+  end2end_fixture_h2_oauth2
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_simple_request_test
+  end2end_fixture_h2_oauth2
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_trailing_metadata_test
+  end2end_fixture_h2_oauth2
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_bad_hostname_test
+  end2end_fixture_h2_proxy
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_binary_metadata_test
+  end2end_fixture_h2_proxy
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_call_creds_test
+  end2end_fixture_h2_proxy
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_after_accept_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_after_client_done_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_after_invoke_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_before_invoke_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_in_a_vacuum_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_census_simple_request_test
+  end2end_fixture_h2_proxy
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_default_host_test
+  end2end_fixture_h2_proxy
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_disappearing_server_test
+  end2end_fixture_h2_proxy
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_empty_batch_test
+  end2end_fixture_h2_proxy
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_graceful_server_shutdown_test
+  end2end_fixture_h2_proxy
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_high_initial_seqno_test
+  end2end_fixture_h2_proxy
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_invoke_large_request_test
+  end2end_fixture_h2_proxy
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_large_metadata_test
+  end2end_fixture_h2_proxy
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_max_message_length_test
+  end2end_fixture_h2_proxy
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_metadata_test
+  end2end_fixture_h2_proxy
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_no_op_test
+  end2end_fixture_h2_proxy
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_payload_test
+  end2end_fixture_h2_proxy
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_ping_pong_streaming_test
+  end2end_fixture_h2_proxy
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_registered_call_test
+  end2end_fixture_h2_proxy
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_request_with_payload_test
+  end2end_fixture_h2_proxy
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_server_finishes_request_test
+  end2end_fixture_h2_proxy
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_shutdown_finishes_calls_test
+  end2end_fixture_h2_proxy
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_shutdown_finishes_tags_test
+  end2end_fixture_h2_proxy
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_simple_delayed_request_test
+  end2end_fixture_h2_proxy
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_simple_request_test
+  end2end_fixture_h2_proxy
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_trailing_metadata_test
+  end2end_fixture_h2_proxy
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_bad_hostname_test
+  end2end_fixture_h2_sockpair
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_binary_metadata_test
+  end2end_fixture_h2_sockpair
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_call_creds_test
+  end2end_fixture_h2_sockpair
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_after_accept_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_after_client_done_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_after_invoke_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_before_invoke_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_in_a_vacuum_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_census_simple_request_test
+  end2end_fixture_h2_sockpair
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_compressed_payload_test
+  end2end_fixture_h2_sockpair
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_empty_batch_test
+  end2end_fixture_h2_sockpair
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_graceful_server_shutdown_test
+  end2end_fixture_h2_sockpair
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_high_initial_seqno_test
+  end2end_fixture_h2_sockpair
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_invoke_large_request_test
+  end2end_fixture_h2_sockpair
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_large_metadata_test
+  end2end_fixture_h2_sockpair
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_max_concurrent_streams_test
+  end2end_fixture_h2_sockpair
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_max_message_length_test
+  end2end_fixture_h2_sockpair
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_metadata_test
+  end2end_fixture_h2_sockpair
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_no_op_test
+  end2end_fixture_h2_sockpair
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_payload_test
+  end2end_fixture_h2_sockpair
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_ping_pong_streaming_test
+  end2end_fixture_h2_sockpair
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_registered_call_test
+  end2end_fixture_h2_sockpair
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_request_with_flags_test
+  end2end_fixture_h2_sockpair
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_request_with_payload_test
+  end2end_fixture_h2_sockpair
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_server_finishes_request_test
+  end2end_fixture_h2_sockpair
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_shutdown_finishes_calls_test
+  end2end_fixture_h2_sockpair
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_shutdown_finishes_tags_test
+  end2end_fixture_h2_sockpair
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_simple_request_test
+  end2end_fixture_h2_sockpair
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_trailing_metadata_test
+  end2end_fixture_h2_sockpair
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_bad_hostname_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_binary_metadata_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_call_creds_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_after_accept_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_after_client_done_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_after_invoke_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_before_invoke_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_in_a_vacuum_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_census_simple_request_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_compressed_payload_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_empty_batch_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_graceful_server_shutdown_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_high_initial_seqno_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_invoke_large_request_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_large_metadata_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_max_concurrent_streams_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_max_message_length_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_metadata_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_no_op_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_payload_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_ping_pong_streaming_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_registered_call_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_request_with_flags_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_request_with_payload_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_server_finishes_request_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_shutdown_finishes_calls_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_shutdown_finishes_tags_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_simple_request_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_trailing_metadata_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_bad_hostname_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_binary_metadata_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_call_creds_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_after_accept_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_after_client_done_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_after_invoke_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_before_invoke_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_in_a_vacuum_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_census_simple_request_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_compressed_payload_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_empty_batch_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_graceful_server_shutdown_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_high_initial_seqno_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_invoke_large_request_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_large_metadata_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_max_concurrent_streams_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_max_message_length_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_metadata_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_no_op_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_payload_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_ping_pong_streaming_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_registered_call_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_request_with_flags_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_request_with_payload_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_server_finishes_request_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_shutdown_finishes_calls_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_shutdown_finishes_tags_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_simple_request_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_trailing_metadata_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_bad_hostname_test
+  end2end_fixture_h2_ssl
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_binary_metadata_test
+  end2end_fixture_h2_ssl
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_call_creds_test
+  end2end_fixture_h2_ssl
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_cancel_after_accept_test
+  end2end_fixture_h2_ssl
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_cancel_after_client_done_test
+  end2end_fixture_h2_ssl
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_cancel_after_invoke_test
+  end2end_fixture_h2_ssl
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_cancel_before_invoke_test
+  end2end_fixture_h2_ssl
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_cancel_in_a_vacuum_test
+  end2end_fixture_h2_ssl
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_census_simple_request_test
+  end2end_fixture_h2_ssl
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_channel_connectivity_test
+  end2end_fixture_h2_ssl
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_compressed_payload_test
+  end2end_fixture_h2_ssl
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_default_host_test
+  end2end_fixture_h2_ssl
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_disappearing_server_test
+  end2end_fixture_h2_ssl
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_empty_batch_test
+  end2end_fixture_h2_ssl
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_graceful_server_shutdown_test
+  end2end_fixture_h2_ssl
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_high_initial_seqno_test
+  end2end_fixture_h2_ssl
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_invoke_large_request_test
+  end2end_fixture_h2_ssl
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_large_metadata_test
+  end2end_fixture_h2_ssl
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_max_concurrent_streams_test
+  end2end_fixture_h2_ssl
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_max_message_length_test
+  end2end_fixture_h2_ssl
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_metadata_test
+  end2end_fixture_h2_ssl
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_no_op_test
+  end2end_fixture_h2_ssl
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_payload_test
+  end2end_fixture_h2_ssl
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_ping_pong_streaming_test
+  end2end_fixture_h2_ssl
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_registered_call_test
+  end2end_fixture_h2_ssl
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_request_with_flags_test
+  end2end_fixture_h2_ssl
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_request_with_payload_test
+  end2end_fixture_h2_ssl
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_server_finishes_request_test
+  end2end_fixture_h2_ssl
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_shutdown_finishes_calls_test
+  end2end_fixture_h2_ssl
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_shutdown_finishes_tags_test
+  end2end_fixture_h2_ssl
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_simple_delayed_request_test
+  end2end_fixture_h2_ssl
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_simple_request_test
+  end2end_fixture_h2_ssl
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_trailing_metadata_test
+  end2end_fixture_h2_ssl
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_bad_hostname_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_binary_metadata_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_call_creds_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_cancel_after_accept_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_cancel_after_client_done_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_cancel_after_invoke_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_cancel_before_invoke_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_cancel_in_a_vacuum_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_census_simple_request_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_channel_connectivity_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_compressed_payload_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_default_host_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_disappearing_server_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_empty_batch_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_graceful_server_shutdown_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_high_initial_seqno_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_invoke_large_request_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_large_metadata_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_max_concurrent_streams_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_max_message_length_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_metadata_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_no_op_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_payload_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_ping_pong_streaming_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_registered_call_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_request_with_flags_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_request_with_payload_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_server_finishes_request_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_shutdown_finishes_calls_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_shutdown_finishes_tags_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_simple_delayed_request_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_simple_request_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_trailing_metadata_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_bad_hostname_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_binary_metadata_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_call_creds_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_cancel_after_accept_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_cancel_after_client_done_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_cancel_after_invoke_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_cancel_before_invoke_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_cancel_in_a_vacuum_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_census_simple_request_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_default_host_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_disappearing_server_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_empty_batch_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_graceful_server_shutdown_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_high_initial_seqno_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_invoke_large_request_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_large_metadata_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_max_message_length_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_metadata_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_no_op_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_payload_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_ping_pong_streaming_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_registered_call_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_request_with_payload_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_server_finishes_request_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_shutdown_finishes_calls_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_shutdown_finishes_tags_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_simple_delayed_request_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_simple_request_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_trailing_metadata_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_bad_hostname_test
+  end2end_fixture_h2_uchannel
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_binary_metadata_test
+  end2end_fixture_h2_uchannel
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_call_creds_test
+  end2end_fixture_h2_uchannel
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_after_accept_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_after_client_done_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_after_invoke_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_before_invoke_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_in_a_vacuum_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_census_simple_request_test
+  end2end_fixture_h2_uchannel
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_channel_connectivity_test
+  end2end_fixture_h2_uchannel
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_compressed_payload_test
+  end2end_fixture_h2_uchannel
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_default_host_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_default_host_test
+  end2end_fixture_h2_uchannel
+  end2end_test_default_host
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_disappearing_server_test
+  end2end_fixture_h2_uchannel
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_empty_batch_test
+  end2end_fixture_h2_uchannel
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_graceful_server_shutdown_test
+  end2end_fixture_h2_uchannel
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_high_initial_seqno_test
+  end2end_fixture_h2_uchannel
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_invoke_large_request_test
+  end2end_fixture_h2_uchannel
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_large_metadata_test
+  end2end_fixture_h2_uchannel
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_max_concurrent_streams_test
+  end2end_fixture_h2_uchannel
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_max_message_length_test
+  end2end_fixture_h2_uchannel
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_metadata_test
+  end2end_fixture_h2_uchannel
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_no_op_test
+  end2end_fixture_h2_uchannel
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_payload_test
+  end2end_fixture_h2_uchannel
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_ping_pong_streaming_test
+  end2end_fixture_h2_uchannel
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_registered_call_test
+  end2end_fixture_h2_uchannel
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_request_with_flags_test
+  end2end_fixture_h2_uchannel
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_request_with_payload_test
+  end2end_fixture_h2_uchannel
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_server_finishes_request_test
+  end2end_fixture_h2_uchannel
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_shutdown_finishes_calls_test
+  end2end_fixture_h2_uchannel
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_shutdown_finishes_tags_test
+  end2end_fixture_h2_uchannel
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_simple_delayed_request_test
+  end2end_fixture_h2_uchannel
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_simple_request_test
+  end2end_fixture_h2_uchannel
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_trailing_metadata_test
+  end2end_fixture_h2_uchannel
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_bad_hostname_test
+  end2end_fixture_h2_uds
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_binary_metadata_test
+  end2end_fixture_h2_uds
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_call_creds_test
+  end2end_fixture_h2_uds
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_after_accept_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_after_client_done_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_after_invoke_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_before_invoke_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_in_a_vacuum_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_census_simple_request_test
+  end2end_fixture_h2_uds
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_channel_connectivity_test
+  end2end_fixture_h2_uds
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_compressed_payload_test
+  end2end_fixture_h2_uds
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_disappearing_server_test
+  end2end_fixture_h2_uds
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_empty_batch_test
+  end2end_fixture_h2_uds
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_graceful_server_shutdown_test
+  end2end_fixture_h2_uds
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_high_initial_seqno_test
+  end2end_fixture_h2_uds
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_invoke_large_request_test
+  end2end_fixture_h2_uds
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_large_metadata_test
+  end2end_fixture_h2_uds
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_max_concurrent_streams_test
+  end2end_fixture_h2_uds
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_max_message_length_test
+  end2end_fixture_h2_uds
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_metadata_test
+  end2end_fixture_h2_uds
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_no_op_test
+  end2end_fixture_h2_uds
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_payload_test
+  end2end_fixture_h2_uds
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_ping_pong_streaming_test
+  end2end_fixture_h2_uds
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_registered_call_test
+  end2end_fixture_h2_uds
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_request_with_flags_test
+  end2end_fixture_h2_uds
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_request_with_payload_test
+  end2end_fixture_h2_uds
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_server_finishes_request_test
+  end2end_fixture_h2_uds
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_shutdown_finishes_calls_test
+  end2end_fixture_h2_uds
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_shutdown_finishes_tags_test
+  end2end_fixture_h2_uds
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_simple_delayed_request_test
+  end2end_fixture_h2_uds
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_simple_request_test
+  end2end_fixture_h2_uds
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_trailing_metadata_test
+  end2end_fixture_h2_uds
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_bad_hostname_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_bad_hostname_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_bad_hostname
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_binary_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_binary_metadata_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_binary_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_call_creds_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_call_creds_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_call_creds
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_after_accept_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_after_accept_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_after_accept
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_after_client_done_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_after_client_done_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_after_client_done
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_after_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_after_invoke_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_after_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_before_invoke_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_before_invoke_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_before_invoke
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_in_a_vacuum_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_in_a_vacuum_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_in_a_vacuum
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_census_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_census_simple_request_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_census_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_channel_connectivity_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_channel_connectivity_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_channel_connectivity
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_compressed_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_compressed_payload_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_compressed_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_disappearing_server_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_disappearing_server_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_disappearing_server
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_empty_batch_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_empty_batch_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_empty_batch
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_graceful_server_shutdown_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_graceful_server_shutdown_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_graceful_server_shutdown
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_high_initial_seqno_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_high_initial_seqno_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_high_initial_seqno
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_invoke_large_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_invoke_large_request_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_invoke_large_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_large_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_large_metadata_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_large_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_max_concurrent_streams_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_max_concurrent_streams_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_max_concurrent_streams
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_max_message_length_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_max_message_length_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_max_message_length
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_metadata_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_no_op_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_no_op_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_no_op
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_payload_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_ping_pong_streaming_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_ping_pong_streaming_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_ping_pong_streaming
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_registered_call_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_registered_call_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_registered_call
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_request_with_flags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_request_with_flags_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_request_with_flags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_request_with_payload_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_request_with_payload_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_request_with_payload
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_server_finishes_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_server_finishes_request_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_server_finishes_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_shutdown_finishes_calls_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_shutdown_finishes_calls_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_shutdown_finishes_calls
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_shutdown_finishes_tags_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_shutdown_finishes_tags_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_shutdown_finishes_tags
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_simple_delayed_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_simple_delayed_request_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_simple_delayed_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_simple_request_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_simple_request_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_simple_request
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_trailing_metadata_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_trailing_metadata_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_trailing_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_bad_hostname_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_binary_metadata_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_after_accept_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_after_client_done_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_after_invoke_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_before_invoke_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_in_a_vacuum_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_census_simple_request_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_census_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_channel_connectivity_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_channel_connectivity_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_channel_connectivity
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_compressed_payload_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_default_host_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_default_host_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_default_host
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_disappearing_server_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_disappearing_server_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_disappearing_server
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_empty_batch_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_graceful_server_shutdown_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_high_initial_seqno_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_invoke_large_request_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_large_metadata_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_max_concurrent_streams_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_max_message_length_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_metadata_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_no_op_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_payload_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_ping_pong_streaming_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_registered_call_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_request_with_flags_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_request_with_payload_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_server_finishes_request_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_shutdown_finishes_calls_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_shutdown_finishes_tags_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_simple_delayed_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_simple_delayed_request_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_simple_delayed_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_simple_request_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_trailing_metadata_nosec_test
+  end2end_fixture_h2_compress
+  end2end_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_bad_hostname_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_binary_metadata_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_after_accept_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_after_client_done_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_after_invoke_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_before_invoke_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_in_a_vacuum_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_census_simple_request_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_census_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_channel_connectivity_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_channel_connectivity_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_channel_connectivity
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_compressed_payload_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_default_host_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_default_host_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_default_host
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_disappearing_server_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_disappearing_server_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_disappearing_server
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_empty_batch_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_graceful_server_shutdown_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_high_initial_seqno_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_invoke_large_request_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_large_metadata_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_max_concurrent_streams_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_max_message_length_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_metadata_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_no_op_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_payload_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_ping_pong_streaming_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_registered_call_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_request_with_flags_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_request_with_payload_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_server_finishes_request_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_shutdown_finishes_calls_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_shutdown_finishes_tags_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_simple_delayed_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_simple_delayed_request_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_simple_delayed_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_simple_request_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_trailing_metadata_nosec_test
+  end2end_fixture_h2_full
+  end2end_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_bad_hostname_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_binary_metadata_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_after_accept_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_after_client_done_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_after_invoke_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_before_invoke_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_in_a_vacuum_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_census_simple_request_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_census_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_channel_connectivity_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_channel_connectivity_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_channel_connectivity
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_compressed_payload_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_default_host_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_default_host_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_default_host
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_disappearing_server_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_disappearing_server_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_disappearing_server
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_empty_batch_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_graceful_server_shutdown_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_high_initial_seqno_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_invoke_large_request_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_large_metadata_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_max_concurrent_streams_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_max_message_length_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_metadata_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_no_op_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_payload_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_ping_pong_streaming_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_registered_call_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_request_with_flags_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_request_with_payload_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_server_finishes_request_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_shutdown_finishes_calls_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_shutdown_finishes_tags_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_simple_delayed_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_simple_delayed_request_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_simple_delayed_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_simple_request_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_trailing_metadata_nosec_test
+  end2end_fixture_h2_full+poll
+  end2end_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_bad_hostname_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_binary_metadata_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_after_accept_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_after_client_done_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_after_invoke_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_before_invoke_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_in_a_vacuum_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_census_simple_request_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_census_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_default_host_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_default_host_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_default_host
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_disappearing_server_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_disappearing_server_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_disappearing_server
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_empty_batch_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_graceful_server_shutdown_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_high_initial_seqno_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_invoke_large_request_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_large_metadata_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_max_message_length_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_metadata_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_no_op_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_payload_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_ping_pong_streaming_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_registered_call_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_request_with_payload_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_server_finishes_request_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_shutdown_finishes_calls_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_shutdown_finishes_tags_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_simple_delayed_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_simple_delayed_request_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_simple_delayed_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_simple_request_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_trailing_metadata_nosec_test
+  end2end_fixture_h2_proxy
+  end2end_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_bad_hostname_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_binary_metadata_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_after_accept_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_after_client_done_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_after_invoke_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_before_invoke_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_in_a_vacuum_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_census_simple_request_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_census_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_compressed_payload_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_empty_batch_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_graceful_server_shutdown_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_high_initial_seqno_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_invoke_large_request_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_large_metadata_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_max_concurrent_streams_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_max_message_length_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_metadata_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_no_op_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_payload_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_ping_pong_streaming_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_registered_call_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_request_with_flags_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_request_with_payload_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_server_finishes_request_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_shutdown_finishes_calls_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_shutdown_finishes_tags_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_simple_request_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_trailing_metadata_nosec_test
+  end2end_fixture_h2_sockpair
+  end2end_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_bad_hostname_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_binary_metadata_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_after_accept_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_after_client_done_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_after_invoke_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_before_invoke_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_in_a_vacuum_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_census_simple_request_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_census_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_compressed_payload_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_empty_batch_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_graceful_server_shutdown_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_high_initial_seqno_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_invoke_large_request_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_large_metadata_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_max_concurrent_streams_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_max_message_length_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_metadata_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_no_op_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_payload_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_ping_pong_streaming_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_registered_call_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_request_with_flags_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_request_with_payload_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_server_finishes_request_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_shutdown_finishes_calls_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_shutdown_finishes_tags_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_simple_request_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_trailing_metadata_nosec_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_bad_hostname_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_binary_metadata_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_after_accept_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_after_client_done_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_after_invoke_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_before_invoke_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_census_simple_request_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_census_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_compressed_payload_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_empty_batch_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_graceful_server_shutdown_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_high_initial_seqno_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_invoke_large_request_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_large_metadata_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_max_concurrent_streams_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_max_message_length_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_metadata_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_no_op_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_payload_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_ping_pong_streaming_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_registered_call_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_request_with_flags_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_request_with_payload_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_server_finishes_request_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_shutdown_finishes_calls_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_shutdown_finishes_tags_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_simple_request_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_trailing_metadata_nosec_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_bad_hostname_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_binary_metadata_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_after_accept_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_after_client_done_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_after_invoke_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_before_invoke_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_in_a_vacuum_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_census_simple_request_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_census_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_channel_connectivity_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_channel_connectivity_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_channel_connectivity
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_compressed_payload_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_default_host_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_default_host_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_default_host
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_disappearing_server_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_disappearing_server_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_disappearing_server
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_empty_batch_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_graceful_server_shutdown_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_high_initial_seqno_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_invoke_large_request_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_large_metadata_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_max_concurrent_streams_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_max_message_length_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_metadata_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_no_op_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_payload_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_ping_pong_streaming_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_registered_call_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_request_with_flags_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_request_with_payload_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_server_finishes_request_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_shutdown_finishes_calls_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_shutdown_finishes_tags_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_simple_delayed_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_simple_delayed_request_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_simple_delayed_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_simple_request_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_trailing_metadata_nosec_test
+  end2end_fixture_h2_uchannel
+  end2end_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_bad_hostname_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_binary_metadata_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_after_accept_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_after_client_done_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_after_invoke_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_before_invoke_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_in_a_vacuum_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_census_simple_request_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_census_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_channel_connectivity_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_channel_connectivity_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_channel_connectivity
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_compressed_payload_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_disappearing_server_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_disappearing_server_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_disappearing_server
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_empty_batch_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_graceful_server_shutdown_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_high_initial_seqno_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_invoke_large_request_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_large_metadata_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_max_concurrent_streams_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_max_message_length_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_metadata_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_no_op_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_payload_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_ping_pong_streaming_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_registered_call_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_request_with_flags_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_request_with_payload_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_server_finishes_request_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_shutdown_finishes_calls_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_shutdown_finishes_tags_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_simple_delayed_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_simple_delayed_request_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_simple_delayed_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_simple_request_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_trailing_metadata_nosec_test
+  end2end_fixture_h2_uds
+  end2end_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_bad_hostname_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_bad_hostname_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_bad_hostname
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_binary_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_binary_metadata_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_binary_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_after_accept_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_after_accept_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_after_accept
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_after_client_done_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_after_client_done_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_after_client_done
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_after_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_after_invoke_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_after_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_before_invoke_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_before_invoke_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_before_invoke
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_in_a_vacuum_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_in_a_vacuum_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_census_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_census_simple_request_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_census_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_channel_connectivity_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_channel_connectivity_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_channel_connectivity
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_compressed_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_compressed_payload_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_compressed_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_disappearing_server_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_disappearing_server_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_disappearing_server
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_empty_batch_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_empty_batch_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_empty_batch
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_graceful_server_shutdown_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_graceful_server_shutdown_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_graceful_server_shutdown
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_high_initial_seqno_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_high_initial_seqno_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_invoke_large_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_invoke_large_request_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_invoke_large_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_large_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_large_metadata_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_large_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_max_concurrent_streams_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_max_concurrent_streams_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_max_concurrent_streams
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_max_message_length_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_max_message_length_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_max_message_length
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_metadata_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_no_op_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_no_op_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_no_op
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_payload_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_ping_pong_streaming_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_ping_pong_streaming_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_ping_pong_streaming
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_registered_call_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_registered_call_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_registered_call
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_request_with_flags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_request_with_flags_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_request_with_flags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_request_with_payload_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_request_with_payload_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_request_with_payload
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_server_finishes_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_server_finishes_request_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_server_finishes_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_shutdown_finishes_calls_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_shutdown_finishes_calls_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_shutdown_finishes_calls
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_shutdown_finishes_tags_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_shutdown_finishes_tags_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_shutdown_finishes_tags
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_simple_delayed_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_simple_delayed_request_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_simple_delayed_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_simple_request_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_simple_request_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_simple_request
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_trailing_metadata_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_trailing_metadata_nosec_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_trailing_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(connection_prefix_bad_client_test
+  test/core/bad_client/tests/connection_prefix.c
+)
+target_link_libraries(connection_prefix_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(initial_settings_frame_bad_client_test
+  test/core/bad_client/tests/initial_settings_frame.c
+)
+target_link_libraries(initial_settings_frame_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+)
+endif()

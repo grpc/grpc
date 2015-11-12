@@ -26,6 +26,11 @@ coverage
 # cache for run_tests.py
 .run_tests_cache
 
+# cmake related stuff
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
 # emacs temp files
 *~
 
