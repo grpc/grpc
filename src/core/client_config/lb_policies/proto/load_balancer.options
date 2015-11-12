@@ -3,3 +3,4 @@ grpc.lb.v0.InitialLoadBalanceResponse.client_config max_size:64
 grpc.lb.v0.InitialLoadBalanceResponse.load_balancer_delegate max_size:64
 grpc.lb.v0.Server.ip_address max_size:46
 grpc.lb.v0.Server.load_balance_token max_size:64
+load_balancer.proto no_unions:true

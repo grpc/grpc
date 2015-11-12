@@ -35,7 +35,7 @@
 #include <string>
 
 #include "src/core/client_config/lb_policies/load_balancer_api.h"
-#include "src/core/client_config/lb_policies/protos/load_balancer.pb.h"
+#include "src/core/client_config/lb_policies/proto/load_balancer.pb.h"
 
 namespace grpc {
 namespace {

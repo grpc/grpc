@@ -258,12 +258,7 @@
     <ClInclude Include="..\..\..\src\core\channel\noop_filter.h" />
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\load_balancer.pb.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_common.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_decode.h" />
-    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_encode.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h" />
@@ -325,6 +320,7 @@
     <ClInclude Include="..\..\..\src\core\json\json_common.h" />
     <ClInclude Include="..\..\..\src\core\json\json_reader.h" />
     <ClInclude Include="..\..\..\src\core\json\json_writer.h" />
+    <ClInclude Include="..\..\..\src\core\proto\load_balancer.pb.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_interface.h" />
     <ClInclude Include="..\..\..\src\core\statistics\census_rpc_stats.h" />
     <ClInclude Include="..\..\..\src\core\surface\api_trace.h" />
@@ -363,6 +359,10 @@
     <ClInclude Include="..\..\..\src\core\transport\stream_op.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport_impl.h" />
+    <ClInclude Include="..\..\..\third_party\nanopb\pb.h" />
+    <ClInclude Include="..\..\..\third_party\nanopb\pb_common.h" />
+    <ClInclude Include="..\..\..\third_party\nanopb\pb_decode.h" />
+    <ClInclude Include="..\..\..\third_party\nanopb\pb_encode.h" />
     <ClInclude Include="..\..\..\src\core\census\aggregation.h" />
     <ClInclude Include="..\..\..\src\core\census\context.h" />
     <ClInclude Include="..\..\..\src\core\census\rpc_metric_id.h" />
@@ -396,15 +396,7 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\load_balancer.pb.c">
-    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_common.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_decode.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_encode.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
     </ClCompile>
@@ -536,6 +528,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\json\json_writer.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\proto\load_balancer.pb.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\api_trace.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\byte_buffer.c">
@@ -625,6 +619,12 @@
     <ClCompile Include="..\..\..\src\core\transport\transport.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\transport_op_string.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\nanopb\pb_common.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\nanopb\pb_decode.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\nanopb\pb_encode.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\census\context.c">
     </ClCompile>
