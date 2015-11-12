@@ -42,12 +42,20 @@ if (OPENSSL_FOUND)
   include_directories(${OPENSSL_INCLUDE_DIRS})
 endif(OPENSSL_FOUND)
 
+find_package(Threads REQUIRED)
+
 include(CheckSymbolExists)
 check_symbol_exists(SSL_get0_alpn_selected openssl/ssl.h HAVE_ALPN)
 if(HAVE_ALPN)
   add_definitions(-DTSI_OPENSSL_ALPN_SUPPORT=1)
 else()
   add_definitions(-DTSI_OPENSSL_ALPN_SUPPORT=0)
+endif()
+
+if(UNIX)
+  set(MATH_LIB -lm)
+else()
+  set(MATH_LIB)
 endif()
 
 add_library(gpr
@@ -602,6 +610,8 @@ target_link_libraries(alpn_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -615,6 +625,8 @@ target_link_libraries(bin_encoder_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -628,6 +640,8 @@ target_link_libraries(chttp2_status_conversion_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -641,6 +655,8 @@ target_link_libraries(chttp2_stream_encoder_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -654,6 +670,8 @@ target_link_libraries(chttp2_stream_map_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -667,6 +685,8 @@ target_link_libraries(compression_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -680,6 +700,8 @@ target_link_libraries(dualstack_socket_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -693,6 +715,8 @@ target_link_libraries(endpoint_pair_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -706,6 +730,8 @@ target_link_libraries(fd_conservation_posix_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -719,6 +745,8 @@ target_link_libraries(fd_posix_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -732,6 +760,8 @@ target_link_libraries(fling_client
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -745,6 +775,8 @@ target_link_libraries(fling_server
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -758,6 +790,8 @@ target_link_libraries(fling_stream_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -771,6 +805,8 @@ target_link_libraries(fling_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -782,6 +818,8 @@ target_link_libraries(gen_hpack_tables
   grpc
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -791,6 +829,8 @@ add_executable(gen_legal_metadata_characters
 target_link_libraries(gen_legal_metadata_characters
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -802,6 +842,8 @@ target_link_libraries(gpr_cmdline_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -813,6 +855,8 @@ target_link_libraries(gpr_cpu_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -824,6 +868,8 @@ target_link_libraries(gpr_env_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -835,6 +881,8 @@ target_link_libraries(gpr_file_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -846,6 +894,8 @@ target_link_libraries(gpr_histogram_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -857,6 +907,8 @@ target_link_libraries(gpr_host_port_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -868,6 +920,8 @@ target_link_libraries(gpr_log_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -879,6 +933,8 @@ target_link_libraries(gpr_slice_buffer_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -890,6 +946,8 @@ target_link_libraries(gpr_slice_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -901,6 +959,8 @@ target_link_libraries(gpr_stack_lockfree_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -912,6 +972,8 @@ target_link_libraries(gpr_string_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -923,6 +985,8 @@ target_link_libraries(gpr_sync_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -934,6 +998,8 @@ target_link_libraries(gpr_thd_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -945,6 +1011,8 @@ target_link_libraries(gpr_time_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -956,6 +1024,8 @@ target_link_libraries(gpr_tls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -967,6 +1037,8 @@ target_link_libraries(gpr_useful_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -980,6 +1052,8 @@ target_link_libraries(grpc_auth_context_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -993,6 +1067,8 @@ target_link_libraries(grpc_base64_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1006,6 +1082,8 @@ target_link_libraries(grpc_byte_buffer_reader_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1019,6 +1097,8 @@ target_link_libraries(grpc_channel_args_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1032,6 +1112,8 @@ target_link_libraries(grpc_channel_stack_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1045,6 +1127,8 @@ target_link_libraries(grpc_completion_queue_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1058,6 +1142,8 @@ target_link_libraries(grpc_create_jwt
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1071,6 +1157,8 @@ target_link_libraries(grpc_credentials_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1084,6 +1172,8 @@ target_link_libraries(grpc_fetch_oauth2
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -1097,6 +1187,8 @@ target_link_libraries(grpc_json_token_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1110,6 +1202,8 @@ target_link_libraries(grpc_jwt_verifier_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1123,6 +1217,8 @@ target_link_libraries(grpc_print_google_default_creds_token
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1136,6 +1232,8 @@ target_link_libraries(grpc_security_connector_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1149,6 +1247,8 @@ target_link_libraries(grpc_stream_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1162,6 +1262,8 @@ target_link_libraries(grpc_verify_jwt
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1175,6 +1277,8 @@ target_link_libraries(hpack_parser_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1188,6 +1292,8 @@ target_link_libraries(hpack_table_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1201,6 +1307,8 @@ target_link_libraries(httpcli_format_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1214,6 +1322,8 @@ target_link_libraries(httpcli_parser_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -1227,6 +1337,8 @@ target_link_libraries(httpcli_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1238,6 +1350,8 @@ target_link_libraries(json_rewrite
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1251,6 +1365,8 @@ target_link_libraries(json_rewrite_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1264,6 +1380,8 @@ target_link_libraries(json_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1277,6 +1395,8 @@ target_link_libraries(lame_client_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1290,6 +1410,8 @@ target_link_libraries(lb_policies_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -1303,6 +1425,8 @@ target_link_libraries(low_level_ping_pong_benchmark
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1316,6 +1440,8 @@ target_link_libraries(message_compress_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1329,6 +1455,8 @@ target_link_libraries(multi_init_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1342,6 +1470,8 @@ target_link_libraries(multiple_server_queues_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1353,6 +1483,8 @@ target_link_libraries(murmur_hash_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1366,6 +1498,8 @@ target_link_libraries(no_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1379,6 +1513,8 @@ target_link_libraries(resolve_address_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1392,6 +1528,8 @@ target_link_libraries(secure_endpoint_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1405,6 +1543,8 @@ target_link_libraries(sockaddr_utils_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -1418,6 +1558,8 @@ target_link_libraries(tcp_client_posix_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -1431,6 +1573,8 @@ target_link_libraries(tcp_posix_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -1444,6 +1588,8 @@ target_link_libraries(tcp_server_posix_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1457,6 +1603,8 @@ target_link_libraries(time_averaged_stats_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1470,6 +1618,8 @@ target_link_libraries(timeout_encoding_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1483,6 +1633,8 @@ target_link_libraries(timer_heap_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1496,6 +1648,8 @@ target_link_libraries(timer_list_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1509,6 +1663,8 @@ target_link_libraries(timers_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1522,6 +1678,8 @@ target_link_libraries(transport_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -1535,6 +1693,8 @@ target_link_libraries(transport_security_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -1548,6 +1708,8 @@ target_link_libraries(udp_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1561,6 +1723,8 @@ target_link_libraries(uri_parser_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -1574,6 +1738,8 @@ target_link_libraries(workqueue_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1590,6 +1756,8 @@ target_link_libraries(h2_compress_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1606,6 +1774,8 @@ target_link_libraries(h2_compress_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1622,6 +1792,8 @@ target_link_libraries(h2_compress_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1638,6 +1810,8 @@ target_link_libraries(h2_compress_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1654,6 +1828,8 @@ target_link_libraries(h2_compress_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1670,6 +1846,8 @@ target_link_libraries(h2_compress_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1686,6 +1864,8 @@ target_link_libraries(h2_compress_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1702,6 +1882,8 @@ target_link_libraries(h2_compress_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1718,6 +1900,8 @@ target_link_libraries(h2_compress_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1734,6 +1918,8 @@ target_link_libraries(h2_compress_channel_connectivity_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1750,6 +1936,8 @@ target_link_libraries(h2_compress_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1766,6 +1954,8 @@ target_link_libraries(h2_compress_default_host_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1782,6 +1972,8 @@ target_link_libraries(h2_compress_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1798,6 +1990,8 @@ target_link_libraries(h2_compress_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1814,6 +2008,8 @@ target_link_libraries(h2_compress_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1830,6 +2026,8 @@ target_link_libraries(h2_compress_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1846,6 +2044,8 @@ target_link_libraries(h2_compress_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1862,6 +2062,8 @@ target_link_libraries(h2_compress_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1878,6 +2080,8 @@ target_link_libraries(h2_compress_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1894,6 +2098,8 @@ target_link_libraries(h2_compress_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1910,6 +2116,8 @@ target_link_libraries(h2_compress_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1926,6 +2134,8 @@ target_link_libraries(h2_compress_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1942,6 +2152,8 @@ target_link_libraries(h2_compress_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1958,6 +2170,8 @@ target_link_libraries(h2_compress_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1974,6 +2188,8 @@ target_link_libraries(h2_compress_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -1990,6 +2206,8 @@ target_link_libraries(h2_compress_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2006,6 +2224,8 @@ target_link_libraries(h2_compress_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2022,6 +2242,8 @@ target_link_libraries(h2_compress_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2038,6 +2260,8 @@ target_link_libraries(h2_compress_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2054,6 +2278,8 @@ target_link_libraries(h2_compress_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2070,6 +2296,8 @@ target_link_libraries(h2_compress_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2086,6 +2314,8 @@ target_link_libraries(h2_compress_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2102,6 +2332,8 @@ target_link_libraries(h2_compress_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2118,6 +2350,8 @@ target_link_libraries(h2_fakesec_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2134,6 +2368,8 @@ target_link_libraries(h2_fakesec_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2150,6 +2386,8 @@ target_link_libraries(h2_fakesec_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2166,6 +2404,8 @@ target_link_libraries(h2_fakesec_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2182,6 +2422,8 @@ target_link_libraries(h2_fakesec_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2198,6 +2440,8 @@ target_link_libraries(h2_fakesec_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2214,6 +2458,8 @@ target_link_libraries(h2_fakesec_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2230,6 +2476,8 @@ target_link_libraries(h2_fakesec_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2246,6 +2494,8 @@ target_link_libraries(h2_fakesec_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2262,6 +2512,8 @@ target_link_libraries(h2_fakesec_channel_connectivity_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2278,6 +2530,8 @@ target_link_libraries(h2_fakesec_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2294,6 +2548,8 @@ target_link_libraries(h2_fakesec_default_host_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2310,6 +2566,8 @@ target_link_libraries(h2_fakesec_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2326,6 +2584,8 @@ target_link_libraries(h2_fakesec_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2342,6 +2602,8 @@ target_link_libraries(h2_fakesec_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2358,6 +2620,8 @@ target_link_libraries(h2_fakesec_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2374,6 +2638,8 @@ target_link_libraries(h2_fakesec_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2390,6 +2656,8 @@ target_link_libraries(h2_fakesec_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2406,6 +2674,8 @@ target_link_libraries(h2_fakesec_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2422,6 +2692,8 @@ target_link_libraries(h2_fakesec_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2438,6 +2710,8 @@ target_link_libraries(h2_fakesec_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2454,6 +2728,8 @@ target_link_libraries(h2_fakesec_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2470,6 +2746,8 @@ target_link_libraries(h2_fakesec_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2486,6 +2764,8 @@ target_link_libraries(h2_fakesec_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2502,6 +2782,8 @@ target_link_libraries(h2_fakesec_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2518,6 +2800,8 @@ target_link_libraries(h2_fakesec_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2534,6 +2818,8 @@ target_link_libraries(h2_fakesec_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2550,6 +2836,8 @@ target_link_libraries(h2_fakesec_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2566,6 +2854,8 @@ target_link_libraries(h2_fakesec_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2582,6 +2872,8 @@ target_link_libraries(h2_fakesec_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2598,6 +2890,8 @@ target_link_libraries(h2_fakesec_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2614,6 +2908,8 @@ target_link_libraries(h2_fakesec_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2630,6 +2926,8 @@ target_link_libraries(h2_fakesec_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2646,6 +2944,8 @@ target_link_libraries(h2_full_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2662,6 +2962,8 @@ target_link_libraries(h2_full_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2678,6 +2980,8 @@ target_link_libraries(h2_full_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2694,6 +2998,8 @@ target_link_libraries(h2_full_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2710,6 +3016,8 @@ target_link_libraries(h2_full_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2726,6 +3034,8 @@ target_link_libraries(h2_full_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2742,6 +3052,8 @@ target_link_libraries(h2_full_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2758,6 +3070,8 @@ target_link_libraries(h2_full_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2774,6 +3088,8 @@ target_link_libraries(h2_full_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2790,6 +3106,8 @@ target_link_libraries(h2_full_channel_connectivity_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2806,6 +3124,8 @@ target_link_libraries(h2_full_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2822,6 +3142,8 @@ target_link_libraries(h2_full_default_host_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2838,6 +3160,8 @@ target_link_libraries(h2_full_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2854,6 +3178,8 @@ target_link_libraries(h2_full_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2870,6 +3196,8 @@ target_link_libraries(h2_full_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2886,6 +3214,8 @@ target_link_libraries(h2_full_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2902,6 +3232,8 @@ target_link_libraries(h2_full_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2918,6 +3250,8 @@ target_link_libraries(h2_full_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2934,6 +3268,8 @@ target_link_libraries(h2_full_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2950,6 +3286,8 @@ target_link_libraries(h2_full_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2966,6 +3304,8 @@ target_link_libraries(h2_full_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2982,6 +3322,8 @@ target_link_libraries(h2_full_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -2998,6 +3340,8 @@ target_link_libraries(h2_full_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3014,6 +3358,8 @@ target_link_libraries(h2_full_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3030,6 +3376,8 @@ target_link_libraries(h2_full_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3046,6 +3394,8 @@ target_link_libraries(h2_full_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3062,6 +3412,8 @@ target_link_libraries(h2_full_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3078,6 +3430,8 @@ target_link_libraries(h2_full_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3094,6 +3448,8 @@ target_link_libraries(h2_full_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3110,6 +3466,8 @@ target_link_libraries(h2_full_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3126,6 +3484,8 @@ target_link_libraries(h2_full_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3142,6 +3502,8 @@ target_link_libraries(h2_full_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3158,6 +3520,8 @@ target_link_libraries(h2_full_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3174,6 +3538,8 @@ target_link_libraries(h2_full+poll_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3190,6 +3556,8 @@ target_link_libraries(h2_full+poll_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3206,6 +3574,8 @@ target_link_libraries(h2_full+poll_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3222,6 +3592,8 @@ target_link_libraries(h2_full+poll_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3238,6 +3610,8 @@ target_link_libraries(h2_full+poll_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3254,6 +3628,8 @@ target_link_libraries(h2_full+poll_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3270,6 +3646,8 @@ target_link_libraries(h2_full+poll_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3286,6 +3664,8 @@ target_link_libraries(h2_full+poll_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3302,6 +3682,8 @@ target_link_libraries(h2_full+poll_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3318,6 +3700,8 @@ target_link_libraries(h2_full+poll_channel_connectivity_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3334,6 +3718,8 @@ target_link_libraries(h2_full+poll_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3350,6 +3736,8 @@ target_link_libraries(h2_full+poll_default_host_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3366,6 +3754,8 @@ target_link_libraries(h2_full+poll_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3382,6 +3772,8 @@ target_link_libraries(h2_full+poll_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3398,6 +3790,8 @@ target_link_libraries(h2_full+poll_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3414,6 +3808,8 @@ target_link_libraries(h2_full+poll_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3430,6 +3826,8 @@ target_link_libraries(h2_full+poll_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3446,6 +3844,8 @@ target_link_libraries(h2_full+poll_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3462,6 +3862,8 @@ target_link_libraries(h2_full+poll_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3478,6 +3880,8 @@ target_link_libraries(h2_full+poll_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3494,6 +3898,8 @@ target_link_libraries(h2_full+poll_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3510,6 +3916,8 @@ target_link_libraries(h2_full+poll_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3526,6 +3934,8 @@ target_link_libraries(h2_full+poll_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3542,6 +3952,8 @@ target_link_libraries(h2_full+poll_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3558,6 +3970,8 @@ target_link_libraries(h2_full+poll_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3574,6 +3988,8 @@ target_link_libraries(h2_full+poll_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3590,6 +4006,8 @@ target_link_libraries(h2_full+poll_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3606,6 +4024,8 @@ target_link_libraries(h2_full+poll_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3622,6 +4042,8 @@ target_link_libraries(h2_full+poll_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3638,6 +4060,8 @@ target_link_libraries(h2_full+poll_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3654,6 +4078,8 @@ target_link_libraries(h2_full+poll_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3670,6 +4096,8 @@ target_link_libraries(h2_full+poll_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -3686,6 +4114,8 @@ target_link_libraries(h2_full+poll_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3702,6 +4132,8 @@ target_link_libraries(h2_oauth2_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3718,6 +4150,8 @@ target_link_libraries(h2_oauth2_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3734,6 +4168,8 @@ target_link_libraries(h2_oauth2_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3750,6 +4186,8 @@ target_link_libraries(h2_oauth2_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3766,6 +4204,8 @@ target_link_libraries(h2_oauth2_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3782,6 +4222,8 @@ target_link_libraries(h2_oauth2_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3798,6 +4240,8 @@ target_link_libraries(h2_oauth2_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3814,6 +4258,8 @@ target_link_libraries(h2_oauth2_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3830,6 +4276,8 @@ target_link_libraries(h2_oauth2_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3846,6 +4294,8 @@ target_link_libraries(h2_oauth2_channel_connectivity_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3862,6 +4312,8 @@ target_link_libraries(h2_oauth2_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3878,6 +4330,8 @@ target_link_libraries(h2_oauth2_default_host_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3894,6 +4348,8 @@ target_link_libraries(h2_oauth2_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3910,6 +4366,8 @@ target_link_libraries(h2_oauth2_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3926,6 +4384,8 @@ target_link_libraries(h2_oauth2_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3942,6 +4402,8 @@ target_link_libraries(h2_oauth2_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3958,6 +4420,8 @@ target_link_libraries(h2_oauth2_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3974,6 +4438,8 @@ target_link_libraries(h2_oauth2_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -3990,6 +4456,8 @@ target_link_libraries(h2_oauth2_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4006,6 +4474,8 @@ target_link_libraries(h2_oauth2_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4022,6 +4492,8 @@ target_link_libraries(h2_oauth2_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4038,6 +4510,8 @@ target_link_libraries(h2_oauth2_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4054,6 +4528,8 @@ target_link_libraries(h2_oauth2_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4070,6 +4546,8 @@ target_link_libraries(h2_oauth2_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4086,6 +4564,8 @@ target_link_libraries(h2_oauth2_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4102,6 +4582,8 @@ target_link_libraries(h2_oauth2_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4118,6 +4600,8 @@ target_link_libraries(h2_oauth2_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4134,6 +4618,8 @@ target_link_libraries(h2_oauth2_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4150,6 +4636,8 @@ target_link_libraries(h2_oauth2_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4166,6 +4654,8 @@ target_link_libraries(h2_oauth2_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4182,6 +4672,8 @@ target_link_libraries(h2_oauth2_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4198,6 +4690,8 @@ target_link_libraries(h2_oauth2_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4214,6 +4708,8 @@ target_link_libraries(h2_oauth2_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4230,6 +4726,8 @@ target_link_libraries(h2_proxy_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4246,6 +4744,8 @@ target_link_libraries(h2_proxy_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4262,6 +4762,8 @@ target_link_libraries(h2_proxy_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4278,6 +4780,8 @@ target_link_libraries(h2_proxy_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4294,6 +4798,8 @@ target_link_libraries(h2_proxy_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4310,6 +4816,8 @@ target_link_libraries(h2_proxy_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4326,6 +4834,8 @@ target_link_libraries(h2_proxy_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4342,6 +4852,8 @@ target_link_libraries(h2_proxy_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4358,6 +4870,8 @@ target_link_libraries(h2_proxy_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4374,6 +4888,8 @@ target_link_libraries(h2_proxy_default_host_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4390,6 +4906,8 @@ target_link_libraries(h2_proxy_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4406,6 +4924,8 @@ target_link_libraries(h2_proxy_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4422,6 +4942,8 @@ target_link_libraries(h2_proxy_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4438,6 +4960,8 @@ target_link_libraries(h2_proxy_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4454,6 +4978,8 @@ target_link_libraries(h2_proxy_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4470,6 +4996,8 @@ target_link_libraries(h2_proxy_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4486,6 +5014,8 @@ target_link_libraries(h2_proxy_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4502,6 +5032,8 @@ target_link_libraries(h2_proxy_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4518,6 +5050,8 @@ target_link_libraries(h2_proxy_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4534,6 +5068,8 @@ target_link_libraries(h2_proxy_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4550,6 +5086,8 @@ target_link_libraries(h2_proxy_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4566,6 +5104,8 @@ target_link_libraries(h2_proxy_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4582,6 +5122,8 @@ target_link_libraries(h2_proxy_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4598,6 +5140,8 @@ target_link_libraries(h2_proxy_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4614,6 +5158,8 @@ target_link_libraries(h2_proxy_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4630,6 +5176,8 @@ target_link_libraries(h2_proxy_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4646,6 +5194,8 @@ target_link_libraries(h2_proxy_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4662,6 +5212,8 @@ target_link_libraries(h2_proxy_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4678,6 +5230,8 @@ target_link_libraries(h2_proxy_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4694,6 +5248,8 @@ target_link_libraries(h2_sockpair_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4710,6 +5266,8 @@ target_link_libraries(h2_sockpair_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4726,6 +5284,8 @@ target_link_libraries(h2_sockpair_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4742,6 +5302,8 @@ target_link_libraries(h2_sockpair_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4758,6 +5320,8 @@ target_link_libraries(h2_sockpair_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4774,6 +5338,8 @@ target_link_libraries(h2_sockpair_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4790,6 +5356,8 @@ target_link_libraries(h2_sockpair_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4806,6 +5374,8 @@ target_link_libraries(h2_sockpair_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4822,6 +5392,8 @@ target_link_libraries(h2_sockpair_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4838,6 +5410,8 @@ target_link_libraries(h2_sockpair_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4854,6 +5428,8 @@ target_link_libraries(h2_sockpair_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4870,6 +5446,8 @@ target_link_libraries(h2_sockpair_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4886,6 +5464,8 @@ target_link_libraries(h2_sockpair_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4902,6 +5482,8 @@ target_link_libraries(h2_sockpair_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4918,6 +5500,8 @@ target_link_libraries(h2_sockpair_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4934,6 +5518,8 @@ target_link_libraries(h2_sockpair_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4950,6 +5536,8 @@ target_link_libraries(h2_sockpair_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4966,6 +5554,8 @@ target_link_libraries(h2_sockpair_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4982,6 +5572,8 @@ target_link_libraries(h2_sockpair_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -4998,6 +5590,8 @@ target_link_libraries(h2_sockpair_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5014,6 +5608,8 @@ target_link_libraries(h2_sockpair_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5030,6 +5626,8 @@ target_link_libraries(h2_sockpair_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5046,6 +5644,8 @@ target_link_libraries(h2_sockpair_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5062,6 +5662,8 @@ target_link_libraries(h2_sockpair_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5078,6 +5680,8 @@ target_link_libraries(h2_sockpair_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5094,6 +5698,8 @@ target_link_libraries(h2_sockpair_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5110,6 +5716,8 @@ target_link_libraries(h2_sockpair_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5126,6 +5734,8 @@ target_link_libraries(h2_sockpair_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5142,6 +5752,8 @@ target_link_libraries(h2_sockpair_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5158,6 +5770,8 @@ target_link_libraries(h2_sockpair+trace_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5174,6 +5788,8 @@ target_link_libraries(h2_sockpair+trace_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5190,6 +5806,8 @@ target_link_libraries(h2_sockpair+trace_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5206,6 +5824,8 @@ target_link_libraries(h2_sockpair+trace_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5222,6 +5842,8 @@ target_link_libraries(h2_sockpair+trace_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5238,6 +5860,8 @@ target_link_libraries(h2_sockpair+trace_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5254,6 +5878,8 @@ target_link_libraries(h2_sockpair+trace_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5270,6 +5896,8 @@ target_link_libraries(h2_sockpair+trace_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5286,6 +5914,8 @@ target_link_libraries(h2_sockpair+trace_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5302,6 +5932,8 @@ target_link_libraries(h2_sockpair+trace_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5318,6 +5950,8 @@ target_link_libraries(h2_sockpair+trace_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5334,6 +5968,8 @@ target_link_libraries(h2_sockpair+trace_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5350,6 +5986,8 @@ target_link_libraries(h2_sockpair+trace_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5366,6 +6004,8 @@ target_link_libraries(h2_sockpair+trace_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5382,6 +6022,8 @@ target_link_libraries(h2_sockpair+trace_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5398,6 +6040,8 @@ target_link_libraries(h2_sockpair+trace_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5414,6 +6058,8 @@ target_link_libraries(h2_sockpair+trace_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5430,6 +6076,8 @@ target_link_libraries(h2_sockpair+trace_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5446,6 +6094,8 @@ target_link_libraries(h2_sockpair+trace_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5462,6 +6112,8 @@ target_link_libraries(h2_sockpair+trace_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5478,6 +6130,8 @@ target_link_libraries(h2_sockpair+trace_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5494,6 +6148,8 @@ target_link_libraries(h2_sockpair+trace_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5510,6 +6166,8 @@ target_link_libraries(h2_sockpair+trace_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5526,6 +6184,8 @@ target_link_libraries(h2_sockpair+trace_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5542,6 +6202,8 @@ target_link_libraries(h2_sockpair+trace_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5558,6 +6220,8 @@ target_link_libraries(h2_sockpair+trace_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5574,6 +6238,8 @@ target_link_libraries(h2_sockpair+trace_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5590,6 +6256,8 @@ target_link_libraries(h2_sockpair+trace_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5606,6 +6274,8 @@ target_link_libraries(h2_sockpair+trace_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5622,6 +6292,8 @@ target_link_libraries(h2_sockpair_1byte_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5638,6 +6310,8 @@ target_link_libraries(h2_sockpair_1byte_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5654,6 +6328,8 @@ target_link_libraries(h2_sockpair_1byte_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5670,6 +6346,8 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5686,6 +6364,8 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5702,6 +6382,8 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5718,6 +6400,8 @@ target_link_libraries(h2_sockpair_1byte_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5734,6 +6418,8 @@ target_link_libraries(h2_sockpair_1byte_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5750,6 +6436,8 @@ target_link_libraries(h2_sockpair_1byte_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5766,6 +6454,8 @@ target_link_libraries(h2_sockpair_1byte_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5782,6 +6472,8 @@ target_link_libraries(h2_sockpair_1byte_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5798,6 +6490,8 @@ target_link_libraries(h2_sockpair_1byte_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5814,6 +6508,8 @@ target_link_libraries(h2_sockpair_1byte_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5830,6 +6526,8 @@ target_link_libraries(h2_sockpair_1byte_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5846,6 +6544,8 @@ target_link_libraries(h2_sockpair_1byte_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5862,6 +6562,8 @@ target_link_libraries(h2_sockpair_1byte_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5878,6 +6580,8 @@ target_link_libraries(h2_sockpair_1byte_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5894,6 +6598,8 @@ target_link_libraries(h2_sockpair_1byte_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5910,6 +6616,8 @@ target_link_libraries(h2_sockpair_1byte_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5926,6 +6634,8 @@ target_link_libraries(h2_sockpair_1byte_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5942,6 +6652,8 @@ target_link_libraries(h2_sockpair_1byte_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5958,6 +6670,8 @@ target_link_libraries(h2_sockpair_1byte_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5974,6 +6688,8 @@ target_link_libraries(h2_sockpair_1byte_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -5990,6 +6706,8 @@ target_link_libraries(h2_sockpair_1byte_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6006,6 +6724,8 @@ target_link_libraries(h2_sockpair_1byte_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6022,6 +6742,8 @@ target_link_libraries(h2_sockpair_1byte_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6038,6 +6760,8 @@ target_link_libraries(h2_sockpair_1byte_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6054,6 +6778,8 @@ target_link_libraries(h2_sockpair_1byte_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6070,6 +6796,8 @@ target_link_libraries(h2_sockpair_1byte_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6086,6 +6814,8 @@ target_link_libraries(h2_ssl_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6102,6 +6832,8 @@ target_link_libraries(h2_ssl_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6118,6 +6850,8 @@ target_link_libraries(h2_ssl_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6134,6 +6868,8 @@ target_link_libraries(h2_ssl_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6150,6 +6886,8 @@ target_link_libraries(h2_ssl_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6166,6 +6904,8 @@ target_link_libraries(h2_ssl_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6182,6 +6922,8 @@ target_link_libraries(h2_ssl_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6198,6 +6940,8 @@ target_link_libraries(h2_ssl_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6214,6 +6958,8 @@ target_link_libraries(h2_ssl_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6230,6 +6976,8 @@ target_link_libraries(h2_ssl_channel_connectivity_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6246,6 +6994,8 @@ target_link_libraries(h2_ssl_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6262,6 +7012,8 @@ target_link_libraries(h2_ssl_default_host_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6278,6 +7030,8 @@ target_link_libraries(h2_ssl_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6294,6 +7048,8 @@ target_link_libraries(h2_ssl_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6310,6 +7066,8 @@ target_link_libraries(h2_ssl_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6326,6 +7084,8 @@ target_link_libraries(h2_ssl_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6342,6 +7102,8 @@ target_link_libraries(h2_ssl_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6358,6 +7120,8 @@ target_link_libraries(h2_ssl_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6374,6 +7138,8 @@ target_link_libraries(h2_ssl_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6390,6 +7156,8 @@ target_link_libraries(h2_ssl_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6406,6 +7174,8 @@ target_link_libraries(h2_ssl_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6422,6 +7192,8 @@ target_link_libraries(h2_ssl_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6438,6 +7210,8 @@ target_link_libraries(h2_ssl_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6454,6 +7228,8 @@ target_link_libraries(h2_ssl_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6470,6 +7246,8 @@ target_link_libraries(h2_ssl_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6486,6 +7264,8 @@ target_link_libraries(h2_ssl_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6502,6 +7282,8 @@ target_link_libraries(h2_ssl_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6518,6 +7300,8 @@ target_link_libraries(h2_ssl_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6534,6 +7318,8 @@ target_link_libraries(h2_ssl_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6550,6 +7336,8 @@ target_link_libraries(h2_ssl_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6566,6 +7354,8 @@ target_link_libraries(h2_ssl_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6582,6 +7372,8 @@ target_link_libraries(h2_ssl_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -6598,6 +7390,8 @@ target_link_libraries(h2_ssl_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6614,6 +7408,8 @@ target_link_libraries(h2_ssl+poll_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6630,6 +7426,8 @@ target_link_libraries(h2_ssl+poll_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6646,6 +7444,8 @@ target_link_libraries(h2_ssl+poll_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6662,6 +7462,8 @@ target_link_libraries(h2_ssl+poll_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6678,6 +7480,8 @@ target_link_libraries(h2_ssl+poll_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6694,6 +7498,8 @@ target_link_libraries(h2_ssl+poll_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6710,6 +7516,8 @@ target_link_libraries(h2_ssl+poll_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6726,6 +7534,8 @@ target_link_libraries(h2_ssl+poll_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6742,6 +7552,8 @@ target_link_libraries(h2_ssl+poll_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6758,6 +7570,8 @@ target_link_libraries(h2_ssl+poll_channel_connectivity_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6774,6 +7588,8 @@ target_link_libraries(h2_ssl+poll_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6790,6 +7606,8 @@ target_link_libraries(h2_ssl+poll_default_host_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6806,6 +7624,8 @@ target_link_libraries(h2_ssl+poll_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6822,6 +7642,8 @@ target_link_libraries(h2_ssl+poll_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6838,6 +7660,8 @@ target_link_libraries(h2_ssl+poll_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6854,6 +7678,8 @@ target_link_libraries(h2_ssl+poll_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6870,6 +7696,8 @@ target_link_libraries(h2_ssl+poll_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6886,6 +7714,8 @@ target_link_libraries(h2_ssl+poll_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6902,6 +7732,8 @@ target_link_libraries(h2_ssl+poll_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6918,6 +7750,8 @@ target_link_libraries(h2_ssl+poll_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6934,6 +7768,8 @@ target_link_libraries(h2_ssl+poll_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6950,6 +7786,8 @@ target_link_libraries(h2_ssl+poll_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6966,6 +7804,8 @@ target_link_libraries(h2_ssl+poll_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6982,6 +7822,8 @@ target_link_libraries(h2_ssl+poll_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -6998,6 +7840,8 @@ target_link_libraries(h2_ssl+poll_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -7014,6 +7858,8 @@ target_link_libraries(h2_ssl+poll_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -7030,6 +7876,8 @@ target_link_libraries(h2_ssl+poll_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -7046,6 +7894,8 @@ target_link_libraries(h2_ssl+poll_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -7062,6 +7912,8 @@ target_link_libraries(h2_ssl+poll_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -7078,6 +7930,8 @@ target_link_libraries(h2_ssl+poll_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -7094,6 +7948,8 @@ target_link_libraries(h2_ssl+poll_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -7110,6 +7966,8 @@ target_link_libraries(h2_ssl+poll_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -7126,6 +7984,8 @@ target_link_libraries(h2_ssl+poll_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7142,6 +8002,8 @@ target_link_libraries(h2_ssl_proxy_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7158,6 +8020,8 @@ target_link_libraries(h2_ssl_proxy_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7174,6 +8038,8 @@ target_link_libraries(h2_ssl_proxy_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7190,6 +8056,8 @@ target_link_libraries(h2_ssl_proxy_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7206,6 +8074,8 @@ target_link_libraries(h2_ssl_proxy_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7222,6 +8092,8 @@ target_link_libraries(h2_ssl_proxy_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7238,6 +8110,8 @@ target_link_libraries(h2_ssl_proxy_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7254,6 +8128,8 @@ target_link_libraries(h2_ssl_proxy_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7270,6 +8146,8 @@ target_link_libraries(h2_ssl_proxy_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7286,6 +8164,8 @@ target_link_libraries(h2_ssl_proxy_default_host_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7302,6 +8182,8 @@ target_link_libraries(h2_ssl_proxy_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7318,6 +8200,8 @@ target_link_libraries(h2_ssl_proxy_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7334,6 +8218,8 @@ target_link_libraries(h2_ssl_proxy_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7350,6 +8236,8 @@ target_link_libraries(h2_ssl_proxy_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7366,6 +8254,8 @@ target_link_libraries(h2_ssl_proxy_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7382,6 +8272,8 @@ target_link_libraries(h2_ssl_proxy_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7398,6 +8290,8 @@ target_link_libraries(h2_ssl_proxy_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7414,6 +8308,8 @@ target_link_libraries(h2_ssl_proxy_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7430,6 +8326,8 @@ target_link_libraries(h2_ssl_proxy_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7446,6 +8344,8 @@ target_link_libraries(h2_ssl_proxy_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7462,6 +8362,8 @@ target_link_libraries(h2_ssl_proxy_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7478,6 +8380,8 @@ target_link_libraries(h2_ssl_proxy_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7494,6 +8398,8 @@ target_link_libraries(h2_ssl_proxy_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7510,6 +8416,8 @@ target_link_libraries(h2_ssl_proxy_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7526,6 +8434,8 @@ target_link_libraries(h2_ssl_proxy_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7542,6 +8452,8 @@ target_link_libraries(h2_ssl_proxy_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7558,6 +8470,8 @@ target_link_libraries(h2_ssl_proxy_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7574,6 +8488,8 @@ target_link_libraries(h2_ssl_proxy_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7590,6 +8506,8 @@ target_link_libraries(h2_ssl_proxy_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7606,6 +8524,8 @@ target_link_libraries(h2_uchannel_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7622,6 +8542,8 @@ target_link_libraries(h2_uchannel_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7638,6 +8560,8 @@ target_link_libraries(h2_uchannel_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7654,6 +8578,8 @@ target_link_libraries(h2_uchannel_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7670,6 +8596,8 @@ target_link_libraries(h2_uchannel_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7686,6 +8614,8 @@ target_link_libraries(h2_uchannel_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7702,6 +8632,8 @@ target_link_libraries(h2_uchannel_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7718,6 +8650,8 @@ target_link_libraries(h2_uchannel_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7734,6 +8668,8 @@ target_link_libraries(h2_uchannel_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7750,6 +8686,8 @@ target_link_libraries(h2_uchannel_channel_connectivity_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7766,6 +8704,8 @@ target_link_libraries(h2_uchannel_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7782,6 +8722,8 @@ target_link_libraries(h2_uchannel_default_host_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7798,6 +8740,8 @@ target_link_libraries(h2_uchannel_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7814,6 +8758,8 @@ target_link_libraries(h2_uchannel_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7830,6 +8776,8 @@ target_link_libraries(h2_uchannel_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7846,6 +8794,8 @@ target_link_libraries(h2_uchannel_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7862,6 +8812,8 @@ target_link_libraries(h2_uchannel_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7878,6 +8830,8 @@ target_link_libraries(h2_uchannel_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7894,6 +8848,8 @@ target_link_libraries(h2_uchannel_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7910,6 +8866,8 @@ target_link_libraries(h2_uchannel_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7926,6 +8884,8 @@ target_link_libraries(h2_uchannel_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7942,6 +8902,8 @@ target_link_libraries(h2_uchannel_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7958,6 +8920,8 @@ target_link_libraries(h2_uchannel_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7974,6 +8938,8 @@ target_link_libraries(h2_uchannel_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -7990,6 +8956,8 @@ target_link_libraries(h2_uchannel_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -8006,6 +8974,8 @@ target_link_libraries(h2_uchannel_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -8022,6 +8992,8 @@ target_link_libraries(h2_uchannel_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -8038,6 +9010,8 @@ target_link_libraries(h2_uchannel_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -8054,6 +9028,8 @@ target_link_libraries(h2_uchannel_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -8070,6 +9046,8 @@ target_link_libraries(h2_uchannel_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -8086,6 +9064,8 @@ target_link_libraries(h2_uchannel_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -8102,6 +9082,8 @@ target_link_libraries(h2_uchannel_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -8118,6 +9100,8 @@ target_link_libraries(h2_uchannel_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8134,6 +9118,8 @@ target_link_libraries(h2_uds_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8150,6 +9136,8 @@ target_link_libraries(h2_uds_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8166,6 +9154,8 @@ target_link_libraries(h2_uds_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8182,6 +9172,8 @@ target_link_libraries(h2_uds_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8198,6 +9190,8 @@ target_link_libraries(h2_uds_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8214,6 +9208,8 @@ target_link_libraries(h2_uds_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8230,6 +9226,8 @@ target_link_libraries(h2_uds_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8246,6 +9244,8 @@ target_link_libraries(h2_uds_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8262,6 +9262,8 @@ target_link_libraries(h2_uds_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8278,6 +9280,8 @@ target_link_libraries(h2_uds_channel_connectivity_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8294,6 +9298,8 @@ target_link_libraries(h2_uds_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8310,6 +9316,8 @@ target_link_libraries(h2_uds_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8326,6 +9334,8 @@ target_link_libraries(h2_uds_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8342,6 +9352,8 @@ target_link_libraries(h2_uds_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8358,6 +9370,8 @@ target_link_libraries(h2_uds_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8374,6 +9388,8 @@ target_link_libraries(h2_uds_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8390,6 +9406,8 @@ target_link_libraries(h2_uds_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8406,6 +9424,8 @@ target_link_libraries(h2_uds_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8422,6 +9442,8 @@ target_link_libraries(h2_uds_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8438,6 +9460,8 @@ target_link_libraries(h2_uds_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8454,6 +9478,8 @@ target_link_libraries(h2_uds_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8470,6 +9496,8 @@ target_link_libraries(h2_uds_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8486,6 +9514,8 @@ target_link_libraries(h2_uds_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8502,6 +9532,8 @@ target_link_libraries(h2_uds_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8518,6 +9550,8 @@ target_link_libraries(h2_uds_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8534,6 +9568,8 @@ target_link_libraries(h2_uds_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8550,6 +9586,8 @@ target_link_libraries(h2_uds_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8566,6 +9604,8 @@ target_link_libraries(h2_uds_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8582,6 +9622,8 @@ target_link_libraries(h2_uds_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8598,6 +9640,8 @@ target_link_libraries(h2_uds_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8614,6 +9658,8 @@ target_link_libraries(h2_uds_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -8630,6 +9676,8 @@ target_link_libraries(h2_uds_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8646,6 +9694,8 @@ target_link_libraries(h2_uds+poll_bad_hostname_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8662,6 +9712,8 @@ target_link_libraries(h2_uds+poll_binary_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8678,6 +9730,8 @@ target_link_libraries(h2_uds+poll_call_creds_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8694,6 +9748,8 @@ target_link_libraries(h2_uds+poll_cancel_after_accept_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8710,6 +9766,8 @@ target_link_libraries(h2_uds+poll_cancel_after_client_done_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8726,6 +9784,8 @@ target_link_libraries(h2_uds+poll_cancel_after_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8742,6 +9802,8 @@ target_link_libraries(h2_uds+poll_cancel_before_invoke_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8758,6 +9820,8 @@ target_link_libraries(h2_uds+poll_cancel_in_a_vacuum_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8774,6 +9838,8 @@ target_link_libraries(h2_uds+poll_census_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8790,6 +9856,8 @@ target_link_libraries(h2_uds+poll_channel_connectivity_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8806,6 +9874,8 @@ target_link_libraries(h2_uds+poll_compressed_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8822,6 +9892,8 @@ target_link_libraries(h2_uds+poll_disappearing_server_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8838,6 +9910,8 @@ target_link_libraries(h2_uds+poll_empty_batch_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8854,6 +9928,8 @@ target_link_libraries(h2_uds+poll_graceful_server_shutdown_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8870,6 +9946,8 @@ target_link_libraries(h2_uds+poll_high_initial_seqno_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8886,6 +9964,8 @@ target_link_libraries(h2_uds+poll_invoke_large_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8902,6 +9982,8 @@ target_link_libraries(h2_uds+poll_large_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8918,6 +10000,8 @@ target_link_libraries(h2_uds+poll_max_concurrent_streams_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8934,6 +10018,8 @@ target_link_libraries(h2_uds+poll_max_message_length_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8950,6 +10036,8 @@ target_link_libraries(h2_uds+poll_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8966,6 +10054,8 @@ target_link_libraries(h2_uds+poll_no_op_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8982,6 +10072,8 @@ target_link_libraries(h2_uds+poll_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -8998,6 +10090,8 @@ target_link_libraries(h2_uds+poll_ping_pong_streaming_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -9014,6 +10108,8 @@ target_link_libraries(h2_uds+poll_registered_call_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -9030,6 +10126,8 @@ target_link_libraries(h2_uds+poll_request_with_flags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -9046,6 +10144,8 @@ target_link_libraries(h2_uds+poll_request_with_payload_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -9062,6 +10162,8 @@ target_link_libraries(h2_uds+poll_server_finishes_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -9078,6 +10180,8 @@ target_link_libraries(h2_uds+poll_shutdown_finishes_calls_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -9094,6 +10198,8 @@ target_link_libraries(h2_uds+poll_shutdown_finishes_tags_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -9110,6 +10216,8 @@ target_link_libraries(h2_uds+poll_simple_delayed_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -9126,6 +10234,8 @@ target_link_libraries(h2_uds+poll_simple_request_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -9142,6 +10252,8 @@ target_link_libraries(h2_uds+poll_trailing_metadata_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9157,6 +10269,8 @@ target_link_libraries(h2_compress_bad_hostname_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9172,6 +10286,8 @@ target_link_libraries(h2_compress_binary_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9187,6 +10303,8 @@ target_link_libraries(h2_compress_cancel_after_accept_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9202,6 +10320,8 @@ target_link_libraries(h2_compress_cancel_after_client_done_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9217,6 +10337,8 @@ target_link_libraries(h2_compress_cancel_after_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9232,6 +10354,8 @@ target_link_libraries(h2_compress_cancel_before_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9247,6 +10371,8 @@ target_link_libraries(h2_compress_cancel_in_a_vacuum_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9262,6 +10388,8 @@ target_link_libraries(h2_compress_census_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9277,6 +10405,8 @@ target_link_libraries(h2_compress_channel_connectivity_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9292,6 +10422,8 @@ target_link_libraries(h2_compress_compressed_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9307,6 +10439,8 @@ target_link_libraries(h2_compress_default_host_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9322,6 +10456,8 @@ target_link_libraries(h2_compress_disappearing_server_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9337,6 +10473,8 @@ target_link_libraries(h2_compress_empty_batch_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9352,6 +10490,8 @@ target_link_libraries(h2_compress_graceful_server_shutdown_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9367,6 +10507,8 @@ target_link_libraries(h2_compress_high_initial_seqno_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9382,6 +10524,8 @@ target_link_libraries(h2_compress_invoke_large_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9397,6 +10541,8 @@ target_link_libraries(h2_compress_large_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9412,6 +10558,8 @@ target_link_libraries(h2_compress_max_concurrent_streams_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9427,6 +10575,8 @@ target_link_libraries(h2_compress_max_message_length_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9442,6 +10592,8 @@ target_link_libraries(h2_compress_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9457,6 +10609,8 @@ target_link_libraries(h2_compress_no_op_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9472,6 +10626,8 @@ target_link_libraries(h2_compress_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9487,6 +10643,8 @@ target_link_libraries(h2_compress_ping_pong_streaming_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9502,6 +10660,8 @@ target_link_libraries(h2_compress_registered_call_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9517,6 +10677,8 @@ target_link_libraries(h2_compress_request_with_flags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9532,6 +10694,8 @@ target_link_libraries(h2_compress_request_with_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9547,6 +10711,8 @@ target_link_libraries(h2_compress_server_finishes_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9562,6 +10728,8 @@ target_link_libraries(h2_compress_shutdown_finishes_calls_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9577,6 +10745,8 @@ target_link_libraries(h2_compress_shutdown_finishes_tags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9592,6 +10762,8 @@ target_link_libraries(h2_compress_simple_delayed_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9607,6 +10779,8 @@ target_link_libraries(h2_compress_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9622,6 +10796,8 @@ target_link_libraries(h2_compress_trailing_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9637,6 +10813,8 @@ target_link_libraries(h2_full_bad_hostname_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9652,6 +10830,8 @@ target_link_libraries(h2_full_binary_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9667,6 +10847,8 @@ target_link_libraries(h2_full_cancel_after_accept_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9682,6 +10864,8 @@ target_link_libraries(h2_full_cancel_after_client_done_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9697,6 +10881,8 @@ target_link_libraries(h2_full_cancel_after_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9712,6 +10898,8 @@ target_link_libraries(h2_full_cancel_before_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9727,6 +10915,8 @@ target_link_libraries(h2_full_cancel_in_a_vacuum_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9742,6 +10932,8 @@ target_link_libraries(h2_full_census_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9757,6 +10949,8 @@ target_link_libraries(h2_full_channel_connectivity_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9772,6 +10966,8 @@ target_link_libraries(h2_full_compressed_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9787,6 +10983,8 @@ target_link_libraries(h2_full_default_host_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9802,6 +11000,8 @@ target_link_libraries(h2_full_disappearing_server_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9817,6 +11017,8 @@ target_link_libraries(h2_full_empty_batch_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9832,6 +11034,8 @@ target_link_libraries(h2_full_graceful_server_shutdown_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9847,6 +11051,8 @@ target_link_libraries(h2_full_high_initial_seqno_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9862,6 +11068,8 @@ target_link_libraries(h2_full_invoke_large_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9877,6 +11085,8 @@ target_link_libraries(h2_full_large_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9892,6 +11102,8 @@ target_link_libraries(h2_full_max_concurrent_streams_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9907,6 +11119,8 @@ target_link_libraries(h2_full_max_message_length_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9922,6 +11136,8 @@ target_link_libraries(h2_full_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9937,6 +11153,8 @@ target_link_libraries(h2_full_no_op_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9952,6 +11170,8 @@ target_link_libraries(h2_full_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9967,6 +11187,8 @@ target_link_libraries(h2_full_ping_pong_streaming_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9982,6 +11204,8 @@ target_link_libraries(h2_full_registered_call_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -9997,6 +11221,8 @@ target_link_libraries(h2_full_request_with_flags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10012,6 +11238,8 @@ target_link_libraries(h2_full_request_with_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10027,6 +11255,8 @@ target_link_libraries(h2_full_server_finishes_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10042,6 +11272,8 @@ target_link_libraries(h2_full_shutdown_finishes_calls_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10057,6 +11289,8 @@ target_link_libraries(h2_full_shutdown_finishes_tags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10072,6 +11306,8 @@ target_link_libraries(h2_full_simple_delayed_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10087,6 +11323,8 @@ target_link_libraries(h2_full_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10102,6 +11340,8 @@ target_link_libraries(h2_full_trailing_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10117,6 +11357,8 @@ target_link_libraries(h2_full+poll_bad_hostname_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10132,6 +11374,8 @@ target_link_libraries(h2_full+poll_binary_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10147,6 +11391,8 @@ target_link_libraries(h2_full+poll_cancel_after_accept_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10162,6 +11408,8 @@ target_link_libraries(h2_full+poll_cancel_after_client_done_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10177,6 +11425,8 @@ target_link_libraries(h2_full+poll_cancel_after_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10192,6 +11442,8 @@ target_link_libraries(h2_full+poll_cancel_before_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10207,6 +11459,8 @@ target_link_libraries(h2_full+poll_cancel_in_a_vacuum_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10222,6 +11476,8 @@ target_link_libraries(h2_full+poll_census_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10237,6 +11493,8 @@ target_link_libraries(h2_full+poll_channel_connectivity_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10252,6 +11510,8 @@ target_link_libraries(h2_full+poll_compressed_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10267,6 +11527,8 @@ target_link_libraries(h2_full+poll_default_host_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10282,6 +11544,8 @@ target_link_libraries(h2_full+poll_disappearing_server_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10297,6 +11561,8 @@ target_link_libraries(h2_full+poll_empty_batch_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10312,6 +11578,8 @@ target_link_libraries(h2_full+poll_graceful_server_shutdown_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10327,6 +11595,8 @@ target_link_libraries(h2_full+poll_high_initial_seqno_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10342,6 +11612,8 @@ target_link_libraries(h2_full+poll_invoke_large_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10357,6 +11629,8 @@ target_link_libraries(h2_full+poll_large_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10372,6 +11646,8 @@ target_link_libraries(h2_full+poll_max_concurrent_streams_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10387,6 +11663,8 @@ target_link_libraries(h2_full+poll_max_message_length_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10402,6 +11680,8 @@ target_link_libraries(h2_full+poll_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10417,6 +11697,8 @@ target_link_libraries(h2_full+poll_no_op_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10432,6 +11714,8 @@ target_link_libraries(h2_full+poll_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10447,6 +11731,8 @@ target_link_libraries(h2_full+poll_ping_pong_streaming_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10462,6 +11748,8 @@ target_link_libraries(h2_full+poll_registered_call_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10477,6 +11765,8 @@ target_link_libraries(h2_full+poll_request_with_flags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10492,6 +11782,8 @@ target_link_libraries(h2_full+poll_request_with_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10507,6 +11799,8 @@ target_link_libraries(h2_full+poll_server_finishes_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10522,6 +11816,8 @@ target_link_libraries(h2_full+poll_shutdown_finishes_calls_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10537,6 +11833,8 @@ target_link_libraries(h2_full+poll_shutdown_finishes_tags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10552,6 +11850,8 @@ target_link_libraries(h2_full+poll_simple_delayed_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10567,6 +11867,8 @@ target_link_libraries(h2_full+poll_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -10582,6 +11884,8 @@ target_link_libraries(h2_full+poll_trailing_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10597,6 +11901,8 @@ target_link_libraries(h2_proxy_bad_hostname_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10612,6 +11918,8 @@ target_link_libraries(h2_proxy_binary_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10627,6 +11935,8 @@ target_link_libraries(h2_proxy_cancel_after_accept_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10642,6 +11952,8 @@ target_link_libraries(h2_proxy_cancel_after_client_done_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10657,6 +11969,8 @@ target_link_libraries(h2_proxy_cancel_after_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10672,6 +11986,8 @@ target_link_libraries(h2_proxy_cancel_before_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10687,6 +12003,8 @@ target_link_libraries(h2_proxy_cancel_in_a_vacuum_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10702,6 +12020,8 @@ target_link_libraries(h2_proxy_census_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10717,6 +12037,8 @@ target_link_libraries(h2_proxy_default_host_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10732,6 +12054,8 @@ target_link_libraries(h2_proxy_disappearing_server_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10747,6 +12071,8 @@ target_link_libraries(h2_proxy_empty_batch_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10762,6 +12088,8 @@ target_link_libraries(h2_proxy_graceful_server_shutdown_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10777,6 +12105,8 @@ target_link_libraries(h2_proxy_high_initial_seqno_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10792,6 +12122,8 @@ target_link_libraries(h2_proxy_invoke_large_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10807,6 +12139,8 @@ target_link_libraries(h2_proxy_large_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10822,6 +12156,8 @@ target_link_libraries(h2_proxy_max_message_length_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10837,6 +12173,8 @@ target_link_libraries(h2_proxy_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10852,6 +12190,8 @@ target_link_libraries(h2_proxy_no_op_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10867,6 +12207,8 @@ target_link_libraries(h2_proxy_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10882,6 +12224,8 @@ target_link_libraries(h2_proxy_ping_pong_streaming_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10897,6 +12241,8 @@ target_link_libraries(h2_proxy_registered_call_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10912,6 +12258,8 @@ target_link_libraries(h2_proxy_request_with_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10927,6 +12275,8 @@ target_link_libraries(h2_proxy_server_finishes_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10942,6 +12292,8 @@ target_link_libraries(h2_proxy_shutdown_finishes_calls_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10957,6 +12309,8 @@ target_link_libraries(h2_proxy_shutdown_finishes_tags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10972,6 +12326,8 @@ target_link_libraries(h2_proxy_simple_delayed_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -10987,6 +12343,8 @@ target_link_libraries(h2_proxy_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11002,6 +12360,8 @@ target_link_libraries(h2_proxy_trailing_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11017,6 +12377,8 @@ target_link_libraries(h2_sockpair_bad_hostname_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11032,6 +12394,8 @@ target_link_libraries(h2_sockpair_binary_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11047,6 +12411,8 @@ target_link_libraries(h2_sockpair_cancel_after_accept_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11062,6 +12428,8 @@ target_link_libraries(h2_sockpair_cancel_after_client_done_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11077,6 +12445,8 @@ target_link_libraries(h2_sockpair_cancel_after_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11092,6 +12462,8 @@ target_link_libraries(h2_sockpair_cancel_before_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11107,6 +12479,8 @@ target_link_libraries(h2_sockpair_cancel_in_a_vacuum_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11122,6 +12496,8 @@ target_link_libraries(h2_sockpair_census_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11137,6 +12513,8 @@ target_link_libraries(h2_sockpair_compressed_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11152,6 +12530,8 @@ target_link_libraries(h2_sockpair_empty_batch_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11167,6 +12547,8 @@ target_link_libraries(h2_sockpair_graceful_server_shutdown_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11182,6 +12564,8 @@ target_link_libraries(h2_sockpair_high_initial_seqno_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11197,6 +12581,8 @@ target_link_libraries(h2_sockpair_invoke_large_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11212,6 +12598,8 @@ target_link_libraries(h2_sockpair_large_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11227,6 +12615,8 @@ target_link_libraries(h2_sockpair_max_concurrent_streams_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11242,6 +12632,8 @@ target_link_libraries(h2_sockpair_max_message_length_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11257,6 +12649,8 @@ target_link_libraries(h2_sockpair_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11272,6 +12666,8 @@ target_link_libraries(h2_sockpair_no_op_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11287,6 +12683,8 @@ target_link_libraries(h2_sockpair_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11302,6 +12700,8 @@ target_link_libraries(h2_sockpair_ping_pong_streaming_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11317,6 +12717,8 @@ target_link_libraries(h2_sockpair_registered_call_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11332,6 +12734,8 @@ target_link_libraries(h2_sockpair_request_with_flags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11347,6 +12751,8 @@ target_link_libraries(h2_sockpair_request_with_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11362,6 +12768,8 @@ target_link_libraries(h2_sockpair_server_finishes_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11377,6 +12785,8 @@ target_link_libraries(h2_sockpair_shutdown_finishes_calls_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11392,6 +12802,8 @@ target_link_libraries(h2_sockpair_shutdown_finishes_tags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11407,6 +12819,8 @@ target_link_libraries(h2_sockpair_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11422,6 +12836,8 @@ target_link_libraries(h2_sockpair_trailing_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11437,6 +12853,8 @@ target_link_libraries(h2_sockpair+trace_bad_hostname_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11452,6 +12870,8 @@ target_link_libraries(h2_sockpair+trace_binary_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11467,6 +12887,8 @@ target_link_libraries(h2_sockpair+trace_cancel_after_accept_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11482,6 +12904,8 @@ target_link_libraries(h2_sockpair+trace_cancel_after_client_done_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11497,6 +12921,8 @@ target_link_libraries(h2_sockpair+trace_cancel_after_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11512,6 +12938,8 @@ target_link_libraries(h2_sockpair+trace_cancel_before_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11527,6 +12955,8 @@ target_link_libraries(h2_sockpair+trace_cancel_in_a_vacuum_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11542,6 +12972,8 @@ target_link_libraries(h2_sockpair+trace_census_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11557,6 +12989,8 @@ target_link_libraries(h2_sockpair+trace_compressed_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11572,6 +13006,8 @@ target_link_libraries(h2_sockpair+trace_empty_batch_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11587,6 +13023,8 @@ target_link_libraries(h2_sockpair+trace_graceful_server_shutdown_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11602,6 +13040,8 @@ target_link_libraries(h2_sockpair+trace_high_initial_seqno_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11617,6 +13057,8 @@ target_link_libraries(h2_sockpair+trace_invoke_large_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11632,6 +13074,8 @@ target_link_libraries(h2_sockpair+trace_large_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11647,6 +13091,8 @@ target_link_libraries(h2_sockpair+trace_max_concurrent_streams_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11662,6 +13108,8 @@ target_link_libraries(h2_sockpair+trace_max_message_length_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11677,6 +13125,8 @@ target_link_libraries(h2_sockpair+trace_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11692,6 +13142,8 @@ target_link_libraries(h2_sockpair+trace_no_op_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11707,6 +13159,8 @@ target_link_libraries(h2_sockpair+trace_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11722,6 +13176,8 @@ target_link_libraries(h2_sockpair+trace_ping_pong_streaming_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11737,6 +13193,8 @@ target_link_libraries(h2_sockpair+trace_registered_call_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11752,6 +13210,8 @@ target_link_libraries(h2_sockpair+trace_request_with_flags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11767,6 +13227,8 @@ target_link_libraries(h2_sockpair+trace_request_with_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11782,6 +13244,8 @@ target_link_libraries(h2_sockpair+trace_server_finishes_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11797,6 +13261,8 @@ target_link_libraries(h2_sockpair+trace_shutdown_finishes_calls_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11812,6 +13278,8 @@ target_link_libraries(h2_sockpair+trace_shutdown_finishes_tags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11827,6 +13295,8 @@ target_link_libraries(h2_sockpair+trace_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11842,6 +13312,8 @@ target_link_libraries(h2_sockpair+trace_trailing_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11857,6 +13329,8 @@ target_link_libraries(h2_sockpair_1byte_bad_hostname_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11872,6 +13346,8 @@ target_link_libraries(h2_sockpair_1byte_binary_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11887,6 +13363,8 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_accept_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11902,6 +13380,8 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_client_done_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11917,6 +13397,8 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11932,6 +13414,8 @@ target_link_libraries(h2_sockpair_1byte_cancel_before_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11947,6 +13431,8 @@ target_link_libraries(h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11962,6 +13448,8 @@ target_link_libraries(h2_sockpair_1byte_census_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11977,6 +13465,8 @@ target_link_libraries(h2_sockpair_1byte_compressed_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -11992,6 +13482,8 @@ target_link_libraries(h2_sockpair_1byte_empty_batch_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12007,6 +13499,8 @@ target_link_libraries(h2_sockpair_1byte_graceful_server_shutdown_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12022,6 +13516,8 @@ target_link_libraries(h2_sockpair_1byte_high_initial_seqno_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12037,6 +13533,8 @@ target_link_libraries(h2_sockpair_1byte_invoke_large_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12052,6 +13550,8 @@ target_link_libraries(h2_sockpair_1byte_large_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12067,6 +13567,8 @@ target_link_libraries(h2_sockpair_1byte_max_concurrent_streams_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12082,6 +13584,8 @@ target_link_libraries(h2_sockpair_1byte_max_message_length_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12097,6 +13601,8 @@ target_link_libraries(h2_sockpair_1byte_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12112,6 +13618,8 @@ target_link_libraries(h2_sockpair_1byte_no_op_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12127,6 +13635,8 @@ target_link_libraries(h2_sockpair_1byte_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12142,6 +13652,8 @@ target_link_libraries(h2_sockpair_1byte_ping_pong_streaming_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12157,6 +13669,8 @@ target_link_libraries(h2_sockpair_1byte_registered_call_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12172,6 +13686,8 @@ target_link_libraries(h2_sockpair_1byte_request_with_flags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12187,6 +13703,8 @@ target_link_libraries(h2_sockpair_1byte_request_with_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12202,6 +13720,8 @@ target_link_libraries(h2_sockpair_1byte_server_finishes_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12217,6 +13737,8 @@ target_link_libraries(h2_sockpair_1byte_shutdown_finishes_calls_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12232,6 +13754,8 @@ target_link_libraries(h2_sockpair_1byte_shutdown_finishes_tags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12247,6 +13771,8 @@ target_link_libraries(h2_sockpair_1byte_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12262,6 +13788,8 @@ target_link_libraries(h2_sockpair_1byte_trailing_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12277,6 +13805,8 @@ target_link_libraries(h2_uchannel_bad_hostname_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12292,6 +13822,8 @@ target_link_libraries(h2_uchannel_binary_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12307,6 +13839,8 @@ target_link_libraries(h2_uchannel_cancel_after_accept_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12322,6 +13856,8 @@ target_link_libraries(h2_uchannel_cancel_after_client_done_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12337,6 +13873,8 @@ target_link_libraries(h2_uchannel_cancel_after_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12352,6 +13890,8 @@ target_link_libraries(h2_uchannel_cancel_before_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12367,6 +13907,8 @@ target_link_libraries(h2_uchannel_cancel_in_a_vacuum_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12382,6 +13924,8 @@ target_link_libraries(h2_uchannel_census_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12397,6 +13941,8 @@ target_link_libraries(h2_uchannel_channel_connectivity_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12412,6 +13958,8 @@ target_link_libraries(h2_uchannel_compressed_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12427,6 +13975,8 @@ target_link_libraries(h2_uchannel_default_host_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12442,6 +13992,8 @@ target_link_libraries(h2_uchannel_disappearing_server_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12457,6 +14009,8 @@ target_link_libraries(h2_uchannel_empty_batch_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12472,6 +14026,8 @@ target_link_libraries(h2_uchannel_graceful_server_shutdown_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12487,6 +14043,8 @@ target_link_libraries(h2_uchannel_high_initial_seqno_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12502,6 +14060,8 @@ target_link_libraries(h2_uchannel_invoke_large_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12517,6 +14077,8 @@ target_link_libraries(h2_uchannel_large_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12532,6 +14094,8 @@ target_link_libraries(h2_uchannel_max_concurrent_streams_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12547,6 +14111,8 @@ target_link_libraries(h2_uchannel_max_message_length_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12562,6 +14128,8 @@ target_link_libraries(h2_uchannel_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12577,6 +14145,8 @@ target_link_libraries(h2_uchannel_no_op_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12592,6 +14162,8 @@ target_link_libraries(h2_uchannel_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12607,6 +14179,8 @@ target_link_libraries(h2_uchannel_ping_pong_streaming_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12622,6 +14196,8 @@ target_link_libraries(h2_uchannel_registered_call_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12637,6 +14213,8 @@ target_link_libraries(h2_uchannel_request_with_flags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12652,6 +14230,8 @@ target_link_libraries(h2_uchannel_request_with_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12667,6 +14247,8 @@ target_link_libraries(h2_uchannel_server_finishes_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12682,6 +14264,8 @@ target_link_libraries(h2_uchannel_shutdown_finishes_calls_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12697,6 +14281,8 @@ target_link_libraries(h2_uchannel_shutdown_finishes_tags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12712,6 +14298,8 @@ target_link_libraries(h2_uchannel_simple_delayed_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12727,6 +14315,8 @@ target_link_libraries(h2_uchannel_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -12742,6 +14332,8 @@ target_link_libraries(h2_uchannel_trailing_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12757,6 +14349,8 @@ target_link_libraries(h2_uds_bad_hostname_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12772,6 +14366,8 @@ target_link_libraries(h2_uds_binary_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12787,6 +14383,8 @@ target_link_libraries(h2_uds_cancel_after_accept_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12802,6 +14400,8 @@ target_link_libraries(h2_uds_cancel_after_client_done_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12817,6 +14417,8 @@ target_link_libraries(h2_uds_cancel_after_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12832,6 +14434,8 @@ target_link_libraries(h2_uds_cancel_before_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12847,6 +14451,8 @@ target_link_libraries(h2_uds_cancel_in_a_vacuum_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12862,6 +14468,8 @@ target_link_libraries(h2_uds_census_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12877,6 +14485,8 @@ target_link_libraries(h2_uds_channel_connectivity_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12892,6 +14502,8 @@ target_link_libraries(h2_uds_compressed_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12907,6 +14519,8 @@ target_link_libraries(h2_uds_disappearing_server_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12922,6 +14536,8 @@ target_link_libraries(h2_uds_empty_batch_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12937,6 +14553,8 @@ target_link_libraries(h2_uds_graceful_server_shutdown_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12952,6 +14570,8 @@ target_link_libraries(h2_uds_high_initial_seqno_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12967,6 +14587,8 @@ target_link_libraries(h2_uds_invoke_large_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12982,6 +14604,8 @@ target_link_libraries(h2_uds_large_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -12997,6 +14621,8 @@ target_link_libraries(h2_uds_max_concurrent_streams_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13012,6 +14638,8 @@ target_link_libraries(h2_uds_max_message_length_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13027,6 +14655,8 @@ target_link_libraries(h2_uds_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13042,6 +14672,8 @@ target_link_libraries(h2_uds_no_op_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13057,6 +14689,8 @@ target_link_libraries(h2_uds_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13072,6 +14706,8 @@ target_link_libraries(h2_uds_ping_pong_streaming_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13087,6 +14723,8 @@ target_link_libraries(h2_uds_registered_call_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13102,6 +14740,8 @@ target_link_libraries(h2_uds_request_with_flags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13117,6 +14757,8 @@ target_link_libraries(h2_uds_request_with_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13132,6 +14774,8 @@ target_link_libraries(h2_uds_server_finishes_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13147,6 +14791,8 @@ target_link_libraries(h2_uds_shutdown_finishes_calls_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13162,6 +14808,8 @@ target_link_libraries(h2_uds_shutdown_finishes_tags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13177,6 +14825,8 @@ target_link_libraries(h2_uds_simple_delayed_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13192,6 +14842,8 @@ target_link_libraries(h2_uds_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
@@ -13207,6 +14859,8 @@ target_link_libraries(h2_uds_trailing_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13222,6 +14876,8 @@ target_link_libraries(h2_uds+poll_bad_hostname_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13237,6 +14893,8 @@ target_link_libraries(h2_uds+poll_binary_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13252,6 +14910,8 @@ target_link_libraries(h2_uds+poll_cancel_after_accept_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13267,6 +14927,8 @@ target_link_libraries(h2_uds+poll_cancel_after_client_done_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13282,6 +14944,8 @@ target_link_libraries(h2_uds+poll_cancel_after_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13297,6 +14961,8 @@ target_link_libraries(h2_uds+poll_cancel_before_invoke_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13312,6 +14978,8 @@ target_link_libraries(h2_uds+poll_cancel_in_a_vacuum_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13327,6 +14995,8 @@ target_link_libraries(h2_uds+poll_census_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13342,6 +15012,8 @@ target_link_libraries(h2_uds+poll_channel_connectivity_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13357,6 +15029,8 @@ target_link_libraries(h2_uds+poll_compressed_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13372,6 +15046,8 @@ target_link_libraries(h2_uds+poll_disappearing_server_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13387,6 +15063,8 @@ target_link_libraries(h2_uds+poll_empty_batch_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13402,6 +15080,8 @@ target_link_libraries(h2_uds+poll_graceful_server_shutdown_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13417,6 +15097,8 @@ target_link_libraries(h2_uds+poll_high_initial_seqno_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13432,6 +15114,8 @@ target_link_libraries(h2_uds+poll_invoke_large_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13447,6 +15131,8 @@ target_link_libraries(h2_uds+poll_large_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13462,6 +15148,8 @@ target_link_libraries(h2_uds+poll_max_concurrent_streams_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13477,6 +15165,8 @@ target_link_libraries(h2_uds+poll_max_message_length_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13492,6 +15182,8 @@ target_link_libraries(h2_uds+poll_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13507,6 +15199,8 @@ target_link_libraries(h2_uds+poll_no_op_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13522,6 +15216,8 @@ target_link_libraries(h2_uds+poll_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13537,6 +15233,8 @@ target_link_libraries(h2_uds+poll_ping_pong_streaming_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13552,6 +15250,8 @@ target_link_libraries(h2_uds+poll_registered_call_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13567,6 +15267,8 @@ target_link_libraries(h2_uds+poll_request_with_flags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13582,6 +15284,8 @@ target_link_libraries(h2_uds+poll_request_with_payload_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13597,6 +15301,8 @@ target_link_libraries(h2_uds+poll_server_finishes_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13612,6 +15318,8 @@ target_link_libraries(h2_uds+poll_shutdown_finishes_calls_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13627,6 +15335,8 @@ target_link_libraries(h2_uds+poll_shutdown_finishes_tags_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13642,6 +15352,8 @@ target_link_libraries(h2_uds+poll_simple_delayed_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13657,6 +15369,8 @@ target_link_libraries(h2_uds+poll_simple_request_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
@@ -13672,6 +15386,8 @@ target_link_libraries(h2_uds+poll_trailing_metadata_nosec_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -13686,6 +15402,8 @@ target_link_libraries(connection_prefix_bad_client_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
@@ -13700,5 +15418,7 @@ target_link_libraries(initial_settings_frame_bad_client_test
   gpr
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
 )
 endif()

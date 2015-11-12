@@ -51,12 +51,20 @@
     include_directories(<%text>${OPENSSL_INCLUDE_DIRS}</%text>)
   endif(OPENSSL_FOUND)
 
+  find_package(Threads REQUIRED)
+
   include(CheckSymbolExists)
   check_symbol_exists(SSL_get0_alpn_selected openssl/ssl.h HAVE_ALPN)
   if(HAVE_ALPN)
     add_definitions(-DTSI_OPENSSL_ALPN_SUPPORT=1)
   else()
     add_definitions(-DTSI_OPENSSL_ALPN_SUPPORT=0)
+  endif()
+
+  if(UNIX)
+    set(MATH_LIB -lm)
+  else()
+    set(MATH_LIB)
   endif()
 
   % for lib in libs:
@@ -91,6 +99,8 @@
   %   if tgt.get('secure', 'check'):
     <%text>${OPENSSL_LIBRARIES}</%text>
   %   endif
+    <%text>${CMAKE_THREAD_LIBS_INIT}</%text>
+    <%text>${MATH_LIB}</%text>
   )
   endif()
   %  endif
