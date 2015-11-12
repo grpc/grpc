@@ -103,20 +103,8 @@
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
       <Filter>src\core\client_config</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\load_balancer.pb.c">
-      <Filter>src\core\client_config\lb_policies</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.c">
       <Filter>src\core\client_config\lb_policies</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_common.c">
-      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_decode.c">
-      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_encode.c">
-      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
       <Filter>src\core\client_config\lb_policies</Filter>
@@ -313,6 +301,9 @@
     <ClCompile Include="..\..\..\src\core\json\json_writer.c">
       <Filter>src\core\json</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\proto\load_balancer.pb.c">
+      <Filter>src\core\proto</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\api_trace.c">
       <Filter>src\core\surface</Filter>
     </ClCompile>
@@ -448,6 +439,15 @@
     <ClCompile Include="..\..\..\src\core\transport\transport_op_string.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\third_party\nanopb\pb_common.c">
+      <Filter>third_party\nanopb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\nanopb\pb_decode.c">
+      <Filter>third_party\nanopb</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\third_party\nanopb\pb_encode.c">
+      <Filter>third_party\nanopb</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\census\context.c">
       <Filter>src\core\census</Filter>
     </ClCompile>
@@ -563,23 +563,8 @@
     <ClInclude Include="..\..\..\src\core\client_config\connector.h">
       <Filter>src\core\client_config</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\load_balancer.pb.h">
-      <Filter>src\core\client_config\lb_policies</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\load_balancer_api.h">
       <Filter>src\core\client_config\lb_policies</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb.h">
-      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_common.h">
-      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_decode.h">
-      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\src\core\client_config\lb_policies\nanopb\pb_encode.h">
-      <Filter>src\core\client_config\lb_policies\nanopb</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h">
       <Filter>src\core\client_config\lb_policies</Filter>
@@ -764,6 +749,9 @@
     <ClInclude Include="..\..\..\src\core\json\json_writer.h">
       <Filter>src\core\json</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\src\core\proto\load_balancer.pb.h">
+      <Filter>src\core\proto</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\statistics\census_interface.h">
       <Filter>src\core\statistics</Filter>
     </ClInclude>
@@ -878,6 +866,18 @@
     <ClInclude Include="..\..\..\src\core\transport\transport_impl.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\third_party\nanopb\pb.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\nanopb\pb_common.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\nanopb\pb_decode.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\third_party\nanopb\pb_encode.h">
+      <Filter>third_party\nanopb</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\src\core\census\aggregation.h">
       <Filter>src\core\census</Filter>
     </ClInclude>
@@ -914,9 +914,6 @@
     <Filter Include="src\core\client_config\lb_policies">
       <UniqueIdentifier>{a3eca4d5-f760-61a6-7251-556b828c8b44}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\core\client_config\lb_policies\nanopb">
-      <UniqueIdentifier>{4ee25827-b6cd-5ebb-0b05-855fd0cdbe31}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\core\client_config\resolvers">
       <UniqueIdentifier>{6d97b8d9-2c15-927a-892a-709d073c02ab}</UniqueIdentifier>
     </Filter>
@@ -938,6 +935,9 @@
     <Filter Include="src\core\json">
       <UniqueIdentifier>{e665cc0e-b994-d7c5-cc18-2007392019f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\core\proto">
+      <UniqueIdentifier>{1ff04466-0905-8a5d-d6f4-7ff2df4c13b5}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\core\security">
       <UniqueIdentifier>{1d850ac6-e639-4eab-5338-4ba40272fcc9}</UniqueIdentifier>
     </Filter>
@@ -955,6 +955,12 @@
     </Filter>
     <Filter Include="src\core\tsi">
       <UniqueIdentifier>{0b0f9ab1-efa4-7f03-e446-6fb9b5227e84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party">
+      <UniqueIdentifier>{aaab30a4-2a15-732e-c141-3fbc0f0f5a7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="third_party\nanopb">
+      <UniqueIdentifier>{93d6596d-330c-1d27-6f84-3c840e57869e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

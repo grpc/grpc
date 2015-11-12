@@ -145,13 +145,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\core\client_config\lb_policies\protos\load_balancer.pb.cc">
+    <ClCompile Include="..\..\..\..\src\core\client_config\lb_policies\proto\load_balancer.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\src\core\client_config\lb_policies\protos\load_balancer.pb.h">
+    <ClInclude Include="..\..\..\..\src\core\client_config\lb_policies\proto\load_balancer.pb.h">
     </ClInclude>
-    <ClCompile Include="..\..\..\..\src\core\client_config\lb_policies\protos\load_balancer.grpc.pb.cc">
+    <ClCompile Include="..\..\..\..\src\core\client_config\lb_policies\proto\load_balancer.grpc.pb.cc">
     </ClCompile>
-    <ClInclude Include="..\..\..\..\src\core\client_config\lb_policies\protos\load_balancer.grpc.pb.h">
+    <ClInclude Include="..\..\..\..\src\core\client_config\lb_policies\proto\load_balancer.grpc.pb.h">
     </ClInclude>
     <ClCompile Include="..\..\..\..\test\cpp\grpclb\grpclb_api_test.cc">
     </ClCompile>
