@@ -1,0 +1,140 @@
+// Copyright 2015, Google Inc.
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+syntax = "proto3";
+
+import "test/proto/benchmarks/payloads.proto";
+import "test/proto/benchmarks/stats.proto";
+
+package grpc.testing;
+
+enum ClientType {
+  SYNC_CLIENT = 0;
+  ASYNC_CLIENT = 1;
+}
+
+enum ServerType {
+  SYNC_SERVER = 0;
+  ASYNC_SERVER = 1;
+}
+
+enum RpcType {
+  UNARY = 0;
+  STREAMING = 1;
+}
+
+message PoissonParams {
+  double offered_load = 1;
+}
+
+message UniformParams {
+  double interarrival_lo = 1;
+  double interarrival_hi = 2;
+}
+
+message DeterministicParams {
+  double offered_load = 1;
+}
+
+message ParetoParams {
+  double interarrival_base = 1;
+  double alpha = 2;
+}
+
+message ClosedLoopParams {
+}
+
+message LoadParams {
+  oneof load {
+    ClosedLoopParams closed_loop = 1;
+    PoissonParams poisson = 2;
+    UniformParams uniform = 3;
+    DeterministicParams determ = 4;
+    ParetoParams pareto = 5;
+  };
+}
+
+// presence of SecurityParams implies use of TLS
+message SecurityParams {
+  bool use_test_ca = 1;
+  string server_host_override = 2;
+}
+
+message ClientConfig {
+  repeated string server_targets = 1;
+  ClientType client_type = 2;
+  SecurityParams security_params = 3;
+  int32 outstanding_rpcs_per_channel = 4;
+  int32 client_channels = 5;
+  // only for async client:
+  int32 async_client_threads = 7;
+  RpcType rpc_type = 8;
+  LoadParams load_params = 10;
+  PayloadConfig payload_config = 11;
+}
+
+message ClientStatus {
+  ClientStats stats = 1;
+}
+
+// Request current stats
+message Mark {
+  bool reset = 1;
+}
+
+message ClientArgs {
+  oneof argtype {
+    ClientConfig setup = 1;
+    Mark mark = 2;
+  }
+}
+
+message ServerConfig {
+  ServerType server_type = 1;
+  SecurityParams security_params = 2;
+  int32 port = 4;
+  // only for async server
+  int32 async_server_threads = 7;
+  // restrict core usage
+  int32 core_limit = 8;
+  PayloadConfig payload_config = 9;
+}
+
+message ServerArgs {
+  oneof argtype {
+    ServerConfig setup = 1;
+    Mark mark = 2;
+  }
+}
+
+message ServerStatus {
+  ServerStats stats = 1;
+  int32 port = 2;
+  int32 cores = 3;
+}

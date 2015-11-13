@@ -214,7 +214,8 @@ void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack);
 
-/* Ignore set pollset */
+/* Ignore set pollset - used by filters to implement the set_pollset method
+   if they don't care about pollsets at all. Does nothing. */
 void grpc_call_stack_ignore_set_pollset(grpc_exec_ctx *exec_ctx,
                                         grpc_call_element *elem,
                                         grpc_pollset *pollset);

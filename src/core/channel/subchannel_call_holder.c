@@ -123,6 +123,7 @@ retry:
     } else {
       switch (holder->creation_phase) {
         case GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING:
+          fail_locked(exec_ctx, holder);
           break;
         case GRPC_SUBCHANNEL_CALL_HOLDER_CREATING_CALL:
           grpc_subchannel_cancel_create_call(exec_ctx, holder->subchannel,
