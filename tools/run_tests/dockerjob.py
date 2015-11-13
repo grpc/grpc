@@ -101,7 +101,7 @@ class DockerJob:
 
   def __init__(self, spec):
     self._spec = spec
-    self._job = jobset.Job(spec, bin_hash=None, newline_on_success=True, travis=True, add_env={}, xml_report=None)
+    self._job = jobset.Job(spec, bin_hash=None, newline_on_success=True, travis=True, add_env={})
     self._container_name = spec.container_name
 
   def mapped_port(self, port):

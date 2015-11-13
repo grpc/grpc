@@ -36,6 +36,10 @@
 
 #include "src/core/client_config/subchannel.h"
 
+/** Pick a subchannel for grpc_subchannel_call_holder;
+    Return 1 if subchannel is available immediately (in which case on_ready
+    should not be called), or 0 otherwise (in which case on_ready should be
+    called when the subchannel is available) */
 typedef int (*grpc_subchannel_call_holder_pick_subchannel)(
     grpc_exec_ctx *exec_ctx, void *arg, grpc_metadata_batch *initial_metadata,
     grpc_subchannel **subchannel, grpc_closure *on_ready);
@@ -46,10 +50,21 @@ typedef enum {
   GRPC_SUBCHANNEL_CALL_HOLDER_CREATING_CALL
 } grpc_subchannel_call_holder_creation_phase;
 
+/** Wrapper for holding a pointer to grpc_subchannel_call, and the
+    associated machinery to create such a pointer.
+    Handles queueing of stream ops until a call object is ready, waiting
+    for initial metadata before trying to create a call object,
+    and handling cancellation gracefully.
+
+    Both the channel and uchannel filter use this as their call_data. */
 typedef struct grpc_subchannel_call_holder {
-  /* either 0 for no call, 1 for cancelled, or a pointer to a
-     grpc_subchannel_call */
+  /** either 0 for no call, 1 for cancelled, or a pointer to a
+      grpc_subchannel_call */
   gpr_atm subchannel_call;
+  /** Helper function to choose the subchannel on which to create
+      the call object. Channel filter delegates to the load
+      balancing policy (once it's ready); uchannel returns
+      immediately */
   grpc_subchannel_call_holder_pick_subchannel pick_subchannel;
   void *pick_subchannel_arg;
 
