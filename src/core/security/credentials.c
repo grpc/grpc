@@ -200,8 +200,7 @@ grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials *p) {
   return arg;
 }
 
-grpc_server_credentials *grpc_server_credentials_from_arg(
-    const grpc_arg *arg) {
+grpc_server_credentials *grpc_server_credentials_from_arg(const grpc_arg *arg) {
   if (strcmp(arg->key, GRPC_SERVER_CREDENTIALS_ARG) != 0) return NULL;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,

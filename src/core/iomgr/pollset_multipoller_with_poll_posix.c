@@ -124,7 +124,7 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
   pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd);
   pfds[0].events = POLLIN;
   pfds[0].revents = 0;
-  pfds[1].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker->wakeup_fd);
+  pfds[1].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker->wakeup_fd->fd);
   pfds[1].events = POLLIN;
   pfds[1].revents = 0;
   for (i = 0; i < h->fd_count; i++) {
@@ -174,7 +174,7 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
       grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
     }
     if (pfds[1].revents & POLLIN_CHECK) {
-      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd);
+      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd);
     }
     for (i = 2; i < pfd_count; i++) {
       if (watchers[i].fd == NULL) {

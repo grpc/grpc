@@ -89,7 +89,8 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
   }
 
   if (p->byte == 4) {
-    if (p->amount == 0 || (p->amount & 0x80000000u)) {
+    gpr_uint32 received_update = p->amount;
+    if (received_update == 0 || (received_update & 0x80000000u)) {
       gpr_log(GPR_ERROR, "invalid window update bytes: %d", p->amount);
       return GRPC_CHTTP2_CONNECTION_ERROR;
     }
@@ -97,17 +98,15 @@ grpc_chttp2_parse_error grpc_chttp2_window_update_parser_parse(
 
     if (transport_parsing->incoming_stream_id != 0) {
       if (stream_parsing != NULL) {
-        GRPC_CHTTP2_FLOWCTL_TRACE_STREAM("update", transport_parsing,
-                                         stream_parsing, outgoing_window_update,
-                                         p->amount);
-        stream_parsing->outgoing_window_update += p->amount;
+        GRPC_CHTTP2_FLOW_CREDIT_STREAM("parse", transport_parsing,
+                                       stream_parsing, outgoing_window,
+                                       received_update);
         grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
                                                  stream_parsing);
       }
     } else {
-      GRPC_CHTTP2_FLOWCTL_TRACE_TRANSPORT("update", transport_parsing,
-                                          outgoing_window_update, p->amount);
-      transport_parsing->outgoing_window_update += p->amount;
+      GRPC_CHTTP2_FLOW_CREDIT_TRANSPORT("parse", transport_parsing,
+                                        outgoing_window, received_update);
     }
   }
 

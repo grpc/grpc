@@ -38,12 +38,14 @@
 #include <string.h>
 #include <assert.h>
 
-#include "src/core/transport/chttp2/bin_encoder.h"
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
+#include "src/core/transport/chttp2/bin_encoder.h"
 
 typedef enum {
   NOT_BINARY,
@@ -899,8 +901,8 @@ static int parse_lithdr_nvridx_v(grpc_chttp2_hpack_parser *p,
 static int finish_max_tbl_size(grpc_chttp2_hpack_parser *p,
                                const gpr_uint8 *cur, const gpr_uint8 *end) {
   gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
-  abort(); /* not implemented */
-  return parse_begin(p, cur, end);
+  /* not implemented */
+  return 0;
 }
 
 /* parse a max table size change, max size < 15 */
@@ -1379,20 +1381,23 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
   grpc_chttp2_hpack_parser *parser = hpack_parser;
+  GPR_TIMER_BEGIN("grpc_chttp2_hpack_parser_parse", 0);
   if (!grpc_chttp2_hpack_parser_parse(parser, GPR_SLICE_START_PTR(slice),
                                       GPR_SLICE_END_PTR(slice))) {
+    GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
     return GRPC_CHTTP2_CONNECTION_ERROR;
   }
   if (is_last) {
     if (parser->is_boundary && parser->state != parse_begin) {
       gpr_log(GPR_ERROR,
               "end of header frame not aligned with a hpack record boundary");
+      GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
       return GRPC_CHTTP2_CONNECTION_ERROR;
     }
     if (parser->is_boundary) {
-      grpc_chttp2_incoming_metadata_buffer_place_metadata_batch_into(
-          &stream_parsing->incoming_metadata,
-          &stream_parsing->data_parser.incoming_sopb);
+      stream_parsing
+          ->got_metadata_on_parse[stream_parsing->header_frames_received] = 1;
+      stream_parsing->header_frames_received++;
       grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
                                                stream_parsing);
     }
@@ -1404,5 +1409,6 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
     parser->is_boundary = 0xde;
     parser->is_eof = 0xde;
   }
+  GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
   return GRPC_CHTTP2_PARSE_OK;
 }

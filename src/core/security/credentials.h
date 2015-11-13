@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H
 #define GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H
 
-#include "src/core/transport/stream_op.h"
+#include "src/core/transport/metadata_batch.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
