@@ -13,8 +13,6 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 project (${PACKAGE_NAME} C CXX)
 
-#add_subdirectory(third_party/protobuf/cmake)
-
 set (PACKAGE_SOVERSION ${PACKAGE_VERSION_MAJOR})
 set (CMAKE_INCLUDE_CURRENT_DIR ON)
 set (CMAKE_VERBOSE_MAKEFILE ON)
@@ -29,8 +27,13 @@ if(COMPILER_SUPPORTS_CXX11)
 elseif(COMPILER_SUPPORTS_CXX0X)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
-        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+    message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
+
+find_package(PROTOBUF REQUIRED)
+if (PROTOBUF_FOUND)
+  include_directories(${PROTOBUF_INCLUDE_DIRS})
+endif(PROTOBUF_FOUND)
 
 find_package(ZLIB REQUIRED)
 if (ZLIB_FOUND)
@@ -57,6 +60,18 @@ if(UNIX)
 else()
   set(MATH_LIB)
 endif()
+
+PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_STATS_PROTO_SRCS TEST_PROTO_BENCHMARKS_STATS_PROTO_HDRS stats.proto PROTOROOT test/proto/benchmarks OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto/benchmarks)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_SERVICES_PROTO_SRCS TEST_PROTO_BENCHMARKS_SERVICES_PROTO_HDRS services.proto PROTOROOT test/proto/benchmarks OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto/benchmarks)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_TEST_PROTO_SRCS TEST_PROTO_TEST_PROTO_HDRS test.proto PROTOROOT test/proto OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_SRCS TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_HDRS payloads.proto PROTOROOT test/proto/benchmarks OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto/benchmarks)
+PROTOBUF_GENERATE_CPP(TEST_CPP_QPS_PERF_DB_PROTO_SRCS TEST_CPP_QPS_PERF_DB_PROTO_HDRS perf_db.proto PROTOROOT test/cpp/qps OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/cpp/qps)
+PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_SRCS TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_HDRS echo_duplicate.proto PROTOROOT test/cpp/util OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/cpp/util)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_MESSAGES_PROTO_SRCS TEST_PROTO_MESSAGES_PROTO_HDRS messages.proto PROTOROOT test/proto OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_EMPTY_PROTO_SRCS TEST_PROTO_EMPTY_PROTO_HDRS empty.proto PROTOROOT test/proto OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_CONTROL_PROTO_SRCS TEST_PROTO_BENCHMARKS_CONTROL_PROTO_HDRS control.proto PROTOROOT test/proto/benchmarks OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto/benchmarks)
+PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_MESSAGES_PROTO_SRCS TEST_CPP_UTIL_MESSAGES_PROTO_HDRS messages.proto PROTOROOT test/cpp/util OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/cpp/util)
+PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_ECHO_PROTO_SRCS TEST_CPP_UTIL_ECHO_PROTO_HDRS echo.proto PROTOROOT test/cpp/util OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/cpp/util)
 
 add_library(gpr
   src/core/profiling/basic_timers.c
@@ -416,6 +431,129 @@ endif()
 add_library(reconnect_server
   test/core/util/reconnect_server.c
 )
+add_library(grpc++
+  src/cpp/client/secure_channel_arguments.cc
+  src/cpp/client/secure_credentials.cc
+  src/cpp/common/auth_property_iterator.cc
+  src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_create_auth_context.cc
+  src/cpp/server/secure_server_credentials.cc
+  src/cpp/client/channel.cc
+  src/cpp/client/channel_arguments.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/credentials.cc
+  src/cpp/client/generic_stub.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/common/call.cc
+  src/cpp/common/completion_queue.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/proto/proto_utils.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/fixed_size_thread_pool.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/server.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/util/byte_buffer.cc
+  src/cpp/util/slice.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time.cc
+)
+add_library(grpc++_test_config
+  test/cpp/util/test_config.cc
+)
+add_library(grpc++_test_util
+  ${TEST_CPP_UTIL_MESSAGES_PROTO_SRCS} ${TEST_CPP_UTIL_MESSAGES_PROTO_HDRS}
+  ${TEST_CPP_UTIL_ECHO_PROTO_SRCS} ${TEST_CPP_UTIL_ECHO_PROTO_HDRS}
+  ${TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_SRCS} ${TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_HDRS}
+  test/cpp/util/cli_call.cc
+  test/cpp/util/create_test_channel.cc
+  test/cpp/util/string_ref_helper.cc
+  test/cpp/util/subprocess.cc
+)
+add_library(grpc++_unsecure
+  src/cpp/common/insecure_create_auth_context.cc
+  src/cpp/client/channel.cc
+  src/cpp/client/channel_arguments.cc
+  src/cpp/client/client_context.cc
+  src/cpp/client/create_channel.cc
+  src/cpp/client/create_channel_internal.cc
+  src/cpp/client/credentials.cc
+  src/cpp/client/generic_stub.cc
+  src/cpp/client/insecure_credentials.cc
+  src/cpp/common/call.cc
+  src/cpp/common/completion_queue.cc
+  src/cpp/common/rpc_method.cc
+  src/cpp/proto/proto_utils.cc
+  src/cpp/server/async_generic_service.cc
+  src/cpp/server/create_default_thread_pool.cc
+  src/cpp/server/dynamic_thread_pool.cc
+  src/cpp/server/fixed_size_thread_pool.cc
+  src/cpp/server/insecure_server_credentials.cc
+  src/cpp/server/server.cc
+  src/cpp/server/server_builder.cc
+  src/cpp/server/server_context.cc
+  src/cpp/server/server_credentials.cc
+  src/cpp/util/byte_buffer.cc
+  src/cpp/util/slice.cc
+  src/cpp/util/status.cc
+  src/cpp/util/string_ref.cc
+  src/cpp/util/time.cc
+)
+add_library(grpc_plugin_support
+  src/compiler/cpp_generator.cc
+  src/compiler/csharp_generator.cc
+  src/compiler/objective_c_generator.cc
+  src/compiler/python_generator.cc
+  src/compiler/ruby_generator.cc
+)
+add_library(interop_client_helper
+  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
+  test/cpp/interop/client_helper.cc
+)
+add_library(interop_client_main
+  ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
+  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
+  ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
+  test/cpp/interop/client.cc
+  test/cpp/interop/interop_client.cc
+)
+add_library(interop_server_helper
+  test/cpp/interop/server_helper.cc
+)
+add_library(interop_server_main
+  ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
+  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
+  ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
+  test/cpp/interop/server.cc
+)
+add_library(qps
+  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
+  ${TEST_PROTO_BENCHMARKS_CONTROL_PROTO_SRCS} ${TEST_PROTO_BENCHMARKS_CONTROL_PROTO_HDRS}
+  ${TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_SRCS} ${TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_HDRS}
+  ${TEST_PROTO_BENCHMARKS_SERVICES_PROTO_SRCS} ${TEST_PROTO_BENCHMARKS_SERVICES_PROTO_HDRS}
+  ${TEST_PROTO_BENCHMARKS_STATS_PROTO_SRCS} ${TEST_PROTO_BENCHMARKS_STATS_PROTO_HDRS}
+  ${TEST_CPP_QPS_PERF_DB_PROTO_SRCS} ${TEST_CPP_QPS_PERF_DB_PROTO_HDRS}
+  test/cpp/qps/client_async.cc
+  test/cpp/qps/client_sync.cc
+  test/cpp/qps/driver.cc
+  test/cpp/qps/perf_db_client.cc
+  test/cpp/qps/qps_worker.cc
+  test/cpp/qps/report.cc
+  test/cpp/qps/server_async.cc
+  test/cpp/qps/server_sync.cc
+  test/cpp/qps/timer.cc
+  test/cpp/util/benchmark_config.cc
+)
+add_library(grpc_csharp_ext
+  src/csharp/ext/grpc_csharp_ext.c
+)
 if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
 add_library(end2end_fixture_h2_compress
   test/core/end2end/fixtures/h2_compress.c
@@ -608,6 +746,7 @@ target_link_libraries(alpn_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -623,6 +762,7 @@ target_link_libraries(bin_encoder_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -638,6 +778,7 @@ target_link_libraries(chttp2_status_conversion_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -653,6 +794,7 @@ target_link_libraries(chttp2_stream_encoder_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -668,6 +810,7 @@ target_link_libraries(chttp2_stream_map_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -683,6 +826,7 @@ target_link_libraries(compression_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -698,6 +842,7 @@ target_link_libraries(dualstack_socket_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -713,6 +858,7 @@ target_link_libraries(endpoint_pair_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -728,6 +874,7 @@ target_link_libraries(fd_conservation_posix_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -743,6 +890,7 @@ target_link_libraries(fd_posix_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -758,6 +906,7 @@ target_link_libraries(fling_client
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -773,6 +922,7 @@ target_link_libraries(fling_server
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -788,6 +938,7 @@ target_link_libraries(fling_stream_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -803,6 +954,7 @@ target_link_libraries(fling_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -816,6 +968,7 @@ add_executable(gen_hpack_tables
 target_link_libraries(gen_hpack_tables
   gpr
   grpc
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -827,6 +980,7 @@ add_executable(gen_legal_metadata_characters
   tools/codegen/core/gen_legal_metadata_characters.c
 )
 target_link_libraries(gen_legal_metadata_characters
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -840,6 +994,7 @@ add_executable(gpr_cmdline_test
 target_link_libraries(gpr_cmdline_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -853,6 +1008,7 @@ add_executable(gpr_cpu_test
 target_link_libraries(gpr_cpu_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -866,6 +1022,7 @@ add_executable(gpr_env_test
 target_link_libraries(gpr_env_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -879,6 +1036,7 @@ add_executable(gpr_file_test
 target_link_libraries(gpr_file_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -892,6 +1050,7 @@ add_executable(gpr_histogram_test
 target_link_libraries(gpr_histogram_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -905,6 +1064,7 @@ add_executable(gpr_host_port_test
 target_link_libraries(gpr_host_port_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -918,6 +1078,7 @@ add_executable(gpr_log_test
 target_link_libraries(gpr_log_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -931,6 +1092,7 @@ add_executable(gpr_slice_buffer_test
 target_link_libraries(gpr_slice_buffer_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -944,6 +1106,7 @@ add_executable(gpr_slice_test
 target_link_libraries(gpr_slice_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -957,6 +1120,7 @@ add_executable(gpr_stack_lockfree_test
 target_link_libraries(gpr_stack_lockfree_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -970,6 +1134,7 @@ add_executable(gpr_string_test
 target_link_libraries(gpr_string_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -983,6 +1148,7 @@ add_executable(gpr_sync_test
 target_link_libraries(gpr_sync_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -996,6 +1162,7 @@ add_executable(gpr_thd_test
 target_link_libraries(gpr_thd_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1009,6 +1176,7 @@ add_executable(gpr_time_test
 target_link_libraries(gpr_time_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1022,6 +1190,7 @@ add_executable(gpr_tls_test
 target_link_libraries(gpr_tls_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1035,6 +1204,7 @@ add_executable(gpr_useful_test
 target_link_libraries(gpr_useful_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1050,6 +1220,7 @@ target_link_libraries(grpc_auth_context_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1065,6 +1236,7 @@ target_link_libraries(grpc_base64_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1080,6 +1252,7 @@ target_link_libraries(grpc_byte_buffer_reader_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1095,6 +1268,7 @@ target_link_libraries(grpc_channel_args_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1110,6 +1284,7 @@ target_link_libraries(grpc_channel_stack_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1125,6 +1300,7 @@ target_link_libraries(grpc_completion_queue_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1140,6 +1316,7 @@ target_link_libraries(grpc_create_jwt
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1155,6 +1332,7 @@ target_link_libraries(grpc_credentials_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1170,6 +1348,7 @@ target_link_libraries(grpc_fetch_oauth2
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1185,6 +1364,7 @@ target_link_libraries(grpc_json_token_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1200,6 +1380,7 @@ target_link_libraries(grpc_jwt_verifier_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1215,6 +1396,7 @@ target_link_libraries(grpc_print_google_default_creds_token
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1230,6 +1412,7 @@ target_link_libraries(grpc_security_connector_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1245,6 +1428,7 @@ target_link_libraries(grpc_stream_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1260,6 +1444,7 @@ target_link_libraries(grpc_verify_jwt
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1275,6 +1460,7 @@ target_link_libraries(hpack_parser_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1290,6 +1476,7 @@ target_link_libraries(hpack_table_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1305,6 +1492,7 @@ target_link_libraries(httpcli_format_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1320,6 +1508,7 @@ target_link_libraries(httpcli_parser_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1335,6 +1524,7 @@ target_link_libraries(httpcli_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1348,6 +1538,7 @@ add_executable(json_rewrite
 target_link_libraries(json_rewrite
   grpc
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1363,6 +1554,7 @@ target_link_libraries(json_rewrite_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1378,6 +1570,7 @@ target_link_libraries(json_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1393,6 +1586,7 @@ target_link_libraries(lame_client_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1408,6 +1602,7 @@ target_link_libraries(lb_policies_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1423,6 +1618,7 @@ target_link_libraries(low_level_ping_pong_benchmark
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1438,6 +1634,7 @@ target_link_libraries(message_compress_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1453,6 +1650,7 @@ target_link_libraries(multi_init_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1468,6 +1666,7 @@ target_link_libraries(multiple_server_queues_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1481,6 +1680,7 @@ add_executable(murmur_hash_test
 target_link_libraries(murmur_hash_test
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1496,6 +1696,7 @@ target_link_libraries(no_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1511,6 +1712,7 @@ target_link_libraries(resolve_address_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1526,6 +1728,7 @@ target_link_libraries(secure_endpoint_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1541,6 +1744,7 @@ target_link_libraries(sockaddr_utils_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1556,6 +1760,7 @@ target_link_libraries(tcp_client_posix_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1571,6 +1776,7 @@ target_link_libraries(tcp_posix_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1586,6 +1792,7 @@ target_link_libraries(tcp_server_posix_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1601,6 +1808,7 @@ target_link_libraries(time_averaged_stats_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1616,6 +1824,7 @@ target_link_libraries(timeout_encoding_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1631,6 +1840,7 @@ target_link_libraries(timer_heap_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1646,6 +1856,7 @@ target_link_libraries(timer_list_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1661,6 +1872,7 @@ target_link_libraries(timers_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1676,6 +1888,7 @@ target_link_libraries(transport_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1691,6 +1904,7 @@ target_link_libraries(transport_security_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1706,6 +1920,7 @@ target_link_libraries(udp_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1721,6 +1936,7 @@ target_link_libraries(uri_parser_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1736,6 +1952,789 @@ target_link_libraries(workqueue_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(async_end2end_test
+  test/cpp/end2end/async_end2end_test.cc
+)
+target_link_libraries(async_end2end_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(async_streaming_ping_pong_test
+  test/cpp/qps/async_streaming_ping_pong_test.cc
+)
+target_link_libraries(async_streaming_ping_pong_test
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(async_unary_ping_pong_test
+  test/cpp/qps/async_unary_ping_pong_test.cc
+)
+target_link_libraries(async_unary_ping_pong_test
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(auth_property_iterator_test
+  test/cpp/common/auth_property_iterator_test.cc
+)
+target_link_libraries(auth_property_iterator_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(channel_arguments_test
+  test/cpp/client/channel_arguments_test.cc
+)
+target_link_libraries(channel_arguments_test
+  grpc++
+  grpc
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(cli_call_test
+  test/cpp/util/cli_call_test.cc
+)
+target_link_libraries(cli_call_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(client_crash_test
+  test/cpp/end2end/client_crash_test.cc
+)
+target_link_libraries(client_crash_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(client_crash_test_server
+  test/cpp/end2end/client_crash_test_server.cc
+)
+target_link_libraries(client_crash_test_server
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(credentials_test
+  test/cpp/client/credentials_test.cc
+)
+target_link_libraries(credentials_test
+  grpc++
+  grpc
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(cxx_byte_buffer_test
+  test/cpp/util/byte_buffer_test.cc
+)
+target_link_libraries(cxx_byte_buffer_test
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(cxx_slice_test
+  test/cpp/util/slice_test.cc
+)
+target_link_libraries(cxx_slice_test
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(cxx_string_ref_test
+  test/cpp/util/string_ref_test.cc
+)
+target_link_libraries(cxx_string_ref_test
+  grpc++
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(cxx_time_test
+  test/cpp/util/time_test.cc
+)
+target_link_libraries(cxx_time_test
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(end2end_test
+  test/cpp/end2end/end2end_test.cc
+)
+target_link_libraries(end2end_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(generic_end2end_test
+  test/cpp/end2end/generic_end2end_test.cc
+)
+target_link_libraries(generic_end2end_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_cli
+  test/cpp/util/grpc_cli.cc
+)
+target_link_libraries(grpc_cli
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_cpp_plugin
+  src/compiler/cpp_plugin.cc
+)
+target_link_libraries(grpc_cpp_plugin
+  grpc_plugin_support
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_csharp_plugin
+  src/compiler/csharp_plugin.cc
+)
+target_link_libraries(grpc_csharp_plugin
+  grpc_plugin_support
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_objective_c_plugin
+  src/compiler/objective_c_plugin.cc
+)
+target_link_libraries(grpc_objective_c_plugin
+  grpc_plugin_support
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_python_plugin
+  src/compiler/python_plugin.cc
+)
+target_link_libraries(grpc_python_plugin
+  grpc_plugin_support
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(grpc_ruby_plugin
+  src/compiler/ruby_plugin.cc
+)
+target_link_libraries(grpc_ruby_plugin
+  grpc_plugin_support
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(interop_client
+  vsprojects/dummy.c
+)
+target_link_libraries(interop_client
+  interop_client_main
+  interop_client_helper
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(interop_server
+  vsprojects/dummy.c
+)
+target_link_libraries(interop_server
+  interop_server_main
+  interop_server_helper
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(interop_test
+  test/cpp/interop/interop_test.cc
+)
+target_link_libraries(interop_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(mock_test
+  test/cpp/end2end/mock_test.cc
+)
+target_link_libraries(mock_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(qps_driver
+  test/cpp/qps/qps_driver.cc
+)
+target_link_libraries(qps_driver
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(qps_interarrival_test
+  test/cpp/qps/qps_interarrival_test.cc
+)
+target_link_libraries(qps_interarrival_test
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(qps_openloop_test
+  test/cpp/qps/qps_openloop_test.cc
+)
+target_link_libraries(qps_openloop_test
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(qps_test
+  test/cpp/qps/qps_test.cc
+)
+target_link_libraries(qps_test
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(qps_worker
+  test/cpp/qps/worker.cc
+)
+target_link_libraries(qps_worker
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(reconnect_interop_client
+  ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
+  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
+  ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
+  test/cpp/interop/reconnect_interop_client.cc
+)
+target_link_libraries(reconnect_interop_client
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(reconnect_interop_server
+  ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
+  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
+  ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
+  test/cpp/interop/reconnect_interop_server.cc
+)
+target_link_libraries(reconnect_interop_server
+  reconnect_server
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(secure_auth_context_test
+  test/cpp/common/secure_auth_context_test.cc
+)
+target_link_libraries(secure_auth_context_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(secure_sync_unary_ping_pong_test
+  test/cpp/qps/secure_sync_unary_ping_pong_test.cc
+)
+target_link_libraries(secure_sync_unary_ping_pong_test
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(server_crash_test
+  test/cpp/end2end/server_crash_test.cc
+)
+target_link_libraries(server_crash_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(server_crash_test_client
+  test/cpp/end2end/server_crash_test_client.cc
+)
+target_link_libraries(server_crash_test_client
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(shutdown_test
+  test/cpp/end2end/shutdown_test.cc
+)
+target_link_libraries(shutdown_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(status_test
+  test/cpp/util/status_test.cc
+)
+target_link_libraries(status_test
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(streaming_throughput_test
+  test/cpp/end2end/streaming_throughput_test.cc
+)
+target_link_libraries(streaming_throughput_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(stress_test
+  ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
+  ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
+  ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
+  test/cpp/interop/interop_client.cc
+  test/cpp/interop/stress_interop_client.cc
+  test/cpp/interop/stress_test.cc
+)
+target_link_libraries(stress_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(sync_streaming_ping_pong_test
+  test/cpp/qps/sync_streaming_ping_pong_test.cc
+)
+target_link_libraries(sync_streaming_ping_pong_test
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(sync_unary_ping_pong_test
+  test/cpp/qps/sync_unary_ping_pong_test.cc
+)
+target_link_libraries(sync_unary_ping_pong_test
+  qps
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(thread_stress_test
+  test/cpp/end2end/thread_stress_test.cc
+)
+target_link_libraries(thread_stress_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(zookeeper_test
+  test/cpp/end2end/zookeeper_test.cc
+)
+target_link_libraries(zookeeper_test
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc_zookeeper
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1754,6 +2753,7 @@ target_link_libraries(h2_compress_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1772,6 +2772,7 @@ target_link_libraries(h2_compress_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1790,6 +2791,7 @@ target_link_libraries(h2_compress_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1808,6 +2810,7 @@ target_link_libraries(h2_compress_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1826,6 +2829,7 @@ target_link_libraries(h2_compress_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1844,6 +2848,7 @@ target_link_libraries(h2_compress_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1862,6 +2867,7 @@ target_link_libraries(h2_compress_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1880,6 +2886,7 @@ target_link_libraries(h2_compress_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1898,6 +2905,7 @@ target_link_libraries(h2_compress_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1916,6 +2924,7 @@ target_link_libraries(h2_compress_channel_connectivity_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1934,6 +2943,7 @@ target_link_libraries(h2_compress_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1952,6 +2962,7 @@ target_link_libraries(h2_compress_default_host_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1970,6 +2981,7 @@ target_link_libraries(h2_compress_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -1988,6 +3000,7 @@ target_link_libraries(h2_compress_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2006,6 +3019,7 @@ target_link_libraries(h2_compress_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2024,6 +3038,7 @@ target_link_libraries(h2_compress_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2042,6 +3057,7 @@ target_link_libraries(h2_compress_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2060,6 +3076,7 @@ target_link_libraries(h2_compress_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2078,6 +3095,7 @@ target_link_libraries(h2_compress_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2096,6 +3114,7 @@ target_link_libraries(h2_compress_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2114,6 +3133,7 @@ target_link_libraries(h2_compress_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2132,6 +3152,7 @@ target_link_libraries(h2_compress_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2150,6 +3171,7 @@ target_link_libraries(h2_compress_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2168,6 +3190,7 @@ target_link_libraries(h2_compress_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2186,6 +3209,7 @@ target_link_libraries(h2_compress_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2204,6 +3228,7 @@ target_link_libraries(h2_compress_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2222,6 +3247,7 @@ target_link_libraries(h2_compress_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2240,6 +3266,7 @@ target_link_libraries(h2_compress_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2258,6 +3285,7 @@ target_link_libraries(h2_compress_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2276,6 +3304,7 @@ target_link_libraries(h2_compress_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2294,6 +3323,7 @@ target_link_libraries(h2_compress_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2312,6 +3342,7 @@ target_link_libraries(h2_compress_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2330,6 +3361,7 @@ target_link_libraries(h2_compress_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2348,6 +3380,7 @@ target_link_libraries(h2_fakesec_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2366,6 +3399,7 @@ target_link_libraries(h2_fakesec_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2384,6 +3418,7 @@ target_link_libraries(h2_fakesec_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2402,6 +3437,7 @@ target_link_libraries(h2_fakesec_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2420,6 +3456,7 @@ target_link_libraries(h2_fakesec_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2438,6 +3475,7 @@ target_link_libraries(h2_fakesec_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2456,6 +3494,7 @@ target_link_libraries(h2_fakesec_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2474,6 +3513,7 @@ target_link_libraries(h2_fakesec_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2492,6 +3532,7 @@ target_link_libraries(h2_fakesec_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2510,6 +3551,7 @@ target_link_libraries(h2_fakesec_channel_connectivity_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2528,6 +3570,7 @@ target_link_libraries(h2_fakesec_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2546,6 +3589,7 @@ target_link_libraries(h2_fakesec_default_host_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2564,6 +3608,7 @@ target_link_libraries(h2_fakesec_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2582,6 +3627,7 @@ target_link_libraries(h2_fakesec_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2600,6 +3646,7 @@ target_link_libraries(h2_fakesec_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2618,6 +3665,7 @@ target_link_libraries(h2_fakesec_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2636,6 +3684,7 @@ target_link_libraries(h2_fakesec_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2654,6 +3703,7 @@ target_link_libraries(h2_fakesec_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2672,6 +3722,7 @@ target_link_libraries(h2_fakesec_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2690,6 +3741,7 @@ target_link_libraries(h2_fakesec_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2708,6 +3760,7 @@ target_link_libraries(h2_fakesec_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2726,6 +3779,7 @@ target_link_libraries(h2_fakesec_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2744,6 +3798,7 @@ target_link_libraries(h2_fakesec_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2762,6 +3817,7 @@ target_link_libraries(h2_fakesec_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2780,6 +3836,7 @@ target_link_libraries(h2_fakesec_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2798,6 +3855,7 @@ target_link_libraries(h2_fakesec_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2816,6 +3874,7 @@ target_link_libraries(h2_fakesec_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2834,6 +3893,7 @@ target_link_libraries(h2_fakesec_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2852,6 +3912,7 @@ target_link_libraries(h2_fakesec_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2870,6 +3931,7 @@ target_link_libraries(h2_fakesec_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2888,6 +3950,7 @@ target_link_libraries(h2_fakesec_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2906,6 +3969,7 @@ target_link_libraries(h2_fakesec_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2924,6 +3988,7 @@ target_link_libraries(h2_fakesec_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2942,6 +4007,7 @@ target_link_libraries(h2_full_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2960,6 +4026,7 @@ target_link_libraries(h2_full_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2978,6 +4045,7 @@ target_link_libraries(h2_full_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -2996,6 +4064,7 @@ target_link_libraries(h2_full_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3014,6 +4083,7 @@ target_link_libraries(h2_full_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3032,6 +4102,7 @@ target_link_libraries(h2_full_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3050,6 +4121,7 @@ target_link_libraries(h2_full_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3068,6 +4140,7 @@ target_link_libraries(h2_full_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3086,6 +4159,7 @@ target_link_libraries(h2_full_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3104,6 +4178,7 @@ target_link_libraries(h2_full_channel_connectivity_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3122,6 +4197,7 @@ target_link_libraries(h2_full_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3140,6 +4216,7 @@ target_link_libraries(h2_full_default_host_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3158,6 +4235,7 @@ target_link_libraries(h2_full_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3176,6 +4254,7 @@ target_link_libraries(h2_full_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3194,6 +4273,7 @@ target_link_libraries(h2_full_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3212,6 +4292,7 @@ target_link_libraries(h2_full_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3230,6 +4311,7 @@ target_link_libraries(h2_full_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3248,6 +4330,7 @@ target_link_libraries(h2_full_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3266,6 +4349,7 @@ target_link_libraries(h2_full_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3284,6 +4368,7 @@ target_link_libraries(h2_full_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3302,6 +4387,7 @@ target_link_libraries(h2_full_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3320,6 +4406,7 @@ target_link_libraries(h2_full_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3338,6 +4425,7 @@ target_link_libraries(h2_full_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3356,6 +4444,7 @@ target_link_libraries(h2_full_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3374,6 +4463,7 @@ target_link_libraries(h2_full_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3392,6 +4482,7 @@ target_link_libraries(h2_full_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3410,6 +4501,7 @@ target_link_libraries(h2_full_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3428,6 +4520,7 @@ target_link_libraries(h2_full_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3446,6 +4539,7 @@ target_link_libraries(h2_full_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3464,6 +4558,7 @@ target_link_libraries(h2_full_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3482,6 +4577,7 @@ target_link_libraries(h2_full_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3500,6 +4596,7 @@ target_link_libraries(h2_full_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3518,6 +4615,7 @@ target_link_libraries(h2_full_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3536,6 +4634,7 @@ target_link_libraries(h2_full+poll_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3554,6 +4653,7 @@ target_link_libraries(h2_full+poll_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3572,6 +4672,7 @@ target_link_libraries(h2_full+poll_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3590,6 +4691,7 @@ target_link_libraries(h2_full+poll_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3608,6 +4710,7 @@ target_link_libraries(h2_full+poll_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3626,6 +4729,7 @@ target_link_libraries(h2_full+poll_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3644,6 +4748,7 @@ target_link_libraries(h2_full+poll_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3662,6 +4767,7 @@ target_link_libraries(h2_full+poll_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3680,6 +4786,7 @@ target_link_libraries(h2_full+poll_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3698,6 +4805,7 @@ target_link_libraries(h2_full+poll_channel_connectivity_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3716,6 +4824,7 @@ target_link_libraries(h2_full+poll_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3734,6 +4843,7 @@ target_link_libraries(h2_full+poll_default_host_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3752,6 +4862,7 @@ target_link_libraries(h2_full+poll_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3770,6 +4881,7 @@ target_link_libraries(h2_full+poll_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3788,6 +4900,7 @@ target_link_libraries(h2_full+poll_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3806,6 +4919,7 @@ target_link_libraries(h2_full+poll_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3824,6 +4938,7 @@ target_link_libraries(h2_full+poll_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3842,6 +4957,7 @@ target_link_libraries(h2_full+poll_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3860,6 +4976,7 @@ target_link_libraries(h2_full+poll_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3878,6 +4995,7 @@ target_link_libraries(h2_full+poll_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3896,6 +5014,7 @@ target_link_libraries(h2_full+poll_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3914,6 +5033,7 @@ target_link_libraries(h2_full+poll_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3932,6 +5052,7 @@ target_link_libraries(h2_full+poll_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3950,6 +5071,7 @@ target_link_libraries(h2_full+poll_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3968,6 +5090,7 @@ target_link_libraries(h2_full+poll_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -3986,6 +5109,7 @@ target_link_libraries(h2_full+poll_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4004,6 +5128,7 @@ target_link_libraries(h2_full+poll_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4022,6 +5147,7 @@ target_link_libraries(h2_full+poll_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4040,6 +5166,7 @@ target_link_libraries(h2_full+poll_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4058,6 +5185,7 @@ target_link_libraries(h2_full+poll_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4076,6 +5204,7 @@ target_link_libraries(h2_full+poll_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4094,6 +5223,7 @@ target_link_libraries(h2_full+poll_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4112,6 +5242,7 @@ target_link_libraries(h2_full+poll_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4130,6 +5261,7 @@ target_link_libraries(h2_oauth2_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4148,6 +5280,7 @@ target_link_libraries(h2_oauth2_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4166,6 +5299,7 @@ target_link_libraries(h2_oauth2_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4184,6 +5318,7 @@ target_link_libraries(h2_oauth2_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4202,6 +5337,7 @@ target_link_libraries(h2_oauth2_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4220,6 +5356,7 @@ target_link_libraries(h2_oauth2_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4238,6 +5375,7 @@ target_link_libraries(h2_oauth2_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4256,6 +5394,7 @@ target_link_libraries(h2_oauth2_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4274,6 +5413,7 @@ target_link_libraries(h2_oauth2_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4292,6 +5432,7 @@ target_link_libraries(h2_oauth2_channel_connectivity_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4310,6 +5451,7 @@ target_link_libraries(h2_oauth2_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4328,6 +5470,7 @@ target_link_libraries(h2_oauth2_default_host_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4346,6 +5489,7 @@ target_link_libraries(h2_oauth2_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4364,6 +5508,7 @@ target_link_libraries(h2_oauth2_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4382,6 +5527,7 @@ target_link_libraries(h2_oauth2_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4400,6 +5546,7 @@ target_link_libraries(h2_oauth2_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4418,6 +5565,7 @@ target_link_libraries(h2_oauth2_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4436,6 +5584,7 @@ target_link_libraries(h2_oauth2_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4454,6 +5603,7 @@ target_link_libraries(h2_oauth2_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4472,6 +5622,7 @@ target_link_libraries(h2_oauth2_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4490,6 +5641,7 @@ target_link_libraries(h2_oauth2_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4508,6 +5660,7 @@ target_link_libraries(h2_oauth2_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4526,6 +5679,7 @@ target_link_libraries(h2_oauth2_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4544,6 +5698,7 @@ target_link_libraries(h2_oauth2_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4562,6 +5717,7 @@ target_link_libraries(h2_oauth2_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4580,6 +5736,7 @@ target_link_libraries(h2_oauth2_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4598,6 +5755,7 @@ target_link_libraries(h2_oauth2_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4616,6 +5774,7 @@ target_link_libraries(h2_oauth2_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4634,6 +5793,7 @@ target_link_libraries(h2_oauth2_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4652,6 +5812,7 @@ target_link_libraries(h2_oauth2_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4670,6 +5831,7 @@ target_link_libraries(h2_oauth2_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4688,6 +5850,7 @@ target_link_libraries(h2_oauth2_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4706,6 +5869,7 @@ target_link_libraries(h2_oauth2_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4724,6 +5888,7 @@ target_link_libraries(h2_proxy_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4742,6 +5907,7 @@ target_link_libraries(h2_proxy_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4760,6 +5926,7 @@ target_link_libraries(h2_proxy_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4778,6 +5945,7 @@ target_link_libraries(h2_proxy_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4796,6 +5964,7 @@ target_link_libraries(h2_proxy_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4814,6 +5983,7 @@ target_link_libraries(h2_proxy_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4832,6 +6002,7 @@ target_link_libraries(h2_proxy_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4850,6 +6021,7 @@ target_link_libraries(h2_proxy_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4868,6 +6040,7 @@ target_link_libraries(h2_proxy_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4886,6 +6059,7 @@ target_link_libraries(h2_proxy_default_host_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4904,6 +6078,7 @@ target_link_libraries(h2_proxy_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4922,6 +6097,7 @@ target_link_libraries(h2_proxy_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4940,6 +6116,7 @@ target_link_libraries(h2_proxy_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4958,6 +6135,7 @@ target_link_libraries(h2_proxy_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4976,6 +6154,7 @@ target_link_libraries(h2_proxy_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -4994,6 +6173,7 @@ target_link_libraries(h2_proxy_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5012,6 +6192,7 @@ target_link_libraries(h2_proxy_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5030,6 +6211,7 @@ target_link_libraries(h2_proxy_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5048,6 +6230,7 @@ target_link_libraries(h2_proxy_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5066,6 +6249,7 @@ target_link_libraries(h2_proxy_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5084,6 +6268,7 @@ target_link_libraries(h2_proxy_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5102,6 +6287,7 @@ target_link_libraries(h2_proxy_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5120,6 +6306,7 @@ target_link_libraries(h2_proxy_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5138,6 +6325,7 @@ target_link_libraries(h2_proxy_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5156,6 +6344,7 @@ target_link_libraries(h2_proxy_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5174,6 +6363,7 @@ target_link_libraries(h2_proxy_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5192,6 +6382,7 @@ target_link_libraries(h2_proxy_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5210,6 +6401,7 @@ target_link_libraries(h2_proxy_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5228,6 +6420,7 @@ target_link_libraries(h2_proxy_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5246,6 +6439,7 @@ target_link_libraries(h2_sockpair_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5264,6 +6458,7 @@ target_link_libraries(h2_sockpair_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5282,6 +6477,7 @@ target_link_libraries(h2_sockpair_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5300,6 +6496,7 @@ target_link_libraries(h2_sockpair_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5318,6 +6515,7 @@ target_link_libraries(h2_sockpair_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5336,6 +6534,7 @@ target_link_libraries(h2_sockpair_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5354,6 +6553,7 @@ target_link_libraries(h2_sockpair_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5372,6 +6572,7 @@ target_link_libraries(h2_sockpair_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5390,6 +6591,7 @@ target_link_libraries(h2_sockpair_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5408,6 +6610,7 @@ target_link_libraries(h2_sockpair_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5426,6 +6629,7 @@ target_link_libraries(h2_sockpair_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5444,6 +6648,7 @@ target_link_libraries(h2_sockpair_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5462,6 +6667,7 @@ target_link_libraries(h2_sockpair_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5480,6 +6686,7 @@ target_link_libraries(h2_sockpair_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5498,6 +6705,7 @@ target_link_libraries(h2_sockpair_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5516,6 +6724,7 @@ target_link_libraries(h2_sockpair_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5534,6 +6743,7 @@ target_link_libraries(h2_sockpair_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5552,6 +6762,7 @@ target_link_libraries(h2_sockpair_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5570,6 +6781,7 @@ target_link_libraries(h2_sockpair_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5588,6 +6800,7 @@ target_link_libraries(h2_sockpair_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5606,6 +6819,7 @@ target_link_libraries(h2_sockpair_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5624,6 +6838,7 @@ target_link_libraries(h2_sockpair_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5642,6 +6857,7 @@ target_link_libraries(h2_sockpair_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5660,6 +6876,7 @@ target_link_libraries(h2_sockpair_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5678,6 +6895,7 @@ target_link_libraries(h2_sockpair_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5696,6 +6914,7 @@ target_link_libraries(h2_sockpair_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5714,6 +6933,7 @@ target_link_libraries(h2_sockpair_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5732,6 +6952,7 @@ target_link_libraries(h2_sockpair_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5750,6 +6971,7 @@ target_link_libraries(h2_sockpair_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5768,6 +6990,7 @@ target_link_libraries(h2_sockpair+trace_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5786,6 +7009,7 @@ target_link_libraries(h2_sockpair+trace_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5804,6 +7028,7 @@ target_link_libraries(h2_sockpair+trace_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5822,6 +7047,7 @@ target_link_libraries(h2_sockpair+trace_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5840,6 +7066,7 @@ target_link_libraries(h2_sockpair+trace_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5858,6 +7085,7 @@ target_link_libraries(h2_sockpair+trace_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5876,6 +7104,7 @@ target_link_libraries(h2_sockpair+trace_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5894,6 +7123,7 @@ target_link_libraries(h2_sockpair+trace_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5912,6 +7142,7 @@ target_link_libraries(h2_sockpair+trace_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5930,6 +7161,7 @@ target_link_libraries(h2_sockpair+trace_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5948,6 +7180,7 @@ target_link_libraries(h2_sockpair+trace_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5966,6 +7199,7 @@ target_link_libraries(h2_sockpair+trace_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -5984,6 +7218,7 @@ target_link_libraries(h2_sockpair+trace_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6002,6 +7237,7 @@ target_link_libraries(h2_sockpair+trace_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6020,6 +7256,7 @@ target_link_libraries(h2_sockpair+trace_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6038,6 +7275,7 @@ target_link_libraries(h2_sockpair+trace_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6056,6 +7294,7 @@ target_link_libraries(h2_sockpair+trace_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6074,6 +7313,7 @@ target_link_libraries(h2_sockpair+trace_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6092,6 +7332,7 @@ target_link_libraries(h2_sockpair+trace_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6110,6 +7351,7 @@ target_link_libraries(h2_sockpair+trace_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6128,6 +7370,7 @@ target_link_libraries(h2_sockpair+trace_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6146,6 +7389,7 @@ target_link_libraries(h2_sockpair+trace_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6164,6 +7408,7 @@ target_link_libraries(h2_sockpair+trace_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6182,6 +7427,7 @@ target_link_libraries(h2_sockpair+trace_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6200,6 +7446,7 @@ target_link_libraries(h2_sockpair+trace_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6218,6 +7465,7 @@ target_link_libraries(h2_sockpair+trace_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6236,6 +7484,7 @@ target_link_libraries(h2_sockpair+trace_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6254,6 +7503,7 @@ target_link_libraries(h2_sockpair+trace_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6272,6 +7522,7 @@ target_link_libraries(h2_sockpair+trace_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6290,6 +7541,7 @@ target_link_libraries(h2_sockpair_1byte_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6308,6 +7560,7 @@ target_link_libraries(h2_sockpair_1byte_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6326,6 +7579,7 @@ target_link_libraries(h2_sockpair_1byte_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6344,6 +7598,7 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6362,6 +7617,7 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6380,6 +7636,7 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6398,6 +7655,7 @@ target_link_libraries(h2_sockpair_1byte_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6416,6 +7674,7 @@ target_link_libraries(h2_sockpair_1byte_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6434,6 +7693,7 @@ target_link_libraries(h2_sockpair_1byte_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6452,6 +7712,7 @@ target_link_libraries(h2_sockpair_1byte_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6470,6 +7731,7 @@ target_link_libraries(h2_sockpair_1byte_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6488,6 +7750,7 @@ target_link_libraries(h2_sockpair_1byte_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6506,6 +7769,7 @@ target_link_libraries(h2_sockpair_1byte_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6524,6 +7788,7 @@ target_link_libraries(h2_sockpair_1byte_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6542,6 +7807,7 @@ target_link_libraries(h2_sockpair_1byte_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6560,6 +7826,7 @@ target_link_libraries(h2_sockpair_1byte_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6578,6 +7845,7 @@ target_link_libraries(h2_sockpair_1byte_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6596,6 +7864,7 @@ target_link_libraries(h2_sockpair_1byte_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6614,6 +7883,7 @@ target_link_libraries(h2_sockpair_1byte_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6632,6 +7902,7 @@ target_link_libraries(h2_sockpair_1byte_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6650,6 +7921,7 @@ target_link_libraries(h2_sockpair_1byte_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6668,6 +7940,7 @@ target_link_libraries(h2_sockpair_1byte_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6686,6 +7959,7 @@ target_link_libraries(h2_sockpair_1byte_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6704,6 +7978,7 @@ target_link_libraries(h2_sockpair_1byte_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6722,6 +7997,7 @@ target_link_libraries(h2_sockpair_1byte_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6740,6 +8016,7 @@ target_link_libraries(h2_sockpair_1byte_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6758,6 +8035,7 @@ target_link_libraries(h2_sockpair_1byte_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6776,6 +8054,7 @@ target_link_libraries(h2_sockpair_1byte_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6794,6 +8073,7 @@ target_link_libraries(h2_sockpair_1byte_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6812,6 +8092,7 @@ target_link_libraries(h2_ssl_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6830,6 +8111,7 @@ target_link_libraries(h2_ssl_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6848,6 +8130,7 @@ target_link_libraries(h2_ssl_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6866,6 +8149,7 @@ target_link_libraries(h2_ssl_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6884,6 +8168,7 @@ target_link_libraries(h2_ssl_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6902,6 +8187,7 @@ target_link_libraries(h2_ssl_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6920,6 +8206,7 @@ target_link_libraries(h2_ssl_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6938,6 +8225,7 @@ target_link_libraries(h2_ssl_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6956,6 +8244,7 @@ target_link_libraries(h2_ssl_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6974,6 +8263,7 @@ target_link_libraries(h2_ssl_channel_connectivity_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -6992,6 +8282,7 @@ target_link_libraries(h2_ssl_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7010,6 +8301,7 @@ target_link_libraries(h2_ssl_default_host_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7028,6 +8320,7 @@ target_link_libraries(h2_ssl_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7046,6 +8339,7 @@ target_link_libraries(h2_ssl_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7064,6 +8358,7 @@ target_link_libraries(h2_ssl_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7082,6 +8377,7 @@ target_link_libraries(h2_ssl_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7100,6 +8396,7 @@ target_link_libraries(h2_ssl_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7118,6 +8415,7 @@ target_link_libraries(h2_ssl_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7136,6 +8434,7 @@ target_link_libraries(h2_ssl_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7154,6 +8453,7 @@ target_link_libraries(h2_ssl_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7172,6 +8472,7 @@ target_link_libraries(h2_ssl_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7190,6 +8491,7 @@ target_link_libraries(h2_ssl_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7208,6 +8510,7 @@ target_link_libraries(h2_ssl_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7226,6 +8529,7 @@ target_link_libraries(h2_ssl_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7244,6 +8548,7 @@ target_link_libraries(h2_ssl_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7262,6 +8567,7 @@ target_link_libraries(h2_ssl_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7280,6 +8586,7 @@ target_link_libraries(h2_ssl_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7298,6 +8605,7 @@ target_link_libraries(h2_ssl_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7316,6 +8624,7 @@ target_link_libraries(h2_ssl_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7334,6 +8643,7 @@ target_link_libraries(h2_ssl_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7352,6 +8662,7 @@ target_link_libraries(h2_ssl_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7370,6 +8681,7 @@ target_link_libraries(h2_ssl_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7388,6 +8700,7 @@ target_link_libraries(h2_ssl_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7406,6 +8719,7 @@ target_link_libraries(h2_ssl+poll_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7424,6 +8738,7 @@ target_link_libraries(h2_ssl+poll_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7442,6 +8757,7 @@ target_link_libraries(h2_ssl+poll_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7460,6 +8776,7 @@ target_link_libraries(h2_ssl+poll_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7478,6 +8795,7 @@ target_link_libraries(h2_ssl+poll_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7496,6 +8814,7 @@ target_link_libraries(h2_ssl+poll_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7514,6 +8833,7 @@ target_link_libraries(h2_ssl+poll_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7532,6 +8852,7 @@ target_link_libraries(h2_ssl+poll_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7550,6 +8871,7 @@ target_link_libraries(h2_ssl+poll_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7568,6 +8890,7 @@ target_link_libraries(h2_ssl+poll_channel_connectivity_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7586,6 +8909,7 @@ target_link_libraries(h2_ssl+poll_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7604,6 +8928,7 @@ target_link_libraries(h2_ssl+poll_default_host_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7622,6 +8947,7 @@ target_link_libraries(h2_ssl+poll_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7640,6 +8966,7 @@ target_link_libraries(h2_ssl+poll_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7658,6 +8985,7 @@ target_link_libraries(h2_ssl+poll_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7676,6 +9004,7 @@ target_link_libraries(h2_ssl+poll_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7694,6 +9023,7 @@ target_link_libraries(h2_ssl+poll_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7712,6 +9042,7 @@ target_link_libraries(h2_ssl+poll_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7730,6 +9061,7 @@ target_link_libraries(h2_ssl+poll_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7748,6 +9080,7 @@ target_link_libraries(h2_ssl+poll_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7766,6 +9099,7 @@ target_link_libraries(h2_ssl+poll_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7784,6 +9118,7 @@ target_link_libraries(h2_ssl+poll_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7802,6 +9137,7 @@ target_link_libraries(h2_ssl+poll_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7820,6 +9156,7 @@ target_link_libraries(h2_ssl+poll_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7838,6 +9175,7 @@ target_link_libraries(h2_ssl+poll_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7856,6 +9194,7 @@ target_link_libraries(h2_ssl+poll_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7874,6 +9213,7 @@ target_link_libraries(h2_ssl+poll_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7892,6 +9232,7 @@ target_link_libraries(h2_ssl+poll_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7910,6 +9251,7 @@ target_link_libraries(h2_ssl+poll_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7928,6 +9270,7 @@ target_link_libraries(h2_ssl+poll_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7946,6 +9289,7 @@ target_link_libraries(h2_ssl+poll_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7964,6 +9308,7 @@ target_link_libraries(h2_ssl+poll_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -7982,6 +9327,7 @@ target_link_libraries(h2_ssl+poll_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8000,6 +9346,7 @@ target_link_libraries(h2_ssl_proxy_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8018,6 +9365,7 @@ target_link_libraries(h2_ssl_proxy_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8036,6 +9384,7 @@ target_link_libraries(h2_ssl_proxy_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8054,6 +9403,7 @@ target_link_libraries(h2_ssl_proxy_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8072,6 +9422,7 @@ target_link_libraries(h2_ssl_proxy_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8090,6 +9441,7 @@ target_link_libraries(h2_ssl_proxy_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8108,6 +9460,7 @@ target_link_libraries(h2_ssl_proxy_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8126,6 +9479,7 @@ target_link_libraries(h2_ssl_proxy_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8144,6 +9498,7 @@ target_link_libraries(h2_ssl_proxy_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8162,6 +9517,7 @@ target_link_libraries(h2_ssl_proxy_default_host_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8180,6 +9536,7 @@ target_link_libraries(h2_ssl_proxy_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8198,6 +9555,7 @@ target_link_libraries(h2_ssl_proxy_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8216,6 +9574,7 @@ target_link_libraries(h2_ssl_proxy_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8234,6 +9593,7 @@ target_link_libraries(h2_ssl_proxy_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8252,6 +9612,7 @@ target_link_libraries(h2_ssl_proxy_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8270,6 +9631,7 @@ target_link_libraries(h2_ssl_proxy_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8288,6 +9650,7 @@ target_link_libraries(h2_ssl_proxy_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8306,6 +9669,7 @@ target_link_libraries(h2_ssl_proxy_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8324,6 +9688,7 @@ target_link_libraries(h2_ssl_proxy_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8342,6 +9707,7 @@ target_link_libraries(h2_ssl_proxy_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8360,6 +9726,7 @@ target_link_libraries(h2_ssl_proxy_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8378,6 +9745,7 @@ target_link_libraries(h2_ssl_proxy_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8396,6 +9764,7 @@ target_link_libraries(h2_ssl_proxy_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8414,6 +9783,7 @@ target_link_libraries(h2_ssl_proxy_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8432,6 +9802,7 @@ target_link_libraries(h2_ssl_proxy_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8450,6 +9821,7 @@ target_link_libraries(h2_ssl_proxy_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8468,6 +9840,7 @@ target_link_libraries(h2_ssl_proxy_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8486,6 +9859,7 @@ target_link_libraries(h2_ssl_proxy_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8504,6 +9878,7 @@ target_link_libraries(h2_ssl_proxy_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8522,6 +9897,7 @@ target_link_libraries(h2_uchannel_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8540,6 +9916,7 @@ target_link_libraries(h2_uchannel_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8558,6 +9935,7 @@ target_link_libraries(h2_uchannel_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8576,6 +9954,7 @@ target_link_libraries(h2_uchannel_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8594,6 +9973,7 @@ target_link_libraries(h2_uchannel_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8612,6 +9992,7 @@ target_link_libraries(h2_uchannel_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8630,6 +10011,7 @@ target_link_libraries(h2_uchannel_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8648,6 +10030,7 @@ target_link_libraries(h2_uchannel_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8666,6 +10049,7 @@ target_link_libraries(h2_uchannel_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8684,6 +10068,7 @@ target_link_libraries(h2_uchannel_channel_connectivity_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8702,6 +10087,7 @@ target_link_libraries(h2_uchannel_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8720,6 +10106,7 @@ target_link_libraries(h2_uchannel_default_host_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8738,6 +10125,7 @@ target_link_libraries(h2_uchannel_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8756,6 +10144,7 @@ target_link_libraries(h2_uchannel_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8774,6 +10163,7 @@ target_link_libraries(h2_uchannel_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8792,6 +10182,7 @@ target_link_libraries(h2_uchannel_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8810,6 +10201,7 @@ target_link_libraries(h2_uchannel_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8828,6 +10220,7 @@ target_link_libraries(h2_uchannel_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8846,6 +10239,7 @@ target_link_libraries(h2_uchannel_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8864,6 +10258,7 @@ target_link_libraries(h2_uchannel_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8882,6 +10277,7 @@ target_link_libraries(h2_uchannel_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8900,6 +10296,7 @@ target_link_libraries(h2_uchannel_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8918,6 +10315,7 @@ target_link_libraries(h2_uchannel_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8936,6 +10334,7 @@ target_link_libraries(h2_uchannel_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8954,6 +10353,7 @@ target_link_libraries(h2_uchannel_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8972,6 +10372,7 @@ target_link_libraries(h2_uchannel_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -8990,6 +10391,7 @@ target_link_libraries(h2_uchannel_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9008,6 +10410,7 @@ target_link_libraries(h2_uchannel_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9026,6 +10429,7 @@ target_link_libraries(h2_uchannel_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9044,6 +10448,7 @@ target_link_libraries(h2_uchannel_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9062,6 +10467,7 @@ target_link_libraries(h2_uchannel_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9080,6 +10486,7 @@ target_link_libraries(h2_uchannel_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9098,6 +10505,7 @@ target_link_libraries(h2_uchannel_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9116,6 +10524,7 @@ target_link_libraries(h2_uds_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9134,6 +10543,7 @@ target_link_libraries(h2_uds_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9152,6 +10562,7 @@ target_link_libraries(h2_uds_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9170,6 +10581,7 @@ target_link_libraries(h2_uds_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9188,6 +10600,7 @@ target_link_libraries(h2_uds_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9206,6 +10619,7 @@ target_link_libraries(h2_uds_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9224,6 +10638,7 @@ target_link_libraries(h2_uds_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9242,6 +10657,7 @@ target_link_libraries(h2_uds_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9260,6 +10676,7 @@ target_link_libraries(h2_uds_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9278,6 +10695,7 @@ target_link_libraries(h2_uds_channel_connectivity_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9296,6 +10714,7 @@ target_link_libraries(h2_uds_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9314,6 +10733,7 @@ target_link_libraries(h2_uds_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9332,6 +10752,7 @@ target_link_libraries(h2_uds_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9350,6 +10771,7 @@ target_link_libraries(h2_uds_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9368,6 +10790,7 @@ target_link_libraries(h2_uds_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9386,6 +10809,7 @@ target_link_libraries(h2_uds_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9404,6 +10828,7 @@ target_link_libraries(h2_uds_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9422,6 +10847,7 @@ target_link_libraries(h2_uds_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9440,6 +10866,7 @@ target_link_libraries(h2_uds_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9458,6 +10885,7 @@ target_link_libraries(h2_uds_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9476,6 +10904,7 @@ target_link_libraries(h2_uds_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9494,6 +10923,7 @@ target_link_libraries(h2_uds_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9512,6 +10942,7 @@ target_link_libraries(h2_uds_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9530,6 +10961,7 @@ target_link_libraries(h2_uds_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9548,6 +10980,7 @@ target_link_libraries(h2_uds_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9566,6 +10999,7 @@ target_link_libraries(h2_uds_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9584,6 +11018,7 @@ target_link_libraries(h2_uds_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9602,6 +11037,7 @@ target_link_libraries(h2_uds_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9620,6 +11056,7 @@ target_link_libraries(h2_uds_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9638,6 +11075,7 @@ target_link_libraries(h2_uds_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9656,6 +11094,7 @@ target_link_libraries(h2_uds_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9674,6 +11113,7 @@ target_link_libraries(h2_uds_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9692,6 +11132,7 @@ target_link_libraries(h2_uds+poll_bad_hostname_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9710,6 +11151,7 @@ target_link_libraries(h2_uds+poll_binary_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9728,6 +11170,7 @@ target_link_libraries(h2_uds+poll_call_creds_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9746,6 +11189,7 @@ target_link_libraries(h2_uds+poll_cancel_after_accept_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9764,6 +11208,7 @@ target_link_libraries(h2_uds+poll_cancel_after_client_done_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9782,6 +11227,7 @@ target_link_libraries(h2_uds+poll_cancel_after_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9800,6 +11246,7 @@ target_link_libraries(h2_uds+poll_cancel_before_invoke_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9818,6 +11265,7 @@ target_link_libraries(h2_uds+poll_cancel_in_a_vacuum_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9836,6 +11284,7 @@ target_link_libraries(h2_uds+poll_census_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9854,6 +11303,7 @@ target_link_libraries(h2_uds+poll_channel_connectivity_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9872,6 +11322,7 @@ target_link_libraries(h2_uds+poll_compressed_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9890,6 +11341,7 @@ target_link_libraries(h2_uds+poll_disappearing_server_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9908,6 +11360,7 @@ target_link_libraries(h2_uds+poll_empty_batch_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9926,6 +11379,7 @@ target_link_libraries(h2_uds+poll_graceful_server_shutdown_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9944,6 +11398,7 @@ target_link_libraries(h2_uds+poll_high_initial_seqno_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9962,6 +11417,7 @@ target_link_libraries(h2_uds+poll_invoke_large_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9980,6 +11436,7 @@ target_link_libraries(h2_uds+poll_large_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -9998,6 +11455,7 @@ target_link_libraries(h2_uds+poll_max_concurrent_streams_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10016,6 +11474,7 @@ target_link_libraries(h2_uds+poll_max_message_length_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10034,6 +11493,7 @@ target_link_libraries(h2_uds+poll_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10052,6 +11512,7 @@ target_link_libraries(h2_uds+poll_no_op_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10070,6 +11531,7 @@ target_link_libraries(h2_uds+poll_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10088,6 +11550,7 @@ target_link_libraries(h2_uds+poll_ping_pong_streaming_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10106,6 +11569,7 @@ target_link_libraries(h2_uds+poll_registered_call_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10124,6 +11588,7 @@ target_link_libraries(h2_uds+poll_request_with_flags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10142,6 +11607,7 @@ target_link_libraries(h2_uds+poll_request_with_payload_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10160,6 +11626,7 @@ target_link_libraries(h2_uds+poll_server_finishes_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10178,6 +11645,7 @@ target_link_libraries(h2_uds+poll_shutdown_finishes_calls_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10196,6 +11664,7 @@ target_link_libraries(h2_uds+poll_shutdown_finishes_tags_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10214,6 +11683,7 @@ target_link_libraries(h2_uds+poll_simple_delayed_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10232,6 +11702,7 @@ target_link_libraries(h2_uds+poll_simple_request_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10250,6 +11721,7 @@ target_link_libraries(h2_uds+poll_trailing_metadata_test
   grpc
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10267,6 +11739,7 @@ target_link_libraries(h2_compress_bad_hostname_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10284,6 +11757,7 @@ target_link_libraries(h2_compress_binary_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10301,6 +11775,7 @@ target_link_libraries(h2_compress_cancel_after_accept_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10318,6 +11793,7 @@ target_link_libraries(h2_compress_cancel_after_client_done_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10335,6 +11811,7 @@ target_link_libraries(h2_compress_cancel_after_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10352,6 +11829,7 @@ target_link_libraries(h2_compress_cancel_before_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10369,6 +11847,7 @@ target_link_libraries(h2_compress_cancel_in_a_vacuum_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10386,6 +11865,7 @@ target_link_libraries(h2_compress_census_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10403,6 +11883,7 @@ target_link_libraries(h2_compress_channel_connectivity_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10420,6 +11901,7 @@ target_link_libraries(h2_compress_compressed_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10437,6 +11919,7 @@ target_link_libraries(h2_compress_default_host_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10454,6 +11937,7 @@ target_link_libraries(h2_compress_disappearing_server_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10471,6 +11955,7 @@ target_link_libraries(h2_compress_empty_batch_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10488,6 +11973,7 @@ target_link_libraries(h2_compress_graceful_server_shutdown_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10505,6 +11991,7 @@ target_link_libraries(h2_compress_high_initial_seqno_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10522,6 +12009,7 @@ target_link_libraries(h2_compress_invoke_large_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10539,6 +12027,7 @@ target_link_libraries(h2_compress_large_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10556,6 +12045,7 @@ target_link_libraries(h2_compress_max_concurrent_streams_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10573,6 +12063,7 @@ target_link_libraries(h2_compress_max_message_length_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10590,6 +12081,7 @@ target_link_libraries(h2_compress_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10607,6 +12099,7 @@ target_link_libraries(h2_compress_no_op_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10624,6 +12117,7 @@ target_link_libraries(h2_compress_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10641,6 +12135,7 @@ target_link_libraries(h2_compress_ping_pong_streaming_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10658,6 +12153,7 @@ target_link_libraries(h2_compress_registered_call_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10675,6 +12171,7 @@ target_link_libraries(h2_compress_request_with_flags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10692,6 +12189,7 @@ target_link_libraries(h2_compress_request_with_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10709,6 +12207,7 @@ target_link_libraries(h2_compress_server_finishes_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10726,6 +12225,7 @@ target_link_libraries(h2_compress_shutdown_finishes_calls_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10743,6 +12243,7 @@ target_link_libraries(h2_compress_shutdown_finishes_tags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10760,6 +12261,7 @@ target_link_libraries(h2_compress_simple_delayed_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10777,6 +12279,7 @@ target_link_libraries(h2_compress_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10794,6 +12297,7 @@ target_link_libraries(h2_compress_trailing_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10811,6 +12315,7 @@ target_link_libraries(h2_full_bad_hostname_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10828,6 +12333,7 @@ target_link_libraries(h2_full_binary_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10845,6 +12351,7 @@ target_link_libraries(h2_full_cancel_after_accept_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10862,6 +12369,7 @@ target_link_libraries(h2_full_cancel_after_client_done_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10879,6 +12387,7 @@ target_link_libraries(h2_full_cancel_after_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10896,6 +12405,7 @@ target_link_libraries(h2_full_cancel_before_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10913,6 +12423,7 @@ target_link_libraries(h2_full_cancel_in_a_vacuum_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10930,6 +12441,7 @@ target_link_libraries(h2_full_census_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10947,6 +12459,7 @@ target_link_libraries(h2_full_channel_connectivity_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10964,6 +12477,7 @@ target_link_libraries(h2_full_compressed_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10981,6 +12495,7 @@ target_link_libraries(h2_full_default_host_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -10998,6 +12513,7 @@ target_link_libraries(h2_full_disappearing_server_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11015,6 +12531,7 @@ target_link_libraries(h2_full_empty_batch_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11032,6 +12549,7 @@ target_link_libraries(h2_full_graceful_server_shutdown_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11049,6 +12567,7 @@ target_link_libraries(h2_full_high_initial_seqno_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11066,6 +12585,7 @@ target_link_libraries(h2_full_invoke_large_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11083,6 +12603,7 @@ target_link_libraries(h2_full_large_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11100,6 +12621,7 @@ target_link_libraries(h2_full_max_concurrent_streams_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11117,6 +12639,7 @@ target_link_libraries(h2_full_max_message_length_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11134,6 +12657,7 @@ target_link_libraries(h2_full_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11151,6 +12675,7 @@ target_link_libraries(h2_full_no_op_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11168,6 +12693,7 @@ target_link_libraries(h2_full_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11185,6 +12711,7 @@ target_link_libraries(h2_full_ping_pong_streaming_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11202,6 +12729,7 @@ target_link_libraries(h2_full_registered_call_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11219,6 +12747,7 @@ target_link_libraries(h2_full_request_with_flags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11236,6 +12765,7 @@ target_link_libraries(h2_full_request_with_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11253,6 +12783,7 @@ target_link_libraries(h2_full_server_finishes_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11270,6 +12801,7 @@ target_link_libraries(h2_full_shutdown_finishes_calls_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11287,6 +12819,7 @@ target_link_libraries(h2_full_shutdown_finishes_tags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11304,6 +12837,7 @@ target_link_libraries(h2_full_simple_delayed_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11321,6 +12855,7 @@ target_link_libraries(h2_full_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11338,6 +12873,7 @@ target_link_libraries(h2_full_trailing_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11355,6 +12891,7 @@ target_link_libraries(h2_full+poll_bad_hostname_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11372,6 +12909,7 @@ target_link_libraries(h2_full+poll_binary_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11389,6 +12927,7 @@ target_link_libraries(h2_full+poll_cancel_after_accept_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11406,6 +12945,7 @@ target_link_libraries(h2_full+poll_cancel_after_client_done_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11423,6 +12963,7 @@ target_link_libraries(h2_full+poll_cancel_after_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11440,6 +12981,7 @@ target_link_libraries(h2_full+poll_cancel_before_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11457,6 +12999,7 @@ target_link_libraries(h2_full+poll_cancel_in_a_vacuum_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11474,6 +13017,7 @@ target_link_libraries(h2_full+poll_census_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11491,6 +13035,7 @@ target_link_libraries(h2_full+poll_channel_connectivity_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11508,6 +13053,7 @@ target_link_libraries(h2_full+poll_compressed_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11525,6 +13071,7 @@ target_link_libraries(h2_full+poll_default_host_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11542,6 +13089,7 @@ target_link_libraries(h2_full+poll_disappearing_server_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11559,6 +13107,7 @@ target_link_libraries(h2_full+poll_empty_batch_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11576,6 +13125,7 @@ target_link_libraries(h2_full+poll_graceful_server_shutdown_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11593,6 +13143,7 @@ target_link_libraries(h2_full+poll_high_initial_seqno_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11610,6 +13161,7 @@ target_link_libraries(h2_full+poll_invoke_large_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11627,6 +13179,7 @@ target_link_libraries(h2_full+poll_large_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11644,6 +13197,7 @@ target_link_libraries(h2_full+poll_max_concurrent_streams_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11661,6 +13215,7 @@ target_link_libraries(h2_full+poll_max_message_length_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11678,6 +13233,7 @@ target_link_libraries(h2_full+poll_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11695,6 +13251,7 @@ target_link_libraries(h2_full+poll_no_op_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11712,6 +13269,7 @@ target_link_libraries(h2_full+poll_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11729,6 +13287,7 @@ target_link_libraries(h2_full+poll_ping_pong_streaming_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11746,6 +13305,7 @@ target_link_libraries(h2_full+poll_registered_call_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11763,6 +13323,7 @@ target_link_libraries(h2_full+poll_request_with_flags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11780,6 +13341,7 @@ target_link_libraries(h2_full+poll_request_with_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11797,6 +13359,7 @@ target_link_libraries(h2_full+poll_server_finishes_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11814,6 +13377,7 @@ target_link_libraries(h2_full+poll_shutdown_finishes_calls_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11831,6 +13395,7 @@ target_link_libraries(h2_full+poll_shutdown_finishes_tags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11848,6 +13413,7 @@ target_link_libraries(h2_full+poll_simple_delayed_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11865,6 +13431,7 @@ target_link_libraries(h2_full+poll_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11882,6 +13449,7 @@ target_link_libraries(h2_full+poll_trailing_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11899,6 +13467,7 @@ target_link_libraries(h2_proxy_bad_hostname_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11916,6 +13485,7 @@ target_link_libraries(h2_proxy_binary_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11933,6 +13503,7 @@ target_link_libraries(h2_proxy_cancel_after_accept_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11950,6 +13521,7 @@ target_link_libraries(h2_proxy_cancel_after_client_done_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11967,6 +13539,7 @@ target_link_libraries(h2_proxy_cancel_after_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -11984,6 +13557,7 @@ target_link_libraries(h2_proxy_cancel_before_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12001,6 +13575,7 @@ target_link_libraries(h2_proxy_cancel_in_a_vacuum_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12018,6 +13593,7 @@ target_link_libraries(h2_proxy_census_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12035,6 +13611,7 @@ target_link_libraries(h2_proxy_default_host_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12052,6 +13629,7 @@ target_link_libraries(h2_proxy_disappearing_server_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12069,6 +13647,7 @@ target_link_libraries(h2_proxy_empty_batch_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12086,6 +13665,7 @@ target_link_libraries(h2_proxy_graceful_server_shutdown_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12103,6 +13683,7 @@ target_link_libraries(h2_proxy_high_initial_seqno_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12120,6 +13701,7 @@ target_link_libraries(h2_proxy_invoke_large_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12137,6 +13719,7 @@ target_link_libraries(h2_proxy_large_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12154,6 +13737,7 @@ target_link_libraries(h2_proxy_max_message_length_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12171,6 +13755,7 @@ target_link_libraries(h2_proxy_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12188,6 +13773,7 @@ target_link_libraries(h2_proxy_no_op_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12205,6 +13791,7 @@ target_link_libraries(h2_proxy_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12222,6 +13809,7 @@ target_link_libraries(h2_proxy_ping_pong_streaming_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12239,6 +13827,7 @@ target_link_libraries(h2_proxy_registered_call_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12256,6 +13845,7 @@ target_link_libraries(h2_proxy_request_with_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12273,6 +13863,7 @@ target_link_libraries(h2_proxy_server_finishes_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12290,6 +13881,7 @@ target_link_libraries(h2_proxy_shutdown_finishes_calls_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12307,6 +13899,7 @@ target_link_libraries(h2_proxy_shutdown_finishes_tags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12324,6 +13917,7 @@ target_link_libraries(h2_proxy_simple_delayed_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12341,6 +13935,7 @@ target_link_libraries(h2_proxy_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12358,6 +13953,7 @@ target_link_libraries(h2_proxy_trailing_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12375,6 +13971,7 @@ target_link_libraries(h2_sockpair_bad_hostname_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12392,6 +13989,7 @@ target_link_libraries(h2_sockpair_binary_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12409,6 +14007,7 @@ target_link_libraries(h2_sockpair_cancel_after_accept_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12426,6 +14025,7 @@ target_link_libraries(h2_sockpair_cancel_after_client_done_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12443,6 +14043,7 @@ target_link_libraries(h2_sockpair_cancel_after_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12460,6 +14061,7 @@ target_link_libraries(h2_sockpair_cancel_before_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12477,6 +14079,7 @@ target_link_libraries(h2_sockpair_cancel_in_a_vacuum_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12494,6 +14097,7 @@ target_link_libraries(h2_sockpair_census_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12511,6 +14115,7 @@ target_link_libraries(h2_sockpair_compressed_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12528,6 +14133,7 @@ target_link_libraries(h2_sockpair_empty_batch_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12545,6 +14151,7 @@ target_link_libraries(h2_sockpair_graceful_server_shutdown_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12562,6 +14169,7 @@ target_link_libraries(h2_sockpair_high_initial_seqno_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12579,6 +14187,7 @@ target_link_libraries(h2_sockpair_invoke_large_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12596,6 +14205,7 @@ target_link_libraries(h2_sockpair_large_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12613,6 +14223,7 @@ target_link_libraries(h2_sockpair_max_concurrent_streams_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12630,6 +14241,7 @@ target_link_libraries(h2_sockpair_max_message_length_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12647,6 +14259,7 @@ target_link_libraries(h2_sockpair_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12664,6 +14277,7 @@ target_link_libraries(h2_sockpair_no_op_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12681,6 +14295,7 @@ target_link_libraries(h2_sockpair_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12698,6 +14313,7 @@ target_link_libraries(h2_sockpair_ping_pong_streaming_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12715,6 +14331,7 @@ target_link_libraries(h2_sockpair_registered_call_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12732,6 +14349,7 @@ target_link_libraries(h2_sockpair_request_with_flags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12749,6 +14367,7 @@ target_link_libraries(h2_sockpair_request_with_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12766,6 +14385,7 @@ target_link_libraries(h2_sockpair_server_finishes_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12783,6 +14403,7 @@ target_link_libraries(h2_sockpair_shutdown_finishes_calls_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12800,6 +14421,7 @@ target_link_libraries(h2_sockpair_shutdown_finishes_tags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12817,6 +14439,7 @@ target_link_libraries(h2_sockpair_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12834,6 +14457,7 @@ target_link_libraries(h2_sockpair_trailing_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12851,6 +14475,7 @@ target_link_libraries(h2_sockpair+trace_bad_hostname_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12868,6 +14493,7 @@ target_link_libraries(h2_sockpair+trace_binary_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12885,6 +14511,7 @@ target_link_libraries(h2_sockpair+trace_cancel_after_accept_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12902,6 +14529,7 @@ target_link_libraries(h2_sockpair+trace_cancel_after_client_done_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12919,6 +14547,7 @@ target_link_libraries(h2_sockpair+trace_cancel_after_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12936,6 +14565,7 @@ target_link_libraries(h2_sockpair+trace_cancel_before_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12953,6 +14583,7 @@ target_link_libraries(h2_sockpair+trace_cancel_in_a_vacuum_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12970,6 +14601,7 @@ target_link_libraries(h2_sockpair+trace_census_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -12987,6 +14619,7 @@ target_link_libraries(h2_sockpair+trace_compressed_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13004,6 +14637,7 @@ target_link_libraries(h2_sockpair+trace_empty_batch_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13021,6 +14655,7 @@ target_link_libraries(h2_sockpair+trace_graceful_server_shutdown_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13038,6 +14673,7 @@ target_link_libraries(h2_sockpair+trace_high_initial_seqno_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13055,6 +14691,7 @@ target_link_libraries(h2_sockpair+trace_invoke_large_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13072,6 +14709,7 @@ target_link_libraries(h2_sockpair+trace_large_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13089,6 +14727,7 @@ target_link_libraries(h2_sockpair+trace_max_concurrent_streams_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13106,6 +14745,7 @@ target_link_libraries(h2_sockpair+trace_max_message_length_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13123,6 +14763,7 @@ target_link_libraries(h2_sockpair+trace_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13140,6 +14781,7 @@ target_link_libraries(h2_sockpair+trace_no_op_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13157,6 +14799,7 @@ target_link_libraries(h2_sockpair+trace_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13174,6 +14817,7 @@ target_link_libraries(h2_sockpair+trace_ping_pong_streaming_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13191,6 +14835,7 @@ target_link_libraries(h2_sockpair+trace_registered_call_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13208,6 +14853,7 @@ target_link_libraries(h2_sockpair+trace_request_with_flags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13225,6 +14871,7 @@ target_link_libraries(h2_sockpair+trace_request_with_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13242,6 +14889,7 @@ target_link_libraries(h2_sockpair+trace_server_finishes_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13259,6 +14907,7 @@ target_link_libraries(h2_sockpair+trace_shutdown_finishes_calls_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13276,6 +14925,7 @@ target_link_libraries(h2_sockpair+trace_shutdown_finishes_tags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13293,6 +14943,7 @@ target_link_libraries(h2_sockpair+trace_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13310,6 +14961,7 @@ target_link_libraries(h2_sockpair+trace_trailing_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13327,6 +14979,7 @@ target_link_libraries(h2_sockpair_1byte_bad_hostname_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13344,6 +14997,7 @@ target_link_libraries(h2_sockpair_1byte_binary_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13361,6 +15015,7 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_accept_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13378,6 +15033,7 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_client_done_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13395,6 +15051,7 @@ target_link_libraries(h2_sockpair_1byte_cancel_after_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13412,6 +15069,7 @@ target_link_libraries(h2_sockpair_1byte_cancel_before_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13429,6 +15087,7 @@ target_link_libraries(h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13446,6 +15105,7 @@ target_link_libraries(h2_sockpair_1byte_census_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13463,6 +15123,7 @@ target_link_libraries(h2_sockpair_1byte_compressed_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13480,6 +15141,7 @@ target_link_libraries(h2_sockpair_1byte_empty_batch_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13497,6 +15159,7 @@ target_link_libraries(h2_sockpair_1byte_graceful_server_shutdown_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13514,6 +15177,7 @@ target_link_libraries(h2_sockpair_1byte_high_initial_seqno_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13531,6 +15195,7 @@ target_link_libraries(h2_sockpair_1byte_invoke_large_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13548,6 +15213,7 @@ target_link_libraries(h2_sockpair_1byte_large_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13565,6 +15231,7 @@ target_link_libraries(h2_sockpair_1byte_max_concurrent_streams_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13582,6 +15249,7 @@ target_link_libraries(h2_sockpair_1byte_max_message_length_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13599,6 +15267,7 @@ target_link_libraries(h2_sockpair_1byte_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13616,6 +15285,7 @@ target_link_libraries(h2_sockpair_1byte_no_op_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13633,6 +15303,7 @@ target_link_libraries(h2_sockpair_1byte_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13650,6 +15321,7 @@ target_link_libraries(h2_sockpair_1byte_ping_pong_streaming_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13667,6 +15339,7 @@ target_link_libraries(h2_sockpair_1byte_registered_call_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13684,6 +15357,7 @@ target_link_libraries(h2_sockpair_1byte_request_with_flags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13701,6 +15375,7 @@ target_link_libraries(h2_sockpair_1byte_request_with_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13718,6 +15393,7 @@ target_link_libraries(h2_sockpair_1byte_server_finishes_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13735,6 +15411,7 @@ target_link_libraries(h2_sockpair_1byte_shutdown_finishes_calls_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13752,6 +15429,7 @@ target_link_libraries(h2_sockpair_1byte_shutdown_finishes_tags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13769,6 +15447,7 @@ target_link_libraries(h2_sockpair_1byte_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13786,6 +15465,7 @@ target_link_libraries(h2_sockpair_1byte_trailing_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13803,6 +15483,7 @@ target_link_libraries(h2_uchannel_bad_hostname_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13820,6 +15501,7 @@ target_link_libraries(h2_uchannel_binary_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13837,6 +15519,7 @@ target_link_libraries(h2_uchannel_cancel_after_accept_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13854,6 +15537,7 @@ target_link_libraries(h2_uchannel_cancel_after_client_done_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13871,6 +15555,7 @@ target_link_libraries(h2_uchannel_cancel_after_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13888,6 +15573,7 @@ target_link_libraries(h2_uchannel_cancel_before_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13905,6 +15591,7 @@ target_link_libraries(h2_uchannel_cancel_in_a_vacuum_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13922,6 +15609,7 @@ target_link_libraries(h2_uchannel_census_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13939,6 +15627,7 @@ target_link_libraries(h2_uchannel_channel_connectivity_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13956,6 +15645,7 @@ target_link_libraries(h2_uchannel_compressed_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13973,6 +15663,7 @@ target_link_libraries(h2_uchannel_default_host_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -13990,6 +15681,7 @@ target_link_libraries(h2_uchannel_disappearing_server_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14007,6 +15699,7 @@ target_link_libraries(h2_uchannel_empty_batch_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14024,6 +15717,7 @@ target_link_libraries(h2_uchannel_graceful_server_shutdown_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14041,6 +15735,7 @@ target_link_libraries(h2_uchannel_high_initial_seqno_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14058,6 +15753,7 @@ target_link_libraries(h2_uchannel_invoke_large_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14075,6 +15771,7 @@ target_link_libraries(h2_uchannel_large_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14092,6 +15789,7 @@ target_link_libraries(h2_uchannel_max_concurrent_streams_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14109,6 +15807,7 @@ target_link_libraries(h2_uchannel_max_message_length_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14126,6 +15825,7 @@ target_link_libraries(h2_uchannel_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14143,6 +15843,7 @@ target_link_libraries(h2_uchannel_no_op_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14160,6 +15861,7 @@ target_link_libraries(h2_uchannel_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14177,6 +15879,7 @@ target_link_libraries(h2_uchannel_ping_pong_streaming_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14194,6 +15897,7 @@ target_link_libraries(h2_uchannel_registered_call_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14211,6 +15915,7 @@ target_link_libraries(h2_uchannel_request_with_flags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14228,6 +15933,7 @@ target_link_libraries(h2_uchannel_request_with_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14245,6 +15951,7 @@ target_link_libraries(h2_uchannel_server_finishes_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14262,6 +15969,7 @@ target_link_libraries(h2_uchannel_shutdown_finishes_calls_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14279,6 +15987,7 @@ target_link_libraries(h2_uchannel_shutdown_finishes_tags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14296,6 +16005,7 @@ target_link_libraries(h2_uchannel_simple_delayed_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14313,6 +16023,7 @@ target_link_libraries(h2_uchannel_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14330,6 +16041,7 @@ target_link_libraries(h2_uchannel_trailing_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14347,6 +16059,7 @@ target_link_libraries(h2_uds_bad_hostname_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14364,6 +16077,7 @@ target_link_libraries(h2_uds_binary_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14381,6 +16095,7 @@ target_link_libraries(h2_uds_cancel_after_accept_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14398,6 +16113,7 @@ target_link_libraries(h2_uds_cancel_after_client_done_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14415,6 +16131,7 @@ target_link_libraries(h2_uds_cancel_after_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14432,6 +16149,7 @@ target_link_libraries(h2_uds_cancel_before_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14449,6 +16167,7 @@ target_link_libraries(h2_uds_cancel_in_a_vacuum_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14466,6 +16185,7 @@ target_link_libraries(h2_uds_census_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14483,6 +16203,7 @@ target_link_libraries(h2_uds_channel_connectivity_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14500,6 +16221,7 @@ target_link_libraries(h2_uds_compressed_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14517,6 +16239,7 @@ target_link_libraries(h2_uds_disappearing_server_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14534,6 +16257,7 @@ target_link_libraries(h2_uds_empty_batch_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14551,6 +16275,7 @@ target_link_libraries(h2_uds_graceful_server_shutdown_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14568,6 +16293,7 @@ target_link_libraries(h2_uds_high_initial_seqno_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14585,6 +16311,7 @@ target_link_libraries(h2_uds_invoke_large_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14602,6 +16329,7 @@ target_link_libraries(h2_uds_large_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14619,6 +16347,7 @@ target_link_libraries(h2_uds_max_concurrent_streams_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14636,6 +16365,7 @@ target_link_libraries(h2_uds_max_message_length_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14653,6 +16383,7 @@ target_link_libraries(h2_uds_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14670,6 +16401,7 @@ target_link_libraries(h2_uds_no_op_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14687,6 +16419,7 @@ target_link_libraries(h2_uds_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14704,6 +16437,7 @@ target_link_libraries(h2_uds_ping_pong_streaming_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14721,6 +16455,7 @@ target_link_libraries(h2_uds_registered_call_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14738,6 +16473,7 @@ target_link_libraries(h2_uds_request_with_flags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14755,6 +16491,7 @@ target_link_libraries(h2_uds_request_with_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14772,6 +16509,7 @@ target_link_libraries(h2_uds_server_finishes_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14789,6 +16527,7 @@ target_link_libraries(h2_uds_shutdown_finishes_calls_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14806,6 +16545,7 @@ target_link_libraries(h2_uds_shutdown_finishes_tags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14823,6 +16563,7 @@ target_link_libraries(h2_uds_simple_delayed_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14840,6 +16581,7 @@ target_link_libraries(h2_uds_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14857,6 +16599,7 @@ target_link_libraries(h2_uds_trailing_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14874,6 +16617,7 @@ target_link_libraries(h2_uds+poll_bad_hostname_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14891,6 +16635,7 @@ target_link_libraries(h2_uds+poll_binary_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14908,6 +16653,7 @@ target_link_libraries(h2_uds+poll_cancel_after_accept_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14925,6 +16671,7 @@ target_link_libraries(h2_uds+poll_cancel_after_client_done_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14942,6 +16689,7 @@ target_link_libraries(h2_uds+poll_cancel_after_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14959,6 +16707,7 @@ target_link_libraries(h2_uds+poll_cancel_before_invoke_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14976,6 +16725,7 @@ target_link_libraries(h2_uds+poll_cancel_in_a_vacuum_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -14993,6 +16743,7 @@ target_link_libraries(h2_uds+poll_census_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15010,6 +16761,7 @@ target_link_libraries(h2_uds+poll_channel_connectivity_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15027,6 +16779,7 @@ target_link_libraries(h2_uds+poll_compressed_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15044,6 +16797,7 @@ target_link_libraries(h2_uds+poll_disappearing_server_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15061,6 +16815,7 @@ target_link_libraries(h2_uds+poll_empty_batch_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15078,6 +16833,7 @@ target_link_libraries(h2_uds+poll_graceful_server_shutdown_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15095,6 +16851,7 @@ target_link_libraries(h2_uds+poll_high_initial_seqno_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15112,6 +16869,7 @@ target_link_libraries(h2_uds+poll_invoke_large_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15129,6 +16887,7 @@ target_link_libraries(h2_uds+poll_large_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15146,6 +16905,7 @@ target_link_libraries(h2_uds+poll_max_concurrent_streams_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15163,6 +16923,7 @@ target_link_libraries(h2_uds+poll_max_message_length_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15180,6 +16941,7 @@ target_link_libraries(h2_uds+poll_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15197,6 +16959,7 @@ target_link_libraries(h2_uds+poll_no_op_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15214,6 +16977,7 @@ target_link_libraries(h2_uds+poll_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15231,6 +16995,7 @@ target_link_libraries(h2_uds+poll_ping_pong_streaming_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15248,6 +17013,7 @@ target_link_libraries(h2_uds+poll_registered_call_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15265,6 +17031,7 @@ target_link_libraries(h2_uds+poll_request_with_flags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15282,6 +17049,7 @@ target_link_libraries(h2_uds+poll_request_with_payload_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15299,6 +17067,7 @@ target_link_libraries(h2_uds+poll_server_finishes_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15316,6 +17085,7 @@ target_link_libraries(h2_uds+poll_shutdown_finishes_calls_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15333,6 +17103,7 @@ target_link_libraries(h2_uds+poll_shutdown_finishes_tags_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15350,6 +17121,7 @@ target_link_libraries(h2_uds+poll_simple_delayed_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15367,6 +17139,7 @@ target_link_libraries(h2_uds+poll_simple_request_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15384,6 +17157,7 @@ target_link_libraries(h2_uds+poll_trailing_metadata_nosec_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15400,6 +17174,7 @@ target_link_libraries(connection_prefix_bad_client_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -15416,6 +17191,7 @@ target_link_libraries(initial_settings_frame_bad_client_test
   grpc_unsecure
   gpr_test_util
   gpr
+  ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
