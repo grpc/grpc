@@ -184,6 +184,39 @@ static void test_byte_buffer_from_reader(void) {
   grpc_byte_buffer_destroy(buffer_from_reader);
 }
 
+static void test_readall(void) {
+  char* lotsa_as[512];
+  char* lotsa_bs[1024];
+  gpr_slice slices[2];
+  grpc_byte_buffer *buffer;
+  grpc_byte_buffer_reader reader;
+  gpr_slice slice_out;
+
+  LOG_TEST("test_readall");
+
+  memset(lotsa_as, 'a', 512);
+  memset(lotsa_bs, 'b', 1024);
+  /* use slices large enough to overflow inlining */
+  slices[0] = gpr_slice_malloc(512);
+  memcpy(GPR_SLICE_START_PTR(slices[0]), lotsa_as, 512);
+  slices[1] = gpr_slice_malloc(1024);
+  memcpy(GPR_SLICE_START_PTR(slices[1]), lotsa_bs, 1024);
+
+  buffer = grpc_raw_byte_buffer_create(slices, 2);
+  gpr_slice_unref(slices[0]);
+  gpr_slice_unref(slices[1]);
+
+  grpc_byte_buffer_reader_init(&reader, buffer);
+  slice_out = grpc_byte_buffer_reader_readall(&reader);
+
+  GPR_ASSERT(GPR_SLICE_LENGTH(slice_out) == 512 + 1024);
+  GPR_ASSERT(memcmp(GPR_SLICE_START_PTR(slice_out), lotsa_as, 512) == 0);
+  GPR_ASSERT(memcmp(&(GPR_SLICE_START_PTR(slice_out)[512]), lotsa_bs, 1024) ==
+             0);
+  gpr_slice_unref(slice_out);
+  grpc_byte_buffer_destroy(buffer);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_read_one_slice();
@@ -192,6 +225,6 @@ int main(int argc, char **argv) {
   test_read_gzip_compressed_slice();
   test_read_deflate_compressed_slice();
   test_byte_buffer_from_reader();
-
+  test_readall();
   return 0;
 }

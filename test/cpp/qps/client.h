@@ -40,8 +40,9 @@
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/timer.h"
-#include "test/proto/qpstest.grpc.pb.h"
 #include "test/cpp/util/create_test_channel.h"
+#include "test/proto/benchmarks/payloads.grpc.pb.h"
+#include "test/proto/benchmarks/services.grpc.pb.h"
 
 namespace grpc {
 
@@ -75,27 +76,54 @@ class Client {
       channels_[i].init(config.server_targets(i % config.server_targets_size()),
                         config);
     }
-    request_.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
-    request_.set_response_size(config.payload_size());
+    if (config.payload_config().has_bytebuf_params()) {
+      GPR_ASSERT(false);  // not yet implemented
+    } else if (config.payload_config().has_simple_params()) {
+      request_.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
+      request_.set_response_size(
+          config.payload_config().simple_params().resp_size());
+      request_.mutable_payload()->set_type(
+          grpc::testing::PayloadType::COMPRESSABLE);
+      int size = config.payload_config().simple_params().req_size();
+      std::unique_ptr<char[]> body(new char[size]);
+      request_.mutable_payload()->set_body(body.get(), size);
+    } else if (config.payload_config().has_complex_params()) {
+      GPR_ASSERT(false);  // not yet implemented
+    } else {
+      // default should be simple proto without payloads
+      request_.set_response_type(grpc::testing::PayloadType::COMPRESSABLE);
+      request_.set_response_size(0);
+      request_.mutable_payload()->set_type(
+          grpc::testing::PayloadType::COMPRESSABLE);
+    }
   }
   virtual ~Client() {}
 
-  ClientStats Mark() {
+  ClientStats Mark(bool reset) {
     Histogram latencies;
-    // avoid std::vector for old compilers that expect a copy constructor
-    Histogram* to_merge = new Histogram[threads_.size()];
-    for (size_t i = 0; i < threads_.size(); i++) {
-      threads_[i]->BeginSwap(&to_merge[i]);
-    }
-    std::unique_ptr<Timer> timer(new Timer);
-    timer_.swap(timer);
-    for (size_t i = 0; i < threads_.size(); i++) {
-      threads_[i]->EndSwap();
-      latencies.Merge(&to_merge[i]);
-    }
-    delete[] to_merge;
+    Timer::Result timer_result;
 
-    auto timer_result = timer->Mark();
+    // avoid std::vector for old compilers that expect a copy constructor
+    if (reset) {
+      Histogram* to_merge = new Histogram[threads_.size()];
+      for (size_t i = 0; i < threads_.size(); i++) {
+        threads_[i]->BeginSwap(&to_merge[i]);
+      }
+      std::unique_ptr<Timer> timer(new Timer);
+      timer_.swap(timer);
+      for (size_t i = 0; i < threads_.size(); i++) {
+        threads_[i]->EndSwap();
+        latencies.Merge(to_merge[i]);
+      }
+      delete[] to_merge;
+      timer_result = timer->Mark();
+    } else {
+      // merge snapshots of each thread histogram
+      for (size_t i = 0; i < threads_.size(); i++) {
+        threads_[i]->MergeStatsInto(&latencies);
+      }
+      timer_result = timer_->Mark();
+    }
 
     ClientStats stats;
     latencies.FillProto(stats.mutable_latencies());
@@ -122,15 +150,18 @@ class Client {
       // We have to use a 2-phase init like this with a default
       // constructor followed by an initializer function to make
       // old compilers happy with using this in std::vector
-      channel_ = CreateTestChannel(target, config.enable_ssl());
-      stub_ = TestService::NewStub(channel_);
+      channel_ = CreateTestChannel(
+          target, config.security_params().server_host_override(),
+          config.has_security_params(),
+          !config.security_params().use_test_ca());
+      stub_ = BenchmarkService::NewStub(channel_);
     }
     Channel* get_channel() { return channel_.get(); }
-    TestService::Stub* get_stub() { return stub_.get(); }
+    BenchmarkService::Stub* get_stub() { return stub_.get(); }
 
    private:
     std::shared_ptr<Channel> channel_;
-    std::unique_ptr<TestService::Stub> stub_;
+    std::unique_ptr<BenchmarkService::Stub> stub_;
   };
   std::vector<ClientChannelInfo> channels_;
 
@@ -146,37 +177,41 @@ class Client {
 
   void SetupLoadTest(const ClientConfig& config, size_t num_threads) {
     // Set up the load distribution based on the number of threads
-    if (config.load_type() == CLOSED_LOOP) {
+    const auto& load = config.load_params();
+
+    std::unique_ptr<RandomDist> random_dist;
+    switch (load.load_case()) {
+    case LoadParams::kClosedLoop:
+      // Closed-loop doesn't use random dist at all
+      break;
+    case LoadParams::kPoisson:
+      random_dist.reset(
+          new ExpDist(load.poisson().offered_load() / num_threads));
+      break;
+    case LoadParams::kUniform:
+      random_dist.reset(
+          new UniformDist(load.uniform().interarrival_lo() * num_threads,
+                          load.uniform().interarrival_hi() * num_threads));
+      break;
+    case LoadParams::kDeterm:
+      random_dist.reset(
+          new DetDist(num_threads / load.determ().offered_load()));
+      break;
+    case LoadParams::kPareto:
+      random_dist.reset(
+          new ParetoDist(load.pareto().interarrival_base() * num_threads,
+                         load.pareto().alpha()));
+      break;
+    default:
+      GPR_ASSERT(false);
+    }
+
+    // Set closed_loop_ based on whether or not random_dist is set
+    if (!random_dist) {
       closed_loop_ = true;
     } else {
       closed_loop_ = false;
-
-      std::unique_ptr<RandomDist> random_dist;
-      const auto& load = config.load_params();
-      switch (config.load_type()) {
-        case POISSON:
-          random_dist.reset(
-              new ExpDist(load.poisson().offered_load() / num_threads));
-          break;
-        case UNIFORM:
-          random_dist.reset(
-              new UniformDist(load.uniform().interarrival_lo() * num_threads,
-                              load.uniform().interarrival_hi() * num_threads));
-          break;
-        case DETERMINISTIC:
-          random_dist.reset(
-              new DetDist(num_threads / load.determ().offered_load()));
-          break;
-        case PARETO:
-          random_dist.reset(
-              new ParetoDist(load.pareto().interarrival_base() * num_threads,
-                             load.pareto().alpha()));
-          break;
-        default:
-          GPR_ASSERT(false);
-          break;
-      }
-
+      // set up interarrival timer according to random dist
       interarrival_timer_.init(*random_dist, num_threads);
       for (size_t i = 0; i < num_threads; i++) {
         next_time_.push_back(
@@ -204,7 +239,7 @@ class Client {
    public:
     Thread(Client* client, size_t idx)
         : done_(false),
-          new_(nullptr),
+          new_stats_(nullptr),
           client_(client),
           idx_(idx),
           impl_(&Thread::ThreadFunc, this) {}
@@ -219,14 +254,19 @@ class Client {
 
     void BeginSwap(Histogram* n) {
       std::lock_guard<std::mutex> g(mu_);
-      new_ = n;
+      new_stats_ = n;
     }
 
     void EndSwap() {
       std::unique_lock<std::mutex> g(mu_);
-      while (new_ != nullptr) {
+      while (new_stats_ != nullptr) {
         cv_.wait(g);
       };
+    }
+
+    void MergeStatsInto(Histogram* hist) {
+      std::unique_lock<std::mutex> g(mu_);
+      hist->Merge(histogram_);
     }
 
    private:
@@ -246,21 +286,21 @@ class Client {
         if (done_) {
           return;
         }
-        // check if we're marking, swap out the histogram if so
-        if (new_) {
-          new_->Swap(&histogram_);
-          new_ = nullptr;
+        // check if we're resetting stats, swap out the histogram if so
+        if (new_stats_) {
+          new_stats_->Swap(&histogram_);
+          new_stats_ = nullptr;
           cv_.notify_one();
         }
       }
     }
 
-    TestService::Stub* stub_;
+    BenchmarkService::Stub* stub_;
     ClientConfig config_;
     std::mutex mu_;
     std::condition_variable cv_;
     bool done_;
-    Histogram* new_;
+    Histogram* new_stats_;
     Histogram histogram_;
     Client* client_;
     size_t idx_;

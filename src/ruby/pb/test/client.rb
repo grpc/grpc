@@ -46,6 +46,7 @@ $LOAD_PATH.unshift(pb_dir) unless $LOAD_PATH.include?(pb_dir)
 $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'optparse'
+require 'logger'
 
 require 'grpc'
 require 'googleauth'
@@ -58,6 +59,22 @@ require 'test/proto/test_services'
 require 'signet/ssl_config'
 
 AUTH_ENV = Google::Auth::CredentialsLoader::ENV_VAR
+
+# RubyLogger defines a logger for gRPC based on the standard ruby logger.
+module RubyLogger
+  def logger
+    LOGGER
+  end
+
+  LOGGER = Logger.new(STDOUT)
+  LOGGER.level = Logger::INFO
+end
+
+# GRPC is the general RPC module
+module GRPC
+  # Inject the noop #logger if no module-level logger method has been injected.
+  extend RubyLogger
+end
 
 # AssertionError is use to indicate interop test failures.
 class AssertionError < RuntimeError; end

@@ -744,7 +744,8 @@ def _start_port_server(port_server_port):
     running = False
   if running:
     current_version = int(subprocess.check_output(
-        [sys.executable, 'tools/run_tests/port_server.py', 'dump_version']))
+        [sys.executable, os.path.abspath('tools/run_tests/port_server.py'),
+         'dump_version']))
     print 'my port server is version %d' % current_version
     running = (version >= current_version)
     if not running:
@@ -755,13 +756,18 @@ def _start_port_server(port_server_port):
     fd, logfile = tempfile.mkstemp()
     os.close(fd)
     print 'starting port_server, with log file %s' % logfile
-    args = [sys.executable, 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port, '-l', logfile]
+    args = [sys.executable, os.path.abspath('tools/run_tests/port_server.py'),
+            '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
     if platform.system() == 'Windows':
+      # Working directory of port server needs to be outside of Jenkins
+      # workspace to prevent file lock issues.
+      tempdir = tempfile.mkdtemp()
       port_server = subprocess.Popen(
           args,
           env=env,
+          cwd=tempdir,
           creationflags = 0x00000008, # detached process
           close_fds=True)
     else:
@@ -844,6 +850,7 @@ def _build_and_run(
                  for _ in range(0, args.antagonists)]
   port_server_port = 32767
   _start_port_server(port_server_port)
+  resultset = None
   try:
     infinite_runs = runs_per_test == 0
     one_run = set(
@@ -889,7 +896,7 @@ def _build_and_run(
   finally:
     for antagonist in antagonists:
       antagonist.kill()
-    if xml_report:
+    if xml_report and resultset:
       report_utils.render_xml_report(resultset, xml_report)
 
   number_failures, _ = jobset.run(

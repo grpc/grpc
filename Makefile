@@ -890,6 +890,7 @@ qps_worker: $(BINDIR)/$(CONFIG)/qps_worker
 reconnect_interop_client: $(BINDIR)/$(CONFIG)/reconnect_interop_client
 reconnect_interop_server: $(BINDIR)/$(CONFIG)/reconnect_interop_server
 secure_auth_context_test: $(BINDIR)/$(CONFIG)/secure_auth_context_test
+secure_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
 server_crash_test: $(BINDIR)/$(CONFIG)/server_crash_test
 server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
@@ -3551,6 +3552,8 @@ test_cxx: test_zookeeper buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/qps_test || ( echo test qps_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_auth_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_auth_context_test || ( echo test secure_auth_context_test failed ; exit 1 )
+	$(E) "[RUN]     Testing secure_sync_unary_ping_pong_test"
+	$(Q) $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test || ( echo test secure_sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_crash_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_crash_test || ( echo test server_crash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
@@ -3754,6 +3757,66 @@ $(GENDIR)/test/cpp/util/messages.grpc.pb.cc: test/cpp/util/messages.proto $(PROT
 endif
 
 ifeq ($(NO_PROTOC),true)
+$(GENDIR)/test/proto/benchmarks/control.pb.cc: protoc_dep_error
+$(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc: protoc_dep_error
+else
+$(GENDIR)/test/proto/benchmarks/control.pb.cc: test/proto/benchmarks/control.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc: test/proto/benchmarks/control.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/test/proto/benchmarks/payloads.pb.cc: protoc_dep_error
+$(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc: protoc_dep_error
+else
+$(GENDIR)/test/proto/benchmarks/payloads.pb.cc: test/proto/benchmarks/payloads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc: test/proto/benchmarks/payloads.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/test/proto/benchmarks/services.pb.cc: protoc_dep_error
+$(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc: protoc_dep_error
+else
+$(GENDIR)/test/proto/benchmarks/services.pb.cc: test/proto/benchmarks/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc: test/proto/benchmarks/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+endif
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/test/proto/benchmarks/stats.pb.cc: protoc_dep_error
+$(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc: protoc_dep_error
+else
+$(GENDIR)/test/proto/benchmarks/stats.pb.cc: test/proto/benchmarks/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc: test/proto/benchmarks/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
+endif
+
+ifeq ($(NO_PROTOC),true)
 $(GENDIR)/test/proto/empty.pb.cc: protoc_dep_error
 $(GENDIR)/test/proto/empty.grpc.pb.cc: protoc_dep_error
 else
@@ -3763,21 +3826,6 @@ $(GENDIR)/test/proto/empty.pb.cc: test/proto/empty.proto $(PROTOBUF_DEP) $(PROTO
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
 $(GENDIR)/test/proto/empty.grpc.pb.cc: test/proto/empty.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
-	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
-endif
-
-ifeq ($(NO_PROTOC),true)
-$(GENDIR)/test/proto/messages.pb.cc: protoc_dep_error
-$(GENDIR)/test/proto/messages.grpc.pb.cc: protoc_dep_error
-else
-$(GENDIR)/test/proto/messages.pb.cc: test/proto/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
-	$(E) "[PROTOC]  Generating protobuf CC file from $<"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
-
-$(GENDIR)/test/proto/messages.grpc.pb.cc: test/proto/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
@@ -3802,12 +3850,12 @@ ifeq ($(NO_PROTOC),true)
 $(GENDIR)/test/proto/qpstest.pb.cc: protoc_dep_error
 $(GENDIR)/test/proto/qpstest.grpc.pb.cc: protoc_dep_error
 else
-$(GENDIR)/test/proto/qpstest.pb.cc: test/proto/qpstest.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/test/proto/messages.pb.cc: test/proto/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/test/proto/qpstest.grpc.pb.cc: test/proto/qpstest.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
+$(GENDIR)/test/proto/messages.grpc.pb.cc: test/proto/messages.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS)
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(BINDIR)/$(CONFIG)/grpc_cpp_plugin $<
@@ -5404,7 +5452,11 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/server.o: $(GENDIR)/test/proto/empty.pb.cc 
 
 
 LIBQPS_SRC = \
-    $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc \
+    $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc \
+    $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc \
+    $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc \
+    $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc \
+    $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc \
     $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc \
     test/cpp/qps/client_async.cc \
     test/cpp/qps/client_sync.cc \
@@ -5459,16 +5511,16 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBQPS_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
-$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/test/proto/qpstest.pb.cc $(GENDIR)/test/proto/qpstest.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_async.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/client_sync.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/driver.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/perf_db_client.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_worker.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/report.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_async.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/server_sync.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/timer.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/test/cpp/util/benchmark_config.o: $(GENDIR)/test/proto/messages.pb.cc $(GENDIR)/test/proto/messages.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/control.pb.cc $(GENDIR)/test/proto/benchmarks/control.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.pb.cc $(GENDIR)/test/proto/benchmarks/payloads.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/services.pb.cc $(GENDIR)/test/proto/benchmarks/services.grpc.pb.cc $(GENDIR)/test/proto/benchmarks/stats.pb.cc $(GENDIR)/test/proto/benchmarks/stats.grpc.pb.cc $(GENDIR)/test/cpp/qps/perf_db.pb.cc $(GENDIR)/test/cpp/qps/perf_db.grpc.pb.cc
 
 
 LIBGRPC_CSHARP_EXT_SRC = \
@@ -10380,6 +10432,46 @@ deps_secure_auth_context_test: $(SECURE_AUTH_CONTEXT_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SECURE_AUTH_CONTEXT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SECURE_SYNC_UNARY_PING_PONG_TEST_SRC = \
+    test/cpp/qps/secure_sync_unary_ping_pong_test.cc \
+
+SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SECURE_SYNC_UNARY_PING_PONG_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test: openssl_dep_error
+
+else
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test: $(PROTOBUF_DEP) $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/secure_sync_unary_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_secure_sync_unary_ping_pong_test: $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
 endif
 endif
 
