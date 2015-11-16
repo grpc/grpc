@@ -36,7 +36,11 @@ package grpc.testing;
 
 message GaugeResponse {
   string name = 1;
-  int64 value = 2;
+  oneof value {
+    int64 long_value = 2;
+    double double_vale = 3;
+    string string_value = 4;
+  }
 }
 
 message GaugeRequest {

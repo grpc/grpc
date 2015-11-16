@@ -61,8 +61,8 @@ grpc::Status MetricsServiceImpl::GetAllGauges(
   std::lock_guard<std::mutex> lock(mu_);
   for (auto it = gauges_.begin(); it != gauges_.end(); it++) {
     GaugeResponse resp;
-    resp.set_name(it->first);           // Gauge name
-    resp.set_value(it->second->Get());  // Gauge value
+    resp.set_name(it->first);                // Gauge name
+    resp.set_long_value(it->second->Get());  // Gauge value
     writer->Write(resp);
   }
 
@@ -77,14 +77,14 @@ grpc::Status MetricsServiceImpl::GetGauge(ServerContext* context,
   auto it = gauges_.find(request->name());
   if (it != gauges_.end()) {
     response->set_name(it->first);
-    response->set_value(it->second->Get());
+    response->set_long_value(it->second->Get());
   }
 
   return Status::OK;
 }
 
-std::shared_ptr<Gauge> MetricsServiceImpl::CreateGauge(string name,
-                                                       bool& already_present) {
+std::shared_ptr<Gauge> MetricsServiceImpl::CreateGauge(const grpc::string& name,
+                                                       bool* already_present) {
   std::lock_guard<std::mutex> lock(mu_);
 
   std::shared_ptr<Gauge> gauge(new Gauge(0));
@@ -92,7 +92,7 @@ std::shared_ptr<Gauge> MetricsServiceImpl::CreateGauge(string name,
 
   // p.first is an iterator pointing to <name, shared_ptr<Gauge>> pair. p.second
   // is a boolean indicating if the Gauge is already present in the map
-  already_present = !p.second;
+  *already_present = !p.second;
   return p.first->second;
 }
 

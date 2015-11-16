@@ -41,6 +41,7 @@
 #include <grpc/support/time.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/grpc++.h>
+#include <grpc++/impl/thd.h>
 
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/interop/stress_interop_client.h"
@@ -91,11 +92,6 @@ DEFINE_string(test_cases, "",
               " 'large_unary', 10% of the time and 'empty_stream' the remaining"
               " 70% of the time");
 
-using std::make_pair;
-using std::pair;
-using std::thread;
-using std::vector;
-
 using grpc::testing::kTestCaseList;
 using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
@@ -119,7 +115,7 @@ TestCaseType GetTestTypeFromName(const grpc::string& test_name) {
 
 // Converts a string of comma delimited tokens to a vector of tokens
 bool ParseCommaDelimitedString(const grpc::string& comma_delimited_str,
-                               vector<grpc::string>& tokens) {
+                               std::vector<grpc::string>& tokens) {
   size_t bpos = 0;
   size_t epos = grpc::string::npos;
 
@@ -137,10 +133,10 @@ bool ParseCommaDelimitedString(const grpc::string& comma_delimited_str,
 //   - Whether parsing was successful (return value)
 //   - Vector of (test_type_enum, weight) pairs returned via 'tests' parameter
 bool ParseTestCasesString(const grpc::string& test_cases,
-                          vector<pair<TestCaseType, int>>& tests) {
+                          std::vector<std::pair<TestCaseType, int>>& tests) {
   bool is_success = true;
 
-  vector<grpc::string> tokens;
+  std::vector<grpc::string> tokens;
   ParseCommaDelimitedString(test_cases, tokens);
 
   for (auto it = tokens.begin(); it != tokens.end(); it++) {
@@ -168,8 +164,8 @@ bool ParseTestCasesString(const grpc::string& test_cases,
 }
 
 // For debugging purposes
-void LogParameterInfo(const vector<grpc::string>& addresses,
-                      const vector<pair<TestCaseType, int>>& tests) {
+void LogParameterInfo(const std::vector<grpc::string>& addresses,
+                      const std::vector<std::pair<TestCaseType, int>>& tests) {
   gpr_log(GPR_INFO, "server_addresses: %s", FLAGS_server_addresses.c_str());
   gpr_log(GPR_INFO, "test_cases : %s", FLAGS_test_cases.c_str());
   gpr_log(GPR_INFO, "sleep_duration_ms: %d", FLAGS_sleep_duration_ms);
@@ -195,7 +191,7 @@ int main(int argc, char** argv) {
   srand(time(NULL));
 
   // Parse the server addresses
-  vector<grpc::string> server_addresses;
+  std::vector<grpc::string> server_addresses;
   ParseCommaDelimitedString(FLAGS_server_addresses, server_addresses);
 
   // Parse test cases and weights
@@ -204,7 +200,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  vector<pair<TestCaseType, int>> tests;
+  std::vector<std::pair<TestCaseType, int>> tests;
   if (!ParseTestCasesString(FLAGS_test_cases, tests)) {
     gpr_log(GPR_ERROR, "Error in parsing test cases string %s ",
             FLAGS_test_cases.c_str());
@@ -218,7 +214,7 @@ int main(int argc, char** argv) {
 
   gpr_log(GPR_INFO, "Starting test(s)..");
 
-  vector<thread> test_threads;
+  std::vector<grpc::thread> test_threads;
 
   int thread_idx = 0;
   for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
@@ -239,8 +235,8 @@ int main(int argc, char** argv) {
       grpc::string metricName =
           "/stress_test/qps/thread/" + std::to_string(thread_idx);
       test_threads.emplace_back(
-          thread(&StressTestInteropClient::MainLoop, client,
-                 metrics_service.CreateGauge(metricName, is_already_created)));
+          grpc::thread(&StressTestInteropClient::MainLoop, client,
+                 metrics_service.CreateGauge(metricName, &is_already_created)));
 
       // The Gauge should not have been already created
       GPR_ASSERT(!is_already_created);
