@@ -36,7 +36,6 @@
 #include <atomic>
 #include <map>
 #include <mutex>
-#include <vector>
 
 #include "test/proto/metrics.grpc.pb.h"
 #include "test/proto/metrics.pb.h"
@@ -61,9 +60,8 @@
 namespace grpc {
 namespace testing {
 
-using std::map;
-using std::vector;
-
+// TODO(sreek): Add support for other types of Gauges like Double, String in
+// future
 class Gauge {
  public:
   Gauge(long initial_val);
@@ -86,7 +84,8 @@ class MetricsServiceImpl GRPC_FINAL : public MetricsService::Service {
   // is already present in the map.
   // NOTE: CreateGauge can be called anytime (i.e before or after calling
   // StartServer).
-  std::shared_ptr<Gauge> CreateGauge(string name, bool& is_present);
+  std::shared_ptr<Gauge> CreateGauge(const grpc::string& name,
+                                     bool* already_present);
 
   std::unique_ptr<grpc::Server> StartServer(int port);
 

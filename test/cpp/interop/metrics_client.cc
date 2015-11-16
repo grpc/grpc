@@ -67,9 +67,13 @@ void PrintMetrics(grpc::string& server_address) {
   long overall_qps = 0;
   int idx = 0;
   while (reader->Read(&gauge_response)) {
-    gpr_log(GPR_INFO, "Gauge: %d (%s: %ld)", ++idx,
-            gauge_response.name().c_str(), gauge_response.value());
-    overall_qps += gauge_response.value();
+    if (gauge_response.value_case() == GaugeResponse::kLongValue) {
+      gpr_log(GPR_INFO, "Gauge: %d (%s: %ld)", ++idx,
+              gauge_response.name().c_str(), gauge_response.long_value());
+      overall_qps += gauge_response.long_value();
+    } else {
+      gpr_log(GPR_INFO, "Gauge %s is not a long value", gauge_response.name().c_str());
+    }
   }
 
   gpr_log(GPR_INFO, "OVERALL: %ld", overall_qps);
@@ -84,7 +88,7 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
   // Make sure server_addresses flag is not empty
-  if (FLAGS_metrics_server_address.length() == 0) {
+  if (FLAGS_metrics_server_address.empty()) {
     gpr_log(
         GPR_ERROR,
         "Cannot connect to the Metrics server. Please pass the address of the"
