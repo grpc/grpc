@@ -1,5 +1,4 @@
-#!/bin/sh
-
+#!/bin/bash
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -28,31 +27,16 @@
 # THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# Builds http2 interop client in a base image.
+set -e
 
-if [ x"$QPS_WORKERS" == x ]; then
-  echo Error: Must set QPS_WORKERS variable in form \
-    "host:port,host:port,..." 1>&2
-  exit 1
-fi
+mkdir -p /var/local/git
+git clone --recursive /var/local/jenkins/grpc /var/local/git/grpc
 
-bins=`find . .. ../.. ../../.. -name bins | head -1`
+# copy service account keys if available
+cp -r /var/local/jenkins/service_account $HOME || true
 
-for secure in true false
-do
-  for channels in 1 2 4 8
-  do
-    for client in SYNC_CLIENT ASYNC_CLIENT
-    do
-      for server in SYNC_SERVER ASYNC_SERVER
-      do
-        for rpc in UNARY STREAMING
-        do
-          echo "Test $rpc $client $server, $channels channels, secure=$secure"
-          "$bins"/opt/qps_driver --rpc_type=$rpc \
-              --client_type=$client --server_type=$server \
-	      --secure_test=$secure
-	done
-      done
-    done
-  done
-done
+# compile the tests
+(cd /var/local/git/grpc/tools/http2_interop && go test -c)
+

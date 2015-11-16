@@ -1,5 +1,3 @@
-#!/bin/sh
-
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -29,30 +27,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-if [ x"$QPS_WORKERS" == x ]; then
-  echo Error: Must set QPS_WORKERS variable in form \
-    "host:port,host:port,..." 1>&2
-  exit 1
-fi
+FROM golang:1.4
 
-bins=`find . .. ../.. ../../.. -name bins | head -1`
+# Using login shell removes Go from path, so we add it.
+RUN ln -s /usr/src/go/bin/go /usr/local/bin
 
-for secure in true false
-do
-  for channels in 1 2 4 8
-  do
-    for client in SYNC_CLIENT ASYNC_CLIENT
-    do
-      for server in SYNC_SERVER ASYNC_SERVER
-      do
-        for rpc in UNARY STREAMING
-        do
-          echo "Test $rpc $client $server, $channels channels, secure=$secure"
-          "$bins"/opt/qps_driver --rpc_type=$rpc \
-              --client_type=$client --server_type=$server \
-	      --secure_test=$secure
-	done
-      done
-    done
-  done
-done
+# Define the default command.
+CMD ["bash"]
