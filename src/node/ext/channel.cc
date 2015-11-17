@@ -82,7 +82,7 @@ bool ParseChannelArgs(Local<Value> args_val,
     return false;
   }
   grpc_channel_args *channel_args = reinterpret_cast<grpc_channel_args*>(
-      malloc(sizeof(channel_args)));
+      malloc(sizeof(grpc_channel_args)));
   *channel_args_ptr = channel_args;
   Local<Object> args_hash = Nan::To<Object>(args_val).ToLocalChecked();
   Local<Array> keys = Nan::GetOwnPropertyNames(args_hash).ToLocalChecked();

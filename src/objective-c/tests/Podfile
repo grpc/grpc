@@ -3,13 +3,28 @@ platform :ios, '8.0'
 
 pod 'Protobuf', :path => "../../../third_party/protobuf"
 pod 'gRPC', :path => "../../.."
-pod 'RemoteTest', :path => "../generated_libraries/RemoteTestClient"
-pod 'RouteGuide', :path => "../generated_libraries/RouteGuideClient"
+pod 'RemoteTest', :path => "RemoteTestClient"
 
-link_with 'AllTests'
+link_with 'AllTests',
+          'RxLibraryUnitTests',
+          'InteropTests',
+          'InteropTestsLocalSSL',
+          'InteropTestsLocalCleartext'
 
 target 'Tests' do
 end
 
 target 'AllTests' do
+end
+
+target 'RxLibraryUnitTests' do
+end
+
+target 'InteropTestsRemote' do
+end
+
+target 'InteropTestsLocalSSL' do
+end
+
+target 'InteropTestsLocalCleartext' do
 end

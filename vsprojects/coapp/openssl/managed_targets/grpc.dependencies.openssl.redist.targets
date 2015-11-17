@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Choose>
+    <!-- Under older versions of Monodevelop, Choose is not supported and is just ignored, which gives us the desired effect. -->
+    <When Condition=" '$(OS)' != 'Unix' ">
+      <ItemGroup Condition=" '$(CopyNativeDependencies)' == 'true' ">
+        <Content Include="$(MSBuildThisFileDirectory)..\..\build\native\bin\$(NativeDependenciesToolset)\$(NativeDependenciesPlatform)\$(NativeDependenciesConfiguration)\dynamic\libeay32.dll">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="$(MSBuildThisFileDirectory)..\..\build\native\bin\$(NativeDependenciesToolset)\$(NativeDependenciesPlatform)\$(NativeDependenciesConfiguration)\dynamic\ssleay32.dll">
+          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+      </ItemGroup>
+    </When>
+  <Otherwise />
+  </Choose>
+</Project>

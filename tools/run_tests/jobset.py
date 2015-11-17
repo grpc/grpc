@@ -34,21 +34,20 @@ import multiprocessing
 import os
 import platform
 import signal
-import string
 import subprocess
 import sys
 import tempfile
 import time
-import xml.etree.cElementTree as ET
 
 
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
+_MAX_RESULT_SIZE = 8192
 
 
 # setup a signal handler so that signal.pause registers 'something'
 # when a child finishes
 # not using futures and threading to avoid a dependency on subprocess32
-if platform.system() == "Windows":
+if platform.system() == 'Windows':
   pass
 else:
   have_alarm = False
@@ -118,8 +117,8 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
   except:
     pass
 
-message.old_tag = ""
-message.old_msg = ""
+message.old_tag = ''
+message.old_msg = ''
 
 def which(filename):
   if '/' in filename:
@@ -169,22 +168,34 @@ class JobSpec(object):
     return self.identity() == other.identity()
 
 
+class JobResult(object):
+  def __init__(self):
+    self.state = 'UNKNOWN'
+    self.returncode = -1
+    self.elapsed_time = 0
+    self.num_failures = 0
+    self.retries = 0
+    self.message = ''
+    
+
 class Job(object):
   """Manages one job."""
 
-  def __init__(self, spec, bin_hash, newline_on_success, travis, add_env, xml_report):
+  def __init__(self, spec, bin_hash, newline_on_success, travis, add_env):
     self._spec = spec
     self._bin_hash = bin_hash
     self._newline_on_success = newline_on_success
     self._travis = travis
     self._add_env = add_env.copy()
-    self._xml_test = ET.SubElement(xml_report, 'testcase',
-                                   name=self._spec.shortname) if xml_report is not None else None
     self._retries = 0
     self._timeout_retries = 0
     self._suppress_failure_message = False
     message('START', spec.shortname, do_newline=self._travis)
+    self.result = JobResult()
     self.start()
+
+  def GetSpec(self):
+    return self._spec
 
   def start(self):
     self._tempfile = tempfile.TemporaryFile()
@@ -192,34 +203,41 @@ class Job(object):
     env.update(self._spec.environ)
     env.update(self._add_env)
     self._start = time.time()
-    self._process = subprocess.Popen(args=self._spec.cmdline,
-                                     stderr=subprocess.STDOUT,
-                                     stdout=self._tempfile,
-                                     cwd=self._spec.cwd,
-                                     shell=self._spec.shell,
-                                     env=env)
+    try_start = lambda: subprocess.Popen(args=self._spec.cmdline,
+                                         stderr=subprocess.STDOUT,
+                                         stdout=self._tempfile,
+                                         cwd=self._spec.cwd,
+                                         shell=self._spec.shell,
+                                         env=env)
+    delay = 0.3
+    for i in range(0, 4):
+      try:
+        self._process = try_start()
+        break
+      except OSError:
+        message('WARNING', 'Failed to start %s, retrying in %f seconds' % (self._spec.shortname, delay))
+        time.sleep(delay)
+        delay *= 2
+    else:
+      self._process = try_start()
     self._state = _RUNNING
 
   def state(self, update_cache):
     """Poll current state of the job. Prints messages at completion."""
+    self._tempfile.seek(0)
+    stdout = self._tempfile.read()
+    self.result.message = stdout[-_MAX_RESULT_SIZE:]
     if self._state == _RUNNING and self._process.poll() is not None:
       elapsed = time.time() - self._start
-      self._tempfile.seek(0)
-      stdout = self._tempfile.read()
-      filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))
-      # TODO: looks like jenkins master is slow because parsing the junit results XMLs is not
-      # implemented efficiently. This is an experiment to workaround the issue by making sure
-      # results.xml file is small enough.
-      filtered_stdout = filtered_stdout[-128:]
-      if self._xml_test is not None:
-        self._xml_test.set('time', str(elapsed))
-        ET.SubElement(self._xml_test, 'system-out').text = filtered_stdout
+      self.result.elapsed_time = elapsed
       if self._process.returncode != 0:
         if self._retries < self._spec.flake_retries:
           message('FLAKE', '%s [ret=%d, pid=%d]' % (
             self._spec.shortname, self._process.returncode, self._process.pid),
             stdout, do_newline=True)
           self._retries += 1
+          self.result.num_failures += 1
+          self.result.retries = self._timeout_retries + self._retries
           self.start()
         else:
           self._state = _FAILURE
@@ -227,30 +245,32 @@ class Job(object):
             message('FAILED', '%s [ret=%d, pid=%d]' % (
                 self._spec.shortname, self._process.returncode, self._process.pid),
                 stdout, do_newline=True)
-          if self._xml_test is not None:
-            ET.SubElement(self._xml_test, 'failure', message='Failure').text
+          self.result.state = 'FAILED'
+          self.result.num_failures += 1
+          self.result.returncode = self._process.returncode
       else:
         self._state = _SUCCESS
         message('PASSED', '%s [time=%.1fsec; retries=%d;%d]' % (
                     self._spec.shortname, elapsed, self._retries, self._timeout_retries),
             do_newline=self._newline_on_success or self._travis)
+        self.result.state = 'PASSED'
         if self._bin_hash:
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
-      self._tempfile.seek(0)
-      stdout = self._tempfile.read()
-      filtered_stdout = filter(lambda x: x in string.printable, stdout.decode(errors='ignore'))
       if self._timeout_retries < self._spec.timeout_retries:
         message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
         self._timeout_retries += 1
+        self.result.num_failures += 1
+        self.result.retries = self._timeout_retries + self._retries
+        if self._spec.kill_handler:
+          self._spec.kill_handler(self)
         self._process.terminate()
         self.start()
       else:
         message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
         self.kill()
-        if self._xml_test is not None:
-          ET.SubElement(self._xml_test, 'system-out').text = filtered_stdout
-          ET.SubElement(self._xml_test, 'error', message='Timeout')
+        self.result.state = 'TIMEOUT'
+        self.result.num_failures += 1
     return self._state
 
   def kill(self):
@@ -262,13 +282,13 @@ class Job(object):
 
   def suppress_failure_message(self):
     self._suppress_failure_message = True
-
+    
 
 class Jobset(object):
   """Manages one run of jobs."""
 
   def __init__(self, check_cancelled, maxjobs, newline_on_success, travis,
-               stop_on_failure, add_env, cache, xml_report):
+               stop_on_failure, add_env, cache):
     self._running = set()
     self._check_cancelled = check_cancelled
     self._cancelled = False
@@ -280,8 +300,11 @@ class Jobset(object):
     self._cache = cache
     self._stop_on_failure = stop_on_failure
     self._hashes = {}
-    self._xml_report = xml_report
     self._add_env = add_env
+    self.resultset = {}
+    
+  def get_num_failures(self):
+    return self._failures  
 
   def start(self, spec):
     """Start a job. Return True on success, False on failure."""
@@ -304,12 +327,13 @@ class Jobset(object):
       bin_hash = None
       should_run = True
     if should_run:
-      self._running.add(Job(spec,
-                            bin_hash,
-                            self._newline_on_success,
-                            self._travis,
-                            self._add_env,
-                            self._xml_report))
+      job = Job(spec,
+                bin_hash,
+                self._newline_on_success,
+                self._travis,
+                self._add_env)
+      self._running.add(job)
+      self.resultset[job.GetSpec().shortname] = []
     return True
 
   def reap(self):
@@ -329,6 +353,7 @@ class Jobset(object):
         break
       for job in dead:
         self._completed += 1
+        self.resultset[job.GetSpec().shortname].append(job.result)
         self._running.remove(job)
       if dead: return
       if (not self._travis):
@@ -380,14 +405,13 @@ def run(cmdlines,
         infinite_runs=False,
         stop_on_failure=False,
         cache=None,
-        xml_report=None,
         add_env={}):
   js = Jobset(check_cancelled,
               maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
               newline_on_success, travis, stop_on_failure, add_env,
-              cache if cache is not None else NoCache(),
-              xml_report)
+              cache if cache is not None else NoCache())
   for cmdline in cmdlines:
     if not js.start(cmdline):
       break
-  return js.finish()
+  js.finish()  
+  return js.get_num_failures(), js.resultset

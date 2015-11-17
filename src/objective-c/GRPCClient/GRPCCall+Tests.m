@@ -40,6 +40,9 @@
 + (void)useTestCertsPath:(NSString *)certsPath
                 testName:(NSString *)testName
                  forHost:(NSString *)host {
+  if (!host || !certsPath || !testName) {
+    [NSException raise:NSInvalidArgumentException format:@"host, path and name must be provided."];
+  }
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
   hostConfig.pathToCertificates = certsPath;
   hostConfig.hostNameOverride = testName;

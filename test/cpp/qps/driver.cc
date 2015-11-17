@@ -48,6 +48,7 @@
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
+#include "test/proto/benchmarks/services.grpc.pb.h"
 
 using std::list;
 using std::thread;
@@ -91,12 +92,12 @@ static ClientContext* AllocContext(list<ClientContext>* contexts, T deadline) {
 }
 
 struct ServerData {
-  unique_ptr<Worker::Stub> stub;
+  unique_ptr<WorkerService::Stub> stub;
   unique_ptr<ClientReaderWriter<ServerArgs, ServerStatus>> stream;
 };
 
 struct ClientData {
-  unique_ptr<Worker::Stub> stub;
+  unique_ptr<WorkerService::Stub> stub;
   unique_ptr<ClientReaderWriter<ClientArgs, ClientStatus>> stream;
 };
 }  // namespace runsc
@@ -131,8 +132,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
 
     int driver_port = grpc_pick_unused_port_or_die();
-    int benchmark_port = grpc_pick_unused_port_or_die();
-    local_workers.emplace_back(new QpsWorker(driver_port, benchmark_port));
+    local_workers.emplace_back(new QpsWorker(driver_port));
     char addr[256];
     sprintf(addr, "localhost:%d", driver_port);
     if (spawn_local_worker_count < 0) {
@@ -165,7 +165,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
         CreateChannel(workers[i], InsecureChannelCredentials()));
     ServerArgs args;
     result_server_config = server_config;
-    result_server_config.set_host(workers[i]);
     *args.mutable_setup() = server_config;
     servers[i].stream =
         servers[i].stub->RunServer(runsc::AllocContext(&contexts, deadline));
@@ -189,14 +188,18 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
+<<<<<<< HEAD
     clients[i].stub = Worker::NewStub(
         CreateChannel(workers[i + num_servers], InsecureChannelCredentials()));
+=======
+    clients[i].stub = WorkerService::NewStub(
+        CreateChannel(workers[i + num_servers], InsecureCredentials()));
+>>>>>>> ab88da26bad1566d0a0f9a797ec429bd96ae30e2
     ClientArgs args;
     result_client_config = client_config;
-    result_client_config.set_host(workers[i + num_servers]);
     *args.mutable_setup() = client_config;
     clients[i].stream =
-        clients[i].stub->RunTest(runsc::AllocContext(&contexts, deadline));
+        clients[i].stub->RunClient(runsc::AllocContext(&contexts, deadline));
     GPR_ASSERT(clients[i].stream->Write(args));
     ClientStatus init_status;
     GPR_ASSERT(clients[i].stream->Read(&init_status));
@@ -211,9 +214,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Start a run
   gpr_log(GPR_INFO, "Starting");
   ServerArgs server_mark;
-  server_mark.mutable_mark();
+  server_mark.mutable_mark()->set_reset(true);
   ClientArgs client_mark;
-  client_mark.mutable_mark();
+  client_mark.mutable_mark()->set_reset(true);
   for (auto server = &servers[0]; server != &servers[num_servers]; server++) {
     GPR_ASSERT(server->stream->Write(server_mark));
   }
@@ -251,14 +254,15 @@ std::unique_ptr<ScenarioResult> RunScenario(
     GPR_ASSERT(server->stream->Read(&server_status));
     const auto& stats = server_status.stats();
     result->server_resources.emplace_back(
-        stats.time_elapsed(), stats.time_user(), stats.time_system());
+        stats.time_elapsed(), stats.time_user(), stats.time_system(),
+        server_status.cores());
   }
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {
     GPR_ASSERT(client->stream->Read(&client_status));
     const auto& stats = client_status.stats();
     result->latencies.MergeProto(stats.latencies());
     result->client_resources.emplace_back(
-        stats.time_elapsed(), stats.time_user(), stats.time_system());
+        stats.time_elapsed(), stats.time_user(), stats.time_system(), -1);
   }
 
   for (auto client = &clients[0]; client != &clients[num_clients]; client++) {

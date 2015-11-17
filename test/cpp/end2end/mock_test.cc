@@ -62,7 +62,7 @@ template <class W, class R>
 class MockClientReaderWriter GRPC_FINAL
     : public ClientReaderWriterInterface<W, R> {
  public:
-  void WaitForInitialMetadata() {}
+  void WaitForInitialMetadata() GRPC_OVERRIDE {}
   bool Read(R* msg) GRPC_OVERRIDE { return true; }
   bool Write(const W& msg) GRPC_OVERRIDE { return true; }
   bool WritesDone() GRPC_OVERRIDE { return true; }
@@ -73,7 +73,7 @@ class MockClientReaderWriter<EchoRequest, EchoResponse> GRPC_FINAL
     : public ClientReaderWriterInterface<EchoRequest, EchoResponse> {
  public:
   MockClientReaderWriter() : writes_done_(false) {}
-  void WaitForInitialMetadata() {}
+  void WaitForInitialMetadata() GRPC_OVERRIDE {}
   bool Read(EchoResponse* msg) GRPC_OVERRIDE {
     if (writes_done_) return false;
     msg->set_message(last_message_);

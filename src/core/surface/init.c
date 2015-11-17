@@ -47,6 +47,7 @@
 #include "src/core/client_config/resolvers/dns_resolver.h"
 #include "src/core/client_config/resolvers/sockaddr_resolver.h"
 #include "src/core/debug/trace.h"
+#include "src/core/iomgr/executor.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/surface/api_trace.h"
@@ -108,6 +109,7 @@ void grpc_init(void) {
     grpc_register_tracer("connectivity_state", &grpc_connectivity_state_trace);
     grpc_security_pre_init();
     grpc_iomgr_init();
+    grpc_executor_init();
     grpc_tracer_init("GRPC_TRACE");
     /* Only initialize census if noone else has. */
     if (census_enabled() == CENSUS_FEATURE_NONE) {
@@ -132,6 +134,7 @@ void grpc_shutdown(void) {
   gpr_mu_lock(&g_init_mu);
   if (--g_initializations == 0) {
     grpc_iomgr_shutdown();
+    grpc_executor_shutdown();
     census_shutdown();
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();

@@ -31,8 +31,6 @@
  *
  */
 
-#include <signal.h>
-
 #include <set>
 
 #include <grpc/support/log.h>
@@ -52,17 +50,15 @@ static void RunQPS() {
 
   ClientConfig client_config;
   client_config.set_client_type(ASYNC_CLIENT);
-  client_config.set_enable_ssl(false);
   client_config.set_outstanding_rpcs_per_channel(1000);
   client_config.set_client_channels(8);
-  client_config.set_payload_size(1);
   client_config.set_async_client_threads(8);
   client_config.set_rpc_type(UNARY);
+  client_config.mutable_load_params()->mutable_closed_loop();
 
   ServerConfig server_config;
   server_config.set_server_type(ASYNC_SERVER);
-  server_config.set_enable_ssl(false);
-  server_config.set_threads(8);
+  server_config.set_async_server_threads(8);
 
   const auto result =
       RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
@@ -77,7 +73,6 @@ static void RunQPS() {
 int main(int argc, char** argv) {
   grpc::testing::InitBenchmark(&argc, &argv, true);
 
-  signal(SIGPIPE, SIG_IGN);
   grpc::testing::RunQPS();
 
   return 0;

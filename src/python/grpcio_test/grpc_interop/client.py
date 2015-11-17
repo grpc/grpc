@@ -32,10 +32,13 @@
 import argparse
 from oauth2client import client as oauth2client_client
 
-from grpc.early_adopter import implementations
+from grpc.beta import implementations
+
+from grpc_test.beta import test_utilities
 
 from grpc_interop import methods
 from grpc_interop import resources
+from grpc_interop import test_pb2
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -71,12 +74,17 @@ def _oauth_access_token(args):
 def _stub(args):
   if args.oauth_scope:
     if args.test_case == 'oauth2_auth_token':
+      # TODO(jtattermusch): This testcase sets the auth metadata key-value
+      # manually, which also means that the user would need to do the same
+      # thing every time he/she would like to use and out of band oauth token.
+      # The transformer function that produces the metadata key-value from
+      # the access token should be provided by gRPC auth library.
       access_token = _oauth_access_token(args)
       metadata_transformer = lambda x: [
-          ('Authorization', 'Bearer %s' % access_token)]
+          ('authorization', 'Bearer %s' % access_token)]
     else:
       metadata_transformer = lambda x: [
-          ('Authorization', 'Bearer %s' % _oauth_access_token(args))]
+          ('authorization', 'Bearer %s' % _oauth_access_token(args))]
   else:
     metadata_transformer = lambda x: []
   if args.use_tls:
@@ -85,15 +93,16 @@ def _stub(args):
     else:
       root_certificates = resources.prod_root_certificates()
 
-    stub = implementations.stub(
-        methods.SERVICE_NAME, methods.CLIENT_METHODS, args.server_host,
-        args.server_port, metadata_transformer=metadata_transformer,
-        secure=True, root_certificates=root_certificates,
-        server_host_override=args.server_host_override)
+    channel = test_utilities.not_really_secure_channel(
+        args.server_host, args.server_port,
+        implementations.ssl_client_credentials(root_certificates, None, None),
+        args.server_host_override)
+    stub = test_pb2.beta_create_TestService_stub(
+        channel, metadata_transformer=metadata_transformer)
   else:
-    stub = implementations.stub(
-        methods.SERVICE_NAME, methods.CLIENT_METHODS, args.server_host,
-        args.server_port, secure=False)
+    channel = implementations.insecure_channel(
+        args.server_host, args.server_port)
+    stub = test_pb2.beta_create_TestService_stub(channel)
   return stub
 
 

@@ -45,6 +45,7 @@ $LOAD_PATH.unshift(pb_dir) unless $LOAD_PATH.include?(pb_dir)
 $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'forwardable'
+require 'logger'
 require 'optparse'
 
 require 'grpc'
@@ -52,6 +53,60 @@ require 'grpc'
 require 'test/proto/empty'
 require 'test/proto/messages'
 require 'test/proto/test_services'
+
+# DebugIsTruncated extends the default Logger to truncate debug messages
+class DebugIsTruncated < Logger
+  def debug(s)
+    super(truncate(s, 1024))
+  end
+
+  # Truncates a given +text+ after a given <tt>length</tt> if +text+ is longer than <tt>length</tt>:
+  #
+  #   'Once upon a time in a world far far away'.truncate(27)
+  #   # => "Once upon a time in a wo..."
+  #
+  # Pass a string or regexp <tt>:separator</tt> to truncate +text+ at a natural break:
+  #
+  #   'Once upon a time in a world far far away'.truncate(27, separator: ' ')
+  #   # => "Once upon a time in a..."
+  #
+  #   'Once upon a time in a world far far away'.truncate(27, separator: /\s/)
+  #   # => "Once upon a time in a..."
+  #
+  # The last characters will be replaced with the <tt>:omission</tt> string (defaults to "...")
+  # for a total length not exceeding <tt>length</tt>:
+  #
+  #   'And they found that many people were sleeping better.'.truncate(25, omission: '... (continued)')
+  #   # => "And they f... (continued)"
+  def truncate(s, truncate_at, options = {})
+    return s unless s.length > truncate_at
+    omission = options[:omission] || '...'
+    with_extra_room = truncate_at - omission.length
+    stop = \
+      if options[:separator]
+        rindex(options[:separator], with_extra_room) || with_extra_room
+      else
+        with_extra_room
+      end
+    "#{s[0, stop]}#{omission}"
+  end
+end
+
+# RubyLogger defines a logger for gRPC based on the standard ruby logger.
+module RubyLogger
+  def logger
+    LOGGER
+  end
+
+  LOGGER = DebugIsTruncated.new(STDOUT)
+  LOGGER.level = Logger::WARN
+end
+
+# GRPC is the general RPC module
+module GRPC
+  # Inject the noop #logger if no module-level logger method has been injected.
+  extend RubyLogger
+end
 
 # loads the certificates by the test server.
 def load_test_certs
@@ -113,7 +168,7 @@ class TestTarget < Grpc::Testing::TestService::Service
 
   def streaming_input_call(call)
     sizes = call.each_remote_read.map { |x| x.payload.body.length }
-    sum = sizes.inject { |s, x| s + x }
+    sum = sizes.inject(0) { |s, x| s + x }
     StreamingInputCallResponse.new(aggregated_payload_size: sum)
   end
 
@@ -168,8 +223,9 @@ def parse_options
     opts.on('--port PORT', 'server port') do |v|
       options['port'] = v
     end
-    opts.on('-s', '--use_tls', 'require a secure connection?') do |v|
-      options['secure'] = v
+    opts.on('--use_tls USE_TLS', ['false', 'true'],
+            'require a secure connection?') do |v|
+      options['secure'] = v == 'true'
     end
   end.parse!
 

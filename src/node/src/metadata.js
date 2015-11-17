@@ -33,6 +33,15 @@
 
 /**
  * Metadata module
+ *
+ * This module defines the Metadata class, which represents header and trailer
+ * metadata for gRPC calls. Here is an example of how to use it:
+ *
+ * var metadata = new metadata_module.Metadata();
+ * metadata.set('key1', 'value1');
+ * metadata.add('key1', 'value2');
+ * metadata.get('key1') // returns ['value1', 'value2']
+ *
  * @module
  */
 
@@ -59,7 +68,6 @@ function normalizeKey(key) {
 function validate(key, value) {
   if (_.endsWith(key, '-bin')) {
     if (!(value instanceof Buffer)) {
-      console.log(value.constructor.toString());
       throw new Error('keys that end with \'-bin\' must have Buffer values');
     }
   } else {

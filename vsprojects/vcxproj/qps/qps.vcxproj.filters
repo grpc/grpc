@@ -1,8 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\test\cpp\qps\qpstest.proto">
-      <Filter>test\cpp\qps</Filter>
+    <ClCompile Include="..\..\..\test\proto\messages.proto">
+      <Filter>test\proto</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\control.proto">
+      <Filter>test\proto\benchmarks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\payloads.proto">
+      <Filter>test\proto\benchmarks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\services.proto">
+      <Filter>test\proto\benchmarks</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\test\proto\benchmarks\stats.proto">
+      <Filter>test\proto\benchmarks</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\test\cpp\qps\perf_db.proto">
       <Filter>test\cpp\qps</Filter>
@@ -86,6 +98,12 @@
     </Filter>
     <Filter Include="test\cpp\util">
       <UniqueIdentifier>{9042d134-6d5a-a907-799e-01768a475055}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\proto">
+      <UniqueIdentifier>{44e63a33-67f4-0575-e87a-711a7c9111e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\proto\benchmarks">
+      <UniqueIdentifier>{4180a094-39b4-e46c-1576-940bfe87d284}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
