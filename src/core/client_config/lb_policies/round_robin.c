@@ -46,7 +46,7 @@ int grpc_lb_round_robin_trace = 0;
 typedef struct pending_pick {
   struct pending_pick *next;
   grpc_pollset *pollset;
-  grpc_subchannel **target;
+  grpc_connected_subchannel **target;
   grpc_closure *on_complete;
 } pending_pick;
 
@@ -144,9 +144,9 @@ static void advance_last_picked_locked(round_robin_lb_policy *p) {
 /** Prepends (relative to the root at p->ready_list) the connected subchannel \a
  * csc to the list of ready subchannels. */
 static ready_list *add_connected_sc_locked(round_robin_lb_policy *p,
-                                           grpc_subchannel *csc) {
+                                           grpc_subchannel *sc) {
   ready_list *new_elem = gpr_malloc(sizeof(ready_list));
-  new_elem->subchannel = csc;
+  new_elem->subchannel = sc;
   if (p->ready_list.prev == NULL) {
     /* first element */
     new_elem->next = &p->ready_list;
@@ -160,7 +160,7 @@ static ready_list *add_connected_sc_locked(round_robin_lb_policy *p,
     p->ready_list.prev = new_elem;
   }
   if (grpc_lb_round_robin_trace) {
-    gpr_log(GPR_DEBUG, "[READYLIST] ADDING NODE %p (SC %p)", new_elem, csc);
+    gpr_log(GPR_DEBUG, "[READYLIST] ADDING NODE %p (SC %p)", new_elem, sc);
   }
   return new_elem;
 }
@@ -265,7 +265,7 @@ void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                           grpc_subchannel **target) {
+                           grpc_connected_subchannel **target) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
   size_t i;
@@ -314,7 +314,7 @@ void rr_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 }
 
 int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
-            grpc_metadata_batch *initial_metadata, grpc_subchannel **target,
+            grpc_metadata_batch *initial_metadata, grpc_connected_subchannel **target,
             grpc_closure *on_complete) {
   size_t i;
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
@@ -323,9 +323,9 @@ int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
   gpr_mu_lock(&p->mu);
   if ((selected = peek_next_connected_locked(p))) {
     gpr_mu_unlock(&p->mu);
-    *target = selected->subchannel;
+    *target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
     if (grpc_lb_round_robin_trace) {
-      gpr_log(GPR_DEBUG, "[RR PICK] TARGET <-- SUBCHANNEL %p (NODE %p)",
+      gpr_log(GPR_DEBUG, "[RR PICK] TARGET <-- CONNECTED SUBCHANNEL %p (NODE %p)",
               selected->subchannel, selected);
     }
     /* only advance the last picked pointer if the selection was used */
@@ -390,7 +390,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         }
         while ((pp = p->pending_picks)) {
           p->pending_picks = pp->next;
-          *pp->target = selected->subchannel;
+          *pp->target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
           if (grpc_lb_round_robin_trace) {
             gpr_log(GPR_DEBUG,
                     "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",

@@ -42,12 +42,11 @@
     called when the subchannel is available) */
 typedef int (*grpc_subchannel_call_holder_pick_subchannel)(
     grpc_exec_ctx *exec_ctx, void *arg, grpc_metadata_batch *initial_metadata,
-    grpc_subchannel **subchannel, grpc_closure *on_ready);
+    grpc_connected_subchannel **connected_subchannel, grpc_closure *on_ready);
 
 typedef enum {
   GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING,
-  GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL,
-  GRPC_SUBCHANNEL_CALL_HOLDER_CREATING_CALL
+  GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL
 } grpc_subchannel_call_holder_creation_phase;
 
 /** Wrapper for holding a pointer to grpc_subchannel_call, and the
@@ -71,7 +70,7 @@ typedef struct grpc_subchannel_call_holder {
   gpr_mu mu;
 
   grpc_subchannel_call_holder_creation_phase creation_phase;
-  grpc_subchannel *subchannel;
+  grpc_connected_subchannel *connected_subchannel;
   grpc_pollset *pollset;
 
   grpc_transport_stream_op *waiting_ops;

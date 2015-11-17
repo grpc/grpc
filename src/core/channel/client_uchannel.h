@@ -64,7 +64,7 @@ void grpc_client_uchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
 grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
                                           grpc_channel_args *args);
 
-void grpc_client_uchannel_set_subchannel(grpc_channel *uchannel,
-                                         grpc_subchannel *subchannel);
+void grpc_client_uchannel_set_connected_subchannel(grpc_channel *uchannel,
+                                         grpc_connected_subchannel *connected_subchannel);
 
 #endif /* GRPC_INTERNAL_CORE_CHANNEL_CLIENT_MICROCHANNEL_H */
