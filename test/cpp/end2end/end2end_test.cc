@@ -575,6 +575,18 @@ void CancelRpc(ClientContext* context, int delay_us, TestServiceImpl* service) {
   context->TryCancel();
 }
 
+TEST_P(End2endTest, CancelRpcBeforeStart) {
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+  context.TryCancel();
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ("", response.message());
+  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+}
+
 // Client cancels request stream after sending two messages
 TEST_P(End2endTest, ClientCancelsRequestStream) {
   ResetStub();
