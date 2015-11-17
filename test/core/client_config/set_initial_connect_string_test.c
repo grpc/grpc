@@ -54,6 +54,7 @@ struct rpc_state {
   grpc_call *call;
   grpc_op op;
   gpr_slice_buffer incoming_buffer;
+  gpr_slice_buffer temp_incoming_buffer;
   grpc_endpoint *tcp;
   int done;
 };
@@ -65,12 +66,15 @@ static grpc_closure on_read;
 
 static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   GPR_ASSERT(success);
+  gpr_slice_buffer_move_into(
+    &state.temp_incoming_buffer, &state.incoming_buffer);
   if (state.incoming_buffer.length > strlen(magic_connect_string)) {
     state.done = 1;
     grpc_endpoint_shutdown(exec_ctx, state.tcp);
     grpc_endpoint_destroy(exec_ctx, state.tcp);
   } else {
-    grpc_endpoint_read(exec_ctx, state.tcp, &state.incoming_buffer, &on_read);
+    grpc_endpoint_read(
+      exec_ctx, state.tcp, &state.temp_incoming_buffer, &on_read);
   }
 }
 
@@ -78,9 +82,10 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp) {
   test_tcp_server *server = arg;
   grpc_closure_init(&on_read, handle_read, NULL);
   gpr_slice_buffer_init(&state.incoming_buffer);
+  gpr_slice_buffer_init(&state.temp_incoming_buffer);
   state.tcp = tcp;
   grpc_endpoint_add_to_pollset(exec_ctx, tcp, &server->pollset);
-  grpc_endpoint_read(exec_ctx, tcp, &state.incoming_buffer, &on_read);
+  grpc_endpoint_read(exec_ctx, tcp, &state.temp_incoming_buffer, &on_read);
 }
 
 static void set_magic_initial_string(struct sockaddr **addr, size_t *addr_len,
@@ -139,6 +144,7 @@ static void start_rpc(int use_creds, int target_port) {
 static void cleanup_rpc(void) {
   grpc_event ev;
   gpr_slice_buffer_destroy(&state.incoming_buffer);
+  gpr_slice_buffer_destroy(&state.temp_incoming_buffer);
   grpc_credentials_unref(state.creds);
   grpc_call_destroy(state.call);
   grpc_completion_queue_shutdown(state.cq);
