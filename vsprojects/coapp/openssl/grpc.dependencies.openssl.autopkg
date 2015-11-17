@@ -1,0 +1,101 @@
+@import @"version.inc";
+
+#define { 
+      package-id = "grpc.dependencies.openssl";
+}
+
+nuget {
+	// the nuspec file metadata. Gets created/updated on build
+	nuspec {
+		id = ${package-id};
+		version : ${package-version};
+		title: gRPC Native Dependency: OpenSSL;
+		authors: {Mark J. Cox, Ralf S. Engelschall, Dr. Stephen Henson, Ben Laurie, Garrett Serack, Tim Rogers};
+		owners: {Jan Tattermusch};
+		licenseUrl: "http://www.openssl.org/source/license.html";
+		projectUrl: "http://github.com/grpc/grpc";
+		iconUrl: "http://openssl.com/images/openssl-logo.png";
+		requireLicenseAcceptance:false;
+		summary: "An OpenSSL library";
+		description: @"Native OpenSSL library.
+	OpenSSL homepage:  http://www.openssl.org";
+		releaseNotes: "Release of OpenSSL 1.0.2a libraries.";
+		copyright: Copyright 2015;
+		tags: { openssl, native, CoApp };
+
+	};
+
+    dependencies {
+        packages : {
+            grpc.dependencies.zlib/1.2.8.9
+        };
+    }
+    
+	// the files that go into the content folders
+	// (inserted into the nuspec file)
+	files {
+	
+	    // .targets file that are applied when redist package is installed from a managed project.
+		managed_build: {
+		  #output {
+              package = redist;
+          };
+		  #destination = \build\portable-net45;
+		  "managed_targets\${package-id}.redist.targets";
+		  "managed_targets\${package-id}.redist.props";
+		};
+		
+		nestedInclude: {
+			#destination = "${d_include}\openssl";
+			#excludes : { ..\..\..\third_party\openssl\inc32\openssl\opensslconf.h };
+			"..\..\..\third_party\openssl\inc32\openssl\*";
+		};
+	
+		// TODO(jtattermusch): Visual Studio 2010 and 2012 Express (v100 and v110 toolsets) don't support x64,
+        // so while generating the package, you will get a warning that corresponding files are missing
+		// (and the resulting package will be somewhat incomplete).
+		("v100,v120", "Win32,x64", "release,debug", "Dynamic,Static") => {
+			[${0},${1},${2},${3}] {
+				lib:         { .\output\${0}\${1}\${2}\${3}\libeay32.lib;
+				               .\output\${0}\${1}\${2}\${3}\ssleay32.lib };
+				
+				source: {
+							#destination = ${d_src}\openssl;
+							.\output\${0}\${1}\${2}\${3}\include\openssl\opensslconf.h
+				};
+			};
+		};
+		("v100,v120", "Win32,x64", "release,debug", "Dynamic") => {
+			[${0},${1},${2},${3}] {
+				bin:     { .\output\${0}\${1}\${2}\${3}\libeay32.dll;
+                           .\output\${0}\${1}\${2}\${3}\ssleay32.dll };
+				symbols: { .\output\${0}\${1}\${2}\${3}\libeay32.pdb;
+                           .\output\${0}\${1}\${2}\${3}\ssleay32.pdb };
+			};
+		};
+		
+	};
+	
+	// the VC++ .props file that gets generated and inserted into the ${d_content} folder
+	props { 
+        PropertyGroup {
+            CallingConvention-zlib = cdecl;
+        }
+        
+	};
+
+	// the VC++ .targets file that gets generated and inserted into the ${d_content} folder
+	targets {
+		// every configuration needs to reference the include directories.
+		Includes += ${pkg_root}${d_include};
+		// Defines += HAS_ZLIB;
+		
+        ("v100,v110,v120", "Win32,x64", "release,debug", "Dynamic,Static") => {
+			[${0},${1},${2},${3}] {
+                Includes += ${pkg_root}${d_include};
+            };
+        };
+        
+	};
+}
+

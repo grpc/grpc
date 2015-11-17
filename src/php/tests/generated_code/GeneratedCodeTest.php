@@ -31,11 +31,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-require 'AbstractGeneratedCodeTest.php';
+require_once dirname(__FILE__).'/AbstractGeneratedCodeTest.php';
 
-class GeneratedCodeTest extends AbstractGeneratedCodeTest {
-  public static function setUpBeforeClass() {
-    self::$client = new math\MathClient(
+class GeneratedCodeTest extends AbstractGeneratedCodeTest
+{
+    public function setUp()
+    {
+        self::$client = new math\MathClient(
         getenv('GRPC_TEST_HOST'), []);
-  }
+    }
+
+    public static function tearDownAfterClass()
+    {
+        self::$client->close();
+    }
 }

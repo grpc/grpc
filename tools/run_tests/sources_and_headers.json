@@ -237,6 +237,18 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "gpr_cpu_test", 
+    "src": [
+      "test/core/support/cpu_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "gpr_env_test", 
     "src": [
       "test/core/support/env_test.c"
@@ -1582,6 +1594,23 @@
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
+      "grpc_test_util", 
+      "qps"
+    ], 
+    "headers": [], 
+    "language": "c++", 
+    "name": "secure_sync_unary_ping_pong_test", 
+    "src": [
+      "test/cpp/qps/secure_sync_unary_ping_pong_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -1652,6 +1681,38 @@
     "name": "streaming_throughput_test", 
     "src": [
       "test/cpp/end2end/streaming_throughput_test.cc"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/cpp/interop/client_helper.h", 
+      "test/cpp/interop/interop_client.h", 
+      "test/cpp/interop/stress_interop_client.h", 
+      "test/proto/empty.grpc.pb.h", 
+      "test/proto/empty.pb.h", 
+      "test/proto/messages.grpc.pb.h", 
+      "test/proto/messages.pb.h", 
+      "test/proto/test.grpc.pb.h", 
+      "test/proto/test.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "stress_test", 
+    "src": [
+      "test/cpp/interop/client_helper.h", 
+      "test/cpp/interop/interop_client.cc", 
+      "test/cpp/interop/interop_client.h", 
+      "test/cpp/interop/stress_interop_client.cc", 
+      "test/cpp/interop/stress_interop_client.h", 
+      "test/cpp/interop/stress_test.cc"
     ]
   }, 
   {
@@ -7364,6 +7425,501 @@
   {
     "deps": [
       "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_bad_hostname", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_bad_hostname_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_binary_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_binary_metadata_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_call_creds", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_call_creds_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_cancel_after_accept", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_cancel_after_accept_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_cancel_after_client_done", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_cancel_after_client_done_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_cancel_after_invoke", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_cancel_after_invoke_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_cancel_before_invoke", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_cancel_before_invoke_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_cancel_in_a_vacuum", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_cancel_in_a_vacuum_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_census_simple_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_census_simple_request_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_channel_connectivity", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_channel_connectivity_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_compressed_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_compressed_payload_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_default_host_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_disappearing_server", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_disappearing_server_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_empty_batch", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_empty_batch_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_graceful_server_shutdown", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_graceful_server_shutdown_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_high_initial_seqno", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_high_initial_seqno_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_invoke_large_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_invoke_large_request_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_large_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_large_metadata_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_max_concurrent_streams", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_max_concurrent_streams_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_max_message_length", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_max_message_length_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_metadata_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_no_op", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_no_op_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_payload_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_ping_pong_streaming", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_ping_pong_streaming_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_registered_call", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_registered_call_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_request_with_flags", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_request_with_flags_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_request_with_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_request_with_payload_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_server_finishes_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_server_finishes_request_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_shutdown_finishes_calls", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_shutdown_finishes_calls_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_shutdown_finishes_tags", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_shutdown_finishes_tags_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_simple_delayed_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_simple_delayed_request_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_simple_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_simple_request_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_trailing_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_trailing_metadata_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
       "end2end_fixture_h2_uds", 
       "end2end_test_bad_hostname", 
       "gpr", 
@@ -11235,6 +11791,454 @@
   }, 
   {
     "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_bad_hostname", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_bad_hostname_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_binary_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_binary_metadata_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_cancel_after_accept", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_cancel_after_accept_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_cancel_after_client_done", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_cancel_after_client_done_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_cancel_after_invoke", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_cancel_after_invoke_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_cancel_before_invoke", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_cancel_before_invoke_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_cancel_in_a_vacuum", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_cancel_in_a_vacuum_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_census_simple_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_census_simple_request_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_channel_connectivity", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_channel_connectivity_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_compressed_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_compressed_payload_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_default_host_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_disappearing_server", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_disappearing_server_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_empty_batch", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_empty_batch_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_graceful_server_shutdown", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_graceful_server_shutdown_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_high_initial_seqno", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_high_initial_seqno_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_invoke_large_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_invoke_large_request_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_large_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_large_metadata_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_max_concurrent_streams", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_max_concurrent_streams_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_max_message_length", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_max_message_length_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_metadata_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_no_op", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_no_op_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_payload_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_ping_pong_streaming", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_ping_pong_streaming_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_registered_call", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_registered_call_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_request_with_flags", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_request_with_flags_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_request_with_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_request_with_payload_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_server_finishes_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_server_finishes_request_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_shutdown_finishes_calls", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_shutdown_finishes_calls_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_shutdown_finishes_tags", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_shutdown_finishes_tags_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_simple_delayed_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_simple_delayed_request_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_simple_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_simple_request_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_fixture_h2_uchannel", 
+      "end2end_test_trailing_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_uchannel_trailing_metadata_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
       "end2end_fixture_h2_uds", 
       "end2end_test_bad_hostname", 
       "gpr", 
@@ -12287,6 +13291,7 @@
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
       "src/core/channel/client_channel.h", 
+      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.h", 
       "src/core/channel/context.h", 
@@ -12319,6 +13324,7 @@
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
       "src/core/iomgr/exec_ctx.h", 
+      "src/core/iomgr/executor.h", 
       "src/core/iomgr/fd_posix.h", 
       "src/core/iomgr/iocp_windows.h", 
       "src/core/iomgr/iomgr.h", 
@@ -12433,6 +13439,8 @@
       "src/core/channel/channel_stack.h", 
       "src/core/channel/client_channel.c", 
       "src/core/channel/client_channel.h", 
+      "src/core/channel/client_uchannel.c", 
+      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.c", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.c", 
@@ -12499,6 +13507,8 @@
       "src/core/iomgr/endpoint_pair_windows.c", 
       "src/core/iomgr/exec_ctx.c", 
       "src/core/iomgr/exec_ctx.h", 
+      "src/core/iomgr/executor.c", 
+      "src/core/iomgr/executor.h", 
       "src/core/iomgr/fd_posix.c", 
       "src/core/iomgr/fd_posix.h", 
       "src/core/iomgr/iocp_windows.c", 
@@ -12790,6 +13800,7 @@
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
       "src/core/channel/client_channel.h", 
+      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.h", 
       "src/core/channel/context.h", 
@@ -12822,6 +13833,7 @@
       "src/core/iomgr/endpoint.h", 
       "src/core/iomgr/endpoint_pair.h", 
       "src/core/iomgr/exec_ctx.h", 
+      "src/core/iomgr/executor.h", 
       "src/core/iomgr/fd_posix.h", 
       "src/core/iomgr/iocp_windows.h", 
       "src/core/iomgr/iomgr.h", 
@@ -12922,6 +13934,8 @@
       "src/core/channel/channel_stack.h", 
       "src/core/channel/client_channel.c", 
       "src/core/channel/client_channel.h", 
+      "src/core/channel/client_uchannel.c", 
+      "src/core/channel/client_uchannel.h", 
       "src/core/channel/compress_filter.c", 
       "src/core/channel/compress_filter.h", 
       "src/core/channel/connected_channel.c", 
@@ -12987,6 +14001,8 @@
       "src/core/iomgr/endpoint_pair_windows.c", 
       "src/core/iomgr/exec_ctx.c", 
       "src/core/iomgr/exec_ctx.h", 
+      "src/core/iomgr/executor.c", 
+      "src/core/iomgr/executor.h", 
       "src/core/iomgr/fd_posix.c", 
       "src/core/iomgr/fd_posix.h", 
       "src/core/iomgr/iocp_windows.c", 
@@ -13645,13 +14661,21 @@
       "test/cpp/qps/perf_db.pb.h", 
       "test/cpp/qps/perf_db_client.h", 
       "test/cpp/qps/qps_worker.h", 
-      "test/cpp/qps/qpstest.grpc.pb.h", 
-      "test/cpp/qps/qpstest.pb.h", 
       "test/cpp/qps/report.h", 
       "test/cpp/qps/server.h", 
       "test/cpp/qps/stats.h", 
       "test/cpp/qps/timer.h", 
-      "test/cpp/util/benchmark_config.h"
+      "test/cpp/util/benchmark_config.h", 
+      "test/proto/benchmarks/control.grpc.pb.h", 
+      "test/proto/benchmarks/control.pb.h", 
+      "test/proto/benchmarks/payloads.grpc.pb.h", 
+      "test/proto/benchmarks/payloads.pb.h", 
+      "test/proto/benchmarks/services.grpc.pb.h", 
+      "test/proto/benchmarks/services.pb.h", 
+      "test/proto/benchmarks/stats.grpc.pb.h", 
+      "test/proto/benchmarks/stats.pb.h", 
+      "test/proto/messages.grpc.pb.h", 
+      "test/proto/messages.pb.h"
     ], 
     "language": "c++", 
     "name": "qps", 
@@ -13898,6 +14922,23 @@
     "src": [
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/fixtures/h2_ssl_proxy.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/core/end2end/end2end_tests.h"
+    ], 
+    "language": "c", 
+    "name": "end2end_fixture_h2_uchannel", 
+    "src": [
+      "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/fixtures/h2_uchannel.c"
     ]
   }, 
   {

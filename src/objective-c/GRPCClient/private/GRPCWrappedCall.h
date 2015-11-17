@@ -39,7 +39,7 @@
 
 @interface GRPCOperation : NSObject
 @property(nonatomic, readonly) grpc_op op;
-// Guaranteed to be called when the operation has finished.
+/** Guaranteed to be called when the operation has finished. */
 - (void)finish;
 @end
 

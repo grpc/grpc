@@ -46,6 +46,9 @@ portlog.txt
 *-gyp.mk
 out
 
+# YCM config files
+.ycm_extra_conf.py
+
 # XCode
 build/
 *.pbxuser

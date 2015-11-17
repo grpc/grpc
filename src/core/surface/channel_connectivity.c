@@ -37,6 +37,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/channel/client_channel.h"
+#include "src/core/channel/client_uchannel.h"
 #include "src/core/iomgr/timer.h"
 #include "src/core/surface/api_trace.h"
 #include "src/core/surface/completion_queue.h"
@@ -51,18 +52,24 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   GRPC_API_TRACE(
       "grpc_channel_check_connectivity_state(channel=%p, try_to_connect=%d)", 2,
       (channel, try_to_connect));
-  if (client_channel_elem->filter != &grpc_client_channel_filter) {
-    gpr_log(GPR_ERROR,
-            "grpc_channel_check_connectivity_state called on something that is "
-            "not a client channel, but '%s'",
-            client_channel_elem->filter->name);
+  if (client_channel_elem->filter == &grpc_client_channel_filter) {
+    state = grpc_client_channel_check_connectivity_state(
+        &exec_ctx, client_channel_elem, try_to_connect);
     grpc_exec_ctx_finish(&exec_ctx);
-    return GRPC_CHANNEL_FATAL_FAILURE;
+    return state;
   }
-  state = grpc_client_channel_check_connectivity_state(
-      &exec_ctx, client_channel_elem, try_to_connect);
+  if (client_channel_elem->filter == &grpc_client_uchannel_filter) {
+    state = grpc_client_uchannel_check_connectivity_state(
+        &exec_ctx, client_channel_elem, try_to_connect);
+    grpc_exec_ctx_finish(&exec_ctx);
+    return state;
+  }
+  gpr_log(GPR_ERROR,
+          "grpc_channel_check_connectivity_state called on something that is "
+          "not a (u)client channel, but '%s'",
+          client_channel_elem->filter->name);
   grpc_exec_ctx_finish(&exec_ctx);
-  return state;
+  return GRPC_CHANNEL_FATAL_FAILURE;
 }
 
 typedef enum {
@@ -87,7 +94,17 @@ typedef struct {
 } state_watcher;
 
 static void delete_state_watcher(grpc_exec_ctx *exec_ctx, state_watcher *w) {
-  GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, w->channel, "watch_connectivity");
+  grpc_channel_element *client_channel_elem = grpc_channel_stack_last_element(
+      grpc_channel_get_channel_stack(w->channel));
+  if (client_channel_elem->filter == &grpc_client_channel_filter) {
+    GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, w->channel,
+                                "watch_channel_connectivity");
+  } else if (client_channel_elem->filter == &grpc_client_uchannel_filter) {
+    GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, w->channel,
+                                "watch_uchannel_connectivity");
+  } else {
+    abort();
+  }
   gpr_mu_destroy(&w->mu);
   gpr_free(w);
 }
@@ -125,8 +142,13 @@ static void partly_done(grpc_exec_ctx *exec_ctx, state_watcher *w,
     w->removed = 1;
     client_channel_elem = grpc_channel_stack_last_element(
         grpc_channel_get_channel_stack(w->channel));
-    grpc_client_channel_del_interested_party(exec_ctx, client_channel_elem,
-                                             grpc_cq_pollset(w->cq));
+    if (client_channel_elem->filter == &grpc_client_channel_filter) {
+      grpc_client_channel_del_interested_party(exec_ctx, client_channel_elem,
+                                               grpc_cq_pollset(w->cq));
+    } else {
+      grpc_client_uchannel_del_interested_party(exec_ctx, client_channel_elem,
+                                                grpc_cq_pollset(w->cq));
+    }
   }
   gpr_mu_unlock(&w->mu);
   if (due_to_completion) {
@@ -199,18 +221,18 @@ void grpc_channel_watch_connectivity_state(
                   gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC),
                   timeout_complete, w, gpr_now(GPR_CLOCK_MONOTONIC));
 
-  if (client_channel_elem->filter != &grpc_client_channel_filter) {
-    gpr_log(GPR_ERROR,
-            "grpc_channel_watch_connectivity_state called on something that is "
-            "not a client channel, but '%s'",
-            client_channel_elem->filter->name);
-    grpc_exec_ctx_enqueue(&exec_ctx, &w->on_complete, 1);
-  } else {
-    GRPC_CHANNEL_INTERNAL_REF(channel, "watch_connectivity");
+  if (client_channel_elem->filter == &grpc_client_channel_filter) {
+    GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");
     grpc_client_channel_add_interested_party(&exec_ctx, client_channel_elem,
                                              grpc_cq_pollset(cq));
     grpc_client_channel_watch_connectivity_state(&exec_ctx, client_channel_elem,
                                                  &w->state, &w->on_complete);
+  } else if (client_channel_elem->filter == &grpc_client_uchannel_filter) {
+    GRPC_CHANNEL_INTERNAL_REF(channel, "watch_uchannel_connectivity");
+    grpc_client_uchannel_add_interested_party(&exec_ctx, client_channel_elem,
+                                              grpc_cq_pollset(cq));
+    grpc_client_uchannel_watch_connectivity_state(
+        &exec_ctx, client_channel_elem, &w->state, &w->on_complete);
   }
 
   grpc_exec_ctx_finish(&exec_ctx);

@@ -49,38 +49,40 @@
 #include <grpc++/security/server_credentials.h>
 #include <gtest/gtest.h>
 
-#include "test/cpp/qps/qpstest.grpc.pb.h"
 #include "test/cpp/qps/server.h"
+#include "test/proto/benchmarks/services.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
 
 class AsyncQpsServerTest : public Server {
  public:
-  AsyncQpsServerTest(const ServerConfig &config, int port) {
+  explicit AsyncQpsServerTest(const ServerConfig &config) : Server(config) {
     char *server_address = NULL;
-    gpr_join_host_port(&server_address, "::", port);
+
+    gpr_join_host_port(&server_address, "::", port());
 
     ServerBuilder builder;
-    builder.AddListeningPort(server_address, InsecureServerCredentials());
+    builder.AddListeningPort(server_address,
+                             Server::CreateServerCredentials(config));
     gpr_free(server_address);
 
     builder.RegisterAsyncService(&async_service_);
-    for (int i = 0; i < config.threads(); i++) {
+    for (int i = 0; i < config.async_server_threads(); i++) {
       srv_cqs_.emplace_back(builder.AddCompletionQueue());
     }
 
     server_ = builder.BuildAndStart();
 
     using namespace std::placeholders;
-    for (int i = 0; i < 10000 / config.threads(); i++) {
-      for (int j = 0; j < config.threads(); j++) {
+    for (int i = 0; i < 10000 / config.async_server_threads(); i++) {
+      for (int j = 0; j < config.async_server_threads(); j++) {
         auto request_unary = std::bind(
-            &TestService::AsyncService::RequestUnaryCall, &async_service_, _1,
-            _2, _3, srv_cqs_[j].get(), srv_cqs_[j].get(), _4);
+            &BenchmarkService::AsyncService::RequestUnaryCall, &async_service_,
+            _1, _2, _3, srv_cqs_[j].get(), srv_cqs_[j].get(), _4);
         auto request_streaming = std::bind(
-            &TestService::AsyncService::RequestStreamingCall, &async_service_,
-            _1, _2, srv_cqs_[j].get(), srv_cqs_[j].get(), _3);
+            &BenchmarkService::AsyncService::RequestStreamingCall,
+            &async_service_, _1, _2, srv_cqs_[j].get(), srv_cqs_[j].get(), _3);
         contexts_.push_front(
             new ServerRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
                 request_unary, ProcessRPC));
@@ -89,10 +91,10 @@ class AsyncQpsServerTest : public Server {
                 request_streaming, ProcessRPC));
       }
     }
-    for (int i = 0; i < config.threads(); i++) {
+    for (int i = 0; i < config.async_server_threads(); i++) {
       shutdown_state_.emplace_back(new PerThreadShutdownState());
     }
-    for (int i = 0; i < config.threads(); i++) {
+    for (int i = 0; i < config.async_server_threads(); i++) {
       threads_.emplace_back(&AsyncQpsServerTest::ThreadFunc, this, i);
     }
   }
@@ -309,7 +311,7 @@ class AsyncQpsServerTest : public Server {
   std::vector<std::thread> threads_;
   std::unique_ptr<grpc::Server> server_;
   std::vector<std::unique_ptr<grpc::ServerCompletionQueue>> srv_cqs_;
-  TestService::AsyncService async_service_;
+  BenchmarkService::AsyncService async_service_;
   std::forward_list<ServerRpcContext *> contexts_;
 
   class PerThreadShutdownState {
@@ -333,9 +335,8 @@ class AsyncQpsServerTest : public Server {
   std::vector<std::unique_ptr<PerThreadShutdownState>> shutdown_state_;
 };
 
-std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config,
-                                          int port) {
-  return std::unique_ptr<Server>(new AsyncQpsServerTest(config, port));
+std::unique_ptr<Server> CreateAsyncServer(const ServerConfig &config) {
+  return std::unique_ptr<Server>(new AsyncQpsServerTest(config));
 }
 
 }  // namespace testing

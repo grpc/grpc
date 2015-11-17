@@ -157,6 +157,7 @@ Pod::Spec.new do |s|
                       'src/core/channel/channel_args.h',
                       'src/core/channel/channel_stack.h',
                       'src/core/channel/client_channel.h',
+                      'src/core/channel/client_uchannel.h',
                       'src/core/channel/compress_filter.h',
                       'src/core/channel/connected_channel.h',
                       'src/core/channel/context.h',
@@ -189,6 +190,7 @@ Pod::Spec.new do |s|
                       'src/core/iomgr/endpoint.h',
                       'src/core/iomgr/endpoint_pair.h',
                       'src/core/iomgr/exec_ctx.h',
+                      'src/core/iomgr/executor.h',
                       'src/core/iomgr/fd_posix.h',
                       'src/core/iomgr/iocp_windows.h',
                       'src/core/iomgr/iomgr.h',
@@ -299,6 +301,7 @@ Pod::Spec.new do |s|
                       'src/core/channel/channel_args.c',
                       'src/core/channel/channel_stack.c',
                       'src/core/channel/client_channel.c',
+                      'src/core/channel/client_uchannel.c',
                       'src/core/channel/compress_filter.c',
                       'src/core/channel/connected_channel.c',
                       'src/core/channel/http_client_filter.c',
@@ -332,6 +335,7 @@ Pod::Spec.new do |s|
                       'src/core/iomgr/endpoint_pair_posix.c',
                       'src/core/iomgr/endpoint_pair_windows.c',
                       'src/core/iomgr/exec_ctx.c',
+                      'src/core/iomgr/executor.c',
                       'src/core/iomgr/fd_posix.c',
                       'src/core/iomgr/iocp_windows.c',
                       'src/core/iomgr/iomgr.c',
@@ -447,6 +451,7 @@ Pod::Spec.new do |s|
                               'src/core/channel/channel_args.h',
                               'src/core/channel/channel_stack.h',
                               'src/core/channel/client_channel.h',
+                              'src/core/channel/client_uchannel.h',
                               'src/core/channel/compress_filter.h',
                               'src/core/channel/connected_channel.h',
                               'src/core/channel/context.h',
@@ -479,6 +484,7 @@ Pod::Spec.new do |s|
                               'src/core/iomgr/endpoint.h',
                               'src/core/iomgr/endpoint_pair.h',
                               'src/core/iomgr/exec_ctx.h',
+                              'src/core/iomgr/executor.h',
                               'src/core/iomgr/fd_posix.h',
                               'src/core/iomgr/iocp_windows.h',
                               'src/core/iomgr/iomgr.h',
@@ -560,8 +566,12 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     # This isn't officially supported in Cocoapods. We've asked for an alternative:
     # https://github.com/CocoaPods/CocoaPods/issues/4386
-    ss.xcconfig = { 'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC" ' +
-                                             '"$(PODS_ROOT)/Headers/Private/gRPC/include"' }
+    ss.xcconfig = {
+      'USE_HEADERMAP' => 'NO',
+      'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+      'USER_HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC"',
+      'HEADER_SEARCH_PATHS' => '"$(PODS_ROOT)/Headers/Private/gRPC/include"'
+    }
 
     ss.requires_arc = false
     ss.libraries = 'z'

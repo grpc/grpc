@@ -12,11 +12,13 @@ Here's how to build and run the Objective-C implementation of the [Hello World](
 example used in [Getting started](https://github.com/grpc/grpc/tree/master/examples).
 
 The example code for this and our other examples lives in the `examples` directory. Clone
-this repository to your local machine by running the following command:
+this repository to your local machine by running the following commands:
 
 
 ```sh
 $ git clone https://github.com/grpc/grpc.git
+$ cd grpc
+$ git submodule update --init
 ```
 
 Change your current directory to `examples/objective-c/helloworld`
@@ -53,4 +55,4 @@ responds with a `HLWHelloResponse`, which contains a string that is then output 
 
 ## Tutorial
 
-You can find a more detailed tutorial in [gRPC Basics: Objective-C](../route_guide/README.md).
+You can find a more detailed tutorial in [gRPC Basics: Objective-C](http://www.grpc.io/docs/tutorials/basic/objective-c.html).

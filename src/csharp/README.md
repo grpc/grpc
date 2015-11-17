@@ -1,3 +1,4 @@
+[![Nuget](https://img.shields.io/nuget/v/Grpc.svg)](http://www.nuget.org/packages/Grpc/)
 gRPC C#
 =======
 
@@ -57,6 +58,9 @@ HOW TO USE
 
 - Add NuGet package `Grpc` as a dependency (Project -> Add NuGet packages).
 
+- NOTE: Currently, there are no debian packages for the latest version Protocol Buffers compiler (_protoc_)
+  and the gRPC _protoc_ plugin. You can install them using [gRPC Linuxbrew instructions][].
+
 **Mac OS X**
 
 - WARNING: As of now gRPC C# only works on 64bit version of Mono (because we don't compile
@@ -70,7 +74,7 @@ HOW TO USE
   $ curl -fsSL https://goo.gl/getgrpc | bash -
   ```
   This will download and run the [gRPC install script][], then install the latest version of gRPC C core and native C# extension.
-  It also installs Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for ruby.
+  It also installs Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin for C#.
 
 - Install 64-bit version of mono with command `brew install mono`.
 
@@ -192,6 +196,7 @@ Internally, gRPC C# uses a native library written in C (gRPC C core) and invokes
 
 - Possible cause for the problem is that the `grpc_csharp_ext` library is installed, but it has different bitness (32/64bit) than your C# runtime (in case you are using mono) or C# application.
 
+[gRPC Linuxbrew instructions]:https://github.com/grpc/homebrew-grpc#quick-install-linux
 [homebrew]:http://brew.sh
 [gRPC install script]:https://raw.githubusercontent.com/grpc/homebrew-grpc/master/scripts/install
 [grpc.io]: http://www.grpc.io/docs/installation/csharp.html

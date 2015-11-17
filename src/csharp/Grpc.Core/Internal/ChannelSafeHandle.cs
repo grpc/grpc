@@ -32,6 +32,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core.Profiling;
 
 namespace Grpc.Core.Internal
 {
@@ -84,13 +85,16 @@ namespace Grpc.Core.Internal
 
         public CallSafeHandle CreateCall(CompletionRegistry registry, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline, CallCredentialsSafeHandle credentials)
         {
-            var result = grpcsharp_channel_create_call(this, parentCall, propagationMask, cq, method, host, deadline);
-            if (credentials != null)
+            using (Profilers.ForCurrentThread().NewScope("ChannelSafeHandle.CreateCall"))
             {
-                result.SetCredentials(credentials);
+                var result = grpcsharp_channel_create_call(this, parentCall, propagationMask, cq, method, host, deadline);
+                if (credentials != null)
+                {
+                    result.SetCredentials(credentials);
+                }
+                result.SetCompletionRegistry(registry);
+                return result;
             }
-            result.SetCompletionRegistry(registry);
-            return result;
         }
 
         public ChannelState CheckConnectivityState(bool tryToConnect)

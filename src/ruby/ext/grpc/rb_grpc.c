@@ -55,7 +55,10 @@ static rb_data_type_t grpc_rb_timespec_data_type = {
      {NULL, NULL}},
     NULL,
     NULL,
-    RUBY_TYPED_FREE_IMMEDIATELY};
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
+    RUBY_TYPED_FREE_IMMEDIATELY
+#endif
+};
 
 /* Alloc func that blocks allocation of a given object by raising an
  * exception. */
@@ -262,10 +265,20 @@ static void Init_grpc_time_consts() {
   id_tv_nsec = rb_intern("tv_nsec");
 }
 
+/*
+   TODO: find an alternative to ruby_vm_at_exit that is ok in Ruby 2.0 where
+   RUBY_TYPED_FREE_IMMEDIATELY is not defined.
+
+   At the moment, registering a function using ruby_vm_at_exit segfaults in Ruby
+   2.0.  This is not an issue with the gRPC handler.  More likely, this was an
+   in issue with 2.0 that got resolved in 2.1 and has not been backported.
+*/
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
 static void grpc_rb_shutdown(ruby_vm_t *vm) {
   (void)vm;
   grpc_shutdown();
 }
+#endif
 
 /* Initialize the GRPC module structs */
 
@@ -285,7 +298,12 @@ VALUE sym_metadata = Qundef;
 
 void Init_grpc() {
   grpc_init();
+
+/* TODO: find alternative to ruby_vm_at_exit that is ok in Ruby 2.0 */
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
   ruby_vm_at_exit(grpc_rb_shutdown);
+#endif
+
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
   grpc_rb_sNewServerRpc =

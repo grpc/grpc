@@ -48,14 +48,17 @@
         # io.js always reports versions >0 and always exports ALPN symbols.
         # Therefore, Node's major version will be truthy if and only if it
         # supports ALPN. The output of "node -v" is v[major].[minor].[patch],
-        # like "v4.1.1" in a recent version. We use grep to extract just the
-        # major version. "4", would be the output for the example.
+        # like "v4.1.1" in a recent version. We use cut to split by period and
+        # take the first field (resulting in "v[major]"), then use cut again
+        # to take all but the first character, removing the "v".
       'defines': [
-        'TSI_OPENSSL_ALPN_SUPPORT=<!(node -v | grep -oP "(?<=v)(\d+)(?=\.\d+\.\d+)")'
+        'TSI_OPENSSL_ALPN_SUPPORT=<!(node --version | cut -d. -f1 | cut -c2-)'
       ],
       'include_dirs': [
         '.',
-        'include'
+        'include',
+        '<(node_root_dir)/deps/openssl/openssl/include',
+        '<(node_root_dir)/deps/zlib'
       ],
       'conditions': [
         ['OS != "win"', {
@@ -74,11 +77,21 @@
            ]
           ]
         }],
+        ["target_arch=='ia32'", {
+            "include_dirs": [ "<(node_root_dir)/deps/openssl/config/piii" ]
+        }],
+        ["target_arch=='x64'", {
+            "include_dirs": [ "<(node_root_dir)/deps/openssl/config/k8" ]
+        }],
+        ["target_arch=='arm'", {
+            "include_dirs": [ "<(node_root_dir)/deps/openssl/config/arm" ]
+        }]
       ]
     },
     'targets': [
+      % for module in node_modules:
       % for lib in libs:
-      % if lib.name == 'gpr' or lib.name == 'grpc':
+      % if lib.name in module.transitive_deps:
       {
         'target_name': '${lib.name}',
         'product_prefix': 'lib',
@@ -92,6 +105,13 @@
           % for source in lib.src:
           '${source}',
           % endfor
+        ],
+        "conditions": [
+          ['OS == "mac"', {
+            'xcode_settings': {
+              'MACOSX_DEPLOYMENT_TARGET': '10.9'
+            }
+          }]
         ],
       },
       % endif
@@ -123,22 +143,18 @@
             }
           }]
         ],
-        "target_name": "grpc_node",
+        "target_name": "${module.name}",
         "sources": [
-          "src/node/ext/byte_buffer.cc",
-          "src/node/ext/call.cc",
-          "src/node/ext/call_credentials.cc",
-          "src/node/ext/channel.cc",
-          "src/node/ext/channel_credentials.cc",
-          "src/node/ext/completion_queue_async_worker.cc",
-          "src/node/ext/node_grpc.cc",
-          "src/node/ext/server.cc",
-          "src/node/ext/server_credentials.cc",
-          "src/node/ext/timeval.cc"
+          % for source in module.src:
+          "${source}",
+          % endfor
         ],
         "dependencies": [
-          "grpc"
+          % for dep in getattr(module, 'deps', []):
+          "${dep}",
+          % endfor
         ]
-      }
+      },
+      % endfor
     ]
   }
