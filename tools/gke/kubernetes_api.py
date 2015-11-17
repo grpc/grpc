@@ -201,7 +201,7 @@ def create_pod(kube_host, kube_port, namespace, pod_name, image_name,
                                                          namespace)
   request_body = _make_pod_config(pod_name, image_name, container_port_list,
                                  cmd_list, arg_list)
-  return do_post(post_url, 'Create Pod', request_body)
+  return _do_post(post_url, 'Create Pod', request_body)
 
 
 def delete_service(kube_host, kube_port, namespace, service_name):
