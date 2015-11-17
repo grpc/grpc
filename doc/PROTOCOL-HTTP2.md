@@ -66,9 +66,9 @@ Base64-encoded values.
 **ASCII-Value** should not have leading or trailing whitespace. If it contains
 leading or trailing whitespace, it may be stripped. The **ASCII-Value**
 character range defined is more strict than HTTP. Implementations must not error
-due to receiving an invalid **ASCII-Value** but value valid in HTTP, but the
-precise behavior is not strictly defined: they may throw the value away or
-accept the value. If accepted, care must be taken to make sure that the
+due to receiving an invalid **ASCII-Value** that's a valid **field-value** in
+HTTP, but the precise behavior is not strictly defined: they may throw the value
+away or accept the value. If accepted, care must be taken to make sure that the
 application is permitted to echo the value back as metadata. For example, if the
 metadata is provided to the application as a list in a request, the application
 should not trigger an error by providing that same list as the metadata in the
