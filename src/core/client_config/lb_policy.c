@@ -71,13 +71,13 @@ void grpc_lb_policy_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy) {
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                         grpc_pollset *pollset,
                         grpc_metadata_batch *initial_metadata,
-                        grpc_subchannel **target, grpc_closure *on_complete) {
+                        grpc_connected_subchannel **target, grpc_closure *on_complete) {
   return policy->vtable->pick(exec_ctx, policy, pollset, initial_metadata,
                               target, on_complete);
 }
 
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                                grpc_subchannel **target) {
+                                grpc_connected_subchannel **target) {
   policy->vtable->cancel_pick(exec_ctx, policy, target);
 }
 

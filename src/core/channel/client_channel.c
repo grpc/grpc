@@ -287,7 +287,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
 
 typedef struct {
   grpc_metadata_batch *initial_metadata;
-  grpc_subchannel **subchannel;
+  grpc_connected_subchannel **connected_subchannel;
   grpc_closure *on_ready;
   grpc_call_element *elem;
   grpc_closure closure;
@@ -295,17 +295,17 @@ typedef struct {
 
 static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
                               grpc_metadata_batch *initial_metadata,
-                              grpc_subchannel **subchannel,
+                              grpc_connected_subchannel **connected_subchannel,
                               grpc_closure *on_ready);
 
 static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   continue_picking_args *cpa = arg;
   if (!success) {
     grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, 0);
-  } else if (cpa->subchannel == NULL) {
+  } else if (cpa->connected_subchannel == NULL) {
     /* cancelled, do nothing */
   } else if (cc_pick_subchannel(exec_ctx, cpa->elem, cpa->initial_metadata,
-                                cpa->subchannel, cpa->on_ready)) {
+                                cpa->connected_subchannel, cpa->on_ready)) {
     grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, 1);
   }
   gpr_free(cpa);
@@ -313,7 +313,7 @@ static void continue_picking(grpc_exec_ctx *exec_ctx, void *arg, int success) {
 
 static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
                               grpc_metadata_batch *initial_metadata,
-                              grpc_subchannel **subchannel,
+                              grpc_connected_subchannel **connected_subchannel,
                               grpc_closure *on_ready) {
   grpc_call_element *elem = elemp;
   channel_data *chand = elem->channel_data;
@@ -321,18 +321,18 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
   continue_picking_args *cpa;
   grpc_closure *closure;
 
-  GPR_ASSERT(subchannel);
+  GPR_ASSERT(connected_subchannel);
 
   gpr_mu_lock(&chand->mu_config);
   if (initial_metadata == NULL) {
     if (chand->lb_policy != NULL) {
-      grpc_lb_policy_cancel_pick(exec_ctx, chand->lb_policy, subchannel);
+      grpc_lb_policy_cancel_pick(exec_ctx, chand->lb_policy, connected_subchannel);
     }
     for (closure = chand->waiting_for_config_closures.head; closure != NULL;
          closure = grpc_closure_next(closure)) {
       cpa = closure->cb_arg;
-      if (cpa->subchannel == subchannel) {
-        cpa->subchannel = NULL;
+      if (cpa->connected_subchannel == connected_subchannel) {
+        cpa->connected_subchannel = NULL;
         grpc_exec_ctx_enqueue(exec_ctx, cpa->on_ready, 0);
       }
     }
@@ -341,7 +341,7 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
   }
   if (chand->lb_policy != NULL) {
     int r = grpc_lb_policy_pick(exec_ctx, chand->lb_policy, calld->pollset,
-                                initial_metadata, subchannel, on_ready);
+                                initial_metadata, connected_subchannel, on_ready);
     gpr_mu_unlock(&chand->mu_config);
     return r;
   }
@@ -354,7 +354,7 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
   }
   cpa = gpr_malloc(sizeof(*cpa));
   cpa->initial_metadata = initial_metadata;
-  cpa->subchannel = subchannel;
+  cpa->connected_subchannel = connected_subchannel;
   cpa->on_ready = on_ready;
   cpa->elem = elem;
   grpc_closure_init(&cpa->closure, continue_picking, cpa);

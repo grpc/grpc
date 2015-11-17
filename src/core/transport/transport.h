@@ -96,7 +96,7 @@ typedef struct grpc_transport_stream_op {
 typedef struct grpc_transport_op {
   /** called when processing of this op is done */
   grpc_closure *on_consumed;
-  /** connectivity monitoring */
+  /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
   grpc_closure *on_connectivity_state_change;
   grpc_connectivity_state *connectivity_state;
   /** should the transport be disconnected */
