@@ -31,9 +31,10 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H
-#define GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H
+#ifndef GRPC_INTERNAL_CORE_CENSUS_LOG_H
+#define GRPC_INTERNAL_CORE_CENSUS_LOG_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 /* Maximum record size, in bytes. */
@@ -62,9 +63,11 @@ void census_log_shutdown(void);
        - log is configured to keep old records OR
        - all blocks are pinned by incomplete records.
 */
-void *census_log_start_write(size_t size);
+void* census_log_start_write(size_t size);
 
-void census_log_end_write(void *record, size_t bytes_written);
+void census_log_end_write(void* record, size_t bytes_written);
+
+void census_log_init_reader(void);
 
 /* census_log_read_next() iterates over blocks with data and for each block
    returns a pointer to the first unread byte. The number of bytes that can be
@@ -74,8 +77,7 @@ void census_log_end_write(void *record, size_t bytes_written);
    is read. census_log_init_reader() starts the iteration or aborts the
    current iteration.
 */
-void census_log_init_reader(void);
-const void *census_log_read_next(size_t *bytes_available);
+const void* census_log_read_next(size_t* bytes_available);
 
 /* Returns estimated remaining space across all blocks, in bytes. If log is
    configured to discard old records, returns total log space. Otherwise,
@@ -86,6 +88,6 @@ size_t census_log_remaining_space(void);
 
 /* Returns the number of times gprc_stats_log_start_write() failed due to
    out-of-space. */
-int census_log_out_of_space_count(void);
+gpr_int64 census_log_out_of_space_count(void);
 
-#endif /* GRPC_INTERNAL_CORE_STATISTICS_CENSUS_LOG_H */
+#endif /* GRPC_INTERNAL_CORE_CENSUS_LOG_H */

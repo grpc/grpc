@@ -47,6 +47,78 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "census_multiple_writers_circular_buffer_log_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "census_multiple_writers_log_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "census_quick_log_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "census_small_log_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_status_conversion_test", 
     "platforms": [
       "linux", 

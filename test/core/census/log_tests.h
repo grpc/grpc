@@ -31,16 +31,21 @@
  *
  */
 
-#include "test/core/statistics/census_log_tests.h"
+#ifndef GRPC_TEST_CORE_CENSUS_LOG_TESTS_H
+#define GRPC_TEST_CORE_CENSUS_LOG_TESTS_H
 
-#include <stdlib.h>
+void test_invalid_record_size();
+void test_end_write_with_different_size();
+void test_read_pending_record();
+void test_read_beyond_pending_record();
+void test_detached_while_reading();
+void test_fill_log_no_fragmentation();
+void test_fill_circular_log_no_fragmentation();
+void test_fill_log_with_straddling_records();
+void test_fill_circular_log_with_straddling_records();
+void test_multiple_writers_circular_log();
+void test_multiple_writers();
+void test_performance();
+void test_small_log();
 
-#include <grpc/support/time.h>
-#include "test/core/util/test_config.h"
-
-int main(int argc, char **argv) {
-  grpc_test_init(argc, argv);
-  srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
-  test_small_log();
-  return 0;
-}
+#endif /* GRPC_TEST_CORE_CENSUS_LOG_TESTS_H */

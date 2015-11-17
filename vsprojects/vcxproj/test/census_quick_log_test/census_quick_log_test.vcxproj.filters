@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\census\quick_log_test.c">
+      <Filter>test\core\census</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{1d9c433b-5c6f-f818-357f-5d4d032f55e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{ab3f9bd0-8774-43fd-4433-219d545079dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\census">
+      <UniqueIdentifier>{5ac830d4-e9de-d5db-9ccb-efd8c5737b78}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

@@ -894,6 +894,7 @@ src/core/transport/transport.h \
 src/core/transport/transport_impl.h \
 src/core/census/aggregation.h \
 src/core/census/context.h \
+src/core/census/log.h \
 src/core/census/rpc_metric_id.h \
 src/core/httpcli/httpcli_security_connector.c \
 src/core/security/base64.c \
@@ -1041,6 +1042,7 @@ src/core/transport/transport.c \
 src/core/transport/transport_op_string.c \
 src/core/census/context.c \
 src/core/census/initialize.c \
+src/core/census/log.c \
 src/core/census/operation.c \
 src/core/census/tracing.c \
 include/grpc/support/alloc.h \

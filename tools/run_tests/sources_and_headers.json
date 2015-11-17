@@ -31,6 +31,66 @@
   }, 
   {
     "deps": [
+      "census_log_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "census_multiple_writers_circular_buffer_log_test", 
+    "src": [
+      "test/core/census/multiple_writers_circular_buffer_log_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "census_log_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "census_multiple_writers_log_test", 
+    "src": [
+      "test/core/census/multiple_writers_log_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "census_log_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "census_quick_log_test", 
+    "src": [
+      "test/core/census/quick_log_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "census_log_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "census_small_log_test", 
+    "src": [
+      "test/core/census/small_log_test.c"
+    ]
+  }, 
+  {
+    "deps": [
       "gpr", 
       "gpr_test_util", 
       "grpc", 
@@ -13136,6 +13196,20 @@
     ]
   }, 
   {
+    "deps": [
+      "gpr"
+    ], 
+    "headers": [
+      "test/core/census/log_tests.h"
+    ], 
+    "language": "c", 
+    "name": "census_log_test", 
+    "src": [
+      "test/core/census/log_tests.c", 
+      "test/core/census/log_tests.h"
+    ]
+  }, 
+  {
     "deps": [], 
     "headers": [
       "include/grpc/support/alloc.h", 
@@ -13287,6 +13361,7 @@
       "src/core/census/aggregation.h", 
       "src/core/census/context.h", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/log.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
@@ -13430,6 +13505,8 @@
       "src/core/census/grpc_filter.c", 
       "src/core/census/grpc_filter.h", 
       "src/core/census/initialize.c", 
+      "src/core/census/log.c", 
+      "src/core/census/log.h", 
       "src/core/census/operation.c", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/census/tracing.c", 
@@ -13796,6 +13873,7 @@
       "src/core/census/aggregation.h", 
       "src/core/census/context.h", 
       "src/core/census/grpc_filter.h", 
+      "src/core/census/log.h", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/channel/channel_args.h", 
       "src/core/channel/channel_stack.h", 
@@ -13925,6 +14003,8 @@
       "src/core/census/grpc_filter.c", 
       "src/core/census/grpc_filter.h", 
       "src/core/census/initialize.c", 
+      "src/core/census/log.c", 
+      "src/core/census/log.h", 
       "src/core/census/operation.c", 
       "src/core/census/rpc_metric_id.h", 
       "src/core/census/tracing.c", 

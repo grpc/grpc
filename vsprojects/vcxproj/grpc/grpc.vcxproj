@@ -380,6 +380,7 @@
     <ClInclude Include="..\..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\..\src\core\census\aggregation.h" />
     <ClInclude Include="..\..\..\src\core\census\context.h" />
+    <ClInclude Include="..\..\..\src\core\census\log.h" />
     <ClInclude Include="..\..\..\src\core\census\rpc_metric_id.h" />
   </ItemGroup>
   <ItemGroup>
@@ -674,6 +675,8 @@
     <ClCompile Include="..\..\..\src\core\census\context.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\census\initialize.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\census\log.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\census\operation.c">
     </ClCompile>

@@ -15,10 +15,12 @@ filegroups:
   headers:
   - src/core/census/aggregation.h
   - src/core/census/context.h
+  - src/core/census/log.h
   - src/core/census/rpc_metric_id.h
   src:
   - src/core/census/context.c
   - src/core/census/initialize.c
+  - src/core/census/log.c
   - src/core/census/operation.c
   - src/core/census/tracing.c
 - name: grpc++_base
@@ -362,6 +364,15 @@ filegroups:
   - test/core/util/port_windows.c
   - test/core/util/slice_splitter.c
 libs:
+- name: census_log_test
+  build: private
+  language: c
+  headers:
+  - test/core/census/log_tests.h
+  src:
+  - test/core/census/log_tests.c
+  deps:
+  - gpr
 - name: gpr
   build: all
   language: c
@@ -807,6 +818,50 @@ targets:
   src:
   - test/core/transport/chttp2/bin_encoder_test.c
   deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: census_multiple_writers_circular_buffer_log_test
+  build: test
+  language: c
+  src:
+  - test/core/census/multiple_writers_circular_buffer_log_test.c
+  deps:
+  - census_log_test
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: census_multiple_writers_log_test
+  build: test
+  language: c
+  src:
+  - test/core/census/multiple_writers_log_test.c
+  deps:
+  - census_log_test
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: census_quick_log_test
+  build: test
+  language: c
+  src:
+  - test/core/census/quick_log_test.c
+  deps:
+  - census_log_test
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: census_small_log_test
+  build: test
+  language: c
+  src:
+  - test/core/census/small_log_test.c
+  deps:
+  - census_log_test
   - grpc_test_util
   - grpc
   - gpr_test_util
