@@ -127,6 +127,11 @@ typedef struct {
 /** Initial sequence number for http2 transports */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
+/** Amount to read ahead on individual streams. Defaults to 64kb, larger
+    values can help throughput on high-latency connections.
+    NOTE: at some point we'd like to auto-tune this, and this parameter
+    will become a no-op. */
+#define GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES "grpc.http2.lookahead_bytes"
 /** Default authority to pass if none specified on call construction */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
 /** Primary user agent: goes at the start of the user-agent metadata

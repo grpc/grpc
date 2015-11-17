@@ -52,7 +52,6 @@
 #include "src/core/transport/transport_impl.h"
 
 #define DEFAULT_WINDOW 65535
-#define GRPC_CHTTP2_STREAM_LOOKAHEAD DEFAULT_WINDOW
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 
@@ -245,6 +244,7 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   t->global.is_client = is_client;
   t->writing.outgoing_window = DEFAULT_WINDOW;
   t->parsing.incoming_window = DEFAULT_WINDOW;
+  t->global.stream_lookahead = DEFAULT_WINDOW;
   t->global.connection_window_target = DEFAULT_CONNECTION_WINDOW_TARGET;
   t->global.ping_counter = 1;
   t->global.pings.next = t->global.pings.prev = &t->global.pings;
@@ -336,6 +336,18 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                   is_client ? "client" : "server");
         } else {
           t->global.next_stream_id =
+              (gpr_uint32)channel_args->args[i].value.integer;
+        }
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer",
+                  GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES);
+        } else if (channel_args->args[i].value.integer <= 5) {
+          gpr_log(GPR_ERROR, "%s: must be at least 5",
+                  GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES);
+        } else {
+          t->global.stream_lookahead =
               (gpr_uint32)channel_args->args[i].value.integer;
         }
       }
@@ -1372,8 +1384,8 @@ static void incoming_byte_stream_update_flow_control(
   gpr_uint32 max_recv_bytes;
 
   /* clamp max recv hint to an allowable size */
-  if (max_size_hint >= GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD) {
-    max_recv_bytes = GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD;
+  if (max_size_hint >= GPR_UINT32_MAX - transport_global->stream_lookahead) {
+    max_recv_bytes = GPR_UINT32_MAX - transport_global->stream_lookahead;
   } else {
     max_recv_bytes = (gpr_uint32)max_size_hint;
   }
@@ -1386,8 +1398,9 @@ static void incoming_byte_stream_update_flow_control(
   }
 
   /* add some small lookahead to keep pipelines flowing */
-  GPR_ASSERT(max_recv_bytes <= GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD);
-  max_recv_bytes += GRPC_CHTTP2_STREAM_LOOKAHEAD;
+  GPR_ASSERT(max_recv_bytes <=
+             GPR_UINT32_MAX - transport_global->stream_lookahead);
+  max_recv_bytes += transport_global->stream_lookahead;
   if (stream_global->max_recv_bytes < max_recv_bytes) {
     gpr_uint32 add_max_recv_bytes =
         max_recv_bytes - stream_global->max_recv_bytes;
