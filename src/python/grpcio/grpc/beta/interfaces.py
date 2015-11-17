@@ -100,8 +100,11 @@ def grpc_call_options(disable_compression=False, credentials=None):
     disable_compression: A boolean indicating whether or not compression should
       be disabled for the request object of the RPC. Only valid for
       request-unary RPCs.
-    credentials: A ClientCredentials object to use for the invoked RPC.
+    credentials: Reserved for gRPC per-call credentials. The type for this does
+      not exist yet at the Python level.
   """
+  if credentials is not None:
+    raise ValueError('`credentials` is a reserved argument')
   return GRPCCallOptions(disable_compression, None, credentials)
 
 
