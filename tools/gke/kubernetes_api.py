@@ -121,7 +121,7 @@ def _make_service_config(service_name, pod_name, service_port_list,
 
 
 def _print_connection_error(msg):
-  print('ERROR: Connection failed. Did you remember to run Kubenetes proxy on'
+  print('ERROR: Connection failed. Did you remember to run Kubenetes proxy on '
         'localhost (i.e kubectl proxy --port=<proxy_port>) ?. Error: %s' % msg)
 
 def _do_post(post_url, api_name, request_body):
