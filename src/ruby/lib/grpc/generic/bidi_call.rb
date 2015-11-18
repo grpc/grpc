@@ -56,7 +56,8 @@ module GRPC
     #          the call
     # @param marshal [Function] f(obj)->string that marshal requests
     # @param unmarshal [Function] f(string)->obj that unmarshals responses
-    def initialize(call, q, marshal, unmarshal)
+    # @param metadata_tag [Object] tag object used to collect metadata
+    def initialize(call, q, marshal, unmarshal, metadata_tag: nil)
       fail(ArgumentError, 'not a call') unless call.is_a? Core::Call
       unless q.is_a? Core::CompletionQueue
         fail(ArgumentError, 'not a CompletionQueue')
@@ -67,6 +68,7 @@ module GRPC
       @op_notifier = nil  # signals completion on clients
       @readq = Queue.new
       @unmarshal = unmarshal
+      @metadata_tag = metadata_tag
     end
 
     # Begins orchestration of the Bidi stream for a client sending requests.
@@ -111,6 +113,18 @@ module GRPC
       return unless @op_notifier
       GRPC.logger.debug("bidi-notify-done: notifying  #{@op_notifier}")
       @op_notifier.notify(self)
+    end
+
+    # performs a read using @call.run_batch, ensures metadata is set up
+    def read_using_run_batch
+      ops = { RECV_MESSAGE => nil }
+      ops[RECV_INITIAL_METADATA] = nil unless @metadata_tag.nil?
+      batch_result = @call.run_batch(@cq, self, INFINITE_FUTURE, ops)
+      unless @metadata_tag.nil?
+        @call.metadata = batch_result.metadata
+        @metadata_tag = nil
+      end
+      batch_result
     end
 
     # each_queued_msg yields each message on this instances readq
@@ -169,9 +183,7 @@ module GRPC
           loop do
             GRPC.logger.debug("bidi-read-loop: #{count}")
             count += 1
-            # TODO: ensure metadata is read if available, currently it's not
-            batch_result = @call.run_batch(@cq, read_tag, INFINITE_FUTURE,
-                                           RECV_MESSAGE => nil)
+            batch_result = read_using_run_batch
 
             # handle the next message
             if batch_result.message.nil?
