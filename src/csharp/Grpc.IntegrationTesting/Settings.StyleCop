@@ -1,10 +1,10 @@
 <StyleCopSettings Version="105">
   <SourceFileList>
     <SourceFile>Empty.cs</SourceFile>
-	<SourceFile>Control.cs</SourceFile>
-	<SourceFile>Messages.cs</SourceFile>
-	<SourceFile>Payloads.cs</SourceFile>
-	<SourceFile>Stats.cs</SourceFile>
+    <SourceFile>Control.cs</SourceFile>
+    <SourceFile>Messages.cs</SourceFile>
+    <SourceFile>Payloads.cs</SourceFile>
+    <SourceFile>Stats.cs</SourceFile>
     <Settings>
     <GlobalSettings>
       <BooleanProperty Name="RulesEnabledByDefault">False</BooleanProperty>
