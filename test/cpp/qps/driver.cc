@@ -161,7 +161,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
-    servers[i].stub = Worker::NewStub(
+    servers[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i], InsecureChannelCredentials()));
     ServerArgs args;
     result_server_config = server_config;
@@ -188,7 +188,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // where class contained in std::vector must have a copy constructor
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
-    clients[i].stub = Worker::NewStub(
+    clients[i].stub = WorkerService::NewStub(
         CreateChannel(workers[i + num_servers], InsecureChannelCredentials()));
     ClientArgs args;
     result_client_config = client_config;
