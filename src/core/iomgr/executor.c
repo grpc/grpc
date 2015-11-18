@@ -63,8 +63,6 @@ void grpc_executor_init() {
 
 /* thread body */
 static void closure_exec_thread_func(void *ignored) {
-  grpc_closure *closure;
-
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   while (1) {
     gpr_mu_lock(&g_executor.mu);
@@ -72,16 +70,16 @@ static void closure_exec_thread_func(void *ignored) {
       gpr_mu_unlock(&g_executor.mu);
       break;
     }
-    closure = grpc_closure_list_pop(&g_executor.closures);
-    if (closure == NULL) {
+    if (grpc_closure_list_empty(g_executor.closures)) {
       /* no more work, time to die */
       GPR_ASSERT(g_executor.busy == 1);
       g_executor.busy = 0;
       gpr_mu_unlock(&g_executor.mu);
       break;
+    } else {
+      grpc_exec_ctx_enqueue_list(&exec_ctx, &g_executor.closures);
     }
     gpr_mu_unlock(&g_executor.mu);
-    closure->cb(&exec_ctx, closure->cb_arg, closure->success);
     grpc_exec_ctx_flush(&exec_ctx);
   }
   grpc_exec_ctx_finish(&exec_ctx);
@@ -125,7 +123,6 @@ void grpc_executor_enqueue(grpc_closure *closure, int success) {
 
 void grpc_executor_shutdown() {
   int pending_join;
-  grpc_closure *closure;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
   gpr_mu_lock(&g_executor.mu);
@@ -136,9 +133,7 @@ void grpc_executor_shutdown() {
    * list below because we aren't accepting new work */
 
   /* Execute pending callbacks, some may be performing cleanups */
-  while ((closure = grpc_closure_list_pop(&g_executor.closures)) != NULL) {
-    closure->cb(&exec_ctx, closure->cb_arg, closure->success);
-  }
+  grpc_exec_ctx_enqueue_list(&exec_ctx, &g_executor.closures);
   grpc_exec_ctx_finish(&exec_ctx);
   GPR_ASSERT(grpc_closure_list_empty(g_executor.closures));
   if (pending_join) {
