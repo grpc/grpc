@@ -426,7 +426,7 @@ if ($use_tls) {
         $ssl_credentials = Grpc\ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
     } else {
-        $ssl_credentials = Grpc\Credentials::createSsl();
+        $ssl_credentials = Grpc\ChannelCredentials::createSsl();
     }
     $opts['credentials'] = $ssl_credentials;
     $opts['grpc.ssl_target_name_override'] = $host_override;
