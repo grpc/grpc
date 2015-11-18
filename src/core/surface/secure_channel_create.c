@@ -230,7 +230,7 @@ static const grpc_subchannel_factory_vtable subchannel_factory_vtable = {
    Asynchronously: - resolve target
                    - connect to it (trying alternatives as presented)
                    - perform handshakes */
-grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
+grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
                                          const char *target,
                                          const grpc_channel_args *args,
                                          void *reserved) {
@@ -261,9 +261,9 @@ grpc_channel *grpc_secure_channel_create(grpc_credentials *creds,
         "Security connector exists in channel args.");
   }
 
-  if (grpc_credentials_create_security_connector(
-          creds, target, args, NULL, &security_connector,
-          &new_args_from_connector) != GRPC_SECURITY_OK) {
+  if (grpc_channel_credentials_create_security_connector(
+          creds, target, args, &security_connector, &new_args_from_connector) !=
+      GRPC_SECURITY_OK) {
     grpc_exec_ctx_finish(&exec_ctx);
     return grpc_lame_client_channel_create(
         target, GRPC_STATUS_INVALID_ARGUMENT,
