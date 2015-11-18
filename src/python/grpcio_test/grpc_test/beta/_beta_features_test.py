@@ -228,5 +228,57 @@ class BetaFeaturesTest(unittest.TestCase):
     self.assertEqual(_RESPONSE, response)
 
 
+class ContextManagementAndLifecycleTest(unittest.TestCase):
+
+  def setUp(self):
+    self._servicer = _Servicer()
+    method_implementations = {
+        (_GROUP, _UNARY_UNARY):
+            utilities.unary_unary_inline(self._servicer.unary_unary),
+        (_GROUP, _UNARY_STREAM):
+            utilities.unary_stream_inline(self._servicer.unary_stream),
+        (_GROUP, _STREAM_UNARY):
+            utilities.stream_unary_inline(self._servicer.stream_unary),
+        (_GROUP, _STREAM_STREAM):
+            utilities.stream_stream_inline(self._servicer.stream_stream),
+    }
+
+    self._cardinalities = {
+        _UNARY_UNARY: cardinality.Cardinality.UNARY_UNARY,
+        _UNARY_STREAM: cardinality.Cardinality.UNARY_STREAM,
+        _STREAM_UNARY: cardinality.Cardinality.STREAM_UNARY,
+        _STREAM_STREAM: cardinality.Cardinality.STREAM_STREAM,
+    }
+
+    server_options = implementations.server_options(
+        thread_pool_size=test_constants.POOL_SIZE)
+    self._server = implementations.server(
+        method_implementations, options=server_options)
+    server_credentials = implementations.ssl_server_credentials(
+        [(resources.private_key(), resources.certificate_chain(),),])
+    port = self._server.add_secure_port('[::]:0', server_credentials)
+    self._server.start()
+    self._client_credentials = implementations.ssl_client_credentials(
+        resources.test_root_certificates(), None, None)
+    self._channel = test_utilities.not_really_secure_channel(
+        'localhost', port, self._client_credentials, _SERVER_HOST_OVERRIDE)
+    self._stub_options = implementations.stub_options(
+        thread_pool_size=test_constants.POOL_SIZE)
+
+  def tearDown(self):
+    self._server.stop(test_constants.SHORT_TIMEOUT).wait()
+
+  def test_unary_unary(self):
+    dynamic_stub = implementations.dynamic_stub(
+        self._channel, _GROUP, self._cardinalities, options=self._stub_options)
+    with dynamic_stub:
+      call_options = interfaces.grpc_call_options(
+          disable_compression=True, credentials=self._client_credentials)
+      response = getattr(dynamic_stub, _UNARY_UNARY)(
+          _REQUEST, test_constants.LONG_TIMEOUT, protocol_options=call_options)
+      self.assertEqual(_RESPONSE, response)
+      self.assertIsNotNone(self._servicer.peer())
+
+
 if __name__ == '__main__':
   unittest.main(verbosity=2)

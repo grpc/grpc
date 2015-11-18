@@ -42,21 +42,39 @@ _DEFAULT_POOL_SIZE = 6
 
 class _AutoIntermediary(object):
 
-  def __init__(self, delegate, on_deletion):
+  def __init__(self, up, down, delegate):
+    self._lock = threading.Lock()
+    self._up = up
+    self._down = down
+    self._in_context = False
     self._delegate = delegate
-    self._on_deletion = on_deletion
 
   def __getattr__(self, attr):
-    return getattr(self._delegate, attr)
+    with self._lock:
+      return getattr(self._delegate, attr)
 
   def __enter__(self):
-    return self
+    with self._lock:
+      if self._in_context:
+        raise ValueError('Already in context!')
+      elif self._delegate is None:
+        self._delegate = self._up()
+      self._in_context = True
+      return self
 
   def __exit__(self, exc_type, exc_val, exc_tb):
-    return False
+    with self._lock:
+      if not self._in_context:
+        raise ValueError('Not in context!')
+      self._down()
+      self._in_context = False
+      self._delegate = None
+      return False
 
   def __del__(self):
-    self._on_deletion()
+    with self._lock:
+      if self._delegate is not None:
+        self._down()
 
 
 def _assemble(
@@ -81,7 +99,7 @@ def _assemble(
 
 
 def _disassemble(end_link, grpc_link, pool):
-  end_link.stop(24 * 60 * 60).wait()
+  end_link.stop(0).wait()
   grpc_link.stop()
   end_link.join_link(utilities.NULL_LINK)
   grpc_link.join_link(utilities.NULL_LINK)
@@ -89,10 +107,41 @@ def _disassemble(end_link, grpc_link, pool):
     pool.shutdown(wait=True)
 
 
-def _wrap_assembly(stub, end_link, grpc_link, assembly_pool):
-  disassembly_thread = threading.Thread(
-      target=_disassemble, args=(end_link, grpc_link, assembly_pool))
-  return _AutoIntermediary(stub, disassembly_thread.start)
+class _StubAssemblyManager(object):
+
+  def __init__(
+      self, channel, host, metadata_transformer, request_serializers,
+      response_deserializers, thread_pool, thread_pool_size, end_link,
+      grpc_link, assembly_pool, stub_creator):
+    self._channel = channel
+    self._host = host
+    self._metadata_transformer = metadata_transformer
+    self._request_serializers = request_serializers
+    self._response_deserializers = response_deserializers
+    self._thread_pool = thread_pool
+    self._thread_pool_size = thread_pool_size
+    self._end_link = end_link
+    self._grpc_link = grpc_link
+    self._assembly_pool = assembly_pool
+    self._stub_creator = stub_creator
+
+  def up(self):
+    self._end_link, self._grpc_link, invocation_pool, self._assembly_pool = (
+        _assemble(
+            self._channel, self._host, self._metadata_transformer,
+            self._request_serializers, self._response_deserializers,
+            self._thread_pool, self._thread_pool_size))
+    return self._stub_creator(self._end_link, invocation_pool)
+
+  def down(self):
+    _disassemble(self._end_link, self._grpc_link, self._assembly_pool)
+
+
+def _dynamic_stub_creator(service, cardinalities):
+  def create_dynamic_stub(end_link, invocation_pool):
+    return _crust_implementations.dynamic_stub(
+        end_link, service, cardinalities, invocation_pool)
+  return create_dynamic_stub
 
 
 def generic_stub(
@@ -101,8 +150,12 @@ def generic_stub(
   end_link, grpc_link, invocation_pool, assembly_pool = _assemble(
       channel, host, metadata_transformer, request_serializers,
       response_deserializers, thread_pool, thread_pool_size)
+  stub_assembly = _StubAssemblyManager(
+      channel, host, metadata_transformer, request_serializers,
+      response_deserializers, thread_pool, thread_pool_size, end_link,
+      grpc_link, assembly_pool, _crust_implementations.generic_stub)
   stub = _crust_implementations.generic_stub(end_link, invocation_pool)
-  return _wrap_assembly(stub, end_link, grpc_link, assembly_pool)
+  return _AutoIntermediary(stub_assembly.up, stub_assembly.down, stub)
 
 
 def dynamic_stub(
@@ -112,6 +165,10 @@ def dynamic_stub(
   end_link, grpc_link, invocation_pool, assembly_pool = _assemble(
       channel, host, metadata_transformer, request_serializers,
       response_deserializers, thread_pool, thread_pool_size)
+  stub_assembly = _StubAssemblyManager(
+      channel, host, metadata_transformer, request_serializers,
+      response_deserializers, thread_pool, thread_pool_size, end_link,
+      grpc_link, assembly_pool, _dynamic_stub_creator(service, cardinalities))
   stub = _crust_implementations.dynamic_stub(
       end_link, service, cardinalities, invocation_pool)
-  return _wrap_assembly(stub, end_link, grpc_link, assembly_pool)
+  return _AutoIntermediary(stub_assembly.up, stub_assembly.down, stub)
