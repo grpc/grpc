@@ -38,10 +38,10 @@
 
 #include <grpc/grpc_security.h>
 
-/* Initializes the ruby Credentials class. */
-void Init_grpc_credentials();
+/* Initializes the ruby ChannelCredentials class. */
+void Init_grpc_channel_credentials();
 
 /* Gets the wrapped credentials from the ruby wrapper */
-grpc_credentials* grpc_rb_get_wrapped_credentials(VALUE v);
+grpc_channel_credentials* grpc_rb_get_wrapped_channel_credentials(VALUE v);
 
 #endif /* GRPC_RB_CREDENTIALS_H_ */

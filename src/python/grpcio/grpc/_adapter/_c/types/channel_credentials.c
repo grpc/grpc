@@ -36,25 +36,27 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
+#include <grpc/grpc_security.h>
 
 
-PyMethodDef pygrpc_Call_methods[] = {
-    {"start_batch", (PyCFunction)pygrpc_Call_start_batch, METH_KEYWORDS, ""},
-    {"cancel", (PyCFunction)pygrpc_Call_cancel, METH_KEYWORDS, ""},
-    {"peer", (PyCFunction)pygrpc_Call_peer, METH_NOARGS, ""},
-    {"set_credentials", (PyCFunction)pygrpc_Call_set_credentials, METH_KEYWORDS,
-     ""},
+PyMethodDef pygrpc_ChannelCredentials_methods[] = {
+    {"google_default", (PyCFunction)pygrpc_ChannelCredentials_google_default,
+     METH_CLASS|METH_NOARGS, ""},
+    {"ssl", (PyCFunction)pygrpc_ChannelCredentials_ssl,
+     METH_CLASS|METH_KEYWORDS, ""},
+    {"composite", (PyCFunction)pygrpc_ChannelCredentials_composite,
+     METH_CLASS|METH_KEYWORDS, ""},
     {NULL}
 };
-const char pygrpc_Call_doc[] = "See grpc._adapter._types.Call.";
-PyTypeObject pygrpc_Call_type = {
+
+const char pygrpc_ChannelCredentials_doc[] = "";
+PyTypeObject pygrpc_ChannelCredentials_type = {
     PyObject_HEAD_INIT(NULL)
     0,                                        /* ob_size */
-    "Call",                                   /* tp_name */
-    sizeof(Call),                             /* tp_basicsize */
+    "ChannelCredentials",                     /* tp_name */
+    sizeof(ChannelCredentials),               /* tp_basicsize */
     0,                                        /* tp_itemsize */
-    (destructor)pygrpc_Call_dealloc,          /* tp_dealloc */
+    (destructor)pygrpc_ChannelCredentials_dealloc, /* tp_dealloc */
     0,                                        /* tp_print */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
@@ -70,14 +72,14 @@ PyTypeObject pygrpc_Call_type = {
     0,                                        /* tp_setattro */
     0,                                        /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    pygrpc_Call_doc,                          /* tp_doc */
+    pygrpc_ChannelCredentials_doc,             /* tp_doc */
     0,                                        /* tp_traverse */
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
     0,                                        /* tp_iter */
     0,                                        /* tp_iternext */
-    pygrpc_Call_methods,                      /* tp_methods */
+    pygrpc_ChannelCredentials_methods,         /* tp_methods */
     0,                                        /* tp_members */
     0,                                        /* tp_getset */
     0,                                        /* tp_base */
@@ -90,97 +92,74 @@ PyTypeObject pygrpc_Call_type = {
     0                                         /* tp_new */
 };
 
-Call *pygrpc_Call_new_empty(CompletionQueue *cq) {
-  Call *call = (Call *)pygrpc_Call_type.tp_alloc(&pygrpc_Call_type, 0);
-  call->c_call = NULL;
-  call->cq = cq;
-  Py_XINCREF(call->cq);
-  return call;
-}
-void pygrpc_Call_dealloc(Call *self) {
-  if (self->c_call) {
-    grpc_call_destroy(self->c_call);
-  }
-  Py_XDECREF(self->cq);
+void pygrpc_ChannelCredentials_dealloc(ChannelCredentials *self) {
+  grpc_channel_credentials_release(self->c_creds);
   self->ob_type->tp_free((PyObject *)self);
 }
-PyObject *pygrpc_Call_start_batch(Call *self, PyObject *args, PyObject *kwargs) {
-  PyObject *op_list;
-  PyObject *user_tag;
-  grpc_op *ops;
-  size_t nops;
-  size_t i;
-  size_t j;
-  pygrpc_tag *tag;
-  grpc_call_error errcode;
-  static char *keywords[] = {"ops", "tag", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO:start_batch", keywords,
-                                   &op_list, &user_tag)) {
+
+ChannelCredentials *pygrpc_ChannelCredentials_google_default(
+    PyTypeObject *type, PyObject *ignored) {
+  ChannelCredentials *self = (ChannelCredentials *)type->tp_alloc(type, 0);
+  self->c_creds = grpc_google_default_credentials_create();
+  if (!self->c_creds) {
+    Py_DECREF(self);
+    PyErr_SetString(PyExc_RuntimeError,
+                    "couldn't create Google default credentials");
     return NULL;
   }
-  if (!PyList_Check(op_list)) {
-    PyErr_SetString(PyExc_TypeError, "expected a list of OpArgs");
-    return NULL;
-  }
-  nops = PyList_Size(op_list);
-  ops = gpr_malloc(sizeof(grpc_op) * nops);
-  for (i = 0; i < nops; ++i) {
-    PyObject *item = PyList_GET_ITEM(op_list, i);
-    if (!pygrpc_produce_op(item, &ops[i])) {
-      for (j = 0; j < i; ++j) {
-        pygrpc_discard_op(ops[j]);
-      }
-      return NULL;
-    }
-  }
-  tag = pygrpc_produce_batch_tag(user_tag, self, ops, nops);
-  errcode = grpc_call_start_batch(self->c_call, tag->ops, tag->nops, tag, NULL);
-  gpr_free(ops);
-  return PyInt_FromLong(errcode);
-}
-PyObject *pygrpc_Call_cancel(Call *self, PyObject *args, PyObject *kwargs) {
-  PyObject *py_code = NULL;
-  grpc_call_error errcode;
-  int code;
-  char *details = NULL;
-  static char *keywords[] = {"code", "details", NULL};
-  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Os:start_batch", keywords,
-                                   &py_code, &details)) {
-    return NULL;
-  }
-  if (py_code != NULL && details != NULL) {
-    if (!PyInt_Check(py_code)) {
-      PyErr_SetString(PyExc_TypeError, "expected integer code");
-      return NULL;
-    }
-    code = PyInt_AsLong(py_code);
-    errcode = grpc_call_cancel_with_status(self->c_call, code, details, NULL);
-  } else if (py_code != NULL || details != NULL) {
-    PyErr_SetString(PyExc_ValueError,
-                    "if `code` is specified, so must `details`");
-    return NULL;
-  } else {
-    errcode = grpc_call_cancel(self->c_call, NULL);
-  }
-  return PyInt_FromLong(errcode);
+  return self;
 }
 
-PyObject *pygrpc_Call_peer(Call *self) {
-  char *peer = grpc_call_get_peer(self->c_call);
-  PyObject *py_peer = PyString_FromString(peer);
-  gpr_free(peer);
-  return py_peer;
-}
-PyObject *pygrpc_Call_set_credentials(Call *self, PyObject *args,
-                                      PyObject *kwargs) {
-  CallCredentials *creds;
-  grpc_call_error errcode;
-  static char *keywords[] = {"creds", NULL};
-  if (!PyArg_ParseTupleAndKeywords(
-      args, kwargs, "O!:set_credentials", keywords,
-      &pygrpc_CallCredentials_type, &creds)) {
+ChannelCredentials *pygrpc_ChannelCredentials_ssl(
+    PyTypeObject *type, PyObject *args, PyObject *kwargs) {
+  ChannelCredentials *self;
+  const char *root_certs;
+  const char *private_key = NULL;
+  const char *cert_chain = NULL;
+  grpc_ssl_pem_key_cert_pair key_cert_pair;
+  static char *keywords[] = {"root_certs", "private_key", "cert_chain", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "z|zz:ssl", keywords,
+        &root_certs, &private_key, &cert_chain)) {
     return NULL;
   }
-  errcode = grpc_call_set_credentials(self->c_call, creds->c_creds);
-  return PyInt_FromLong(errcode);
+  self = (ChannelCredentials *)type->tp_alloc(type, 0);
+  if (private_key && cert_chain) {
+    key_cert_pair.private_key = private_key;
+    key_cert_pair.cert_chain = cert_chain;
+    self->c_creds =
+        grpc_ssl_credentials_create(root_certs, &key_cert_pair, NULL);
+  } else {
+    self->c_creds = grpc_ssl_credentials_create(root_certs, NULL, NULL);
+  }
+  if (!self->c_creds) {
+    Py_DECREF(self);
+    PyErr_SetString(PyExc_RuntimeError, "couldn't create ssl credentials");
+    return NULL;
+  }
+  return self;
 }
+
+ChannelCredentials *pygrpc_ChannelCredentials_composite(
+    PyTypeObject *type, PyObject *args, PyObject *kwargs) {
+  ChannelCredentials *self;
+  ChannelCredentials *creds1;
+  CallCredentials *creds2;
+  static char *keywords[] = {"creds1", "creds2", NULL};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O!O!:composite", keywords,
+        &pygrpc_ChannelCredentials_type, &creds1,
+        &pygrpc_CallCredentials_type, &creds2)) {
+    return NULL;
+  }
+  self = (ChannelCredentials *)type->tp_alloc(type, 0);
+  self->c_creds =
+      grpc_composite_channel_credentials_create(
+          creds1->c_creds, creds2->c_creds, NULL);
+  if (!self->c_creds) {
+    Py_DECREF(self);
+    PyErr_SetString(
+        PyExc_RuntimeError, "couldn't create composite credentials");
+    return NULL;
+  }
+  return self;
+}
+

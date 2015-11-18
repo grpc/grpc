@@ -199,7 +199,7 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<bool> {
 
   void ResetStub() {
     std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureCredentials());
+        CreateChannel(server_address_.str(), InsecureChannelCredentials());
     stub_ = grpc::cpp::test::util::TestService::NewStub(channel);
   }
 
@@ -749,7 +749,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 
 TEST_P(AsyncEnd2endTest, UnimplementedRpc) {
   std::shared_ptr<Channel> channel =
-      CreateChannel(server_address_.str(), InsecureCredentials());
+      CreateChannel(server_address_.str(), InsecureChannelCredentials());
   std::unique_ptr<grpc::cpp::test::util::UnimplementedService::Stub> stub;
   stub = grpc::cpp::test::util::UnimplementedService::NewStub(channel);
   EchoRequest send_request;

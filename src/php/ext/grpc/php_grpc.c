@@ -35,7 +35,8 @@
 #include "channel.h"
 #include "server.h"
 #include "timeval.h"
-#include "credentials.h"
+#include "channel_credentials.h"
+#include "call_credentials.h"
 #include "server_credentials.h"
 #include "completion_queue.h"
 
@@ -233,7 +234,8 @@ PHP_MINIT_FUNCTION(grpc) {
   grpc_init_channel(TSRMLS_C);
   grpc_init_server(TSRMLS_C);
   grpc_init_timeval(TSRMLS_C);
-  grpc_init_credentials(TSRMLS_C);
+  grpc_init_channel_credentials(TSRMLS_C);
+  grpc_init_call_credentials(TSRMLS_C);
   grpc_init_server_credentials(TSRMLS_C);
   grpc_php_init_completion_queue(TSRMLS_C);
   return SUCCESS;
