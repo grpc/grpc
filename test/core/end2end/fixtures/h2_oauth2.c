@@ -118,14 +118,14 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
-static void chttp2_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
-                                                grpc_channel_args *client_args,
-                                                grpc_credentials *creds) {
+static void chttp2_init_client_secure_fullstack(
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args,
+    grpc_channel_credentials *creds) {
   fullstack_secure_fixture_data *ffd = f->fixture_data;
   f->client =
       grpc_secure_channel_create(creds, ffd->localaddr, client_args, NULL);
   GPR_ASSERT(f->client != NULL);
-  grpc_credentials_release(creds);
+  grpc_channel_credentials_release(creds);
 }
 
 static void chttp2_init_server_secure_fullstack(
@@ -151,12 +151,12 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  grpc_credentials *ssl_creds =
+  grpc_channel_credentials *ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, NULL, NULL);
-  grpc_credentials *oauth2_creds =
+  grpc_call_credentials *oauth2_creds =
       grpc_md_only_test_credentials_create("Authorization", oauth2_md, 1);
-  grpc_credentials *ssl_oauth2_creds =
-      grpc_composite_credentials_create(ssl_creds, oauth2_creds, NULL);
+  grpc_channel_credentials *ssl_oauth2_creds =
+      grpc_composite_channel_credentials_create(ssl_creds, oauth2_creds, NULL);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                 {"foo.test.google.fr"}};
@@ -164,8 +164,8 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_oauth2_creds);
   grpc_channel_args_destroy(new_client_args);
-  grpc_credentials_release(ssl_creds);
-  grpc_credentials_release(oauth2_creds);
+  grpc_channel_credentials_release(ssl_creds);
+  grpc_call_credentials_release(oauth2_creds);
 }
 
 static int fail_server_auth_check(grpc_channel_args *server_args) {

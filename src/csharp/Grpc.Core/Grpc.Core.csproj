@@ -80,7 +80,6 @@
     <Compile Include="ServerServiceDefinition.cs" />
     <Compile Include="Utils\AsyncStreamExtensions.cs" />
     <Compile Include="Utils\BenchmarkUtil.cs" />
-    <Compile Include="Internal\CredentialsSafeHandle.cs" />
     <Compile Include="ChannelCredentials.cs" />
     <Compile Include="Internal\ChannelArgsSafeHandle.cs" />
     <Compile Include="Internal\AsyncCompletion.cs" />
@@ -119,6 +118,8 @@
     <Compile Include="CompressionLevel.cs" />
     <Compile Include="WriteOptions.cs" />
     <Compile Include="ContextPropagationToken.cs" />
+    <Compile Include="Internal\CallCredentialsSafeHandle.cs" />
+    <Compile Include="Internal\ChannelCredentialsSafeHandle.cs" />
     <Compile Include="Profiling\ProfilerEntry.cs" />
     <Compile Include="Profiling\ProfilerScope.cs" />
     <Compile Include="Profiling\IProfiler.cs" />

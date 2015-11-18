@@ -46,7 +46,7 @@
 /* --- grpc_call --- */
 
 grpc_call_error grpc_call_set_credentials(grpc_call *call,
-                                          grpc_credentials *creds) {
+                                          grpc_call_credentials *creds) {
   grpc_client_security_context *ctx = NULL;
   GRPC_API_TRACE("grpc_call_set_credentials(call=%p, creds=%p)", 2,
                  (call, creds));
@@ -54,20 +54,16 @@ grpc_call_error grpc_call_set_credentials(grpc_call *call,
     gpr_log(GPR_ERROR, "Method is client-side only.");
     return GRPC_CALL_ERROR_NOT_ON_SERVER;
   }
-  if (creds != NULL && !grpc_credentials_has_request_metadata_only(creds)) {
-    gpr_log(GPR_ERROR, "Incompatible credentials to set on a call.");
-    return GRPC_CALL_ERROR;
-  }
   ctx = (grpc_client_security_context *)grpc_call_context_get(
       call, GRPC_CONTEXT_SECURITY);
   if (ctx == NULL) {
     ctx = grpc_client_security_context_create();
-    ctx->creds = grpc_credentials_ref(creds);
+    ctx->creds = grpc_call_credentials_ref(creds);
     grpc_call_context_set(call, GRPC_CONTEXT_SECURITY, ctx,
                           grpc_client_security_context_destroy);
   } else {
-    grpc_credentials_unref(ctx->creds);
-    ctx->creds = grpc_credentials_ref(creds);
+    grpc_call_credentials_unref(ctx->creds);
+    ctx->creds = grpc_call_credentials_ref(creds);
   }
   return GRPC_CALL_OK;
 }
@@ -101,7 +97,7 @@ grpc_client_security_context *grpc_client_security_context_create(void) {
 
 void grpc_client_security_context_destroy(void *ctx) {
   grpc_client_security_context *c = (grpc_client_security_context *)ctx;
-  grpc_credentials_unref(c->creds);
+  grpc_call_credentials_unref(c->creds);
   GRPC_AUTH_CONTEXT_UNREF(c->auth_context, "client_security_context");
   gpr_free(ctx);
 }
@@ -324,8 +320,7 @@ grpc_arg grpc_auth_context_to_arg(grpc_auth_context *p) {
   return arg;
 }
 
-grpc_auth_context *grpc_auth_context_from_arg(
-    const grpc_arg *arg) {
+grpc_auth_context *grpc_auth_context_from_arg(const grpc_arg *arg) {
   if (strcmp(arg->key, GRPC_AUTH_CONTEXT_ARG) != 0) return NULL;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
@@ -340,8 +335,7 @@ grpc_auth_context *grpc_find_auth_context_in_args(
   size_t i;
   if (args == NULL) return NULL;
   for (i = 0; i < args->num_args; i++) {
-    grpc_auth_context *p =
-        grpc_auth_context_from_arg(&args->args[i]);
+    grpc_auth_context *p = grpc_auth_context_from_arg(&args->args[i]);
     if (p != NULL) return p;
   }
   return NULL;

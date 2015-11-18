@@ -5,7 +5,7 @@ settings:
   '#': The public version number of the library.
   version:
     major: 0
-    minor: 11
+    minor: 12
     micro: 0
     build: 0
 filegroups:
@@ -116,6 +116,7 @@ filegroups:
   - src/core/channel/http_client_filter.h
   - src/core/channel/http_server_filter.h
   - src/core/channel/noop_filter.h
+  - src/core/channel/subchannel_call_holder.h
   - src/core/client_config/client_config.h
   - src/core/client_config/connector.h
   - src/core/client_config/initial_connect_string.h
@@ -183,7 +184,6 @@ filegroups:
   - src/core/statistics/census_interface.h
   - src/core/statistics/census_rpc_stats.h
   - src/core/surface/api_trace.h
-  - src/core/surface/byte_buffer_queue.h
   - src/core/surface/call.h
   - src/core/surface/call_test_only.h
   - src/core/surface/channel.h
@@ -192,6 +192,7 @@ filegroups:
   - src/core/surface/init.h
   - src/core/surface/server.h
   - src/core/surface/surface_trace.h
+  - src/core/transport/byte_stream.h
   - src/core/transport/chttp2/alpn.h
   - src/core/transport/chttp2/bin_encoder.h
   - src/core/transport/chttp2/frame.h
@@ -201,6 +202,7 @@ filegroups:
   - src/core/transport/chttp2/frame_rst_stream.h
   - src/core/transport/chttp2/frame_settings.h
   - src/core/transport/chttp2/frame_window_update.h
+  - src/core/transport/chttp2/hpack_encoder.h
   - src/core/transport/chttp2/hpack_parser.h
   - src/core/transport/chttp2/hpack_table.h
   - src/core/transport/chttp2/http2_errors.h
@@ -208,14 +210,13 @@ filegroups:
   - src/core/transport/chttp2/incoming_metadata.h
   - src/core/transport/chttp2/internal.h
   - src/core/transport/chttp2/status_conversion.h
-  - src/core/transport/chttp2/stream_encoder.h
   - src/core/transport/chttp2/stream_map.h
   - src/core/transport/chttp2/timeout_encoding.h
   - src/core/transport/chttp2/varint.h
   - src/core/transport/chttp2_transport.h
   - src/core/transport/connectivity_state.h
   - src/core/transport/metadata.h
-  - src/core/transport/stream_op.h
+  - src/core/transport/metadata_batch.h
   - src/core/transport/transport.h
   - src/core/transport/transport_impl.h
   src:
@@ -230,6 +231,7 @@ filegroups:
   - src/core/channel/http_client_filter.c
   - src/core/channel/http_server_filter.c
   - src/core/channel/noop_filter.c
+  - src/core/channel/subchannel_call_holder.c
   - src/core/client_config/client_config.c
   - src/core/client_config/connector.c
   - src/core/client_config/default_initial_connect_string.c
@@ -301,7 +303,6 @@ filegroups:
   - src/core/json/json_writer.c
   - src/core/surface/api_trace.c
   - src/core/surface/byte_buffer.c
-  - src/core/surface/byte_buffer_queue.c
   - src/core/surface/byte_buffer_reader.c
   - src/core/surface/call.c
   - src/core/surface/call_details.c
@@ -318,6 +319,7 @@ filegroups:
   - src/core/surface/server_chttp2.c
   - src/core/surface/server_create.c
   - src/core/surface/version.c
+  - src/core/transport/byte_stream.c
   - src/core/transport/chttp2/alpn.c
   - src/core/transport/chttp2/bin_encoder.c
   - src/core/transport/chttp2/frame_data.c
@@ -326,13 +328,13 @@ filegroups:
   - src/core/transport/chttp2/frame_rst_stream.c
   - src/core/transport/chttp2/frame_settings.c
   - src/core/transport/chttp2/frame_window_update.c
+  - src/core/transport/chttp2/hpack_encoder.c
   - src/core/transport/chttp2/hpack_parser.c
   - src/core/transport/chttp2/hpack_table.c
   - src/core/transport/chttp2/huffsyms.c
   - src/core/transport/chttp2/incoming_metadata.c
   - src/core/transport/chttp2/parsing.c
   - src/core/transport/chttp2/status_conversion.c
-  - src/core/transport/chttp2/stream_encoder.c
   - src/core/transport/chttp2/stream_lists.c
   - src/core/transport/chttp2/stream_map.c
   - src/core/transport/chttp2/timeout_encoding.c
@@ -341,7 +343,7 @@ filegroups:
   - src/core/transport/chttp2_transport.c
   - src/core/transport/connectivity_state.c
   - src/core/transport/metadata.c
-  - src/core/transport/stream_op.c
+  - src/core/transport/metadata_batch.c
   - src/core/transport/transport.c
   - src/core/transport/transport_op_string.c
 - name: grpc_test_util_base
@@ -827,21 +829,21 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: chttp2_status_conversion_test
+- name: chttp2_hpack_encoder_test
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/status_conversion_test.c
+  - test/core/transport/chttp2/hpack_encoder_test.c
   deps:
   - grpc_test_util
   - grpc
   - gpr_test_util
   - gpr
-- name: chttp2_stream_encoder_test
+- name: chttp2_status_conversion_test
   build: test
   language: c
   src:
-  - test/core/transport/chttp2/stream_encoder_test.c
+  - test/core/transport/chttp2/status_conversion_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -1240,16 +1242,6 @@ targets:
   language: c
   src:
   - test/core/security/security_connector_test.c
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: grpc_stream_op_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/stream_op_test.c
   deps:
   - grpc_test_util
   - grpc
@@ -2260,3 +2252,19 @@ vspackages:
   props: false
   redist: false
   version: 1.7.0.1
+node_modules:
+- deps:
+  - grpc
+  - gpr
+  name: grpc_node
+  src:
+  - src/node/ext/byte_buffer.cc
+  - src/node/ext/call.cc
+  - src/node/ext/call_credentials.cc
+  - src/node/ext/channel.cc
+  - src/node/ext/channel_credentials.cc
+  - src/node/ext/completion_queue_async_worker.cc
+  - src/node/ext/node_grpc.cc
+  - src/node/ext/server.cc
+  - src/node/ext/server_credentials.cc
+  - src/node/ext/timeval.cc
