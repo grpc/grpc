@@ -4,7 +4,7 @@ gRPC in 3 minutes (Node.js)
 PREREQUISITES
 -------------
 
-- `node`: This requires Node 10.x or greater.
+- `node`: This requires Node 0.10.x or greater.
 - [homebrew][] on Mac OS X.  This simplifies the installation of the gRPC C core.
 
 INSTALL
