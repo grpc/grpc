@@ -891,6 +891,7 @@ src/core/transport/chttp2_transport.h \
 src/core/transport/connectivity_state.h \
 src/core/transport/metadata.h \
 src/core/transport/metadata_batch.h \
+src/core/transport/static_metadata.h \
 src/core/transport/transport.h \
 src/core/transport/transport_impl.h \
 src/core/census/aggregation.h \
@@ -1039,6 +1040,7 @@ src/core/transport/chttp2_transport.c \
 src/core/transport/connectivity_state.c \
 src/core/transport/metadata.c \
 src/core/transport/metadata_batch.c \
+src/core/transport/static_metadata.c \
 src/core/transport/transport.c \
 src/core/transport/transport_op_string.c \
 src/core/census/context.c \

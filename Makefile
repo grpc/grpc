@@ -4558,6 +4558,7 @@ LIBGRPC_SRC = \
     src/core/transport/connectivity_state.c \
     src/core/transport/metadata.c \
     src/core/transport/metadata_batch.c \
+    src/core/transport/static_metadata.c \
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
     src/core/census/context.c \
@@ -4841,6 +4842,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/transport/connectivity_state.c \
     src/core/transport/metadata.c \
     src/core/transport/metadata_batch.c \
+    src/core/transport/static_metadata.c \
     src/core/transport/transport.c \
     src/core/transport/transport_op_string.c \
     src/core/census/context.c \
