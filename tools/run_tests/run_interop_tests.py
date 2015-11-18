@@ -624,7 +624,9 @@ try:
                                            docker_image=docker_images.get(str(language)))
           jobs.append(test_job)
           
-    if args.http2_interop:
+    # TODO(carl-mastrangelo): Currently prod TLS terminators aren't spec compliant. Reenable
+    # this once a better solution is in place.
+    if args.http2_interop and False:
       for test_case in _HTTP2_TEST_CASES:
         test_job = cloud_to_prod_jobspec(http2Interop, test_case,
                                          docker_image=docker_images.get(str(http2Interop)))
@@ -660,6 +662,9 @@ try:
           
     if args.http2_interop:
       for test_case in _HTTP2_TEST_CASES:
+        if server_name == "go":
+          # TODO(carl-mastrangelo): Reenable after https://github.com/grpc/grpc-go/issues/434
+          continue 
         test_job = cloud_to_cloud_jobspec(http2Interop,
                                           test_case,
                                           server_name,

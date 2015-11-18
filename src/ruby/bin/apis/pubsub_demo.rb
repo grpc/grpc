@@ -66,7 +66,7 @@ end
 
 # creates a SSL Credentials from the production certificates.
 def ssl_creds
-  GRPC::Core::Credentials.new(load_prod_cert)
+  GRPC::Core::ChannelCredentials.new(load_prod_cert)
 end
 
 # Builds the metadata authentication update proc.
