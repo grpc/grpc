@@ -474,7 +474,8 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
   c->mdctx = ctx;
   c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout");
   c->max_table_size = GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE;
-  c->cap_table_elems = c->max_table_elems = elems_for_bytes(c->max_table_size);
+  c->cap_table_elems = elems_for_bytes(c->max_table_size);
+  c->max_table_elems = c->cap_table_elems;
   c->max_usable_size = GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE;
   c->table_elem_size =
       gpr_malloc(sizeof(*c->table_elem_size) * c->cap_table_elems);
@@ -500,7 +501,20 @@ void grpc_chttp2_hpack_compressor_set_max_usable_size(
 }
 
 static void rebuild_elems(grpc_chttp2_hpack_compressor *c, gpr_uint32 new_cap) {
+  gpr_uint16 *table_elem_size = gpr_malloc(sizeof(*table_elem_size) * new_cap);
+  gpr_uint32 i;
 
+  memset(table_elem_size, 0, sizeof(*table_elem_size) * new_cap);
+  GPR_ASSERT(c->table_elems <= new_cap);
+
+  for (i = 0; i < c->table_elems; i++) {
+    gpr_uint32 ofs = c->tail_remote_index + i + 1;
+    table_elem_size[ofs % new_cap] = c->table_elem_size[ofs % c->cap_table_elems];
+  }
+
+  c->cap_table_elems = new_cap;
+  gpr_free(c->table_elem_size);
+  c->table_elem_size = table_elem_size;
 }
 
 void grpc_chttp2_hpack_compressor_set_max_table_size(
@@ -517,7 +531,7 @@ void grpc_chttp2_hpack_compressor_set_max_table_size(
   if (c->max_table_elems > c->cap_table_elems) {
     rebuild_elems(c, GPR_MAX(c->max_table_elems, 2 * c->cap_table_elems));
   } else if (c->max_table_elems < c->cap_table_elems / 3) {
-    gpr_uint32 new_cap = GPR_MIN(c->max_table_elems, 16);
+    gpr_uint32 new_cap = GPR_MAX(c->max_table_elems, 16);
     if (new_cap != c->cap_table_elems) {
       rebuild_elems(c, new_cap);
     }

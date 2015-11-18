@@ -485,10 +485,10 @@ _CONFIGS = {
     'msan': SimpleConfig('msan', timeout_multiplier=1.5),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', timeout_multiplier=1.5, environ={
-        'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt',
+        'ASAN_OPTIONS': 'detect_leaks=1:color=always',
         'LSAN_OPTIONS': 'report_objects=1'}),
     'asan-noleaks': SimpleConfig('asan', environ={
-        'ASAN_OPTIONS': 'detect_leaks=0:color=always:suppressions=tools/tsan_suppressions.txt'}),
+        'ASAN_OPTIONS': 'detect_leaks=0:color=always'}),
     'gcov': SimpleConfig('gcov'),
     'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
     'helgrind': ValgrindConfig('dbg', 'helgrind')

@@ -130,6 +130,7 @@ typedef struct {
 /** How much memory to use for hpack decoding */
 #define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER \
   "grpc.http2.hpack_table_size.decoder"
+/** How much memory to use for hpack encoding */
 #define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
   "grpc.http2.hpack_table_size.encoder"
 /** Default authority to pass if none specified on call construction */
