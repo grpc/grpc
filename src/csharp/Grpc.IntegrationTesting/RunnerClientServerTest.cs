@@ -57,6 +57,7 @@ namespace Grpc.IntegrationTesting
             var serverConfig = new ServerConfig
             {
                 ServerType = ServerType.ASYNC_SERVER,
+                Host = Host,
                 PayloadConfig = new PayloadConfig
                 {
                     SimpleParams = new SimpleProtoParams
@@ -90,6 +91,11 @@ namespace Grpc.IntegrationTesting
                     {
                         ReqSize = 100
                     }
+                },
+                HistogramParams = new HistogramParams
+                {
+                    Resolution = 0.01,
+                    MaxPossible = 60e9
                 }
             };
 
@@ -105,7 +111,7 @@ namespace Grpc.IntegrationTesting
             await runner.StopAsync();
 
             System.Console.WriteLine(stats);
-            System.Console.WriteLine("avg micros/call " + (long) ((stats.Latencies.Sum / stats.Latencies.Count) * 1000000));
+            System.Console.WriteLine("avg micros/call " + (long) (stats.Latencies.Sum / stats.Latencies.Count / 1000.0));
         }
     }
 }
