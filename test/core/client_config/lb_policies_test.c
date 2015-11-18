@@ -269,7 +269,7 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
     }
     memset(s_valid, 0, f->num_servers * sizeof(int));
 
-    deadline = n_millis_time(1000);
+    deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1);
     c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
                                  "/foo", "foo.test.google.fr", deadline, NULL);
     GPR_ASSERT(c);
@@ -304,7 +304,8 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
                grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL));
 
     s_idx = -1;
-    while ((ev = grpc_completion_queue_next(f->cq, n_millis_time(300), NULL))
+    while ((ev = grpc_completion_queue_next(
+                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(2), NULL))
                .type != GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(gpr_intptr)ev.tag);
@@ -316,6 +317,7 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
         s_idx = read_tag - 1000;
         s_valid[s_idx] = 1;
         connection_sequence[iter_num] = s_idx;
+        break;
       } else if (read_tag == 1) {
         gpr_log(GPR_DEBUG, "client timed out");
         GPR_ASSERT(ev.success);
@@ -453,6 +455,8 @@ void run_spec(const test_spec *spec) {
   int *actual_connection_sequence;
   request_data rdata;
   servers_fixture *f;
+  grpc_channel_args args;
+  grpc_arg arg;
   rdata.call_details =
       gpr_malloc(sizeof(grpc_call_details) * spec->num_servers);
   f = setup_servers("127.0.0.1", &rdata, spec->num_servers);
@@ -462,7 +466,14 @@ void run_spec(const test_spec *spec) {
                                           f->num_servers, ",", NULL);
   gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin",
                servers_hostports_str);
-  client = grpc_insecure_channel_create(client_hostport, NULL, NULL);
+
+  arg.type = GRPC_ARG_INTEGER;
+  arg.key = "grpc.testing.fixed_reconnect_backoff";
+  arg.value.integer = 100;
+  args.num_args = 1;
+  args.args = &arg;
+
+  client = grpc_insecure_channel_create(client_hostport, &args, NULL);
 
   gpr_log(GPR_INFO, "Testing '%s' with servers=%s client=%s", spec->description,
           servers_hostports_str, client_hostport);
