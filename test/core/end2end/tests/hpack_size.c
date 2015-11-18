@@ -434,8 +434,8 @@ static void test_size(grpc_end2end_test_config config, int encode_size,
 }
 
 void grpc_end2end_tests(grpc_end2end_test_config config) {
-  static const int interesting_sizes[] = {
-      4096, 0, 100, 1000, 32768, 4 * 1024 * 1024};
+  static const int interesting_sizes[] = {4096, 0,     100,
+                                          1000, 32768, 4 * 1024 * 1024};
   size_t i, j;
 
   for (i = 0; i < GPR_ARRAY_SIZE(interesting_sizes); i++) {

@@ -303,8 +303,8 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
 
     s_idx = -1;
     while ((ev = grpc_completion_queue_next(
-                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL))
-               .type != GRPC_QUEUE_TIMEOUT) {
+                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)).type !=
+           GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(gpr_intptr)ev.tag);
       gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%d",
