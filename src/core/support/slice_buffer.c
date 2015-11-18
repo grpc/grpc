@@ -220,7 +220,7 @@ void gpr_slice_buffer_move_first(gpr_slice_buffer *src, size_t n,
     return;
   }
   src_idx = 0;
-  for (;;) {
+  while (src_idx < src->capacity) {
     gpr_slice slice = src->slices[src_idx];
     size_t slice_len = GPR_SLICE_LENGTH(slice);
     if (n > slice_len) {
