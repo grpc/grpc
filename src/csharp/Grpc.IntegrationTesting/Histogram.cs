@@ -52,8 +52,7 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class Histogram
     {
-        readonly SpinLock spinlock = new SpinLock();
-
+        readonly object myLock = new object();
         readonly double multiplier;
         readonly double oneOnLogMultiplier;
         readonly double maxPossible;
@@ -79,15 +78,9 @@ namespace Grpc.IntegrationTesting
 
         public void AddObservation(double value)
         {
-            bool lockTaken = false;
-            spinlock.Enter(ref lockTaken);
-            try
+            lock (myLock)
             {
                 AddObservationUnsafe(value);    
-            }
-            finally
-            {
-                if (lockTaken) spinlock.Exit();
             }
         }
 
@@ -97,15 +90,9 @@ namespace Grpc.IntegrationTesting
         /// </summary>
         public HistogramData GetSnapshot(bool reset = false)
         {
-            bool lockTaken = false;
-            spinlock.Enter(ref lockTaken);
-            try
+            lock (myLock)
             {
                 return GetSnapshotUnsafe(reset);    
-            }
-            finally
-            {
-                if (lockTaken) spinlock.Exit();
             }
         }
 
