@@ -60,6 +60,7 @@ message HistogramData {
 }
 
 message ClientStats {
+  // Latency histogram. Data points are in nanoseconds.
   HistogramData latencies = 1;
 
   // See ServerStats for details.
