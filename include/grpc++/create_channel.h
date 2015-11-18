@@ -49,7 +49,8 @@ namespace grpc {
 /// an object or is invalid, a lame channel is returned.
 /// \param args Options for channel creation.
 std::shared_ptr<Channel> CreateChannel(
-    const grpc::string& target, const std::shared_ptr<Credentials>& creds);
+    const grpc::string& target,
+    const std::shared_ptr<ChannelCredentials>& creds);
 
 /// Create a new \em custom \a Channel pointing to \a target
 ///
@@ -61,7 +62,8 @@ std::shared_ptr<Channel> CreateChannel(
 /// an object or is invalid, a lame channel is returned.
 /// \param args Options for channel creation.
 std::shared_ptr<Channel> CreateCustomChannel(
-    const grpc::string& target, const std::shared_ptr<Credentials>& creds,
+    const grpc::string& target,
+    const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args);
 
 }  // namespace grpc

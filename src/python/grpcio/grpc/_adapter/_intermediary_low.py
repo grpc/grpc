@@ -253,10 +253,10 @@ class Server(object):
 
 
 class ClientCredentials(object):
-  """Adapter from old _low.ClientCredentials interface to new _low.ClientCredentials."""
+  """Adapter from old _low.ClientCredentials interface to new _low.ChannelCredentials."""
 
   def __init__(self, root_certificates, private_key, certificate_chain):
-    self._internal = _low.ClientCredentials.ssl(root_certificates, private_key, certificate_chain)
+    self._internal = _low.ChannelCredentials.ssl(root_certificates, private_key, certificate_chain)
 
 
 class ServerCredentials(object):
