@@ -187,7 +187,8 @@ typedef struct {
   size_t num_creds;
 } grpc_call_credentials_array;
 
-const grpc_call_credentials_array *grpc_composite_call_credentials_get_credentials(
+const grpc_call_credentials_array *
+grpc_composite_call_credentials_get_credentials(
     grpc_call_credentials *composite_creds);
 
 /* Returns creds if creds is of the specified type or the inner creds of the

@@ -186,9 +186,8 @@ std::shared_ptr<CallCredentials> GoogleIAMCredentials(
 /// Combines a channel credentials and a call credentials into a composite
 /// channel credentials.
 std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
-      const std::shared_ptr<ChannelCredentials>& channel_creds,
-      const std::shared_ptr<CallCredentials>& call_creds);
-
+    const std::shared_ptr<ChannelCredentials>& channel_creds,
+    const std::shared_ptr<CallCredentials>& call_creds);
 
 /// Combines two call credentials objects into a composite call credentials.
 std::shared_ptr<CallCredentials> CompositeCallCredentials(

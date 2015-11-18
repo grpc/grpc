@@ -116,9 +116,12 @@ void grpc_call_credentials_release(grpc_call_credentials *creds) {
   grpc_call_credentials_unref(creds);
 }
 
-void grpc_call_credentials_get_request_metadata(
-    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds, grpc_pollset *pollset,
-    const char *service_url, grpc_credentials_metadata_cb cb, void *user_data) {
+void grpc_call_credentials_get_request_metadata(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_credentials *creds,
+                                                grpc_pollset *pollset,
+                                                const char *service_url,
+                                                grpc_credentials_metadata_cb cb,
+                                                void *user_data) {
   if (creds == NULL || creds->vtable->get_request_metadata == NULL) {
     if (cb != NULL) {
       cb(exec_ctx, user_data, NULL, 0, GRPC_CREDENTIALS_OK);
@@ -423,9 +426,12 @@ static void jwt_destruct(grpc_call_credentials *creds) {
   gpr_mu_destroy(&c->cache_mu);
 }
 
-static void jwt_get_request_metadata(
-    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds, grpc_pollset *pollset,
-    const char *service_url, grpc_credentials_metadata_cb cb, void *user_data) {
+static void jwt_get_request_metadata(grpc_exec_ctx *exec_ctx,
+                                     grpc_call_credentials *creds,
+                                     grpc_pollset *pollset,
+                                     const char *service_url,
+                                     grpc_credentials_metadata_cb cb,
+                                     void *user_data) {
   grpc_service_account_jwt_access_credentials *c =
       (grpc_service_account_jwt_access_credentials *)creds;
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
@@ -798,9 +804,12 @@ static void on_simulated_token_fetch_done(void *user_data) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void md_only_test_get_request_metadata(
-    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds, grpc_pollset *pollset,
-    const char *service_url, grpc_credentials_metadata_cb cb, void *user_data) {
+static void md_only_test_get_request_metadata(grpc_exec_ctx *exec_ctx,
+                                              grpc_call_credentials *creds,
+                                              grpc_pollset *pollset,
+                                              const char *service_url,
+                                              grpc_credentials_metadata_cb cb,
+                                              void *user_data) {
   grpc_md_only_test_credentials *c = (grpc_md_only_test_credentials *)creds;
 
   if (c->is_async) {
@@ -837,9 +846,12 @@ static void access_token_destruct(grpc_call_credentials *creds) {
   grpc_credentials_md_store_unref(c->access_token_md);
 }
 
-static void access_token_get_request_metadata(
-    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds, grpc_pollset *pollset,
-    const char *service_url, grpc_credentials_metadata_cb cb, void *user_data) {
+static void access_token_get_request_metadata(grpc_exec_ctx *exec_ctx,
+                                              grpc_call_credentials *creds,
+                                              grpc_pollset *pollset,
+                                              const char *service_url,
+                                              grpc_credentials_metadata_cb cb,
+                                              void *user_data) {
   grpc_access_token_credentials *c = (grpc_access_token_credentials *)creds;
   cb(exec_ctx, user_data, c->access_token_md->entries, 1, GRPC_CREDENTIALS_OK);
 }
@@ -978,9 +990,12 @@ static void composite_call_metadata_cb(grpc_exec_ctx *exec_ctx, void *user_data,
   composite_call_md_context_destroy(ctx);
 }
 
-static void composite_call_get_request_metadata(
-    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds, grpc_pollset *pollset,
-    const char *service_url, grpc_credentials_metadata_cb cb, void *user_data) {
+static void composite_call_get_request_metadata(grpc_exec_ctx *exec_ctx,
+                                                grpc_call_credentials *creds,
+                                                grpc_pollset *pollset,
+                                                const char *service_url,
+                                                grpc_credentials_metadata_cb cb,
+                                                void *user_data) {
   grpc_composite_call_credentials *c = (grpc_composite_call_credentials *)creds;
   grpc_composite_call_credentials_metadata_context *ctx;
 
@@ -1097,7 +1112,7 @@ static void iam_get_request_metadata(grpc_exec_ctx *exec_ctx,
 }
 
 static grpc_call_credentials_vtable iam_vtable = {iam_destruct,
-                                             iam_get_request_metadata};
+                                                  iam_get_request_metadata};
 
 grpc_call_credentials *grpc_google_iam_credentials_create(
     const char *token, const char *authority_selector, void *reserved) {
@@ -1265,4 +1280,3 @@ grpc_channel_credentials *grpc_composite_channel_credentials_create(
   c->call_creds = grpc_call_credentials_ref(call_creds);
   return &c->base;
 }
-
