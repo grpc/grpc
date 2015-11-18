@@ -247,14 +247,14 @@ def str_idx(s):
     if s == s2:
       return i
 
-print >>H, 'gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
-print >>C, 'gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2] = {'
+print >>H, 'const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
+print >>C, 'const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2] = {'
 print >>C, ','.join('%d' % str_idx(x) for x in itertools.chain.from_iterable([a,b] for a, b in all_elems))
 print >>C, '};'
 print >>C
 
-print >>H, 'const char *grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];'
-print >>C, 'const char *grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {'
+print >>H, 'const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];'
+print >>C, 'const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {'
 print >>C, '%s' % ',\n'.join('  "%s"' % s for s in all_strs)
 print >>C, '};'
 print >>C
