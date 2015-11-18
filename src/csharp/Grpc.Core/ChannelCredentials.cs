@@ -76,7 +76,7 @@ namespace Grpc.Core
         /// should be created.
         /// </summary>
         /// <returns>The native credentials.</returns>
-        internal abstract CredentialsSafeHandle ToNativeCredentials();
+        internal abstract ChannelCredentialsSafeHandle ToNativeCredentials();
 
         /// <summary>
         /// Returns <c>true</c> if this credential type allows being composed by <c>CompositeCredentials</c>.
@@ -88,7 +88,7 @@ namespace Grpc.Core
 
         private sealed class InsecureCredentialsImpl : ChannelCredentials
         {
-            internal override CredentialsSafeHandle ToNativeCredentials()
+            internal override ChannelCredentialsSafeHandle ToNativeCredentials()
             {
                 return null;
             }
@@ -160,9 +160,9 @@ namespace Grpc.Core
             get { return true; }
         }
 
-        internal override CredentialsSafeHandle ToNativeCredentials()
+        internal override ChannelCredentialsSafeHandle ToNativeCredentials()
         {
-            return CredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair);
+            return ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair);
         }
     }
 
@@ -188,12 +188,12 @@ namespace Grpc.Core
             Preconditions.CheckArgument(channelCredentials.IsComposable, "Supplied channel credentials do not allow composition.");
         }
 
-        internal override CredentialsSafeHandle ToNativeCredentials()
+        internal override ChannelCredentialsSafeHandle ToNativeCredentials()
         {
-            using (var cred1 = channelCredentials.ToNativeCredentials())
-            using (var cred2 = callCredentials.ToNativeCredentials())
+            using (var channelCreds = channelCredentials.ToNativeCredentials())
+            using (var callCreds = callCredentials.ToNativeCredentials())
             {
-                var nativeComposite = CredentialsSafeHandle.CreateComposite(cred1, cred2);
+                var nativeComposite = ChannelCredentialsSafeHandle.CreateComposite(channelCreds, callCreds);
                 if (nativeComposite.IsInvalid)
                 {
                     throw new ArgumentException("Error creating native composite credentials. Likely, this is because you are trying to compose incompatible credentials.");

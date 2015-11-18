@@ -159,6 +159,31 @@ class GoLanguage:
     return 'go'
 
 
+class Http2Client:
+  """Represents the HTTP/2 Interop Test
+
+  This pretends to be a language in order to be built and run, but really it
+  isn't.
+  """
+  def __init__(self):
+    self.client_cwd = None
+    self.safename = str(self)
+
+  def client_args(self):
+    return ['tools/http2_interop/http2_interop.test']
+
+  def cloud_to_prod_env(self):
+    return {}
+
+  def global_env(self):
+    return {}
+
+  def unimplemented_test_cases(self):
+    return _TEST_CASES
+
+  def __str__(self):
+    return 'http2'
+
 class NodeLanguage:
 
   def __init__(self):
@@ -281,6 +306,7 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
 
+_HTTP2_TEST_CASES = ["tls"]
 
 def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   """Wraps given cmdline array to create 'docker run' cmdline from it."""
@@ -439,6 +465,7 @@ def server_jobspec(language, docker_image):
                                       environ=environ,
                                       docker_args=['-p', str(_DEFAULT_SERVER_PORT),
                                                    '--name', container_name])
+
   server_job = jobset.JobSpec(
           cmdline=docker_cmdline,
           environ=environ,
@@ -516,6 +543,12 @@ argp.add_argument('--allow_flakes',
                   action='store_const',
                   const=True,
                   help='Allow flaky tests to show as passing (re-runs failed tests up to five times)')
+argp.add_argument('--http2_interop',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Enable HTTP/2 interop tests')
+                  
 args = argp.parse_args()
 
 servers = set(s for s in itertools.chain.from_iterable(_SERVERS
@@ -539,12 +572,16 @@ languages = set(_LANGUAGES[l]
                 for l in itertools.chain.from_iterable(
                       _LANGUAGES.iterkeys() if x == 'all' else [x]
                       for x in args.language))
+                      
+http2Interop = Http2Client() if args.http2_interop else None
 
 docker_images={}
 if args.use_docker:
   # languages for which to build docker images
   languages_to_build = set(_LANGUAGES[k] for k in set([str(l) for l in languages] +
                                                     [s for s in servers]))
+  if args.http2_interop:
+    languages_to_build.add(http2Interop)
 
   build_jobs = []
   for l in languages_to_build:
@@ -586,6 +623,15 @@ try:
           test_job = cloud_to_prod_jobspec(language, test_case,
                                            docker_image=docker_images.get(str(language)))
           jobs.append(test_job)
+          
+    # TODO(carl-mastrangelo): Currently prod TLS terminators aren't spec compliant. Reenable
+    # this once a better solution is in place.
+    if args.http2_interop and False:
+      for test_case in _HTTP2_TEST_CASES:
+        test_job = cloud_to_prod_jobspec(http2Interop, test_case,
+                                         docker_image=docker_images.get(str(http2Interop)))
+        jobs.append(test_job)
+     
 
   if args.cloud_to_prod_auth:
     for language in languages:
@@ -613,6 +659,19 @@ try:
                                             server_port,
                                             docker_image=docker_images.get(str(language)))
           jobs.append(test_job)
+          
+    if args.http2_interop:
+      for test_case in _HTTP2_TEST_CASES:
+        if server_name == "go":
+          # TODO(carl-mastrangelo): Reenable after https://github.com/grpc/grpc-go/issues/434
+          continue 
+        test_job = cloud_to_cloud_jobspec(http2Interop,
+                                          test_case,
+                                          server_name,
+                                          server_host,
+                                          server_port,
+                                          docker_image=docker_images.get(str(http2Interop)))
+        jobs.append(test_job)
 
   if not jobs:
     print 'No jobs to run.'
@@ -631,7 +690,8 @@ try:
   
   report_utils.render_html_report(
       set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES, 
-      resultset, num_failures, args.cloud_to_prod_auth or args.cloud_to_prod)
+      _HTTP2_TEST_CASES, resultset, num_failures,
+      args.cloud_to_prod_auth or args.cloud_to_prod, args.http2_interop)
 
 finally:
   # Check if servers are still running.

@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_CLOSURE_H
 #define GRPC_INTERNAL_CORE_IOMGR_CLOSURE_H
 
-#include <stddef.h>
+#include <grpc/support/port_platform.h>
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;
@@ -64,13 +64,10 @@ struct grpc_closure {
   /** Arguments to be passed to "cb". */
   void *cb_arg;
 
-  /** Internal. A boolean indication to "cb" on the state of the iomgr.
-   * For instance, closures created during a shutdown would have this field set
-   * to false. */
-  int success;
-
-  /**< Internal. Do not touch */
-  struct grpc_closure *next;
+  /** Once enqueued, contains in the lower bit the success of the closure,
+      and in the upper bits the pointer to the next closure in the list.
+      Before enqueing for execution, this is usable for scratch data. */
+  gpr_uintptr final_data;
 };
 
 /** Initializes \a closure with \a cb and \a cb_arg. */
@@ -91,10 +88,10 @@ void grpc_closure_list_add(grpc_closure_list *list, grpc_closure *closure,
 /** append all closures from \a src to \a dst and empty \a src. */
 void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst);
 
-/** pop (return and remove) the head closure from \a list. */
-grpc_closure *grpc_closure_list_pop(grpc_closure_list *list);
-
 /** return whether \a list is empty. */
 int grpc_closure_list_empty(grpc_closure_list list);
+
+/** return the next pointer for a queued closure list */
+grpc_closure *grpc_closure_next(grpc_closure *closure);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_CLOSURE_H */

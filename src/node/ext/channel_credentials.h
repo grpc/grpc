@@ -42,19 +42,19 @@
 namespace grpc {
 namespace node {
 
-/* Wrapper class for grpc_credentials structs */
+/* Wrapper class for grpc_channel_credentials structs */
 class ChannelCredentials : public Nan::ObjectWrap {
  public:
   static void Init(v8::Local<v8::Object> exports);
   static bool HasInstance(v8::Local<v8::Value> val);
-  /* Wrap a grpc_credentials struct in a javascript object */
-  static v8::Local<v8::Value> WrapStruct(grpc_credentials *credentials);
+  /* Wrap a grpc_channel_credentials struct in a javascript object */
+  static v8::Local<v8::Value> WrapStruct(grpc_channel_credentials *credentials);
 
-  /* Returns the grpc_credentials struct that this object wraps */
-  grpc_credentials *GetWrappedCredentials();
+  /* Returns the grpc_channel_credentials struct that this object wraps */
+  grpc_channel_credentials *GetWrappedCredentials();
 
  private:
-  explicit ChannelCredentials(grpc_credentials *credentials);
+  explicit ChannelCredentials(grpc_channel_credentials *credentials);
   ~ChannelCredentials();
 
   // Prevent copying
@@ -70,7 +70,7 @@ class ChannelCredentials : public Nan::ObjectWrap {
   // Used for typechecking instances of this javascript class
   static Nan::Persistent<v8::FunctionTemplate> fun_tpl;
 
-  grpc_credentials *wrapped_credentials;
+  grpc_channel_credentials *wrapped_credentials;
 };
 
 }  // namespace node

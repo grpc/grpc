@@ -30,10 +30,16 @@
 from grpc._cython._cygrpc cimport grpc
 
 
-cdef class ClientCredentials:
+cdef class ChannelCredentials:
 
-  cdef grpc.grpc_credentials *c_credentials
+  cdef grpc.grpc_channel_credentials *c_credentials
   cdef grpc.grpc_ssl_pem_key_cert_pair c_ssl_pem_key_cert_pair
+  cdef list references
+
+
+cdef class CallCredentials:
+
+  cdef grpc.grpc_call_credentials *c_credentials
   cdef list references
 
 

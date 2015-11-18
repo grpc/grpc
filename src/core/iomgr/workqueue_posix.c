@@ -129,8 +129,6 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, int success) {
 
 void grpc_workqueue_push(grpc_workqueue *workqueue, grpc_closure *closure,
                          int success) {
-  closure->success = success;
-  closure->next = NULL;
   gpr_mu_lock(&workqueue->mu);
   if (grpc_closure_list_empty(workqueue->closure_list)) {
     grpc_wakeup_fd_wakeup(&workqueue->wakeup_fd);
