@@ -1,11 +1,11 @@
 /*
  * Copyright 2015, Google Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
  * met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
  * * Redistributions in binary form must reproduce the above
@@ -15,7 +15,7 @@
  * * Neither the name of Google Inc. nor the names of its
  * contributors may be used to endorse or promote products derived from
  * this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -31,8 +31,9 @@
 
 /*
  * WARNING: Auto-generated code.
- * 
- * To make changes to this file, change tools/codegen/core/gen_static_metadata.py,
+ *
+ * To make changes to this file, change
+ * tools/codegen/core/gen_static_metadata.py,
  * and then re-run it.
  */
 
@@ -205,13 +206,15 @@ extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 /* "accept-encoding": "" */
 #define GRPC_MDELEM_ACCEPT_ENCODING_EMPTY (&grpc_static_mdelem_table[2])
 /* "accept-encoding": "gzip, deflate" */
-#define GRPC_MDELEM_ACCEPT_ENCODING_GZIP_COMMA_DEFLATE (&grpc_static_mdelem_table[3])
+#define GRPC_MDELEM_ACCEPT_ENCODING_GZIP_COMMA_DEFLATE \
+  (&grpc_static_mdelem_table[3])
 /* "accept-language": "" */
 #define GRPC_MDELEM_ACCEPT_LANGUAGE_EMPTY (&grpc_static_mdelem_table[4])
 /* "accept-ranges": "" */
 #define GRPC_MDELEM_ACCEPT_RANGES_EMPTY (&grpc_static_mdelem_table[5])
 /* "access-control-allow-origin": "" */
-#define GRPC_MDELEM_ACCESS_CONTROL_ALLOW_ORIGIN_EMPTY (&grpc_static_mdelem_table[6])
+#define GRPC_MDELEM_ACCESS_CONTROL_ALLOW_ORIGIN_EMPTY \
+  (&grpc_static_mdelem_table[6])
 /* "age": "" */
 #define GRPC_MDELEM_AGE_EMPTY (&grpc_static_mdelem_table[7])
 /* "allow": "" */
@@ -315,7 +318,8 @@ extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 /* ":status": "500" */
 #define GRPC_MDELEM_STATUS_500 (&grpc_static_mdelem_table[57])
 /* "strict-transport-security": "" */
-#define GRPC_MDELEM_STRICT_TRANSPORT_SECURITY_EMPTY (&grpc_static_mdelem_table[58])
+#define GRPC_MDELEM_STRICT_TRANSPORT_SECURITY_EMPTY \
+  (&grpc_static_mdelem_table[58])
 /* "te": "trailers" */
 #define GRPC_MDELEM_TE_TRAILERS (&grpc_static_mdelem_table[59])
 /* "transfer-encoding": "" */
@@ -329,6 +333,6 @@ extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 /* "www-authenticate": "" */
 #define GRPC_MDELEM_WWW_AUTHENTICATE_EMPTY (&grpc_static_mdelem_table[64])
 
-gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];
-const char *grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];
+const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2];
+const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H */
