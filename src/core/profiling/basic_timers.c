@@ -50,12 +50,12 @@ typedef struct gpr_timer_entry {
   gpr_timespec tm;
   const char *tagstr;
   const char *file;
-  int line;
+  short line;
   char type;
   gpr_uint8 important;
 } gpr_timer_entry;
 
-#define MAX_COUNT (1024 * 1024 / sizeof(gpr_timer_entry))
+#define MAX_COUNT (5 * 1024 * 1024 / sizeof(gpr_timer_entry))
 
 static __thread gpr_timer_entry g_log[MAX_COUNT];
 static __thread int g_count;
@@ -102,7 +102,7 @@ static void gpr_timers_log_add(const char *tagstr, marker_type type,
   entry->tagstr = tagstr;
   entry->type = type;
   entry->file = file;
-  entry->line = line;
+  entry->line = (short)line;
   entry->important = important != 0;
 }
 
