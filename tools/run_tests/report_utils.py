@@ -78,7 +78,8 @@ def render_interop_html_report(
   client_langs, server_langs, test_cases, auth_test_cases, http2_cases, 
   resultset, num_failures, cloud_to_prod, http2_interop):
   """Generate HTML report for interop tests."""
-  template_file = 'templates/interop_html_report.template'
+  html_report_dir = 'reports'
+  template_file = os.path.join(html_report_dir, 'interop_html_report.template')
   try:
     mytemplate = Template(filename=template_file, format_exceptions=True)
   except NameError:
@@ -87,12 +88,6 @@ def render_interop_html_report(
   except IOError as e:
     print 'Failed to find the template %s: %s' % (template_file, e)
     return
-
-  # Write to reports/index.html as set up in Jenkins plugin.
-  html_report_dir = 'reports'
-  if not os.path.exists(html_report_dir):
-    os.mkdir(html_report_dir)
-  html_file_path = os.path.join(html_report_dir, 'index.html')
 
   sorted_test_cases = sorted(test_cases)
   sorted_auth_test_cases = sorted(auth_test_cases)
@@ -109,5 +104,6 @@ def render_interop_html_report(
           'num_failures': num_failures,
           'cloud_to_prod': cloud_to_prod,
           'http2_interop': http2_interop}
+  html_file_path = os.path.join(html_report_dir, 'index.html')
   with open(html_file_path, 'w') as output_file:
     mytemplate.render_context(Context(output_file, **args))
