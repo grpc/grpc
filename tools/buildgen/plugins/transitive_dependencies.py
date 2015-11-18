@@ -27,30 +27,37 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""The Python implementation of the GRPC helloworld.Greeter server."""
+"""Buildgen transitive dependencies
 
-import time
+This takes the list of libs, node_modules, and targets from our
+yaml dictionary, and adds to each the transitive closure
+of the list of dependencies.
 
-import helloworld_pb2
+"""
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
+def get_lib(libs, name):
+  return next(lib for lib in libs if lib['name']==name)
 
+def transitive_deps(lib, libs):
+  if 'deps' in lib:
+    # Recursively call transitive_deps on each dependency, and take the union
+    return set.union(set(lib['deps']),
+                     *[set(transitive_deps(get_lib(libs, dep), libs))
+                       for dep in lib['deps']])
+  else:
+    return set()
 
-class Greeter(helloworld_pb2.BetaGreeterServicer):
+def mako_plugin(dictionary):
+  """The exported plugin code for transitive_dependencies.
 
-  def SayHello(self, request, context):
-    return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+  Each item in libs, node_modules, and targets can have a deps list.
+  We add a transitive_deps property to each with the transitive closure
+  of those dependency lists.
+  """
+  libs = dictionary.get('libs')
+  node_modules = dictionary.get('node_modules')
+  targets = dictionary.get('targets')
 
-
-def serve():
-  server = helloworld_pb2.beta_create_Greeter_server(Greeter())
-  server.add_insecure_port('[::]:50051')
-  server.start()
-  try:
-    while True:
-      time.sleep(_ONE_DAY_IN_SECONDS)
-  except KeyboardInterrupt:
-    server.stop(0)
-
-if __name__ == '__main__':
-  serve()
+  for target_list in (libs, node_modules, targets):
+    for target in target_list:
+      target['transitive_deps'] = transitive_deps(target, libs)
