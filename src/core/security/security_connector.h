@@ -67,7 +67,6 @@ typedef void (*grpc_security_check_cb)(grpc_exec_ctx *exec_ctx, void *user_data,
 typedef void (*grpc_security_handshake_done_cb)(grpc_exec_ctx *exec_ctx,
                                                 void *user_data,
                                                 grpc_security_status status,
-                                                grpc_endpoint *wrapped_endpoint,
                                                 grpc_endpoint *secure_endpoint);
 
 typedef struct {
@@ -78,6 +77,7 @@ typedef struct {
   grpc_security_status (*check_peer)(grpc_security_connector *sc, tsi_peer peer,
                                      grpc_security_check_cb cb,
                                      void *user_data);
+  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_security_connector *sc);
 } grpc_security_connector_vtable;
 
 struct grpc_security_connector {
@@ -115,6 +115,8 @@ void grpc_security_connector_do_handshake(grpc_exec_ctx *exec_ctx,
                                           grpc_security_handshake_done_cb cb,
                                           void *user_data);
 
+void grpc_security_connector_shutdown(grpc_exec_ctx *exec_ctx,
+                                      grpc_security_connector *connector);
 /* Check the peer.
    Implementations can choose to check the peer either synchronously or
    asynchronously. In the first case, a successful call will return
