@@ -54,9 +54,6 @@
  * load-balancing mechanisms meant for communication from within the core. */
 
 typedef struct client_uchannel_channel_data {
-  /** metadata context for this channel */
-  grpc_mdctx *mdctx;
-
   /** master channel - the grpc_channel instance that ultimately owns
       this channel_data via its channel stack.
       We occasionally use this to bump the refcount on the master channel
@@ -161,7 +158,6 @@ static void cuc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&chand->connectivity_cb, monitor_subchannel, chand);
   GPR_ASSERT(args->is_last);
   GPR_ASSERT(elem->filter == &grpc_client_uchannel_filter);
-  chand->mdctx = args->metadata_context;
   chand->master = args->master;
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_uchannel");

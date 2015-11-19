@@ -44,6 +44,7 @@
 #include "src/core/profiling/timers.h"
 #include "src/core/compression/message_compress.h"
 #include "src/core/support/string.h"
+#include "src/core/transport/static_metadata.h"
 
 typedef struct call_data {
   gpr_slice_buffer slices; /**< Buffers up input slices to be compressed */
@@ -67,16 +68,6 @@ typedef struct call_data {
 } call_data;
 
 typedef struct channel_data {
-  /** Metadata key for the incoming (requested) compression algorithm */
-  grpc_mdstr *mdstr_request_compression_algorithm_key;
-  /** Metadata key for the outgoing (used) compression algorithm */
-  grpc_mdstr *mdstr_outgoing_compression_algorithm_key;
-  /** Metadata key for the accepted encodings */
-  grpc_mdstr *mdstr_compression_capabilities_key;
-  /** Precomputed metadata elements for all available compression algorithms */
-  grpc_mdelem *mdelem_compression_algorithms[GRPC_COMPRESS_ALGORITHMS_COUNT];
-  /** Precomputed metadata elements for the accepted encodings */
-  grpc_mdelem *mdelem_accept_encoding;
   /** The default, channel-level, compression algorithm */
   grpc_compression_algorithm default_compression_algorithm;
   /** Compression options for the channel */
@@ -91,7 +82,7 @@ static grpc_mdelem *compression_md_filter(void *user_data, grpc_mdelem *md) {
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
 
-  if (md->key == channeld->mdstr_request_compression_algorithm_key) {
+  if (md->key == GRPC_MDSTR_GRPC_ENCODING) {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
     if (!grpc_compression_algorithm_parse(md_c_str, strlen(md_c_str),
                                           &calld->compression_algorithm)) {
