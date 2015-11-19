@@ -1401,6 +1401,25 @@
   {
     "deps": [
       "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config"
+    ], 
+    "headers": [
+      "test/cpp/util/metrics_server.h", 
+      "test/proto/metrics.grpc.pb.h", 
+      "test/proto/metrics.pb.h"
+    ], 
+    "language": "c++", 
+    "name": "metrics_client", 
+    "src": [
+      "test/cpp/interop/metrics_client.cc", 
+      "test/cpp/util/metrics_server.h"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
@@ -1683,10 +1702,13 @@
       "test/cpp/interop/client_helper.h", 
       "test/cpp/interop/interop_client.h", 
       "test/cpp/interop/stress_interop_client.h", 
+      "test/cpp/util/metrics_server.h", 
       "test/proto/empty.grpc.pb.h", 
       "test/proto/empty.pb.h", 
       "test/proto/messages.grpc.pb.h", 
       "test/proto/messages.pb.h", 
+      "test/proto/metrics.grpc.pb.h", 
+      "test/proto/metrics.pb.h", 
       "test/proto/test.grpc.pb.h", 
       "test/proto/test.pb.h"
     ], 
@@ -1698,7 +1720,9 @@
       "test/cpp/interop/interop_client.h", 
       "test/cpp/interop/stress_interop_client.cc", 
       "test/cpp/interop/stress_interop_client.h", 
-      "test/cpp/interop/stress_test.cc"
+      "test/cpp/interop/stress_test.cc", 
+      "test/cpp/util/metrics_server.cc", 
+      "test/cpp/util/metrics_server.h"
     ]
   }, 
   {
