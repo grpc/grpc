@@ -183,6 +183,7 @@
         'src/core/channel/http_client_filter.c',
         'src/core/channel/http_server_filter.c',
         'src/core/channel/noop_filter.c',
+        'src/core/channel/subchannel_call_holder.c',
         'src/core/client_config/client_config.c',
         'src/core/client_config/connector.c',
         'src/core/client_config/lb_policies/pick_first.c',
@@ -252,7 +253,6 @@
         'src/core/json/json_writer.c',
         'src/core/surface/api_trace.c',
         'src/core/surface/byte_buffer.c',
-        'src/core/surface/byte_buffer_queue.c',
         'src/core/surface/byte_buffer_reader.c',
         'src/core/surface/call.c',
         'src/core/surface/call_details.c',
@@ -269,6 +269,7 @@
         'src/core/surface/server_chttp2.c',
         'src/core/surface/server_create.c',
         'src/core/surface/version.c',
+        'src/core/transport/byte_stream.c',
         'src/core/transport/chttp2/alpn.c',
         'src/core/transport/chttp2/bin_encoder.c',
         'src/core/transport/chttp2/frame_data.c',
@@ -277,13 +278,13 @@
         'src/core/transport/chttp2/frame_rst_stream.c',
         'src/core/transport/chttp2/frame_settings.c',
         'src/core/transport/chttp2/frame_window_update.c',
+        'src/core/transport/chttp2/hpack_encoder.c',
         'src/core/transport/chttp2/hpack_parser.c',
         'src/core/transport/chttp2/hpack_table.c',
         'src/core/transport/chttp2/huffsyms.c',
         'src/core/transport/chttp2/incoming_metadata.c',
         'src/core/transport/chttp2/parsing.c',
         'src/core/transport/chttp2/status_conversion.c',
-        'src/core/transport/chttp2/stream_encoder.c',
         'src/core/transport/chttp2/stream_lists.c',
         'src/core/transport/chttp2/stream_map.c',
         'src/core/transport/chttp2/timeout_encoding.c',
@@ -292,7 +293,7 @@
         'src/core/transport/chttp2_transport.c',
         'src/core/transport/connectivity_state.c',
         'src/core/transport/metadata.c',
-        'src/core/transport/stream_op.c',
+        'src/core/transport/metadata_batch.c',
         'src/core/transport/transport.c',
         'src/core/transport/transport_op_string.c',
         'src/core/census/context.c',
@@ -346,11 +347,12 @@
         "src/node/ext/node_grpc.cc",
         "src/node/ext/server.cc",
         "src/node/ext/server_credentials.cc",
-        "src/node/ext/timeval.cc"
+        "src/node/ext/timeval.cc",
       ],
       "dependencies": [
-        "grpc"
+        "grpc",
+        "gpr",
       ]
-    }
+    },
   ]
 }

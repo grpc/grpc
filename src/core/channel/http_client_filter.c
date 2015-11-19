@@ -45,10 +45,8 @@ typedef struct call_data {
   grpc_linked_mdelem te_trailers;
   grpc_linked_mdelem content_type;
   grpc_linked_mdelem user_agent;
-  int sent_initial_metadata;
 
-  int got_initial_metadata;
-  grpc_stream_op_buffer *recv_ops;
+  grpc_metadata_batch *recv_initial_metadata;
 
   /** Closure to call when finished with the hc_on_recv hook */
   grpc_closure *on_done_recv;
@@ -91,18 +89,11 @@ static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
 static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, int success) {
   grpc_call_element *elem = user_data;
   call_data *calld = elem->call_data;
-  size_t i;
-  size_t nops = calld->recv_ops->nops;
-  grpc_stream_op *ops = calld->recv_ops->ops;
-  for (i = 0; i < nops; i++) {
-    grpc_stream_op *op = &ops[i];
-    client_recv_filter_args a;
-    if (op->type != GRPC_OP_METADATA) continue;
-    calld->got_initial_metadata = 1;
-    a.elem = elem;
-    a.exec_ctx = exec_ctx;
-    grpc_metadata_batch_filter(&op->data.metadata, client_recv_filter, &a);
-  }
+  client_recv_filter_args a;
+  a.elem = elem;
+  a.exec_ctx = exec_ctx;
+  grpc_metadata_batch_filter(calld->recv_initial_metadata, client_recv_filter,
+                             &a);
   calld->on_done_recv->cb(exec_ctx, calld->on_done_recv->cb_arg, success);
 }
 
@@ -123,40 +114,29 @@ static void hc_mutate_op(grpc_call_element *elem,
   /* grab pointers to our data from the call element */
   call_data *calld = elem->call_data;
   channel_data *channeld = elem->channel_data;
-  size_t i;
-  if (op->send_ops && !calld->sent_initial_metadata) {
-    size_t nops = op->send_ops->nops;
-    grpc_stream_op *ops = op->send_ops->ops;
-    for (i = 0; i < nops; i++) {
-      grpc_stream_op *stream_op = &ops[i];
-      if (stream_op->type != GRPC_OP_METADATA) continue;
-      calld->sent_initial_metadata = 1;
-      grpc_metadata_batch_filter(&stream_op->data.metadata, client_strip_filter,
-                                 elem);
-      /* Send : prefixed headers, which have to be before any application
-         layer headers. */
-      grpc_metadata_batch_add_head(&stream_op->data.metadata, &calld->method,
-                                   GRPC_MDELEM_REF(channeld->method));
-      grpc_metadata_batch_add_head(&stream_op->data.metadata, &calld->scheme,
-                                   GRPC_MDELEM_REF(channeld->scheme));
-      grpc_metadata_batch_add_tail(&stream_op->data.metadata,
-                                   &calld->te_trailers,
-                                   GRPC_MDELEM_REF(channeld->te_trailers));
-      grpc_metadata_batch_add_tail(&stream_op->data.metadata,
-                                   &calld->content_type,
-                                   GRPC_MDELEM_REF(channeld->content_type));
-      grpc_metadata_batch_add_tail(&stream_op->data.metadata,
-                                   &calld->user_agent,
-                                   GRPC_MDELEM_REF(channeld->user_agent));
-      break;
-    }
+  if (op->send_initial_metadata != NULL) {
+    grpc_metadata_batch_filter(op->send_initial_metadata, client_strip_filter,
+                               elem);
+    /* Send : prefixed headers, which have to be before any application
+       layer headers. */
+    grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->method,
+                                 GRPC_MDELEM_REF(channeld->method));
+    grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->scheme,
+                                 GRPC_MDELEM_REF(channeld->scheme));
+    grpc_metadata_batch_add_tail(op->send_initial_metadata, &calld->te_trailers,
+                                 GRPC_MDELEM_REF(channeld->te_trailers));
+    grpc_metadata_batch_add_tail(op->send_initial_metadata,
+                                 &calld->content_type,
+                                 GRPC_MDELEM_REF(channeld->content_type));
+    grpc_metadata_batch_add_tail(op->send_initial_metadata, &calld->user_agent,
+                                 GRPC_MDELEM_REF(channeld->user_agent));
   }
 
-  if (op->recv_ops && !calld->got_initial_metadata) {
+  if (op->recv_initial_metadata != NULL) {
     /* substitute our callback for the higher callback */
-    calld->recv_ops = op->recv_ops;
-    calld->on_done_recv = op->on_done_recv;
-    op->on_done_recv = &calld->hc_on_recv;
+    calld->recv_initial_metadata = op->recv_initial_metadata;
+    calld->on_done_recv = op->on_complete;
+    op->on_complete = &calld->hc_on_recv;
   }
 }
 
@@ -172,14 +152,10 @@ static void hc_start_transport_op(grpc_exec_ctx *exec_ctx,
 
 /* Constructor for call_data */
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           const void *server_transport_data,
-                           grpc_transport_stream_op *initial_op) {
+                           grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
-  calld->sent_initial_metadata = 0;
-  calld->got_initial_metadata = 0;
   calld->on_done_recv = NULL;
   grpc_closure_init(&calld->hc_on_recv, hc_on_recv, elem);
-  if (initial_op) hc_mutate_op(elem, initial_op);
 }
 
 /* Destructor for call_data */
@@ -250,28 +226,31 @@ static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
 
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
-                              grpc_channel_element *elem, grpc_channel *master,
-                              const grpc_channel_args *channel_args,
-                              grpc_mdctx *mdctx, int is_first, int is_last) {
+                              grpc_channel_element *elem,
+                              grpc_channel_element_args *args) {
   /* grab pointers to our data from the channel element */
   channel_data *channeld = elem->channel_data;
 
   /* The first and the last filters tend to be implemented differently to
      handle the case that there's no 'next' filter to call on the up or down
      path */
-  GPR_ASSERT(!is_last);
+  GPR_ASSERT(!args->is_last);
 
   /* initialize members */
-  channeld->te_trailers = grpc_mdelem_from_strings(mdctx, "te", "trailers");
-  channeld->method = grpc_mdelem_from_strings(mdctx, ":method", "POST");
-  channeld->scheme = grpc_mdelem_from_strings(mdctx, ":scheme",
-                                              scheme_from_args(channel_args));
-  channeld->content_type =
-      grpc_mdelem_from_strings(mdctx, "content-type", "application/grpc");
-  channeld->status = grpc_mdelem_from_strings(mdctx, ":status", "200");
+  channeld->te_trailers =
+      grpc_mdelem_from_strings(args->metadata_context, "te", "trailers");
+  channeld->method =
+      grpc_mdelem_from_strings(args->metadata_context, ":method", "POST");
+  channeld->scheme = grpc_mdelem_from_strings(
+      args->metadata_context, ":scheme", scheme_from_args(args->channel_args));
+  channeld->content_type = grpc_mdelem_from_strings(
+      args->metadata_context, "content-type", "application/grpc");
+  channeld->status =
+      grpc_mdelem_from_strings(args->metadata_context, ":status", "200");
   channeld->user_agent = grpc_mdelem_from_metadata_strings(
-      mdctx, grpc_mdstr_from_string(mdctx, "user-agent"),
-      user_agent_from_args(mdctx, channel_args));
+      args->metadata_context,
+      grpc_mdstr_from_string(args->metadata_context, "user-agent"),
+      user_agent_from_args(args->metadata_context, args->channel_args));
 }
 
 /* Destructor for channel data */
@@ -290,6 +269,6 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 
 const grpc_channel_filter grpc_http_client_filter = {
     hc_start_transport_op, grpc_channel_next_op, sizeof(call_data),
-    init_call_elem,        destroy_call_elem,    sizeof(channel_data),
-    init_channel_elem,     destroy_channel_elem, grpc_call_next_get_peer,
-    "http-client"};
+    init_call_elem, grpc_call_stack_ignore_set_pollset, destroy_call_elem,
+    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
+    grpc_call_next_get_peer, "http-client"};

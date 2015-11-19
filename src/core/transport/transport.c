@@ -33,8 +33,35 @@
 
 #include "src/core/transport/transport.h"
 #include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include "src/core/transport/transport_impl.h"
+
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason) {
+  gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
+  gpr_log(GPR_DEBUG, "STREAM %p:%p   REF %d->%d %s", refcount,
+          refcount->destroy.cb_arg, val, val + 1, reason);
+#else
+void grpc_stream_ref(grpc_stream_refcount *refcount) {
+#endif
+  gpr_ref(&refcount->refs);
+}
+
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount,
+                       const char *reason) {
+  gpr_atm val = gpr_atm_no_barrier_load(&refcount->refs.count);
+  gpr_log(GPR_DEBUG, "STREAM %p:%p UNREF %d->%d %s", refcount,
+          refcount->destroy.cb_arg, val, val - 1, reason);
+#else
+void grpc_stream_unref(grpc_exec_ctx *exec_ctx,
+                       grpc_stream_refcount *refcount) {
+#endif
+  if (gpr_unref(&refcount->refs)) {
+    grpc_exec_ctx_enqueue(exec_ctx, &refcount->destroy, 1);
+  }
+}
 
 size_t grpc_transport_stream_size(grpc_transport *transport) {
   return transport->vtable->sizeof_stream;
@@ -47,10 +74,10 @@ void grpc_transport_destroy(grpc_exec_ctx *exec_ctx,
 
 int grpc_transport_init_stream(grpc_exec_ctx *exec_ctx,
                                grpc_transport *transport, grpc_stream *stream,
-                               const void *server_data,
-                               grpc_transport_stream_op *initial_op) {
-  return transport->vtable->init_stream(exec_ctx, transport, stream,
-                                        server_data, initial_op);
+                               grpc_stream_refcount *refcount,
+                               const void *server_data) {
+  return transport->vtable->init_stream(exec_ctx, transport, stream, refcount,
+                                        server_data);
 }
 
 void grpc_transport_perform_stream_op(grpc_exec_ctx *exec_ctx,
@@ -66,6 +93,12 @@ void grpc_transport_perform_op(grpc_exec_ctx *exec_ctx,
   transport->vtable->perform_op(exec_ctx, transport, op);
 }
 
+void grpc_transport_set_pollset(grpc_exec_ctx *exec_ctx,
+                                grpc_transport *transport, grpc_stream *stream,
+                                grpc_pollset *pollset) {
+  transport->vtable->set_pollset(exec_ctx, transport, stream, pollset);
+}
+
 void grpc_transport_destroy_stream(grpc_exec_ctx *exec_ctx,
                                    grpc_transport *transport,
                                    grpc_stream *stream) {
@@ -79,9 +112,8 @@ char *grpc_transport_get_peer(grpc_exec_ctx *exec_ctx,
 
 void grpc_transport_stream_op_finish_with_failure(
     grpc_exec_ctx *exec_ctx, grpc_transport_stream_op *op) {
-  grpc_exec_ctx_enqueue(exec_ctx, op->on_done_recv, 0);
-  grpc_exec_ctx_enqueue(exec_ctx, op->on_done_send, 0);
-  grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, 0);
+  grpc_exec_ctx_enqueue(exec_ctx, op->recv_message_ready, 0);
+  grpc_exec_ctx_enqueue(exec_ctx, op->on_complete, 0);
 }
 
 void grpc_transport_stream_op_add_cancellation(grpc_transport_stream_op *op,
@@ -129,9 +161,9 @@ void grpc_transport_stream_op_add_close(grpc_transport_stream_op *op,
   if (optional_message) {
     cmd = gpr_malloc(sizeof(*cmd));
     cmd->message = *optional_message;
-    cmd->then_call = op->on_consumed;
+    cmd->then_call = op->on_complete;
     grpc_closure_init(&cmd->closure, free_message, cmd);
-    op->on_consumed = &cmd->closure;
+    op->on_complete = &cmd->closure;
     op->optional_close_message = &cmd->message;
   }
   op->close_with_status = status;
