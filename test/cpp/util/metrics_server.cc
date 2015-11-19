@@ -102,7 +102,7 @@ std::shared_ptr<Gauge> MetricsServiceImpl::CreateGauge(const grpc::string& name,
 std::unique_ptr<grpc::Server> MetricsServiceImpl::StartServer(int port) {
   gpr_log(GPR_INFO, "Building metrics server..");
 
-  grpc::string address = "0.0.0.0:" + std::to_string(port);
+  const grpc::string address = "0.0.0.0:" + std::to_string(port);
 
   ServerBuilder builder;
   builder.AddListeningPort(address, grpc::InsecureServerCredentials());
