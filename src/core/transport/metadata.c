@@ -46,6 +46,15 @@
 #include "src/core/transport/chttp2/bin_encoder.h"
 #include "src/core/transport/static_metadata.h"
 
+/* There are two kinds of mdelem and mdstr instances.
+ * Static instances are declared in static_metadata.{h,c} and
+ * are initialized by grpc_mdctx_global_init().
+ * Dynamic instances are stored in hash tables on grpc_mdctx, and are backed
+ * by internal_string and internal_element structures.
+ * Internal helper functions here-in (is_mdstr_static, is_mdelem_static) are
+ * used to determine which kind of element a pointer refers to.
+ */
+
 #define INITIAL_STRTAB_CAPACITY 4
 #define INITIAL_MDTAB_CAPACITY 4
 
@@ -81,6 +90,7 @@
 
 typedef void (*destroy_user_data_func)(void *user_data);
 
+/* Shadow structure for grpc_mdstr for non-static values */
 typedef struct internal_string {
   /* must be byte compatible with grpc_mdstr */
   gpr_slice slice;
@@ -98,6 +108,7 @@ typedef struct internal_string {
   struct internal_string *bucket_next;
 } internal_string;
 
+/* Shadow structure for grpc_mdelem for non-static elements */
 typedef struct internal_metadata {
   /* must be byte compatible with grpc_mdelem */
   internal_string *key;
@@ -130,15 +141,18 @@ struct grpc_mdctx {
 
   gpr_mu mu;
 
+  /* linearly probed hash tables for static element lookup */
   static_string static_strtab[GRPC_STATIC_MDSTR_COUNT * 2];
   static_mdelem static_mdtab[GRPC_STATIC_MDELEM_COUNT * 2];
   size_t static_strtab_maxprobe;
   size_t static_mdtab_maxprobe;
 
+  /* chained hash table of dynamically allocated strings */
   internal_string **strtab;
   size_t strtab_count;
   size_t strtab_capacity;
 
+  /* chained hash table of dynamically allocated mdelems */
   internal_metadata **mdtab;
   size_t mdtab_count;
   size_t mdtab_free;
