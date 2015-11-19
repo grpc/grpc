@@ -61,12 +61,13 @@ void gpr_slice_unref(gpr_slice slice) {
    nothing */
 static void noop_ref_or_unref(void *unused) {}
 
-static gpr_slice_refcount noop_refcount = {noop_ref_or_unref, noop_ref_or_unref};
+static gpr_slice_refcount noop_refcount = {noop_ref_or_unref,
+                                           noop_ref_or_unref};
 
 gpr_slice gpr_slice_from_static_string(const char *s) {
   gpr_slice slice;
   slice.refcount = &noop_refcount;
-  slice.data.refcounted.bytes = (gpr_uint8*)s;
+  slice.data.refcounted.bytes = (gpr_uint8 *)s;
   slice.data.refcounted.length = strlen(s);
   return slice;
 }

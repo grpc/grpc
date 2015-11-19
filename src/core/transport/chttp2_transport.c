@@ -806,7 +806,7 @@ static void perform_stream_op_locked(
     }
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_trailing_metadata_finished, 
+          exec_ctx, &stream_global->send_trailing_metadata_finished,
           grpc_metadata_batch_is_empty(op->send_trailing_metadata));
     } else if (stream_global->id != 0) {
       /* TODO(ctiller): check if there's flow control for any outstanding
@@ -1033,7 +1033,8 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
      to the upper layers - drop what we've got, and then publish
      what we want - which is safe because we haven't told anyone
      about the metadata yet */
-  if (!stream_global->published_trailing_metadata || stream_global->recv_trailing_metadata_finished != NULL) {
+  if (!stream_global->published_trailing_metadata ||
+      stream_global->recv_trailing_metadata_finished != NULL) {
     grpc_mdctx *mdctx =
         TRANSPORT_FROM_GLOBAL(transport_global)->metadata_context;
     char status_string[GPR_LTOA_MIN_BUFSIZE];
