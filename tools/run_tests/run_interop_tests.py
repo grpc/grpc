@@ -37,7 +37,6 @@ import jobset
 import multiprocessing
 import os
 import report_utils
-import subprocess
 import sys
 import tempfile
 import time
