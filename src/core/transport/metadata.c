@@ -31,7 +31,6 @@
  *
  */
 
-#include "src/core/iomgr/sockaddr.h"
 #include "src/core/transport/metadata.h"
 
 #include <assert.h>
@@ -45,6 +44,7 @@
 #include "src/core/profiling/timers.h"
 #include "src/core/support/murmur_hash.h"
 #include "src/core/transport/chttp2/bin_encoder.h"
+#include "src/core/transport/static_metadata.h"
 
 #define INITIAL_STRTAB_CAPACITY 4
 #define INITIAL_MDTAB_CAPACITY 4
@@ -52,14 +52,14 @@
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
 #define DEBUG_ARGS , const char *file, int line
 #define FWD_DEBUG_ARGS , file, line
-#define INTERNAL_STRING_REF(s) internal_string_ref((s), __FILE__, __LINE__)
-#define INTERNAL_STRING_UNREF(s) internal_string_unref((s), __FILE__, __LINE__)
+#define INTERNAL_STRING_REF(s) if (is_mdstr_static((grpc_mdstr*)(s))); else internal_string_ref((s), __FILE__, __LINE__)
+#define INTERNAL_STRING_UNREF(s) if (is_mdstr_static((grpc_mdstr*)(s))); else internal_string_unref((s), __FILE__, __LINE__)
 #define REF_MD_LOCKED(s) ref_md_locked((s), __FILE__, __LINE__)
 #else
 #define DEBUG_ARGS
 #define FWD_DEBUG_ARGS
-#define INTERNAL_STRING_REF(s) internal_string_ref((s))
-#define INTERNAL_STRING_UNREF(s) internal_string_unref((s))
+#define INTERNAL_STRING_REF(s) if (is_mdstr_static((grpc_mdstr*)(s))); else internal_string_ref((s))
+#define INTERNAL_STRING_UNREF(s) if (is_mdstr_static((grpc_mdstr*)(s))); else internal_string_unref((s))
 #define REF_MD_LOCKED(s) ref_md_locked((s))
 #endif
 
@@ -98,11 +98,26 @@ typedef struct internal_metadata {
   struct internal_metadata *bucket_next;
 } internal_metadata;
 
+typedef struct static_string {
+  grpc_mdstr *mdstr;
+  gpr_uint32 hash;
+} static_string;
+
+typedef struct static_mdelem {
+  grpc_mdelem *mdelem;
+  gpr_uint32 hash;
+} static_mdelem;
+
 struct grpc_mdctx {
   gpr_uint32 hash_seed;
   int refs;
 
   gpr_mu mu;
+
+  static_string static_strtab[GRPC_STATIC_MDSTR_COUNT * 2];
+  static_mdelem static_mdtab[GRPC_STATIC_MDELEM_COUNT * 2];
+  size_t static_strtab_maxprobe;
+  size_t static_mdtab_maxprobe;
 
   internal_string **strtab;
   size_t strtab_count;
@@ -119,6 +134,34 @@ static void internal_string_unref(internal_string *s DEBUG_ARGS);
 static void discard_metadata(grpc_mdctx *ctx);
 static void gc_mdtab(grpc_mdctx *ctx);
 static void metadata_context_destroy_locked(grpc_mdctx *ctx);
+
+void grpc_mdctx_global_init(void) {
+  size_t i;
+  for (i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
+    grpc_mdstr *elem = &grpc_static_mdstr_table[i];
+    const char *str = grpc_static_metadata_strings[i];
+    *(gpr_slice*)&elem->slice = gpr_slice_from_static_string(str);
+    *(gpr_uint32*)&elem->hash = gpr_murmur_hash3(str, strlen(str), 0);
+  }
+  for (i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
+    grpc_mdelem *elem = &grpc_static_mdelem_table[i];
+    grpc_mdstr *key = &grpc_static_mdstr_table[2 * i + 0];
+    grpc_mdstr *value = &grpc_static_mdstr_table[2 * i + 1];
+    *(grpc_mdstr**)&elem->key = key;
+    *(grpc_mdstr**)&elem->value = value;
+  }
+}
+
+void grpc_mdctx_global_shutdown(void) {
+}
+
+static int is_mdstr_static(grpc_mdstr *s) {
+  return s >= &grpc_static_mdstr_table[0] && s < &grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
+}
+
+static int is_mdelem_static(grpc_mdelem *e) {
+  return e >= &grpc_static_mdelem_table[0] && e < &grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
+}
 
 static void lock(grpc_mdctx *ctx) { gpr_mu_lock(&ctx->mu); }
 
@@ -170,6 +213,9 @@ static void ref_md_locked(internal_metadata *md DEBUG_ARGS) {
 
 grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed) {
   grpc_mdctx *ctx = gpr_malloc(sizeof(grpc_mdctx));
+  size_t i, j;
+
+  memset(ctx, 0, sizeof(*ctx));
 
   ctx->refs = 1;
   ctx->hash_seed = seed;
@@ -183,6 +229,38 @@ grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed) {
   ctx->mdtab_count = 0;
   ctx->mdtab_capacity = INITIAL_MDTAB_CAPACITY;
   ctx->mdtab_free = 0;
+
+  for (i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
+    const char *str = grpc_static_metadata_strings[i];
+    gpr_uint32 lup_hash = gpr_murmur_hash3(str, strlen(str), seed);
+    for (j = 0;; j++) {
+      size_t idx = (lup_hash + j) % GPR_ARRAY_SIZE(ctx->static_strtab);
+      if (ctx->static_strtab[idx].mdstr == NULL) {
+        ctx->static_strtab[idx].mdstr = &grpc_static_mdstr_table[i];
+        ctx->static_strtab[idx].hash = lup_hash;
+        break;
+      }
+    }
+    if (j > ctx->static_strtab_maxprobe) {
+      ctx->static_strtab_maxprobe = j;
+    }
+  }
+
+  for (i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
+    grpc_mdelem *elem = &grpc_static_mdelem_table[i];
+    gpr_uint32 hash = GRPC_MDSTR_KV_HASH(elem->key->hash, elem->value->hash);
+    for (j = 0;; j++) {
+      size_t idx = (hash + j) % GPR_ARRAY_SIZE(ctx->static_mdtab);
+      if (ctx->static_mdtab[idx].mdelem == NULL) {
+        ctx->static_mdtab[idx].mdelem = elem;
+        ctx->static_mdtab[idx].hash = hash;
+        break;
+      }
+    }
+    if (j > ctx->static_mdtab_maxprobe) {
+      ctx->static_mdtab_maxprobe = j;
+    }
+  }
 
   return ctx;
 }
@@ -350,8 +428,20 @@ grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *buf,
                                    size_t length) {
   gpr_uint32 hash = gpr_murmur_hash3(buf, length, ctx->hash_seed);
   internal_string *s;
+  size_t i;
 
   GPR_TIMER_BEGIN("grpc_mdstr_from_buffer", 0);
+
+  /* search for a static string */
+  for (i = 0; i <= ctx->static_strtab_maxprobe; i++) {
+    size_t idx = (hash + i) % GPR_ARRAY_SIZE(ctx->static_strtab);
+    static_string *ss = &ctx->static_strtab[idx];
+    if (ss->hash == hash && GPR_SLICE_LENGTH(ss->mdstr->slice) == length &&
+        0 == memcmp(buf, GPR_SLICE_START_PTR(ss->mdstr->slice), length)) {
+      return ss->mdstr;
+    }
+  }
+
   lock(ctx);
 
   /* search for an existing string */
@@ -479,11 +569,22 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx,
   internal_string *value = (internal_string *)mvalue;
   gpr_uint32 hash = GRPC_MDSTR_KV_HASH(mkey->hash, mvalue->hash);
   internal_metadata *md;
+  size_t i;
 
-  GPR_ASSERT(key->context == ctx);
-  GPR_ASSERT(value->context == ctx);
+  GPR_ASSERT(is_mdstr_static(mkey) || key->context == ctx);
+  GPR_ASSERT(is_mdstr_static(mvalue) || value->context == ctx);
 
   GPR_TIMER_BEGIN("grpc_mdelem_from_metadata_strings", 0);
+
+  if (is_mdstr_static(mkey) && is_mdstr_static(mvalue)) {
+    for (i = 0; i <= ctx->static_mdtab_maxprobe; i++) {
+      size_t idx = (hash + i) % GPR_ARRAY_SIZE(ctx->static_mdtab);
+      static_mdelem *smd = &ctx->static_mdtab[idx];
+      if (smd->hash == hash && smd->mdelem->key == mkey && smd->mdelem->value == mvalue) {
+        return smd->mdelem;
+      }
+    }
+  }
 
   lock(ctx);
 
@@ -553,6 +654,7 @@ grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,
 
 grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
   internal_metadata *md = (internal_metadata *)gmd;
+  if (is_mdelem_static(gmd)) return gmd;
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
           "ELM   REF:%p:%d->%d: '%s' = '%s'", md,
@@ -573,6 +675,7 @@ grpc_mdelem *grpc_mdelem_ref(grpc_mdelem *gmd DEBUG_ARGS) {
 void grpc_mdelem_unref(grpc_mdelem *gmd DEBUG_ARGS) {
   internal_metadata *md = (internal_metadata *)gmd;
   if (!md) return;
+  if (is_mdelem_static(gmd)) return;
 #ifdef GRPC_METADATA_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
           "ELM UNREF:%p:%d->%d: '%s' = '%s'", md,
@@ -600,7 +703,9 @@ const char *grpc_mdstr_as_c_string(grpc_mdstr *s) {
 
 grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;
-  grpc_mdctx *ctx = s->context;
+  grpc_mdctx *ctx;
+  if (is_mdstr_static(gs)) return gs;
+  ctx = s->context;
   lock(ctx);
   internal_string_ref(s FWD_DEBUG_ARGS);
   unlock(ctx);
@@ -609,7 +714,9 @@ grpc_mdstr *grpc_mdstr_ref(grpc_mdstr *gs DEBUG_ARGS) {
 
 void grpc_mdstr_unref(grpc_mdstr *gs DEBUG_ARGS) {
   internal_string *s = (internal_string *)gs;
-  grpc_mdctx *ctx = s->context;
+  grpc_mdctx *ctx;
+  if (is_mdstr_static(gs)) return;
+  ctx = s->context;
   lock(ctx);
   internal_string_unref(s FWD_DEBUG_ARGS);
   unlock(ctx);
