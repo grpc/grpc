@@ -17,7 +17,7 @@ var (
 	serverHost = flag.String("server_host", "", "The host to test")
 	serverPort = flag.Int("server_port", 443, "The port to test")
 	useTls     = flag.Bool("use_tls", true, "Should TLS tests be run")
-	testCase   = flag.String("test_case", "", "What test cases to run")
+	testCase   = flag.String("test_case", "", "What test cases to run (tls, framing)")
 
 	// The rest of these are unused, but present to fulfill the client interface
 	serverHostOverride    = flag.String("server_host_override", "", "Unused")
@@ -69,6 +69,9 @@ func (ctx *HTTP2InteropCtx) Close() error {
 }
 
 func TestShortPreface(t *testing.T) {
+	if *testCase != "framing" {
+		t.SkipNow()
+	}
 	ctx := InteropCtx(t)
 	for i := 0; i < len(Preface)-1; i++ {
 		if err := testShortPreface(ctx, Preface[:i]+"X"); err != io.EOF {
@@ -78,6 +81,9 @@ func TestShortPreface(t *testing.T) {
 }
 
 func TestUnknownFrameType(t *testing.T) {
+	if *testCase != "framing" {
+		t.SkipNow()
+	}
 	ctx := InteropCtx(t)
 	if err := testUnknownFrameType(ctx); err != nil {
 		t.Fatal(err)
@@ -86,7 +92,7 @@ func TestUnknownFrameType(t *testing.T) {
 
 func TestTLSApplicationProtocol(t *testing.T) {
 	if *testCase != "tls" {
-		return
+		t.SkipNow()
 	}
 	ctx := InteropCtx(t)
 	err := testTLSApplicationProtocol(ctx)
@@ -95,7 +101,7 @@ func TestTLSApplicationProtocol(t *testing.T) {
 
 func TestTLSMaxVersion(t *testing.T) {
 	if *testCase != "tls" {
-		return
+		t.SkipNow()
 	}
 	ctx := InteropCtx(t)
 	err := testTLSMaxVersion(ctx, tls.VersionTLS11)
@@ -106,7 +112,7 @@ func TestTLSMaxVersion(t *testing.T) {
 
 func TestTLSBadCipherSuites(t *testing.T) {
 	if *testCase != "tls" {
-		return
+		t.SkipNow()
 	}
 	ctx := InteropCtx(t)
 	err := testTLSBadCipherSuites(ctx)
@@ -114,6 +120,9 @@ func TestTLSBadCipherSuites(t *testing.T) {
 }
 
 func TestClientPrefaceWithStreamId(t *testing.T) {
+	if *testCase != "framing" {
+		t.SkipNow()
+	}
 	ctx := InteropCtx(t)
 	err := testClientPrefaceWithStreamId(ctx)
 	matchError(t, err, "EOF")
