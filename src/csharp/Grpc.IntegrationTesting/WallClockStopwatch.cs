@@ -32,57 +32,47 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
-using Grpc.Core.Internal;
+using System.Threading.Tasks;
+using Google.Protobuf;
+using Grpc.Core;
+using Grpc.Core.Utils;
+using NUnit.Framework;
+using Grpc.Testing;
 
-namespace Grpc.Core.Profiling
+namespace Grpc.IntegrationTesting
 {
-    internal struct ProfilerEntry
+    /// <summary>
+    /// Snapshottable wall clock stopwatch.
+    /// </summary>
+    public class WallClockStopwatch
     {
-        public enum Type
+        long startTicks;
+
+        public WallClockStopwatch()
         {
-            BEGIN,
-            END,
-            MARK
+            this.startTicks = DateTime.UtcNow.Ticks;
         }
 
-        public ProfilerEntry(Timespec timespec, Type type, string tag)
+        public TimeSpan GetElapsedSnapshot(bool reset)
         {
-            this.timespec = timespec;
-            this.type = type;
-            this.tag = tag;
-        }
+            var utcNow = DateTime.UtcNow;
 
-        public Timespec timespec;
-        public Type type;
-        public string tag;
-
-        public override string ToString()
-        {
-            // mimic the output format used by C core.
-            return string.Format(
-                "{{\"t\": {0}.{1}, \"thd\":\"unknown\", \"type\": \"{2}\", \"tag\": \"{3}\", " +
-                "\"file\": \"unknown\", \"line\": 0, \"imp\": 0}}",
-                timespec.TimevalSeconds, timespec.TimevalNanos.ToString("D9"),
-                GetTypeAbbreviation(type), tag);
-        }
-
-        internal static string GetTypeAbbreviation(Type type)
-        {
-            switch (type)
+            long oldStartTicks;
+            if (reset)
             {
-                case Type.BEGIN:
-                    return "{";
-
-                case Type.END:
-                    return "}";
-                
-                case Type.MARK:
-                    return ".";
-                default:
-                    throw new ArgumentException("Unknown type");
+                oldStartTicks = Interlocked.Exchange(ref this.startTicks, utcNow.Ticks);
             }
+            else
+            {
+                oldStartTicks = this.startTicks;
+            }
+            return utcNow - new DateTime(oldStartTicks, DateTimeKind.Utc);
         }
     }
 }
