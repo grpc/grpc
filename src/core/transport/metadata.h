@@ -157,4 +157,7 @@ int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
 
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 
+void grpc_mdctx_global_init(void);
+void grpc_mdctx_global_shutdown(void);
+
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_METADATA_H */

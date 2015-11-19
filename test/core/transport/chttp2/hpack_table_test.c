@@ -36,10 +36,12 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "src/core/support/string.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpc/grpc.h>
+
+#include "src/core/support/string.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
@@ -268,8 +270,10 @@ static void test_find(void) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_static_lookup();
   test_many_additions();
   test_find();
+  grpc_shutdown();
   return 0;
 }

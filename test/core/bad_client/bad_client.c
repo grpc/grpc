@@ -84,7 +84,7 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
   gpr_thd_id id;
   char *hex;
   grpc_transport *transport;
-  grpc_mdctx *mdctx = grpc_mdctx_create();
+  grpc_mdctx *mdctx;
   gpr_slice slice =
       gpr_slice_from_copied_buffer(client_payload, client_payload_length);
   gpr_slice_buffer outgoing;
@@ -101,6 +101,8 @@ void grpc_run_bad_client_test(grpc_bad_client_server_side_validator validator,
 
   /* Init grpc */
   grpc_init();
+
+  mdctx = grpc_mdctx_create();
 
   /* Create endpoints */
   sfd = grpc_iomgr_create_endpoint_pair("fixture", 65536);

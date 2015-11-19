@@ -93,6 +93,7 @@ void grpc_init(void) {
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
     gpr_time_init();
+    grpc_mdctx_global_init();
     grpc_lb_policy_registry_init(grpc_pick_first_lb_factory_create());
     grpc_register_lb_policy(grpc_pick_first_lb_factory_create());
     grpc_register_lb_policy(grpc_round_robin_lb_factory_create());
@@ -147,6 +148,7 @@ void grpc_shutdown(void) {
         g_all_of_the_plugins[i].destroy();
       }
     }
+    grpc_mdctx_global_shutdown();
   }
   gpr_mu_unlock(&g_init_mu);
 }

@@ -270,6 +270,7 @@ static void test_base64_and_huffman_works(void) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_no_op();
   test_create_string();
   test_create_metadata();
@@ -279,5 +280,6 @@ int main(int argc, char **argv) {
   test_things_stick_around();
   test_slices_work();
   test_base64_and_huffman_works();
+  grpc_shutdown();
   return 0;
 }

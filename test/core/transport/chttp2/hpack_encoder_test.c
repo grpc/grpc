@@ -191,8 +191,10 @@ static void run_test(void (*test)(), const char *name) {
 int main(int argc, char **argv) {
   size_t i;
   grpc_test_init(argc, argv);
+  grpc_init();
   TEST(test_basic_headers);
   TEST(test_decode_table_overflow);
+  grpc_shutdown();
   for (i = 0; i < num_to_delete; i++) {
     gpr_free(to_delete[i]);
   }
