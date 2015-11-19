@@ -94,11 +94,11 @@ Channel *pygrpc_Channel_new(
   Channel *self;
   const char *target;
   PyObject *py_args;
-  ClientCredentials *creds = NULL;
+  ChannelCredentials *creds = NULL;
   grpc_channel_args c_args;
   char *keywords[] = {"target", "args", "creds", NULL};
   if (!PyArg_ParseTupleAndKeywords(args, kwargs, "sO|O!:Channel", keywords,
-        &target, &py_args, &pygrpc_ClientCredentials_type, &creds)) {
+        &target, &py_args, &pygrpc_ChannelCredentials_type, &creds)) {
     return NULL;
   }
   if (!pygrpc_produce_channel_args(py_args, &c_args)) {

@@ -65,11 +65,11 @@ using v8::Value;
 Nan::Callback *ChannelCredentials::constructor;
 Persistent<FunctionTemplate> ChannelCredentials::fun_tpl;
 
-ChannelCredentials::ChannelCredentials(grpc_credentials *credentials)
+ChannelCredentials::ChannelCredentials(grpc_channel_credentials *credentials)
     : wrapped_credentials(credentials) {}
 
 ChannelCredentials::~ChannelCredentials() {
-  grpc_credentials_release(wrapped_credentials);
+  grpc_channel_credentials_release(wrapped_credentials);
 }
 
 void ChannelCredentials::Init(Local<Object> exports) {
@@ -95,7 +95,8 @@ bool ChannelCredentials::HasInstance(Local<Value> val) {
   return Nan::New(fun_tpl)->HasInstance(val);
 }
 
-Local<Value> ChannelCredentials::WrapStruct(grpc_credentials *credentials) {
+Local<Value> ChannelCredentials::WrapStruct(
+    grpc_channel_credentials *credentials) {
   EscapableHandleScope scope;
   const int argc = 1;
   Local<Value> argv[argc] = {
@@ -109,7 +110,7 @@ Local<Value> ChannelCredentials::WrapStruct(grpc_credentials *credentials) {
   }
 }
 
-grpc_credentials *ChannelCredentials::GetWrappedCredentials() {
+grpc_channel_credentials *ChannelCredentials::GetWrappedCredentials() {
   return wrapped_credentials;
 }
 
@@ -120,8 +121,8 @@ NAN_METHOD(ChannelCredentials::New) {
           "ChannelCredentials can only be created with the provided functions");
     }
     Local<External> ext = info[0].As<External>();
-    grpc_credentials *creds_value =
-        reinterpret_cast<grpc_credentials *>(ext->Value());
+    grpc_channel_credentials *creds_value =
+        reinterpret_cast<grpc_channel_credentials *>(ext->Value());
     ChannelCredentials *credentials = new ChannelCredentials(creds_value);
     credentials->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
@@ -153,7 +154,7 @@ NAN_METHOD(ChannelCredentials::CreateSsl) {
     return Nan::ThrowTypeError(
         "createSSl's third argument must be a Buffer if provided");
   }
-  grpc_credentials *creds = grpc_ssl_credentials_create(
+  grpc_channel_credentials *creds = grpc_ssl_credentials_create(
       root_certs, key_cert_pair.private_key == NULL ? NULL : &key_cert_pair,
       NULL);
   if (creds == NULL) {
@@ -180,7 +181,7 @@ NAN_METHOD(ChannelCredentials::Compose) {
   }
   CallCredentials *other = ObjectWrap::Unwrap<CallCredentials>(
       Nan::To<Object>(info[0]).ToLocalChecked());
-  grpc_credentials *creds = grpc_composite_credentials_create(
+  grpc_channel_credentials *creds = grpc_composite_channel_credentials_create(
       self->wrapped_credentials, other->GetWrappedCredentials(), NULL);
   if (creds == NULL) {
     info.GetReturnValue().SetNull();

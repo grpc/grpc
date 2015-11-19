@@ -89,8 +89,9 @@
       ]
     },
     'targets': [
+      % for module in node_modules:
       % for lib in libs:
-      % if lib.name == 'gpr' or lib.name == 'grpc':
+      % if lib.name in module.transitive_deps:
       {
         'target_name': '${lib.name}',
         'product_prefix': 'lib',
@@ -142,22 +143,18 @@
             }
           }]
         ],
-        "target_name": "grpc_node",
+        "target_name": "${module.name}",
         "sources": [
-          "src/node/ext/byte_buffer.cc",
-          "src/node/ext/call.cc",
-          "src/node/ext/call_credentials.cc",
-          "src/node/ext/channel.cc",
-          "src/node/ext/channel_credentials.cc",
-          "src/node/ext/completion_queue_async_worker.cc",
-          "src/node/ext/node_grpc.cc",
-          "src/node/ext/server.cc",
-          "src/node/ext/server_credentials.cc",
-          "src/node/ext/timeval.cc"
+          % for source in module.src:
+          "${source}",
+          % endfor
         ],
         "dependencies": [
-          "grpc"
+          % for dep in getattr(module, 'deps', []):
+          "${dep}",
+          % endfor
         ]
-      }
+      },
+      % endfor
     ]
   }
