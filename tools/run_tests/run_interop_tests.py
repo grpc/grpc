@@ -170,7 +170,7 @@ class Http2Client:
     self.safename = str(self)
 
   def client_args(self):
-    return ['tools/http2_interop/http2_interop.test']
+    return ['tools/http2_interop/http2_interop.test', '-v']
 
   def cloud_to_prod_env(self):
     return {}
@@ -306,7 +306,7 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
 
-_HTTP2_TEST_CASES = ["tls"]
+_HTTP2_TEST_CASES = ["tls", "framing"]
 
 def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   """Wraps given cmdline array to create 'docker run' cmdline from it."""
