@@ -66,7 +66,9 @@ namespace Grpc.IntegrationTesting
             switch (config.RpcType)
             {
                 case RpcType.UNARY:
-                    return new SyncUnaryClientRunner(channel, config.PayloadConfig.SimpleParams.ReqSize);
+                    return new SyncUnaryClientRunner(channel,
+                        config.PayloadConfig.SimpleParams.ReqSize,
+                        config.HistogramParams);
 
                 case RpcType.STREAMING:
                 default:
@@ -80,6 +82,8 @@ namespace Grpc.IntegrationTesting
     /// </summary>
     public class SyncUnaryClientRunner : IClientRunner
     {
+        const double SecondsToNanos = 1e9;
+
         readonly Channel channel;
         readonly int payloadSize;
         readonly Histogram histogram;
@@ -89,11 +93,11 @@ namespace Grpc.IntegrationTesting
         readonly CancellationTokenSource stoppedCts;
         readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
         
-        public SyncUnaryClientRunner(Channel channel, int payloadSize)
+        public SyncUnaryClientRunner(Channel channel, int payloadSize, HistogramParams histogramParams)
         {
             this.channel = Grpc.Core.Utils.Preconditions.CheckNotNull(channel);
             this.payloadSize = payloadSize;
-            this.histogram = new Histogram(0.01, 60e9);  // TODO: needs to be in sync with test/cpp/qps/histogram.h
+            this.histogram = new Histogram(histogramParams.Resolution, histogramParams.MaxPossible);
 
             this.stoppedCts = new CancellationTokenSource();
             this.client = BenchmarkService.NewClient(channel);
@@ -136,8 +140,8 @@ namespace Grpc.IntegrationTesting
                 client.UnaryCall(request);
                 stopwatch.Stop();
 
-                // TODO: 1e9 needs to be in sync with C++ code
-                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * 1e9);
+                // spec requires data point in nanoseconds.
+                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
             }
         }
 
