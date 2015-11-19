@@ -65,7 +65,7 @@ namespace Grpc.IntegrationTesting
             var server = new Server
             {
                 Services = { BenchmarkService.BindService(new BenchmarkServiceImpl(responseSize)) },
-                Ports = { new ServerPort("0.0.0.0", config.Port, credentials) }
+                Ports = { new ServerPort(config.Host, config.Port, credentials) }
             };
 
             server.Start();

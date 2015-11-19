@@ -23,17 +23,19 @@ namespace Grpc.Testing {
           string.Concat(
             "CiF0ZXN0L3Byb3RvL2JlbmNobWFya3Mvc3RhdHMucHJvdG8SDGdycGMudGVz", 
             "dGluZyJLCgtTZXJ2ZXJTdGF0cxIUCgx0aW1lX2VsYXBzZWQYASABKAESEQoJ", 
-            "dGltZV91c2VyGAIgASgBEhMKC3RpbWVfc3lzdGVtGAMgASgBIncKDUhpc3Rv", 
-            "Z3JhbURhdGESDgoGYnVja2V0GAEgAygNEhAKCG1pbl9zZWVuGAIgASgBEhAK", 
-            "CG1heF9zZWVuGAMgASgBEgsKA3N1bRgEIAEoARIWCg5zdW1fb2Zfc3F1YXJl", 
-            "cxgFIAEoARINCgVjb3VudBgGIAEoASJ7CgtDbGllbnRTdGF0cxIuCglsYXRl", 
-            "bmNpZXMYASABKAsyGy5ncnBjLnRlc3RpbmcuSGlzdG9ncmFtRGF0YRIUCgx0", 
-            "aW1lX2VsYXBzZWQYAiABKAESEQoJdGltZV91c2VyGAMgASgBEhMKC3RpbWVf", 
-            "c3lzdGVtGAQgASgBYgZwcm90bzM="));
+            "dGltZV91c2VyGAIgASgBEhMKC3RpbWVfc3lzdGVtGAMgASgBIjsKD0hpc3Rv", 
+            "Z3JhbVBhcmFtcxISCgpyZXNvbHV0aW9uGAEgASgBEhQKDG1heF9wb3NzaWJs", 
+            "ZRgCIAEoASJ3Cg1IaXN0b2dyYW1EYXRhEg4KBmJ1Y2tldBgBIAMoDRIQCght", 
+            "aW5fc2VlbhgCIAEoARIQCghtYXhfc2VlbhgDIAEoARILCgNzdW0YBCABKAES", 
+            "FgoOc3VtX29mX3NxdWFyZXMYBSABKAESDQoFY291bnQYBiABKAEiewoLQ2xp", 
+            "ZW50U3RhdHMSLgoJbGF0ZW5jaWVzGAEgASgLMhsuZ3JwYy50ZXN0aW5nLkhp", 
+            "c3RvZ3JhbURhdGESFAoMdGltZV9lbGFwc2VkGAIgASgBEhEKCXRpbWVfdXNl", 
+            "chgDIAEoARITCgt0aW1lX3N5c3RlbRgEIAEoAWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.InternalBuildGeneratedFileFrom(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedCodeInfo(null, new pbr::GeneratedCodeInfo[] {
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ServerStats), new[]{ "TimeElapsed", "TimeUser", "TimeSystem" }, null, null, null),
+            new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.HistogramParams), new[]{ "Resolution", "MaxPossible" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.HistogramData), new[]{ "Bucket", "MinSeen", "MaxSeen", "Sum", "SumOfSquares", "Count" }, null, null, null),
             new pbr::GeneratedCodeInfo(typeof(global::Grpc.Testing.ClientStats), new[]{ "Latencies", "TimeElapsed", "TimeUser", "TimeSystem" }, null, null, null)
           }));
@@ -197,12 +199,140 @@ namespace Grpc.Testing {
   }
 
   [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+  public sealed partial class HistogramParams : pb::IMessage<HistogramParams> {
+    private static readonly pb::MessageParser<HistogramParams> _parser = new pb::MessageParser<HistogramParams>(() => new HistogramParams());
+    public static pb::MessageParser<HistogramParams> Parser { get { return _parser; } }
+
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Grpc.Testing.Stats.Descriptor.MessageTypes[1]; }
+    }
+
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    public HistogramParams() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    public HistogramParams(HistogramParams other) : this() {
+      resolution_ = other.resolution_;
+      maxPossible_ = other.maxPossible_;
+    }
+
+    public HistogramParams Clone() {
+      return new HistogramParams(this);
+    }
+
+    public const int ResolutionFieldNumber = 1;
+    private double resolution_;
+    public double Resolution {
+      get { return resolution_; }
+      set {
+        resolution_ = value;
+      }
+    }
+
+    public const int MaxPossibleFieldNumber = 2;
+    private double maxPossible_;
+    public double MaxPossible {
+      get { return maxPossible_; }
+      set {
+        maxPossible_ = value;
+      }
+    }
+
+    public override bool Equals(object other) {
+      return Equals(other as HistogramParams);
+    }
+
+    public bool Equals(HistogramParams other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Resolution != other.Resolution) return false;
+      if (MaxPossible != other.MaxPossible) return false;
+      return true;
+    }
+
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Resolution != 0D) hash ^= Resolution.GetHashCode();
+      if (MaxPossible != 0D) hash ^= MaxPossible.GetHashCode();
+      return hash;
+    }
+
+    public override string ToString() {
+      return pb::JsonFormatter.Default.Format(this);
+    }
+
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Resolution != 0D) {
+        output.WriteRawTag(9);
+        output.WriteDouble(Resolution);
+      }
+      if (MaxPossible != 0D) {
+        output.WriteRawTag(17);
+        output.WriteDouble(MaxPossible);
+      }
+    }
+
+    public int CalculateSize() {
+      int size = 0;
+      if (Resolution != 0D) {
+        size += 1 + 8;
+      }
+      if (MaxPossible != 0D) {
+        size += 1 + 8;
+      }
+      return size;
+    }
+
+    public void MergeFrom(HistogramParams other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Resolution != 0D) {
+        Resolution = other.Resolution;
+      }
+      if (other.MaxPossible != 0D) {
+        MaxPossible = other.MaxPossible;
+      }
+    }
+
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            input.SkipLastField();
+            break;
+          case 9: {
+            Resolution = input.ReadDouble();
+            break;
+          }
+          case 17: {
+            MaxPossible = input.ReadDouble();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
   public sealed partial class HistogramData : pb::IMessage<HistogramData> {
     private static readonly pb::MessageParser<HistogramData> _parser = new pb::MessageParser<HistogramData>(() => new HistogramData());
     public static pb::MessageParser<HistogramData> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.Stats.Descriptor.MessageTypes[1]; }
+      get { return global::Grpc.Testing.Stats.Descriptor.MessageTypes[2]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
@@ -427,7 +557,7 @@ namespace Grpc.Testing {
     public static pb::MessageParser<ClientStats> Parser { get { return _parser; } }
 
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::Grpc.Testing.Stats.Descriptor.MessageTypes[2]; }
+      get { return global::Grpc.Testing.Stats.Descriptor.MessageTypes[3]; }
     }
 
     pbr::MessageDescriptor pb::IMessage.Descriptor {
