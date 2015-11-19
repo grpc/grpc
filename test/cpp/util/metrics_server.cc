@@ -33,8 +33,6 @@
 
 #include "test/cpp/util/metrics_server.h"
 
-#include <vector>
-
 #include <grpc++/server_builder.h>
 
 #include "test/proto/metrics.grpc.pb.h"
@@ -43,15 +41,17 @@
 namespace grpc {
 namespace testing {
 
-using std::vector;
-
 Gauge::Gauge(long initial_val) : val_(initial_val) {}
 
 void Gauge::Set(long new_val) {
-  val_.store(new_val, std::memory_order_relaxed);
+  std::lock_guard<std::mutex> lock(val_mu_);
+  val_ = new_val;
 }
 
-long Gauge::Get() { return val_.load(std::memory_order_relaxed); }
+long Gauge::Get() {
+  std::lock_guard<std::mutex> lock(val_mu_);
+  return val_;
+}
 
 grpc::Status MetricsServiceImpl::GetAllGauges(
     ServerContext* context, const EmptyMessage* request,
@@ -74,7 +74,7 @@ grpc::Status MetricsServiceImpl::GetGauge(ServerContext* context,
                                           GaugeResponse* response) {
   std::lock_guard<std::mutex> lock(mu_);
 
-  auto it = gauges_.find(request->name());
+  const auto it = gauges_.find(request->name());
   if (it != gauges_.end()) {
     response->set_name(it->first);
     response->set_long_value(it->second->Get());
@@ -88,16 +88,17 @@ std::shared_ptr<Gauge> MetricsServiceImpl::CreateGauge(const grpc::string& name,
   std::lock_guard<std::mutex> lock(mu_);
 
   std::shared_ptr<Gauge> gauge(new Gauge(0));
-  auto p = gauges_.emplace(name, gauge);
+  const auto p = gauges_.emplace(name, gauge);
 
   // p.first is an iterator pointing to <name, shared_ptr<Gauge>> pair. p.second
-  // is a boolean indicating if the Gauge is already present in the map
+  // is a boolean which is set to 'true' if the Gauge is inserted in the guages_
+  // map and 'false' if it is already present in the map
   *already_present = !p.second;
   return p.first->second;
 }
 
-// Starts the metrics server and returns the grpc::Server instance. Call
-// wait() on the returned server instance.
+// Starts the metrics server and returns the grpc::Server instance. Call Wait()
+// on the returned server instance.
 std::unique_ptr<grpc::Server> MetricsServiceImpl::StartServer(int port) {
   gpr_log(GPR_INFO, "Building metrics server..");
 

@@ -33,7 +33,6 @@
 #ifndef GRPC_TEST_CPP_METRICS_SERVER_H
 #define GRPC_TEST_CPP_METRICS_SERVER_H
 
-#include <atomic>
 #include <map>
 #include <mutex>
 
@@ -69,7 +68,8 @@ class Gauge {
   long Get();
 
  private:
-  std::atomic_long val_;
+  long val_;
+  std::mutex val_mu_;
 };
 
 class MetricsServiceImpl GRPC_FINAL : public MetricsService::Service {
