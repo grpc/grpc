@@ -219,9 +219,9 @@ int main(int argc, char** argv) {
   int thread_idx = 0;
   for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
     // TODO(sreek): This will change once we add support for other tests
-    // that won't work with InsecureCredentials()
+    // that won't work with InsecureChannelCredentials()
     std::shared_ptr<grpc::Channel> channel(
-        CreateChannel(*it, grpc::InsecureCredentials()));
+        grpc::CreateChannel(*it, grpc::InsecureChannelCredentials()));
 
     // Make multiple stubs (as defined by num_stubs_per_channel flag) to use the
     // same channel. This is to test calling multiple RPC calls in parallel on

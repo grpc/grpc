@@ -53,7 +53,7 @@ using grpc::testing::MetricsServiceImpl;
 void PrintMetrics(grpc::string& server_address) {
   gpr_log(GPR_INFO, "creating a channel to %s", server_address.c_str());
   std::shared_ptr<grpc::Channel> channel(
-      grpc::CreateChannel(server_address, grpc::InsecureCredentials()));
+      grpc::CreateChannel(server_address, grpc::InsecureChannelCredentials()));
 
   std::unique_ptr<MetricsService::Stub> stub(MetricsService::NewStub(channel));
 
