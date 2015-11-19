@@ -144,13 +144,13 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
-  grpc_tcp_listener *sp;
-
   grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1);
 
   gpr_mu_destroy(&s->mu);
 
-  for (sp = s->head; sp; sp = sp->next) {
+  while (s->head) {
+    grpc_tcp_listener *sp = s->head;
+    s->head = sp->next;
     grpc_tcp_listener_unref(sp);
   }
 
