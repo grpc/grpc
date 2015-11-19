@@ -74,7 +74,7 @@ static gpr_once s_init_max_accept_queue_size;
 static int s_max_accept_queue_size;
 
 /* one listening port */
-typedef struct server_port {
+struct grpc_tcp_listener {
   int fd;
   grpc_fd *emfd;
   grpc_tcp_server *server;
@@ -88,10 +88,10 @@ typedef struct server_port {
   grpc_closure read_closure;
   grpc_closure destroyed_closure;
   gpr_refcount refs;
-  struct server_port *next;
-  struct server_port *dual_stack_second_port;
+  struct grpc_tcp_listener *next;
+  struct grpc_tcp_listener *dual_stack_second_port;
   int is_dual_stack_second_port;
-} server_port;
+};
 
 static void unlink_if_unix_domain_socket(const struct sockaddr_un *un) {
   struct stat st;
@@ -118,7 +118,7 @@ struct grpc_tcp_server {
   int shutdown;
 
   /* linked list of server ports */
-  server_port *head;
+  grpc_tcp_listener *head;
   unsigned nports;
 
   /* shutdown callback */
@@ -144,14 +144,14 @@ grpc_tcp_server *grpc_tcp_server_create(void) {
 }
 
 static void finish_shutdown(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
-  server_port *sp;
+  grpc_tcp_listener *sp;
 
   grpc_exec_ctx_enqueue(exec_ctx, s->shutdown_complete, 1);
 
   gpr_mu_destroy(&s->mu);
 
   for (sp = s->head; sp; sp = sp->next) {
-    grpc_tcp_listener_unref((grpc_tcp_listener *)sp);
+    grpc_tcp_listener_unref(sp);
   }
 
   gpr_free(s);
@@ -183,7 +183,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s) {
   }
 
   if (s->head) {
-    server_port *sp;
+    grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
       if (sp->addr.sockaddr.sa_family == AF_UNIX) {
         unlink_if_unix_domain_socket(&sp->addr.un);
@@ -211,7 +211,7 @@ void grpc_tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
 
   /* shutdown all fd's */
   if (s->active_ports) {
-    server_port *sp;
+    grpc_tcp_listener *sp;
     for (sp = s->head; sp; sp = sp->next) {
       grpc_fd_shutdown(exec_ctx, sp->emfd);
     }
@@ -304,7 +304,7 @@ error:
 
 /* event manager callback when reads are ready */
 static void on_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
-  server_port *sp = arg;
+  grpc_tcp_listener *sp = arg;
   grpc_fd *fdobj;
   size_t i;
 
@@ -370,10 +370,10 @@ error:
   }
 }
 
-static server_port *add_socket_to_server(grpc_tcp_server *s, int fd,
+static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, int fd,
                                          const struct sockaddr *addr,
                                          size_t addr_len) {
-  server_port *sp = NULL;
+  grpc_tcp_listener *sp = NULL;
   int port;
   char *addr_str;
   char *name;
@@ -385,7 +385,7 @@ static server_port *add_socket_to_server(grpc_tcp_server *s, int fd,
     gpr_mu_lock(&s->mu);
     s->nports++;
     GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-    sp = gpr_malloc(sizeof(server_port));
+    sp = gpr_malloc(sizeof(grpc_tcp_listener));
     sp->next = s->head;
     s->head = sp;
     sp->server = s;
@@ -410,8 +410,8 @@ grpc_tcp_listener *grpc_tcp_server_add_port(grpc_tcp_server *s,
                                             const void *addr,
                                             size_t addr_len) {
   int allocated_port = -1;
-  server_port *sp;
-  server_port *sp2 = NULL;
+  grpc_tcp_listener *sp;
+  grpc_tcp_listener *sp2 = NULL;
   int fd;
   grpc_dualstack_mode dsmode;
   struct sockaddr_in6 addr6_v4mapped;
@@ -491,11 +491,11 @@ grpc_tcp_listener *grpc_tcp_server_add_port(grpc_tcp_server *s,
 
 done:
   gpr_free(allocated_addr);
-  return (grpc_tcp_listener *)sp;
+  return sp;
 }
 
 int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned port_index) {
-  server_port *sp;
+  grpc_tcp_listener *sp;
   for (sp = s->head; sp && port_index != 0; sp = sp->next, port_index--);
   if (port_index == 0 && sp) {
     return sp->fd;
@@ -509,7 +509,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
                            grpc_tcp_server_cb on_accept_cb,
                            void *on_accept_cb_arg) {
   size_t i;
-  server_port *sp;
+  grpc_tcp_listener *sp;
   GPR_ASSERT(on_accept_cb);
   gpr_mu_lock(&s->mu);
   GPR_ASSERT(!s->on_accept_cb);
@@ -532,17 +532,17 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
 }
 
 int grpc_tcp_listener_get_port(grpc_tcp_listener *listener) {
-  server_port *sp = (server_port *)listener;
+  grpc_tcp_listener *sp = listener;
   return sp->port;
 }
 
 void grpc_tcp_listener_ref(grpc_tcp_listener *listener) {
-  server_port *sp = (server_port *)listener;
+  grpc_tcp_listener *sp = listener;
   gpr_ref(&sp->refs);
 }
 
 void grpc_tcp_listener_unref(grpc_tcp_listener *listener) {
-  server_port *sp = (server_port *)listener;
+  grpc_tcp_listener *sp = listener;
   if (sp->is_dual_stack_second_port) return;
   if (gpr_unref(&sp->refs)) {
     if (sp->dual_stack_second_port) gpr_free(sp->dual_stack_second_port);
