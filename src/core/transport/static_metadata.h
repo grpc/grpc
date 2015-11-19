@@ -35,6 +35,10 @@
  * To make changes to this file, change
  * tools/codegen/core/gen_static_metadata.py,
  * and then re-run it.
+ *
+ * See metadata.h for an explanation of the interface here, and metadata.c for
+ * an
+ * explanation of what's going on.
  */
 
 #ifndef GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H
