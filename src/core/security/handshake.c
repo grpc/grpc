@@ -68,8 +68,7 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
                                     grpc_security_handshake *h,
                                     int is_success) {
   if (is_success) {
-    h->cb(exec_ctx, h->user_data, GRPC_SECURITY_OK, h->wrapped_endpoint,
-          h->secure_endpoint);
+    h->cb(exec_ctx, h->user_data, GRPC_SECURITY_OK, h->secure_endpoint);
   } else {
     if (h->secure_endpoint != NULL) {
       grpc_endpoint_shutdown(exec_ctx, h->secure_endpoint);
@@ -77,8 +76,7 @@ static void security_handshake_done(grpc_exec_ctx *exec_ctx,
     } else {
       grpc_endpoint_destroy(exec_ctx, h->wrapped_endpoint);
     }
-    h->cb(exec_ctx, h->user_data, GRPC_SECURITY_ERROR, h->wrapped_endpoint,
-          NULL);
+    h->cb(exec_ctx, h->user_data, GRPC_SECURITY_ERROR, NULL);
   }
   if (h->handshaker != NULL) tsi_handshaker_destroy(h->handshaker);
   if (h->handshake_buffer != NULL) gpr_free(h->handshake_buffer);
