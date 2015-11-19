@@ -1,4 +1,4 @@
-#region Copyright notice and license
+﻿#region Copyright notice and license
 
 // Copyright 2015, Google Inc.
 // All rights reserved.
@@ -32,57 +32,15 @@
 #endregion
 
 using System;
-using System.IO;
-using System.Threading;
-using Grpc.Core.Internal;
+using Grpc.IntegrationTesting;
 
-namespace Grpc.Core.Profiling
+namespace Grpc.IntegrationTesting
 {
-    internal struct ProfilerEntry
+    class Program
     {
-        public enum Type
+        public static void Main(string[] args)
         {
-            BEGIN,
-            END,
-            MARK
-        }
-
-        public ProfilerEntry(Timespec timespec, Type type, string tag)
-        {
-            this.timespec = timespec;
-            this.type = type;
-            this.tag = tag;
-        }
-
-        public Timespec timespec;
-        public Type type;
-        public string tag;
-
-        public override string ToString()
-        {
-            // mimic the output format used by C core.
-            return string.Format(
-                "{{\"t\": {0}.{1}, \"thd\":\"unknown\", \"type\": \"{2}\", \"tag\": \"{3}\", " +
-                "\"file\": \"unknown\", \"line\": 0, \"imp\": 0}}",
-                timespec.TimevalSeconds, timespec.TimevalNanos.ToString("D9"),
-                GetTypeAbbreviation(type), tag);
-        }
-
-        internal static string GetTypeAbbreviation(Type type)
-        {
-            switch (type)
-            {
-                case Type.BEGIN:
-                    return "{";
-
-                case Type.END:
-                    return "}";
-                
-                case Type.MARK:
-                    return ".";
-                default:
-                    throw new ArgumentException("Unknown type");
-            }
+            QpsWorker.Run(args);
         }
     }
 }
