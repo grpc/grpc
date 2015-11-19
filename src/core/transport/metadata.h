@@ -59,7 +59,13 @@
 
    grpc_mdelem instances MAY live longer than their refcount implies, and are
    garbage collected periodically, meaning cached data can easily outlive a
-   single request. */
+   single request.
+
+   STATIC METADATA: in static_metadata.h we declare a set of static metadata.
+   These mdelems and mdstrs are available via pre-declared code generated macros
+   and are available to code anywhere between grpc_init() and grpc_shutdown().
+   They are not refcounted, but can be passed to _ref and _unref functions
+   declared here - in which case those functions are effectively no-ops. */
 
 /* Forward declarations */
 typedef struct grpc_mdctx grpc_mdctx;
