@@ -78,7 +78,7 @@ namespace Grpc.Core
         /// Creates native object for the credentials.
         /// </summary>
         /// <returns>The native credentials.</returns>
-        internal abstract CredentialsSafeHandle ToNativeCredentials();
+        internal abstract CallCredentialsSafeHandle ToNativeCredentials();
     }
 
     /// <summary>
@@ -98,7 +98,7 @@ namespace Grpc.Core
             this.interceptor = Preconditions.CheckNotNull(interceptor);
         }
 
-        internal override CredentialsSafeHandle ToNativeCredentials()
+        internal override CallCredentialsSafeHandle ToNativeCredentials()
         {
             NativeMetadataCredentialsPlugin plugin = new NativeMetadataCredentialsPlugin(interceptor);
             return plugin.Credentials;
@@ -123,14 +123,14 @@ namespace Grpc.Core
             this.credentials = new List<CallCredentials>(credentials);
         }
 
-        internal override CredentialsSafeHandle ToNativeCredentials()
+        internal override CallCredentialsSafeHandle ToNativeCredentials()
         {
             return ToNativeRecursive(0);
         }
 
         // Recursive descent makes managing lifetime of intermediate CredentialSafeHandle instances easier.
         // In practice, we won't usually see composites from more than two credentials anyway.
-        private CredentialsSafeHandle ToNativeRecursive(int startIndex)
+        private CallCredentialsSafeHandle ToNativeRecursive(int startIndex)
         {
             if (startIndex == credentials.Count - 1)
             {
@@ -140,7 +140,7 @@ namespace Grpc.Core
             using (var cred1 = credentials[startIndex].ToNativeCredentials())
             using (var cred2 = ToNativeRecursive(startIndex + 1))
             {
-                var nativeComposite = CredentialsSafeHandle.CreateComposite(cred1, cred2);
+                var nativeComposite = CallCredentialsSafeHandle.CreateComposite(cred1, cred2);
                 if (nativeComposite.IsInvalid)
                 {
                     throw new ArgumentException("Error creating native composite credentials. Likely, this is because you are trying to compose incompatible credentials.");

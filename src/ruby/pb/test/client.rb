@@ -103,13 +103,13 @@ end
 # creates SSL Credentials from the test certificates.
 def test_creds
   certs = load_test_certs
-  GRPC::Core::Credentials.new(certs[0])
+  GRPC::Core::ChannelCredentials.new(certs[0])
 end
 
 # creates SSL Credentials from the production certificates.
 def prod_creds
   cert_text = load_prod_cert
-  GRPC::Core::Credentials.new(cert_text)
+  GRPC::Core::ChannelCredentials.new(cert_text)
 end
 
 # creates the SSL Credentials.

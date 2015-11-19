@@ -757,7 +757,7 @@ NAN_METHOD(Call::SetCredentials) {
   Call *call = ObjectWrap::Unwrap<Call>(info.This());
   CallCredentials *creds_object = ObjectWrap::Unwrap<CallCredentials>(
       Nan::To<Object>(info[0]).ToLocalChecked());
-  grpc_credentials *creds = creds_object->GetWrappedCredentials();
+  grpc_call_credentials *creds = creds_object->GetWrappedCredentials();
   grpc_call_error error = GRPC_CALL_ERROR;
   if (creds) {
     error = grpc_call_set_credentials(call->wrapped_call, creds);

@@ -323,6 +323,14 @@ class Call:
     """
     return None
 
+  def set_credentials(self, creds):
+    """Set per-call credentials.
+
+    Args:
+      creds (CallCredentials): Credentials to be set for this call.
+    """
+    return None
+
 
 class Channel:
   __metaclass__ = abc.ABCMeta
@@ -334,7 +342,7 @@ class Channel:
     Args:
       target (str): ...
       args (sequence of 2-sequence of str, (str|integer)): ...
-      credentials (ClientCredentials): If None, create an insecure channel,
+      credentials (ChannelCredentials): If None, create an insecure channel,
         else create a secure channel using the client credentials.
     """
 

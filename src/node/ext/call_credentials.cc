@@ -64,11 +64,11 @@ using v8::Value;
 Nan::Callback *CallCredentials::constructor;
 Persistent<FunctionTemplate> CallCredentials::fun_tpl;
 
-CallCredentials::CallCredentials(grpc_credentials *credentials)
+CallCredentials::CallCredentials(grpc_call_credentials *credentials)
     : wrapped_credentials(credentials) {}
 
 CallCredentials::~CallCredentials() {
-  grpc_credentials_release(wrapped_credentials);
+  grpc_call_credentials_release(wrapped_credentials);
 }
 
 void CallCredentials::Init(Local<Object> exports) {
@@ -91,7 +91,7 @@ bool CallCredentials::HasInstance(Local<Value> val) {
   return Nan::New(fun_tpl)->HasInstance(val);
 }
 
-Local<Value> CallCredentials::WrapStruct(grpc_credentials *credentials) {
+Local<Value> CallCredentials::WrapStruct(grpc_call_credentials *credentials) {
   EscapableHandleScope scope;
   const int argc = 1;
   if (credentials == NULL) {
@@ -108,7 +108,7 @@ Local<Value> CallCredentials::WrapStruct(grpc_credentials *credentials) {
   }
 }
 
-grpc_credentials *CallCredentials::GetWrappedCredentials() {
+grpc_call_credentials *CallCredentials::GetWrappedCredentials() {
   return wrapped_credentials;
 }
 
@@ -119,8 +119,8 @@ NAN_METHOD(CallCredentials::New) {
           "CallCredentials can only be created with the provided functions");
     }
     Local<External> ext = info[0].As<External>();
-    grpc_credentials *creds_value =
-        reinterpret_cast<grpc_credentials *>(ext->Value());
+    grpc_call_credentials *creds_value =
+        reinterpret_cast<grpc_call_credentials *>(ext->Value());
     CallCredentials *credentials = new CallCredentials(creds_value);
     credentials->Wrap(info.This());
     info.GetReturnValue().Set(info.This());
@@ -144,7 +144,7 @@ NAN_METHOD(CallCredentials::Compose) {
   CallCredentials *self = ObjectWrap::Unwrap<CallCredentials>(info.This());
   CallCredentials *other = ObjectWrap::Unwrap<CallCredentials>(
       Nan::To<Object>(info[0]).ToLocalChecked());
-  grpc_credentials *creds = grpc_composite_credentials_create(
+  grpc_call_credentials *creds = grpc_composite_call_credentials_create(
       self->wrapped_credentials, other->wrapped_credentials, NULL);
   info.GetReturnValue().Set(WrapStruct(creds));
 }
@@ -162,8 +162,8 @@ NAN_METHOD(CallCredentials::CreateFromPlugin) {
   plugin.get_metadata = plugin_get_metadata;
   plugin.destroy = plugin_destroy_state;
   plugin.state = reinterpret_cast<void*>(state);
-  grpc_credentials *creds = grpc_metadata_credentials_create_from_plugin(plugin,
-                                                                         NULL);
+  grpc_call_credentials *creds = grpc_metadata_credentials_create_from_plugin(
+      plugin, NULL);
   info.GetReturnValue().Set(WrapStruct(creds));
 }
 
