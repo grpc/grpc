@@ -170,7 +170,7 @@ class Http2Client:
     self.safename = str(self)
 
   def client_args(self):
-    return ['tools/http2_interop/http2_interop.test', '-v']
+    return ['tools/http2_interop/http2_interop.test', '-test.v']
 
   def cloud_to_prod_env(self):
     return {}
