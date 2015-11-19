@@ -76,7 +76,6 @@ class SecureCallCredentials GRPC_FINAL : public CallCredentials {
   grpc_call_credentials* const c_creds_;
 };
 
-
 class MetadataCredentialsPluginWrapper GRPC_FINAL {
  public:
   static void Destroy(void* wrapper);

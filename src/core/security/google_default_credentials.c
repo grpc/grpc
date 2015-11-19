@@ -214,7 +214,8 @@ grpc_channel_credentials *grpc_google_default_credentials_create(void) {
 end:
   if (result == NULL) {
     if (call_creds != NULL) {
-      /* Blend with default ssl credentials and add a global reference so that it
+      /* Blend with default ssl credentials and add a global reference so that
+         it
          can be cached and re-served. */
       grpc_channel_credentials *ssl_creds =
           grpc_ssl_credentials_create(NULL, NULL, NULL);
