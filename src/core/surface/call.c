@@ -922,7 +922,8 @@ static batch_control *allocate_batch_control(grpc_call *call) {
   size_t i;
   for (i = 0; i < MAX_CONCURRENT_BATCHES; i++) {
     if ((call->used_batches & (1 << i)) == 0) {
-      call->used_batches |= (gpr_uint8)(1 << i);
+      call->used_batches =
+          (gpr_uint8)(call->used_batches | (gpr_uint8)(1 << i));
       return &call->active_batches[i];
     }
   }
