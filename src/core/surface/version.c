@@ -36,4 +36,4 @@
 
 #include <grpc/grpc.h>
 
-const char *grpc_version_string(void) { return "0.11.0.0"; }
+const char *grpc_version_string(void) { return "0.12.0.0"; }

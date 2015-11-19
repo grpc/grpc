@@ -48,6 +48,7 @@ namespace grpc {
 ClientContext::ClientContext()
     : initial_metadata_received_(false),
       call_(nullptr),
+      call_canceled_(false),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
       propagate_from_call_(nullptr) {}
 
@@ -72,12 +73,16 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
 
 void ClientContext::set_call(grpc_call* call,
                              const std::shared_ptr<Channel>& channel) {
+  grpc::unique_lock<grpc::mutex> lock(mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;
   if (creds_ && !creds_->ApplyToCall(call_)) {
     grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
                                  "Failed to set credentials to rpc.", nullptr);
+  }
+  if (call_canceled_) {
+    grpc_call_cancel(call_, nullptr);
   }
 }
 
@@ -101,8 +106,11 @@ std::shared_ptr<const AuthContext> ClientContext::auth_context() const {
 }
 
 void ClientContext::TryCancel() {
+  grpc::unique_lock<grpc::mutex> lock(mu_);
   if (call_) {
     grpc_call_cancel(call_, nullptr);
+  } else {
+    call_canceled_ = true;
   }
 }
 

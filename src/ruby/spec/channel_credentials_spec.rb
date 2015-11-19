@@ -29,8 +29,8 @@
 
 require 'grpc'
 
-describe GRPC::Core::Credentials do
-  Credentials = GRPC::Core::Credentials
+describe GRPC::Core::ChannelCredentials do
+  ChannelCredentials = GRPC::Core::ChannelCredentials
 
   def load_test_certs
     test_root = File.join(File.dirname(__FILE__), 'testdata')
@@ -40,32 +40,24 @@ describe GRPC::Core::Credentials do
 
   describe '#new' do
     it 'can be constructed with fake inputs' do
-      expect { Credentials.new('root_certs', 'key', 'cert') }.not_to raise_error
+      blk = proc  { ChannelCredentials.new('root_certs', 'key', 'cert') }
+      expect(&blk).not_to raise_error
     end
 
     it 'it can be constructed using specific test certificates' do
       certs = load_test_certs
-      expect { Credentials.new(*certs) }.not_to raise_error
+      expect { ChannelCredentials.new(*certs) }.not_to raise_error
     end
 
     it 'can be constructed with server roots certs only' do
       root_cert, _, _ = load_test_certs
-      expect { Credentials.new(root_cert) }.not_to raise_error
+      expect { ChannelCredentials.new(root_cert) }.not_to raise_error
     end
 
     it 'cannot be constructed with a nil server roots' do
       _, client_key, client_chain = load_test_certs
-      blk = proc { Credentials.new(nil, client_key, client_chain) }
+      blk = proc { ChannelCredentials.new(nil, client_key, client_chain) }
       expect(&blk).to raise_error
-    end
-  end
-
-  describe '#compose' do
-    it 'cannot be completed OK with 2 SSL creds' do
-      certs = load_test_certs
-      cred1 = Credentials.new(*certs)
-      cred2 = Credentials.new(*certs)
-      expect { cred1.compose(cred2) }.to raise_error
     end
   end
 end

@@ -431,7 +431,7 @@ describe 'the secure http client/server' do
     @server.start
     args = { Channel::SSL_TARGET => 'foo.test.google.fr' }
     @ch = Channel.new("0.0.0.0:#{server_port}", args,
-                      GRPC::Core::Credentials.new(certs[0], nil, nil))
+                      GRPC::Core::ChannelCredentials.new(certs[0], nil, nil))
   end
 
   after(:example) do

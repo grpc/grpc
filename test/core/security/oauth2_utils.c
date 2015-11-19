@@ -75,7 +75,8 @@ static void on_oauth2_response(grpc_exec_ctx *exec_ctx, void *user_data,
 
 static void do_nothing(grpc_exec_ctx *exec_ctx, void *unused, int success) {}
 
-char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds) {
+char *grpc_test_fetch_oauth2_token_with_credentials(
+    grpc_call_credentials *creds) {
   oauth2_request request;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure do_nothing_closure;
@@ -84,8 +85,8 @@ char *grpc_test_fetch_oauth2_token_with_credentials(grpc_credentials *creds) {
 
   grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
 
-  grpc_credentials_get_request_metadata(&exec_ctx, creds, &request.pollset, "",
-                                        on_oauth2_response, &request);
+  grpc_call_credentials_get_request_metadata(&exec_ctx, creds, &request.pollset,
+                                             "", on_oauth2_response, &request);
 
   grpc_exec_ctx_finish(&exec_ctx);
 

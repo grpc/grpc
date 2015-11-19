@@ -3,13 +3,13 @@ package http2interop
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"strings"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 )
 
@@ -17,8 +17,7 @@ var (
 	serverHost = flag.String("server_host", "", "The host to test")
 	serverPort = flag.Int("server_port", 443, "The port to test")
 	useTls     = flag.Bool("use_tls", true, "Should TLS tests be run")
-	// TODO: implement
-	testCase              = flag.String("test_case", "", "What test cases to run")
+	testCase   = flag.String("test_case", "", "What test cases to run")
 
 	// The rest of these are unused, but present to fulfill the client interface
 	serverHostOverride    = flag.String("server_host_override", "", "Unused")
@@ -86,15 +85,32 @@ func TestUnknownFrameType(t *testing.T) {
 }
 
 func TestTLSApplicationProtocol(t *testing.T) {
+	if *testCase != "tls" {
+		return
+	}
 	ctx := InteropCtx(t)
-	err := testTLSApplicationProtocol(ctx); 
+	err := testTLSApplicationProtocol(ctx)
 	matchError(t, err, "EOF")
 }
 
 func TestTLSMaxVersion(t *testing.T) {
+	if *testCase != "tls" {
+		return
+	}
 	ctx := InteropCtx(t)
-	err := testTLSMaxVersion(ctx, tls.VersionTLS11);
+	err := testTLSMaxVersion(ctx, tls.VersionTLS11)
+	// TODO(carl-mastrangelo): maybe this should be some other error.  If the server picks
+	// the wrong protocol version, thats bad too.
 	matchError(t, err, "EOF", "server selected unsupported protocol")
+}
+
+func TestTLSBadCipherSuites(t *testing.T) {
+	if *testCase != "tls" {
+		return
+	}
+	ctx := InteropCtx(t)
+	err := testTLSBadCipherSuites(ctx)
+	matchError(t, err, "EOF", "Got goaway frame")
 }
 
 func TestClientPrefaceWithStreamId(t *testing.T) {
@@ -103,16 +119,16 @@ func TestClientPrefaceWithStreamId(t *testing.T) {
 	matchError(t, err, "EOF")
 }
 
-func matchError(t *testing.T, err error, matches  ... string) {
-  if err == nil {
-    t.Fatal("Expected an error")
-  }
-  for _, s := range matches {
-    if strings.Contains(err.Error(), s) {
-      return
-    }
-  }
-  t.Fatalf("Error %v not in %+v", err, matches)
+func matchError(t *testing.T, err error, matches ...string) {
+	if err == nil {
+		t.Fatal("Expected an error")
+	}
+	for _, s := range matches {
+		if strings.Contains(err.Error(), s) {
+			return
+		}
+	}
+	t.Fatalf("Error %v not in %+v", err, matches)
 }
 
 func TestMain(m *testing.M) {
