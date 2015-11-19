@@ -77,10 +77,10 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
 
 /** construct a subchannel call (possibly asynchronously).
  *
- * If the returned status is 1, the call will return immediately and \a target 
- * will point to a connected \a subchannel_call instance. Note that \a notify 
+ * If the returned status is 1, the call will return immediately and \a target
+ * will point to a connected \a subchannel_call instance. Note that \a notify
  * will \em not be invoked in this case.
- * Otherwise, if the returned status is 0, the subchannel call will be created 
+ * Otherwise, if the returned status is 0, the subchannel call will be created
  * asynchronously, invoking the \a notify callback upon completion. */
 int grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx,
                                 grpc_subchannel *subchannel,
