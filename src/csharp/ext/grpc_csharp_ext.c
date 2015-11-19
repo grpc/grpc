@@ -930,11 +930,12 @@ typedef void(GPR_CALLTYPE *grpcsharp_metadata_interceptor_func)(
   void *state, const char *service_url, grpc_credentials_plugin_metadata_cb cb,
   void *user_data, gpr_int32 is_destroy);
 
-static void grpcsharp_get_metadata_handler(void *state, const char *service_url,
-  grpc_credentials_plugin_metadata_cb cb, void *user_data) {
+static void grpcsharp_get_metadata_handler(
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data) {
   grpcsharp_metadata_interceptor_func interceptor =
       (grpcsharp_metadata_interceptor_func)(gpr_intptr)state;
-  interceptor(state, service_url, cb, user_data, 0);
+  interceptor(state, context.service_url, cb, user_data, 0);
 }
 
 static void grpcsharp_metadata_credentials_destroy_handler(void *state) {
