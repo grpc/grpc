@@ -68,8 +68,6 @@ typedef struct grpc_subchannel_call_holder {
   grpc_subchannel_call_holder_pick_subchannel pick_subchannel;
   void *pick_subchannel_arg;
 
-  grpc_mdctx *mdctx;
-
   gpr_mu mu;
 
   grpc_subchannel_call_holder_creation_phase creation_phase;
@@ -86,7 +84,7 @@ typedef struct grpc_subchannel_call_holder {
 void grpc_subchannel_call_holder_init(
     grpc_subchannel_call_holder *holder,
     grpc_subchannel_call_holder_pick_subchannel pick_subchannel,
-    void *pick_subchannel_arg, grpc_mdctx *mdctx);
+    void *pick_subchannel_arg);
 void grpc_subchannel_call_holder_destroy(grpc_exec_ctx *exec_ctx,
                                          grpc_subchannel_call_holder *holder);
 

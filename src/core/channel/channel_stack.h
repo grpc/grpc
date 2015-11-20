@@ -60,7 +60,6 @@ typedef struct {
 
 typedef struct {
   grpc_stream_refcount *refcount;
-  grpc_mdctx *metadata_context;
   const void *server_transport_data;
   grpc_call_context_element *context;
 } grpc_call_element_args;
@@ -193,7 +192,6 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
                           grpc_iomgr_cb_func destroy, void *destroy_arg,
                           grpc_call_context_element *context,
                           const void *transport_server_data,
-                          grpc_mdctx *metadata_context,
                           grpc_call_stack *call_stack);
 /* Set a pollset for a call stack: must occur before the first op is started */
 void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,

@@ -65,7 +65,6 @@ struct grpc_channel {
   int is_client;
   gpr_refcount refs;
   gpr_uint32 max_message_length;
-  grpc_mdctx *metadata_context;
   grpc_mdelem *default_authority;
 
   gpr_mu registered_call_mu;
@@ -82,59 +81,10 @@ struct grpc_channel {
 /* the protobuf library will (by default) start warning at 100megs */
 #define DEFAULT_MAX_MESSAGE_LENGTH (100 * 1024 * 1024)
 
-static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
-                                        const grpc_channel_args *args) {
-  gpr_strvec v;
-  size_t i;
-  int is_first = 1;
-  char *tmp;
-  grpc_mdstr *result;
-
-  gpr_strvec_init(&v);
-
-  for (i = 0; args && i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_PRIMARY_USER_AGENT_STRING)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
-                GRPC_ARG_PRIMARY_USER_AGENT_STRING);
-      } else {
-        if (!is_first) gpr_strvec_add(&v, gpr_strdup(" "));
-        is_first = 0;
-        gpr_strvec_add(&v, gpr_strdup(args->args[i].value.string));
-      }
-    }
-  }
-
-  gpr_asprintf(&tmp, "%sgrpc-c/%s (%s)", is_first ? "" : " ",
-               grpc_version_string(), GPR_PLATFORM_STRING);
-  is_first = 0;
-  gpr_strvec_add(&v, tmp);
-
-  for (i = 0; args && i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_SECONDARY_USER_AGENT_STRING)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
-                GRPC_ARG_SECONDARY_USER_AGENT_STRING);
-      } else {
-        if (!is_first) gpr_strvec_add(&v, gpr_strdup(" "));
-        is_first = 0;
-        gpr_strvec_add(&v, gpr_strdup(args->args[i].value.string));
-      }
-    }
-  }
-
-  tmp = gpr_strvec_flatten(&v, NULL);
-  gpr_strvec_destroy(&v);
-  result = grpc_mdstr_from_string(mdctx, tmp);
-  gpr_free(tmp);
-
-  return result;
-}
-
 grpc_channel *grpc_channel_create_from_filters(
     grpc_exec_ctx *exec_ctx, const char *target,
     const grpc_channel_filter **filters, size_t num_filters,
-    const grpc_channel_args *args, grpc_mdctx *mdctx, int is_client) {
+    const grpc_channel_args *args, int is_client) {
   size_t i;
   size_t size =
       sizeof(grpc_channel) + grpc_channel_stack_size(filters, num_filters);
@@ -145,16 +95,8 @@ grpc_channel *grpc_channel_create_from_filters(
   channel->is_client = is_client;
   /* decremented by grpc_channel_destroy */
   gpr_ref_init(&channel->refs, 1);
-  channel->metadata_context = mdctx;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = NULL;
-
-  if (is_client) {
-    grpc_mdctx_set_mdelem_cache(
-        mdctx, GRPC_MDELEM_CACHED_USER_AGENT,
-        grpc_mdelem_from_metadata_strings(mdctx, GRPC_MDSTR_USER_AGENT,
-                                          user_agent_from_args(mdctx, args)));
-  }
 
   channel->max_message_length = DEFAULT_MAX_MESSAGE_LENGTH;
   if (args) {
@@ -179,7 +121,7 @@ grpc_channel *grpc_channel_create_from_filters(
             GRPC_MDELEM_UNREF(channel->default_authority);
           }
           channel->default_authority = grpc_mdelem_from_strings(
-              mdctx, ":authority", args->args[i].value.string);
+              ":authority", args->args[i].value.string);
         }
       } else if (0 ==
                  strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
@@ -193,7 +135,7 @@ grpc_channel *grpc_channel_create_from_filters(
                     GRPC_ARG_DEFAULT_AUTHORITY);
           } else {
             channel->default_authority = grpc_mdelem_from_strings(
-                mdctx, ":authority", args->args[i].value.string);
+                ":authority", args->args[i].value.string);
           }
         }
       }
@@ -204,8 +146,8 @@ grpc_channel *grpc_channel_create_from_filters(
       target != NULL) {
     char *default_authority = grpc_get_default_authority(target);
     if (default_authority) {
-      channel->default_authority = grpc_mdelem_from_strings(
-          channel->metadata_context, ":authority", default_authority);
+      channel->default_authority =
+          grpc_mdelem_from_strings(":authority", default_authority);
     }
     gpr_free(default_authority);
   }
@@ -259,12 +201,10 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, cq,
-      grpc_mdelem_from_metadata_strings(
-          channel->metadata_context, GRPC_MDSTR_PATH,
-          grpc_mdstr_from_string(channel->metadata_context, method)),
-      host ? grpc_mdelem_from_metadata_strings(
-                 channel->metadata_context, GRPC_MDSTR_AUTHORITY,
-                 grpc_mdstr_from_string(channel->metadata_context, host))
+      grpc_mdelem_from_metadata_strings(GRPC_MDSTR_PATH,
+                                        grpc_mdstr_from_string(method)),
+      host ? grpc_mdelem_from_metadata_strings(GRPC_MDSTR_AUTHORITY,
+                                               grpc_mdstr_from_string(host))
            : NULL,
       deadline);
 }
@@ -276,14 +216,11 @@ void *grpc_channel_register_call(grpc_channel *channel, const char *method,
       "grpc_channel_register_call(channel=%p, method=%s, host=%s, reserved=%p)",
       4, (channel, method, host, reserved));
   GPR_ASSERT(!reserved);
-  rc->path = grpc_mdelem_from_metadata_strings(
-      channel->metadata_context, GRPC_MDSTR_PATH,
-      grpc_mdstr_from_string(channel->metadata_context, method));
-  rc->authority =
-      host ? grpc_mdelem_from_metadata_strings(
-                 channel->metadata_context, GRPC_MDSTR_AUTHORITY,
-                 grpc_mdstr_from_string(channel->metadata_context, host))
-           : NULL;
+  rc->path = grpc_mdelem_from_metadata_strings(GRPC_MDSTR_PATH,
+                                               grpc_mdstr_from_string(method));
+  rc->authority = host ? grpc_mdelem_from_metadata_strings(
+                             GRPC_MDSTR_AUTHORITY, grpc_mdstr_from_string(host))
+                       : NULL;
   gpr_mu_lock(&channel->registered_call_mu);
   rc->next = channel->registered_calls;
   channel->registered_calls = rc;
@@ -336,8 +273,6 @@ static void destroy_channel(grpc_exec_ctx *exec_ctx, grpc_channel *channel) {
   if (channel->default_authority != NULL) {
     GRPC_MDELEM_UNREF(channel->default_authority);
   }
-  grpc_mdctx_drop_caches(channel->metadata_context);
-  grpc_mdctx_unref(channel->metadata_context);
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);
   gpr_free(channel);
@@ -376,10 +311,6 @@ grpc_channel_stack *grpc_channel_get_channel_stack(grpc_channel *channel) {
   return CHANNEL_STACK_FROM_CHANNEL(channel);
 }
 
-grpc_mdctx *grpc_channel_get_metadata_context(grpc_channel *channel) {
-  return channel->metadata_context;
-}
-
 grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel, int i) {
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   switch (i) {
@@ -391,9 +322,8 @@ grpc_mdelem *grpc_channel_get_reffed_status_elem(grpc_channel *channel, int i) {
       return GRPC_MDELEM_GRPC_STATUS_2;
   }
   gpr_ltoa(i, tmp);
-  return grpc_mdelem_from_metadata_strings(
-      channel->metadata_context, GRPC_MDSTR_GRPC_STATUS,
-      grpc_mdstr_from_string(channel->metadata_context, tmp));
+  return grpc_mdelem_from_metadata_strings(GRPC_MDSTR_GRPC_STATUS,
+                                           grpc_mdstr_from_string(tmp));
 }
 
 gpr_uint32 grpc_channel_get_max_message_length(grpc_channel *channel) {

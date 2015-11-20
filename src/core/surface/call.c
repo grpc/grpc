@@ -137,7 +137,6 @@ struct grpc_call {
   grpc_channel *channel;
   grpc_call *parent;
   grpc_call *first_child;
-  grpc_mdctx *metadata_context;
   /* TODO(ctiller): share with cq if possible? */
   gpr_mu mu;
 
@@ -269,11 +268,9 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
   }
   call->send_deadline = send_deadline;
   GRPC_CHANNEL_INTERNAL_REF(channel, "call");
-  call->metadata_context = grpc_channel_get_metadata_context(channel);
   /* initial refcount dropped by grpc_call_destroy */
   grpc_call_stack_init(&exec_ctx, channel_stack, 1, destroy_call, call,
                        call->context, server_transport_data,
-                       grpc_channel_get_metadata_context(channel),
                        CALL_STACK_FROM_CALL(call));
   if (cq != NULL) {
     GRPC_CQ_INTERNAL_REF(cq, "bind");
@@ -570,9 +567,8 @@ static int prepare_application_metadata(grpc_call *call, int count,
     grpc_metadata *md = &metadata[i];
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
-    l->md = grpc_mdelem_from_string_and_buffer(call->metadata_context, md->key,
-                                               (const gpr_uint8 *)md->value,
-                                               md->value_length);
+    l->md = grpc_mdelem_from_string_and_buffer(
+        md->key, (const gpr_uint8 *)md->value, md->value_length);
     if (!grpc_mdstr_is_legal_header(l->md->key)) {
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
               grpc_mdstr_as_c_string(l->md->key));
@@ -715,8 +711,7 @@ static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                           grpc_status_code status,
                                           const char *description) {
   grpc_mdstr *details =
-      description ? grpc_mdstr_from_string(c->metadata_context, description)
-                  : NULL;
+      description ? grpc_mdstr_from_string(description) : NULL;
   cancel_closure *cc = gpr_malloc(sizeof(*cc));
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
@@ -1230,9 +1225,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             call->channel, op->data.send_status_from_server.status);
         if (op->data.send_status_from_server.status_details != NULL) {
           call->send_extra_metadata[1].md = grpc_mdelem_from_metadata_strings(
-              call->metadata_context, GRPC_MDSTR_GRPC_MESSAGE,
+              GRPC_MDSTR_GRPC_MESSAGE,
               grpc_mdstr_from_string(
-                  call->metadata_context,
                   op->data.send_status_from_server.status_details));
           call->send_extra_metadata_count++;
           set_status_details(

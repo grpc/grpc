@@ -50,9 +50,6 @@ CONFIG = [
     'host',
     'grpc-message',
     'grpc-status',
-    'gzip',
-    'deflate',
-    'identity',
     '',
     ('grpc-status', '0'),
     ('grpc-status', '1'),
@@ -127,6 +124,12 @@ CONFIG = [
     ('www-authenticate', ''),
 ]
 
+COMPRESSION_ALGORITHMS = [
+    'identity',
+    'deflate',
+    'gzip',
+]
+
 # utility: mangle the name of a config
 def mangle(elem):
   xl = {
@@ -174,6 +177,7 @@ def put_banner(files, banner):
 # build a list of all the strings we need
 all_strs = set()
 all_elems = set()
+static_userdata = {}
 for elem in CONFIG:
   if isinstance(elem, tuple):
     all_strs.add(elem[0])
@@ -181,6 +185,16 @@ for elem in CONFIG:
     all_elems.add(elem)
   else:
     all_strs.add(elem)
+compression_elems = []
+for mask in range(1, 1<<len(COMPRESSION_ALGORITHMS)):
+  val = ','.join(COMPRESSION_ALGORITHMS[alg]
+                 for alg in range(0, len(COMPRESSION_ALGORITHMS))
+                 if (1 << alg) & mask)
+  elem = ('grpc-accept-encoding', val)
+  all_strs.add(val)
+  all_elems.add(elem)
+  compression_elems.append(elem)
+  static_userdata[elem] = 1 + mask
 all_strs = sorted(list(all_strs), key=mangle)
 all_elems = sorted(list(all_elems), key=mangle)
 
@@ -248,11 +262,15 @@ print >>C
 
 print >>H, '#define GRPC_STATIC_MDELEM_COUNT %d' % len(all_elems)
 print >>H, 'extern grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
+print >>H, 'extern gpr_uintptr grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];'
 for i, elem in enumerate(all_elems):
   print >>H, '/* "%s": "%s" */' % elem
   print >>H, '#define %s (&grpc_static_mdelem_table[%d])' % (mangle(elem).upper(), i)
 print >>H
 print >>C, 'grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];'
+print >>C, 'gpr_uintptr grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] = {'
+print >>C, '  %s' % ','.join('%d' % static_userdata.get(elem, 0) for elem in all_elems)
+print >>C, '};'
 print >>C
 
 def str_idx(s):
@@ -260,17 +278,30 @@ def str_idx(s):
     if s == s2:
       return i
 
-print >>H, 'const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
+def md_idx(m):
+  for i, m2 in enumerate(all_elems):
+    if m == m2:
+      return i
+
+print >>H, 'extern const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2];'
 print >>C, 'const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT*2] = {'
 print >>C, ','.join('%d' % str_idx(x) for x in itertools.chain.from_iterable([a,b] for a, b in all_elems))
 print >>C, '};'
 print >>C
 
-print >>H, 'const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];'
+print >>H, 'extern const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT];'
 print >>C, 'const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {'
 print >>C, '%s' % ',\n'.join('  "%s"' % s for s in all_strs)
 print >>C, '};'
 print >>C
+
+print >>H, 'extern const gpr_uint8 grpc_static_accept_encoding_metadata[%d];' % (1 << len(COMPRESSION_ALGORITHMS))
+print >>C, 'const gpr_uint8 grpc_static_accept_encoding_metadata[%d] = {' % (1 << len(COMPRESSION_ALGORITHMS))
+print >>C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems)
+print >>C, '};'
+print >>C
+
+print >>H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]])'
 
 print >>H, '#endif /* GRPC_INTERNAL_CORE_TRANSPORT_STATIC_METADATA_H */'
 

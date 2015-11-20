@@ -66,8 +66,6 @@ typedef struct call_data {
   grpc_closure *post_send;
   grpc_closure send_done;
   grpc_closure got_slice;
-
-  grpc_mdctx *mdctx;
 } call_data;
 
 typedef struct channel_data {
@@ -146,10 +144,10 @@ static void process_send_initial_metadata(
       grpc_compression_encoding_mdelem(calld->compression_algorithm));
 
   /* convey supported compression algorithms */
-  grpc_metadata_batch_add_tail(
-      initial_metadata, &calld->accept_encoding_storage,
-      GRPC_MDELEM_REF(grpc_accept_encoding_mdelem_from_compression_algorithms(
-          calld->mdctx, channeld->supported_compression_algorithms)));
+  grpc_metadata_batch_add_tail(initial_metadata,
+                               &calld->accept_encoding_storage,
+                               GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(
+                                   channeld->supported_compression_algorithms));
 }
 
 static void continue_send_message(grpc_exec_ctx *exec_ctx,
@@ -243,7 +241,6 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   /* initialize members */
   gpr_slice_buffer_init(&calld->slices);
   calld->has_compression_algorithm = 0;
-  calld->mdctx = args->metadata_context;
   grpc_closure_init(&calld->got_slice, got_slice, elem);
   grpc_closure_init(&calld->send_done, send_done, elem);
 }

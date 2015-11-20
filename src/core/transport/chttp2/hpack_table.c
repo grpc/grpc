@@ -169,15 +169,14 @@ static struct {
     {"www-authenticate", ""},
 };
 
-void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx) {
+void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl) {
   size_t i;
 
   memset(tbl, 0, sizeof(*tbl));
-  tbl->mdctx = mdctx;
   tbl->max_bytes = GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE;
   for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    tbl->static_ents[i - 1] = grpc_mdelem_from_strings(
-        mdctx, static_table[i].key, static_table[i].value);
+    tbl->static_ents[i - 1] =
+        grpc_mdelem_from_strings(static_table[i].key, static_table[i].value);
   }
 }
 

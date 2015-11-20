@@ -93,12 +93,9 @@ static void test_create_channel_stack(void) {
   grpc_call_element *call_elem;
   grpc_arg arg;
   grpc_channel_args chan_args;
-  grpc_mdctx *metadata_context;
   int *channel_data;
   int *call_data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-
-  metadata_context = grpc_mdctx_create();
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "test_key";
@@ -117,7 +114,7 @@ static void test_create_channel_stack(void) {
 
   call_stack = gpr_malloc(channel_stack->call_stack_size);
   grpc_call_stack_init(&exec_ctx, channel_stack, 0, NULL, NULL, NULL, NULL,
-                       metadata_context, call_stack);
+                       call_stack);
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
   GPR_ASSERT(call_elem->filter == channel_elem->filter);
@@ -132,8 +129,6 @@ static void test_create_channel_stack(void) {
 
   grpc_channel_stack_destroy(&exec_ctx, channel_stack);
   gpr_free(channel_stack);
-
-  grpc_mdctx_unref(metadata_context);
 
   grpc_exec_ctx_finish(&exec_ctx);
 }

@@ -633,8 +633,7 @@ static void on_hdr(grpc_chttp2_hpack_parser *p, grpc_mdelem *md,
 
 static grpc_mdstr *take_string(grpc_chttp2_hpack_parser *p,
                                grpc_chttp2_hpack_parser_string *str) {
-  grpc_mdstr *s = grpc_mdstr_from_buffer(p->table.mdctx, (gpr_uint8 *)str->str,
-                                         str->length);
+  grpc_mdstr *s = grpc_mdstr_from_buffer((gpr_uint8 *)str->str, str->length);
   str->length = 0;
   return s;
 }
@@ -742,8 +741,7 @@ static int parse_indexed_field_x(grpc_chttp2_hpack_parser *p,
 static int finish_lithdr_incidx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              GRPC_MDSTR_REF(md->key),
+  on_hdr(p, grpc_mdelem_from_metadata_strings(GRPC_MDSTR_REF(md->key),
                                               take_string(p, &p->value)),
          1);
   return parse_begin(p, cur, end);
@@ -752,8 +750,7 @@ static int finish_lithdr_incidx(grpc_chttp2_hpack_parser *p,
 /* finish a literal header with incremental indexing with no index */
 static int finish_lithdr_incidx_v(grpc_chttp2_hpack_parser *p,
                                   const gpr_uint8 *cur, const gpr_uint8 *end) {
-  on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              take_string(p, &p->key),
+  on_hdr(p, grpc_mdelem_from_metadata_strings(take_string(p, &p->key),
                                               take_string(p, &p->value)),
          1);
   return parse_begin(p, cur, end);
@@ -795,8 +792,7 @@ static int parse_lithdr_incidx_v(grpc_chttp2_hpack_parser *p,
 static int finish_lithdr_notidx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              GRPC_MDSTR_REF(md->key),
+  on_hdr(p, grpc_mdelem_from_metadata_strings(GRPC_MDSTR_REF(md->key),
                                               take_string(p, &p->value)),
          0);
   return parse_begin(p, cur, end);
@@ -805,8 +801,7 @@ static int finish_lithdr_notidx(grpc_chttp2_hpack_parser *p,
 /* finish a literal header without incremental indexing with index = 0 */
 static int finish_lithdr_notidx_v(grpc_chttp2_hpack_parser *p,
                                   const gpr_uint8 *cur, const gpr_uint8 *end) {
-  on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              take_string(p, &p->key),
+  on_hdr(p, grpc_mdelem_from_metadata_strings(take_string(p, &p->key),
                                               take_string(p, &p->value)),
          0);
   return parse_begin(p, cur, end);
@@ -848,8 +843,7 @@ static int parse_lithdr_notidx_v(grpc_chttp2_hpack_parser *p,
 static int finish_lithdr_nvridx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              GRPC_MDSTR_REF(md->key),
+  on_hdr(p, grpc_mdelem_from_metadata_strings(GRPC_MDSTR_REF(md->key),
                                               take_string(p, &p->value)),
          0);
   return parse_begin(p, cur, end);
@@ -858,8 +852,7 @@ static int finish_lithdr_nvridx(grpc_chttp2_hpack_parser *p,
 /* finish a literal header that is never indexed with an extra value */
 static int finish_lithdr_nvridx_v(grpc_chttp2_hpack_parser *p,
                                   const gpr_uint8 *cur, const gpr_uint8 *end) {
-  on_hdr(p, grpc_mdelem_from_metadata_strings(p->table.mdctx,
-                                              take_string(p, &p->key),
+  on_hdr(p, grpc_mdelem_from_metadata_strings(take_string(p, &p->key),
                                               take_string(p, &p->value)),
          0);
   return parse_begin(p, cur, end);
@@ -1342,8 +1335,7 @@ static void on_header_not_set(void *user_data, grpc_mdelem *md) {
   abort();
 }
 
-void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser *p,
-                                   grpc_mdctx *mdctx) {
+void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser *p) {
   p->on_header = on_header_not_set;
   p->on_header_user_data = NULL;
   p->state = parse_begin;
@@ -1353,7 +1345,7 @@ void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser *p,
   p->value.str = NULL;
   p->value.capacity = 0;
   p->value.length = 0;
-  grpc_chttp2_hptbl_init(&p->table, mdctx);
+  grpc_chttp2_hptbl_init(&p->table);
 }
 
 void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser *p) {

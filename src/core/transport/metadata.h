@@ -68,7 +68,6 @@
    declared here - in which case those functions are effectively no-ops. */
 
 /* Forward declarations */
-typedef struct grpc_mdctx grpc_mdctx;
 typedef struct grpc_mdstr grpc_mdstr;
 typedef struct grpc_mdelem grpc_mdelem;
 
@@ -87,27 +86,18 @@ struct grpc_mdelem {
   /* there is a private part to this in metadata.c */
 };
 
-/* Create/orphan a metadata context */
-grpc_mdctx *grpc_mdctx_create(void);
-grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed);
-void grpc_mdctx_ref(grpc_mdctx *mdctx);
-void grpc_mdctx_unref(grpc_mdctx *mdctx);
-
-void grpc_mdctx_drop_caches(grpc_mdctx *mdctx);
-
 /* Test only accessors to internal state - only for testing this code - do not
    rely on it outside of metadata_test.c */
-size_t grpc_mdctx_get_mdtab_capacity_test_only(grpc_mdctx *mdctx);
-size_t grpc_mdctx_get_mdtab_count_test_only(grpc_mdctx *mdctx);
-size_t grpc_mdctx_get_mdtab_free_test_only(grpc_mdctx *mdctx);
+size_t grpc_mdctx_get_mdtab_capacity_test_only(void);
+size_t grpc_mdctx_get_mdtab_count_test_only(void);
+size_t grpc_mdctx_get_mdtab_free_test_only(void);
 
 /* Constructors for grpc_mdstr instances; take a variety of data types that
    clients may have handy */
-grpc_mdstr *grpc_mdstr_from_string(grpc_mdctx *ctx, const char *str);
+grpc_mdstr *grpc_mdstr_from_string(const char *str);
 /* Unrefs the slice. */
-grpc_mdstr *grpc_mdstr_from_slice(grpc_mdctx *ctx, gpr_slice slice);
-grpc_mdstr *grpc_mdstr_from_buffer(grpc_mdctx *ctx, const gpr_uint8 *str,
-                                   size_t length);
+grpc_mdstr *grpc_mdstr_from_slice(gpr_slice slice);
+grpc_mdstr *grpc_mdstr_from_buffer(const gpr_uint8 *str, size_t length);
 
 /* Returns a borrowed slice from the mdstr with its contents base64 encoded
    and huffman compressed */
@@ -115,15 +105,12 @@ gpr_slice grpc_mdstr_as_base64_encoded_and_huffman_compressed(grpc_mdstr *str);
 
 /* Constructors for grpc_mdelem instances; take a variety of data types that
    clients may have handy */
-grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdctx *ctx, grpc_mdstr *key,
+grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *key,
                                                grpc_mdstr *value);
-grpc_mdelem *grpc_mdelem_from_strings(grpc_mdctx *ctx, const char *key,
-                                      const char *value);
+grpc_mdelem *grpc_mdelem_from_strings(const char *key, const char *value);
 /* Unrefs the slices. */
-grpc_mdelem *grpc_mdelem_from_slices(grpc_mdctx *ctx, gpr_slice key,
-                                     gpr_slice value);
-grpc_mdelem *grpc_mdelem_from_string_and_buffer(grpc_mdctx *ctx,
-                                                const char *key,
+grpc_mdelem *grpc_mdelem_from_slices(gpr_slice key, gpr_slice value);
+grpc_mdelem *grpc_mdelem_from_string_and_buffer(const char *key,
                                                 const gpr_uint8 *value,
                                                 size_t value_length);
 
@@ -162,25 +149,6 @@ const char *grpc_mdstr_as_c_string(grpc_mdstr *s);
 int grpc_mdstr_is_legal_header(grpc_mdstr *s);
 int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s);
 int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s);
-
-/* Gross layering hack (that we seem to need):
- * metadata context keeps a cache of algorithm bitset to
- * 'accept-encoding: algorithm1,algorithm2' in order to accelerate sending
- * compression metadata */
-grpc_mdelem *grpc_accept_encoding_mdelem_from_compression_algorithms(
-    grpc_mdctx *ctx, gpr_uint32 algorithm_mask);
-
-/* Cache-slots
- * A metadata context can cache (on behalf of its owner) some small set of
- * metadata elements. */
-typedef enum {
-  GRPC_MDELEM_CACHED_USER_AGENT = 0,
-  GRPC_MDELEM_CACHE_SLOT_COUNT
-} grpc_mdelem_cache_slot;
-void grpc_mdctx_set_mdelem_cache(grpc_mdctx *ctx, grpc_mdelem_cache_slot slot,
-                                 grpc_mdelem *elem);
-grpc_mdelem *grpc_mdelem_from_cache(grpc_mdctx *ctx,
-                                    grpc_mdelem_cache_slot slot);
 
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 

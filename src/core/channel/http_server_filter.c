@@ -56,7 +56,6 @@ typedef struct call_data {
       up-call on transport_op, and remember to call our on_done_recv member
       after handling it. */
   grpc_closure hs_on_recv;
-  grpc_mdctx *mdctx;
 } call_data;
 
 typedef struct channel_data { gpr_uint8 unused; } channel_data;
@@ -124,7 +123,7 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
     /* translate host to :authority since :authority may be
        omitted */
     grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
-        calld->mdctx, GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
+        GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
     GRPC_MDELEM_UNREF(md);
     calld->seen_authority = 1;
     return authority;
@@ -211,7 +210,6 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
   /* initialize members */
   memset(calld, 0, sizeof(*calld));
   grpc_closure_init(&calld->hs_on_recv, hs_on_recv, elem);
-  calld->mdctx = args->metadata_context;
 }
 
 /* Destructor for call_data */

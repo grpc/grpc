@@ -140,7 +140,7 @@ static int cuc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
 static void cuc_init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                                grpc_call_element_args *args) {
   grpc_subchannel_call_holder_init(elem->call_data, cuc_pick_subchannel,
-                                   elem->channel_data, args->metadata_context);
+                                   elem->channel_data);
 }
 
 /* Destructor for call_data */
@@ -244,8 +244,7 @@ void grpc_client_uchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
-                                          grpc_channel_args *args,
-                                          grpc_mdctx *mdctx) {
+                                          grpc_channel_args *args) {
   grpc_channel *channel = NULL;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
@@ -254,7 +253,6 @@ grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 0;
 
-  grpc_mdctx_ref(mdctx);
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
   }
@@ -262,8 +260,8 @@ grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
   filters[n++] = &grpc_client_uchannel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 
-  channel = grpc_channel_create_from_filters(&exec_ctx, target, filters, n,
-                                             args, mdctx, 1);
+  channel =
+      grpc_channel_create_from_filters(&exec_ctx, target, filters, n, args, 1);
 
   gpr_free(target);
   return channel;
