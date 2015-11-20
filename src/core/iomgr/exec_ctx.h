@@ -34,6 +34,10 @@
 #ifndef GRPC_INTERNAL_CORE_IOMGR_EXEC_CTX_H
 #define GRPC_INTERNAL_CORE_IOMGR_EXEC_CTX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "src/core/iomgr/closure.h"
 
 /** Execution context.
@@ -74,5 +78,8 @@ void grpc_exec_ctx_enqueue(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
  *  Leaves \a list empty. */
 void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
                                 grpc_closure_list *list);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
