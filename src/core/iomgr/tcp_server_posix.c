@@ -67,7 +67,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#define INIT_PORT_CAP 2
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
 static gpr_once s_init_max_accept_queue_size;
@@ -89,8 +88,12 @@ struct grpc_tcp_listener {
   grpc_closure destroyed_closure;
   gpr_refcount refs;
   struct grpc_tcp_listener *next;
-  struct grpc_tcp_listener *dual_stack_second_port;
-  int is_dual_stack_second_port;
+  /* When we add a listener, more than one can be created, mainly because of
+     IPv6. A sibling will still be in the normal list, but will be flagged
+     as such. Any action, such as ref or unref, will affect all of the
+     siblings in the list. */
+  struct grpc_tcp_listener *sibling;
+  int is_sibling;
 };
 
 static void unlink_if_unix_domain_socket(const struct sockaddr_un *un) {
@@ -394,8 +397,8 @@ static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, int fd,
     memcpy(sp->addr.untyped, addr, addr_len);
     sp->addr_len = addr_len;
     sp->port = port;
-    sp->is_dual_stack_second_port = 0;
-    sp->dual_stack_second_port = NULL;
+    sp->is_sibling = 0;
+    sp->sibling = NULL;
     gpr_ref_init(&sp->refs, 1);
     GPR_ASSERT(sp->emfd);
     gpr_mu_unlock(&s->mu);
@@ -486,8 +489,8 @@ grpc_tcp_listener *grpc_tcp_server_add_port(grpc_tcp_server *s,
     addr_len = sizeof(addr4_copy);
   }
   sp = add_socket_to_server(s, fd, addr, addr_len);
-  sp->dual_stack_second_port = sp2;
-  if (sp2) sp2->is_dual_stack_second_port = 1;
+  sp->sibling = sp2;
+  if (sp2) sp2->is_sibling = 1;
 
 done:
   gpr_free(allocated_addr);
@@ -543,9 +546,14 @@ void grpc_tcp_listener_ref(grpc_tcp_listener *listener) {
 
 void grpc_tcp_listener_unref(grpc_tcp_listener *listener) {
   grpc_tcp_listener *sp = listener;
-  if (sp->is_dual_stack_second_port) return;
+  if (sp->is_sibling) return;
   if (gpr_unref(&sp->refs)) {
-    if (sp->dual_stack_second_port) gpr_free(sp->dual_stack_second_port);
+    grpc_tcp_listener *sibling = sp->sibling;
+    while (sibling) {
+      sp = sibling;
+      sibling = sp->sibling;
+      gpr_free(sp);
+    }
     gpr_free(listener);
   }
 }
