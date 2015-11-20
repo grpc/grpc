@@ -38,6 +38,7 @@
 #include <memory>
 
 #include <grpc++/impl/grpc_library.h>
+#include <grpc++/security/auth_context.h>
 #include <grpc++/support/config.h>
 #include <grpc++/support/status.h>
 #include <grpc++/support/string_ref.h>
@@ -207,9 +208,14 @@ class MetadataCredentialsPlugin {
   // a different thread from the one processing the call.
   virtual bool IsBlocking() const { return true; }
 
+  // Type of credentials this plugin is implementing.
+  virtual const char* GetType() const { return ""; }
+
   // Gets the auth metatada produced by this plugin.
   virtual Status GetMetadata(
       grpc::string_ref service_url,
+      grpc::string_ref method_name,
+      const AuthContext& channel_auth_contexst,
       std::multimap<grpc::string, grpc::string>* metadata) = 0;
 };
 
