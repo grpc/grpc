@@ -38,10 +38,10 @@
 #include <vector>
 
 #include <gflags/gflags.h>
-#include <grpc/support/time.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/grpc++.h>
 #include <grpc++/impl/thd.h>
+#include <grpc/support/time.h>
 
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/interop/stress_interop_client.h"
@@ -69,6 +69,8 @@ DEFINE_string(server_addresses, "localhost:8080",
               " addresses in the format:\n"
               " \"<name_1>:<port_1>,<name_2>:<port_1>...<name_N>:<port_N>\"\n"
               " Note: <name> can be servername or IP address.");
+
+DEFINE_int32(num_channels_per_server, 1, "Number of channels for each server");
 
 DEFINE_int32(num_stubs_per_channel, 1,
              "Number of stubs per each channels to server. This number also "
@@ -216,30 +218,46 @@ int main(int argc, char** argv) {
 
   std::vector<grpc::thread> test_threads;
 
+  // Create and start the test threads.
+  // Note that:
+  // - Each server can have multiple channels (as configured by
+  // FLAGS_num_channels_per_server).
+  //
+  // - Each channel can have multiple stubs (as configured by
+  // FLAGS_num_stubs_per_channel). This is to test calling multiple RPCs in
+  // parallel on the same channel.
   int thread_idx = 0;
+  int server_idx = -1;
+  char buffer[256];
   for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
-    // TODO(sreek): This will change once we add support for other tests
-    // that won't work with InsecureChannelCredentials()
-    std::shared_ptr<grpc::Channel> channel(
-        grpc::CreateChannel(*it, grpc::InsecureChannelCredentials()));
+    ++server_idx;
+    // Create channel(s) for each server
+    for (int channel_idx = 0; channel_idx < FLAGS_num_channels_per_server;
+         channel_idx++) {
+      // TODO (sreek). This won't work for tests that require Authentication
+      std::shared_ptr<grpc::Channel> channel(
+          grpc::CreateChannel(*it, grpc::InsecureChannelCredentials()));
 
-    // Make multiple stubs (as defined by num_stubs_per_channel flag) to use the
-    // same channel. This is to test calling multiple RPC calls in parallel on
-    // each channel.
-    for (int i = 0; i < FLAGS_num_stubs_per_channel; i++) {
-      StressTestInteropClient* client = new StressTestInteropClient(
-          ++thread_idx, *it, channel, test_selector, FLAGS_test_duration_secs,
-          FLAGS_sleep_duration_ms, FLAGS_metrics_collection_interval_secs);
+      // Create stub(s) for each channel
+      for (int stub_idx = 0; stub_idx < FLAGS_num_stubs_per_channel;
+           stub_idx++) {
+        StressTestInteropClient* client = new StressTestInteropClient(
+            ++thread_idx, *it, channel, test_selector, FLAGS_test_duration_secs,
+            FLAGS_sleep_duration_ms, FLAGS_metrics_collection_interval_secs);
 
-      bool is_already_created;
-      grpc::string metricName =
-          "/stress_test/qps/thread/" + std::to_string(thread_idx);
-      test_threads.emplace_back(
-          grpc::thread(&StressTestInteropClient::MainLoop, client,
-                 metrics_service.CreateGauge(metricName, &is_already_created)));
+        bool is_already_created;
+        // Gauge name
+        std::snprintf(buffer, sizeof(buffer),
+                      "/stress_test/server_%d/channel_%d/stub_%d/qps",
+                      server_idx, channel_idx, stub_idx);
 
-      // The Gauge should not have been already created
-      GPR_ASSERT(!is_already_created);
+        test_threads.emplace_back(grpc::thread(
+            &StressTestInteropClient::MainLoop, client,
+            metrics_service.CreateGauge(buffer, &is_already_created)));
+
+        // The Gauge should not have been already created
+        GPR_ASSERT(!is_already_created);
+      }
     }
   }
 
