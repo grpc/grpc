@@ -115,8 +115,7 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
         grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
       } else {
         /* We need to consume this here, because the server may already have
-         * gone
-         * away. */
+         * gone away. */
         grpc_endpoint_destroy(exec_ctx, secure_endpoint);
       }
       gpr_mu_unlock(&state->mu);
@@ -145,9 +144,9 @@ static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
 
 static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, int success) {
   grpc_server_secure_state *state = statep;
-  grpc_security_connector_shutdown(exec_ctx, state->sc);
   state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
                               success);
+  grpc_security_connector_shutdown(exec_ctx, state->sc);
   state_unref(state);
 }
 
