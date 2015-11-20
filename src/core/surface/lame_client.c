@@ -46,10 +46,10 @@
 typedef struct {
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
+  grpc_mdctx *mdctx;
 } call_data;
 
 typedef struct {
-  grpc_mdctx *mdctx;
   grpc_channel *master;
   grpc_status_code error_code;
   const char *error_message;
@@ -60,8 +60,8 @@ static void fill_metadata(grpc_call_element *elem, grpc_metadata_batch *mdb) {
   channel_data *chand = elem->channel_data;
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
-  calld->status.md = grpc_mdelem_from_strings(chand->mdctx, "grpc-status", tmp);
-  calld->details.md = grpc_mdelem_from_strings(chand->mdctx, "grpc-message",
+  calld->status.md = grpc_mdelem_from_strings(calld->mdctx, "grpc-status", tmp);
+  calld->details.md = grpc_mdelem_from_strings(calld->mdctx, "grpc-message",
                                                chand->error_message);
   calld->status.prev = calld->details.next = NULL;
   calld->status.next = &calld->details;
@@ -104,7 +104,10 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {}
+                           grpc_call_element_args *args) {
+  call_data *calld = elem->call_data;
+  calld->mdctx = args->metadata_context;
+}
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
                               grpc_call_element *elem) {}
@@ -115,7 +118,6 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(args->is_last);
-  chand->mdctx = args->metadata_context;
   chand->master = args->master;
 }
 

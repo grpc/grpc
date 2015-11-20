@@ -109,7 +109,7 @@ static void test_create_channel_stack(void) {
 
   channel_stack = gpr_malloc(grpc_channel_stack_size(&filters, 1));
   grpc_channel_stack_init(&exec_ctx, &filters, 1, NULL, &chan_args,
-                          metadata_context, channel_stack);
+                          channel_stack);
   GPR_ASSERT(channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = (int *)channel_elem->channel_data;
@@ -117,7 +117,7 @@ static void test_create_channel_stack(void) {
 
   call_stack = gpr_malloc(channel_stack->call_stack_size);
   grpc_call_stack_init(&exec_ctx, channel_stack, 0, NULL, NULL, NULL, NULL,
-                       call_stack);
+                       metadata_context, call_stack);
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
   GPR_ASSERT(call_elem->filter == channel_elem->filter);

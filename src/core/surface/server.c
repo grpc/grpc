@@ -54,6 +54,7 @@
 #include "src/core/surface/completion_queue.h"
 #include "src/core/surface/init.h"
 #include "src/core/transport/metadata.h"
+#include "src/core/transport/static_metadata.h"
 
 typedef struct listener {
   void *arg;
@@ -108,8 +109,6 @@ struct channel_data {
   grpc_server *server;
   grpc_connectivity_state connectivity_state;
   grpc_channel *channel;
-  grpc_mdstr *path_key;
-  grpc_mdstr *authority_key;
   /* linked list of all channels on a server */
   channel_data *next;
   channel_data *prev;
@@ -558,12 +557,11 @@ static void maybe_finish_shutdown(grpc_exec_ctx *exec_ctx,
 
 static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
   grpc_call_element *elem = user_data;
-  channel_data *chand = elem->channel_data;
   call_data *calld = elem->call_data;
-  if (md->key == chand->path_key) {
+  if (md->key == GRPC_MDSTR_PATH) {
     calld->path = GRPC_MDSTR_REF(md->value);
     return NULL;
-  } else if (md->key == chand->authority_key) {
+  } else if (md->key == GRPC_MDSTR_AUTHORITY) {
     calld->host = GRPC_MDSTR_REF(md->value);
     return NULL;
   }
@@ -718,9 +716,6 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(!args->is_last);
   chand->server = NULL;
   chand->channel = NULL;
-  chand->path_key = grpc_mdstr_from_string(args->metadata_context, ":path");
-  chand->authority_key =
-      grpc_mdstr_from_string(args->metadata_context, ":authority");
   chand->next = chand->prev = chand;
   chand->registered_methods = NULL;
   chand->connectivity_state = GRPC_CHANNEL_IDLE;
@@ -750,8 +745,6 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
     chand->next = chand->prev = chand;
     maybe_finish_shutdown(exec_ctx, chand->server);
     gpr_mu_unlock(&chand->server->mu_global);
-    GRPC_MDSTR_UNREF(chand->path_key);
-    GRPC_MDSTR_UNREF(chand->authority_key);
     server_unref(exec_ctx, chand->server);
   }
 }

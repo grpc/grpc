@@ -62,7 +62,8 @@ void grpc_client_uchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
                                                grpc_pollset *pollset);
 
 grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
-                                          grpc_channel_args *args);
+                                          grpc_channel_args *args,
+                                          grpc_mdctx *mdctx);
 
 void grpc_client_uchannel_set_subchannel(grpc_channel *uchannel,
                                          grpc_subchannel *subchannel);

@@ -140,7 +140,7 @@ static int cuc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
 static void cuc_init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                                grpc_call_element_args *args) {
   grpc_subchannel_call_holder_init(elem->call_data, cuc_pick_subchannel,
-                                   elem->channel_data);
+                                   elem->channel_data, args->metadata_context);
 }
 
 /* Destructor for call_data */
@@ -244,11 +244,11 @@ void grpc_client_uchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
 }
 
 grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
-                                          grpc_channel_args *args) {
+                                          grpc_channel_args *args,
+                                          grpc_mdctx *mdctx) {
   grpc_channel *channel = NULL;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
-  grpc_mdctx *mdctx = grpc_subchannel_get_mdctx(subchannel);
   grpc_channel *master = grpc_subchannel_get_master(subchannel);
   char *target = grpc_channel_get_target(master);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

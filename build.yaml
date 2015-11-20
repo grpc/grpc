@@ -134,6 +134,7 @@ filegroups:
   - src/core/client_config/subchannel_factory_decorators/add_channel_arg.h
   - src/core/client_config/subchannel_factory_decorators/merge_channel_args.h
   - src/core/client_config/uri_parser.h
+  - src/core/compression/algorithm_metadata.h
   - src/core/compression/message_compress.h
   - src/core/debug/trace.h
   - src/core/httpcli/format_request.h
