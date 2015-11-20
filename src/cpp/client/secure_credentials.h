@@ -88,7 +88,7 @@ class MetadataCredentialsPluginWrapper GRPC_FINAL {
       std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
  private:
-  void InvokePlugin(const char* service_url,
+  void InvokePlugin(grpc_auth_metadata_context context,
                     grpc_credentials_plugin_metadata_cb cb, void* user_data);
   std::unique_ptr<ThreadPoolInterface> thread_pool_;
   std::unique_ptr<MetadataCredentialsPlugin> plugin_;
