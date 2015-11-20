@@ -58,7 +58,7 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx,
 void grpc_subchannel_call_holder_init(
     grpc_subchannel_call_holder *holder,
     grpc_subchannel_call_holder_pick_subchannel pick_subchannel,
-    void *pick_subchannel_arg) {
+    void *pick_subchannel_arg, grpc_mdctx *mdctx) {
   gpr_atm_rel_store(&holder->subchannel_call, 0);
   holder->pick_subchannel = pick_subchannel;
   holder->pick_subchannel_arg = pick_subchannel_arg;
@@ -68,6 +68,7 @@ void grpc_subchannel_call_holder_init(
   holder->waiting_ops_count = 0;
   holder->waiting_ops_capacity = 0;
   holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
+  holder->mdctx = mdctx;
 }
 
 void grpc_subchannel_call_holder_destroy(grpc_exec_ctx *exec_ctx,
@@ -156,9 +157,9 @@ retry:
       holder->subchannel != NULL) {
     holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_CREATING_CALL;
     grpc_closure_init(&holder->next_step, call_ready, holder);
-    if (grpc_subchannel_create_call(exec_ctx, holder->subchannel,
-                                    holder->pollset, &holder->subchannel_call,
-                                    &holder->next_step)) {
+    if (grpc_subchannel_create_call(
+            exec_ctx, holder->subchannel, holder->pollset, holder->mdctx,
+            &holder->subchannel_call, &holder->next_step)) {
       /* got one immediately - continue the op (and any waiting ops) */
       holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
       retry_waiting_locked(exec_ctx, holder);
@@ -184,9 +185,9 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, int success) {
     fail_locked(exec_ctx, holder);
   } else {
     grpc_closure_init(&holder->next_step, call_ready, holder);
-    if (grpc_subchannel_create_call(exec_ctx, holder->subchannel,
-                                    holder->pollset, &holder->subchannel_call,
-                                    &holder->next_step)) {
+    if (grpc_subchannel_create_call(
+            exec_ctx, holder->subchannel, holder->pollset, holder->mdctx,
+            &holder->subchannel_call, &holder->next_step)) {
       holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
       /* got one immediately - continue the op (and any waiting ops) */
       retry_waiting_locked(exec_ctx, holder);

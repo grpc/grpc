@@ -47,18 +47,21 @@ grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 
 grpc_mdelem grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
 
-const gpr_uint8 grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT *
-                                                  2] = {
-    9,  29, 8,  29, 10, 29, 10, 42, 11, 29, 12, 29, 13, 29, 14, 29, 15, 29, 16,
-    29, 17, 29, 18, 29, 19, 29, 20, 29, 21, 29, 22, 29, 23, 29, 24, 29, 25, 29,
-    26, 29, 27, 29, 30, 29, 31, 29, 32, 29, 33, 29, 39, 0,  43, 29, 47, 29, 48,
-    29, 49, 29, 50, 29, 51, 29, 52, 29, 53, 29, 54, 29, 55, 29, 56, 34, 56, 58,
-    57, 68, 57, 69, 59, 29, 60, 29, 61, 29, 62, 29, 63, 29, 64, 29, 65, 35, 65,
-    44, 65, 45, 66, 29, 67, 29, 70, 1,  70, 2,  70, 3,  70, 4,  70, 5,  70, 6,
-    70, 7,  71, 29, 72, 73, 74, 29, 75, 29, 76, 29, 77, 29, 78, 29};
+const gpr_uint8
+    grpc_static_metadata_elem_indices[GRPC_STATIC_MDELEM_COUNT * 2] = {
+        11, 32, 10, 32, 12, 32, 12, 46, 13, 32, 14, 32, 15, 32, 16, 32, 17, 32,
+        19, 32, 20, 32, 21, 32, 22, 32, 23, 32, 24, 32, 25, 32, 26, 32, 27, 32,
+        28, 18, 28, 32, 29, 32, 30, 32, 33, 32, 34, 32, 35, 32, 36, 32, 40, 31,
+        40, 45, 40, 50, 43, 0,  43, 1,  43, 2,  47, 32, 51, 32, 52, 32, 53, 32,
+        54, 32, 55, 32, 56, 32, 57, 32, 58, 32, 59, 32, 60, 37, 60, 62, 61, 72,
+        61, 73, 63, 32, 64, 32, 65, 32, 66, 32, 67, 32, 68, 32, 69, 38, 69, 48,
+        69, 49, 70, 32, 71, 32, 74, 3,  74, 4,  74, 5,  74, 6,  74, 7,  74, 8,
+        74, 9,  75, 32, 76, 77, 78, 32, 79, 32, 80, 32, 81, 32, 82, 32};
 
 const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {
     "0",
+    "1",
+    "2",
     "200",
     "204",
     "206",
@@ -74,6 +77,7 @@ const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {
     "access-control-allow-origin",
     "age",
     "allow",
+    "application/grpc",
     ":authority",
     "authorization",
     "cache-control",
@@ -96,6 +100,7 @@ const char *const grpc_static_metadata_strings[GRPC_STATIC_MDSTR_COUNT] = {
     "grpc",
     "grpc-accept-encoding",
     "grpc-encoding",
+    "grpc-internal-encoding-request",
     "grpc-message",
     "grpc-status",
     "grpc-timeout",

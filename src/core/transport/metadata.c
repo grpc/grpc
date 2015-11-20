@@ -37,12 +37,15 @@
 #include <stddef.h>
 #include <string.h>
 
+#include <grpc/compression.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include "src/core/profiling/timers.h"
 #include "src/core/support/murmur_hash.h"
+#include "src/core/support/string.h"
 #include "src/core/transport/chttp2/bin_encoder.h"
 #include "src/core/transport/static_metadata.h"
 
@@ -157,6 +160,11 @@ struct grpc_mdctx {
   size_t mdtab_count;
   size_t mdtab_free;
   size_t mdtab_capacity;
+
+  /* cache slots */
+  gpr_atm cache_slots[GRPC_MDELEM_CACHE_SLOT_COUNT];
+  /* compression algorithm mdelems: one per algorithm bitmask */
+  gpr_atm compression_algorithm_mdelem[1 << GRPC_COMPRESS_ALGORITHMS_COUNT];
 };
 
 static void internal_string_ref(internal_string *s DEBUG_ARGS);
@@ -175,8 +183,10 @@ void grpc_mdctx_global_init(void) {
   }
   for (i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
     grpc_mdelem *elem = &grpc_static_mdelem_table[i];
-    grpc_mdstr *key = &grpc_static_mdstr_table[2 * i + 0];
-    grpc_mdstr *value = &grpc_static_mdstr_table[2 * i + 1];
+    grpc_mdstr *key =
+        &grpc_static_mdstr_table[grpc_static_metadata_elem_indices[2 * i + 0]];
+    grpc_mdstr *value =
+        &grpc_static_mdstr_table[grpc_static_metadata_elem_indices[2 * i + 1]];
     *(grpc_mdstr **)&elem->key = key;
     *(grpc_mdstr **)&elem->value = value;
   }
@@ -302,6 +312,42 @@ grpc_mdctx *grpc_mdctx_create(void) {
    */
   return grpc_mdctx_create_with_seed(
       (gpr_uint32)gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
+}
+
+static void drop_cached_elem(gpr_atm *slot) {
+  gpr_atm value = gpr_atm_no_barrier_load(slot);
+  gpr_atm_rel_store(slot, 0);
+  GRPC_MDELEM_UNREF((grpc_mdelem *)value);
+}
+
+void grpc_mdctx_drop_caches(grpc_mdctx *ctx) {
+  size_t i;
+  for (i = 0; i < GRPC_MDELEM_CACHE_SLOT_COUNT; i++) {
+    drop_cached_elem(&ctx->cache_slots[i]);
+  }
+  for (i = 0; i < GPR_ARRAY_SIZE(ctx->compression_algorithm_mdelem); i++) {
+    drop_cached_elem(&ctx->compression_algorithm_mdelem[i]);
+  }
+}
+
+static void set_cache(gpr_atm *slot, grpc_mdelem *elem) {
+  if (!gpr_atm_rel_cas(slot, 0, (gpr_atm)elem)) {
+    GRPC_MDELEM_UNREF(elem);
+  }
+}
+
+void grpc_mdctx_set_mdelem_cache(grpc_mdctx *ctx, grpc_mdelem_cache_slot slot,
+                                 grpc_mdelem *elem) {
+  set_cache(&ctx->cache_slots[slot], elem);
+}
+
+static grpc_mdelem *get_cache(gpr_atm *slot) {
+  return (grpc_mdelem *)gpr_atm_acq_load(slot);
+}
+
+grpc_mdelem *grpc_mdelem_from_cache(grpc_mdctx *ctx,
+                                    grpc_mdelem_cache_slot slot) {
+  return get_cache(&ctx->cache_slots[slot]);
 }
 
 static void discard_metadata(grpc_mdctx *ctx) {
@@ -780,6 +826,7 @@ void *grpc_mdelem_get_user_data(grpc_mdelem *md, void (*destroy_func)(void *)) {
 void grpc_mdelem_set_user_data(grpc_mdelem *md, void (*destroy_func)(void *),
                                void *user_data) {
   internal_metadata *im = (internal_metadata *)md;
+  GPR_ASSERT(!is_mdelem_static(md));
   GPR_ASSERT((user_data == NULL) == (destroy_func == NULL));
   gpr_mu_lock(&im->mu_user_data);
   if (gpr_atm_no_barrier_load(&im->destroy_user_data)) {
@@ -836,6 +883,52 @@ int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s) {
       0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   return conforms_to(s, legal_header_bits);
+}
+
+static grpc_mdelem *make_accept_encoding_mdelem_for_compression_algorithms(
+    grpc_mdctx *mdctx, gpr_uint32 algorithms) {
+  gpr_strvec sv;
+  int i;
+  char *str;
+  grpc_mdelem *out;
+
+  gpr_strvec_init(&sv);
+  for (i = 0; algorithms != 0; i++, algorithms >>= 1) {
+    if (algorithms & 1) {
+      char *name;
+      GPR_ASSERT(grpc_compression_algorithm_name((grpc_compression_algorithm)i,
+                                                 &name));
+      if (sv.count) {
+        gpr_strvec_add(&sv, gpr_strdup(","));
+      }
+      gpr_strvec_add(&sv, gpr_strdup(name));
+    }
+  }
+  str = gpr_strvec_flatten(&sv, NULL);
+  out =
+      grpc_mdelem_from_metadata_strings(mdctx, GRPC_MDSTR_GRPC_ACCEPT_ENCODING,
+                                        grpc_mdstr_from_string(mdctx, str));
+  gpr_strvec_destroy(&sv);
+  gpr_free(str);
+  return out;
+}
+
+grpc_mdelem *grpc_accept_encoding_mdelem_from_compression_algorithms(
+    grpc_mdctx *ctx, gpr_uint32 algorithms) {
+  grpc_mdelem *ret;
+  gpr_atm *slot;
+  GPR_ASSERT(algorithms < GPR_ARRAY_SIZE(ctx->compression_algorithm_mdelem));
+
+  slot = &ctx->compression_algorithm_mdelem[algorithms];
+  ret = get_cache(slot);
+  if (ret == NULL) {
+    set_cache(slot, make_accept_encoding_mdelem_for_compression_algorithms(
+                        ctx, algorithms));
+    ret = get_cache(slot);
+    GPR_ASSERT(ret != NULL);
+  }
+
+  return ret;
 }
 
 int grpc_mdstr_is_bin_suffixed(grpc_mdstr *s) {

@@ -35,6 +35,7 @@
 
 #include <stdarg.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice.h>

@@ -41,6 +41,7 @@ import sys
 
 CONFIG = [
     'grpc-timeout',
+    'grpc-internal-encoding-request',
     ':path',
     'grpc-encoding',
     'grpc-accept-encoding',
@@ -54,7 +55,13 @@ CONFIG = [
     'identity',
     '',
     ('grpc-status', '0'),
+    ('grpc-status', '1'),
+    ('grpc-status', '2'),
+    ('grpc-encoding', 'identity'),
+    ('grpc-encoding', 'gzip'),
+    ('grpc-encoding', 'deflate'),
     ('te', 'trailers'),
+    ('content-type', 'application/grpc'),
     (':method', 'POST'),
     (':status', '200'),
     (':status', '404'),
