@@ -35,14 +35,15 @@
 
 #include <string.h>
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+
 #include "src/core/profiling/timers.h"
 #include "src/core/transport/chttp2/http2_errors.h"
 #include "src/core/transport/chttp2/status_conversion.h"
 #include "src/core/transport/chttp2/timeout_encoding.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "src/core/transport/static_metadata.h"
 
 static int init_frame_parser(grpc_exec_ctx *exec_ctx,
                              grpc_chttp2_transport_parsing *transport_parsing);
@@ -588,13 +589,12 @@ static void on_initial_header(void *tp, grpc_mdelem *md) {
       transport_parsing->is_client ? "CLI" : "SVR",
       grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value)));
 
-  if (md->key == transport_parsing->elem_grpc_status_ok->key &&
-      md != transport_parsing->elem_grpc_status_ok) {
+  if (md->key == GRPC_MDSTR_GRPC_STATUS && md != GRPC_MDELEM_GRPC_STATUS_0) {
     /* TODO(ctiller): check for a status like " 0" */
     stream_parsing->seen_error = 1;
   }
 
-  if (md->key == transport_parsing->str_grpc_timeout) {
+  if (md->key == GRPC_MDSTR_GRPC_TIMEOUT) {
     gpr_timespec *cached_timeout = grpc_mdelem_get_user_data(md, free_timeout);
     if (!cached_timeout) {
       /* not already parsed: parse it now, and store the result away */
@@ -635,8 +635,7 @@ static void on_trailing_header(void *tp, grpc_mdelem *md) {
       transport_parsing->is_client ? "CLI" : "SVR",
       grpc_mdstr_as_c_string(md->key), grpc_mdstr_as_c_string(md->value)));
 
-  if (md->key == transport_parsing->elem_grpc_status_ok->key &&
-      md != transport_parsing->elem_grpc_status_ok) {
+  if (md->key == GRPC_MDSTR_GRPC_STATUS && md != GRPC_MDELEM_GRPC_STATUS_0) {
     /* TODO(ctiller): check for a status like " 0" */
     stream_parsing->seen_error = 1;
   }

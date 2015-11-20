@@ -63,7 +63,6 @@ typedef struct {
   gpr_uint8 security_context_set;
   grpc_linked_mdelem md_links[MAX_CREDENTIALS_METADATA_COUNT];
   char *service_url;
-  grpc_mdctx *md_ctx;
 } call_data;
 
 /* We can have a per-channel credentials. */
@@ -107,7 +106,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   for (i = 0; i < num_md; i++) {
     grpc_metadata_batch_add_tail(
         mdb, &calld->md_links[i],
-        grpc_mdelem_from_slices(calld->md_ctx, gpr_slice_ref(md_elems[i].key),
+        grpc_mdelem_from_slices(gpr_slice_ref(md_elems[i].key),
                                 gpr_slice_ref(md_elems[i].value)));
   }
   grpc_call_next_op(exec_ctx, elem, op);
@@ -262,7 +261,6 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   memset(calld, 0, sizeof(*calld));
-  calld->md_ctx = args->metadata_context;
 }
 
 static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,

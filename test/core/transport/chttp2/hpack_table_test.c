@@ -60,10 +60,8 @@ static void assert_index(const grpc_chttp2_hptbl *tbl, gpr_uint32 idx,
 
 static void test_static_lookup(void) {
   grpc_chttp2_hptbl tbl;
-  grpc_mdctx *mdctx;
 
-  mdctx = grpc_mdctx_create();
-  grpc_chttp2_hptbl_init(&tbl, mdctx);
+  grpc_chttp2_hptbl_init(&tbl);
 
   LOG_TEST("test_static_lookup");
   assert_index(&tbl, 1, ":authority", "");
@@ -129,7 +127,6 @@ static void test_static_lookup(void) {
   assert_index(&tbl, 61, "www-authenticate", "");
 
   grpc_chttp2_hptbl_destroy(&tbl);
-  grpc_mdctx_unref(mdctx);
 }
 
 static void test_many_additions(void) {
@@ -137,17 +134,15 @@ static void test_many_additions(void) {
   int i;
   char *key;
   char *value;
-  grpc_mdctx *mdctx;
 
   LOG_TEST("test_many_additions");
 
-  mdctx = grpc_mdctx_create();
-  grpc_chttp2_hptbl_init(&tbl, mdctx);
+  grpc_chttp2_hptbl_init(&tbl);
 
   for (i = 0; i < 1000000; i++) {
     gpr_asprintf(&key, "K:%d", i);
     gpr_asprintf(&value, "VALUE:%d", i);
-    grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings(mdctx, key, value));
+    grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings(key, value));
     assert_index(&tbl, 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY, key, value);
     gpr_free(key);
     gpr_free(value);
@@ -161,13 +156,12 @@ static void test_many_additions(void) {
   }
 
   grpc_chttp2_hptbl_destroy(&tbl);
-  grpc_mdctx_unref(mdctx);
 }
 
 static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl *tbl,
                                                  const char *key,
                                                  const char *value) {
-  grpc_mdelem *md = grpc_mdelem_from_strings(tbl->mdctx, key, value);
+  grpc_mdelem *md = grpc_mdelem_from_strings(key, value);
   grpc_chttp2_hptbl_find_result r = grpc_chttp2_hptbl_find(tbl, md);
   GRPC_MDELEM_UNREF(md);
   return r;
@@ -177,16 +171,14 @@ static void test_find(void) {
   grpc_chttp2_hptbl tbl;
   int i;
   char buffer[32];
-  grpc_mdctx *mdctx;
   grpc_chttp2_hptbl_find_result r;
 
   LOG_TEST("test_find");
 
-  mdctx = grpc_mdctx_create();
-  grpc_chttp2_hptbl_init(&tbl, mdctx);
-  grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings(mdctx, "abc", "xyz"));
-  grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings(mdctx, "abc", "123"));
-  grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings(mdctx, "x", "1"));
+  grpc_chttp2_hptbl_init(&tbl);
+  grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings("abc", "xyz"));
+  grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings("abc", "123"));
+  grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings("x", "1"));
 
   r = find_simple(&tbl, "abc", "123");
   GPR_ASSERT(r.index == 2 + GRPC_CHTTP2_LAST_STATIC_ENTRY);
@@ -235,8 +227,7 @@ static void test_find(void) {
   /* overflow the string buffer, check find still works */
   for (i = 0; i < 10000; i++) {
     gpr_ltoa(i, buffer);
-    grpc_chttp2_hptbl_add(&tbl,
-                          grpc_mdelem_from_strings(mdctx, "test", buffer));
+    grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings("test", buffer));
   }
 
   r = find_simple(&tbl, "abc", "123");
@@ -265,7 +256,6 @@ static void test_find(void) {
   GPR_ASSERT(r.has_value == 0);
 
   grpc_chttp2_hptbl_destroy(&tbl);
-  grpc_mdctx_unref(mdctx);
 }
 
 int main(int argc, char **argv) {

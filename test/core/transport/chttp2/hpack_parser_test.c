@@ -91,9 +91,8 @@ static void test_vector(grpc_chttp2_hpack_parser *parser,
 
 static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser parser;
-  grpc_mdctx *mdctx = grpc_mdctx_create();
 
-  grpc_chttp2_hpack_parser_init(&parser, mdctx);
+  grpc_chttp2_hpack_parser_init(&parser);
   /* D.2.1 */
   test_vector(&parser, mode,
               "400a 6375 7374 6f6d 2d6b 6579 0d63 7573"
@@ -111,7 +110,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
   test_vector(&parser, mode, "82", ":method", "GET", NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
 
-  grpc_chttp2_hpack_parser_init(&parser, mdctx);
+  grpc_chttp2_hpack_parser_init(&parser);
   /* D.3.1 */
   test_vector(&parser, mode,
               "8286 8441 0f77 7777 2e65 7861 6d70 6c65"
@@ -131,7 +130,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
               NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
 
-  grpc_chttp2_hpack_parser_init(&parser, mdctx);
+  grpc_chttp2_hpack_parser_init(&parser);
   /* D.4.1 */
   test_vector(&parser, mode,
               "8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
@@ -151,7 +150,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
               NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
 
-  grpc_chttp2_hpack_parser_init(&parser, mdctx);
+  grpc_chttp2_hpack_parser_init(&parser);
   parser.table.max_bytes = 256;
   /* D.5.1 */
   test_vector(&parser, mode,
@@ -184,7 +183,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
 
-  grpc_chttp2_hpack_parser_init(&parser, mdctx);
+  grpc_chttp2_hpack_parser_init(&parser);
   parser.table.max_bytes = 256;
   /* D.6.1 */
   test_vector(&parser, mode,
@@ -213,7 +212,6 @@ static void test_vectors(grpc_slice_split_mode mode) {
               "set-cookie",
               "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1", NULL);
   grpc_chttp2_hpack_parser_destroy(&parser);
-  grpc_mdctx_unref(mdctx);
 }
 
 int main(int argc, char **argv) {

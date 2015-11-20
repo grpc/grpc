@@ -84,8 +84,8 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
  * asynchronously, invoking the \a notify callback upon completion. */
 int grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx,
                                 grpc_subchannel *subchannel,
-                                grpc_pollset *pollset, grpc_mdctx *mdctx,
-                                gpr_atm *target, grpc_closure *notify);
+                                grpc_pollset *pollset, gpr_atm *target,
+                                grpc_closure *notify);
 
 /** cancel \a call in the waiting state. */
 void grpc_subchannel_cancel_create_call(grpc_exec_ctx *exec_ctx,
@@ -147,8 +147,6 @@ struct grpc_subchannel_args {
   /** Address to connect to */
   struct sockaddr *addr;
   size_t addr_len;
-  /** metadata context to use */
-  grpc_mdctx *mdctx;
   /** master channel */
   grpc_channel *master;
 };

@@ -55,11 +55,12 @@ typedef struct call_data {
       up-call on transport_op, and remember to call our on_done_recv member
       after handling it. */
   grpc_closure hc_on_recv;
-
-  grpc_mdctx *mdctx;
 } call_data;
 
-typedef struct channel_data { grpc_mdelem *static_scheme; } channel_data;
+typedef struct channel_data {
+  grpc_mdelem *static_scheme;
+  grpc_mdelem *user_agent;
+} channel_data;
 
 typedef struct {
   grpc_call_element *elem;
@@ -119,10 +120,8 @@ static void hc_mutate_op(grpc_call_element *elem,
     grpc_metadata_batch_add_tail(
         op->send_initial_metadata, &calld->content_type,
         GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
-    grpc_metadata_batch_add_tail(
-        op->send_initial_metadata, &calld->user_agent,
-        GRPC_MDELEM_REF(grpc_mdelem_from_cache(calld->mdctx,
-                                               GRPC_MDELEM_CACHED_USER_AGENT)));
+    grpc_metadata_batch_add_tail(op->send_initial_metadata, &calld->user_agent,
+                                 GRPC_MDELEM_REF(channeld->user_agent));
   }
 
   if (op->recv_initial_metadata != NULL) {
@@ -148,7 +147,6 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            grpc_call_element_args *args) {
   call_data *calld = elem->call_data;
   calld->on_done_recv = NULL;
-  calld->mdctx = args->metadata_context;
   grpc_closure_init(&calld->hc_on_recv, hc_on_recv, elem);
 }
 
@@ -177,6 +175,54 @@ static grpc_mdelem *scheme_from_args(const grpc_channel_args *args) {
   return GRPC_MDELEM_SCHEME_HTTP;
 }
 
+static grpc_mdstr *user_agent_from_args(const grpc_channel_args *args) {
+  gpr_strvec v;
+  size_t i;
+  int is_first = 1;
+  char *tmp;
+  grpc_mdstr *result;
+
+  gpr_strvec_init(&v);
+
+  for (i = 0; args && i < args->num_args; i++) {
+    if (0 == strcmp(args->args[i].key, GRPC_ARG_PRIMARY_USER_AGENT_STRING)) {
+      if (args->args[i].type != GRPC_ARG_STRING) {
+        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
+                GRPC_ARG_PRIMARY_USER_AGENT_STRING);
+      } else {
+        if (!is_first) gpr_strvec_add(&v, gpr_strdup(" "));
+        is_first = 0;
+        gpr_strvec_add(&v, gpr_strdup(args->args[i].value.string));
+      }
+    }
+  }
+
+  gpr_asprintf(&tmp, "%sgrpc-c/%s (%s)", is_first ? "" : " ",
+               grpc_version_string(), GPR_PLATFORM_STRING);
+  is_first = 0;
+  gpr_strvec_add(&v, tmp);
+
+  for (i = 0; args && i < args->num_args; i++) {
+    if (0 == strcmp(args->args[i].key, GRPC_ARG_SECONDARY_USER_AGENT_STRING)) {
+      if (args->args[i].type != GRPC_ARG_STRING) {
+        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
+                GRPC_ARG_SECONDARY_USER_AGENT_STRING);
+      } else {
+        if (!is_first) gpr_strvec_add(&v, gpr_strdup(" "));
+        is_first = 0;
+        gpr_strvec_add(&v, gpr_strdup(args->args[i].value.string));
+      }
+    }
+  }
+
+  tmp = gpr_strvec_flatten(&v, NULL);
+  gpr_strvec_destroy(&v);
+  result = grpc_mdstr_from_string(tmp);
+  gpr_free(tmp);
+
+  return result;
+}
+
 /* Constructor for channel_data */
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element *elem,
@@ -184,11 +230,15 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   GPR_ASSERT(!args->is_last);
   chand->static_scheme = scheme_from_args(args->channel_args);
+  chand->user_agent = grpc_mdelem_from_metadata_strings(
+      GRPC_MDSTR_USER_AGENT, user_agent_from_args(args->channel_args));
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
+  channel_data *chand = elem->channel_data;
+  GRPC_MDELEM_UNREF(chand->user_agent);
 }
 
 const grpc_channel_filter grpc_http_client_filter = {

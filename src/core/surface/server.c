@@ -887,7 +887,7 @@ void grpc_server_start(grpc_server *server) {
 void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
                                  grpc_transport *transport,
                                  grpc_channel_filter const **extra_filters,
-                                 size_t num_extra_filters, grpc_mdctx *mdctx,
+                                 size_t num_extra_filters,
                                  const grpc_channel_args *args) {
   size_t num_filters = s->channel_filter_count + num_extra_filters + 1;
   grpc_channel_filter const **filters =
@@ -922,7 +922,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
   }
 
   channel = grpc_channel_create_from_filters(exec_ctx, NULL, filters,
-                                             num_filters, args, mdctx, 0);
+                                             num_filters, args, 0);
   chand = (channel_data *)grpc_channel_stack_element(
               grpc_channel_get_channel_stack(channel), 0)->channel_data;
   chand->server = s;
@@ -941,8 +941,8 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
     chand->registered_methods = gpr_malloc(alloc);
     memset(chand->registered_methods, 0, alloc);
     for (rm = s->registered_methods; rm; rm = rm->next) {
-      host = rm->host ? grpc_mdstr_from_string(mdctx, rm->host) : NULL;
-      method = grpc_mdstr_from_string(mdctx, rm->method);
+      host = rm->host ? grpc_mdstr_from_string(rm->host) : NULL;
+      method = grpc_mdstr_from_string(rm->method);
       hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
                                .server_registered_method != NULL;

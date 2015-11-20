@@ -232,9 +232,6 @@ struct grpc_chttp2_transport_parsing {
 
   /** data to write later - after parsing */
   gpr_slice_buffer qbuf;
-  /* metadata object cache */
-  grpc_mdstr *str_grpc_timeout;
-  grpc_mdelem *elem_grpc_status_ok;
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
   /** simple one shot parsers */
@@ -288,7 +285,6 @@ struct grpc_chttp2_transport_parsing {
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   grpc_endpoint *ep;
-  grpc_mdctx *metadata_context;
   gpr_refcount refs;
   char *peer_string;
 

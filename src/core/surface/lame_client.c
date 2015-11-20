@@ -46,7 +46,6 @@
 typedef struct {
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
-  grpc_mdctx *mdctx;
 } call_data;
 
 typedef struct {
@@ -60,9 +59,9 @@ static void fill_metadata(grpc_call_element *elem, grpc_metadata_batch *mdb) {
   channel_data *chand = elem->channel_data;
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
-  calld->status.md = grpc_mdelem_from_strings(calld->mdctx, "grpc-status", tmp);
-  calld->details.md = grpc_mdelem_from_strings(calld->mdctx, "grpc-message",
-                                               chand->error_message);
+  calld->status.md = grpc_mdelem_from_strings("grpc-status", tmp);
+  calld->details.md =
+      grpc_mdelem_from_strings("grpc-message", chand->error_message);
   calld->status.prev = calld->details.next = NULL;
   calld->status.next = &calld->details;
   calld->details.prev = &calld->status;
@@ -105,8 +104,6 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
 
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                            grpc_call_element_args *args) {
-  call_data *calld = elem->call_data;
-  calld->mdctx = args->metadata_context;
 }
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
@@ -141,8 +138,8 @@ grpc_channel *grpc_lame_client_channel_create(const char *target,
   channel_data *chand;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   static const grpc_channel_filter *filters[] = {&lame_filter};
-  channel = grpc_channel_create_from_filters(&exec_ctx, target, filters, 1,
-                                             NULL, grpc_mdctx_create(), 1);
+  channel =
+      grpc_channel_create_from_filters(&exec_ctx, target, filters, 1, NULL, 1);
   elem = grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   GRPC_API_TRACE(
       "grpc_lame_client_channel_create(target=%s, error_code=%d, "

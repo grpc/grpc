@@ -59,11 +59,6 @@ typedef struct {
      been seen. When that count reaches max (255), all values are halved. */
   gpr_uint8 filter_elems[GRPC_CHTTP2_HPACKC_NUM_FILTERS];
 
-  /* metadata context */
-  grpc_mdctx *mdctx;
-  /* the string 'grpc-timeout' */
-  grpc_mdstr *timeout_key_str;
-
   /* entry tables for keys & elems: these tables track values that have been
      seen and *may* be in the decompressor table */
   grpc_mdstr *entries_keys[GRPC_CHTTP2_HPACKC_NUM_VALUES];
@@ -74,8 +69,7 @@ typedef struct {
   gpr_uint16 table_elem_size[GRPC_CHTTP2_HPACKC_MAX_TABLE_ELEMS];
 } grpc_chttp2_hpack_compressor;
 
-void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
-                                       grpc_mdctx *mdctx);
+void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c);
 void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c);
 
 void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor *c, gpr_uint32 id,

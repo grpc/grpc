@@ -157,7 +157,6 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
                           grpc_iomgr_cb_func destroy, void *destroy_arg,
                           grpc_call_context_element *context,
                           const void *transport_server_data,
-                          grpc_mdctx *metadata_context,
                           grpc_call_stack *call_stack) {
   grpc_channel_element *channel_elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
   grpc_call_element_args args;
@@ -178,7 +177,6 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
     args.refcount = &call_stack->refcount;
     args.server_transport_data = transport_server_data;
     args.context = context;
-    args.metadata_context = metadata_context;
     call_elems[i].filter = channel_elems[i].filter;
     call_elems[i].channel_data = channel_elems[i].channel_data;
     call_elems[i].call_data = user_data;
