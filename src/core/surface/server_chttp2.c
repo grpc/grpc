@@ -107,9 +107,11 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   }
 
   for (i = 0; i < resolved->naddrs; i++) {
-    port_temp = grpc_tcp_server_add_port(
+    grpc_tcp_listener *listener;
+    listener = grpc_tcp_server_add_port(
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
         resolved->addrs[i].len);
+    port_temp = grpc_tcp_listener_get_port(listener);
     if (port_temp >= 0) {
       if (port_num == -1) {
         port_num = port_temp;
