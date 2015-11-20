@@ -148,6 +148,7 @@
     <ClInclude Include="..\..\..\..\test\cpp\interop\client_helper.h" />
     <ClInclude Include="..\..\..\..\test\cpp\interop\interop_client.h" />
     <ClInclude Include="..\..\..\..\test\cpp\interop\stress_interop_client.h" />
+    <ClInclude Include="..\..\..\..\test\cpp\util\metrics_server.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\test\proto\empty.pb.cc">
@@ -166,6 +167,14 @@
     </ClCompile>
     <ClInclude Include="..\..\..\..\test\proto\messages.grpc.pb.h">
     </ClInclude>
+    <ClCompile Include="..\..\..\..\test\proto\metrics.pb.cc">
+    </ClCompile>
+    <ClInclude Include="..\..\..\..\test\proto\metrics.pb.h">
+    </ClInclude>
+    <ClCompile Include="..\..\..\..\test\proto\metrics.grpc.pb.cc">
+    </ClCompile>
+    <ClInclude Include="..\..\..\..\test\proto\metrics.grpc.pb.h">
+    </ClInclude>
     <ClCompile Include="..\..\..\..\test\proto\test.pb.cc">
     </ClCompile>
     <ClInclude Include="..\..\..\..\test\proto\test.pb.h">
@@ -179,6 +188,8 @@
     <ClCompile Include="..\..\..\..\test\cpp\interop\stress_interop_client.cc">
     </ClCompile>
     <ClCompile Include="..\..\..\..\test\cpp\interop\stress_test.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\test\cpp\util\metrics_server.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

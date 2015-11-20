@@ -97,6 +97,7 @@ message ClientConfig {
   RpcType rpc_type = 8;
   LoadParams load_params = 10;
   PayloadConfig payload_config = 11;
+  HistogramParams histogram_params = 12;
 }
 
 message ClientStatus {
@@ -118,6 +119,7 @@ message ClientArgs {
 message ServerConfig {
   ServerType server_type = 1;
   SecurityParams security_params = 2;
+  string host = 3;
   int32 port = 4;
   // only for async server
   int32 async_server_threads = 7;

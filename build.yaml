@@ -1890,6 +1890,20 @@ targets:
   - mac
   - linux
   - posix
+- name: metrics_client
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/util/metrics_server.h
+  src:
+  - test/proto/metrics.proto
+  - test/cpp/interop/metrics_client.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
 - name: mock_test
   build: test
   language: c++
@@ -2130,13 +2144,16 @@ targets:
   - test/cpp/interop/client_helper.h
   - test/cpp/interop/interop_client.h
   - test/cpp/interop/stress_interop_client.h
+  - test/cpp/util/metrics_server.h
   src:
   - test/proto/empty.proto
   - test/proto/messages.proto
+  - test/proto/metrics.proto
   - test/proto/test.proto
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
+  - test/cpp/util/metrics_server.cc
   deps:
   - grpc++_test_util
   - grpc_test_util
@@ -2231,6 +2248,23 @@ node_modules:
 - deps:
   - grpc
   - gpr
+  headers:
+  - src/node/ext/byte_buffer.h
+  - src/node/ext/call.h
+  - src/node/ext/call_credentials.h
+  - src/node/ext/channel.h
+  - src/node/ext/channel_credentials.h
+  - src/node/ext/completion_queue_async_worker.h
+  - src/node/ext/server.h
+  - src/node/ext/server_credentials.h
+  - src/node/ext/timeval.h
+  js:
+  - src/node/index.js
+  - src/node/src/client.js
+  - src/node/src/common.js
+  - src/node/src/credentials.js
+  - src/node/src/metadata.js
+  - src/node/src/server.js
   name: grpc_node
   src:
   - src/node/ext/byte_buffer.cc
