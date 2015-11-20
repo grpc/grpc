@@ -34,6 +34,10 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_RESOLVER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "src/core/client_config/client_config.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/iomgr/sockaddr.h"
@@ -94,5 +98,8 @@ void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
 void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,
                         grpc_client_config **target_config,
                         grpc_closure *on_complete);
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_INTERNAL_CORE_CONFIG_RESOLVER_H */

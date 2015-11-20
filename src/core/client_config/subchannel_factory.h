@@ -34,6 +34,10 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "src/core/channel/channel_stack.h"
 #include "src/core/client_config/subchannel.h"
 
@@ -62,5 +66,9 @@ void grpc_subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
 grpc_subchannel *grpc_subchannel_factory_create_subchannel(
     grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory,
     grpc_subchannel_args *args);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_H */

@@ -34,6 +34,10 @@
 #ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H
 #define GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "src/core/client_config/lb_policy.h"
 
 /** Total configuration for a client. Provided, and updated, by
@@ -49,5 +53,9 @@ void grpc_client_config_set_lb_policy(grpc_client_config *client_config,
                                       grpc_lb_policy *lb_policy);
 grpc_lb_policy *grpc_client_config_get_lb_policy(
     grpc_client_config *client_config);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_CLIENT_CONFIG_H */
