@@ -2245,6 +2245,23 @@ node_modules:
 - deps:
   - grpc
   - gpr
+  headers:
+  - src/node/ext/byte_buffer.h
+  - src/node/ext/call.h
+  - src/node/ext/call_credentials.h
+  - src/node/ext/channel.h
+  - src/node/ext/channel_credentials.h
+  - src/node/ext/completion_queue_async_worker.h
+  - src/node/ext/server.h
+  - src/node/ext/server_credentials.h
+  - src/node/ext/timeval.h
+  js:
+  - src/node/index.js
+  - src/node/src/client.js
+  - src/node/src/common.js
+  - src/node/src/credentials.js
+  - src/node/src/metadata.js
+  - src/node/src/server.js
   name: grpc_node
   src:
   - src/node/ext/byte_buffer.cc
