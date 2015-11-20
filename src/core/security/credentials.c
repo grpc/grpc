@@ -1210,7 +1210,7 @@ grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
                  (reserved));
   GPR_ASSERT(reserved == NULL);
   memset(c, 0, sizeof(*c));
-  c->base.type = GRPC_CALL_CREDENTIALS_TYPE_METADATA_PLUGIN;
+  c->base.type = plugin.type;
   c->base.vtable = &plugin_vtable;
   gpr_ref_init(&c->base.refcount, 1);
   c->plugin = plugin;

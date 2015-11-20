@@ -276,6 +276,9 @@ typedef struct {
 
   /* State that will be set as the first parameter of the methods above. */
   void *state;
+
+  /* Type of credentials that this plugin is implementing. */
+  const char *type;
 } grpc_metadata_credentials_plugin;
 
 /* Creates a credentials object from a plugin. */

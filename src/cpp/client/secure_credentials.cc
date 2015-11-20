@@ -208,7 +208,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
       new MetadataCredentialsPluginWrapper(std::move(plugin));
   grpc_metadata_credentials_plugin c_plugin = {
       MetadataCredentialsPluginWrapper::GetMetadata,
-      MetadataCredentialsPluginWrapper::Destroy, wrapper};
+      MetadataCredentialsPluginWrapper::Destroy, wrapper, ""};
   return WrapCallCredentials(
       grpc_metadata_credentials_create_from_plugin(c_plugin, nullptr));
 }

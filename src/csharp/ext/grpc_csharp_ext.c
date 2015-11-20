@@ -950,6 +950,7 @@ GPR_EXPORT grpc_call_credentials *GPR_CALLTYPE grpcsharp_metadata_credentials_cr
   plugin.get_metadata = grpcsharp_get_metadata_handler;
   plugin.destroy = grpcsharp_metadata_credentials_destroy_handler;
   plugin.state = (void*)(gpr_intptr)metadata_interceptor;
+  plugin.type = "";
   return grpc_metadata_credentials_create_from_plugin(plugin, NULL);
 }
 
