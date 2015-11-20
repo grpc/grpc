@@ -356,6 +356,7 @@
     <ClInclude Include="..\..\..\src\core\transport\connectivity_state.h" />
     <ClInclude Include="..\..\..\src\core\transport\metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\metadata_batch.h" />
+    <ClInclude Include="..\..\..\src\core\transport\static_metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\..\src\core\census\aggregation.h" />
@@ -608,6 +609,8 @@
     <ClCompile Include="..\..\..\src\core\transport\metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\metadata_batch.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\static_metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\transport.c">
     </ClCompile>
