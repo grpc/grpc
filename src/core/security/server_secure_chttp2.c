@@ -145,9 +145,9 @@ static void start(grpc_exec_ctx *exec_ctx, grpc_server *server, void *statep,
 
 static void destroy_done(grpc_exec_ctx *exec_ctx, void *statep, int success) {
   grpc_server_secure_state *state = statep;
+  grpc_security_connector_shutdown(exec_ctx, state->sc);
   state->destroy_callback->cb(exec_ctx, state->destroy_callback->cb_arg,
                               success);
-  grpc_security_connector_shutdown(exec_ctx, state->sc);
   state_unref(state);
 }
 
