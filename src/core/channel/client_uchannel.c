@@ -84,9 +84,9 @@ static void monitor_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
   grpc_connectivity_state_set(exec_ctx, &chand->state_tracker,
                               chand->subchannel_connectivity,
                               "uchannel_monitor_subchannel");
-  grpc_connected_subchannel_notify_on_state_change(exec_ctx, chand->connected_subchannel,
-                                         &chand->subchannel_connectivity,
-                                         &chand->connectivity_cb);
+  grpc_connected_subchannel_notify_on_state_change(
+      exec_ctx, chand->connected_subchannel, &chand->subchannel_connectivity,
+      &chand->connectivity_cb);
 }
 
 static char *cuc_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
@@ -168,8 +168,8 @@ static void cuc_init_channel_elem(grpc_exec_ctx *exec_ctx,
 static void cuc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
-  grpc_connected_subchannel_state_change_unsubscribe(exec_ctx, chand->connected_subchannel,
-                                           &chand->connectivity_cb);
+  grpc_connected_subchannel_state_change_unsubscribe(
+      exec_ctx, chand->connected_subchannel, &chand->connectivity_cb);
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   gpr_mu_destroy(&chand->mu_state);
 }
@@ -198,9 +198,9 @@ grpc_connectivity_state grpc_client_uchannel_check_connectivity_state(
                                 GRPC_CHANNEL_CONNECTING,
                                 "uchannel_connecting_changed");
     chand->subchannel_connectivity = out;
-    grpc_connected_subchannel_notify_on_state_change(exec_ctx, chand->connected_subchannel,
-                                           &chand->subchannel_connectivity,
-                                           &chand->connectivity_cb);
+    grpc_connected_subchannel_notify_on_state_change(
+        exec_ctx, chand->connected_subchannel, &chand->subchannel_connectivity,
+        &chand->connectivity_cb);
   }
   gpr_mu_unlock(&chand->mu_state);
   return out;
@@ -221,8 +221,8 @@ grpc_pollset_set *grpc_client_uchannel_get_connecting_pollset_set(
   channel_data *chand = elem->channel_data;
   grpc_channel_element *parent_elem;
   gpr_mu_lock(&chand->mu_state);
-  parent_elem = grpc_channel_stack_last_element(grpc_channel_get_channel_stack(
-      chand->master));
+  parent_elem = grpc_channel_stack_last_element(
+      grpc_channel_get_channel_stack(chand->master));
   gpr_mu_unlock(&chand->mu_state);
   return grpc_client_channel_get_connecting_pollset_set(parent_elem);
 }
@@ -267,8 +267,8 @@ grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
   return channel;
 }
 
-void grpc_client_uchannel_set_connected_subchannel(grpc_channel *uchannel,
-                                         grpc_connected_subchannel *connected_subchannel) {
+void grpc_client_uchannel_set_connected_subchannel(
+    grpc_channel *uchannel, grpc_connected_subchannel *connected_subchannel) {
   grpc_channel_element *elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(uchannel));
   channel_data *chand = elem->channel_data;
