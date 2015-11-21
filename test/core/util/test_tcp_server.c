@@ -49,6 +49,7 @@ void test_tcp_server_init(test_tcp_server *server,
                           grpc_tcp_server_cb on_connect, void *user_data) {
   grpc_init();
   server->tcp_server = NULL;
+  server->shutdown = 0;
   grpc_pollset_init(&server->pollset);
   server->pollsets[0] = &server->pollset;
   server->on_connect = on_connect;
@@ -90,16 +91,29 @@ void test_tcp_server_poll(test_tcp_server *server, int seconds) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void do_nothing(grpc_exec_ctx *exec_ctx, void *ignored, int success) {}
+static void on_server_destroyed(grpc_exec_ctx *exec_ctx, void *data,
+                                int success) {
+  test_tcp_server *server = data;
+  server->shutdown = 1;
+}
+
+static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, int success) {}
 
 void test_tcp_server_destroy(test_tcp_server *server) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_closure do_nothing_closure[2];
-  grpc_closure_init(&do_nothing_closure[0], do_nothing, NULL);
-  grpc_closure_init(&do_nothing_closure[1], do_nothing, NULL);
-  grpc_tcp_server_destroy(&exec_ctx, server->tcp_server,
-                          &do_nothing_closure[0]);
-  grpc_pollset_shutdown(&exec_ctx, &server->pollset, &do_nothing_closure[1]);
+  gpr_timespec shutdown_deadline;
+  grpc_closure server_shutdown_cb;
+  grpc_closure do_nothing_cb;
+  grpc_closure_init(&server_shutdown_cb, on_server_destroyed, server);
+  grpc_closure_init(&do_nothing_cb, do_nothing, NULL);
+  grpc_tcp_server_destroy(&exec_ctx, server->tcp_server, &server_shutdown_cb);
+  shutdown_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                   gpr_time_from_seconds(5, GPR_TIMESPAN));
+  while (!server->shutdown &&
+         gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), shutdown_deadline) < 0) {
+    test_tcp_server_poll(server, 1);
+  }
+  grpc_pollset_shutdown(&exec_ctx, &server->pollset, &do_nothing_cb);
   grpc_exec_ctx_finish(&exec_ctx);
   grpc_pollset_destroy(&server->pollset);
   grpc_shutdown();

@@ -48,7 +48,7 @@
 
 struct rpc_state {
   char *target;
-  grpc_credentials *creds;
+  grpc_channel_credentials *creds;
   grpc_completion_queue *cq;
   grpc_channel *channel;
   grpc_call *call;
@@ -145,7 +145,7 @@ static void cleanup_rpc(void) {
   grpc_event ev;
   gpr_slice_buffer_destroy(&state.incoming_buffer);
   gpr_slice_buffer_destroy(&state.temp_incoming_buffer);
-  grpc_credentials_unref(state.creds);
+  grpc_channel_credentials_unref(state.creds);
   grpc_call_destroy(state.call);
   grpc_completion_queue_shutdown(state.cq);
   do {
