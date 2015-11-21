@@ -126,7 +126,8 @@ void grpc_pollset_destroy(grpc_pollset *pollset) {}
 
 void grpc_pollset_reset(grpc_pollset *pollset) {
   GPR_ASSERT(pollset->shutting_down);
-  GPR_ASSERT(!has_workers(&pollset->root_worker, GRPC_POLLSET_WORKER_LINK_POLLSET));
+  GPR_ASSERT(
+      !has_workers(&pollset->root_worker, GRPC_POLLSET_WORKER_LINK_POLLSET));
   pollset->shutting_down = 0;
   pollset->is_iocp_worker = 0;
   pollset->kicked_without_pollers = 0;

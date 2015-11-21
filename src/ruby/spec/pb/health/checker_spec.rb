@@ -31,6 +31,7 @@ require 'grpc'
 require 'grpc/health/v1alpha/health'
 require 'grpc/health/checker'
 require 'open3'
+require 'tmpdir'
 
 def can_run_codegen_check
   system('which grpc_ruby_plugin') && system('which protoc')

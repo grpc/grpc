@@ -135,9 +135,8 @@ static void kill_server(const servers_fixture *f, size_t i) {
   gpr_log(GPR_INFO, "KILLING SERVER %d", i);
   GPR_ASSERT(f->servers[i] != NULL);
   grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
-  GPR_ASSERT(
-      grpc_completion_queue_pluck(f->cq, tag(10000), n_millis_time(5000), NULL)
-          .type == GRPC_OP_COMPLETE);
+  GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000), n_millis_time(5000),
+                                         NULL).type == GRPC_OP_COMPLETE);
   grpc_server_destroy(f->servers[i]);
   f->servers[i] = NULL;
 }
@@ -203,8 +202,8 @@ static void teardown_servers(servers_fixture *f) {
     if (f->servers[i] == NULL) continue;
     grpc_server_shutdown_and_notify(f->servers[i], f->cq, tag(10000));
     GPR_ASSERT(grpc_completion_queue_pluck(f->cq, tag(10000),
-                                           n_millis_time(5000), NULL)
-                   .type == GRPC_OP_COMPLETE);
+                                           n_millis_time(5000),
+                                           NULL).type == GRPC_OP_COMPLETE);
     grpc_server_destroy(f->servers[i]);
   }
   grpc_completion_queue_shutdown(f->cq);
@@ -269,8 +268,8 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
     memset(s_valid, 0, f->num_servers * sizeof(int));
 
     c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                                 "/foo", "foo.test.google.fr", gpr_inf_future(GPR_CLOCK_REALTIME),
-                                 NULL);
+                                 "/foo", "foo.test.google.fr",
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     GPR_ASSERT(c);
     completed_client = 0;
 
@@ -303,8 +302,9 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
                grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), NULL));
 
     s_idx = -1;
-    while ((ev = grpc_completion_queue_next(f->cq, n_millis_time(s_idx == -1 ? 3000 : 200), NULL))
-               .type != GRPC_QUEUE_TIMEOUT) {
+    while ((ev = grpc_completion_queue_next(
+                f->cq, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1), NULL)).type !=
+           GRPC_QUEUE_TIMEOUT) {
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
       read_tag = ((int)(gpr_intptr)ev.tag);
       gpr_log(GPR_DEBUG, "EVENT: success:%d, type:%d, tag:%d iter:%d",
@@ -315,6 +315,7 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
         s_idx = read_tag - 1000;
         s_valid[s_idx] = 1;
         connection_sequence[iter_num] = s_idx;
+        break;
       } else if (read_tag == 1) {
         gpr_log(GPR_DEBUG, "client timed out");
         GPR_ASSERT(ev.success);
@@ -453,6 +454,8 @@ void run_spec(const test_spec *spec) {
   int *actual_connection_sequence;
   request_data rdata;
   servers_fixture *f;
+  grpc_channel_args args;
+  grpc_arg arg;
   rdata.call_details =
       gpr_malloc(sizeof(grpc_call_details) * spec->num_servers);
   f = setup_servers("127.0.0.1", &rdata, spec->num_servers);
@@ -462,7 +465,14 @@ void run_spec(const test_spec *spec) {
                                           f->num_servers, ",", NULL);
   gpr_asprintf(&client_hostport, "ipv4:%s?lb_policy=round_robin",
                servers_hostports_str);
-  client = grpc_insecure_channel_create(client_hostport, NULL, NULL);
+
+  arg.type = GRPC_ARG_INTEGER;
+  arg.key = "grpc.testing.fixed_reconnect_backoff";
+  arg.value.integer = 100;
+  args.num_args = 1;
+  args.args = &arg;
+
+  client = grpc_insecure_channel_create(client_hostport, &args, NULL);
 
   gpr_log(GPR_INFO, "Testing '%s' with servers=%s client=%s", spec->description,
           servers_hostports_str, client_hostport);

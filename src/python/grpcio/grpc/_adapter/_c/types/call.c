@@ -173,12 +173,12 @@ PyObject *pygrpc_Call_peer(Call *self) {
 }
 PyObject *pygrpc_Call_set_credentials(Call *self, PyObject *args,
                                       PyObject *kwargs) {
-  ClientCredentials *creds;
+  CallCredentials *creds;
   grpc_call_error errcode;
   static char *keywords[] = {"creds", NULL};
   if (!PyArg_ParseTupleAndKeywords(
       args, kwargs, "O!:set_credentials", keywords,
-      &pygrpc_ClientCredentials_type, &creds)) {
+      &pygrpc_CallCredentials_type, &creds)) {
     return NULL;
   }
   errcode = grpc_call_set_credentials(self->c_call, creds->c_creds);

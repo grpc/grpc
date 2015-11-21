@@ -40,7 +40,7 @@ describe GRPC::Core::Channel do
   let(:cq) { GRPC::Core::CompletionQueue.new }
 
   def create_test_cert
-    GRPC::Core::Credentials.new(load_test_certs[0])
+    GRPC::Core::ChannelCredentials.new(load_test_certs[0])
   end
 
   shared_examples '#new' do
