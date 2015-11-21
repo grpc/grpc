@@ -353,8 +353,8 @@ static void test_google_iam_creds(void) {
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       NULL);
   grpc_call_credentials_get_request_metadata(&exec_ctx, creds, NULL,
-                                        test_service_url,
-                                        check_google_iam_metadata, creds);
+                                             test_service_url,
+                                             check_google_iam_metadata, creds);
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
@@ -436,7 +436,8 @@ static void test_oauth2_google_iam_composite_creds(void) {
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       NULL);
   grpc_call_credentials *composite_creds =
-      grpc_composite_call_credentials_create(oauth2_creds, google_iam_creds, NULL);
+      grpc_composite_call_credentials_create(oauth2_creds, google_iam_creds,
+                                             NULL);
   grpc_call_credentials_unref(oauth2_creds);
   grpc_call_credentials_unref(google_iam_creds);
   GPR_ASSERT(
@@ -481,7 +482,8 @@ static void test_channel_oauth2_google_iam_composite_creds(void) {
   grpc_call_credentials *oauth2_creds =
       grpc_access_token_credentials_create("blah", NULL);
   grpc_channel_credentials *channel_oauth2_creds =
-      grpc_composite_channel_credentials_create(channel_creds, oauth2_creds, NULL);
+      grpc_composite_channel_credentials_create(channel_creds, oauth2_creds,
+                                                NULL);
   grpc_call_credentials *google_iam_creds = grpc_google_iam_credentials_create(
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       NULL);

@@ -57,6 +57,7 @@ void test_tcp_server_init(test_tcp_server *server,
 
 void test_tcp_server_start(test_tcp_server *server, int port) {
   struct sockaddr_in addr;
+  grpc_tcp_listener *listener;
   int port_added;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
 
@@ -65,8 +66,8 @@ void test_tcp_server_start(test_tcp_server *server, int port) {
   memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
 
   server->tcp_server = grpc_tcp_server_create();
-  port_added =
-      grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr));
+  listener = grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr));
+  port_added = grpc_tcp_listener_get_port(listener);
   GPR_ASSERT(port_added == port);
 
   grpc_tcp_server_start(&exec_ctx, server->tcp_server, server->pollsets, 1,

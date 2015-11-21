@@ -252,6 +252,58 @@ func testTLSApplicationProtocol(ctx *HTTP2InteropCtx) error {
 	return nil
 }
 
+func testTLSBadCipherSuites(ctx *HTTP2InteropCtx) error {
+	config := buildTlsConfig(ctx)
+	// These are the suites that Go supports, but are forbidden by http2.
+	config.CipherSuites = []uint16{
+		tls.TLS_RSA_WITH_RC4_128_SHA,
+		tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+		tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_RSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_ECDHE_ECDSA_WITH_RC4_128_SHA,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+		tls.TLS_ECDHE_RSA_WITH_RC4_128_SHA,
+		tls.TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+	}
+	conn, err := connectWithTls(ctx, config)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	conn.SetDeadline(time.Now().Add(defaultTimeout))
+
+	if err := http2Connect(conn, nil); err != nil {
+		return err
+	}
+
+	for {
+		f, err := parseFrame(conn)
+		if err != nil {
+			return err
+		}
+		if gf, ok := f.(*GoAwayFrame); ok {
+			return fmt.Errorf("Got goaway frame %d", gf.Code)
+		}
+	}
+	return nil
+}
+
+func http2Connect(c net.Conn, sf *SettingsFrame) error {
+	if _, err := c.Write([]byte(Preface)); err != nil {
+		return err
+	}
+	if sf == nil {
+		sf = &SettingsFrame{}
+	}
+	if err := streamFrame(c, sf); err != nil {
+		return err
+	}
+	return nil
+}
+
 func connect(ctx *HTTP2InteropCtx) (net.Conn, error) {
 	var conn net.Conn
 	var err error

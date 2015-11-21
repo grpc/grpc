@@ -269,8 +269,8 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
     memset(s_valid, 0, f->num_servers * sizeof(int));
 
     c = grpc_channel_create_call(client, NULL, GRPC_PROPAGATE_DEFAULTS, f->cq,
-                                 "/foo", "foo.test.google.fr", gpr_inf_future(GPR_CLOCK_REALTIME),
-                                 NULL);
+                                 "/foo", "foo.test.google.fr",
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
     GPR_ASSERT(c);
     completed_client = 0;
 
