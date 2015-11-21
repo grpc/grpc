@@ -115,16 +115,20 @@ class Call(object):
     return call
 
   def invoke(self, completion_queue, metadata_tag, finish_tag):
-    err0 = self._internal.start_batch([
+    err = self._internal.start_batch([
           _types.OpArgs.send_initial_metadata(self._metadata)
       ], _IGNORE_ME_TAG)
-    err1 = self._internal.start_batch([
+    if err != _types.CallError.OK:
+      return err
+    err = self._internal.start_batch([
           _types.OpArgs.recv_initial_metadata()
       ], _TagAdapter(metadata_tag, Event.Kind.METADATA_ACCEPTED))
-    err2 = self._internal.start_batch([
+    if err != _types.CallError.OK:
+      return err
+    err = self._internal.start_batch([
           _types.OpArgs.recv_status_on_client()
       ], _TagAdapter(finish_tag, Event.Kind.FINISH))
-    return err0 if err0 != _types.CallError.OK else err1 if err1 != _types.CallError.OK else err2 if err2 != _types.CallError.OK else _types.CallError.OK
+    return err
 
   def write(self, message, tag, flags):
     return self._internal.start_batch([
@@ -158,7 +162,8 @@ class Call(object):
 
   def status(self, status, tag):
     return self._internal.start_batch([
-          _types.OpArgs.send_status_from_server(self._metadata, status.code, status.details)
+          _types.OpArgs.send_status_from_server(
+              self._metadata, status.code, status.details)
       ], _TagAdapter(tag, Event.Kind.COMPLETE_ACCEPTED))
 
   def cancel(self):
@@ -192,7 +197,7 @@ class CompletionQueue(object):
 
   def get(self, deadline=None):
     if deadline is None:
-      ev = self._internal.next()
+      ev = self._internal.next(float('+inf'))
     else:
       ev = self._internal.next(deadline)
     if ev is None:
@@ -248,6 +253,9 @@ class Server(object):
   def service(self, tag):
     return self._internal.request_call(self._internal_cq, _TagAdapter(tag, Event.Kind.SERVICE_ACCEPTED))
 
+  def cancel_all_calls(self):
+    self._internal.cancel_all_calls()
+
   def stop(self):
     return self._internal.shutdown(_TagAdapter(None, Event.Kind.STOP))
 
@@ -256,12 +264,12 @@ class ClientCredentials(object):
   """Adapter from old _low.ClientCredentials interface to new _low.ChannelCredentials."""
 
   def __init__(self, root_certificates, private_key, certificate_chain):
-    self._internal = _low.ChannelCredentials.ssl(root_certificates, private_key, certificate_chain)
+    self._internal = _low.channel_credentials_ssl(root_certificates, private_key, certificate_chain)
 
 
 class ServerCredentials(object):
   """Adapter from old _low.ServerCredentials interface to new _low.ServerCredentials."""
 
   def __init__(self, root_credentials, pair_sequence, force_client_auth):
-    self._internal = _low.ServerCredentials.ssl(
-        root_credentials, list(pair_sequence), force_client_auth)
+    self._internal = _low.server_credentials_ssl(
+        root_credentials, pair_sequence, force_client_auth)
