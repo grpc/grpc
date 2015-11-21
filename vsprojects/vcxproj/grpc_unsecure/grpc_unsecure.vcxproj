@@ -274,6 +274,7 @@
     <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h" />
     <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h" />
     <ClInclude Include="..\..\..\src\core\client_config\uri_parser.h" />
+    <ClInclude Include="..\..\..\src\core\compression\algorithm_metadata.h" />
     <ClInclude Include="..\..\..\src\core\compression\message_compress.h" />
     <ClInclude Include="..\..\..\src\core\debug\trace.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\format_request.h" />
@@ -356,6 +357,7 @@
     <ClInclude Include="..\..\..\src\core\transport\connectivity_state.h" />
     <ClInclude Include="..\..\..\src\core\transport\metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\metadata_batch.h" />
+    <ClInclude Include="..\..\..\src\core\transport\static_metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\..\src\core\census\aggregation.h" />
@@ -608,6 +610,8 @@
     <ClCompile Include="..\..\..\src\core\transport\metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\metadata_batch.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\static_metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\transport.c">
     </ClCompile>

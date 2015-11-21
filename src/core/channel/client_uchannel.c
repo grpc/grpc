@@ -54,9 +54,6 @@
  * load-balancing mechanisms meant for communication from within the core. */
 
 typedef struct client_uchannel_channel_data {
-  /** metadata context for this channel */
-  grpc_mdctx *mdctx;
-
   /** master channel - the grpc_channel instance that ultimately owns
       this channel_data via its channel stack.
       We occasionally use this to bump the refcount on the master channel
@@ -161,7 +158,6 @@ static void cuc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&chand->connectivity_cb, monitor_subchannel, chand);
   GPR_ASSERT(args->is_last);
   GPR_ASSERT(elem->filter == &grpc_client_uchannel_filter);
-  chand->mdctx = args->metadata_context;
   chand->master = args->master;
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_uchannel");
@@ -252,13 +248,11 @@ grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
   grpc_channel *channel = NULL;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
-  grpc_mdctx *mdctx = grpc_subchannel_get_mdctx(subchannel);
   grpc_channel *master = grpc_subchannel_get_master(subchannel);
   char *target = grpc_channel_get_target(master);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 0;
 
-  grpc_mdctx_ref(mdctx);
   if (grpc_channel_args_is_census_enabled(args)) {
     filters[n++] = &grpc_client_census_filter;
   }
@@ -266,8 +260,8 @@ grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
   filters[n++] = &grpc_client_uchannel_filter;
   GPR_ASSERT(n <= MAX_FILTERS);
 
-  channel = grpc_channel_create_from_filters(&exec_ctx, target, filters, n,
-                                             args, mdctx, 1);
+  channel =
+      grpc_channel_create_from_filters(&exec_ctx, target, filters, n, args, 1);
 
   gpr_free(target);
   return channel;

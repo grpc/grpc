@@ -36,9 +36,9 @@ authenticate the server and encrypt all data.
 ```cpp
 SslCredentialsOptions ssl_opts;  // Options to override SSL params, empty by default
 // Create the credentials object by providing service account key in constructor
-std::unique_ptr<Credentials> creds = CredentialsFactory::SslCredentials(ssl_opts);
+std::shared_ptr<ChannelCredentials> creds = SslCredentials(ssl_opts);
 // Create a channel using the credentials created in the previous step
-std::shared_ptr<ChannelInterface> channel = CreateChannel(server_name, creds, channel_args);
+std::shared_ptr<Channel> channel = CreateChannel(server_name, creds);
 // Create a stub on the channel
 std::unique_ptr<Greeter::Stub> stub(Greeter::NewStub(channel));
 // Make actual RPC calls on the stub.
@@ -55,9 +55,9 @@ passed to the factory method.
 gRPC applications can use a simple API to create a credential that works in various deployment scenarios.
 
 ```cpp
-std::unique_ptr<Credentials> creds = CredentialsFactory::GoogleDefaultCredentials();
+std::shared_ptr<ChannelCredentials> creds = GoogleDefaultCredentials();
 // Create a channel, stub and make RPC calls (same as in the previous example)
-std::shared_ptr<ChannelInterface> channel = CreateChannel(server_name, creds, channel_args);
+std::shared_ptr<Channel> channel = CreateChannel(server_name, creds);
 std::unique_ptr<Greeter::Stub> stub(Greeter::NewStub(channel));
 grpc::Status s = stub->sayHello(&context, *request, response);
 ```

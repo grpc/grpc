@@ -110,7 +110,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   list<ClientContext> contexts;
 
   // To be added to the result, containing the final configuration used for
-  // client and config (incluiding host, etc.)
+  // client and config (including host, etc.)
   ClientConfig result_client_config;
   ServerConfig result_server_config;
 
@@ -162,7 +162,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   auto* servers = new ServerData[num_servers];
   for (size_t i = 0; i < num_servers; i++) {
     servers[i].stub = WorkerService::NewStub(
-        CreateChannel(workers[i], InsecureCredentials()));
+        CreateChannel(workers[i], InsecureChannelCredentials()));
     ServerArgs args;
     result_server_config = server_config;
     *args.mutable_setup() = server_config;
@@ -189,7 +189,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   auto* clients = new ClientData[num_clients];
   for (size_t i = 0; i < num_clients; i++) {
     clients[i].stub = WorkerService::NewStub(
-        CreateChannel(workers[i + num_servers], InsecureCredentials()));
+        CreateChannel(workers[i + num_servers], InsecureChannelCredentials()));
     ClientArgs args;
     result_client_config = client_config;
     *args.mutable_setup() = client_config;

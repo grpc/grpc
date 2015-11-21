@@ -37,7 +37,9 @@
 #include <grpc/compression.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/compression/algorithm_metadata.h"
 #include "src/core/surface/api_trace.h"
+#include "src/core/transport/static_metadata.h"
 
 int grpc_compression_algorithm_parse(const char *name, size_t name_length,
                                      grpc_compression_algorithm *algorithm) {
@@ -72,17 +74,55 @@ int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
       *name = "identity";
-      break;
+      return 1;
     case GRPC_COMPRESS_DEFLATE:
       *name = "deflate";
-      break;
+      return 1;
     case GRPC_COMPRESS_GZIP:
       *name = "gzip";
-      break;
-    default:
+      return 1;
+    case GRPC_COMPRESS_ALGORITHMS_COUNT:
       return 0;
   }
-  return 1;
+  return 0;
+}
+
+grpc_compression_algorithm grpc_compression_algorithm_from_mdstr(
+    grpc_mdstr *str) {
+  if (str == GRPC_MDSTR_IDENTITY) return GRPC_COMPRESS_NONE;
+  if (str == GRPC_MDSTR_DEFLATE) return GRPC_COMPRESS_DEFLATE;
+  if (str == GRPC_MDSTR_GZIP) return GRPC_COMPRESS_GZIP;
+  return GRPC_COMPRESS_ALGORITHMS_COUNT;
+}
+
+grpc_mdstr *grpc_compression_algorithm_mdstr(
+    grpc_compression_algorithm algorithm) {
+  switch (algorithm) {
+    case GRPC_COMPRESS_NONE:
+      return GRPC_MDSTR_IDENTITY;
+    case GRPC_COMPRESS_DEFLATE:
+      return GRPC_MDSTR_DEFLATE;
+    case GRPC_COMPRESS_GZIP:
+      return GRPC_MDSTR_GZIP;
+    case GRPC_COMPRESS_ALGORITHMS_COUNT:
+      return NULL;
+  }
+  return NULL;
+}
+
+grpc_mdelem *grpc_compression_encoding_mdelem(
+    grpc_compression_algorithm algorithm) {
+  switch (algorithm) {
+    case GRPC_COMPRESS_NONE:
+      return GRPC_MDELEM_GRPC_ENCODING_IDENTITY;
+    case GRPC_COMPRESS_DEFLATE:
+      return GRPC_MDELEM_GRPC_ENCODING_DEFLATE;
+    case GRPC_COMPRESS_GZIP:
+      return GRPC_MDELEM_GRPC_ENCODING_GZIP;
+    case GRPC_COMPRESS_ALGORITHMS_COUNT:
+      return NULL;
+  }
+  return NULL;
 }
 
 /* TODO(dgq): Add the ability to specify parameters to the individual

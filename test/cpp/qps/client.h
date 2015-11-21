@@ -181,29 +181,29 @@ class Client {
 
     std::unique_ptr<RandomDist> random_dist;
     switch (load.load_case()) {
-    case LoadParams::kClosedLoop:
-      // Closed-loop doesn't use random dist at all
-      break;
-    case LoadParams::kPoisson:
-      random_dist.reset(
-          new ExpDist(load.poisson().offered_load() / num_threads));
-      break;
-    case LoadParams::kUniform:
-      random_dist.reset(
-          new UniformDist(load.uniform().interarrival_lo() * num_threads,
-                          load.uniform().interarrival_hi() * num_threads));
-      break;
-    case LoadParams::kDeterm:
-      random_dist.reset(
-          new DetDist(num_threads / load.determ().offered_load()));
-      break;
-    case LoadParams::kPareto:
-      random_dist.reset(
-          new ParetoDist(load.pareto().interarrival_base() * num_threads,
-                         load.pareto().alpha()));
-      break;
-    default:
-      GPR_ASSERT(false);
+      case LoadParams::kClosedLoop:
+        // Closed-loop doesn't use random dist at all
+        break;
+      case LoadParams::kPoisson:
+        random_dist.reset(
+            new ExpDist(load.poisson().offered_load() / num_threads));
+        break;
+      case LoadParams::kUniform:
+        random_dist.reset(
+            new UniformDist(load.uniform().interarrival_lo() * num_threads,
+                            load.uniform().interarrival_hi() * num_threads));
+        break;
+      case LoadParams::kDeterm:
+        random_dist.reset(
+            new DetDist(num_threads / load.determ().offered_load()));
+        break;
+      case LoadParams::kPareto:
+        random_dist.reset(
+            new ParetoDist(load.pareto().interarrival_base() * num_threads,
+                           load.pareto().alpha()));
+        break;
+      default:
+        GPR_ASSERT(false);
     }
 
     // Set closed_loop_ based on whether or not random_dist is set

@@ -43,6 +43,7 @@
 #include <grpc/support/useful.h>
 
 #include "src/core/channel/channel_stack.h"
+#include "src/core/compression/algorithm_metadata.h"
 #include "src/core/iomgr/timer.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
@@ -50,6 +51,7 @@
 #include "src/core/surface/call.h"
 #include "src/core/surface/channel.h"
 #include "src/core/surface/completion_queue.h"
+#include "src/core/transport/static_metadata.h"
 
 /** The maximum number of concurrent batches possible.
     Based upon the maximum number of individually queueable ops in the batch
@@ -135,7 +137,6 @@ struct grpc_call {
   grpc_channel *channel;
   grpc_call *parent;
   grpc_call *first_child;
-  grpc_mdctx *metadata_context;
   /* TODO(ctiller): share with cq if possible? */
   gpr_mu mu;
 
@@ -267,7 +268,6 @@ grpc_call *grpc_call_create(grpc_channel *channel, grpc_call *parent_call,
   }
   call->send_deadline = send_deadline;
   GRPC_CHANNEL_INTERNAL_REF(channel, "call");
-  call->metadata_context = grpc_channel_get_metadata_context(channel);
   /* initial refcount dropped by grpc_call_destroy */
   grpc_call_stack_init(&exec_ctx, channel_stack, 1, destroy_call, call,
                        call->context, server_transport_data,
@@ -567,9 +567,8 @@ static int prepare_application_metadata(grpc_call *call, int count,
     grpc_metadata *md = &metadata[i];
     grpc_linked_mdelem *l = (grpc_linked_mdelem *)&md->internal_data;
     GPR_ASSERT(sizeof(grpc_linked_mdelem) == sizeof(md->internal_data));
-    l->md = grpc_mdelem_from_string_and_buffer(call->metadata_context, md->key,
-                                               (const gpr_uint8 *)md->value,
-                                               md->value_length);
+    l->md = grpc_mdelem_from_string_and_buffer(
+        md->key, (const gpr_uint8 *)md->value, md->value_length);
     if (!grpc_mdstr_is_legal_header(l->md->key)) {
       gpr_log(GPR_ERROR, "attempt to send invalid metadata key: %s",
               grpc_mdstr_as_c_string(l->md->key));
@@ -712,8 +711,7 @@ static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                           grpc_status_code status,
                                           const char *description) {
   grpc_mdstr *details =
-      description ? grpc_mdstr_from_string(c->metadata_context, description)
-                  : NULL;
+      description ? grpc_mdstr_from_string(description) : NULL;
   cancel_closure *cc = gpr_malloc(sizeof(*cc));
 
   GPR_ASSERT(status != GRPC_STATUS_OK);
@@ -788,8 +786,12 @@ static void destroy_status(void *ignored) {}
 
 static gpr_uint32 decode_status(grpc_mdelem *md) {
   gpr_uint32 status;
-  void *user_data = grpc_mdelem_get_user_data(md, destroy_status);
-  if (user_data) {
+  void *user_data;
+  if (md == GRPC_MDELEM_GRPC_STATUS_0) return 0;
+  if (md == GRPC_MDELEM_GRPC_STATUS_1) return 1;
+  if (md == GRPC_MDELEM_GRPC_STATUS_2) return 2;
+  user_data = grpc_mdelem_get_user_data(md, destroy_status);
+  if (user_data != NULL) {
     status = ((gpr_uint32)(gpr_intptr)user_data) - STATUS_OFFSET;
   } else {
     if (!gpr_parse_bytes_to_uint32(grpc_mdstr_as_c_string(md->value),
@@ -803,38 +805,23 @@ static gpr_uint32 decode_status(grpc_mdelem *md) {
   return status;
 }
 
-/* just as for status above, we need to offset: metadata userdata can't hold a
- * zero (null), which in this case is used to signal no compression */
-#define COMPRESS_OFFSET 1
-static void destroy_compression(void *ignored) {}
-
 static gpr_uint32 decode_compression(grpc_mdelem *md) {
-  grpc_compression_algorithm algorithm;
-  void *user_data = grpc_mdelem_get_user_data(md, destroy_compression);
-  if (user_data) {
-    algorithm =
-        ((grpc_compression_algorithm)(gpr_intptr)user_data) - COMPRESS_OFFSET;
-  } else {
+  grpc_compression_algorithm algorithm =
+      grpc_compression_algorithm_from_mdstr(md->value);
+  if (algorithm == GRPC_COMPRESS_ALGORITHMS_COUNT) {
     const char *md_c_str = grpc_mdstr_as_c_string(md->value);
-    if (!grpc_compression_algorithm_parse(md_c_str, strlen(md_c_str),
-                                          &algorithm)) {
-      gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'", md_c_str);
-      assert(0);
-    }
-    grpc_mdelem_set_user_data(
-        md, destroy_compression,
-        (void *)(gpr_intptr)(algorithm + COMPRESS_OFFSET));
+    gpr_log(GPR_ERROR, "Invalid compression algorithm: '%s'", md_c_str);
   }
   return algorithm;
 }
 
 static grpc_mdelem *recv_common_filter(grpc_call *call, grpc_mdelem *elem) {
-  if (elem->key == grpc_channel_get_status_string(call->channel)) {
+  if (elem->key == GRPC_MDSTR_GRPC_STATUS) {
     GPR_TIMER_BEGIN("status", 0);
     set_status_code(call, STATUS_FROM_WIRE, decode_status(elem));
     GPR_TIMER_END("status", 0);
     return NULL;
-  } else if (elem->key == grpc_channel_get_message_string(call->channel)) {
+  } else if (elem->key == GRPC_MDSTR_GRPC_MESSAGE) {
     GPR_TIMER_BEGIN("status-details", 0);
     set_status_details(call, STATUS_FROM_WIRE, GRPC_MDSTR_REF(elem->value));
     GPR_TIMER_END("status-details", 0);
@@ -867,14 +854,12 @@ static grpc_mdelem *recv_initial_filter(void *callp, grpc_mdelem *elem) {
   elem = recv_common_filter(call, elem);
   if (elem == NULL) {
     return NULL;
-  } else if (elem->key ==
-             grpc_channel_get_compression_algorithm_string(call->channel)) {
+  } else if (elem->key == GRPC_MDSTR_GRPC_ENCODING) {
     GPR_TIMER_BEGIN("compression_algorithm", 0);
     set_compression_algorithm(call, decode_compression(elem));
     GPR_TIMER_END("compression_algorithm", 0);
     return NULL;
-  } else if (elem->key == grpc_channel_get_encodings_accepted_by_peer_string(
-                              call->channel)) {
+  } else if (elem->key == GRPC_MDSTR_GRPC_ACCEPT_ENCODING) {
     GPR_TIMER_BEGIN("encodings_accepted_by_peer", 0);
     set_encodings_accepted_by_peer(call, elem);
     GPR_TIMER_END("encodings_accepted_by_peer", 0);
@@ -922,7 +907,8 @@ static batch_control *allocate_batch_control(grpc_call *call) {
   size_t i;
   for (i = 0; i < MAX_CONCURRENT_BATCHES; i++) {
     if ((call->used_batches & (1 << i)) == 0) {
-      call->used_batches |= (gpr_uint8)(1 << i);
+      call->used_batches =
+          (gpr_uint8)(call->used_batches | (gpr_uint8)(1 << i));
       return &call->active_batches[i];
     }
   }
@@ -1240,10 +1226,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
             call->channel, op->data.send_status_from_server.status);
         if (op->data.send_status_from_server.status_details != NULL) {
           call->send_extra_metadata[1].md = grpc_mdelem_from_metadata_strings(
-              call->metadata_context,
-              GRPC_MDSTR_REF(grpc_channel_get_message_string(call->channel)),
+              GRPC_MDSTR_GRPC_MESSAGE,
               grpc_mdstr_from_string(
-                  call->metadata_context,
                   op->data.send_status_from_server.status_details));
           call->send_extra_metadata_count++;
           set_status_details(

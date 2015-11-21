@@ -37,7 +37,7 @@ from grpc._cython._cygrpc cimport records
 cdef class Channel:
 
   def __cinit__(self, target, records.ChannelArgs arguments=None,
-                credentials.ClientCredentials client_credentials=None):
+                credentials.ChannelCredentials channel_credentials=None):
     cdef grpc.grpc_channel_args *c_arguments = NULL
     self.c_channel = NULL
     self.references = []
@@ -49,13 +49,13 @@ cdef class Channel:
       target = target.encode()
     else:
       raise TypeError("expected target to be str or bytes")
-    if client_credentials is None:
+    if channel_credentials is None:
       self.c_channel = grpc.grpc_insecure_channel_create(target, c_arguments,
                                                          NULL)
     else:
       self.c_channel = grpc.grpc_secure_channel_create(
-          client_credentials.c_credentials, target, c_arguments, NULL)
-      self.references.append(client_credentials)
+          channel_credentials.c_credentials, target, c_arguments, NULL)
+      self.references.append(channel_credentials)
     self.references.append(target)
     self.references.append(arguments)
 

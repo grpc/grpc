@@ -70,7 +70,8 @@ class ChannelArguments {
   void SetChannelArgs(grpc_channel_args* channel_args) const;
 
   // gRPC specific channel argument setters
-  /// Set target name override for SSL host name checking.
+  /// Set target name override for SSL host name checking. This option is for
+  /// testing only and should never be used in production.
   void SetSslTargetNameOverride(const grpc::string& name);
   // TODO(yangg) add flow control options
   /// Set the compression algorithm for the channel.
@@ -83,7 +84,7 @@ class ChannelArguments {
   void SetString(const grpc::string& key, const grpc::string& value);
 
  private:
-  friend class SecureCredentials;
+  friend class SecureChannelCredentials;
   friend class testing::ChannelArgumentsTest;
 
   // Returns empty string when it is not set.
