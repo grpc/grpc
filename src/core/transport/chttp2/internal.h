@@ -227,6 +227,9 @@ struct grpc_chttp2_transport_parsing {
   /** was a goaway frame received? */
   gpr_uint8 goaway_received;
 
+  /** the last sent max_table_size setting */
+  gpr_uint32 last_sent_max_table_size;
+
   /** initial window change */
   gpr_int64 initial_window_update;
 
@@ -483,7 +486,8 @@ struct grpc_chttp2_stream {
 /** Someone is unlocking the transport mutex: check to see if writes
     are required, and schedule them if so */
 int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_global *global,
-                                       grpc_chttp2_transport_writing *writing);
+                                       grpc_chttp2_transport_writing *writing,
+                                       int is_parsing);
 void grpc_chttp2_perform_writes(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
     grpc_endpoint *endpoint);
