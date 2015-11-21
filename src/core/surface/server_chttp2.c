@@ -44,11 +44,11 @@
 #include <grpc/support/useful.h>
 
 static void setup_transport(grpc_exec_ctx *exec_ctx, void *server,
-                            grpc_transport *transport, grpc_mdctx *mdctx) {
+                            grpc_transport *transport) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_http_server_filter};
   grpc_server_setup_transport(exec_ctx, server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters), mdctx,
+                              GPR_ARRAY_SIZE(extra_filters),
                               grpc_server_get_channel_args(server));
 }
 
@@ -61,10 +61,9 @@ static void new_transport(grpc_exec_ctx *exec_ctx, void *server,
    * (as in server_secure_chttp2.c) needs to add synchronization to avoid this
    * case.
    */
-  grpc_mdctx *mdctx = grpc_mdctx_create();
   grpc_transport *transport = grpc_create_chttp2_transport(
-      exec_ctx, grpc_server_get_channel_args(server), tcp, mdctx, 0);
-  setup_transport(exec_ctx, server, transport, mdctx);
+      exec_ctx, grpc_server_get_channel_args(server), tcp, 0);
+  setup_transport(exec_ctx, server, transport);
   grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
 }
 

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 0.11.0.0
+PROJECT_NUMBER         = 0.12.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -809,6 +809,7 @@ src/core/client_config/subchannel_factory.h \
 src/core/client_config/subchannel_factory_decorators/add_channel_arg.h \
 src/core/client_config/subchannel_factory_decorators/merge_channel_args.h \
 src/core/client_config/uri_parser.h \
+src/core/compression/algorithm_metadata.h \
 src/core/compression/message_compress.h \
 src/core/debug/trace.h \
 src/core/httpcli/format_request.h \
@@ -891,6 +892,7 @@ src/core/transport/chttp2_transport.h \
 src/core/transport/connectivity_state.h \
 src/core/transport/metadata.h \
 src/core/transport/metadata_batch.h \
+src/core/transport/static_metadata.h \
 src/core/transport/transport.h \
 src/core/transport/transport_impl.h \
 src/core/census/aggregation.h \
@@ -1039,6 +1041,7 @@ src/core/transport/chttp2_transport.c \
 src/core/transport/connectivity_state.c \
 src/core/transport/metadata.c \
 src/core/transport/metadata_batch.c \
+src/core/transport/static_metadata.c \
 src/core/transport/transport.c \
 src/core/transport/transport_op_string.c \
 src/core/census/context.c \

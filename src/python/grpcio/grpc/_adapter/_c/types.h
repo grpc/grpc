@@ -44,27 +44,35 @@
 /* Client-side credentials */
 /*=========================*/
 
-typedef struct ClientCredentials {
+typedef struct ChannelCredentials {
   PyObject_HEAD
-  grpc_credentials *c_creds;
-} ClientCredentials;
-void pygrpc_ClientCredentials_dealloc(ClientCredentials *self);
-ClientCredentials *pygrpc_ClientCredentials_google_default(
+  grpc_channel_credentials *c_creds;
+} ChannelCredentials;
+void pygrpc_ChannelCredentials_dealloc(ChannelCredentials *self);
+ChannelCredentials *pygrpc_ChannelCredentials_google_default(
     PyTypeObject *type, PyObject *ignored);
-ClientCredentials *pygrpc_ClientCredentials_ssl(
+ChannelCredentials *pygrpc_ChannelCredentials_ssl(
     PyTypeObject *type, PyObject *args, PyObject *kwargs);
-ClientCredentials *pygrpc_ClientCredentials_composite(
+ChannelCredentials *pygrpc_ChannelCredentials_composite(
     PyTypeObject *type, PyObject *args, PyObject *kwargs);
-ClientCredentials *pygrpc_ClientCredentials_compute_engine(
-    PyTypeObject *type, PyObject *ignored);
-ClientCredentials *pygrpc_ClientCredentials_jwt(
-    PyTypeObject *type, PyObject *args, PyObject *kwargs);
-ClientCredentials *pygrpc_ClientCredentials_refresh_token(
-    PyTypeObject *type, PyObject *args, PyObject *kwargs);
-ClientCredentials *pygrpc_ClientCredentials_iam(
-    PyTypeObject *type, PyObject *args, PyObject *kwargs);
-extern PyTypeObject pygrpc_ClientCredentials_type;
+extern PyTypeObject pygrpc_ChannelCredentials_type;
 
+typedef struct CallCredentials {
+  PyObject_HEAD
+  grpc_call_credentials *c_creds;
+} CallCredentials;
+void pygrpc_CallCredentials_dealloc(CallCredentials *self);
+CallCredentials *pygrpc_CallCredentials_composite(
+    PyTypeObject *type, PyObject *args, PyObject *kwargs);
+CallCredentials *pygrpc_CallCredentials_compute_engine(
+    PyTypeObject *type, PyObject *ignored);
+CallCredentials *pygrpc_CallCredentials_jwt(
+    PyTypeObject *type, PyObject *args, PyObject *kwargs);
+CallCredentials *pygrpc_CallCredentials_refresh_token(
+    PyTypeObject *type, PyObject *args, PyObject *kwargs);
+CallCredentials *pygrpc_CallCredentials_iam(
+    PyTypeObject *type, PyObject *args, PyObject *kwargs);
+extern PyTypeObject pygrpc_CallCredentials_type;
 
 /*=========================*/
 /* Server-side credentials */

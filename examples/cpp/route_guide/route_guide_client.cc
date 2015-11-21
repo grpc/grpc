@@ -234,7 +234,8 @@ int main(int argc, char** argv) {
   // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = routeguide::GetDbFileContent(argc, argv);
   RouteGuideClient guide(
-      grpc::CreateChannel("localhost:50051", grpc::InsecureCredentials()),
+      grpc::CreateChannel("localhost:50051",
+                          grpc::InsecureChannelCredentials()),
       db);
 
   std::cout << "-------------- GetFeature --------------" << std::endl;

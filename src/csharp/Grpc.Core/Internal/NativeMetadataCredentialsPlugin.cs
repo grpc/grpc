@@ -46,7 +46,7 @@ namespace Grpc.Core.Internal
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeMetadataCredentialsPlugin>();
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern CredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(NativeMetadataInterceptor interceptor);
+        static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(NativeMetadataInterceptor interceptor);
         
         [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
         static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
@@ -54,7 +54,7 @@ namespace Grpc.Core.Internal
         AsyncAuthInterceptor interceptor;
         GCHandle gcHandle;
         NativeMetadataInterceptor nativeInterceptor;
-        CredentialsSafeHandle credentials;
+        CallCredentialsSafeHandle credentials;
 
         public NativeMetadataCredentialsPlugin(AsyncAuthInterceptor interceptor)
         {
@@ -66,7 +66,7 @@ namespace Grpc.Core.Internal
             this.credentials = grpcsharp_metadata_credentials_create_from_plugin(nativeInterceptor);
         }
 
-        public CredentialsSafeHandle Credentials
+        public CallCredentialsSafeHandle Credentials
         {
             get { return credentials; }
         }

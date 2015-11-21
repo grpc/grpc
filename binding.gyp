@@ -294,6 +294,7 @@
         'src/core/transport/connectivity_state.c',
         'src/core/transport/metadata.c',
         'src/core/transport/metadata_batch.c',
+        'src/core/transport/static_metadata.c',
         'src/core/transport/transport.c',
         'src/core/transport/transport_op_string.c',
         'src/core/census/context.c',
@@ -347,11 +348,12 @@
         "src/node/ext/node_grpc.cc",
         "src/node/ext/server.cc",
         "src/node/ext/server_credentials.cc",
-        "src/node/ext/timeval.cc"
+        "src/node/ext/timeval.cc",
       ],
       "dependencies": [
-        "grpc"
+        "grpc",
+        "gpr",
       ]
-    }
+    },
   ]
 }

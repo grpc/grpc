@@ -117,6 +117,10 @@ class AbortionError(Exception):
     self.code = code
     self.details = details
 
+  def __str__(self):
+    return '%s(code=%s, details="%s")' % (
+        self.__class__.__name__, self.code, self.details)
+
 
 class CancellationError(AbortionError):
   """Indicates that an RPC has been cancelled."""

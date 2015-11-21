@@ -139,7 +139,7 @@ static int poll_read_bytes(int fd, char *buf, size_t read_size, int spin) {
       gpr_log(GPR_ERROR, "Read failed: %s", strerror(errno));
       return -1;
     }
-    bytes_read += (size_t) err2;
+    bytes_read += (size_t)err2;
   } while (bytes_read < read_size);
   return 0;
 }
@@ -174,11 +174,11 @@ static int epoll_read_bytes(struct thread_args *args, char *buf, int spin) {
     GPR_ASSERT(ev.data.fd == args->fds.read_fd);
     do {
       do {
-        err2 = read(args->fds.read_fd, buf + bytes_read,
-		    read_size - bytes_read);
+        err2 =
+            read(args->fds.read_fd, buf + bytes_read, read_size - bytes_read);
       } while (err2 < 0 && errno == EINTR);
       if (errno == EAGAIN) break;
-      bytes_read += (size_t) err2;
+      bytes_read += (size_t)err2;
       /* TODO(klempner): This should really be doing an extra call after we are
          done to ensure we see an EAGAIN */
     } while (bytes_read < read_size);

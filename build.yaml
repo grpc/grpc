@@ -5,7 +5,7 @@ settings:
   '#': The public version number of the library.
   version:
     major: 0
-    minor: 11
+    minor: 12
     micro: 0
     build: 0
 filegroups:
@@ -134,6 +134,7 @@ filegroups:
   - src/core/client_config/subchannel_factory_decorators/add_channel_arg.h
   - src/core/client_config/subchannel_factory_decorators/merge_channel_args.h
   - src/core/client_config/uri_parser.h
+  - src/core/compression/algorithm_metadata.h
   - src/core/compression/message_compress.h
   - src/core/debug/trace.h
   - src/core/httpcli/format_request.h
@@ -216,6 +217,7 @@ filegroups:
   - src/core/transport/connectivity_state.h
   - src/core/transport/metadata.h
   - src/core/transport/metadata_batch.h
+  - src/core/transport/static_metadata.h
   - src/core/transport/transport.h
   - src/core/transport/transport_impl.h
   src:
@@ -341,6 +343,7 @@ filegroups:
   - src/core/transport/connectivity_state.c
   - src/core/transport/metadata.c
   - src/core/transport/metadata_batch.c
+  - src/core/transport/static_metadata.c
   - src/core/transport/transport.c
   - src/core/transport/transport_op_string.c
 - name: grpc_test_util_base
@@ -1887,6 +1890,20 @@ targets:
   - mac
   - linux
   - posix
+- name: metrics_client
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/util/metrics_server.h
+  src:
+  - test/proto/metrics.proto
+  - test/cpp/interop/metrics_client.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
 - name: mock_test
   build: test
   language: c++
@@ -2127,13 +2144,16 @@ targets:
   - test/cpp/interop/client_helper.h
   - test/cpp/interop/interop_client.h
   - test/cpp/interop/stress_interop_client.h
+  - test/cpp/util/metrics_server.h
   src:
   - test/proto/empty.proto
   - test/proto/messages.proto
+  - test/proto/metrics.proto
   - test/proto/test.proto
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
+  - test/cpp/util/metrics_server.cc
   deps:
   - grpc++_test_util
   - grpc_test_util
@@ -2224,3 +2244,36 @@ vspackages:
   props: false
   redist: false
   version: 1.7.0.1
+node_modules:
+- deps:
+  - grpc
+  - gpr
+  headers:
+  - src/node/ext/byte_buffer.h
+  - src/node/ext/call.h
+  - src/node/ext/call_credentials.h
+  - src/node/ext/channel.h
+  - src/node/ext/channel_credentials.h
+  - src/node/ext/completion_queue_async_worker.h
+  - src/node/ext/server.h
+  - src/node/ext/server_credentials.h
+  - src/node/ext/timeval.h
+  js:
+  - src/node/index.js
+  - src/node/src/client.js
+  - src/node/src/common.js
+  - src/node/src/credentials.js
+  - src/node/src/metadata.js
+  - src/node/src/server.js
+  name: grpc_node
+  src:
+  - src/node/ext/byte_buffer.cc
+  - src/node/ext/call.cc
+  - src/node/ext/call_credentials.cc
+  - src/node/ext/channel.cc
+  - src/node/ext/channel_credentials.cc
+  - src/node/ext/completion_queue_async_worker.cc
+  - src/node/ext/node_grpc.cc
+  - src/node/ext/server.cc
+  - src/node/ext/server_credentials.cc
+  - src/node/ext/timeval.cc

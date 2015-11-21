@@ -370,6 +370,9 @@
     <ClCompile Include="..\..\..\src\core\transport\metadata_batch.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\static_metadata.c">
+      <Filter>src\core\transport</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\transport.c">
       <Filter>src\core\transport</Filter>
     </ClCompile>
@@ -496,6 +499,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\client_config\uri_parser.h">
       <Filter>src\core\client_config</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\compression\algorithm_metadata.h">
+      <Filter>src\core\compression</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\compression\message_compress.h">
       <Filter>src\core\compression</Filter>
@@ -741,6 +747,9 @@
       <Filter>src\core\transport</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\metadata_batch.h">
+      <Filter>src\core\transport</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\src\core\transport\static_metadata.h">
       <Filter>src\core\transport</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\src\core\transport\transport.h">

@@ -45,12 +45,13 @@
 #include "src/core/security/security_connector.h"
 #include "src/core/security/credentials.h"
 #include "src/core/surface/call.h"
+#include "src/core/transport/static_metadata.h"
 
 #define MAX_CREDENTIALS_METADATA_COUNT 4
 
 /* We can have a per-call credentials. */
 typedef struct {
-  grpc_credentials *creds;
+  grpc_call_credentials *creds;
   grpc_mdstr *host;
   grpc_mdstr *method;
   /* pollset bound to this call; if we need to make external
@@ -67,11 +68,6 @@ typedef struct {
 /* We can have a per-channel credentials. */
 typedef struct {
   grpc_channel_security_connector *security_connector;
-  grpc_mdctx *md_ctx;
-  grpc_mdstr *authority_string;
-  grpc_mdstr *path_string;
-  grpc_mdstr *error_msg_key;
-  grpc_mdstr *status_key;
 } channel_data;
 
 static void reset_service_url(call_data *calld) {
@@ -95,7 +91,6 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
                                     grpc_credentials_status status) {
   grpc_call_element *elem = (grpc_call_element *)user_data;
   call_data *calld = elem->call_data;
-  channel_data *chand = elem->channel_data;
   grpc_transport_stream_op *op = &calld->op;
   grpc_metadata_batch *mdb;
   size_t i;
@@ -111,7 +106,7 @@ static void on_credentials_metadata(grpc_exec_ctx *exec_ctx, void *user_data,
   for (i = 0; i < num_md; i++) {
     grpc_metadata_batch_add_tail(
         mdb, &calld->md_links[i],
-        grpc_mdelem_from_slices(chand->md_ctx, gpr_slice_ref(md_elems[i].key),
+        grpc_mdelem_from_slices(gpr_slice_ref(md_elems[i].key),
                                 gpr_slice_ref(md_elems[i].value)));
   }
   grpc_call_next_op(exec_ctx, elem, op);
@@ -143,39 +138,35 @@ static void send_security_metadata(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   grpc_client_security_context *ctx =
       (grpc_client_security_context *)op->context[GRPC_CONTEXT_SECURITY].value;
-  grpc_credentials *channel_creds =
+  grpc_call_credentials *channel_call_creds =
       chand->security_connector->request_metadata_creds;
-  int channel_creds_has_md =
-      (channel_creds != NULL) &&
-      grpc_credentials_has_request_metadata(channel_creds);
-  int call_creds_has_md = (ctx != NULL) && (ctx->creds != NULL) &&
-                          grpc_credentials_has_request_metadata(ctx->creds);
+  int call_creds_has_md = (ctx != NULL) && (ctx->creds != NULL);
 
-  if (!channel_creds_has_md && !call_creds_has_md) {
+  if (channel_call_creds == NULL && !call_creds_has_md) {
     /* Skip sending metadata altogether. */
     grpc_call_next_op(exec_ctx, elem, op);
     return;
   }
 
-  if (channel_creds_has_md && call_creds_has_md) {
-    calld->creds =
-        grpc_composite_credentials_create(channel_creds, ctx->creds, NULL);
+  if (channel_call_creds != NULL && call_creds_has_md) {
+    calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
+                                                          ctx->creds, NULL);
     if (calld->creds == NULL) {
       bubble_up_error(exec_ctx, elem, GRPC_STATUS_INVALID_ARGUMENT,
                       "Incompatible credentials set on channel and call.");
       return;
     }
   } else {
-    calld->creds =
-        grpc_credentials_ref(call_creds_has_md ? ctx->creds : channel_creds);
+    calld->creds = grpc_call_credentials_ref(
+        call_creds_has_md ? ctx->creds : channel_call_creds);
   }
 
   build_service_url(chand->security_connector->base.url_scheme, calld);
   calld->op = *op; /* Copy op (originates from the caller's stack). */
   GPR_ASSERT(calld->pollset);
-  grpc_credentials_get_request_metadata(exec_ctx, calld->creds, calld->pollset,
-                                        calld->service_url,
-                                        on_credentials_metadata, elem);
+  grpc_call_credentials_get_request_metadata(exec_ctx, calld->creds,
+                                             calld->pollset, calld->service_url,
+                                             on_credentials_metadata, elem);
 }
 
 static void on_host_checked(grpc_exec_ctx *exec_ctx, void *user_data,
@@ -229,10 +220,10 @@ static void auth_start_transport_op(grpc_exec_ctx *exec_ctx,
       grpc_mdelem *md = l->md;
       /* Pointer comparison is OK for md_elems created from the same context.
        */
-      if (md->key == chand->authority_string) {
+      if (md->key == GRPC_MDSTR_AUTHORITY) {
         if (calld->host != NULL) GRPC_MDSTR_UNREF(calld->host);
         calld->host = GRPC_MDSTR_REF(md->value);
-      } else if (md->key == chand->path_string) {
+      } else if (md->key == GRPC_MDSTR_PATH) {
         if (calld->method != NULL) GRPC_MDSTR_UNREF(calld->method);
         calld->method = GRPC_MDSTR_REF(md->value);
       }
@@ -282,7 +273,7 @@ static void set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
                               grpc_call_element *elem) {
   call_data *calld = elem->call_data;
-  grpc_credentials_unref(calld->creds);
+  grpc_call_credentials_unref(calld->creds);
   if (calld->host != NULL) {
     GRPC_MDSTR_UNREF(calld->host);
   }
@@ -312,11 +303,6 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   chand->security_connector =
       (grpc_channel_security_connector *)GRPC_SECURITY_CONNECTOR_REF(
           sc, "client_auth_filter");
-  chand->md_ctx = args->metadata_context;
-  chand->authority_string = grpc_mdstr_from_string(chand->md_ctx, ":authority");
-  chand->path_string = grpc_mdstr_from_string(chand->md_ctx, ":path");
-  chand->error_msg_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-message");
-  chand->status_key = grpc_mdstr_from_string(chand->md_ctx, "grpc-status");
 }
 
 /* Destructor for channel data */
@@ -325,19 +311,8 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   /* grab pointers to our data from the channel element */
   channel_data *chand = elem->channel_data;
   grpc_channel_security_connector *ctx = chand->security_connector;
-  if (ctx != NULL)
+  if (ctx != NULL) {
     GRPC_SECURITY_CONNECTOR_UNREF(&ctx->base, "client_auth_filter");
-  if (chand->authority_string != NULL) {
-    GRPC_MDSTR_UNREF(chand->authority_string);
-  }
-  if (chand->error_msg_key != NULL) {
-    GRPC_MDSTR_UNREF(chand->error_msg_key);
-  }
-  if (chand->status_key != NULL) {
-    GRPC_MDSTR_UNREF(chand->status_key);
-  }
-  if (chand->path_string != NULL) {
-    GRPC_MDSTR_UNREF(chand->path_string);
   }
 }
 
