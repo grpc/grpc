@@ -624,10 +624,15 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 if args.travis:
   _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
-languages = set(_LANGUAGES[l]
-                for l in itertools.chain.from_iterable(
-                      _LANGUAGES.iterkeys() if x == 'all' else [x]
-                      for x in args.language))
+if 'all' in args.language:
+  lang_list = _LANGUAGES.keys()  
+else:
+  lang_list = args.language
+# We don't support code coverage on ObjC
+if 'gcov' in args.config and 'objc' in lang_list:
+  lang_list.remove('objc')
+
+languages = set(_LANGUAGES[l] for l in lang_list)
 
 if len(build_configs) > 1:
   for language in languages:
@@ -839,6 +844,7 @@ def _calculate_num_runs_failures(list_of_results):
     if jobresult.num_failures > 0:
       num_failures += jobresult.num_failures
   return num_runs, num_failures
+
 
 def _build_and_run(
     check_cancelled, newline_on_success, cache, xml_report=None):
