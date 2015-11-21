@@ -35,7 +35,7 @@
 
 #import "GRPCChannel.h"
 
-struct grpc_credentials;
+struct grpc_channel_credentials;
 
 @interface GRPCSecureChannel : GRPCChannel
 - (instancetype)initWithHost:(NSString *)host;
@@ -50,6 +50,6 @@ struct grpc_credentials;
 
 /** The passed arguments aren't required to be valid beyond the invocation of this initializer. */
 - (instancetype)initWithHost:(NSString *)host
-                 credentials:(struct grpc_credentials *)credentials
+                 credentials:(struct grpc_channel_credentials *)credentials
                         args:(grpc_channel_args *)args NS_DESIGNATED_INITIALIZER;
 @end

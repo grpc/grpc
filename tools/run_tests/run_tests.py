@@ -485,10 +485,10 @@ _CONFIGS = {
     'msan': SimpleConfig('msan', timeout_multiplier=1.5),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', timeout_multiplier=1.5, environ={
-        'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt',
+        'ASAN_OPTIONS': 'detect_leaks=1:color=always',
         'LSAN_OPTIONS': 'report_objects=1'}),
     'asan-noleaks': SimpleConfig('asan', environ={
-        'ASAN_OPTIONS': 'detect_leaks=0:color=always:suppressions=tools/tsan_suppressions.txt'}),
+        'ASAN_OPTIONS': 'detect_leaks=0:color=always'}),
     'gcov': SimpleConfig('gcov'),
     'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
     'helgrind': ValgrindConfig('dbg', 'helgrind')
@@ -624,10 +624,15 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 if args.travis:
   _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
-languages = set(_LANGUAGES[l]
-                for l in itertools.chain.from_iterable(
-                      _LANGUAGES.iterkeys() if x == 'all' else [x]
-                      for x in args.language))
+if 'all' in args.language:
+  lang_list = _LANGUAGES.keys()  
+else:
+  lang_list = args.language
+# We don't support code coverage on ObjC
+if 'gcov' in args.config and 'objc' in lang_list:
+  lang_list.remove('objc')
+
+languages = set(_LANGUAGES[l] for l in lang_list)
 
 if len(build_configs) > 1:
   for language in languages:
@@ -749,7 +754,8 @@ def _start_port_server(port_server_port):
     running = False
   if running:
     current_version = int(subprocess.check_output(
-        [sys.executable, 'tools/run_tests/port_server.py', 'dump_version']))
+        [sys.executable, os.path.abspath('tools/run_tests/port_server.py'),
+         'dump_version']))
     print 'my port server is version %d' % current_version
     running = (version >= current_version)
     if not running:
@@ -760,13 +766,18 @@ def _start_port_server(port_server_port):
     fd, logfile = tempfile.mkstemp()
     os.close(fd)
     print 'starting port_server, with log file %s' % logfile
-    args = [sys.executable, 'tools/run_tests/port_server.py', '-p', '%d' % port_server_port, '-l', logfile]
+    args = [sys.executable, os.path.abspath('tools/run_tests/port_server.py'),
+            '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
     if platform.system() == 'Windows':
+      # Working directory of port server needs to be outside of Jenkins
+      # workspace to prevent file lock issues.
+      tempdir = tempfile.mkdtemp()
       port_server = subprocess.Popen(
           args,
           env=env,
+          cwd=tempdir,
           creationflags = 0x00000008, # detached process
           close_fds=True)
     else:
@@ -834,6 +845,7 @@ def _calculate_num_runs_failures(list_of_results):
       num_failures += jobresult.num_failures
   return num_runs, num_failures
 
+
 def _build_and_run(
     check_cancelled, newline_on_success, cache, xml_report=None):
   """Do one pass of building & running tests."""
@@ -896,7 +908,7 @@ def _build_and_run(
     for antagonist in antagonists:
       antagonist.kill()
     if xml_report and resultset:
-      report_utils.render_xml_report(resultset, xml_report)
+      report_utils.render_junit_xml_report(resultset, xml_report)
 
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,

@@ -29,6 +29,7 @@
 
 cimport cpython
 
+from grpc._cython._cygrpc cimport credentials
 from grpc._cython._cygrpc cimport grpc
 from grpc._cython._cygrpc cimport records
 
@@ -72,6 +73,11 @@ cdef class Call:
                                                NULL)
     else:
       return grpc.grpc_call_cancel(self.c_call, NULL)
+
+  def set_credentials(
+      self, credentials.CallCredentials call_credentials not None):
+    return grpc.grpc_call_set_credentials(
+        self.c_call, call_credentials.c_credentials)
 
   def __dealloc__(self):
     if self.c_call != NULL:

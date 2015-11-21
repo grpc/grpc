@@ -166,7 +166,8 @@ static void simple_request_body(grpc_end2end_test_fixture f, size_t num_ops) {
   cq_verifier_destroy(cqv);
 }
 
-static void test_invoke_simple_request(grpc_end2end_test_config config, size_t num_ops) {
+static void test_invoke_simple_request(grpc_end2end_test_config config,
+                                       size_t num_ops) {
   grpc_end2end_test_fixture f;
 
   f = begin_test(config, "test_invoke_simple_request", NULL, NULL);

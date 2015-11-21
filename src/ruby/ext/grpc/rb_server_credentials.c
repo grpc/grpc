@@ -91,7 +91,9 @@ static const rb_data_type_t grpc_rb_server_credentials_data_type = {
     {grpc_rb_server_credentials_mark, grpc_rb_server_credentials_free,
      GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
     NULL, NULL,
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
     RUBY_TYPED_FREE_IMMEDIATELY
+#endif
 };
 
 /* Allocates ServerCredential instances.
