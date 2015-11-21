@@ -71,6 +71,7 @@ cdef class ServerCredentials:
 
   def __cinit__(self):
     self.c_credentials = NULL
+    self.references = []
 
   def __dealloc__(self):
     if self.c_credentials != NULL:
@@ -83,7 +84,7 @@ def channel_credentials_google_default():
   return credentials
 
 def channel_credentials_ssl(pem_root_certificates,
-                           records.SslPemKeyCertPair ssl_pem_key_cert_pair):
+                            records.SslPemKeyCertPair ssl_pem_key_cert_pair):
   if pem_root_certificates is None:
     pass
   elif isinstance(pem_root_certificates, bytes):
@@ -104,6 +105,7 @@ def channel_credentials_ssl(pem_root_certificates,
   else:
     credentials.c_credentials = grpc.grpc_ssl_credentials_create(
       c_pem_root_certificates, NULL, NULL)
+  return credentials
 
 def channel_credentials_composite(
     ChannelCredentials credentials_1 not None,
@@ -135,7 +137,6 @@ def call_credentials_google_compute_engine():
       grpc.grpc_google_compute_engine_credentials_create(NULL))
   return credentials
 
-#TODO rename to something like client_credentials_service_account_jwt_access.
 def call_credentials_service_account_jwt_access(
     json_key, records.Timespec token_lifetime not None):
   if isinstance(json_key, bytes):
@@ -186,12 +187,14 @@ def call_credentials_google_iam(authorization_token, authority_selector):
 
 def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
                            bint force_client_auth):
+  cdef char *c_pem_root_certs = NULL
   if pem_root_certs is None:
     pass
   elif isinstance(pem_root_certs, bytes):
-    pass
+    c_pem_root_certs = pem_root_certs
   elif isinstance(pem_root_certs, basestring):
     pem_root_certs = pem_root_certs.encode()
+    c_pem_root_certs = pem_root_certs
   else:
     raise TypeError("expected pem_root_certs to be str or bytes")
   pem_key_cert_pairs = list(pem_key_cert_pairs)
@@ -212,7 +215,7 @@ def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,
     credentials.c_ssl_pem_key_cert_pairs[i] = (
         (<records.SslPemKeyCertPair>pem_key_cert_pairs[i]).c_pair)
   credentials.c_credentials = grpc.grpc_ssl_server_credentials_create(
-      pem_root_certs, credentials.c_ssl_pem_key_cert_pairs,
+      c_pem_root_certs, credentials.c_ssl_pem_key_cert_pairs,
       credentials.c_ssl_pem_key_cert_pairs_count, force_client_auth, NULL)
   return credentials
 
