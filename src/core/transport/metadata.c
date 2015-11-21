@@ -430,6 +430,7 @@ grpc_mdstr *grpc_mdstr_from_buffer(const gpr_uint8 *buf, size_t length) {
     if (ss == NULL) break;
     if (ss->hash == hash && GPR_SLICE_LENGTH(ss->slice) == length &&
         0 == memcmp(buf, GPR_SLICE_START_PTR(ss->slice), length)) {
+      GPR_TIMER_END("grpc_mdstr_from_buffer", 0);
       return ss;
     }
   }
@@ -575,6 +576,7 @@ grpc_mdelem *grpc_mdelem_from_metadata_strings(grpc_mdstr *mkey,
       smd = g_static_mdtab[idx];
       if (smd == NULL) break;
       if (smd->key == mkey && smd->value == mvalue) {
+        GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
         return smd;
       }
     }
