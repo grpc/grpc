@@ -59,7 +59,8 @@ typedef struct gpr_avl {
 } gpr_avl;
 
 gpr_avl gpr_avl_create(const gpr_avl_vtable *vtable);
-void gpr_avl_destroy(gpr_avl avl);
+gpr_avl gpr_avl_ref(gpr_avl avl);
+void gpr_avl_unref(gpr_avl avl);
 gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value);
 gpr_avl gpr_avl_remove(gpr_avl avl, void *key);
 void *gpr_avl_get(gpr_avl avl, void *key);
