@@ -3647,6 +3647,8 @@ static void test_stress(void) {
       }
     }
   }
+
+  gpr_avl_unref(avl);
 }
 
 int main(int argc, char *argv[]) {
