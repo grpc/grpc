@@ -76,7 +76,6 @@ static long calculate_height(gpr_avl_node *node) {
   return node == NULL ? 0 : 1 + GPR_MAX(calculate_height(node->left),
                                         calculate_height(node->right));
 }
-#endif
 
 static gpr_avl_node *assert_invariants(gpr_avl_node *n) {
   if (n == NULL) return NULL;
@@ -86,6 +85,11 @@ static gpr_avl_node *assert_invariants(gpr_avl_node *n) {
   assert(labs(node_height(n->left) - node_height(n->right)) <= 1);
   return n;
 }
+#else
+static gpr_avl_node *assert_invariants(gpr_avl_node *n) {
+  return n;
+}
+#endif
 
 gpr_avl_node *new_node(void *key, void *value, gpr_avl_node *left,
                        gpr_avl_node *right) {
