@@ -206,9 +206,9 @@ static gpr_avl_node *add(const gpr_avl_vtable *vtable, gpr_avl_node *node,
   if (cmp == 0) {
     return new_node(key, value, ref_node(node->left), ref_node(node->right));
   } else if (cmp > 0) {
-    return rebalance(vtable, vtable->copy_key(node->key),
-                     vtable->copy_value(node->value),
-                     add(vtable, node->left, key, value), ref_node(node->right));
+    return rebalance(
+        vtable, vtable->copy_key(node->key), vtable->copy_value(node->value),
+        add(vtable, node->left, key, value), ref_node(node->right));
   } else {
     return rebalance(vtable, vtable->copy_key(node->key),
                      vtable->copy_value(node->value), ref_node(node->left),
@@ -253,11 +253,13 @@ static gpr_avl_node *remove(const gpr_avl_vtable *vtable, gpr_avl_node *node,
     } else if (node->left->height < node->right->height) {
       gpr_avl_node *h = in_order_head(node->right);
       return rebalance(vtable, vtable->copy_key(h->key),
-                       vtable->copy_value(h->value), ref_node(node->left), remove(vtable, node->right, h->key));
+                       vtable->copy_value(h->value), ref_node(node->left),
+                       remove(vtable, node->right, h->key));
     } else {
       gpr_avl_node *h = in_order_tail(node->left);
-      return rebalance(vtable, vtable->copy_key(h->key),
-                       vtable->copy_value(h->value), remove(vtable, node->left, h->key), ref_node(node->right));
+      return rebalance(
+          vtable, vtable->copy_key(h->key), vtable->copy_value(h->value),
+          remove(vtable, node->left, h->key), ref_node(node->right));
     }
   } else if (cmp > 0) {
     return rebalance(vtable, vtable->copy_key(node->key),
