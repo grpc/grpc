@@ -77,7 +77,7 @@ gpr_avl gpr_avl_ref(gpr_avl avl);
     are no references left */
 void gpr_avl_unref(gpr_avl avl);
 /** return a new tree with (key, value) added to avl.
-    implicitly unrefs avl to allow easy chaining. 
+    implicitly unrefs avl to allow easy chaining.
     if key exists in avl, the new tree's key entry updated
     (i.e. a duplicate is not created) */
 gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value);
