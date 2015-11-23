@@ -71,17 +71,20 @@ static long node_height(gpr_avl_node *node) {
   return node == NULL ? 0 : node->height;
 }
 
+#ifndef NDEBUG
 static long calculate_height(gpr_avl_node *node) {
   return node == NULL ? 0 : 1 + GPR_MAX(calculate_height(node->left),
                                         calculate_height(node->right));
 }
+#endif
 
-static void assert_invariants(gpr_avl_node *n) {
-  if (n == NULL) return;
+static gpr_avl_node *assert_invariants(gpr_avl_node *n) {
+  if (n == NULL) return NULL;
   assert_invariants(n->left);
   assert_invariants(n->right);
   assert(calculate_height(n) == n->height);
   assert(labs(node_height(n->left) - node_height(n->right)) <= 1);
+  return n;
 }
 
 gpr_avl_node *new_node(void *key, void *value, gpr_avl_node *left,
@@ -90,8 +93,8 @@ gpr_avl_node *new_node(void *key, void *value, gpr_avl_node *left,
   gpr_ref_init(&node->refs, 1);
   node->key = key;
   node->value = value;
-  node->left = left;
-  node->right = right;
+  node->left = assert_invariants(left);
+  node->right = assert_invariants(right);
   node->height = 1 + GPR_MAX(node_height(left), node_height(right));
   return node;
 }
@@ -144,19 +147,13 @@ static gpr_avl_node *rotate_left_right(const gpr_avl_vtable *vtable, void *key,
                                        void *value, gpr_avl_node *left,
                                        gpr_avl_node *right) {
   /* rotate_right(..., rotate_left(left), right) */
-  /* TODO(ctiller): elide first allocation */
-  gpr_avl_node *leftp = new_node(
+  gpr_avl_node *n = new_node(
       vtable->copy_key(left->right->key),
       vtable->copy_value(left->right->value),
       new_node(vtable->copy_key(left->key), vtable->copy_value(left->value),
                ref_node(left->left), ref_node(left->right->left)),
-      ref_node(left->right->right));
-  gpr_avl_node *n =
-      new_node(vtable->copy_key(leftp->key), vtable->copy_value(leftp->value),
-               ref_node(leftp->left),
-               new_node(key, value, ref_node(leftp->right), right));
+      new_node(key, value, ref_node(left->right->right), right));
   unref_node(vtable, left);
-  unref_node(vtable, leftp);
   return n;
 }
 
@@ -164,19 +161,37 @@ static gpr_avl_node *rotate_right_left(const gpr_avl_vtable *vtable, void *key,
                                        void *value, gpr_avl_node *left,
                                        gpr_avl_node *right) {
   /* rotate_left(..., left, rotate_right(right)) */
-  /* TODO(ctiller): elide first allocation */
-  gpr_avl_node *rightp = new_node(
+  gpr_avl_node *n = new_node(
       vtable->copy_key(right->left->key),
-      vtable->copy_value(right->left->value), ref_node(right->left->left),
+      vtable->copy_value(right->left->value),
+      new_node(key, value, left, ref_node(right->left->left)),
       new_node(vtable->copy_key(right->key), vtable->copy_key(right->value),
                ref_node(right->left->right), ref_node(right->right)));
-  gpr_avl_node *n =
-      new_node(vtable->copy_key(rightp->key), vtable->copy_value(rightp->value),
-               new_node(key, value, left, ref_node(rightp->left)),
-               ref_node(rightp->right));
   unref_node(vtable, right);
-  unref_node(vtable, rightp);
   return n;
+}
+
+static gpr_avl_node *rebalance(const gpr_avl_vtable *vtable, void *key,
+                               void *value, gpr_avl_node *left,
+                               gpr_avl_node *right) {
+  switch (node_height(left) - node_height(right)) {
+    case 2:
+      if (node_height(left->left) - node_height(left->right) == -1) {
+        return assert_invariants(
+            rotate_left_right(vtable, key, value, left, right));
+      } else {
+        return assert_invariants(rotate_right(vtable, key, value, left, right));
+      }
+    case -2:
+      if (node_height(right->left) - node_height(right->right) == 1) {
+        return assert_invariants(
+            rotate_right_left(vtable, key, value, left, right));
+      } else {
+        return assert_invariants(rotate_left(vtable, key, value, left, right));
+      }
+    default:
+      return assert_invariants(new_node(key, value, left, right));
+  }
 }
 
 static gpr_avl_node *add(const gpr_avl_vtable *vtable, gpr_avl_node *node,
@@ -189,8 +204,10 @@ static gpr_avl_node *add(const gpr_avl_vtable *vtable, gpr_avl_node *node,
   }
   cmp = vtable->compare_keys(node->key, key);
   if (cmp == 0) {
-    return new_node(key, value, NULL, NULL);
+    return assert_invariants(
+        new_node(key, value, ref_node(node->left), ref_node(node->right)));
   }
+
   l = node->left;
   r = node->right;
   if (cmp > 0) {
@@ -200,26 +217,8 @@ static gpr_avl_node *add(const gpr_avl_vtable *vtable, gpr_avl_node *node,
     r = add(vtable, r, key, value);
     ref_node(l);
   }
-
-  key = vtable->copy_key(node->key);
-  value = vtable->copy_value(node->value);
-
-  switch (node_height(l) - node_height(r)) {
-    case 2:
-      if (node_height(l->left) - node_height(l->right) == 1) {
-        return rotate_right(vtable, key, value, l, r);
-      } else {
-        return rotate_left_right(vtable, key, value, l, r);
-      }
-    case -2:
-      if (node_height(r->left) - node_height(r->right) == 1) {
-        return rotate_right_left(vtable, key, value, l, r);
-      } else {
-        return rotate_left(vtable, key, value, l, r);
-      }
-    default:
-      return new_node(key, value, l, r);
-  }
+  return rebalance(vtable, vtable->copy_key(node->key),
+                   vtable->copy_value(node->value), l, r);
 }
 
 gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value) {
@@ -230,4 +229,73 @@ gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value) {
   return avl;
 }
 
-void gpr_avl_destroy(gpr_avl avl) { unref_node(avl.vtable, avl.root); }
+static gpr_avl_node *in_order_head(gpr_avl_node *node) {
+  while (node->left != NULL) {
+    node = node->left;
+  }
+  return node;
+}
+
+static gpr_avl_node *in_order_tail(gpr_avl_node *node) {
+  while (node->right != NULL) {
+    node = node->right;
+  }
+  return node;
+}
+
+static gpr_avl_node *remove(const gpr_avl_vtable *vtable, gpr_avl_node *node,
+                            void *key) {
+  long cmp;
+  gpr_avl_node *l;
+  gpr_avl_node *r;
+  if (node == NULL) {
+    return NULL;
+  }
+  cmp = vtable->compare_keys(node->key, key);
+  if (cmp == 0) {
+    if (node->left == NULL) {
+      return ref_node(node->right);
+    } else if (node->right == NULL) {
+      return ref_node(node->left);
+    } else if (node->left->height < node->right->height) {
+      gpr_avl_node *h = in_order_head(node->right);
+      l = ref_node(node->left);
+      r = remove(vtable, node->right, h->key);
+      return assert_invariants(rebalance(vtable, vtable->copy_key(h->key),
+                                         vtable->copy_value(h->value), l, r));
+    } else {
+      gpr_avl_node *h = in_order_tail(node->left);
+      l = remove(vtable, node->left, h->key);
+      r = ref_node(node->right);
+      return assert_invariants(rebalance(vtable, vtable->copy_key(h->key),
+                                         vtable->copy_value(h->value), l, r));
+    }
+  }
+
+  l = node->left;
+  r = node->right;
+  if (cmp > 0) {
+    l = remove(vtable, l, key);
+    ref_node(r);
+  } else {
+    r = remove(vtable, r, key);
+    ref_node(l);
+  }
+  return rebalance(vtable, vtable->copy_key(node->key),
+                   vtable->copy_value(node->value), l, r);
+}
+
+gpr_avl gpr_avl_remove(gpr_avl avl, void *key) {
+  gpr_avl_node *old_root = avl.root;
+  avl.root = remove(avl.vtable, avl.root, key);
+  assert_invariants(avl.root);
+  unref_node(avl.vtable, old_root);
+  return avl;
+}
+
+gpr_avl gpr_avl_ref(gpr_avl avl) {
+  ref_node(avl.root);
+  return avl;
+}
+
+void gpr_avl_unref(gpr_avl avl) { unref_node(avl.vtable, avl.root); }
