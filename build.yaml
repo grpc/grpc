@@ -373,6 +373,7 @@ libs:
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_win32.h
+  - include/grpc/support/avl.h
   - include/grpc/support/cmdline.h
   - include/grpc/support/cpu.h
   - include/grpc/support/histogram.h
@@ -410,6 +411,7 @@ libs:
   - src/core/profiling/basic_timers.c
   - src/core/profiling/stap_timers.c
   - src/core/support/alloc.c
+  - src/core/support/avl.c
   - src/core/support/cmdline.c
   - src/core/support/cpu_iphone.c
   - src/core/support/cpu_linux.c
@@ -969,6 +971,14 @@ targets:
   src:
   - tools/codegen/core/gen_legal_metadata_characters.c
   deps: []
+- name: gpr_avl_test
+  build: test
+  language: c
+  src:
+  - test/core/support/avl_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_cmdline_test
   build: test
   language: c
