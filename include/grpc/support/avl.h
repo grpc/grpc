@@ -36,6 +36,7 @@
 
 #include <grpc/support/sync.h>
 
+/** internal node of an AVL tree */
 typedef struct gpr_avl_node {
   gpr_refcount refs;
   void *key;
@@ -46,23 +47,45 @@ typedef struct gpr_avl_node {
 } gpr_avl_node;
 
 typedef struct gpr_avl_vtable {
+  /** destroy a key */
   void (*destroy_key)(void *key);
+  /** copy a key, returning new value */
   void *(*copy_key)(void *key);
+  /** compare key1, key2; return <0 if key1 < key2,
+      >0 if key1 > key2, 0 if key1 == key2 */
   long (*compare_keys)(void *key1, void *key2);
+  /** destroy a value */
   void (*destroy_value)(void *value);
+  /** copy a value */
   void *(*copy_value)(void *value);
 } gpr_avl_vtable;
 
+/** "pointer" to an AVL tree - this is a reference
+    counted object - use gpr_avl_ref to add a reference,
+    gpr_avl_unref when done with a reference */
 typedef struct gpr_avl {
   const gpr_avl_vtable *vtable;
   gpr_avl_node *root;
 } gpr_avl;
 
+/** create an immutable AVL tree */
 gpr_avl gpr_avl_create(const gpr_avl_vtable *vtable);
+/** add a reference to an existing tree - returns
+    the tree as a convenience */
 gpr_avl gpr_avl_ref(gpr_avl avl);
+/** remove a reference to a tree - destroying it if there
+    are no references left */
 void gpr_avl_unref(gpr_avl avl);
+/** return a new tree with (key, value) added to avl.
+    implicitly unrefs avl to allow easy chaining. 
+    if key exists in avl, the new tree's key entry updated
+    (i.e. a duplicate is not created) */
 gpr_avl gpr_avl_add(gpr_avl avl, void *key, void *value);
+/** return a new tree with key deleted */
 gpr_avl gpr_avl_remove(gpr_avl avl, void *key);
+/** lookup key, and return the associated value.
+    does not mutate avl.
+    returns NULL if key is not found. */
 void *gpr_avl_get(gpr_avl avl, void *key);
 
 #endif
