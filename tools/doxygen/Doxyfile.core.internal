@@ -1050,6 +1050,7 @@ include/grpc/support/atm.h \
 include/grpc/support/atm_gcc_atomic.h \
 include/grpc/support/atm_gcc_sync.h \
 include/grpc/support/atm_win32.h \
+include/grpc/support/avl.h \
 include/grpc/support/cmdline.h \
 include/grpc/support/cpu.h \
 include/grpc/support/histogram.h \
@@ -1085,6 +1086,7 @@ src/core/support/time_precise.h \
 src/core/profiling/basic_timers.c \
 src/core/profiling/stap_timers.c \
 src/core/support/alloc.c \
+src/core/support/avl.c \
 src/core/support/cmdline.c \
 src/core/support/cpu_iphone.c \
 src/core/support/cpu_linux.c \
