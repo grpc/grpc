@@ -352,8 +352,8 @@ static void on_accept(grpc_exec_ctx *exec_ctx, void *arg, int from_iocp) {
 }
 
 static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
-                                         const struct sockaddr *addr,
-                                         size_t addr_len) {
+                                               const struct sockaddr *addr,
+                                               size_t addr_len) {
   grpc_tcp_listener *sp = NULL;
   int port;
   int status;
@@ -400,8 +400,7 @@ static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, SOCKET sock,
 }
 
 grpc_tcp_listener *grpc_tcp_server_add_port(grpc_tcp_server *s,
-                                            const void *addr,
-                                            size_t addr_len) {
+                                            const void *addr, size_t addr_len) {
   grpc_tcp_listener *sp;
   SOCKET sock;
   struct sockaddr_in6 addr6_v4mapped;
@@ -459,7 +458,8 @@ grpc_tcp_listener *grpc_tcp_server_add_port(grpc_tcp_server *s,
 
 int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned port_index) {
   grpc_tcp_listener *sp;
-  for (sp = s->head; sp && port_index != 0; sp = sp->next, port_index--);
+  for (sp = s->head; sp && port_index != 0; sp = sp->next, port_index--)
+    ;
   if (port_index == 0 && sp) {
     return _open_osfhandle(sp->socket->socket, 0);
   } else {

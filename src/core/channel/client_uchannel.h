@@ -48,7 +48,7 @@ grpc_connectivity_state grpc_client_uchannel_check_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect);
 
 void grpc_client_uchannel_watch_connectivity_state(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
     grpc_connectivity_state *state, grpc_closure *on_complete);
 
 grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,

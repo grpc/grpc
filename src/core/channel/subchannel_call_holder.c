@@ -243,8 +243,8 @@ static void fail_locked(grpc_exec_ctx *exec_ctx,
   holder->waiting_ops_count = 0;
 }
 
-char *grpc_subchannel_call_holder_get_peer(grpc_exec_ctx *exec_ctx,
-                                           grpc_subchannel_call_holder *holder) {
+char *grpc_subchannel_call_holder_get_peer(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel_call_holder *holder) {
   grpc_subchannel_call *subchannel_call = GET_CALL(holder);
 
   if (subchannel_call) {

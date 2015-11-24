@@ -205,7 +205,7 @@ grpc_connectivity_state grpc_client_uchannel_check_connectivity_state(
 }
 
 void grpc_client_uchannel_watch_connectivity_state(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
     grpc_connectivity_state *state, grpc_closure *on_complete) {
   channel_data *chand = elem->channel_data;
   gpr_mu_lock(&chand->mu_state);
@@ -219,8 +219,6 @@ grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
   grpc_channel *channel = NULL;
 #define MAX_FILTERS 3
   const grpc_channel_filter *filters[MAX_FILTERS];
-  grpc_channel *master = grpc_subchannel_get_master(subchannel);
-  char *target = grpc_channel_get_target(master);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   size_t n = 0;
 
@@ -232,9 +230,8 @@ grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
   GPR_ASSERT(n <= MAX_FILTERS);
 
   channel =
-      grpc_channel_create_from_filters(&exec_ctx, target, filters, n, args, 1);
+      grpc_channel_create_from_filters(&exec_ctx, NULL, filters, n, args, 1);
 
-  gpr_free(target);
   return channel;
 }
 

@@ -341,21 +341,18 @@ grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
 }
 
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
-void grpc_call_internal_ref(grpc_call *c, const char *reason) {
-  grpc_call_stack_ref(CALL_STACK_FROM_CALL(c), reason);
-}
-void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c,
-                              const char *reason) {
-  grpc_call_stack_unref(exec_ctx, CALL_STACK_FROM_CALL(c), reason);
-}
+#define REF_REASON reason
+#define REF_ARG , const char *reason
 #else
-void grpc_call_internal_ref(grpc_call *c) {
-  grpc_call_stack_ref(CALL_STACK_FROM_CALL(c));
-}
-void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c) {
-  grpc_call_stack_unref(exec_ctx, CALL_STACK_FROM_CALL(c));
-}
+#define REF_REASON ""
+#define REF_ARG
 #endif
+void grpc_call_internal_ref(grpc_call *c REF_ARG) {
+  GRPC_CALL_STACK_REF(CALL_STACK_FROM_CALL(c), REF_REASON);
+}
+void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
+  GRPC_CALL_STACK_UNREF(exec_ctx, CALL_STACK_FROM_CALL(c), REF_REASON);
+}
 
 static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, int success) {
   size_t i;
