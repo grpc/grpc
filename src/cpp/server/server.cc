@@ -51,6 +51,15 @@
 
 namespace grpc {
 
+class DefaultGlobalCallbacks GRPC_FINAL : public Server::GlobalCallbacks {
+ public:
+  void PreSynchronousRequest(ServerContext* context) GRPC_OVERRIDE {}
+  void PostSynchronousRequest(ServerContext* context) GRPC_OVERRIDE {}
+};
+
+static DefaultGlobalCallbacks g_default_callbacks;
+static Server::GlobalCallbacks* g_callbacks = &g_default_callbacks;
+
 class Server::UnimplementedAsyncRequestContext {
  protected:
   UnimplementedAsyncRequestContext() : generic_stream_(&server_context_) {}
@@ -220,8 +229,10 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
 
     void Run() {
       ctx_.BeginCompletionOp(&call_);
+      g_callbacks->PreSynchronousRequest(&ctx_);
       method_->handler()->RunHandler(MethodHandler::HandlerParameter(
           &call_, &ctx_, request_payload_, call_.max_message_size()));
+      g_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
       void* ignored_tag;
       bool ignored_ok;
@@ -302,6 +313,13 @@ Server::~Server() {
     delete thread_pool_;
   }
   delete sync_methods_;
+}
+
+void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
+  GPR_ASSERT(g_callbacks == &g_default_callbacks);
+  GPR_ASSERT(callbacks != NULL);
+  GPR_ASSERT(callbacks != &g_default_callbacks);
+  g_callbacks = callbacks;
 }
 
 bool Server::RegisterService(const grpc::string* host, RpcService* service) {
