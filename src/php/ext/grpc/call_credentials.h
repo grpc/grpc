@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef NET_GRPC_PHP_GRPC_CREDENTIALS_H_
-#define NET_GRPC_PHP_GRPC_CREDENTIALS_H_
+#ifndef NET_GRPC_PHP_GRPC_CALL_CREDENTIALS_H_
+#define NET_GRPC_PHP_GRPC_CALL_CREDENTIALS_H_
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -46,18 +46,18 @@
 #include "grpc/grpc.h"
 #include "grpc/grpc_security.h"
 
-/* Class entry for the Credentials PHP class */
-extern zend_class_entry *grpc_ce_credentials;
+/* Class entry for the CallCredentials PHP class */
+extern zend_class_entry *grpc_ce_call_credentials;
 
-/* Wrapper struct for grpc_credentials that can be associated with a PHP
- * object */
-typedef struct wrapped_grpc_credentials {
+/* Wrapper struct for grpc_call_credentials that can be associated
+ * with a PHP object */
+typedef struct wrapped_grpc_call_credentials {
   zend_object std;
 
-  grpc_credentials *wrapped;
-} wrapped_grpc_credentials;
+  grpc_call_credentials *wrapped;
+} wrapped_grpc_call_credentials;
 
-/* Initializes the Credentials PHP class */
-void grpc_init_credentials(TSRMLS_D);
+/* Initializes the CallCredentials PHP class */
+void grpc_init_call_credentials(TSRMLS_D);
 
-#endif /* NET_GRPC_PHP_GRPC_CREDENTIALS_H_ */
+#endif /* NET_GRPC_PHP_GRPC_CALL_CREDENTIALS_H_ */

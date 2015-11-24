@@ -85,7 +85,7 @@ void grpc_auth_property_reset(grpc_auth_property *property);
    Internal client-side security context. */
 
 typedef struct {
-  grpc_credentials *creds;
+  grpc_call_credentials *creds;
   grpc_auth_context *auth_context;
 } grpc_client_security_context;
 

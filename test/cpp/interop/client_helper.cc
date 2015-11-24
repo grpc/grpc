@@ -76,11 +76,11 @@ grpc::string GetServiceAccountJsonKey() {
 }
 
 grpc::string GetOauth2AccessToken() {
-  std::shared_ptr<Credentials> creds = GoogleComputeEngineCredentials();
-  SecureCredentials* secure_creds =
-      dynamic_cast<SecureCredentials*>(creds.get());
+  std::shared_ptr<CallCredentials> creds = GoogleComputeEngineCredentials();
+  SecureCallCredentials* secure_creds =
+      dynamic_cast<SecureCallCredentials*>(creds.get());
   GPR_ASSERT(secure_creds != nullptr);
-  grpc_credentials* c_creds = secure_creds->GetRawCreds();
+  grpc_call_credentials* c_creds = secure_creds->GetRawCreds();
   char* token = grpc_test_fetch_oauth2_token_with_credentials(c_creds);
   GPR_ASSERT(token != nullptr);
   gpr_log(GPR_INFO, "Get raw oauth2 access token: %s", token);
@@ -98,13 +98,13 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
            FLAGS_server_port);
 
   if (test_case == "compute_engine_creds") {
-    std::shared_ptr<Credentials> creds;
+    std::shared_ptr<CallCredentials> creds;
     GPR_ASSERT(FLAGS_use_tls);
     creds = GoogleComputeEngineCredentials();
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_use_tls, !FLAGS_use_test_ca, creds);
   } else if (test_case == "jwt_token_creds") {
-    std::shared_ptr<Credentials> creds;
+    std::shared_ptr<CallCredentials> creds;
     GPR_ASSERT(FLAGS_use_tls);
     grpc::string json_key = GetServiceAccountJsonKey();
     std::chrono::seconds token_lifetime = std::chrono::hours(1);
@@ -114,7 +114,7 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
                              FLAGS_use_tls, !FLAGS_use_test_ca, creds);
   } else if (test_case == "oauth2_auth_token") {
     grpc::string raw_token = GetOauth2AccessToken();
-    std::shared_ptr<Credentials> creds = AccessTokenCredentials(raw_token);
+    std::shared_ptr<CallCredentials> creds = AccessTokenCredentials(raw_token);
     return CreateTestChannel(host_port, FLAGS_server_host_override,
                              FLAGS_use_tls, !FLAGS_use_test_ca, creds);
   } else {

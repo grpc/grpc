@@ -143,9 +143,12 @@ static void test_many_additions(void) {
   grpc_chttp2_hptbl_init(&tbl, mdctx);
 
   for (i = 0; i < 1000000; i++) {
+    grpc_mdelem *elem;
     gpr_asprintf(&key, "K:%d", i);
     gpr_asprintf(&value, "VALUE:%d", i);
-    grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings(mdctx, key, value));
+    elem = grpc_mdelem_from_strings(mdctx, key, value);
+    GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem));
+    GRPC_MDELEM_UNREF(elem);
     assert_index(&tbl, 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY, key, value);
     gpr_free(key);
     gpr_free(value);
@@ -173,18 +176,25 @@ static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl *tbl,
 
 static void test_find(void) {
   grpc_chttp2_hptbl tbl;
-  int i;
+  gpr_uint32 i;
   char buffer[32];
   grpc_mdctx *mdctx;
+  grpc_mdelem *elem;
   grpc_chttp2_hptbl_find_result r;
 
   LOG_TEST("test_find");
 
   mdctx = grpc_mdctx_create();
   grpc_chttp2_hptbl_init(&tbl, mdctx);
-  grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings(mdctx, "abc", "xyz"));
-  grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings(mdctx, "abc", "123"));
-  grpc_chttp2_hptbl_add(&tbl, grpc_mdelem_from_strings(mdctx, "x", "1"));
+  elem = grpc_mdelem_from_strings(mdctx, "abc", "xyz");
+  GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem));
+  GRPC_MDELEM_UNREF(elem);
+  elem = grpc_mdelem_from_strings(mdctx, "abc", "123");
+  GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem));
+  GRPC_MDELEM_UNREF(elem);
+  elem = grpc_mdelem_from_strings(mdctx, "x", "1");
+  GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem));
+  GRPC_MDELEM_UNREF(elem);
 
   r = find_simple(&tbl, "abc", "123");
   GPR_ASSERT(r.index == 2 + GRPC_CHTTP2_LAST_STATIC_ENTRY);
@@ -233,8 +243,9 @@ static void test_find(void) {
   /* overflow the string buffer, check find still works */
   for (i = 0; i < 10000; i++) {
     gpr_ltoa(i, buffer);
-    grpc_chttp2_hptbl_add(&tbl,
-                          grpc_mdelem_from_strings(mdctx, "test", buffer));
+    elem = grpc_mdelem_from_strings(mdctx, "test", buffer);
+    GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem));
+    GRPC_MDELEM_UNREF(elem);
   }
 
   r = find_simple(&tbl, "abc", "123");
@@ -250,7 +261,7 @@ static void test_find(void) {
   GPR_ASSERT(r.has_value == 1);
 
   for (i = 0; i < tbl.num_ents; i++) {
-    int expect = 9999 - i;
+    gpr_uint32 expect = 9999 - i;
     gpr_ltoa(expect, buffer);
 
     r = find_simple(&tbl, "test", buffer);

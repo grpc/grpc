@@ -33,7 +33,8 @@ from grpc._adapter import _types
 
 _USER_AGENT = 'Python-gRPC-{}'.format(_grpcio_metadata.__version__)
 
-ClientCredentials = _c.ClientCredentials
+ChannelCredentials = _c.ChannelCredentials
+CallCredentials = _c.CallCredentials
 ServerCredentials = _c.ServerCredentials
 
 
