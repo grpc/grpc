@@ -207,7 +207,6 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);
   args->args = final_args;
-  args->master = f->master;
   s = grpc_subchannel_create(&c->base, args);
   grpc_connector_unref(exec_ctx, &c->base);
   grpc_channel_args_destroy(final_args);

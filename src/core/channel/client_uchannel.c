@@ -58,7 +58,7 @@ typedef struct client_uchannel_channel_data {
       this channel_data via its channel stack.
       We occasionally use this to bump the refcount on the master channel
       to keep ourselves alive through an asynchronous operation. */
-  grpc_channel *master;
+  grpc_channel_stack *owning_stack;
 
   /** connectivity state being tracked */
   grpc_connectivity_state_tracker state_tracker;
@@ -90,9 +90,7 @@ static void monitor_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static char *cuc_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  channel_data *chand = elem->channel_data;
-  return grpc_subchannel_call_holder_get_peer(exec_ctx, elem->call_data,
-                                              chand->master);
+  return grpc_subchannel_call_holder_get_peer(exec_ctx, elem->call_data);
 }
 
 static void cuc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
@@ -158,7 +156,7 @@ static void cuc_init_channel_elem(grpc_exec_ctx *exec_ctx,
   grpc_closure_init(&chand->connectivity_cb, monitor_subchannel, chand);
   GPR_ASSERT(args->is_last);
   GPR_ASSERT(elem->filter == &grpc_client_uchannel_filter);
-  chand->master = args->master;
+  chand->owning_stack = args->channel_stack;
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_uchannel");
   gpr_mu_init(&chand->mu_state);
@@ -214,33 +212,6 @@ void grpc_client_uchannel_watch_connectivity_state(
   grpc_connectivity_state_notify_on_state_change(
       exec_ctx, &chand->state_tracker, state, on_complete);
   gpr_mu_unlock(&chand->mu_state);
-}
-
-grpc_pollset_set *grpc_client_uchannel_get_connecting_pollset_set(
-    grpc_channel_element *elem) {
-  channel_data *chand = elem->channel_data;
-  grpc_channel_element *parent_elem;
-  gpr_mu_lock(&chand->mu_state);
-  parent_elem = grpc_channel_stack_last_element(
-      grpc_channel_get_channel_stack(chand->master));
-  gpr_mu_unlock(&chand->mu_state);
-  return grpc_client_channel_get_connecting_pollset_set(parent_elem);
-}
-
-void grpc_client_uchannel_add_interested_party(grpc_exec_ctx *exec_ctx,
-                                               grpc_channel_element *elem,
-                                               grpc_pollset *pollset) {
-  grpc_pollset_set *master_pollset_set =
-      grpc_client_uchannel_get_connecting_pollset_set(elem);
-  grpc_pollset_set_add_pollset(exec_ctx, master_pollset_set, pollset);
-}
-
-void grpc_client_uchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
-                                               grpc_channel_element *elem,
-                                               grpc_pollset *pollset) {
-  grpc_pollset_set *master_pollset_set =
-      grpc_client_uchannel_get_connecting_pollset_set(elem);
-  grpc_pollset_set_del_pollset(exec_ctx, master_pollset_set, pollset);
 }
 
 grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,

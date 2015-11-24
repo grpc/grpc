@@ -161,15 +161,10 @@ struct grpc_subchannel_args {
   /** Address to connect to */
   struct sockaddr *addr;
   size_t addr_len;
-  /** master channel */
-  grpc_channel *master;
 };
 
 /** create a subchannel given a connector */
 grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
                                         grpc_subchannel_args *args);
-
-/** Return the master channel associated with the subchannel */
-grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H */

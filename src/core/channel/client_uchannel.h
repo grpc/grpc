@@ -51,16 +51,6 @@ void grpc_client_uchannel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
     grpc_connectivity_state *state, grpc_closure *on_complete);
 
-grpc_pollset_set *grpc_client_uchannel_get_connecting_pollset_set(
-    grpc_channel_element *elem);
-
-void grpc_client_uchannel_add_interested_party(grpc_exec_ctx *exec_ctx,
-                                               grpc_channel_element *channel,
-                                               grpc_pollset *pollset);
-void grpc_client_uchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
-                                               grpc_channel_element *channel,
-                                               grpc_pollset *pollset);
-
 grpc_channel *grpc_client_uchannel_create(grpc_subchannel *subchannel,
                                           grpc_channel_args *args);
 
