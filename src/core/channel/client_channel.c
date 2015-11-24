@@ -324,7 +324,8 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
   gpr_mu_lock(&chand->mu_config);
   if (initial_metadata == NULL) {
     if (chand->lb_policy != NULL) {
-      grpc_lb_policy_cancel_pick(exec_ctx, chand->lb_policy, connected_subchannel);
+      grpc_lb_policy_cancel_pick(exec_ctx, chand->lb_policy,
+                                 connected_subchannel);
     }
     for (closure = chand->waiting_for_config_closures.head; closure != NULL;
          closure = grpc_closure_next(closure)) {
@@ -338,8 +339,9 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
     return 1;
   }
   if (chand->lb_policy != NULL) {
-    int r = grpc_lb_policy_pick(exec_ctx, chand->lb_policy, calld->pollset,
-                                initial_metadata, connected_subchannel, on_ready);
+    int r =
+        grpc_lb_policy_pick(exec_ctx, chand->lb_policy, calld->pollset,
+                            initial_metadata, connected_subchannel, on_ready);
     gpr_mu_unlock(&chand->mu_config);
     return r;
   }
