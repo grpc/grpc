@@ -41,6 +41,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpc/support/useful.h>
+#include "src/core/profiling/timers.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/test_config.h"
 
@@ -89,6 +90,7 @@ static void init_ping_pong_request(void) {
 }
 
 static void step_ping_pong_request(void) {
+  GPR_TIMER_BEGIN("ping_pong", 1);
   call = grpc_channel_create_call(channel, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   "/Reflector/reflectUnary", "localhost",
                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
@@ -99,6 +101,7 @@ static void step_ping_pong_request(void) {
   grpc_call_destroy(call);
   grpc_byte_buffer_destroy(response_payload_recv);
   call = NULL;
+  GPR_TIMER_END("ping_pong", 1);
 }
 
 static void init_ping_pong_stream(void) {
@@ -122,10 +125,12 @@ static void init_ping_pong_stream(void) {
 
 static void step_ping_pong_stream(void) {
   grpc_call_error error;
+  GPR_TIMER_BEGIN("ping_pong", 1);
   error = grpc_call_start_batch(call, stream_step_ops, 2, (void *)1, NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   grpc_byte_buffer_destroy(response_payload_recv);
+  GPR_TIMER_END("ping_pong", 1);
 }
 
 static double now(void) {
@@ -159,11 +164,13 @@ int main(int argc, char **argv) {
   char *scenario_name = "ping-pong-request";
   scenario sc = {NULL, NULL, NULL};
 
+  gpr_timers_set_log_filename("latency_trace.fling_client.txt");
+
+  grpc_init();
+
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];
   grpc_test_init(1, fake_argv);
-
-  grpc_init();
 
   cl = gpr_cmdline_create("fling client");
   gpr_cmdline_add_int(cl, "payload_size", "Size of the payload to send",
