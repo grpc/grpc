@@ -320,6 +320,8 @@ static void finalize_outbuf(grpc_exec_ctx *exec_ctx,
       grpc_chttp2_list_add_written_stream(transport_writing, stream_writing);
     }
   }
+
+  GPR_TIMER_END("finalize_outbuf", 0);
 }
 
 void grpc_chttp2_cleanup_writing(
