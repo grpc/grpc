@@ -56,6 +56,7 @@ class AsyncGenericService;
 class RpcService;
 class RpcServiceMethod;
 class ServerAsyncStreamingInterface;
+class ServerContext;
 class ThreadPoolInterface;
 
 /// Models a gRPC server.
@@ -83,6 +84,17 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   /// \warning The server must be either shutting down or some other thread must
   /// call \a Shutdown for this function to ever return.
   void Wait();
+
+  /// Global Callbacks
+  ///
+  /// Can be set exactly once per application to install hooks whenever
+  /// a server event occurs
+  class GlobalCallbacks {
+   public:
+    virtual void PreSynchronousRequest(ServerContext* context) = 0;
+    virtual void PostSynchronousRequest(ServerContext* context) = 0;
+  };
+  static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
  private:
   friend class AsyncGenericService;
