@@ -103,8 +103,7 @@ static void lame_start_transport_op(grpc_exec_ctx *exec_ctx,
 }
 
 static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                           grpc_call_element_args *args) {
-}
+                           grpc_call_element_args *args) {}
 
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
                               grpc_call_element *elem) {}

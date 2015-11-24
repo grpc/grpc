@@ -137,19 +137,23 @@ retry:
   }
   /* if we don't have a subchannel, try to get one */
   if (holder->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING &&
-      holder->connected_subchannel == NULL && op->send_initial_metadata != NULL) {
+      holder->connected_subchannel == NULL &&
+      op->send_initial_metadata != NULL) {
     holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL;
     grpc_closure_init(&holder->next_step, subchannel_ready, holder);
-    if (holder->pick_subchannel(exec_ctx, holder->pick_subchannel_arg,
-                                op->send_initial_metadata, &holder->connected_subchannel,
-                                &holder->next_step)) {
+    if (holder->pick_subchannel(
+            exec_ctx, holder->pick_subchannel_arg, op->send_initial_metadata,
+            &holder->connected_subchannel, &holder->next_step)) {
       holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
     }
   }
   /* if we've got a subchannel, then let's ask it to create a call */
   if (holder->creation_phase == GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING &&
       holder->connected_subchannel != NULL) {
-    gpr_atm_rel_store(&holder->subchannel_call, grpc_connected_subchannel_create_call(exec_ctx, holder->connected_subchannel, holder->pollset));
+    gpr_atm_rel_store(
+        &holder->subchannel_call,
+        grpc_connected_subchannel_create_call(
+            exec_ctx, holder->connected_subchannel, holder->pollset));
     retry_waiting_locked(exec_ctx, holder);
     goto retry;
   }
@@ -171,7 +175,10 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, int success) {
     holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
     fail_locked(exec_ctx, holder);
   } else {
-    gpr_atm_rel_store(&holder->subchannel_call, grpc_connected_subchannel_create_call(exec_ctx, holder->connected_subchannel, holder->pollset));
+    gpr_atm_rel_store(
+        &holder->subchannel_call,
+        grpc_connected_subchannel_create_call(
+            exec_ctx, holder->connected_subchannel, holder->pollset));
     retry_waiting_locked(exec_ctx, holder);
   }
   gpr_mu_unlock(&holder->mu);
