@@ -697,10 +697,25 @@ static double generate_uniform_random_number(grpc_subchannel *c) {
 
 /* Update backoff_delta and next_attempt in subchannel */
 static void update_reconnect_parameters(grpc_subchannel *c) {
+  size_t i;
   gpr_int32 backoff_delta_millis, jitter;
   gpr_int32 max_backoff_millis =
       GRPC_SUBCHANNEL_RECONNECT_MAX_BACKOFF_SECONDS * 1000;
   double jitter_range;
+
+  if (c->args) {
+    for (i = 0; i < c->args->num_args; i++) {
+      if (0 == strcmp(c->args->args[i].key,
+                      "grpc.testing.fixed_reconnect_backoff")) {
+        GPR_ASSERT(c->args->args[i].type == GRPC_ARG_INTEGER);
+        c->next_attempt = gpr_time_add(
+            gpr_now(GPR_CLOCK_MONOTONIC),
+            gpr_time_from_millis(c->args->args[i].value.integer, GPR_TIMESPAN));
+        return;
+      }
+    }
+  }
+
   backoff_delta_millis =
       (gpr_int32)(gpr_time_to_millis(c->backoff_delta) *
                   GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER);

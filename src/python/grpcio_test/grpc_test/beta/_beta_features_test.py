@@ -181,24 +181,21 @@ class BetaFeaturesTest(unittest.TestCase):
     self._server.stop(test_constants.SHORT_TIMEOUT).wait()
 
   def test_unary_unary(self):
-    call_options = interfaces.grpc_call_options(
-        disable_compression=True, credentials=self._client_credentials)
+    call_options = interfaces.grpc_call_options(disable_compression=True)
     response = getattr(self._dynamic_stub, _UNARY_UNARY)(
         _REQUEST, test_constants.LONG_TIMEOUT, protocol_options=call_options)
     self.assertEqual(_RESPONSE, response)
     self.assertIsNotNone(self._servicer.peer())
 
   def test_unary_stream(self):
-    call_options = interfaces.grpc_call_options(
-        disable_compression=True, credentials=self._client_credentials)
+    call_options = interfaces.grpc_call_options(disable_compression=True)
     response_iterator = getattr(self._dynamic_stub, _UNARY_STREAM)(
         _REQUEST, test_constants.LONG_TIMEOUT, protocol_options=call_options)
     self._servicer.block_until_serviced()
     self.assertIsNotNone(self._servicer.peer())
 
   def test_stream_unary(self):
-    call_options = interfaces.grpc_call_options(
-        credentials=self._client_credentials)
+    call_options = interfaces.grpc_call_options()
     request_iterator = _BlockingIterator(iter((_REQUEST,)))
     response_future = getattr(self._dynamic_stub, _STREAM_UNARY).future(
         request_iterator, test_constants.LONG_TIMEOUT,
@@ -212,8 +209,7 @@ class BetaFeaturesTest(unittest.TestCase):
     self.assertEqual(_RESPONSE, response_future.result())
 
   def test_stream_stream(self):
-    call_options = interfaces.grpc_call_options(
-        credentials=self._client_credentials)
+    call_options = interfaces.grpc_call_options()
     request_iterator = _BlockingIterator(iter((_REQUEST,)))
     response_iterator = getattr(self._dynamic_stub, _STREAM_STREAM)(
         request_iterator, test_constants.SHORT_TIMEOUT,

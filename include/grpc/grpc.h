@@ -132,6 +132,12 @@ typedef struct {
     NOTE: at some point we'd like to auto-tune this, and this parameter
     will become a no-op. */
 #define GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES "grpc.http2.lookahead_bytes"
+/** How much memory to use for hpack decoding */
+#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER \
+  "grpc.http2.hpack_table_size.decoder"
+/** How much memory to use for hpack encoding */
+#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
+  "grpc.http2.hpack_table_size.encoder"
 /** Default authority to pass if none specified on call construction */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
 /** Primary user agent: goes at the start of the user-agent metadata
