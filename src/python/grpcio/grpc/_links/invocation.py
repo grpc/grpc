@@ -182,15 +182,15 @@ class _Kernel(object):
 
   def _on_finish_event(self, operation_id, event, rpc_state):
     _no_longer_due(_FINISH, rpc_state, operation_id, self._rpc_states)
-    if event.status.code is _intermediary_low.Code.OK:
+    if event.status.code == _intermediary_low.Code.OK:
       termination = links.Ticket.Termination.COMPLETION
-    elif event.status.code is _intermediary_low.Code.CANCELLED:
+    elif event.status.code == _intermediary_low.Code.CANCELLED:
       termination = links.Ticket.Termination.CANCELLATION
-    elif event.status.code is _intermediary_low.Code.DEADLINE_EXCEEDED:
+    elif event.status.code == _intermediary_low.Code.DEADLINE_EXCEEDED:
       termination = links.Ticket.Termination.EXPIRATION
-    elif event.status.code is _intermediary_low.Code.UNIMPLEMENTED:
+    elif event.status.code == _intermediary_low.Code.UNIMPLEMENTED:
       termination = links.Ticket.Termination.REMOTE_FAILURE
-    elif event.status.code is _intermediary_low.Code.UNKNOWN:
+    elif event.status.code == _intermediary_low.Code.UNKNOWN:
       termination = links.Ticket.Termination.LOCAL_FAILURE
     else:
       termination = links.Ticket.Termination.TRANSMISSION_FAILURE
