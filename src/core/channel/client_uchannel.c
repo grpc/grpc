@@ -138,7 +138,7 @@ static int cuc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
 static void cuc_init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                                grpc_call_element_args *args) {
   grpc_subchannel_call_holder_init(elem->call_data, cuc_pick_subchannel,
-                                   elem->channel_data);
+                                   elem->channel_data, args->call_stack);
 }
 
 /* Destructor for call_data */
