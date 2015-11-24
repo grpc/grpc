@@ -32,14 +32,14 @@ syntax = "proto3";
 package grpc.testing;
 
 message ServerStats {
-  // wall clock time change since last reset
+  // wall clock time change in seconds since last reset
   double time_elapsed = 1;
 
-  // change in user time used by the server since last reset
+  // change in user time (in seconds) used by the server since last reset
   double time_user = 2;
 
-  // change in server time used by the server process and all threads since
-  // last reset
+  // change in server time (in seconds) used by the server process and all
+  // threads since last reset
   double time_system = 3;
 }
 
