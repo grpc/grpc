@@ -91,7 +91,6 @@ void grpc_subchannel_call_holder_perform_op(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel_call_holder *holder,
                                             grpc_transport_stream_op *op);
 char *grpc_subchannel_call_holder_get_peer(grpc_exec_ctx *exec_ctx,
-                                           grpc_subchannel_call_holder *holder,
-                                           grpc_channel *master);
+                                           grpc_subchannel_call_holder *holder);
 
 #endif

@@ -63,7 +63,6 @@ typedef struct registered_call {
 
 struct grpc_channel {
   int is_client;
-  gpr_refcount refs;
   gpr_uint32 max_message_length;
   grpc_mdelem *default_authority;
 

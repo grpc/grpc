@@ -59,11 +59,6 @@ typedef struct client_channel_channel_data {
   grpc_resolver *resolver;
   /** have we started resolving this channel */
   int started_resolving;
-  /** master channel - the grpc_channel instance that ultimately owns
-      this channel_data via its channel stack.
-      We occasionally use this to bump the refcount on the master channel
-      to keep ourselves alive through an asynchronous operation. */
-  grpc_channel *master;
 
   /** mutex protecting client configuration, including all
       variables below in this data structure */
@@ -81,8 +76,8 @@ typedef struct client_channel_channel_data {
   grpc_connectivity_state_tracker state_tracker;
   /** when an lb_policy arrives, should we try to exit idle */
   int exit_idle_when_lb_policy_arrives;
-  /** pollset_set of interested parties in a new connection */
-  grpc_pollset_set pollset_set;
+  /** owning stack */
+  grpc_channel_stack *owning_stack;
 } channel_data;
 
 /** We create one watcher for each new lb_policy that is returned from a
@@ -103,9 +98,7 @@ typedef struct {
 } waiting_call;
 
 static char *cc_get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
-  channel_data *chand = elem->channel_data;
-  return grpc_subchannel_call_holder_get_peer(exec_ctx, elem->call_data,
-                                              chand->master);
+  return grpc_subchannel_call_holder_get_peer(exec_ctx, elem->call_data);
 }
 
 static void cc_start_transport_stream_op(grpc_exec_ctx *exec_ctx,
@@ -139,7 +132,7 @@ static void on_lb_policy_state_changed(grpc_exec_ctx *exec_ctx, void *arg,
   on_lb_policy_state_changed_locked(exec_ctx, w);
   gpr_mu_unlock(&w->chand->mu_config);
 
-  GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, w->chand->master, "watch_lb_policy");
+  GRPC_CHANNEL_STACK_UNREF(exec_ctx, w->chand->owning_stack, "watch_lb_policy");
   gpr_free(w);
 }
 
@@ -147,7 +140,7 @@ static void watch_lb_policy(grpc_exec_ctx *exec_ctx, channel_data *chand,
                             grpc_lb_policy *lb_policy,
                             grpc_connectivity_state current_state) {
   lb_policy_connectivity_watcher *w = gpr_malloc(sizeof(*w));
-  GRPC_CHANNEL_INTERNAL_REF(chand->master, "watch_lb_policy");
+  GRPC_CHANNEL_STACK_REF(chand->owning_stack, "watch_lb_policy");
 
   w->chand = chand;
   grpc_closure_init(&w->on_changed, on_lb_policy_state_changed, w);
@@ -200,7 +193,7 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
       watch_lb_policy(exec_ctx, chand, lb_policy, state);
     }
     gpr_mu_unlock(&chand->mu_config);
-    GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
+    GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
     grpc_resolver_next(exec_ctx, resolver, &chand->incoming_configuration,
                        &chand->on_config_changed);
     GRPC_RESOLVER_UNREF(exec_ctx, resolver, "channel-next");
@@ -230,7 +223,7 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "config_change");
   }
 
-  GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, chand->master, "resolver");
+  GRPC_CHANNEL_STACK_UNREF(exec_ctx, chand->owning_stack, "resolver");
 }
 
 static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
@@ -347,7 +340,7 @@ static int cc_pick_subchannel(grpc_exec_ctx *exec_ctx, void *elemp,
   }
   if (chand->resolver != NULL && !chand->started_resolving) {
     chand->started_resolving = 1;
-    GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
+    GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
     grpc_resolver_next(exec_ctx, chand->resolver,
                        &chand->incoming_configuration,
                        &chand->on_config_changed);
@@ -387,8 +380,6 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
 
   gpr_mu_init(&chand->mu_config);
-  chand->master = args->master;
-  grpc_pollset_set_init(&chand->pollset_set);
   grpc_closure_init(&chand->on_config_changed, cc_on_config_changed, chand);
 
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
@@ -408,7 +399,6 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
   }
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
-  grpc_pollset_set_destroy(&chand->pollset_set);
   gpr_mu_destroy(&chand->mu_config);
 }
 
@@ -437,7 +427,7 @@ void grpc_client_channel_set_resolver(grpc_exec_ctx *exec_ctx,
   if (!grpc_closure_list_empty(chand->waiting_for_config_closures) ||
       chand->exit_idle_when_lb_policy_arrives) {
     chand->started_resolving = 1;
-    GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
+    GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
     grpc_resolver_next(exec_ctx, resolver, &chand->incoming_configuration,
                        &chand->on_config_changed);
   }
@@ -456,7 +446,7 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     } else {
       chand->exit_idle_when_lb_policy_arrives = 1;
       if (!chand->started_resolving && chand->resolver != NULL) {
-        GRPC_CHANNEL_INTERNAL_REF(chand->master, "resolver");
+        GRPC_CHANNEL_STACK_REF(chand->owning_stack, "resolver");
         chand->started_resolving = 1;
         grpc_resolver_next(exec_ctx, chand->resolver,
                            &chand->incoming_configuration,
@@ -469,31 +459,11 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
 }
 
 void grpc_client_channel_watch_connectivity_state(
-    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
+    grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
     grpc_connectivity_state *state, grpc_closure *on_complete) {
   channel_data *chand = elem->channel_data;
   gpr_mu_lock(&chand->mu_config);
   grpc_connectivity_state_notify_on_state_change(
       exec_ctx, &chand->state_tracker, state, on_complete);
   gpr_mu_unlock(&chand->mu_config);
-}
-
-grpc_pollset_set *grpc_client_channel_get_connecting_pollset_set(
-    grpc_channel_element *elem) {
-  channel_data *chand = elem->channel_data;
-  return &chand->pollset_set;
-}
-
-void grpc_client_channel_add_interested_party(grpc_exec_ctx *exec_ctx,
-                                              grpc_channel_element *elem,
-                                              grpc_pollset *pollset) {
-  channel_data *chand = elem->channel_data;
-  grpc_pollset_set_add_pollset(exec_ctx, &chand->pollset_set, pollset);
-}
-
-void grpc_client_channel_del_interested_party(grpc_exec_ctx *exec_ctx,
-                                              grpc_channel_element *elem,
-                                              grpc_pollset *pollset) {
-  channel_data *chand = elem->channel_data;
-  grpc_pollset_set_del_pollset(exec_ctx, &chand->pollset_set, pollset);
 }

@@ -244,13 +244,12 @@ static void fail_locked(grpc_exec_ctx *exec_ctx,
 }
 
 char *grpc_subchannel_call_holder_get_peer(grpc_exec_ctx *exec_ctx,
-                                           grpc_subchannel_call_holder *holder,
-                                           grpc_channel *master) {
+                                           grpc_subchannel_call_holder *holder) {
   grpc_subchannel_call *subchannel_call = GET_CALL(holder);
 
   if (subchannel_call) {
     return grpc_subchannel_call_get_peer(exec_ctx, subchannel_call);
   } else {
-    return grpc_channel_get_target(master);
+    return NULL;
   }
 }
