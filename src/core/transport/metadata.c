@@ -142,7 +142,6 @@ static size_t g_static_mdtab_maxprobe;
 static strtab_shard g_strtab_shard[STRTAB_SHARD_COUNT];
 static mdtab_shard g_mdtab_shard[MDTAB_SHARD_COUNT];
 
-static void discard_metadata(mdtab_shard *shard);
 static void gc_mdtab(mdtab_shard *shard);
 
 void grpc_mdctx_global_init(void) {
@@ -215,14 +214,20 @@ void grpc_mdctx_global_shutdown(void) {
   for (i = 0; i < MDTAB_SHARD_COUNT; i++) {
     mdtab_shard *shard = &g_mdtab_shard[i];
     gpr_mu_destroy(&shard->mu);
-    discard_metadata(shard);
-    GPR_ASSERT(shard->count == 0);
+    gc_mdtab(shard);
+    /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
+    if (shard->count != 0) {
+      gpr_log(GPR_DEBUG, "WARNING: %d metadata elements were leaked", shard->count);
+    }
     gpr_free(shard->elems);
   }
   for (i = 0; i < STRTAB_SHARD_COUNT; i++) {
     strtab_shard *shard = &g_strtab_shard[i];
     gpr_mu_destroy(&shard->mu);
-    GPR_ASSERT(shard->count == 0);
+    /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
+    if (shard->count != 0) {
+      gpr_log(GPR_DEBUG, "WARNING: %d metadata strings were leaked", shard->count);
+    }
     gpr_free(shard->strs);
   }
 }
@@ -253,96 +258,6 @@ static void ref_md_locked(mdtab_shard *shard,
     GPR_ASSERT(1 != gpr_atm_no_barrier_fetch_add(&md->refcnt, -1));
   }
 }
-
-#if 0
-grpc_mdctx *grpc_mdctx_create_with_seed(gpr_uint32 seed) {
-  grpc_mdctx *ctx = gpr_malloc(sizeof(grpc_mdctx));
-  size_t i, j;
-
-  memset(ctx, 0, sizeof(*ctx));
-
-  g_refs = 1;
-  g_hash_seed = seed;
-  gpr_mu_init(&g_mu);
-  g_strtab = gpr_malloc(sizeof(internal_string *) * INITIAL_STRTAB_CAPACITY);
-  memset(g_strtab, 0, sizeof(grpc_mdstr *) * INITIAL_STRTAB_CAPACITY);
-  g_strtab_count = 0;
-  g_strtab_capacity = INITIAL_STRTAB_CAPACITY;
-  g_mdtab = gpr_malloc(sizeof(internal_metadata *) * INITIAL_MDTAB_CAPACITY);
-  memset(g_mdtab, 0, sizeof(grpc_mdelem *) * INITIAL_MDTAB_CAPACITY);
-  g_mdtab_count = 0;
-  g_mdtab_capacity = INITIAL_MDTAB_CAPACITY;
-  g_mdtab_free = 0;
-
-
-  return ctx;
-}
-
-grpc_mdctx *grpc_mdctx_create(void) {
-  /* This seed is used to prevent remote connections from controlling hash table
-   * collisions. It needs to be somewhat unpredictable to a remote connection.
-   */
-  return grpc_mdctx_create_with_seed(
-      (gpr_uint32)gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
-}
-#endif
-
-static void discard_metadata(mdtab_shard *shard) {
-  size_t i;
-  internal_metadata *next, *cur;
-
-  for (i = 0; i < shard->capacity; i++) {
-    cur = shard->elems[i];
-    while (cur) {
-      void *user_data = (void *)gpr_atm_no_barrier_load(&cur->user_data);
-      GPR_ASSERT(gpr_atm_acq_load(&cur->refcnt) == 0);
-      next = cur->bucket_next;
-      GRPC_MDSTR_UNREF((grpc_mdstr *)cur->key);
-      GRPC_MDSTR_UNREF((grpc_mdstr *)cur->value);
-      if (user_data != NULL) {
-        ((destroy_user_data_func)gpr_atm_no_barrier_load(
-            &cur->destroy_user_data))(user_data);
-      }
-      gpr_mu_destroy(&cur->mu_user_data);
-      gpr_free(cur);
-      cur = next;
-      shard->free--;
-      shard->count--;
-    }
-    shard->elems[i] = NULL;
-  }
-}
-
-#if 0
-static void metadata_context_destroy_locked(grpc_mdctx *ctx) {
-  GPR_ASSERT(g_strtab_count == 0);
-  GPR_ASSERT(g_mdtab_count == 0);
-  GPR_ASSERT(g_mdtab_free == 0);
-  gpr_free(g_strtab);
-  gpr_free(g_mdtab);
-  gpr_mu_unlock(&g_mu);
-  gpr_mu_destroy(&g_mu);
-  gpr_free(ctx);
-}
-
-void grpc_mdctx_ref(grpc_mdctx *ctx) {
-  GPR_TIMER_BEGIN("grpc_mdctx_ref", 0);
-  lock(ctx);
-  GPR_ASSERT(g_refs > 0);
-  g_refs++;
-  unlock(ctx);
-  GPR_TIMER_END("grpc_mdctx_ref", 0);
-}
-
-void grpc_mdctx_unref(grpc_mdctx *ctx) {
-  GPR_TIMER_BEGIN("grpc_mdctx_unref", 0);
-  lock(ctx);
-  GPR_ASSERT(g_refs > 0);
-  g_refs--;
-  unlock(ctx);
-  GPR_TIMER_END("grpc_mdctx_unref", 0);
-}
-#endif
 
 static void grow_strtab(strtab_shard *shard) {
   size_t capacity = shard->capacity * 2;
