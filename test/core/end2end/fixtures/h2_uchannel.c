@@ -252,7 +252,8 @@ static grpc_connected_subchannel *connect_subchannel(grpc_subchannel *c) {
   gpr_mu_lock(GRPC_POLLSET_MU(&pollset));
   while (g_state != GRPC_CHANNEL_READY) {
     grpc_pollset_worker worker;
-    grpc_pollset_work(&exec_ctx, &pollset, &worker, gpr_now(GPR_CLOCK_REALTIME),
+    grpc_pollset_work(&exec_ctx, &pollset, &worker,
+                      gpr_now(GPR_CLOCK_MONOTONIC),
                       GRPC_TIMEOUT_SECONDS_TO_DEADLINE(1));
     gpr_mu_unlock(GRPC_POLLSET_MU(&pollset));
     grpc_exec_ctx_flush(&exec_ctx);

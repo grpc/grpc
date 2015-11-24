@@ -57,7 +57,7 @@ static void retry_waiting_locked(grpc_exec_ctx *exec_ctx,
 void grpc_subchannel_call_holder_init(
     grpc_subchannel_call_holder *holder,
     grpc_subchannel_call_holder_pick_subchannel pick_subchannel,
-    void *pick_subchannel_arg) {
+    void *pick_subchannel_arg, grpc_call_stack *owning_call) {
   gpr_atm_rel_store(&holder->subchannel_call, 0);
   holder->pick_subchannel = pick_subchannel;
   holder->pick_subchannel_arg = pick_subchannel_arg;
@@ -67,6 +67,7 @@ void grpc_subchannel_call_holder_init(
   holder->waiting_ops_count = 0;
   holder->waiting_ops_capacity = 0;
   holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
+  holder->owning_call = owning_call;
 }
 
 void grpc_subchannel_call_holder_destroy(grpc_exec_ctx *exec_ctx,
@@ -141,10 +142,12 @@ retry:
       op->send_initial_metadata != NULL) {
     holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL;
     grpc_closure_init(&holder->next_step, subchannel_ready, holder);
+    GRPC_CALL_STACK_REF(holder->owning_call, "pick_subchannel");
     if (holder->pick_subchannel(
             exec_ctx, holder->pick_subchannel_arg, op->send_initial_metadata,
             &holder->connected_subchannel, &holder->next_step)) {
       holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
+      GRPC_CALL_STACK_UNREF(exec_ctx, holder->owning_call, "pick_subchannel");
     }
   }
   /* if we've got a subchannel, then let's ask it to create a call */
@@ -171,8 +174,8 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, int success) {
              GRPC_SUBCHANNEL_CALL_HOLDER_PICKING_SUBCHANNEL);
   call = GET_CALL(holder);
   GPR_ASSERT(call == NULL || call == CANCELLED_CALL);
+  holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
   if (holder->connected_subchannel == NULL) {
-    holder->creation_phase = GRPC_SUBCHANNEL_CALL_HOLDER_NOT_CREATING;
     fail_locked(exec_ctx, holder);
   } else {
     gpr_atm_rel_store(
@@ -182,6 +185,7 @@ static void subchannel_ready(grpc_exec_ctx *exec_ctx, void *arg, int success) {
     retry_waiting_locked(exec_ctx, holder);
   }
   gpr_mu_unlock(&holder->mu);
+  GRPC_CALL_STACK_UNREF(exec_ctx, holder->owning_call, "pick_subchannel");
 }
 
 typedef struct {

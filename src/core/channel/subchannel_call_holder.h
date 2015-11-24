@@ -78,12 +78,14 @@ typedef struct grpc_subchannel_call_holder {
   size_t waiting_ops_capacity;
 
   grpc_closure next_step;
+
+  grpc_call_stack *owning_call;
 } grpc_subchannel_call_holder;
 
 void grpc_subchannel_call_holder_init(
     grpc_subchannel_call_holder *holder,
     grpc_subchannel_call_holder_pick_subchannel pick_subchannel,
-    void *pick_subchannel_arg);
+    void *pick_subchannel_arg, grpc_call_stack *owning_call);
 void grpc_subchannel_call_holder_destroy(grpc_exec_ctx *exec_ctx,
                                          grpc_subchannel_call_holder *holder);
 
