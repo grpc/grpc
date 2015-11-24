@@ -374,8 +374,8 @@ error:
 }
 
 static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, int fd,
-                                         const struct sockaddr *addr,
-                                         size_t addr_len) {
+                                               const struct sockaddr *addr,
+                                               size_t addr_len) {
   grpc_tcp_listener *sp = NULL;
   int port;
   char *addr_str;
@@ -410,8 +410,7 @@ static grpc_tcp_listener *add_socket_to_server(grpc_tcp_server *s, int fd,
 }
 
 grpc_tcp_listener *grpc_tcp_server_add_port(grpc_tcp_server *s,
-                                            const void *addr,
-                                            size_t addr_len) {
+                                            const void *addr, size_t addr_len) {
   int allocated_port = -1;
   grpc_tcp_listener *sp;
   grpc_tcp_listener *sp2 = NULL;
@@ -499,7 +498,8 @@ done:
 
 int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned port_index) {
   grpc_tcp_listener *sp;
-  for (sp = s->head; sp && port_index != 0; sp = sp->next, port_index--);
+  for (sp = s->head; sp && port_index != 0; sp = sp->next, port_index--)
+    ;
   if (port_index == 0 && sp) {
     return sp->fd;
   } else {
@@ -527,8 +527,7 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *s,
     }
     sp->read_closure.cb = on_read;
     sp->read_closure.cb_arg = sp;
-    grpc_fd_notify_on_read(exec_ctx, sp->emfd,
-                           &sp->read_closure);
+    grpc_fd_notify_on_read(exec_ctx, sp->emfd, &sp->read_closure);
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);
