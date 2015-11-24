@@ -509,7 +509,8 @@ static void rebuild_elems(grpc_chttp2_hpack_compressor *c, gpr_uint32 new_cap) {
 
   for (i = 0; i < c->table_elems; i++) {
     gpr_uint32 ofs = c->tail_remote_index + i + 1;
-    table_elem_size[ofs % new_cap] = c->table_elem_size[ofs % c->cap_table_elems];
+    table_elem_size[ofs % new_cap] =
+        c->table_elem_size[ofs % c->cap_table_elems];
   }
 
   c->cap_table_elems = new_cap;
