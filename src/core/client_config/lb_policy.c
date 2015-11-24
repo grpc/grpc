@@ -51,8 +51,8 @@ void grpc_lb_policy_ref(grpc_lb_policy *policy) {
 }
 
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
-void grpc_lb_policy_unref(grpc_lb_policy *policy,
-                          grpc_closure_list *closure_list, const char *file,
+void grpc_lb_policy_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                          const char *file,
                           int line, const char *reason) {
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "LB_POLICY:%p unref %d -> %d %s",
           policy, (int)policy->refs.count, (int)policy->refs.count - 1, reason);
