@@ -122,8 +122,7 @@ void reconnect_server_start(reconnect_server *server, int port) {
   memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
 
   server->tcp_server = grpc_tcp_server_create();
-  listener = 
-      grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr));
+  listener = grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr));
   port_added = grpc_tcp_listener_get_port(listener);
   GPR_ASSERT(port_added == port);
 

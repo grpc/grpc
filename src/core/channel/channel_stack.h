@@ -179,11 +179,10 @@ grpc_call_element *grpc_call_stack_element(grpc_call_stack *stack, size_t i);
 size_t grpc_channel_stack_size(const grpc_channel_filter **filters,
                                size_t filter_count);
 /* Initialize a channel stack given some filters */
-void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx,int initial_refs,
-                          grpc_iomgr_cb_func destroy, void *destroy_arg,
+void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
+                             grpc_iomgr_cb_func destroy, void *destroy_arg,
                              const grpc_channel_filter **filters,
-                             size_t filter_count,
-                             const grpc_channel_args *args,
+                             size_t filter_count, const grpc_channel_args *args,
                              grpc_channel_stack *stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
@@ -213,10 +212,12 @@ void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
 #define GRPC_CHANNEL_STACK_UNREF(exec_ctx, channel_stack, reason) \
   grpc_stream_unref(exec_ctx, &(channel_stack)->refcount, reason)
 #else
-#define GRPC_CALL_STACK_REF(call_stack, reason) grpc_stream_ref(&(call_stack)->refcount)
+#define GRPC_CALL_STACK_REF(call_stack, reason) \
+  grpc_stream_ref(&(call_stack)->refcount)
 #define GRPC_CALL_STACK_UNREF(exec_ctx, call_stack, reason) \
   grpc_stream_unref(exec_ctx, &(call_stack)->refcount)
-#define GRPC_CHANNEL_STACK_REF(channel_stack, reason) grpc_stream_ref(&(channel_stack)->refcount)
+#define GRPC_CHANNEL_STACK_REF(channel_stack, reason) \
+  grpc_stream_ref(&(channel_stack)->refcount)
 #define GRPC_CHANNEL_STACK_UNREF(exec_ctx, channel_stack, reason) \
   grpc_stream_unref(exec_ctx, &(channel_stack)->refcount)
 #endif

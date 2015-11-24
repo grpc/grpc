@@ -173,15 +173,16 @@ static void connection_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(c);
 }
 
-void grpc_connected_subchannel_ref(
-    grpc_connected_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+void grpc_connected_subchannel_ref(grpc_connected_subchannel *c
+                                       GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   GRPC_CHANNEL_STACK_REF(CHANNEL_STACK_FROM_CONNECTION(c), REF_REASON);
 }
 
 void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
                                      grpc_connected_subchannel *c
                                          GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  GRPC_CHANNEL_STACK_UNREF(exec_ctx, CHANNEL_STACK_FROM_CONNECTION(c), REF_REASON);
+  GRPC_CHANNEL_STACK_UNREF(exec_ctx, CHANNEL_STACK_FROM_CONNECTION(c),
+                           REF_REASON);
 }
 
 /*
@@ -432,8 +433,8 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   channel_stack_size = grpc_channel_stack_size(filters, num_filters);
   con = gpr_malloc(channel_stack_size);
   stk = CHANNEL_STACK_FROM_CONNECTION(con);
-  grpc_channel_stack_init(exec_ctx, 1, connection_destroy, con, filters, num_filters, c->args,
-                          stk);
+  grpc_channel_stack_init(exec_ctx, 1, connection_destroy, con, filters,
+                          num_filters, c->args, stk);
   grpc_connected_channel_bind_transport(stk, c->connecting_result.transport);
   gpr_free((void *)c->connecting_result.filters);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
@@ -624,10 +625,6 @@ grpc_subchannel_call *grpc_connected_subchannel_create_call(
                        NULL, NULL, callstk);
   grpc_call_stack_set_pollset(exec_ctx, callstk, pollset);
   return call;
-}
-
-grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel) {
-  return subchannel->master;
 }
 
 grpc_call_stack *grpc_subchannel_call_get_call_stack(
