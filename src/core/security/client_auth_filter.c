@@ -146,6 +146,7 @@ void build_auth_metadata_context(grpc_security_connector *sc,
     *last_slash = '\0';
     method_name = gpr_strdup(last_slash + 1);
   }
+  if (method_name == NULL) method_name = gpr_strdup("");
   gpr_asprintf(&service_url, "%s://%s%s",
                sc->url_scheme == NULL ? "" : sc->url_scheme,
                grpc_mdstr_as_c_string(calld->host), service);

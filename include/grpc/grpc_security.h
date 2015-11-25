@@ -247,7 +247,8 @@ typedef struct {
   const char *service_url;
 
   /* The method name of the RPC being called (not fully qualified).
-     Can be NULL if no method name was found. */
+     The fully qualified method name can be built from the service_url:
+     full_qualified_method_name = ctx->service_url + '/' + ctx->method_name. */
   const char *method_name;
 
   /* The auth_context of the channel which gives the server's identity. */
