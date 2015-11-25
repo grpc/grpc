@@ -5053,14 +5053,13 @@ endif
 
 
 LIBGRPC++_SRC = \
-    src/cpp/client/secure_channel_arguments.cc \
     src/cpp/client/secure_credentials.cc \
     src/cpp/common/auth_property_iterator.cc \
     src/cpp/common/secure_auth_context.cc \
+    src/cpp/common/secure_channel_arguments.cc \
     src/cpp/common/secure_create_auth_context.cc \
     src/cpp/server/secure_server_credentials.cc \
     src/cpp/client/channel.cc \
-    src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/create_channel_internal.cc \
@@ -5068,6 +5067,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
     src/cpp/common/call.cc \
+    src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
@@ -5307,7 +5307,6 @@ $(OBJDIR)/$(CONFIG)/test/cpp/util/subprocess.o: $(GENDIR)/test/cpp/util/messages
 LIBGRPC++_UNSECURE_SRC = \
     src/cpp/common/insecure_create_auth_context.cc \
     src/cpp/client/channel.cc \
-    src/cpp/client/channel_arguments.cc \
     src/cpp/client/client_context.cc \
     src/cpp/client/create_channel.cc \
     src/cpp/client/create_channel_internal.cc \
@@ -5315,6 +5314,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/generic_stub.cc \
     src/cpp/client/insecure_credentials.cc \
     src/cpp/common/call.cc \
+    src/cpp/common/channel_arguments.cc \
     src/cpp/common/completion_queue.cc \
     src/cpp/common/rpc_method.cc \
     src/cpp/proto/proto_utils.cc \
@@ -9587,7 +9587,7 @@ endif
 
 
 CHANNEL_ARGUMENTS_TEST_SRC = \
-    test/cpp/client/channel_arguments_test.cc \
+    test/cpp/common/channel_arguments_test.cc \
 
 CHANNEL_ARGUMENTS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNEL_ARGUMENTS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9616,7 +9616,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/client/channel_arguments_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/common/channel_arguments_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 deps_channel_arguments_test: $(CHANNEL_ARGUMENTS_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -23152,10 +23152,10 @@ src/core/surface/secure_channel_create.c: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
 src/core/tsi/transport_security.c: $(OPENSSL_DEP)
-src/cpp/client/secure_channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_auth_context.cc: $(OPENSSL_DEP)
+src/cpp/common/secure_channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
