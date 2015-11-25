@@ -31,37 +31,23 @@
  *
  */
 
-#ifndef GRPC_TEST_CORE_UTIL_RECONNECT_SERVER_H
-#define GRPC_TEST_CORE_UTIL_RECONNECT_SERVER_H
+#include "src/core/client_config/initial_connect_string.h"
 
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-#include "test/core/util/test_tcp_server.h"
+#include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+extern void grpc_set_default_initial_connect_string(struct sockaddr **addr,
+                                                    size_t *addr_len,
+                                                    gpr_slice *initial_str);
 
-typedef struct timestamp_list {
-  gpr_timespec timestamp;
-  struct timestamp_list *next;
-} timestamp_list;
+static grpc_set_initial_connect_string_func g_set_initial_connect_string_func =
+    grpc_set_default_initial_connect_string;
 
-typedef struct reconnect_server {
-  test_tcp_server tcp_server;
-  timestamp_list *head;
-  timestamp_list *tail;
-  char *peer;
-} reconnect_server;
-
-void reconnect_server_init(reconnect_server *server);
-void reconnect_server_start(reconnect_server *server, int port);
-void reconnect_server_poll(reconnect_server *server, int seconds);
-void reconnect_server_destroy(reconnect_server *server);
-void reconnect_server_clear_timestamps(reconnect_server *server);
-
-#ifdef __cplusplus
+void grpc_test_set_initial_connect_string_function(
+    grpc_set_initial_connect_string_func func) {
+  g_set_initial_connect_string_func = func;
 }
-#endif
 
-#endif /* GRPC_TEST_CORE_UTIL_RECONNECT_SERVER_H */
+void grpc_set_initial_connect_string(struct sockaddr **addr, size_t *addr_len,
+                                     gpr_slice *initial_str) {
+  g_set_initial_connect_string_func(addr, addr_len, initial_str);
+}

@@ -191,6 +191,9 @@ typedef struct {
       copied to next_stream_id in parsing when parsing commences */
   gpr_uint32 next_stream_id;
 
+  /** how far to lookahead in a stream? */
+  gpr_uint32 stream_lookahead;
+
   /** last received stream id */
   gpr_uint32 last_incoming_stream_id;
 

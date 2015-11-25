@@ -40,6 +40,7 @@
 #include "src/core/channel/channel_args.h"
 #include "src/core/channel/client_channel.h"
 #include "src/core/channel/connected_channel.h"
+#include "src/core/client_config/initial_connect_string.h"
 #include "src/core/iomgr/timer.h"
 #include "src/core/profiling/timers.h"
 #include "src/core/surface/channel.h"
@@ -79,6 +80,9 @@ struct grpc_subchannel {
   /** address to connect to */
   struct sockaddr *addr;
   size_t addr_len;
+
+  /** initial string to send to peer */
+  gpr_slice initial_connect_string;
 
   /** set during connection */
   grpc_connect_out_args connecting_result;
@@ -199,6 +203,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free((void *)c->filters);
   grpc_channel_args_destroy(c->args);
   gpr_free(c->addr);
+  gpr_slice_unref(c->initial_connect_string);
   grpc_connectivity_state_destroy(exec_ctx, &c->state_tracker);
   grpc_connector_unref(exec_ctx, c->connector);
   grpc_pollset_set_destroy(&c->pollset_set);
@@ -250,6 +255,8 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
   memcpy(c->addr, args->addr, args->addr_len);
   grpc_pollset_set_init(&c->pollset_set);
   c->addr_len = args->addr_len;
+  grpc_set_initial_connect_string(&c->addr, &c->addr_len,
+                                  &c->initial_connect_string);
   c->args = grpc_channel_args_copy(args->args);
   c->random = random_seed();
   grpc_closure_init(&c->connected, subchannel_connected, c);
@@ -267,6 +274,7 @@ static void continue_connect(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   args.addr_len = c->addr_len;
   args.deadline = compute_connect_deadline(c);
   args.channel_args = c->args;
+  args.initial_connect_string = c->initial_connect_string;
 
   grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
                               GRPC_CHANNEL_CONNECTING, "state_change");

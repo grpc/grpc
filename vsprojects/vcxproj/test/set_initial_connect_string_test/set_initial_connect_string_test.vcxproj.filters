@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\client_config\set_initial_connect_string_test.c">
+      <Filter>test\core\client_config</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{413358e4-3165-f09d-071c-ee4f2ca0b826}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{a554b5ef-0c80-ac03-1848-bccd947a06a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\client_config">
+      <UniqueIdentifier>{a6c4917f-b1b0-e958-6ea8-34950c2f8f36}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

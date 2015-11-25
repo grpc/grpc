@@ -37,6 +37,8 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/slice.h>
+#include <grpc/support/slice_buffer.h>
 
 #include "src/core/census/grpc_filter.h"
 #include "src/core/channel/channel_args.h"
@@ -56,6 +58,8 @@ typedef struct {
   grpc_closure *notify;
   grpc_connect_in_args args;
   grpc_connect_out_args *result;
+  grpc_closure initial_string_sent;
+  gpr_slice_buffer initial_string_buffer;
 
   grpc_endpoint *tcp;
 
@@ -70,8 +74,14 @@ static void connector_ref(grpc_connector *con) {
 static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
   connector *c = (connector *)con;
   if (gpr_unref(&c->refs)) {
+    /* c->initial_string_buffer does not need to be destroyed */
     gpr_free(c);
   }
+}
+
+static void on_initial_connect_string_sent(grpc_exec_ctx *exec_ctx, void *arg,
+                                           int success) {
+  connector_unref(exec_ctx, arg);
 }
 
 static void connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
@@ -79,6 +89,16 @@ static void connected(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   grpc_closure *notify;
   grpc_endpoint *tcp = c->tcp;
   if (tcp != NULL) {
+    if (!GPR_SLICE_IS_EMPTY(c->args.initial_connect_string)) {
+      grpc_closure_init(&c->initial_string_sent, on_initial_connect_string_sent,
+                        c);
+      gpr_slice_buffer_init(&c->initial_string_buffer);
+      gpr_slice_buffer_add(&c->initial_string_buffer,
+                           c->args.initial_connect_string);
+      connector_ref(arg);
+      grpc_endpoint_write(exec_ctx, tcp, &c->initial_string_buffer,
+                          &c->initial_string_sent);
+    }
     c->result->transport =
         grpc_create_chttp2_transport(exec_ctx, c->args.channel_args, tcp, 1);
     grpc_chttp2_transport_start_reading(exec_ctx, c->result->transport, NULL,
