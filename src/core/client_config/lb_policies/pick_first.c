@@ -363,9 +363,9 @@ static void pf_broadcast(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_unlock(&p->mu);
 
   for (i = 0; i < n; i++) {
-    if (selected == grpc_subchannel_get_connected_subchannel(subchannels[i]))
-      continue;
-    grpc_subchannel_process_transport_op(exec_ctx, subchannels[i], op);
+    if (selected != grpc_subchannel_get_connected_subchannel(subchannels[i])) {
+      grpc_subchannel_process_transport_op(exec_ctx, subchannels[i], op);
+    }
     GRPC_SUBCHANNEL_UNREF(exec_ctx, subchannels[i], "pf_broadcast");
   }
   if (p->selected) {

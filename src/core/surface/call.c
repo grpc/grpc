@@ -739,8 +739,15 @@ static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
 char *grpc_call_get_peer(grpc_call *call) {
   grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  char *result = elem->filter->get_peer(&exec_ctx, elem);
+  char *result;
   GRPC_API_TRACE("grpc_call_get_peer(%p)", 1, (call));
+  result = elem->filter->get_peer(&exec_ctx, elem);
+  if (result == NULL) {
+    result = grpc_channel_get_target(call->channel);
+  }
+  if (result == NULL) {
+    result = gpr_strdup("unknown");
+  }
   grpc_exec_ctx_finish(&exec_ctx);
   return result;
 }
