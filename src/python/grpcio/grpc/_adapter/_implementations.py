@@ -27,30 +27,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-"""Test-appropriate entry points into the gRPC Python Beta API."""
+import collections
 
-from grpc._adapter import _intermediary_low
-from grpc.beta import implementations
+from grpc.beta import interfaces
+
+class AuthMetadataContext(collections.namedtuple(
+    'AuthMetadataContext', [
+        'service_url',
+        'method_name'
+    ]), interfaces.GRPCAuthMetadataContext):
+  pass
 
 
-def not_really_secure_channel(
-    host, port, channel_credentials, server_host_override):
-  """Creates an insecure Channel to a remote host.
+class AuthMetadataPluginCallback(interfaces.GRPCAuthMetadataContext):
 
-  Args:
-    host: The name of the remote host to which to connect.
-    port: The port of the remote host to which to connect.
-    channel_credentials: The implementations.ChannelCredentials with which to
-      connect.
-    server_host_override: The target name used for SSL host name checking.
+  def __init__(self, callback):
+    self._callback = callback
 
-  Returns:
-    An implementations.Channel to the remote host through which RPCs may be
-      conducted.
-  """
-  hostport = '%s:%d' % (host, port)
-  intermediary_low_channel = _intermediary_low.Channel(
-      hostport, channel_credentials._low_credentials,
-      server_host_override=server_host_override)
-  return implementations.Channel(
-      intermediary_low_channel._internal, intermediary_low_channel)
+  def __call__(self, metadata, error):
+    self._callback(metadata, error)

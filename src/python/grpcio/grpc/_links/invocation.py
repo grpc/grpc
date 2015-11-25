@@ -262,7 +262,7 @@ class _Kernel(object):
         self._channel, self._completion_queue, '/%s/%s' % (group, method),
         self._host, time.time() + timeout)
     if options is not None and options.credentials is not None:
-      call.set_credentials(options.credentials._intermediary_low_credentials)
+      call.set_credentials(options.credentials._low_credentials)
     if transformed_initial_metadata is not None:
       for metadata_key, metadata_value in transformed_initial_metadata:
         call.add_metadata(metadata_key, metadata_value)

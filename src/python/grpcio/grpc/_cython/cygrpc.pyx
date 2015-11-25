@@ -76,6 +76,8 @@ Operations = records.Operations
 CallCredentials = credentials.CallCredentials
 ChannelCredentials = credentials.ChannelCredentials
 ServerCredentials = credentials.ServerCredentials
+CredentialsMetadataPlugin = credentials.CredentialsMetadataPlugin
+AuthMetadataContext = credentials.AuthMetadataContext
 
 channel_credentials_google_default = (
     credentials.channel_credentials_google_default)
@@ -91,6 +93,7 @@ call_credentials_jwt_access = (
 call_credentials_refresh_token = (
     credentials.call_credentials_google_refresh_token)
 call_credentials_google_iam = credentials.call_credentials_google_iam
+call_credentials_metadata_plugin = credentials.call_credentials_metadata_plugin
 server_credentials_ssl = credentials.server_credentials_ssl
 
 CompletionQueue = completion_queue.CompletionQueue
