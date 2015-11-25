@@ -116,8 +116,8 @@ void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx, int initial_refs,
   size_t i;
 
   stack->count = filter_count;
-  gpr_ref_init(&stack->refcount.refs, initial_refs);
-  grpc_closure_init(&stack->refcount.destroy, destroy, destroy_arg);
+  GRPC_STREAM_REF_INIT(&stack->refcount, initial_refs, destroy, destroy_arg,
+                       "CHANNEL_STACK");
   elems = CHANNEL_ELEMS_FROM_STACK(stack);
   user_data =
       ((char *)elems) +
@@ -169,8 +169,8 @@ void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
   size_t i;
 
   call_stack->count = count;
-  gpr_ref_init(&call_stack->refcount.refs, initial_refs);
-  grpc_closure_init(&call_stack->refcount.destroy, destroy, destroy_arg);
+  GRPC_STREAM_REF_INIT(&call_stack->refcount, initial_refs, destroy,
+                       destroy_arg, "CALL_STACK");
   call_elems = CALL_ELEMS_FROM_STACK(call_stack);
   user_data = ((char *)call_elems) +
               ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
