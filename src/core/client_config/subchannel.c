@@ -224,18 +224,6 @@ void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
   }
 }
 
-void grpc_subchannel_add_interested_party(grpc_exec_ctx *exec_ctx,
-                                          grpc_subchannel *c,
-                                          grpc_pollset *pollset) {
-  grpc_pollset_set_add_pollset(exec_ctx, &c->pollset_set, pollset);
-}
-
-void grpc_subchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
-                                          grpc_subchannel *c,
-                                          grpc_pollset *pollset) {
-  grpc_pollset_set_del_pollset(exec_ctx, &c->pollset_set, pollset);
-}
-
 static gpr_uint32 random_seed() {
   return (gpr_uint32)(gpr_time_to_millis(gpr_now(GPR_CLOCK_MONOTONIC)));
 }
@@ -298,14 +286,38 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(grpc_subchannel *c) {
   return state;
 }
 
+typedef struct {
+  grpc_subchannel *subchannel;
+  grpc_pollset_set *pollset_set;
+  grpc_closure *notify;
+  grpc_closure closure;
+} external_state_watcher;
+
+static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+  external_state_watcher *w = arg;
+  grpc_closure *follow_up = w->notify;
+  grpc_pollset_set_del_pollset_set(exec_ctx, &w->subchannel->pollset_set, w->pollset_set);
+  GRPC_SUBCHANNEL_UNREF(exec_ctx, w->subchannel, "external_state_watcher");
+  gpr_free(w);
+  follow_up->cb(exec_ctx, follow_up->cb_arg, success);
+}
+
 void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel *c,
+                                            grpc_pollset_set *interested_parties,
                                             grpc_connectivity_state *state,
                                             grpc_closure *notify) {
   int do_connect = 0;
+  external_state_watcher *w = gpr_malloc(sizeof(*w));
+  w->subchannel = c;
+  w->pollset_set = interested_parties;
+  w->notify = notify;
+  grpc_closure_init(&w->closure, on_external_state_watcher_done, w);
+  grpc_pollset_set_add_pollset_set(exec_ctx, &c->pollset_set, interested_parties);
+  GRPC_SUBCHANNEL_REF(c, "external_state_watcher");
   gpr_mu_lock(&c->mu);
   if (grpc_connectivity_state_notify_on_state_change(
-          exec_ctx, &c->state_tracker, state, notify)) {
+          exec_ctx, &c->state_tracker, state, &w->closure)) {
     do_connect = 1;
     c->connecting = 1;
     /* released by connection */

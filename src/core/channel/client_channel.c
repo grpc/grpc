@@ -78,6 +78,8 @@ typedef struct client_channel_channel_data {
   int exit_idle_when_lb_policy_arrives;
   /** owning stack */
   grpc_channel_stack *owning_stack;
+  /** interested parties */
+  grpc_pollset_set interested_parties;
 } channel_data;
 
 /** We create one watcher for each new lb_policy that is returned from a
@@ -177,6 +179,10 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
   chand->incoming_configuration = NULL;
 
+  if (lb_policy != NULL) {
+    grpc_pollset_set_add_pollset_set(exec_ctx, &lb_policy->interested_parties, &chand->interested_parties);
+  }
+
   gpr_mu_lock(&chand->mu_config);
   old_lb_policy = chand->lb_policy;
   chand->lb_policy = lb_policy;
@@ -220,6 +226,7 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
   }
 
   if (old_lb_policy != NULL) {
+    grpc_pollset_set_del_pollset_set(exec_ctx, &old_lb_policy->interested_parties, &chand->interested_parties);
     grpc_lb_policy_shutdown(exec_ctx, old_lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, old_lb_policy, "channel");
   }
@@ -263,6 +270,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
     destroy_resolver = chand->resolver;
     chand->resolver = NULL;
     if (chand->lb_policy != NULL) {
+      grpc_pollset_set_del_pollset_set(exec_ctx, &chand->lb_policy->interested_parties, &chand->interested_parties);
       grpc_lb_policy_shutdown(exec_ctx, chand->lb_policy);
       GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
       chand->lb_policy = NULL;
@@ -391,6 +399,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
 
   grpc_connectivity_state_init(&chand->state_tracker, GRPC_CHANNEL_IDLE,
                                "client_channel");
+  grpc_pollset_set_init(&chand->interested_parties);
 }
 
 /* Destructor for channel_data */
@@ -403,9 +412,11 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
     GRPC_RESOLVER_UNREF(exec_ctx, chand->resolver, "channel");
   }
   if (chand->lb_policy != NULL) {
+    grpc_pollset_set_del_pollset_set(exec_ctx, &chand->lb_policy->interested_parties, &chand->interested_parties);
     GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
   }
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
+  grpc_pollset_set_destroy(&chand->interested_parties);
   gpr_mu_destroy(&chand->mu_config);
 }
 
@@ -465,12 +476,35 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
   return out;
 }
 
+typedef struct {
+  channel_data *chand;
+  grpc_pollset *pollset;
+  grpc_closure *on_complete;
+  grpc_closure my_closure;
+} external_connectivity_watcher;
+
+static void on_external_watch_complete(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
+  external_connectivity_watcher *w = arg;
+  grpc_closure *follow_up = w->on_complete;
+  grpc_pollset_set_del_pollset(exec_ctx, &w->chand->interested_parties, w->pollset);
+  GRPC_CHANNEL_STACK_UNREF(exec_ctx, w->chand->owning_stack, "external_connectivity_watcher");
+  gpr_free(w);
+  follow_up->cb(exec_ctx, follow_up->cb_arg, iomgr_success);
+}
+
 void grpc_client_channel_watch_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, grpc_pollset *pollset,
     grpc_connectivity_state *state, grpc_closure *on_complete) {
   channel_data *chand = elem->channel_data;
+  external_connectivity_watcher *w = gpr_malloc(sizeof(*w));
+  w->chand = chand;
+  w->pollset = pollset;
+  w->on_complete = on_complete;
+  grpc_pollset_set_add_pollset(exec_ctx, &chand->interested_parties, pollset);
+  grpc_closure_init(&w->my_closure, on_external_watch_complete, w);
+  GRPC_CHANNEL_STACK_REF(w->chand->owning_stack, "external_connectivity_watcher");
   gpr_mu_lock(&chand->mu_config);
   grpc_connectivity_state_notify_on_state_change(
-      exec_ctx, &chand->state_tracker, state, on_complete);
+      exec_ctx, &chand->state_tracker, state, &w->my_closure);
   gpr_mu_unlock(&chand->mu_config);
 }

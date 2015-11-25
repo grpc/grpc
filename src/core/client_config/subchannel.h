@@ -109,6 +109,7 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(
     Updates *state with the new state of the channel */
 void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
                                             grpc_subchannel *channel,
+                                            grpc_pollset_set *interested_parties,
                                             grpc_connectivity_state *state,
                                             grpc_closure *notify);
 void grpc_connected_subchannel_notify_on_state_change(
@@ -123,15 +124,6 @@ void grpc_subchannel_state_change_unsubscribe(grpc_exec_ctx *exec_ctx,
 void grpc_connected_subchannel_state_change_unsubscribe(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *channel,
     grpc_closure *subscribed_notify);
-
-/** express interest in \a channel's activities through \a pollset. */
-void grpc_subchannel_add_interested_party(grpc_exec_ctx *exec_ctx,
-                                          grpc_subchannel *channel,
-                                          grpc_pollset *pollset);
-/** stop following \a channel's activity through \a pollset. */
-void grpc_subchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
-                                          grpc_subchannel *channel,
-                                          grpc_pollset *pollset);
 
 /** retrieve the grpc_connected_subchannel - or NULL if called before
     the subchannel becomes connected */
