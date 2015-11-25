@@ -88,7 +88,7 @@ void grpc_connectivity_state_destroy(grpc_exec_ctx *exec_ctx,
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker) {
   if (grpc_connectivity_state_trace) {
-    gpr_log(GPR_DEBUG, "CONWATCH: %s: get %s", tracker->name,
+    gpr_log(GPR_DEBUG, "CONWATCH: %p %s: get %s", tracker, tracker->name,
             grpc_connectivity_state_name(tracker->current_state));
   }
   return tracker->current_state;
@@ -98,8 +98,8 @@ int grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
     grpc_connectivity_state *current, grpc_closure *notify) {
   if (grpc_connectivity_state_trace) {
-    gpr_log(GPR_DEBUG, "CONWATCH: %s: from %s [cur=%s] notify=%p",
-            tracker->name, grpc_connectivity_state_name(*current),
+    gpr_log(GPR_DEBUG, "CONWATCH: %p %s: from %s [cur=%s] notify=%p",
+            tracker, tracker->name, grpc_connectivity_state_name(*current),
             grpc_connectivity_state_name(tracker->current_state), notify);
   }
   if (tracker->current_state != *current) {
@@ -142,7 +142,7 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
                                  const char *reason) {
   grpc_connectivity_state_watcher *w;
   if (grpc_connectivity_state_trace) {
-    gpr_log(GPR_DEBUG, "SET: %s: %s --> %s [%s]", tracker->name,
+    gpr_log(GPR_DEBUG, "SET: %p %s: %s --> %s [%s]", tracker, tracker->name,
             grpc_connectivity_state_name(tracker->current_state),
             grpc_connectivity_state_name(state), reason);
   }

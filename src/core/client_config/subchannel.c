@@ -590,6 +590,7 @@ static void subchannel_call_destroy(grpc_exec_ctx *exec_ctx, void *call,
   grpc_subchannel_call *c = call;
   GPR_TIMER_BEGIN("grpc_subchannel_call_unref.destroy", 0);
   grpc_call_stack_destroy(exec_ctx, SUBCHANNEL_CALL_TO_CALL_STACK(c));
+  GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, c->connection, "subchannel_call");
   gpr_free(c);
   GPR_TIMER_END("grpc_subchannel_call_unref.destroy", 0);
 }
@@ -633,6 +634,7 @@ grpc_subchannel_call *grpc_connected_subchannel_create_call(
       gpr_malloc(sizeof(grpc_subchannel_call) + chanstk->call_stack_size);
   grpc_call_stack *callstk = SUBCHANNEL_CALL_TO_CALL_STACK(call);
   call->connection = con;
+  GRPC_CONNECTED_SUBCHANNEL_REF(con, "subchannel_call");
   grpc_call_stack_init(exec_ctx, chanstk, 1, subchannel_call_destroy, call,
                        NULL, NULL, callstk);
   grpc_call_stack_set_pollset(exec_ctx, callstk, pollset);
