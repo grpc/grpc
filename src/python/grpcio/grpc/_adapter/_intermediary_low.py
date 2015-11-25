@@ -173,7 +173,7 @@ class Call(object):
     return self._internal.peer()
 
   def set_credentials(self, creds):
-    return self._internal.set_credentials(creds._internal)
+    return self._internal.set_credentials(creds)
 
 
 class Channel(object):
@@ -183,10 +183,7 @@ class Channel(object):
     args = []
     if server_host_override:
       args.append((_types.GrpcChannelArgumentKeys.SSL_TARGET_NAME_OVERRIDE.value, server_host_override))
-    creds = None
-    if client_credentials:
-      creds = client_credentials._internal
-    self._internal = _low.Channel(hostport, args, creds)
+    self._internal = _low.Channel(hostport, args, client_credentials)
 
 
 class CompletionQueue(object):
@@ -245,7 +242,7 @@ class Server(object):
     if server_credentials is None:
       return self._internal.add_http2_port(addr, None)
     else:
-      return self._internal.add_http2_port(addr, server_credentials._internal)
+      return self._internal.add_http2_port(addr, server_credentials)
 
   def start(self):
     return self._internal.start()
@@ -259,17 +256,3 @@ class Server(object):
   def stop(self):
     return self._internal.shutdown(_TagAdapter(None, Event.Kind.STOP))
 
-
-class ClientCredentials(object):
-  """Adapter from old _low.ClientCredentials interface to new _low.ChannelCredentials."""
-
-  def __init__(self, root_certificates, private_key, certificate_chain):
-    self._internal = _low.channel_credentials_ssl(root_certificates, private_key, certificate_chain)
-
-
-class ServerCredentials(object):
-  """Adapter from old _low.ServerCredentials interface to new _low.ServerCredentials."""
-
-  def __init__(self, root_credentials, pair_sequence, force_client_auth):
-    self._internal = _low.server_credentials_ssl(
-        root_credentials, pair_sequence, force_client_auth)

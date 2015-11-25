@@ -50,7 +50,7 @@ def not_really_secure_channel(
   """
   hostport = '%s:%d' % (host, port)
   intermediary_low_channel = _intermediary_low.Channel(
-      hostport, client_credentials._intermediary_low_credentials,
+      hostport, client_credentials._low_credentials,
       server_host_override=server_host_override)
   return implementations.Channel(
       intermediary_low_channel._internal, intermediary_low_channel)

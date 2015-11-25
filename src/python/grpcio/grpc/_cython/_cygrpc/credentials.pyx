@@ -27,6 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+cimport cpython
+
 from grpc._cython._cygrpc cimport grpc
 from grpc._cython._cygrpc cimport records
 
@@ -77,6 +79,46 @@ cdef class ServerCredentials:
     if self.c_credentials != NULL:
       grpc.grpc_server_credentials_release(self.c_credentials)
 
+
+cdef class CredentialsMetadataPlugin:
+
+  def __cinit__(self, object plugin_callback):
+    """
+    Args:
+      plugin_callback (callable): Callback accepting a service URL (str/bytes)
+        and callback object (accepting a records.Metadata,
+        grpc.grpc_status_code, and a str/bytes error message). This argument
+        when called should be non-blocking and eventually call the callback
+        object with the appropriate status code/details and metadata (if
+        successful).
+    """
+    if not callable(plugin_callback):
+      raise ValueError('expected callable plugin_callback')
+    self.plugin_callback = plugin_callback
+
+  @staticmethod
+  cdef grpc.grpc_metadata_credentials_plugin make_c_plugin(self):
+    cdef grpc.grpc_metadata_credentials_plugin result
+    result.get_metadata = plugin_get_metadata
+    result.destroy = plugin_destroy_c_plugin_state
+    result.state = <void *>self
+    cpython.Py_INCREF(self)
+    return result
+
+
+cdef void plugin_get_metadata(
+    void *state, const char *service_url,
+    grpc.grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil:
+  def python_callback(
+      records.Metadata metadata, grpc.grpc_status_code status,
+      const char *error_details):
+    cb(user_data, metadata.c_metadata_array.metadata,
+       metadata.c_metadata_array.count, status, error_details)
+  cdef CredentialsMetadataPlugin self = <CredentialsMetadataPlugin>state
+  self.plugin_callback(service_url, python_callback)
+
+cdef void plugin_destroy_c_plugin_state(void *state):
+  cpython.Py_DECREF(<CredentialsMetadataPlugin>state)
 
 def channel_credentials_google_default():
   cdef ChannelCredentials credentials = ChannelCredentials();
@@ -183,6 +225,15 @@ def call_credentials_google_iam(authorization_token, authority_selector):
       authorization_token, authority_selector, NULL)
   credentials.references.append(authorization_token)
   credentials.references.append(authority_selector)
+  return credentials
+
+def call_credentials_metadata_plugin(CredentialsMetadataPlugin plugin):
+  cdef CallCredentials credentials = CallCredentials()
+  credentials.c_credentials = (
+      grpc.grpc_metadata_credentials_create_from_plugin(plugin.make_c_plugin(),
+                                                        NULL))
+  # TODO(atash): the following held reference is *probably* never necessary
+  credentials.references.append(plugin)
   return credentials
 
 def server_credentials_ssl(pem_root_certs, pem_key_cert_pairs,

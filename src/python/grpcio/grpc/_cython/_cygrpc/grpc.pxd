@@ -396,3 +396,17 @@ cdef extern from "grpc/grpc_security.h":
 
   grpc_call_error grpc_call_set_credentials(grpc_call *call,
                                             grpc_call_credentials *creds)
+
+  ctypedef void (*grpc_credentials_plugin_metadata_cb)(
+      void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
+      grpc_status_code status, const char *error_details)
+
+  ctypedef struct grpc_metadata_credentials_plugin:
+    void (*get_metadata)(
+        void *state, const char *service_url,
+        grpc_credentials_plugin_metadata_cb cb, void *user_data)
+    void (*destroy)(void *state)
+    void *state
+
+  grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
+      grpc_metadata_credentials_plugin plugin, void *reserved)

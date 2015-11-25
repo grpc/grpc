@@ -42,6 +42,9 @@ from grpc_test.framework.common import test_constants
 
 _SERVER_HOST_OVERRIDE = 'foo.test.google.fr'
 
+_PER_RPC_CREDENTIALS_METADATA_KEY = 'my-call-credentials-metadata-key'
+_PER_RPC_CREDENTIALS_METADATA_VALUE = 'my-call-credentials-metadata-value'
+
 _GROUP = 'group'
 _UNARY_UNARY = 'unary-unary'
 _UNARY_STREAM = 'unary-stream'
@@ -63,6 +66,7 @@ class _Servicer(object):
     with self._condition:
       self._request = request
       self._peer = context.protocol_context().peer()
+      self._invocation_metadata = context.invocation_metadata()
       context.protocol_context().disable_next_response_compression()
       self._serviced = True
       self._condition.notify_all()
@@ -72,6 +76,7 @@ class _Servicer(object):
     with self._condition:
       self._request = request
       self._peer = context.protocol_context().peer()
+      self._invocation_metadata = context.invocation_metadata()
       context.protocol_context().disable_next_response_compression()
       self._serviced = True
       self._condition.notify_all()
@@ -83,6 +88,7 @@ class _Servicer(object):
       self._request = request
     with self._condition:
       self._peer = context.protocol_context().peer()
+      self._invocation_metadata = context.invocation_metadata()
       context.protocol_context().disable_next_response_compression()
       self._serviced = True
       self._condition.notify_all()
@@ -95,6 +101,7 @@ class _Servicer(object):
         context.protocol_context().disable_next_response_compression()
         yield _RESPONSE
     with self._condition:
+      self._invocation_metadata = context.invocation_metadata()
       self._serviced = True
       self._condition.notify_all()
 
@@ -137,6 +144,11 @@ class _BlockingIterator(object):
       self._condition.notify_all()
 
 
+def _metadata_plugin(service_url, callback):
+  callback([(_PER_RPC_CREDENTIALS_METADATA_KEY,
+             _PER_RPC_CREDENTIALS_METADATA_VALUE)], None)
+
+
 class BetaFeaturesTest(unittest.TestCase):
 
   def setUp(self):
@@ -169,6 +181,8 @@ class BetaFeaturesTest(unittest.TestCase):
     self._server.start()
     self._client_credentials = implementations.ssl_client_credentials(
         resources.test_root_certificates(), None, None)
+    self._call_credentials = implementations.metadata_call_credentials(
+        _metadata_plugin)
     channel = test_utilities.not_really_secure_channel(
         'localhost', port, self._client_credentials, _SERVER_HOST_OVERRIDE)
     stub_options = implementations.stub_options(
@@ -181,21 +195,36 @@ class BetaFeaturesTest(unittest.TestCase):
     self._server.stop(test_constants.SHORT_TIMEOUT).wait()
 
   def test_unary_unary(self):
-    call_options = interfaces.grpc_call_options(disable_compression=True)
+    call_options = interfaces.grpc_call_options(
+        disable_compression=True, credentials=self._call_credentials)
     response = getattr(self._dynamic_stub, _UNARY_UNARY)(
         _REQUEST, test_constants.LONG_TIMEOUT, protocol_options=call_options)
     self.assertEqual(_RESPONSE, response)
     self.assertIsNotNone(self._servicer.peer())
+    invocation_metadata = [(metadatum.key, metadatum.value) for metadatum in
+                           self._servicer._invocation_metadata]
+    self.assertIn(
+        (_PER_RPC_CREDENTIALS_METADATA_KEY,
+         _PER_RPC_CREDENTIALS_METADATA_VALUE),
+        invocation_metadata)
 
   def test_unary_stream(self):
-    call_options = interfaces.grpc_call_options(disable_compression=True)
+    call_options = interfaces.grpc_call_options(
+        disable_compression=True, credentials=self._call_credentials)
     response_iterator = getattr(self._dynamic_stub, _UNARY_STREAM)(
         _REQUEST, test_constants.LONG_TIMEOUT, protocol_options=call_options)
     self._servicer.block_until_serviced()
     self.assertIsNotNone(self._servicer.peer())
+    invocation_metadata = [(metadatum.key, metadatum.value) for metadatum in
+                           self._servicer._invocation_metadata]
+    self.assertIn(
+        (_PER_RPC_CREDENTIALS_METADATA_KEY,
+         _PER_RPC_CREDENTIALS_METADATA_VALUE),
+        invocation_metadata)
 
   def test_stream_unary(self):
-    call_options = interfaces.grpc_call_options()
+    call_options = interfaces.grpc_call_options(
+        credentials=self._call_credentials)
     request_iterator = _BlockingIterator(iter((_REQUEST,)))
     response_future = getattr(self._dynamic_stub, _STREAM_UNARY).future(
         request_iterator, test_constants.LONG_TIMEOUT,
@@ -207,9 +236,16 @@ class BetaFeaturesTest(unittest.TestCase):
     self._servicer.block_until_serviced()
     self.assertIsNotNone(self._servicer.peer())
     self.assertEqual(_RESPONSE, response_future.result())
+    invocation_metadata = [(metadatum.key, metadatum.value) for metadatum in
+                           self._servicer._invocation_metadata]
+    self.assertIn(
+        (_PER_RPC_CREDENTIALS_METADATA_KEY,
+         _PER_RPC_CREDENTIALS_METADATA_VALUE),
+        invocation_metadata)
 
   def test_stream_stream(self):
-    call_options = interfaces.grpc_call_options()
+    call_options = interfaces.grpc_call_options(
+        credentials=self._call_credentials)
     request_iterator = _BlockingIterator(iter((_REQUEST,)))
     response_iterator = getattr(self._dynamic_stub, _STREAM_STREAM)(
         request_iterator, test_constants.SHORT_TIMEOUT,
@@ -222,6 +258,12 @@ class BetaFeaturesTest(unittest.TestCase):
     self._servicer.block_until_serviced()
     self.assertIsNotNone(self._servicer.peer())
     self.assertEqual(_RESPONSE, response)
+    invocation_metadata = [(metadatum.key, metadatum.value) for metadatum in
+                           self._servicer._invocation_metadata]
+    self.assertIn(
+        (_PER_RPC_CREDENTIALS_METADATA_KEY,
+         _PER_RPC_CREDENTIALS_METADATA_VALUE),
+        invocation_metadata)
 
 
 if __name__ == '__main__':
