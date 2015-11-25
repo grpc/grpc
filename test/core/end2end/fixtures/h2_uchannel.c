@@ -323,7 +323,7 @@ static void chttp2_tear_down_micro_fullstack(grpc_end2end_test_fixture *f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/micro_fullstack", FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION,
+    {"chttp2/micro_fullstack", 0,
      chttp2_create_fixture_micro_fullstack, chttp2_init_client_micro_fullstack,
      chttp2_init_server_micro_fullstack, chttp2_tear_down_micro_fullstack},
 };
