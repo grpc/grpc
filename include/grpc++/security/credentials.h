@@ -215,7 +215,7 @@ class MetadataCredentialsPlugin {
   virtual Status GetMetadata(
       grpc::string_ref service_url,
       grpc::string_ref method_name,
-      const AuthContext& channel_auth_contexst,
+      const AuthContext& channel_auth_context,
       std::multimap<grpc::string, grpc::string>* metadata) = 0;
 };
 
