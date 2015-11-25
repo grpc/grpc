@@ -871,6 +871,21 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_test_util", 
+      "test_tcp_server"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "set_initial_connect_string_test", 
+    "src": [
+      "test/core/client_config/set_initial_connect_string_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -1572,7 +1587,8 @@
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
-      "reconnect_server"
+      "reconnect_server", 
+      "test_tcp_server"
     ], 
     "headers": [
       "test/proto/empty.grpc.pb.h", 
@@ -14348,6 +14364,7 @@
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.h", 
+      "src/core/client_config/initial_connect_string.h", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.h", 
       "src/core/client_config/lb_policy.h", 
@@ -14508,6 +14525,9 @@
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.c", 
       "src/core/client_config/connector.h", 
+      "src/core/client_config/default_initial_connect_string.c", 
+      "src/core/client_config/initial_connect_string.c", 
+      "src/core/client_config/initial_connect_string.h", 
       "src/core/client_config/lb_policies/pick_first.c", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.c", 
@@ -14865,6 +14885,7 @@
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.h", 
+      "src/core/client_config/initial_connect_string.h", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.h", 
       "src/core/client_config/lb_policy.h", 
@@ -15011,6 +15032,9 @@
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.c", 
       "src/core/client_config/connector.h", 
+      "src/core/client_config/default_initial_connect_string.c", 
+      "src/core/client_config/initial_connect_string.c", 
+      "src/core/client_config/initial_connect_string.h", 
       "src/core/client_config/lb_policies/pick_first.c", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.c", 
@@ -15248,7 +15272,8 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_test_util"
+      "grpc_test_util", 
+      "test_tcp_server"
     ], 
     "headers": [
       "test/core/util/reconnect_server.h"
@@ -15258,6 +15283,23 @@
     "src": [
       "test/core/util/reconnect_server.c", 
       "test/core/util/reconnect_server.h"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/util/test_tcp_server.h"
+    ], 
+    "language": "c", 
+    "name": "test_tcp_server", 
+    "src": [
+      "test/core/util/test_tcp_server.c", 
+      "test/core/util/test_tcp_server.h"
     ]
   }, 
   {
