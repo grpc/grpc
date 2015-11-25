@@ -39,7 +39,8 @@
     "minimist": "^1.1.0",
     "mocha": "~1.21.0",
     "mocha-jenkins-reporter": "^0.1.9",
-    "mustache": "^2.0.0"
+    "mustache": "^2.0.0",
+    "poisson-process": "^0.2.1"
   },
   "engines": {
     "node": ">=0.10.13"
