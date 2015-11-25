@@ -212,6 +212,10 @@ class MetadataCredentialsPlugin {
   virtual const char* GetType() const { return ""; }
 
   // Gets the auth metatada produced by this plugin.
+  // The fully qualified method name is:
+  // service_url + "/" + method_name.
+  // The channel_auth_context contains (among other things), the identity of
+  // the server.
   virtual Status GetMetadata(
       grpc::string_ref service_url,
       grpc::string_ref method_name,
