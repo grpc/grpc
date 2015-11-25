@@ -118,7 +118,7 @@ static void on_lb_policy_state_changed_locked(
   /* check if the notification is for a stale policy */
   if (w->lb_policy != w->chand->lb_policy) return;
 
-  if ((publish_state == GRPC_CHANNEL_FATAL_FAILURE || publish_state == GRPC_CHANNEL_TRANSIENT_FAILURE) && w->chand->resolver != NULL) {
+  if (publish_state == GRPC_CHANNEL_FATAL_FAILURE && w->chand->resolver != NULL) {
     publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     grpc_resolver_channel_saw_error(exec_ctx, w->chand->resolver);
   }
