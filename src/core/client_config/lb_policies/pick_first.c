@@ -243,6 +243,10 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
     GRPC_LB_POLICY_UNREF(exec_ctx, &p->base, "pick_first_connectivity");
     return;
   } else if (p->selected != NULL) {
+    if (p->checking_connectivity == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      /* if the selected channel goes bad, we're done */
+      p->checking_connectivity = GRPC_CHANNEL_FATAL_FAILURE;
+    }
     grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                                 p->checking_connectivity, "selected_changed");
     if (p->checking_connectivity != GRPC_CHANNEL_FATAL_FAILURE) {

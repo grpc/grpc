@@ -71,9 +71,8 @@ void grpc_resolver_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
 }
 
 void grpc_resolver_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                     grpc_resolver *resolver,
-                                     grpc_subchannel *subchannel) {
-  resolver->vtable->channel_saw_error(exec_ctx, resolver, subchannel);
+                                     grpc_resolver *resolver) {
+  resolver->vtable->channel_saw_error(exec_ctx, resolver);
 }
 
 void grpc_resolver_next(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver,

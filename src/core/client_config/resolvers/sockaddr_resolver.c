@@ -83,8 +83,7 @@ static void sockaddr_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
 
 static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                       grpc_resolver *r,
-                                       grpc_subchannel *subchannel);
+                                       grpc_resolver *r);
 static void sockaddr_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
                           grpc_client_config **target_config,
                           grpc_closure *on_complete);
@@ -106,8 +105,7 @@ static void sockaddr_shutdown(grpc_exec_ctx *exec_ctx,
 }
 
 static void sockaddr_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                       grpc_resolver *resolver,
-                                       grpc_subchannel *subchannel) {
+                                       grpc_resolver *resolver) {
   sockaddr_resolver *r = (sockaddr_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   r->published = 0;

@@ -114,10 +114,15 @@ static void watch_lb_policy(grpc_exec_ctx *exec_ctx, channel_data *chand,
 
 static void on_lb_policy_state_changed_locked(
     grpc_exec_ctx *exec_ctx, lb_policy_connectivity_watcher *w) {
+  grpc_connectivity_state publish_state = w->state;
   /* check if the notification is for a stale policy */
   if (w->lb_policy != w->chand->lb_policy) return;
 
-  grpc_connectivity_state_set(exec_ctx, &w->chand->state_tracker, w->state,
+  if ((publish_state == GRPC_CHANNEL_FATAL_FAILURE || publish_state == GRPC_CHANNEL_TRANSIENT_FAILURE) && w->chand->resolver != NULL) {
+    publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
+    grpc_resolver_channel_saw_error(exec_ctx, w->chand->resolver);
+  }
+  grpc_connectivity_state_set(exec_ctx, &w->chand->state_tracker, publish_state,
                               "lb_changed");
   if (w->state != GRPC_CHANNEL_FATAL_FAILURE) {
     watch_lb_policy(exec_ctx, w->chand, w->lb_policy, w->state);
