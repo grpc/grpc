@@ -145,7 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\cpp\client\channel_arguments_test.cc">
+    <ClCompile Include="..\..\..\..\test\cpp\common\channel_arguments_test.cc">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -292,8 +292,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\cpp\client\channel.cc">
     </ClCompile>
-    <ClCompile Include="..\..\..\src\cpp\client\channel_arguments.cc">
-    </ClCompile>
     <ClCompile Include="..\..\..\src\cpp\client\client_context.cc">
     </ClCompile>
     <ClCompile Include="..\..\..\src\cpp\client\create_channel.cc">
@@ -307,6 +305,8 @@
     <ClCompile Include="..\..\..\src\cpp\client\insecure_credentials.cc">
     </ClCompile>
     <ClCompile Include="..\..\..\src\cpp\common\call.cc">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\cpp\common\channel_arguments.cc">
     </ClCompile>
     <ClCompile Include="..\..\..\src\cpp\common\completion_queue.cc">
     </ClCompile>

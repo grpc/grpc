@@ -1138,7 +1138,7 @@
     "language": "c++", 
     "name": "channel_arguments_test", 
     "src": [
-      "test/cpp/client/channel_arguments_test.cc"
+      "test/cpp/common/channel_arguments_test.cc"
     ]
   }, 
   {
@@ -15353,7 +15353,6 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "src/cpp/client/channel.cc", 
-      "src/cpp/client/channel_arguments.cc", 
       "src/cpp/client/client_context.cc", 
       "src/cpp/client/create_channel.cc", 
       "src/cpp/client/create_channel_internal.cc", 
@@ -15361,16 +15360,17 @@
       "src/cpp/client/credentials.cc", 
       "src/cpp/client/generic_stub.cc", 
       "src/cpp/client/insecure_credentials.cc", 
-      "src/cpp/client/secure_channel_arguments.cc", 
       "src/cpp/client/secure_credentials.cc", 
       "src/cpp/client/secure_credentials.h", 
       "src/cpp/common/auth_property_iterator.cc", 
       "src/cpp/common/call.cc", 
+      "src/cpp/common/channel_arguments.cc", 
       "src/cpp/common/completion_queue.cc", 
       "src/cpp/common/create_auth_context.h", 
       "src/cpp/common/rpc_method.cc", 
       "src/cpp/common/secure_auth_context.cc", 
       "src/cpp/common/secure_auth_context.h", 
+      "src/cpp/common/secure_channel_arguments.cc", 
       "src/cpp/common/secure_create_auth_context.cc", 
       "src/cpp/proto/proto_utils.cc", 
       "src/cpp/server/async_generic_service.cc", 
@@ -15536,7 +15536,6 @@
       "include/grpc++/support/sync_stream.h", 
       "include/grpc++/support/time.h", 
       "src/cpp/client/channel.cc", 
-      "src/cpp/client/channel_arguments.cc", 
       "src/cpp/client/client_context.cc", 
       "src/cpp/client/create_channel.cc", 
       "src/cpp/client/create_channel_internal.cc", 
@@ -15545,6 +15544,7 @@
       "src/cpp/client/generic_stub.cc", 
       "src/cpp/client/insecure_credentials.cc", 
       "src/cpp/common/call.cc", 
+      "src/cpp/common/channel_arguments.cc", 
       "src/cpp/common/completion_queue.cc", 
       "src/cpp/common/create_auth_context.h", 
       "src/cpp/common/insecure_create_auth_context.cc", 
