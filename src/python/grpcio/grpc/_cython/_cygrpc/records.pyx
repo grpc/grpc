@@ -45,8 +45,6 @@ class ChannelArgKey:
   max_concurrent_streams = grpc.GRPC_ARG_MAX_CONCURRENT_STREAMS
   max_message_length = grpc.GRPC_ARG_MAX_MESSAGE_LENGTH
   http2_initial_sequence_number = grpc.GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
-  http2_hpack_table_size_decoder = grpc.GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER
-  http2_hpack_table_size_encoder = grpc.GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER
   default_authority = grpc.GRPC_ARG_DEFAULT_AUTHORITY
   primary_user_agent_string = grpc.GRPC_ARG_PRIMARY_USER_AGENT_STRING
   secondary_user_agent_string = grpc.GRPC_ARG_SECONDARY_USER_AGENT_STRING

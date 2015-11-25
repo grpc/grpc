@@ -137,8 +137,6 @@ cdef extern from "grpc/grpc.h":
   const char *GRPC_ARG_MAX_CONCURRENT_STREAMS
   const char *GRPC_ARG_MAX_MESSAGE_LENGTH
   const char *GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER
-  const char *GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER
-  const char *GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER
   const char *GRPC_ARG_DEFAULT_AUTHORITY
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_SECONDARY_USER_AGENT_STRING
@@ -396,3 +394,27 @@ cdef extern from "grpc/grpc_security.h":
 
   grpc_call_error grpc_call_set_credentials(grpc_call *call,
                                             grpc_call_credentials *creds)
+
+  ctypedef struct grpc_auth_context:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  ctypedef struct grpc_auth_metadata_context:
+    const char *service_url
+    const char *method_name
+    const grpc_auth_context *channel_auth_context
+
+  ctypedef void (*grpc_credentials_plugin_metadata_cb)(
+      void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
+      grpc_status_code status, const char *error_details)
+
+  ctypedef struct grpc_metadata_credentials_plugin:
+    void (*get_metadata)(
+        void *state, grpc_auth_metadata_context context,
+        grpc_credentials_plugin_metadata_cb cb, void *user_data)
+    void (*destroy)(void *state)
+    void *state
+    const char *type
+
+  grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
+      grpc_metadata_credentials_plugin plugin, void *reserved)
