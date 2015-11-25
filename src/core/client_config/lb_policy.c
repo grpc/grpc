@@ -37,6 +37,7 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable) {
   policy->vtable = vtable;
   gpr_ref_init(&policy->refs, 1);
+  grpc_pollset_set_init(&policy->interested_parties);
 }
 
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG

@@ -48,6 +48,7 @@ typedef void (*grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel,
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable *vtable;
   gpr_refcount refs;
+  grpc_pollset_set interested_parties;
 };
 
 struct grpc_lb_policy_vtable {

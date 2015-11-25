@@ -247,9 +247,11 @@ static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *arg, int success) {
 
 static grpc_connected_subchannel *connect_subchannel(grpc_subchannel *c) {
   grpc_pollset pollset;
+  grpc_pollset_set interested_parties;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_init(&pollset);
-  grpc_subchannel_add_interested_party(&exec_ctx, c, &pollset);
+  grpc_pollset_set_add_pollset(&exec_ctx, &interested_parties, &pollset);
+  grpc_subchannel_add_interested_parties(&exec_ctx, c, &interested_parties);
   grpc_subchannel_notify_on_state_change(&exec_ctx, c, &g_state,
                                          grpc_closure_create(state_changed, c));
   grpc_exec_ctx_flush(&exec_ctx);
@@ -266,7 +268,7 @@ static grpc_connected_subchannel *connect_subchannel(grpc_subchannel *c) {
   grpc_pollset_shutdown(&exec_ctx, &pollset,
                         grpc_closure_create(destroy_pollset, &pollset));
   gpr_mu_unlock(GRPC_POLLSET_MU(&pollset));
-  grpc_subchannel_del_interested_party(&exec_ctx, c, &pollset);
+  grpc_subchannel_del_interested_parties(&exec_ctx, c, &interested_parties);
   grpc_exec_ctx_finish(&exec_ctx);
   return grpc_subchannel_get_connected_subchannel(c);
 }
