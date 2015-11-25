@@ -160,7 +160,7 @@ void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
 }
 
 void MetadataCredentialsPluginWrapper::GetMetadata(
-    void* wrapper, const char* service_url,
+    void* wrapper, grpc_auth_metadata_context context,
     grpc_credentials_plugin_metadata_cb cb, void* user_data) {
   GPR_ASSERT(wrapper);
   MetadataCredentialsPluginWrapper* w =
@@ -172,9 +172,9 @@ void MetadataCredentialsPluginWrapper::GetMetadata(
   if (w->plugin_->IsBlocking()) {
     w->thread_pool_->Add(
         std::bind(&MetadataCredentialsPluginWrapper::InvokePlugin, w,
-                  service_url, cb, user_data));
+                  context.service_url, cb, user_data));
   } else {
-    w->InvokePlugin(service_url, cb, user_data);
+    w->InvokePlugin(context.service_url, cb, user_data);
   }
 }
 
@@ -208,7 +208,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
       new MetadataCredentialsPluginWrapper(std::move(plugin));
   grpc_metadata_credentials_plugin c_plugin = {
       MetadataCredentialsPluginWrapper::GetMetadata,
-      MetadataCredentialsPluginWrapper::Destroy, wrapper};
+      MetadataCredentialsPluginWrapper::Destroy, wrapper, ""};
   return WrapCallCredentials(
       grpc_metadata_credentials_create_from_plugin(c_plugin, nullptr));
 }

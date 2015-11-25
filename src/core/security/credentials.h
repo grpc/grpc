@@ -59,7 +59,6 @@ typedef enum {
   "FakeTransportSecurity"
 
 #define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
-#define GRPC_CALL_CREDENTIALS_TYPE_METADATA_PLUGIN "Plugin"
 #define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
 #define GRPC_CALL_CREDENTIALS_TYPE_IAM "Iam"
 #define GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE "Composite"
@@ -162,7 +161,7 @@ typedef struct {
   void (*destruct)(grpc_call_credentials *c);
   void (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
                                grpc_call_credentials *c, grpc_pollset *pollset,
-                               const char *service_url,
+                               grpc_auth_metadata_context context,
                                grpc_credentials_metadata_cb cb,
                                void *user_data);
 } grpc_call_credentials_vtable;
@@ -178,7 +177,7 @@ void grpc_call_credentials_unref(grpc_call_credentials *creds);
 void grpc_call_credentials_get_request_metadata(grpc_exec_ctx *exec_ctx,
                                                 grpc_call_credentials *creds,
                                                 grpc_pollset *pollset,
-                                                const char *service_url,
+                                                grpc_auth_metadata_context context,
                                                 grpc_credentials_metadata_cb cb,
                                                 void *user_data);
 
