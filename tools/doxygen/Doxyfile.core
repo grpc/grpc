@@ -772,6 +772,7 @@ include/grpc/support/atm.h \
 include/grpc/support/atm_gcc_atomic.h \
 include/grpc/support/atm_gcc_sync.h \
 include/grpc/support/atm_win32.h \
+include/grpc/support/avl.h \
 include/grpc/support/cmdline.h \
 include/grpc/support/cpu.h \
 include/grpc/support/histogram.h \

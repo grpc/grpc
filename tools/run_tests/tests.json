@@ -217,6 +217,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "gpr_avl_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "gpr_cmdline_test", 
     "platforms": [
       "linux", 
@@ -952,6 +970,24 @@
     "flaky": false, 
     "language": "c", 
     "name": "secure_endpoint_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "set_initial_connect_string_test", 
     "platforms": [
       "linux", 
       "mac", 
