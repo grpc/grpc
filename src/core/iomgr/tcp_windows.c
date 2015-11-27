@@ -197,7 +197,7 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   tcp->read_slice = gpr_slice_malloc(8192);
 
-  buffer.len = GPR_SLICE_LENGTH(tcp->read_slice);
+  buffer.len = (ULONG)GPR_SLICE_LENGTH(tcp->read_slice);
   buffer.buf = (char *)GPR_SLICE_START_PTR(tcp->read_slice);
 
   TCP_REF(tcp, "read");
@@ -288,12 +288,12 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   }
 
   for (i = 0; i < tcp->write_slices->count; i++) {
-    buffers[i].len = GPR_SLICE_LENGTH(tcp->write_slices->slices[i]);
+    buffers[i].len = (ULONG)GPR_SLICE_LENGTH(tcp->write_slices->slices[i]);
     buffers[i].buf = (char *)GPR_SLICE_START_PTR(tcp->write_slices->slices[i]);
   }
 
   /* First, let's try a synchronous, non-blocking write. */
-  status = WSASend(socket->socket, buffers, tcp->write_slices->count,
+  status = WSASend(socket->socket, buffers, (DWORD)tcp->write_slices->count,
                    &bytes_sent, 0, NULL, NULL);
   info->wsa_error = status == 0 ? 0 : WSAGetLastError();
 
@@ -322,7 +322,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   /* If we got a WSAEWOULDBLOCK earlier, then we need to re-do the same
      operation, this time asynchronously. */
   memset(&socket->write_info.overlapped, 0, sizeof(OVERLAPPED));
-  status = WSASend(socket->socket, buffers, tcp->write_slices->count,
+  status = WSASend(socket->socket, buffers, (DWORD)tcp->write_slices->count,
                    &bytes_sent, 0, &socket->write_info.overlapped, NULL);
   if (allocated) gpr_free(allocated);
 
