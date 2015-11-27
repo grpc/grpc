@@ -50,6 +50,10 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
   grpc_subchannel_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_UNREF(cl, p, r) \
   grpc_subchannel_unref((cl), (p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_WEAK_REF(p, r) \
+  grpc_subchannel_weak_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_WEAK_UNREF(cl, p, r) \
+  grpc_subchannel_weak_unref((cl), (p), __FILE__, __LINE__, (r))
 #define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) \
   grpc_connected_subchannel_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_CONNECTED_SUBCHANNEL_UNREF(cl, p, r) \
@@ -63,6 +67,8 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 #else
 #define GRPC_SUBCHANNEL_REF(p, r) grpc_subchannel_ref((p))
 #define GRPC_SUBCHANNEL_UNREF(cl, p, r) grpc_subchannel_unref((cl), (p))
+#define GRPC_SUBCHANNEL_WEAK_REF(p, r) grpc_subchannel_weak_ref((p))
+#define GRPC_SUBCHANNEL_WEAK_UNREF(cl, p, r) grpc_subchannel_weak_unref((cl), (p))
 #define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) grpc_connected_subchannel_ref((p))
 #define GRPC_CONNECTED_SUBCHANNEL_UNREF(cl, p, r) \
   grpc_connected_subchannel_unref((cl), (p))
@@ -75,6 +81,11 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 void grpc_subchannel_ref(grpc_subchannel *channel
                              GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
+                           grpc_subchannel *channel
+                               GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_weak_ref(grpc_subchannel *channel
+                             GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *channel
                                GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_connected_subchannel_ref(grpc_connected_subchannel *channel
