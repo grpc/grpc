@@ -185,7 +185,6 @@ static void destroy_subchannels(grpc_exec_ctx *exec_ctx, void *arg,
                                 int iomgr_success) {
   pick_first_lb_policy *p = arg;
   size_t i;
-  grpc_transport_op op;
   size_t num_subchannels = p->num_subchannels;
   grpc_subchannel **subchannels;
   grpc_connected_subchannel *exclude_subchannel;
@@ -199,12 +198,6 @@ static void destroy_subchannels(grpc_exec_ctx *exec_ctx, void *arg,
   GRPC_LB_POLICY_UNREF(exec_ctx, &p->base, "destroy_subchannels");
 
   for (i = 0; i < num_subchannels; i++) {
-    if (grpc_subchannel_get_connected_subchannel(subchannels[i]) !=
-        exclude_subchannel) {
-      memset(&op, 0, sizeof(op));
-      op.disconnect = 1;
-      grpc_subchannel_process_transport_op(exec_ctx, subchannels[i], &op);
-    }
     GRPC_SUBCHANNEL_UNREF(exec_ctx, subchannels[i], "pick_first");
   }
 
@@ -323,41 +316,6 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&p->mu);
 }
 
-static void pf_broadcast(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                         grpc_transport_op *op) {
-  pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
-  size_t i;
-  size_t n;
-  grpc_subchannel **subchannels;
-  grpc_connected_subchannel *selected;
-
-  gpr_mu_lock(&p->mu);
-  n = p->num_subchannels;
-  subchannels = gpr_malloc(n * sizeof(*subchannels));
-  selected = p->selected;
-  if (selected) {
-    GRPC_CONNECTED_SUBCHANNEL_REF(selected, "pf_broadcast_to_selected");
-  }
-  for (i = 0; i < n; i++) {
-    subchannels[i] = p->subchannels[i];
-    GRPC_SUBCHANNEL_REF(subchannels[i], "pf_broadcast");
-  }
-  gpr_mu_unlock(&p->mu);
-
-  for (i = 0; i < n; i++) {
-    if (selected != grpc_subchannel_get_connected_subchannel(subchannels[i])) {
-      grpc_subchannel_process_transport_op(exec_ctx, subchannels[i], op);
-    }
-    GRPC_SUBCHANNEL_UNREF(exec_ctx, subchannels[i], "pf_broadcast");
-  }
-  if (p->selected) {
-    grpc_connected_subchannel_process_transport_op(exec_ctx, selected, op);
-    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, selected,
-                                    "pf_broadcast_to_selected");
-  }
-  gpr_free(subchannels);
-}
-
 static grpc_connectivity_state pf_check_connectivity(grpc_exec_ctx *exec_ctx,
                                                      grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
@@ -380,7 +338,7 @@ void pf_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
 
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_destroy, pf_shutdown, pf_pick, pf_cancel_pick, pf_exit_idle,
-    pf_broadcast, pf_check_connectivity, pf_notify_on_state_change};
+    pf_check_connectivity, pf_notify_on_state_change};
 
 static void pick_first_factory_ref(grpc_lb_policy_factory *factory) {}
 

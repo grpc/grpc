@@ -238,7 +238,7 @@ void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
   old_refs = ref_mutate(c, (gpr_atm)1 - (gpr_atm)(1 << INTERNAL_REF_BITS), 1 REF_MUTATE_PURPOSE("STRONG_UNREF"));
-  if ((old_refs & STRONG_REF_MASK) == 0) {
+  if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
     disconnect(exec_ctx, c);
   }
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "strong-unref");
@@ -351,7 +351,7 @@ void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
     do_connect = 1;
     c->connecting = 1;
     /* released by connection */
-    GRPC_SUBCHANNEL_REF(c, "connecting");
+    GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
   }
   gpr_mu_unlock(&c->mu);
 
@@ -367,40 +367,6 @@ void grpc_subchannel_state_change_unsubscribe(grpc_exec_ctx *exec_ctx,
   grpc_connectivity_state_change_unsubscribe(exec_ctx, &c->state_tracker,
                                              subscribed_notify);
   gpr_mu_unlock(&c->mu);
-}
-
-void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
-                                          grpc_subchannel *c,
-                                          grpc_transport_op *op) {
-  grpc_connected_subchannel *con;
-  int cancel_alarm = 0;
-  gpr_mu_lock(&c->mu);
-  con = GET_CONNECTED_SUBCHANNEL(c, no_barrier);
-  if (con != NULL) {
-    GRPC_CONNECTED_SUBCHANNEL_REF(con, "transport-op");
-  }
-  if (op->disconnect) {
-    c->disconnected = 1;
-    grpc_connectivity_state_set(exec_ctx, &c->state_tracker,
-                                GRPC_CHANNEL_FATAL_FAILURE, "disconnect");
-    if (c->have_alarm) {
-      cancel_alarm = 1;
-    }
-  }
-  gpr_mu_unlock(&c->mu);
-
-  if (con != NULL) {
-    grpc_connected_subchannel_process_transport_op(exec_ctx, con, op);
-    GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, con, "transport-op");
-  }
-
-  if (cancel_alarm) {
-    grpc_timer_cancel(exec_ctx, &c->alarm);
-  }
-
-  if (op->disconnect) {
-    grpc_connector_shutdown(exec_ctx, c->connector);
-  }
 }
 
 void grpc_connected_subchannel_process_transport_op(
@@ -488,7 +454,7 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   con = gpr_malloc(channel_stack_size);
   stk = CHANNEL_STACK_FROM_CONNECTION(con);
   grpc_channel_stack_init(exec_ctx, 1, connection_destroy, con, filters,
-                          num_filters, c->args, stk);
+                          num_filters, c->args, "CONNECTED_SUBCHANNEL", stk);
   grpc_connected_channel_bind_transport(stk, c->connecting_result.transport);
   gpr_free((void *)c->connecting_result.filters);
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
@@ -507,7 +473,8 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
     gpr_free(sw_subchannel);
     gpr_free((void *)filters);
     grpc_channel_stack_destroy(exec_ctx, stk);
-    GRPC_SUBCHANNEL_UNREF(exec_ctx, c, "connecting");
+    gpr_free(con);
+    GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
     return;
   }
 
@@ -519,7 +486,7 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
      for connecting is donated
      to the state watcher */
   GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
-  GRPC_SUBCHANNEL_UNREF(exec_ctx, c, "connecting");
+  GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   grpc_connected_subchannel_notify_on_state_change(
       exec_ctx, con, &sw_subchannel->connectivity_state,
       &sw_subchannel->closure);
@@ -588,17 +555,18 @@ static void on_alarm(grpc_exec_ctx *exec_ctx, void *arg, int iomgr_success) {
     update_reconnect_parameters(c);
     continue_connect(exec_ctx, c);
   } else {
-    GRPC_SUBCHANNEL_UNREF(exec_ctx, c, "connecting");
+    GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   }
 }
 
 static void subchannel_connected(grpc_exec_ctx *exec_ctx, void *arg,
                                  int iomgr_success) {
   grpc_subchannel *c = arg;
+
   if (c->connecting_result.transport != NULL) {
     publish_transport(exec_ctx, c);
   } else if (c->disconnected) {
-    /* do nothing */
+    GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   } else {
     gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
     gpr_mu_lock(&c->mu);

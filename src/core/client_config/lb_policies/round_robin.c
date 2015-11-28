@@ -451,29 +451,6 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   }
 }
 
-static void rr_broadcast(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-                         grpc_transport_op *op) {
-  round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
-  size_t i;
-  size_t n;
-  grpc_subchannel **subchannels;
-
-  gpr_mu_lock(&p->mu);
-  n = p->num_subchannels;
-  subchannels = gpr_malloc(n * sizeof(*subchannels));
-  for (i = 0; i < n; i++) {
-    subchannels[i] = p->subchannels[i];
-    GRPC_SUBCHANNEL_REF(subchannels[i], "rr_broadcast");
-  }
-  gpr_mu_unlock(&p->mu);
-
-  for (i = 0; i < n; i++) {
-    grpc_subchannel_process_transport_op(exec_ctx, subchannels[i], op);
-    GRPC_SUBCHANNEL_UNREF(exec_ctx, subchannels[i], "rr_broadcast");
-  }
-  gpr_free(subchannels);
-}
-
 static grpc_connectivity_state rr_check_connectivity(grpc_exec_ctx *exec_ctx,
                                                      grpc_lb_policy *pol) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
@@ -497,7 +474,7 @@ static void rr_notify_on_state_change(grpc_exec_ctx *exec_ctx,
 
 static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
     rr_destroy, rr_shutdown, rr_pick, rr_cancel_pick, rr_exit_idle,
-    rr_broadcast, rr_check_connectivity, rr_notify_on_state_change};
+    rr_check_connectivity, rr_notify_on_state_change};
 
 static void round_robin_factory_ref(grpc_lb_policy_factory *factory) {}
 

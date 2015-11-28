@@ -233,11 +233,12 @@ static grpc_end2end_test_fixture chttp2_create_fixture_micro_fullstack(
 }
 
 grpc_connectivity_state g_state = GRPC_CHANNEL_IDLE;
+grpc_pollset_set g_interested_parties;
 
 static void state_changed(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   if (g_state != GRPC_CHANNEL_READY) {
     grpc_subchannel_notify_on_state_change(
-        exec_ctx, arg, &g_state, grpc_closure_create(state_changed, arg));
+        exec_ctx, arg, &g_interested_parties, &g_state, grpc_closure_create(state_changed, arg));
   }
 }
 
@@ -247,12 +248,11 @@ static void destroy_pollset(grpc_exec_ctx *exec_ctx, void *arg, int success) {
 
 static grpc_connected_subchannel *connect_subchannel(grpc_subchannel *c) {
   grpc_pollset pollset;
-  grpc_pollset_set interested_parties;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_pollset_init(&pollset);
-  grpc_pollset_set_add_pollset(&exec_ctx, &interested_parties, &pollset);
-  grpc_subchannel_add_interested_parties(&exec_ctx, c, &interested_parties);
-  grpc_subchannel_notify_on_state_change(&exec_ctx, c, &g_state,
+  grpc_pollset_set_init(&g_interested_parties);
+  grpc_pollset_set_add_pollset(&exec_ctx, &g_interested_parties, &pollset);
+  grpc_subchannel_notify_on_state_change(&exec_ctx, c, &g_interested_parties, &g_state,
                                          grpc_closure_create(state_changed, c));
   grpc_exec_ctx_flush(&exec_ctx);
   gpr_mu_lock(GRPC_POLLSET_MU(&pollset));
@@ -267,8 +267,8 @@ static grpc_connected_subchannel *connect_subchannel(grpc_subchannel *c) {
   }
   grpc_pollset_shutdown(&exec_ctx, &pollset,
                         grpc_closure_create(destroy_pollset, &pollset));
+  grpc_pollset_set_destroy(&g_interested_parties);
   gpr_mu_unlock(GRPC_POLLSET_MU(&pollset));
-  grpc_subchannel_del_interested_parties(&exec_ctx, c, &interested_parties);
   grpc_exec_ctx_finish(&exec_ctx);
   return grpc_subchannel_get_connected_subchannel(c);
 }

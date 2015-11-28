@@ -260,10 +260,6 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   }
 
   lb_policy = chand->lb_policy;
-  if (lb_policy) {
-    GRPC_LB_POLICY_REF(lb_policy, "broadcast");
-  }
-
   if (op->disconnect && chand->resolver != NULL) {
     grpc_connectivity_state_set(exec_ctx, &chand->state_tracker,
                                 GRPC_CHANNEL_FATAL_FAILURE, "disconnect");
@@ -281,11 +277,6 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   if (destroy_resolver) {
     grpc_resolver_shutdown(exec_ctx, destroy_resolver);
     GRPC_RESOLVER_UNREF(exec_ctx, destroy_resolver, "channel");
-  }
-
-  if (lb_policy) {
-    grpc_lb_policy_broadcast(exec_ctx, lb_policy, op);
-    GRPC_LB_POLICY_UNREF(exec_ctx, lb_policy, "broadcast");
   }
 }
 
