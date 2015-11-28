@@ -52,6 +52,10 @@
     <Compile Include="IClientStreamWriter.cs" />
     <Compile Include="Internal\NativeMetadataCredentialsPlugin.cs" />
     <Compile Include="Internal\INativeCall.cs" />
+    <Compile Include="Internal\PlatformInvocation.cs" />
+    <Compile Include="Internal\PlatformInvocationLinux64.cs" />
+    <Compile Include="Internal\PlatformInvocationWin32.cs" />
+    <Compile Include="Internal\PlatformInvocationWin64.cs" />
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
     <Compile Include="IAsyncStreamReader.cs" />
@@ -142,7 +146,12 @@
     <Otherwise />
   </Choose>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <ItemGroup />
+  <ItemGroup>
+    <Content Include="..\..\..\vsprojects\x64\Debug\grpc_csharp_ext-x64.dll">
+      <Link>grpc_csharp_ext-x64.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
@@ -155,7 +164,5 @@
   <Import Project="..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets" Condition="Exists('..\packages\grpc.dependencies.openssl.redist.1.0.2.2\build\portable-net45\grpc.dependencies.openssl.redist.targets')" />
   <Import Project="..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets" Condition="Exists('..\packages\grpc.dependencies.zlib.redist.1.2.8.9\build\portable-net45\grpc.dependencies.zlib.redist.targets')" />
   <ItemGroup />
-  <ItemGroup>
-    <Folder Include="Profiling\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>

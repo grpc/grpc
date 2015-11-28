@@ -41,6 +41,8 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class ServerCredentialsSafeHandle : SafeHandleZeroIsInvalid
     {
+        static readonly IPlatformInvocation pinvoke = PlatformInvocation.Implementation;
+
         [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
         static extern ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, bool forceClientAuth);
 
