@@ -105,9 +105,6 @@ grpc_subchannel_call *grpc_connected_subchannel_create_call(
     grpc_pollset *pollset);
 
 /** process a transport level op */
-void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
-                                          grpc_subchannel *subchannel,
-                                          grpc_transport_op *op);
 void grpc_connected_subchannel_process_transport_op(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *subchannel,
     grpc_transport_op *op);

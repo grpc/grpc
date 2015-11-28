@@ -66,10 +66,6 @@ struct grpc_lb_policy_vtable {
   /** try to enter a READY connectivity state */
   void (*exit_idle)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
-  /** broadcast a transport op to all subchannels */
-  void (*broadcast)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                    grpc_transport_op *op);
-
   /** check the current connectivity of the lb_policy */
   grpc_connectivity_state (*check_connectivity)(grpc_exec_ctx *exec_ctx,
                                                 grpc_lb_policy *policy);
@@ -117,9 +113,6 @@ int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
 
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                                 grpc_connected_subchannel **target);
-
-void grpc_lb_policy_broadcast(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                              grpc_transport_op *op);
 
 void grpc_lb_policy_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
