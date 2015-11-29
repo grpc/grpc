@@ -227,7 +227,6 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
 
   if (old_lb_policy != NULL) {
     grpc_pollset_set_del_pollset_set(exec_ctx, &old_lb_policy->interested_parties, &chand->interested_parties);
-    grpc_lb_policy_shutdown(exec_ctx, old_lb_policy);
     GRPC_LB_POLICY_UNREF(exec_ctx, old_lb_policy, "channel");
   }
 
@@ -267,7 +266,6 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
     chand->resolver = NULL;
     if (chand->lb_policy != NULL) {
       grpc_pollset_set_del_pollset_set(exec_ctx, &chand->lb_policy->interested_parties, &chand->interested_parties);
-      grpc_lb_policy_shutdown(exec_ctx, chand->lb_policy);
       GRPC_LB_POLICY_UNREF(exec_ctx, chand->lb_policy, "channel");
       chand->lb_policy = NULL;
     }

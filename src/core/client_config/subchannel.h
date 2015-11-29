@@ -124,15 +124,6 @@ void grpc_connected_subchannel_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *channel,
     grpc_connectivity_state *state, grpc_closure *notify);
 
-/** Remove \a subscribed_notify from the list of closures to be called on a
- * state change if present. */
-void grpc_subchannel_state_change_unsubscribe(grpc_exec_ctx *exec_ctx,
-                                              grpc_subchannel *channel,
-                                              grpc_closure *subscribed_notify);
-void grpc_connected_subchannel_state_change_unsubscribe(
-    grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *channel,
-    grpc_closure *subscribed_notify);
-
 /** retrieve the grpc_connected_subchannel - or NULL if called before
     the subchannel becomes connected */
 grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(

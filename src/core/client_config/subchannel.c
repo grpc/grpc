@@ -62,12 +62,18 @@
 
 typedef struct {
   grpc_closure closure;
-  union {
-    grpc_subchannel *subchannel;
-    grpc_connected_subchannel *connected_subchannel;
-  } whom;
+  grpc_subchannel *subchannel;
   grpc_connectivity_state connectivity_state;
 } state_watcher;
+
+typedef struct external_state_watcher {
+  grpc_subchannel *subchannel;
+  grpc_pollset_set *pollset_set;
+  grpc_closure *notify;
+  grpc_closure closure;
+  struct external_state_watcher *next;
+  struct external_state_watcher *prev;
+} external_state_watcher;
 
 struct grpc_subchannel {
   grpc_connector *connector;
@@ -113,6 +119,8 @@ struct grpc_subchannel {
   int connecting;
   /** connectivity state tracking */
   grpc_connectivity_state_tracker state_tracker;
+
+  external_state_watcher root_external_state_watcher;
 
   /** next connect attempt time */
   gpr_timespec next_attempt;
@@ -201,7 +209,7 @@ static void subchannel_destroy(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_free(c);
 }
 
-gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta, int barrier REF_MUTATE_EXTRA_ARGS) {
+static gpr_atm ref_mutate(grpc_subchannel *c, gpr_atm delta, int barrier REF_MUTATE_EXTRA_ARGS) {
   gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta) : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
   gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "SUBCHANNEL: %p % 12s 0x%08x -> 0x%08x [%s]", c, purpose, old_val, old_val + delta, reason);
@@ -277,6 +285,7 @@ grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
                                   &c->initial_connect_string);
   c->args = grpc_channel_args_copy(args->args);
   c->random = random_seed();
+  c->root_external_state_watcher.next = c->root_external_state_watcher.prev = &c->root_external_state_watcher;
   grpc_closure_init(&c->connected, subchannel_connected, c);
   grpc_connectivity_state_init(&c->state_tracker, GRPC_CHANNEL_IDLE,
                                "subchannel");
@@ -316,17 +325,16 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(grpc_subchannel *c) {
   return state;
 }
 
-typedef struct {
-  grpc_subchannel *subchannel;
-  grpc_pollset_set *pollset_set;
-  grpc_closure *notify;
-  grpc_closure closure;
-} external_state_watcher;
-
 static void on_external_state_watcher_done(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   external_state_watcher *w = arg;
   grpc_closure *follow_up = w->notify;
-  grpc_pollset_set_del_pollset_set(exec_ctx, &w->subchannel->pollset_set, w->pollset_set);
+  if (w->pollset_set != NULL) {
+    grpc_pollset_set_del_pollset_set(exec_ctx, &w->subchannel->pollset_set, w->pollset_set);
+  }
+  gpr_mu_lock(&w->subchannel->mu);
+  w->next->prev = w->prev;
+  w->prev->next = w->next;
+  gpr_mu_unlock(&w->subchannel->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, w->subchannel, "external_state_watcher");
   gpr_free(w);
   follow_up->cb(exec_ctx, follow_up->cb_arg, success);
@@ -338,35 +346,45 @@ void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
                                             grpc_connectivity_state *state,
                                             grpc_closure *notify) {
   int do_connect = 0;
-  external_state_watcher *w = gpr_malloc(sizeof(*w));
-  w->subchannel = c;
-  w->pollset_set = interested_parties;
-  w->notify = notify;
-  grpc_closure_init(&w->closure, on_external_state_watcher_done, w);
-  grpc_pollset_set_add_pollset_set(exec_ctx, &c->pollset_set, interested_parties);
-  GRPC_SUBCHANNEL_WEAK_REF(c, "external_state_watcher");
-  gpr_mu_lock(&c->mu);
-  if (grpc_connectivity_state_notify_on_state_change(
-          exec_ctx, &c->state_tracker, state, &w->closure)) {
-    do_connect = 1;
-    c->connecting = 1;
-    /* released by connection */
-    GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
+  external_state_watcher *w;
+
+  if (state == NULL) {
+    gpr_mu_lock(&c->mu);
+    for (w = c->root_external_state_watcher.next; 
+         w != &c->root_external_state_watcher; 
+         w = w->next) {
+      if (w->notify == notify) {
+        grpc_connectivity_state_notify_on_state_change(exec_ctx, &c->state_tracker, NULL, &w->closure);
+      }
+    }
+    gpr_mu_unlock(&c->mu);
+  } else {
+    w = gpr_malloc(sizeof(*w));
+    w->subchannel = c;
+    w->pollset_set = interested_parties;
+    w->notify = notify;
+    grpc_closure_init(&w->closure, on_external_state_watcher_done, w);
+    if (interested_parties != NULL) {
+      grpc_pollset_set_add_pollset_set(exec_ctx, &c->pollset_set, interested_parties);
+    }
+    GRPC_SUBCHANNEL_WEAK_REF(c, "external_state_watcher");
+    gpr_mu_lock(&c->mu);
+    w->next = &c->root_external_state_watcher;
+    w->prev = w->next->prev;
+    w->next->prev = w->prev->next = w;
+    if (grpc_connectivity_state_notify_on_state_change(
+            exec_ctx, &c->state_tracker, state, &w->closure)) {
+      do_connect = 1;
+      c->connecting = 1;
+      /* released by connection */
+      GRPC_SUBCHANNEL_WEAK_REF(c, "connecting");
+    }
+    gpr_mu_unlock(&c->mu);
   }
-  gpr_mu_unlock(&c->mu);
 
   if (do_connect) {
     start_connect(exec_ctx, c);
   }
-}
-
-void grpc_subchannel_state_change_unsubscribe(grpc_exec_ctx *exec_ctx,
-                                              grpc_subchannel *c,
-                                              grpc_closure *subscribed_notify) {
-  gpr_mu_lock(&c->mu);
-  grpc_connectivity_state_change_unsubscribe(exec_ctx, &c->state_tracker,
-                                             subscribed_notify);
-  gpr_mu_unlock(&c->mu);
 }
 
 void grpc_connected_subchannel_process_transport_op(
@@ -380,7 +398,7 @@ void grpc_connected_subchannel_process_transport_op(
 static void subchannel_on_child_state_changed(grpc_exec_ctx *exec_ctx, void *p,
                                               int iomgr_success) {
   state_watcher *sw = p;
-  grpc_subchannel *c = sw->whom.subchannel;
+  grpc_subchannel *c = sw->subchannel;
   gpr_mu *mu = &c->mu;
 
   gpr_mu_lock(mu);
@@ -423,14 +441,7 @@ static void connected_subchannel_state_op(grpc_exec_ctx *exec_ctx,
 void grpc_connected_subchannel_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
     grpc_connectivity_state *state, grpc_closure *closure) {
-  GPR_ASSERT(state != NULL);
   connected_subchannel_state_op(exec_ctx, con, state, closure);
-}
-
-void grpc_connected_subchannel_state_change_unsubscribe(
-    grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
-    grpc_closure *closure) {
-  connected_subchannel_state_op(exec_ctx, con, NULL, closure);
 }
 
 static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
@@ -461,7 +472,7 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
 
   /* initialize state watcher */
   sw_subchannel = gpr_malloc(sizeof(*sw_subchannel));
-  sw_subchannel->whom.subchannel = c;
+  sw_subchannel->subchannel = c;
   sw_subchannel->connectivity_state = GRPC_CHANNEL_READY;
   grpc_closure_init(&sw_subchannel->closure, subchannel_on_child_state_changed,
                     sw_subchannel);
