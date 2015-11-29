@@ -166,8 +166,9 @@ static void cuc_init_channel_elem(grpc_exec_ctx *exec_ctx,
 static void cuc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                      grpc_channel_element *elem) {
   channel_data *chand = elem->channel_data;
-  grpc_connected_subchannel_state_change_unsubscribe(
-      exec_ctx, chand->connected_subchannel, &chand->connectivity_cb);
+  /* cancel subscription */
+  grpc_connected_subchannel_notify_on_state_change(
+      exec_ctx, chand->connected_subchannel, NULL, &chand->connectivity_cb);
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   gpr_mu_destroy(&chand->mu_state);
 }
