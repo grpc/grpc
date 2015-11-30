@@ -207,14 +207,19 @@ static int has_watchers(grpc_fd *fd) {
 }
 
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
-                    const char *reason) {
+                    int release_fd, const char *reason) {
   fd->on_done_closure = on_done;
-  shutdown(fd->fd, SHUT_RDWR);
+  fd->released = release_fd;
+  if (!fd->released) {
+    shutdown(fd->fd, SHUT_RDWR);
+  }
   gpr_mu_lock(&fd->mu);
   REF_BY(fd, 1, reason); /* remove active status, but keep referenced */
   if (!has_watchers(fd)) {
     fd->closed = 1;
-    close(fd->fd);
+    if (!fd->released) {
+      close(fd->fd);
+    }
     grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
   } else {
     wake_all_watchers_locked(fd);
@@ -406,7 +411,9 @@ void grpc_fd_end_poll(grpc_exec_ctx *exec_ctx, grpc_fd_watcher *watcher,
   }
   if (grpc_fd_is_orphaned(fd) && !has_watchers(fd) && !fd->closed) {
     fd->closed = 1;
-    close(fd->fd);
+    if (!fd->released) {
+      close(fd->fd);
+    }
     grpc_exec_ctx_enqueue(exec_ctx, fd->on_done_closure, 1);
   }
   gpr_mu_unlock(&fd->mu);

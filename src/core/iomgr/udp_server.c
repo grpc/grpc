@@ -179,7 +179,7 @@ static void deactivated_all_ports(grpc_exec_ctx *exec_ctx, grpc_udp_server *s) {
       }
       sp->destroyed_closure.cb = destroyed_port;
       sp->destroyed_closure.cb_arg = s;
-      grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure,
+      grpc_fd_orphan(exec_ctx, sp->emfd, &sp->destroyed_closure, 0,
                      "udp_listener_shutdown");
     }
     gpr_mu_unlock(&s->mu);
