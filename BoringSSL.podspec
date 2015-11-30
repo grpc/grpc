@@ -79,10 +79,15 @@ Pod::Spec.new do |s|
   s.compiler_flags = '-DOPENSSL_NO_ASM', '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   s.requires_arc = false
 
-  # This is a bit ridiculous, but requiring people to install Go in order to build is slightly more
-  # ridiculous IMO. This is the last part of the podspec.
-  # TODO(jcanizales): Translate err_data_generate.go into a Bash or Ruby script.
   s.prepare_command = <<-END_OF_COMMAND
+    # Replace "const BIGNUM *I" in rsa.h with a lowercase i, as the former fails when including
+    # OpenSSL in a Swift bridging header (complex.h defines "I", and it's as if the compiler
+    # included it in every bridged header).
+    sed -E -i '.back' 's/\\*I,/*i,/g' include/openssl/rsa.h
+
+    # This is a bit ridiculous, but requiring people to install Go in order to build is slightly
+    # more ridiculous IMO. This is the last part of the podspec.
+    # TODO(jcanizales): Translate err_data_generate.go into a Bash or Ruby script.
     cat > err_data.c <<EOF
       /* Copyright (c) 2015, Google Inc.
        *
