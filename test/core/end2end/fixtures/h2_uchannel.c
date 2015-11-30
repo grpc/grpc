@@ -163,6 +163,7 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   grpc_connector_unref(exec_ctx, &c->base);
   grpc_channel_args_destroy(final_args);
   *f->sniffed_subchannel = s;
+  GRPC_SUBCHANNEL_REF(s, "sniffed");
   return s;
 }
 
@@ -316,11 +317,15 @@ static void chttp2_init_server_micro_fullstack(grpc_end2end_test_fixture *f,
 }
 
 static void chttp2_tear_down_micro_fullstack(grpc_end2end_test_fixture *f) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   micro_fullstack_fixture_data *ffd = f->fixture_data;
   grpc_channel_destroy(ffd->master_channel);
-  ffd->master_channel = NULL;
+  if (ffd->sniffed_subchannel) {
+    GRPC_SUBCHANNEL_UNREF(&exec_ctx, ffd->sniffed_subchannel, "sniffed");
+  }
   gpr_free(ffd->localaddr);
   gpr_free(ffd);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 /* All test configurations */

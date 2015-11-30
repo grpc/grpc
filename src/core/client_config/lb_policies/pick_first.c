@@ -96,7 +96,6 @@ void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   pending_pick *pp;
   gpr_mu_lock(&p->mu);
-  gpr_log(GPR_DEBUG, "LB_POLICY: pf_shutdown: %p", p);
   p->shutdown = 1;
   pp = p->pending_picks;
   p->pending_picks = NULL;
@@ -105,7 +104,7 @@ void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   if (p->selected != NULL) {
     grpc_connected_subchannel_notify_on_state_change(exec_ctx, p->selected, NULL, &p->connectivity_changed);
   } else {
-    grpc_subchannel_notify_on_state_change(exec_ctx, p->subchannels[p->checking_connectivity], NULL, NULL, &p->connectivity_changed);
+    grpc_subchannel_notify_on_state_change(exec_ctx, p->subchannels[p->checking_subchannel], NULL, NULL, &p->connectivity_changed);
   }
   gpr_mu_unlock(&p->mu);
   while (pp != NULL) {
@@ -217,8 +216,6 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   pending_pick *pp;
 
   gpr_mu_lock(&p->mu);
-
-  gpr_log(GPR_DEBUG, "LB_POLICY: pf_connectivity_changed: %p success=%d shutdown=%d", p, iomgr_success, p->shutdown);
 
   if (p->shutdown) {
     gpr_mu_unlock(&p->mu);

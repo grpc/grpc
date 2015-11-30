@@ -232,6 +232,10 @@ void rr_destroy(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
 void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
+  size_t i;
+
+gpr_log(GPR_DEBUG, "LB_POLICY: rr_shutdown: p=%p num_subchannels=%d", p, p->num_subchannels);
+
   gpr_mu_lock(&p->mu);
 
   p->shutdown = 1;
@@ -243,6 +247,12 @@ void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   }
   grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                               GRPC_CHANNEL_FATAL_FAILURE, "shutdown");
+  for (i = 0; i < p->num_subchannels; i++) {
+    grpc_subchannel_notify_on_state_change(exec_ctx, p->subchannels[i],
+                                           NULL,
+                                           NULL,
+                                           &p->connectivity_changed_cbs[i]);
+  }
   gpr_mu_unlock(&p->mu);
 }
 
@@ -273,13 +283,15 @@ static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
   size_t i;
   p->started_picking = 1;
 
+  gpr_log(GPR_DEBUG, "LB_POLICY: p=%p num_subchannels=%d", p, p->num_subchannels);
+
   for (i = 0; i < p->num_subchannels; i++) {
     p->subchannel_connectivity[i] = GRPC_CHANNEL_IDLE;
     grpc_subchannel_notify_on_state_change(exec_ctx, p->subchannels[i],
       &p->base.interested_parties,
                                            &p->subchannel_connectivity[i],
                                            &p->connectivity_changed_cbs[i]);
-    GRPC_LB_POLICY_REF(&p->base, "round_robin_connectivity");
+    GRPC_LB_POLICY_WEAK_REF(&p->base, "round_robin_connectivity");
   }
 }
 
@@ -447,7 +459,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
   gpr_mu_unlock(&p->mu);
 
   if (unref) {
-    GRPC_LB_POLICY_UNREF(exec_ctx, &p->base, "round_robin_connectivity");
+    GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "round_robin_connectivity");
   }
 }
 
