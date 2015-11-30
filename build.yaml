@@ -119,6 +119,7 @@ filegroups:
   - src/core/channel/subchannel_call_holder.h
   - src/core/client_config/client_config.h
   - src/core/client_config/connector.h
+  - src/core/client_config/initial_connect_string.h
   - src/core/client_config/lb_policies/pick_first.h
   - src/core/client_config/lb_policies/round_robin.h
   - src/core/client_config/lb_policy.h
@@ -233,6 +234,8 @@ filegroups:
   - src/core/channel/subchannel_call_holder.c
   - src/core/client_config/client_config.c
   - src/core/client_config/connector.c
+  - src/core/client_config/default_initial_connect_string.c
+  - src/core/client_config/initial_connect_string.c
   - src/core/client_config/lb_policies/pick_first.c
   - src/core/client_config/lb_policies/round_robin.c
   - src/core/client_config/lb_policy.c
@@ -373,6 +376,7 @@ libs:
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_win32.h
+  - include/grpc/support/avl.h
   - include/grpc/support/cmdline.h
   - include/grpc/support/cpu.h
   - include/grpc/support/histogram.h
@@ -410,6 +414,7 @@ libs:
   - src/core/profiling/basic_timers.c
   - src/core/profiling/stap_timers.c
   - src/core/support/alloc.c
+  - src/core/support/avl.c
   - src/core/support/cmdline.c
   - src/core/support/cpu_iphone.c
   - src/core/support/cpu_linux.c
@@ -578,6 +583,19 @@ libs:
   - test/core/util/reconnect_server.h
   src:
   - test/core/util/reconnect_server.c
+  deps:
+  - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: test_tcp_server
+  build: private
+  language: c
+  headers:
+  - test/core/util/test_tcp_server.h
+  src:
+  - test/core/util/test_tcp_server.c
   deps:
   - grpc_test_util
   - grpc
@@ -969,6 +987,14 @@ targets:
   src:
   - tools/codegen/core/gen_legal_metadata_characters.c
   deps: []
+- name: gpr_avl_test
+  build: test
+  language: c
+  src:
+  - test/core/support/avl_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_cmdline_test
   build: test
   language: c
@@ -1422,6 +1448,17 @@ targets:
   src:
   - test/core/security/secure_endpoint_test.c
   deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: set_initial_connect_string_test
+  build: test
+  language: c
+  src:
+  - test/core/client_config/set_initial_connect_string_test.c
+  deps:
+  - test_tcp_server
   - grpc_test_util
   - grpc
   - gpr_test_util
@@ -2029,6 +2066,7 @@ targets:
   - test/cpp/interop/reconnect_interop_server.cc
   deps:
   - reconnect_server
+  - test_tcp_server
   - grpc++_test_util
   - grpc_test_util
   - grpc++

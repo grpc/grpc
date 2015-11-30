@@ -225,6 +225,18 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "gpr_avl_test", 
+    "src": [
+      "test/core/support/avl_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "gpr_cmdline_test", 
     "src": [
       "test/core/support/cmdline_test.c"
@@ -852,6 +864,21 @@
     "name": "secure_endpoint_test", 
     "src": [
       "test/core/security/secure_endpoint_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util", 
+      "test_tcp_server"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "set_initial_connect_string_test", 
+    "src": [
+      "test/core/client_config/set_initial_connect_string_test.c"
     ]
   }, 
   {
@@ -1560,7 +1587,8 @@
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
-      "reconnect_server"
+      "reconnect_server", 
+      "test_tcp_server"
     ], 
     "headers": [
       "test/proto/empty.grpc.pb.h", 
@@ -14175,6 +14203,7 @@
       "include/grpc/support/atm_gcc_atomic.h", 
       "include/grpc/support/atm_gcc_sync.h", 
       "include/grpc/support/atm_win32.h", 
+      "include/grpc/support/avl.h", 
       "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
       "include/grpc/support/histogram.h", 
@@ -14216,6 +14245,7 @@
       "include/grpc/support/atm_gcc_atomic.h", 
       "include/grpc/support/atm_gcc_sync.h", 
       "include/grpc/support/atm_win32.h", 
+      "include/grpc/support/avl.h", 
       "include/grpc/support/cmdline.h", 
       "include/grpc/support/cpu.h", 
       "include/grpc/support/histogram.h", 
@@ -14242,6 +14272,7 @@
       "src/core/profiling/stap_timers.c", 
       "src/core/profiling/timers.h", 
       "src/core/support/alloc.c", 
+      "src/core/support/avl.c", 
       "src/core/support/block_annotate.h", 
       "src/core/support/cmdline.c", 
       "src/core/support/cpu_iphone.c", 
@@ -14333,6 +14364,7 @@
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.h", 
+      "src/core/client_config/initial_connect_string.h", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.h", 
       "src/core/client_config/lb_policy.h", 
@@ -14491,6 +14523,9 @@
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.c", 
       "src/core/client_config/connector.h", 
+      "src/core/client_config/default_initial_connect_string.c", 
+      "src/core/client_config/initial_connect_string.c", 
+      "src/core/client_config/initial_connect_string.h", 
       "src/core/client_config/lb_policies/pick_first.c", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.c", 
@@ -14845,6 +14880,7 @@
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.h", 
+      "src/core/client_config/initial_connect_string.h", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.h", 
       "src/core/client_config/lb_policy.h", 
@@ -14989,6 +15025,9 @@
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.c", 
       "src/core/client_config/connector.h", 
+      "src/core/client_config/default_initial_connect_string.c", 
+      "src/core/client_config/initial_connect_string.c", 
+      "src/core/client_config/initial_connect_string.h", 
       "src/core/client_config/lb_policies/pick_first.c", 
       "src/core/client_config/lb_policies/pick_first.h", 
       "src/core/client_config/lb_policies/round_robin.c", 
@@ -15223,7 +15262,8 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc_test_util"
+      "grpc_test_util", 
+      "test_tcp_server"
     ], 
     "headers": [
       "test/core/util/reconnect_server.h"
@@ -15233,6 +15273,23 @@
     "src": [
       "test/core/util/reconnect_server.c", 
       "test/core/util/reconnect_server.h"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/util/test_tcp_server.h"
+    ], 
+    "language": "c", 
+    "name": "test_tcp_server", 
+    "src": [
+      "test/core/util/test_tcp_server.c", 
+      "test/core/util/test_tcp_server.h"
     ]
   }, 
   {

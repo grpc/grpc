@@ -45,7 +45,7 @@ message ServerStats {
 
 // Histogram params based on grpc/support/histogram.c
 message HistogramParams {
-  double resolution = 1;  // first bucket is [0, 1 + resolution)
+  double resolution = 1;    // first bucket is [0, 1 + resolution)
   double max_possible = 2;  // use enough buckets to allow this value
 }
 

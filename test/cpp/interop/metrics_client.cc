@@ -72,7 +72,8 @@ void PrintMetrics(grpc::string& server_address) {
               gauge_response.name().c_str(), gauge_response.long_value());
       overall_qps += gauge_response.long_value();
     } else {
-      gpr_log(GPR_INFO, "Gauge %s is not a long value", gauge_response.name().c_str());
+      gpr_log(GPR_INFO, "Gauge %s is not a long value",
+              gauge_response.name().c_str());
     }
   }
 
