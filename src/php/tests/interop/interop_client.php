@@ -423,10 +423,10 @@ $opts = [];
 
 if ($use_tls) {
     if ($use_test_ca) {
-        $ssl_credentials = Grpc\Credentials::createSsl(
-        file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
+        $ssl_credentials = Grpc\ChannelCredentials::createSsl(
+            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
     } else {
-        $ssl_credentials = Grpc\Credentials::createSsl();
+        $ssl_credentials = Grpc\ChannelCredentials::createSsl();
     }
     $opts['credentials'] = $ssl_credentials;
     $opts['grpc.ssl_target_name_override'] = $host_override;

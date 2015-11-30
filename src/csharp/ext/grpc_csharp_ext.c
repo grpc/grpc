@@ -785,9 +785,10 @@ grpcsharp_call_send_initial_metadata(grpc_call *call,
                                NULL);
 }
 
-GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_set_credentials(grpc_call *call,
-                                                            grpc_credentials *creds) {
-	return grpc_call_set_credentials(call, creds);
+GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_set_credentials(
+    grpc_call *call,
+    grpc_call_credentials *creds) {
+  return grpc_call_set_credentials(call, creds);
 }
 
 /* Server */
@@ -834,7 +835,7 @@ grpcsharp_server_request_call(grpc_server *server, grpc_completion_queue *cq,
 
 /* Security */
 
-GPR_EXPORT grpc_credentials *GPR_CALLTYPE
+GPR_EXPORT grpc_channel_credentials *GPR_CALLTYPE
 grpcsharp_ssl_credentials_create(const char *pem_root_certs,
                                  const char *key_cert_pair_cert_chain,
                                  const char *key_cert_pair_private_key) {
@@ -850,12 +851,19 @@ grpcsharp_ssl_credentials_create(const char *pem_root_certs,
   }
 }
 
-GPR_EXPORT void GPR_CALLTYPE grpcsharp_credentials_release(grpc_credentials *creds) {
-  grpc_credentials_release(creds);
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_channel_credentials_release(
+    grpc_channel_credentials *creds) {
+  grpc_channel_credentials_release(creds);
+}
+
+GPR_EXPORT void GPR_CALLTYPE grpcsharp_call_credentials_release(
+    grpc_call_credentials *creds) {
+  grpc_call_credentials_release(creds);
 }
 
 GPR_EXPORT grpc_channel *GPR_CALLTYPE
-grpcsharp_secure_channel_create(grpc_credentials *creds, const char *target,
+grpcsharp_secure_channel_create(grpc_channel_credentials *creds,
+                                const char *target,
                                 const grpc_channel_args *args) {
   return grpc_secure_channel_create(creds, target, args, NULL);
 }
@@ -897,10 +905,16 @@ grpcsharp_server_add_secure_http2_port(grpc_server *server, const char *addr,
   return grpc_server_add_secure_http2_port(server, addr, creds);
 }
 
-GPR_EXPORT grpc_credentials *GPR_CALLTYPE grpcsharp_composite_credentials_create(
-  grpc_credentials *creds1,
-  grpc_credentials *creds2) {
-  return grpc_composite_credentials_create(creds1, creds2, NULL);
+GPR_EXPORT grpc_channel_credentials *GPR_CALLTYPE grpcsharp_composite_channel_credentials_create(
+  grpc_channel_credentials *channel_creds,
+  grpc_call_credentials *call_creds) {
+  return grpc_composite_channel_credentials_create(channel_creds, call_creds, NULL);
+}
+
+GPR_EXPORT grpc_call_credentials *GPR_CALLTYPE grpcsharp_composite_call_credentials_create(
+  grpc_call_credentials *creds1,
+  grpc_call_credentials *creds2) {
+  return grpc_composite_call_credentials_create(creds1, creds2, NULL);
 }
 
 /* Metadata credentials plugin */
@@ -929,7 +943,7 @@ static void grpcsharp_metadata_credentials_destroy_handler(void *state) {
   interceptor(state, NULL, NULL, NULL, 1);
 }
 
-GPR_EXPORT grpc_credentials *GPR_CALLTYPE grpcsharp_metadata_credentials_create_from_plugin(
+GPR_EXPORT grpc_call_credentials *GPR_CALLTYPE grpcsharp_metadata_credentials_create_from_plugin(
   grpcsharp_metadata_interceptor_func metadata_interceptor) {
   grpc_metadata_credentials_plugin plugin;
   plugin.get_metadata = grpcsharp_get_metadata_handler;

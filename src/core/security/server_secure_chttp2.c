@@ -94,8 +94,7 @@ static void setup_transport(grpc_exec_ctx *exec_ctx, void *statep,
   grpc_channel_args *args_copy;
   grpc_arg args_to_add[2];
   args_to_add[0] = grpc_server_credentials_to_arg(state->creds);
-  args_to_add[1] =
-      grpc_auth_context_to_arg(state->sc->auth_context);
+  args_to_add[1] = grpc_auth_context_to_arg(state->sc->auth_context);
   args_copy = grpc_channel_args_copy_and_add(
       grpc_server_get_channel_args(state->server), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
@@ -250,9 +249,11 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   }
 
   for (i = 0; i < resolved->naddrs; i++) {
-    port_temp = grpc_tcp_server_add_port(
+    grpc_tcp_listener *listener;
+    listener = grpc_tcp_server_add_port(
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
         resolved->addrs[i].len);
+    port_temp = grpc_tcp_listener_get_port(listener);
     if (port_temp >= 0) {
       if (port_num == -1) {
         port_num = port_temp;

@@ -113,7 +113,7 @@ describe 'ClientStub' do
         opts = {
           GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr',
           a_channel_arg: 'an_arg',
-          creds: GRPC::Core::Credentials.new(certs[0], nil, nil)
+          creds: GRPC::Core::ChannelCredentials.new(certs[0], nil, nil)
         }
         GRPC::ClientStub.new(fake_host, @cq, **opts)
       end

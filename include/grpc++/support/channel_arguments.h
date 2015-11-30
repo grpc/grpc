@@ -84,7 +84,7 @@ class ChannelArguments {
   void SetString(const grpc::string& key, const grpc::string& value);
 
  private:
-  friend class SecureCredentials;
+  friend class SecureChannelCredentials;
   friend class testing::ChannelArgumentsTest;
 
   // Returns empty string when it is not set.

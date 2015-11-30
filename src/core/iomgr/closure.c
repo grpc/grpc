@@ -39,18 +39,17 @@ void grpc_closure_init(grpc_closure *closure, grpc_iomgr_cb_func cb,
                        void *cb_arg) {
   closure->cb = cb;
   closure->cb_arg = cb_arg;
-  closure->next = NULL;
+  closure->final_data = 0;
 }
 
 void grpc_closure_list_add(grpc_closure_list *closure_list,
                            grpc_closure *closure, int success) {
   if (closure == NULL) return;
-  closure->next = NULL;
-  closure->success = success;
+  closure->final_data = (success != 0);
   if (closure_list->head == NULL) {
     closure_list->head = closure;
   } else {
-    closure_list->tail->next = closure;
+    closure_list->tail->final_data |= (gpr_uintptr)closure;
   }
   closure_list->tail = closure;
 }
@@ -66,20 +65,10 @@ void grpc_closure_list_move(grpc_closure_list *src, grpc_closure_list *dst) {
   if (dst->head == NULL) {
     *dst = *src;
   } else {
-    dst->tail->next = src->head;
+    dst->tail->final_data |= (gpr_uintptr)src->head;
     dst->tail = src->tail;
   }
   src->head = src->tail = NULL;
-}
-
-grpc_closure *grpc_closure_list_pop(grpc_closure_list *list) {
-  grpc_closure *head;
-  if (list->head == NULL) {
-    return NULL;
-  }
-  head = list->head;
-  list->head = list->head->next;
-  return head;
 }
 
 typedef struct {
@@ -102,4 +91,8 @@ grpc_closure *grpc_closure_create(grpc_iomgr_cb_func cb, void *cb_arg) {
   wc->cb_arg = cb_arg;
   grpc_closure_init(&wc->wrapper, closure_wrapper, wc);
   return &wc->wrapper;
+}
+
+grpc_closure *grpc_closure_next(grpc_closure *closure) {
+  return (grpc_closure *)(closure->final_data & ~(gpr_uintptr)1);
 }

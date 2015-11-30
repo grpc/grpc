@@ -37,7 +37,6 @@ import jobset
 import multiprocessing
 import os
 import report_utils
-import subprocess
 import sys
 import tempfile
 import time
@@ -170,7 +169,7 @@ class Http2Client:
     self.safename = str(self)
 
   def client_args(self):
-    return ['tools/http2_interop/http2_interop.test']
+    return ['tools/http2_interop/http2_interop.test', '-test.v']
 
   def cloud_to_prod_env(self):
     return {}
@@ -306,7 +305,7 @@ _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
 
-_HTTP2_TEST_CASES = ["tls"]
+_HTTP2_TEST_CASES = ["tls", "framing"]
 
 def docker_run_cmdline(cmdline, image, docker_args=[], cwd=None, environ=None):
   """Wraps given cmdline array to create 'docker run' cmdline from it."""
@@ -686,9 +685,9 @@ try:
   else:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
-  report_utils.render_xml_report(resultset, 'report.xml')
+  report_utils.render_junit_xml_report(resultset, 'report.xml')
   
-  report_utils.render_html_report(
+  report_utils.render_interop_html_report(
       set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES, 
       _HTTP2_TEST_CASES, resultset, num_failures,
       args.cloud_to_prod_auth or args.cloud_to_prod, args.http2_interop)
