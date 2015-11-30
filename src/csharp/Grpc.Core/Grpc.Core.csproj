@@ -49,6 +49,7 @@
     <Compile Include="AsyncDuplexStreamingCall.cs" />
     <Compile Include="AsyncServerStreamingCall.cs" />
     <Compile Include="CallCredentials.cs" />
+    <Compile Include="IAsyncStreamReader.cs" />
     <Compile Include="IClientStreamWriter.cs" />
     <Compile Include="Internal\NativeMetadataCredentialsPlugin.cs" />
     <Compile Include="Internal\INativeCall.cs" />
@@ -58,7 +59,7 @@
     <Compile Include="Internal\PlatformInvocationWin64.cs" />
     <Compile Include="IServerStreamWriter.cs" />
     <Compile Include="IAsyncStreamWriter.cs" />
-    <Compile Include="IAsyncStreamReader.cs" />
+    <Compile Include="Logging\NullLogger.cs" />
     <Compile Include="ServerPort.cs" />
     <Compile Include="Version.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

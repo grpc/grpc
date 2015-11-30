@@ -126,6 +126,14 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Sets the application-wide logger to an implementation that does nothing.
+        /// </summary>
+        public static void DisableLogging()
+        {
+            logger = new NullLogger();   
+        }
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
