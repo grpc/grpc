@@ -89,7 +89,6 @@ class TypeSmokeTest(unittest.TestCase):
     channel = cygrpc.Channel('[::]:0', cygrpc.ChannelArgs([]))
     del channel
 
-  @unittest.skip('TODO(atash): undo skip after #2229 is merged')
   def testServerStartNoExplicitShutdown(self):
     server = cygrpc.Server()
     completion_queue = cygrpc.CompletionQueue()
@@ -99,7 +98,6 @@ class TypeSmokeTest(unittest.TestCase):
     server.start()
     del server
 
-  @unittest.skip('TODO(atash): undo skip after #2229 is merged')
   def testServerStartShutdown(self):
     completion_queue = cygrpc.CompletionQueue()
     server = cygrpc.Server()
