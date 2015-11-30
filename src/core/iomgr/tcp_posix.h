@@ -56,4 +56,9 @@ extern int grpc_tcp_trace;
 grpc_endpoint *grpc_tcp_create(grpc_fd *fd, size_t read_slice_size,
                                const char *peer_string);
 
+int grpc_tcp_get_fd(grpc_endpoint *ep);
+
+void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
+                                     grpc_closure *done);
+
 #endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_POSIX_H */
