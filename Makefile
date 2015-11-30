@@ -3077,7 +3077,7 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_ping_pong_streaming_nosec_test || ( echo test h2_full+poll_ping_pong_streaming_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_registered_call_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_registered_call_nosec_test || ( echo test h2_full+poll_registered_call_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_full+poll_request_with_flags_nosec_test"
+	$(E) "[RUN]     Testing h2_full+poll_riequest_with_flags_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_flags_nosec_test || ( echo test h2_full+poll_request_with_flags_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_full+poll_request_with_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_full+poll_request_with_payload_nosec_test || ( echo test h2_full+poll_request_with_payload_nosec_test failed ; exit 1 )
