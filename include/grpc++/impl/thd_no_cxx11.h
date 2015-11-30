@@ -46,9 +46,20 @@ class thread {
     joined_ = false;
     start();
   }
+  template <class T, class U>
+  thread(void (T::*fptr)(U arg), T *obj, U arg) {
+    func_ = new thread_function_arg<T, U>(fptr, obj, arg);
+    joined_ = false;
+    start();
+  }
   ~thread() {
     if (!joined_) std::terminate();
     delete func_;
+  }
+  thread(thread &&other)
+      : func_(other.func_), thd_(other.thd_), joined_(other.joined_) {
+    other.joined_ = true;
+    other.func_ = NULL;
   }
   void join() {
     gpr_thd_join(thd_);
@@ -79,6 +90,18 @@ class thread {
    private:
     void (T::*fptr_)();
     T *obj_;
+  };
+  template <class T, class U>
+  class thread_function_arg : public thread_function_base {
+   public:
+    thread_function_arg(void (T::*fptr)(U arg), T *obj, U arg)
+        : fptr_(fptr), obj_(obj), arg_(arg) {}
+    virtual void call() { (obj_->*fptr_)(arg_); }
+
+   private:
+    void (T::*fptr_)(U arg);
+    T *obj_;
+    U arg_;
   };
   thread_function_base *func_;
   gpr_thd_id thd_;

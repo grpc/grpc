@@ -137,8 +137,14 @@ static void QpsDriver() {
     // No further load parameters to set up for closed loop
   }
 
+  client_config.mutable_histogram_params()->set_resolution(
+      Histogram::default_resolution());
+  client_config.mutable_histogram_params()->set_max_possible(
+      Histogram::default_max_possible());
+
   ServerConfig server_config;
   server_config.set_server_type(server_type);
+  server_config.set_host("localhost");
   server_config.set_async_server_threads(FLAGS_async_server_threads);
 
   if (FLAGS_secure_test) {

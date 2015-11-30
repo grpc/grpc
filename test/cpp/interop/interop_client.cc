@@ -46,7 +46,7 @@
 #include <grpc++/client_context.h>
 #include <grpc++/security/credentials.h>
 
-#include "src/core/transport/stream_op.h"
+#include "src/core/transport/byte_stream.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/proto/test.grpc.pb.h"
 #include "test/proto/empty.grpc.pb.h"
@@ -244,7 +244,7 @@ void InteropClient::DoPerRpcCreds(const grpc::string& json_key) {
 
   ClientContext context;
   std::chrono::seconds token_lifetime = std::chrono::hours(1);
-  std::shared_ptr<Credentials> creds =
+  std::shared_ptr<CallCredentials> creds =
       ServiceAccountJWTAccessCredentials(json_key, token_lifetime.count());
 
   context.set_credentials(creds);

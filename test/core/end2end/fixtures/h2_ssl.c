@@ -76,14 +76,14 @@ static void process_auth_failure(void *state, grpc_auth_context *ctx,
   cb(user_data, NULL, 0, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, NULL);
 }
 
-static void chttp2_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
-                                                grpc_channel_args *client_args,
-                                                grpc_credentials *creds) {
+static void chttp2_init_client_secure_fullstack(
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args,
+    grpc_channel_credentials *creds) {
   fullstack_secure_fixture_data *ffd = f->fixture_data;
   f->client =
       grpc_secure_channel_create(creds, ffd->localaddr, client_args, NULL);
   GPR_ASSERT(f->client != NULL);
-  grpc_credentials_release(creds);
+  grpc_channel_credentials_release(creds);
 }
 
 static void chttp2_init_server_secure_fullstack(
@@ -109,7 +109,8 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 static void chttp2_init_client_simple_ssl_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  grpc_credentials *ssl_creds = grpc_ssl_credentials_create(NULL, NULL, NULL);
+  grpc_channel_credentials *ssl_creds =
+      grpc_ssl_credentials_create(NULL, NULL, NULL);
   grpc_arg ssl_name_override = {GRPC_ARG_STRING,
                                 GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                 {"foo.test.google.fr"}};

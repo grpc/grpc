@@ -177,7 +177,7 @@ NAN_METHOD(Channel::New) {
     grpc_channel *wrapped_channel;
     // Owned by the Channel object
     Utf8String host(info[0]);
-    grpc_credentials *creds;
+    grpc_channel_credentials *creds;
     if (!ChannelCredentials::HasInstance(info[1])) {
       return Nan::ThrowTypeError(
           "Channel's second argument must be a ChannelCredentials");
