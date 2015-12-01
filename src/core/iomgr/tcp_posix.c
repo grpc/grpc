@@ -74,7 +74,6 @@ typedef struct {
   grpc_fd *em_fd;
   int fd;
   int finished_edge;
-  int fd_released;
   msg_iovlen_type iov_size; /* Number of slices to allocate per read attempt */
   size_t slice_size;
   gpr_refcount refcount;
@@ -92,6 +91,7 @@ typedef struct {
   grpc_closure *read_cb;
   grpc_closure *write_cb;
   grpc_closure *release_fd_cb;
+  int *release_fd;
 
   grpc_closure read_closure;
   grpc_closure write_closure;
@@ -110,7 +110,7 @@ static void tcp_shutdown(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep) {
 }
 
 static void tcp_free(grpc_exec_ctx *exec_ctx, grpc_tcp *tcp) {
-  grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->fd_released,
+  grpc_fd_orphan(exec_ctx, tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   gpr_slice_buffer_destroy(&tcp->last_read_buffer);
   gpr_free(tcp->peer_string);
@@ -456,11 +456,11 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   tcp->read_cb = NULL;
   tcp->write_cb = NULL;
   tcp->release_fd_cb = NULL;
+  tcp->release_fd = NULL;
   tcp->incoming_buffer = NULL;
   tcp->slice_size = slice_size;
   tcp->iov_size = 1;
   tcp->finished_edge = 1;
-  tcp->fd_released = 0;
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);
   tcp->em_fd = em_fd;
@@ -473,15 +473,11 @@ grpc_endpoint *grpc_tcp_create(grpc_fd *em_fd, size_t slice_size,
   return &tcp->base;
 }
 
-int grpc_tcp_get_fd(grpc_endpoint *ep) {
-  grpc_tcp *tcp = (grpc_tcp *)ep;
-  return tcp->fd;
-}
-
 void grpc_tcp_destroy_and_release_fd(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
-                                     grpc_closure *done) {
+                                     int *fd, grpc_closure *done) {
   grpc_tcp *tcp = (grpc_tcp *)ep;
-  tcp->fd_released = 1;
+  GPR_ASSERT(ep->vtable == &vtable);
+  tcp->release_fd = fd;
   tcp->release_fd_cb = done;
   TCP_UNREF(exec_ctx, tcp, "destroy");
 }

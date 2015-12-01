@@ -207,11 +207,13 @@ static int has_watchers(grpc_fd *fd) {
 }
 
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
-                    int release_fd, const char *reason) {
+                    int *release_fd, const char *reason) {
   fd->on_done_closure = on_done;
-  fd->released = release_fd;
+  fd->released = release_fd != NULL;
   if (!fd->released) {
     shutdown(fd->fd, SHUT_RDWR);
+  } else {
+    *release_fd = fd->fd;
   }
   gpr_mu_lock(&fd->mu);
   REF_BY(fd, 1, reason); /* remove active status, but keep referenced */
