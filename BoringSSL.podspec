@@ -31,19 +31,26 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL'
-  s.version  = '0.0.1'
+  s.version  = '1.0'
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.'
-  # Copied from the homepage:
+  # Adapted from the homepage:
   s.description = <<-DESC
     BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.
 
     Although BoringSSL is an open source project, it is not intended for general use, as OpenSSL is.
     We don’t recommend that third parties depend upon it. Doing so is likely to be frustrating
-    because there are no guarantees of API or ABI stability.
+    because there are no guarantees of API stability. Only the latest version of this pod is
+    supported, and every new version is a new major version.
 
-    Programs ship their own copies of BoringSSL when they use it and we update everything as needed
-    when deciding to make API changes. This allows us to mostly avoid compromises in the name of
-    compatibility. It works for us, but it may not work for you.
+    We update Google libraries and programs that use BoringSSL as needed when deciding to make API
+    changes. This allows us to mostly avoid compromises in the name of compatibility. It works for
+    us, but it may not work for you.
+
+    As a Cocoapods pod, it has the advantage over OpenSSL's pods that the library doesn't need to
+    be precompiled. This eliminates the 10 - 20 minutes of wait the first time a user does "pod
+    install", lets it be used as a dynamic framework (pending solution of Cocoapods' issue #4605),
+    and works with bitcode automatically. It's also thought to be smaller than OpenSSL (which takes
+    1MB - 2MB per ARM architecture), but we don't have specific numbers yet.
 
     BoringSSL arose because Google used OpenSSL for many years in various ways and, over time, built
     up a large number of patches that were maintained while tracking upstream OpenSSL. As Google’s
@@ -60,7 +67,7 @@ Pod::Spec.new do |s|
   s.authors  = 'Adam Langley', 'David Benjamin', 'Matt Braithwaite'
 
   s.source = { :git => 'https://boringssl.googlesource.com/boringssl',
-               :commit => 'c5eb4676b69d6431cce4904ddc3703f3358a2fd9' }
+               :tag => 'version_for_cocoapods_1.0' }
 
   s.source_files = 'ssl/*.{h,c}',
                    'ssl/**/*.{h,c}',
@@ -86,7 +93,7 @@ Pod::Spec.new do |s|
     sed -E -i '.back' 's/\\*I,/*i,/g' include/openssl/rsa.h
 
     # This is a bit ridiculous, but requiring people to install Go in order to build is slightly
-    # more ridiculous IMO. This is the last part of the podspec.
+    # more ridiculous IMO. To save you from scrolling, this is the last part of the podspec.
     # TODO(jcanizales): Translate err_data_generate.go into a Bash or Ruby script.
     cat > err_data.c <<EOF
       /* Copyright (c) 2015, Google Inc.
