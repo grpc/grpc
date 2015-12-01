@@ -575,9 +575,7 @@ Pod::Spec.new do |s|
 
     ss.requires_arc = false
     ss.libraries = 'z'
-    ss.dependency 'BoringSSL'
-    # ss.dependency 'OpenSSL', '~> 1.0.200'
-    # ss.dependency 'OpenSSL-for-iOS', '~> 1.0.2.d.1'
+    ss.dependency 'BoringSSL', '~> 1.0'
 
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end
