@@ -205,12 +205,6 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
-void on_fd_released(grpc_exec_ctx *exec_ctx, void *arg, int success) {
-  int *done = arg;
-  *done = 1;
-  grpc_pollset_kick(&g_pollset, NULL);
-}
-
 /* Write to a socket until it fills up, then read from it using the grpc_tcp
    API. */
 static void large_read_test(size_t slice_size) {
@@ -389,6 +383,12 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+void on_fd_released(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+  int *done = arg;
+  *done = 1;
+  grpc_pollset_kick(&g_pollset, NULL);
+}
+
 /* Do a read_test, then release fd and try to read/write again. */
 static void release_fd_test(size_t num_bytes, size_t slice_size) {
   int sv[2];
@@ -408,8 +408,6 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   create_sockets(sv);
 
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), slice_size, "test");
-  fd = grpc_tcp_get_fd(ep);
-  GPR_ASSERT(fd == sv[1]);
   grpc_endpoint_add_to_pollset(&exec_ctx, ep, &g_pollset);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
@@ -436,7 +434,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 
   gpr_slice_buffer_destroy(&state.incoming);
-  grpc_tcp_destroy_and_release_fd(&exec_ctx, ep, &fd_released_cb);
+  grpc_tcp_destroy_and_release_fd(&exec_ctx, ep, &fd, &fd_released_cb);
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
   while (!fd_released_done) {
     grpc_pollset_worker worker;
@@ -445,6 +443,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   }
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
   GPR_ASSERT(fd_released_done == 1);
+  GPR_ASSERT(fd == sv[1]);
   grpc_exec_ctx_finish(&exec_ctx);
 
   written_bytes = fill_socket_partial(sv[0], num_bytes);
