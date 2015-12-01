@@ -322,7 +322,7 @@ class RubyLanguage(object):
     return [['tools/run_tests/build_ruby.sh']]
 
   def post_tests_steps(self):
-    return []
+    return [['tools/run_tests/post_tests_ruby.sh']]
 
   def makefile_name(self):
     return 'Makefile'
