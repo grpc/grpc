@@ -74,7 +74,7 @@ grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker);
 
 /** Return 1 if the channel should start connecting, 0 otherwise.
-    If current==NULL cancel notify if it is already queued (success==0 in that 
+    If current==NULL cancel notify if it is already queued (success==0 in that
     case) */
 int grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,

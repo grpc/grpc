@@ -54,10 +54,14 @@ void grpc_lb_policy_init(grpc_lb_policy *policy,
 #define REF_MUTATE_PASS_ARGS(x)
 #endif
 
-static gpr_atm ref_mutate(grpc_lb_policy *c, gpr_atm delta, int barrier REF_MUTATE_EXTRA_ARGS) {
-  gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta) : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
+static gpr_atm ref_mutate(grpc_lb_policy *c, gpr_atm delta,
+                          int barrier REF_MUTATE_EXTRA_ARGS) {
+  gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta)
+                            : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
-  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "LB_POLICY: %p % 12s 0x%08x -> 0x%08x [%s]", c, purpose, old_val, old_val + delta, reason);
+  gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+          "LB_POLICY: %p % 12s 0x%08x -> 0x%08x [%s]", c, purpose, old_val,
+          old_val + delta, reason);
 #endif
   return old_val;
 }
@@ -66,22 +70,28 @@ void grpc_lb_policy_ref(grpc_lb_policy *policy REF_FUNC_EXTRA_ARGS) {
   ref_mutate(policy, 1 << WEAK_REF_BITS, 0 REF_MUTATE_PASS_ARGS("STRONG_REF"));
 }
 
-void grpc_lb_policy_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy REF_FUNC_EXTRA_ARGS) {
-  gpr_atm old_val = ref_mutate(policy, (gpr_atm)1-(gpr_atm)(1 << WEAK_REF_BITS), 1 REF_MUTATE_PASS_ARGS("STRONG_UNREF"));
+void grpc_lb_policy_unref(grpc_exec_ctx *exec_ctx,
+                          grpc_lb_policy *policy REF_FUNC_EXTRA_ARGS) {
+  gpr_atm old_val =
+      ref_mutate(policy, (gpr_atm)1 - (gpr_atm)(1 << WEAK_REF_BITS),
+                 1 REF_MUTATE_PASS_ARGS("STRONG_UNREF"));
   gpr_atm mask = ~(gpr_atm)((1 << WEAK_REF_BITS) - 1);
   gpr_atm check = 1 << WEAK_REF_BITS;
   if ((old_val & mask) == check) {
     policy->vtable->shutdown(exec_ctx, policy);
   }
-  grpc_lb_policy_weak_unref(exec_ctx, policy REF_FUNC_PASS_ARGS("strong-unref"));
+  grpc_lb_policy_weak_unref(exec_ctx,
+                            policy REF_FUNC_PASS_ARGS("strong-unref"));
 }
 
 void grpc_lb_policy_weak_ref(grpc_lb_policy *policy REF_FUNC_EXTRA_ARGS) {
   ref_mutate(policy, 1, 0 REF_MUTATE_PASS_ARGS("WEAK_REF"));
 }
 
-void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy REF_FUNC_EXTRA_ARGS) {
-  gpr_atm old_val = ref_mutate(policy, -(gpr_atm)1, 1 REF_MUTATE_PASS_ARGS("WEAK_UNREF"));
+void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx,
+                               grpc_lb_policy *policy REF_FUNC_EXTRA_ARGS) {
+  gpr_atm old_val =
+      ref_mutate(policy, -(gpr_atm)1, 1 REF_MUTATE_PASS_ARGS("WEAK_UNREF"));
   if (old_val == 1) {
     grpc_pollset_set_destroy(&policy->interested_parties);
     policy->vtable->destroy(exec_ctx, policy);

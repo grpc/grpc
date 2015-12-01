@@ -99,11 +99,11 @@ int grpc_connectivity_state_notify_on_state_change(
     grpc_connectivity_state *current, grpc_closure *notify) {
   if (grpc_connectivity_state_trace) {
     if (current == NULL) {
-      gpr_log(GPR_DEBUG, "CONWATCH: %p %s: unsubscribe notify=%p",
-              tracker, tracker->name, notify);
+      gpr_log(GPR_DEBUG, "CONWATCH: %p %s: unsubscribe notify=%p", tracker,
+              tracker->name, notify);
     } else {
-      gpr_log(GPR_DEBUG, "CONWATCH: %p %s: from %s [cur=%s] notify=%p",
-              tracker, tracker->name, grpc_connectivity_state_name(*current),
+      gpr_log(GPR_DEBUG, "CONWATCH: %p %s: from %s [cur=%s] notify=%p", tracker,
+              tracker->name, grpc_connectivity_state_name(*current),
               grpc_connectivity_state_name(tracker->current_state), notify);
     }
   }

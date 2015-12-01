@@ -107,8 +107,9 @@ void grpc_pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
   gpr_mu_lock(&bag->mu);
   if (bag->pollset_set_count == bag->pollset_set_capacity) {
     bag->pollset_set_capacity = GPR_MAX(8, 2 * bag->pollset_set_capacity);
-    bag->pollset_sets = gpr_realloc(bag->pollset_sets, 
-        bag->pollset_set_capacity * sizeof(*bag->pollset_sets));
+    bag->pollset_sets =
+        gpr_realloc(bag->pollset_sets,
+                    bag->pollset_set_capacity * sizeof(*bag->pollset_sets));
   }
   bag->pollset_sets[bag->pollset_set_count++] = item;
   for (i = 0, j = 0; i < bag->fd_count; i++) {
@@ -131,9 +132,8 @@ void grpc_pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
   for (i = 0; i < bag->pollset_set_count; i++) {
     if (bag->pollset_sets[i] == item) {
       bag->pollset_set_count--;
-      GPR_SWAP(grpc_pollset_set *, 
-          bag->pollset_sets[i], 
-          bag->pollset_sets[bag->pollset_set_count]);
+      GPR_SWAP(grpc_pollset_set *, bag->pollset_sets[i],
+               bag->pollset_sets[bag->pollset_set_count]);
       break;
     }
   }

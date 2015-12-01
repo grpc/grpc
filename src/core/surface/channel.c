@@ -152,7 +152,8 @@ grpc_channel *grpc_channel_create_from_filters(
   }
 
   grpc_channel_stack_init(exec_ctx, 1, destroy_channel, channel, filters,
-                          num_filters, args, is_client ? "CLIENT_CHANNEL" : "SERVER_CHANNEL",
+                          num_filters, args,
+                          is_client ? "CLIENT_CHANNEL" : "SERVER_CHANNEL",
                           CHANNEL_STACK_FROM_CHANNEL(channel));
 
   return channel;

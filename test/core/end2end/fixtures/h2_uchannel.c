@@ -239,7 +239,8 @@ grpc_pollset_set g_interested_parties;
 static void state_changed(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   if (g_state != GRPC_CHANNEL_READY) {
     grpc_subchannel_notify_on_state_change(
-        exec_ctx, arg, &g_interested_parties, &g_state, grpc_closure_create(state_changed, arg));
+        exec_ctx, arg, &g_interested_parties, &g_state,
+        grpc_closure_create(state_changed, arg));
   }
 }
 
@@ -253,7 +254,8 @@ static grpc_connected_subchannel *connect_subchannel(grpc_subchannel *c) {
   grpc_pollset_init(&pollset);
   grpc_pollset_set_init(&g_interested_parties);
   grpc_pollset_set_add_pollset(&exec_ctx, &g_interested_parties, &pollset);
-  grpc_subchannel_notify_on_state_change(&exec_ctx, c, &g_interested_parties, &g_state,
+  grpc_subchannel_notify_on_state_change(&exec_ctx, c, &g_interested_parties,
+                                         &g_state,
                                          grpc_closure_create(state_changed, c));
   grpc_exec_ctx_flush(&exec_ctx);
   gpr_mu_lock(GRPC_POLLSET_MU(&pollset));
@@ -330,9 +332,9 @@ static void chttp2_tear_down_micro_fullstack(grpc_end2end_test_fixture *f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/micro_fullstack", 0,
-     chttp2_create_fixture_micro_fullstack, chttp2_init_client_micro_fullstack,
-     chttp2_init_server_micro_fullstack, chttp2_tear_down_micro_fullstack},
+    {"chttp2/micro_fullstack", 0, chttp2_create_fixture_micro_fullstack,
+     chttp2_init_client_micro_fullstack, chttp2_init_server_micro_fullstack,
+     chttp2_tear_down_micro_fullstack},
 };
 
 int main(int argc, char **argv) {
