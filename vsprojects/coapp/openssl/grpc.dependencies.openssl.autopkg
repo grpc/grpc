@@ -52,7 +52,6 @@ nuget {
           };
 		  #destination = "\build\portable-net45+netcore45+wpa81+wp8";
 		  "managed_targets\${package-id}.redist.targets";
-		  "managed_targets\${package-id}.redist.props";
 		};
 		
 		nestedInclude: {
