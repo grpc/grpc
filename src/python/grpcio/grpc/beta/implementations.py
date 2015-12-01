@@ -36,6 +36,7 @@ import threading  # pylint: disable=unused-import
 
 # cardinality and face are referenced from specification in this module.
 from grpc._adapter import _intermediary_low
+from grpc._adapter import _low
 from grpc._adapter import _types
 from grpc.beta import _connectivity_channel
 from grpc.beta import _server
@@ -56,9 +57,8 @@ class ClientCredentials(object):
   functions.
   """
 
-  def __init__(self, low_credentials, intermediary_low_credentials):
+  def __init__(self, low_credentials):
     self._low_credentials = low_credentials
-    self._intermediary_low_credentials = intermediary_low_credentials
 
 
 def ssl_client_credentials(root_certificates, private_key, certificate_chain):
@@ -75,10 +75,63 @@ def ssl_client_credentials(root_certificates, private_key, certificate_chain):
   Returns:
     A ClientCredentials for use with an SSL-enabled Channel.
   """
-  intermediary_low_credentials = _intermediary_low.ClientCredentials(
-      root_certificates, private_key, certificate_chain)
+  return ClientCredentials(_low.channel_credentials_ssl(
+      root_certificates, private_key, certificate_chain))
+
+
+class CallCredentials(object):
+  """A value encapsulating data asserting an identity over an *established*
+  channel. May be composed with ClientCredentials to always assert identity for
+  every call over that channel.
+
+  This class and its instances have no supported interface - it exists to define
+  the type of its instances and its instances exist to be passed to other
+  functions.
+  """
+
+  def __init__(self, low_credentials):
+    self._low_credentials = low_credentials
+
+
+def metadata_call_credentials(metadata_callback):
+  """
+  Args:
+    metadata_callback (callable): Callback accepting a service URL and another
+      callback (itself accepting a list of 2-tuples of metadata key/value pairs
+      and an Exception; the Exception may be None).
+  """
+  return CallCredentials(
+      _low.call_credentials_metadata_plugin(metadata_callback))
+
+def composite_call_credentials(call_credentials, additional_call_credentials):
+  """
+  Args:
+    call_credentials: A CallCredentials object.
+    additional_call_credentials: Another CallCredentials object to compose on
+      top of call_credentials.
+
+  Returns:
+    A CallCredentials object for use in a GRPCCallOptions object.
+  """
+  return CallCredentials(
+      _low.call_credentials_composite(
+          call_credentials._low_credentials,
+          additional_call_credentials._low_credentials))
+
+def composite_client_credentials(client_credentials, additional_call_credentials):
+  """
+  Args:
+    client_credentials: A ClientCredentials object.
+    additional_call_credentials: A CallCredentials object to compose on
+      top of client_credentials.
+
+  Returns:
+    A ClientCredentials object for use in a GRPCCallOptions object.
+  """
   return ClientCredentials(
-      intermediary_low_credentials._internal, intermediary_low_credentials)  # pylint: disable=protected-access
+      _low.call_credentials_composite(
+          channel_credentials._low_credentials,
+          additional_call_credentials._low_credentials))
 
 
 class Channel(object):
@@ -147,7 +200,7 @@ def secure_channel(host, port, client_credentials):
     A secure Channel to the remote host through which RPCs may be conducted.
   """
   intermediary_low_channel = _intermediary_low.Channel(
-      '%s:%d' % (host, port), client_credentials._intermediary_low_credentials)
+      '%s:%d' % (host, port), client_credentials._low_credentials)
   return Channel(intermediary_low_channel._internal, intermediary_low_channel)  # pylint: disable=protected-access
 
 
@@ -251,9 +304,8 @@ class ServerCredentials(object):
   functions.
   """
 
-  def __init__(self, low_credentials, intermediary_low_credentials):
+  def __init__(self, low_credentials):
     self._low_credentials = low_credentials
-    self._intermediary_low_credentials = intermediary_low_credentials
 
 
 def ssl_server_credentials(
@@ -282,11 +334,9 @@ def ssl_server_credentials(
     raise ValueError(
         'Illegal to require client auth without providing root certificates!')
   else:
-    intermediary_low_credentials = _intermediary_low.ServerCredentials(
+    return ServerCredentials(_low.server_credentials_ssl(
         root_certificates, private_key_certificate_chain_pairs,
-        require_client_auth)
-    return ServerCredentials(
-        intermediary_low_credentials._internal, intermediary_low_credentials)  # pylint: disable=protected-access
+        require_client_auth))
 
 
 class ServerOptions(object):

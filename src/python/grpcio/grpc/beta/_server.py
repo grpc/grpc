@@ -84,7 +84,7 @@ class Server(interfaces.Server):
 
   def add_secure_port(self, address, server_credentials):
     return self._grpc_link.add_port(
-        address, server_credentials._intermediary_low_credentials)  # pylint: disable=protected-access
+        address, server_credentials._low_credentials)  # pylint: disable=protected-access
 
   def _start(self):
     self._grpc_link.join_link(self._end_link)

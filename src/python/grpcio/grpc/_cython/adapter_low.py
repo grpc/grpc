@@ -33,7 +33,7 @@
 #
 # TODO(atash): Once this is plugged into grpc._adapter._intermediary_low, remove
 # both grpc._adapter._intermediary_low and this file. The fore and rear links in
-# grpc._adapter should be able to use grpc._cython.types directly.
+# grpc._adapter should be able to use grpc._cython.cygrpc directly.
 
 from grpc._adapter import _types as type_interfaces
 from grpc._cython import cygrpc
