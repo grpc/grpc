@@ -348,8 +348,6 @@ void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
   int do_connect = 0;
   external_state_watcher *w;
 
-  gpr_log(GPR_DEBUG, "sc.nosc: c=%p s=%p n=%p", c, state, notify);
-
   if (state == NULL) {
     gpr_mu_lock(&c->mu);
     for (w = c->root_external_state_watcher.next; 

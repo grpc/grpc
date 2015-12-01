@@ -231,8 +231,6 @@ void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   pending_pick *pp;
   size_t i;
 
-gpr_log(GPR_DEBUG, "LB_POLICY: rr_shutdown: p=%p num_subchannels=%d", p, p->num_subchannels);
-
   gpr_mu_lock(&p->mu);
 
   p->shutdown = 1;
