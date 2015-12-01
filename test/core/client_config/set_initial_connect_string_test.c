@@ -66,15 +66,15 @@ static grpc_closure on_read;
 
 static void handle_read(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   GPR_ASSERT(success);
-  gpr_slice_buffer_move_into(
-    &state.temp_incoming_buffer, &state.incoming_buffer);
+  gpr_slice_buffer_move_into(&state.temp_incoming_buffer,
+                             &state.incoming_buffer);
   if (state.incoming_buffer.length > strlen(magic_connect_string)) {
     state.done = 1;
     grpc_endpoint_shutdown(exec_ctx, state.tcp);
     grpc_endpoint_destroy(exec_ctx, state.tcp);
   } else {
-    grpc_endpoint_read(
-      exec_ctx, state.tcp, &state.temp_incoming_buffer, &on_read);
+    grpc_endpoint_read(exec_ctx, state.tcp, &state.temp_incoming_buffer,
+                       &on_read);
   }
 }
 

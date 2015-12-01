@@ -244,9 +244,7 @@ void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
                               GRPC_CHANNEL_FATAL_FAILURE, "shutdown");
   for (i = 0; i < p->num_subchannels; i++) {
     subchannel_data *sd = p->subchannels[i];
-    grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel,
-                                           NULL,
-                                           NULL,
+    grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel, NULL, NULL,
                                            &sd->connectivity_changed_closure);
   }
   gpr_mu_unlock(&p->mu);
@@ -262,7 +260,8 @@ static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   while (pp != NULL) {
     pending_pick *next = pp->next;
     if (pp->target == target) {
-      grpc_pollset_set_del_pollset(exec_ctx, &p->base.interested_parties, pp->pollset);
+      grpc_pollset_set_del_pollset(exec_ctx, &p->base.interested_parties,
+                                   pp->pollset);
       *target = NULL;
       grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, 0);
       gpr_free(pp);
@@ -279,15 +278,15 @@ static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
   size_t i;
   p->started_picking = 1;
 
-  gpr_log(GPR_DEBUG, "LB_POLICY: p=%p num_subchannels=%d", p, p->num_subchannels);
+  gpr_log(GPR_DEBUG, "LB_POLICY: p=%p num_subchannels=%d", p,
+          p->num_subchannels);
 
   for (i = 0; i < p->num_subchannels; i++) {
     subchannel_data *sd = p->subchannels[i];
     sd->connectivity_state = GRPC_CHANNEL_IDLE;
-    grpc_subchannel_notify_on_state_change(exec_ctx, sd->subchannel,
-      &p->base.interested_parties,
-                                           &sd->connectivity_state,
-                                           &sd->connectivity_changed_closure);
+    grpc_subchannel_notify_on_state_change(
+        exec_ctx, sd->subchannel, &p->base.interested_parties,
+        &sd->connectivity_state, &sd->connectivity_changed_closure);
     GRPC_LB_POLICY_WEAK_REF(&p->base, "round_robin_connectivity");
   }
 }
@@ -323,7 +322,8 @@ int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
     }
-    grpc_pollset_set_add_pollset(exec_ctx, &p->base.interested_parties, pollset);
+    grpc_pollset_set_add_pollset(exec_ctx, &p->base.interested_parties,
+                                 pollset);
     pp = gpr_malloc(sizeof(*pp));
     pp->next = p->pending_picks;
     pp->pollset = pollset;
@@ -355,8 +355,7 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                                     GRPC_CHANNEL_READY, "connecting_ready");
         /* add the newly connected subchannel to the list of connected ones.
          * Note that it goes to the "end of the line". */
-        sd->ready_list_node =
-            add_connected_sc_locked(p, sd->subchannel);
+        sd->ready_list_node = add_connected_sc_locked(p, sd->subchannel);
         /* at this point we know there's at least one suitable subchannel. Go
          * ahead and pick one and notify the pending suitors in
          * p->pending_picks. This preemtively replicates rr_pick()'s actions. */
@@ -375,34 +374,29 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                     "[RR CONN CHANGED] TARGET <-- SUBCHANNEL %p (NODE %p)",
                     selected->subchannel, selected);
           }
-          grpc_pollset_set_del_pollset(exec_ctx, &p->base.interested_parties, pp->pollset);
+          grpc_pollset_set_del_pollset(exec_ctx, &p->base.interested_parties,
+                                       pp->pollset);
           grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, 1);
           gpr_free(pp);
         }
         grpc_subchannel_notify_on_state_change(
-            exec_ctx, 
-            sd->subchannel, 
-            &p->base.interested_parties,
-            &sd->connectivity_state,
-            &sd->connectivity_changed_closure);
+            exec_ctx, sd->subchannel, &p->base.interested_parties,
+            &sd->connectivity_state, &sd->connectivity_changed_closure);
         break;
       case GRPC_CHANNEL_CONNECTING:
       case GRPC_CHANNEL_IDLE:
         grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
-                                    sd->connectivity_state, "connecting_changed");
+                                    sd->connectivity_state,
+                                    "connecting_changed");
         grpc_subchannel_notify_on_state_change(
-            exec_ctx, sd->subchannel, 
-            &p->base.interested_parties,
-            &sd->connectivity_state,
-            &sd->connectivity_changed_closure);
+            exec_ctx, sd->subchannel, &p->base.interested_parties,
+            &sd->connectivity_state, &sd->connectivity_changed_closure);
         break;
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
         /* renew state notification */
         grpc_subchannel_notify_on_state_change(
-            exec_ctx, sd->subchannel, 
-                        &p->base.interested_parties,
-            &sd->connectivity_state,
-            &sd->connectivity_changed_closure);
+            exec_ctx, sd->subchannel, &p->base.interested_parties,
+            &sd->connectivity_state, &sd->connectivity_changed_closure);
 
         /* remove from ready list if still present */
         if (sd->ready_list_node != NULL) {
@@ -415,16 +409,14 @@ static void rr_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
         break;
       case GRPC_CHANNEL_FATAL_FAILURE:
         if (sd->ready_list_node != NULL) {
-          remove_disconnected_sc_locked(
-              p, sd->ready_list_node);
+          remove_disconnected_sc_locked(p, sd->ready_list_node);
           sd->ready_list_node = NULL;
         }
 
         p->num_subchannels--;
         GPR_SWAP(subchannel_data *, p->subchannels[sd->index],
                  p->subchannels[p->num_subchannels]);
-        GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel,
-                              "round_robin");
+        GRPC_SUBCHANNEL_UNREF(exec_ctx, sd->subchannel, "round_robin");
         p->subchannels[sd->index]->index = sd->index;
         gpr_free(sd);
 
@@ -491,8 +483,7 @@ static grpc_lb_policy *create_round_robin(grpc_lb_policy_factory *factory,
   memset(p, 0, sizeof(*p));
   grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable);
   p->num_subchannels = args->num_subchannels;
-  p->subchannels =
-      gpr_malloc(sizeof(*p->subchannels) * p->num_subchannels);
+  p->subchannels = gpr_malloc(sizeof(*p->subchannels) * p->num_subchannels);
   memset(p->subchannels, 0, sizeof(*p->subchannels) * p->num_subchannels);
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,
                                "round_robin");
@@ -505,8 +496,8 @@ static grpc_lb_policy *create_round_robin(grpc_lb_policy_factory *factory,
     sd->policy = p;
     sd->index = i;
     sd->subchannel = args->subchannels[i];
-    grpc_closure_init(&sd->connectivity_changed_closure, rr_connectivity_changed,
-                      sd);
+    grpc_closure_init(&sd->connectivity_changed_closure,
+                      rr_connectivity_changed, sd);
   }
 
   /* The (dummy node) root of the ready list */

@@ -58,10 +58,10 @@ void grpc_pollset_set_del_pollset(grpc_exec_ctx *exec_ctx,
                                   grpc_pollset_set *pollset_set,
                                   grpc_pollset *pollset);
 void grpc_pollset_set_add_pollset_set(grpc_exec_ctx *exec_ctx,
-	                                    grpc_pollset_set *bag,
-	                                    grpc_pollset_set *item);
+                                      grpc_pollset_set *bag,
+                                      grpc_pollset_set *item);
 void grpc_pollset_set_del_pollset_set(grpc_exec_ctx *exec_ctx,
-	                                    grpc_pollset_set *bag,
-	                                    grpc_pollset_set *item);
+                                      grpc_pollset_set *bag,
+                                      grpc_pollset_set *item);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_POLLSET_H */

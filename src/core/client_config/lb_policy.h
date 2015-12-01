@@ -93,9 +93,9 @@ void grpc_lb_policy_ref(grpc_lb_policy *policy, const char *file, int line,
 void grpc_lb_policy_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                           const char *file, int line, const char *reason);
 void grpc_lb_policy_weak_ref(grpc_lb_policy *policy, const char *file, int line,
-                        const char *reason);
+                             const char *reason);
 void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                          const char *file, int line, const char *reason);
+                               const char *file, int line, const char *reason);
 #else
 #define GRPC_LB_POLICY_REF(p, r) grpc_lb_policy_ref((p))
 #define GRPC_LB_POLICY_UNREF(cl, p, r) grpc_lb_policy_unref((cl), (p))

@@ -68,7 +68,8 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 #define GRPC_SUBCHANNEL_REF(p, r) grpc_subchannel_ref((p))
 #define GRPC_SUBCHANNEL_UNREF(cl, p, r) grpc_subchannel_unref((cl), (p))
 #define GRPC_SUBCHANNEL_WEAK_REF(p, r) grpc_subchannel_weak_ref((p))
-#define GRPC_SUBCHANNEL_WEAK_UNREF(cl, p, r) grpc_subchannel_weak_unref((cl), (p))
+#define GRPC_SUBCHANNEL_WEAK_UNREF(cl, p, r) \
+  grpc_subchannel_weak_unref((cl), (p))
 #define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) grpc_connected_subchannel_ref((p))
 #define GRPC_CONNECTED_SUBCHANNEL_UNREF(cl, p, r) \
   grpc_connected_subchannel_unref((cl), (p))
@@ -84,10 +85,10 @@ void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *channel
                                GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_weak_ref(grpc_subchannel *channel
-                             GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+                                  GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
-                           grpc_subchannel *channel
-                               GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+                                grpc_subchannel *channel
+                                    GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_connected_subchannel_ref(grpc_connected_subchannel *channel
                                        GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
@@ -115,11 +116,10 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(
 
 /** call notify when the connectivity state of a channel changes from *state.
     Updates *state with the new state of the channel */
-void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
-                                            grpc_subchannel *channel,
-                                            grpc_pollset_set *interested_parties,
-                                            grpc_connectivity_state *state,
-                                            grpc_closure *notify);
+void grpc_subchannel_notify_on_state_change(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel *channel,
+    grpc_pollset_set *interested_parties, grpc_connectivity_state *state,
+    grpc_closure *notify);
 void grpc_connected_subchannel_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *channel,
     grpc_connectivity_state *state, grpc_closure *notify);
