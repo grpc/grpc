@@ -116,7 +116,6 @@ void grpc_iomgr_shutdown(void) {
                     "memory leaks are likely",
                     count_objects());
             dump_objects("LEAKED");
-            abort();
           }
           break;
         }
