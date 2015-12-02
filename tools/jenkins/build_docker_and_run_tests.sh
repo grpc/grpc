@@ -48,7 +48,9 @@ mkdir -p /tmp/xdg-cache-home
 git branch -f jenkins-docker
 
 # Use image name based on Dockerfile checksum
-DOCKER_IMAGE_NAME=grpc_jenkins_slave${docker_suffix}_`sha1sum tools/jenkins/grpc_jenkins_slave/Dockerfile | cut -f1 -d\ `
+docker_image_files=`find tools/jenkins -type f | sort`
+docker_image_suffix=`cat $docker_image_files | sha1sum | cut -f1 -d\ `
+DOCKER_IMAGE_NAME=grpc_jenkins_slave${docker_suffix}_${docker_image_suffix}
 
 # Make sure docker image has been built. Should be instantaneous if so.
 docker build -t $DOCKER_IMAGE_NAME tools/jenkins/grpc_jenkins_slave$docker_suffix
