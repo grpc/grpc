@@ -93,12 +93,9 @@ static void test_create_channel_stack(void) {
   grpc_call_element *call_elem;
   grpc_arg arg;
   grpc_channel_args chan_args;
-  grpc_mdctx *metadata_context;
   int *channel_data;
   int *call_data;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-
-  metadata_context = grpc_mdctx_create();
 
   arg.type = GRPC_ARG_INTEGER;
   arg.key = "test_key";
@@ -109,7 +106,7 @@ static void test_create_channel_stack(void) {
 
   channel_stack = gpr_malloc(grpc_channel_stack_size(&filters, 1));
   grpc_channel_stack_init(&exec_ctx, &filters, 1, NULL, &chan_args,
-                          metadata_context, channel_stack);
+                          channel_stack);
   GPR_ASSERT(channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = (int *)channel_elem->channel_data;
@@ -133,13 +130,13 @@ static void test_create_channel_stack(void) {
   grpc_channel_stack_destroy(&exec_ctx, channel_stack);
   gpr_free(channel_stack);
 
-  grpc_mdctx_unref(metadata_context);
-
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_create_channel_stack();
+  grpc_shutdown();
   return 0;
 }

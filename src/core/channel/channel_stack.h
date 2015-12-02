@@ -54,7 +54,6 @@ typedef struct grpc_call_element grpc_call_element;
 typedef struct {
   grpc_channel *master;
   const grpc_channel_args *channel_args;
-  grpc_mdctx *metadata_context;
   int is_first;
   int is_last;
 } grpc_channel_element_args;
@@ -180,7 +179,6 @@ void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx,
                              const grpc_channel_filter **filters,
                              size_t filter_count, grpc_channel *master,
                              const grpc_channel_args *args,
-                             grpc_mdctx *metadata_context,
                              grpc_channel_stack *stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,

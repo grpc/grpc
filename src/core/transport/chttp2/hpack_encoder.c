@@ -44,6 +44,7 @@
 #include "src/core/transport/chttp2/hpack_table.h"
 #include "src/core/transport/chttp2/timeout_encoding.h"
 #include "src/core/transport/chttp2/varint.h"
+#include "src/core/transport/static_metadata.h"
 
 #define HASH_FRAGMENT_1(x) ((x)&255)
 #define HASH_FRAGMENT_2(x) ((x >> 8) & 255)
@@ -452,8 +453,7 @@ static void deadline_enc(grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
   grpc_chttp2_encode_timeout(
       gpr_time_sub(deadline, gpr_now(deadline.clock_type)), timeout_str);
   mdelem = grpc_mdelem_from_metadata_strings(
-      c->mdctx, GRPC_MDSTR_REF(c->timeout_key_str),
-      grpc_mdstr_from_string(c->mdctx, timeout_str));
+      GRPC_MDSTR_GRPC_TIMEOUT, grpc_mdstr_from_string(timeout_str));
   hpack_enc(c, mdelem, st);
   GRPC_MDELEM_UNREF(mdelem);
 }
@@ -468,11 +468,8 @@ static gpr_uint32 elems_for_bytes(gpr_uint32 bytes) {
   return (bytes + 31) / 32;
 }
 
-void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c,
-                                       grpc_mdctx *ctx) {
+void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor *c) {
   memset(c, 0, sizeof(*c));
-  c->mdctx = ctx;
-  c->timeout_key_str = grpc_mdstr_from_string(ctx, "grpc-timeout");
   c->max_table_size = GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE;
   c->cap_table_elems = elems_for_bytes(c->max_table_size);
   c->max_table_elems = c->cap_table_elems;
@@ -489,7 +486,6 @@ void grpc_chttp2_hpack_compressor_destroy(grpc_chttp2_hpack_compressor *c) {
     if (c->entries_keys[i]) GRPC_MDSTR_UNREF(c->entries_keys[i]);
     if (c->entries_elems[i]) GRPC_MDELEM_UNREF(c->entries_elems[i]);
   }
-  GRPC_MDSTR_UNREF(c->timeout_key_str);
   gpr_free(c->table_elem_size);
 }
 
