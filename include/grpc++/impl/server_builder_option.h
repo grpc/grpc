@@ -38,9 +38,11 @@
 
 namespace grpc {
 
+/// Interface to pass an option to a \a ServerBuilder.
 class ServerBuilderOption {
  public:
   virtual ~ServerBuilderOption() {}
+  /// Alter the \a ChannelArguments used to create the gRPC server.
   virtual void UpdateArguments(ChannelArguments* args) = 0;
 };
 
