@@ -40,6 +40,8 @@
 
 var fs = require('fs');
 var path = require('path');
+var util = require('util');
+var EventEmitter = require('events');
 var _ = require('lodash');
 var PoissonProcess = require('poisson-process');
 var Histogram = require('./histogram');
@@ -101,7 +103,11 @@ function BenchmarkClient(server_targets, channels, histogram_params,
                                  histogram_params.max_possible);
 
   this.running = false;
+
+  this.pending_calls = 0;
 };
+
+util.inherits(BenchmarkClient, EventEmitter);
 
 /**
  * Start a closed-loop test. For each channel, start
@@ -134,28 +140,37 @@ BenchmarkClient.prototype.startClosedLoop = function(
   if (rpc_type == 'UNARY') {
     makeCall = function(client) {
       if (self.running) {
+        self.pending_calls++;
         var start_time = process.hrtime();
         client.unaryCall(argument, function(error, response) {
           // Ignoring error for now
           var time_diff = process.hrtime(start_time);
           self.histogram.add(time_diff);
           makeCall(client);
+          self.pending_calls--;
+          if ((!self.running) && self.pending_calls == 0) {
+            self.emit('finished');
+          }
         });
       }
     };
   } else {
     makeCall = function(client) {
       if (self.running) {
+        self.pending_calls++;
         var start_time = process.hrtime();
         var call = client.streamingCall();
         call.write(argument);
         call.on('data', function() {
         });
         call.on('end', function() {
-          // Ignoring error for now
           var time_diff = process.hrtime(start_time);
           self.histogram.add(time_diff);
           makeCall(client);
+          self.pending_calls--;
+          if ((!self.running) && self.pending_calls == 0) {
+            self.emit('finished');
+          }
         });
       }
     };
@@ -200,11 +215,16 @@ BenchmarkClient.prototype.startPoisson = function(
   if (rpc_type == 'UNARY') {
     makeCall = function(client, poisson) {
       if (self.running) {
+        self.pending_calls++;
         var start_time = process.hrtime();
         client.unaryCall(argument, function(error, response) {
           // Ignoring error for now
           var time_diff = process.hrtime(start_time);
           self.histogram.add(time_diff);
+          self.pending_calls--;
+          if ((!self.running) && self.pending_calls == 0) {
+            self.emit('finished');
+          }
         });
       } else {
         poisson.stop();
@@ -213,15 +233,19 @@ BenchmarkClient.prototype.startPoisson = function(
   } else {
     makeCall = function(client, poisson) {
       if (self.running) {
+        self.pending_calls++;
         var start_time = process.hrtime();
         var call = client.streamingCall();
         call.write(argument);
         call.on('data', function() {
         });
         call.on('end', function() {
-          // Ignoring error for now
           var time_diff = process.hrtime(start_time);
           self.histogram.add(time_diff);
+          self.pending_calls--;
+          if ((!self.running) && self.pending_calls == 0) {
+            self.emit('finished');
+          }
         });
       } else {
         poisson.stop();
@@ -279,9 +303,7 @@ BenchmarkClient.prototype.mark = function(reset) {
  */
 BenchmarkClient.prototype.stop = function(callback) {
   this.running = false;
-  /* TODO(murgatroid99): Figure out how to check that the clients have finished
-   * before calling this */
-  callback();
+  self.on('finished', callback);
 };
 
 module.exports = BenchmarkClient;

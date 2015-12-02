@@ -107,7 +107,7 @@ function BenchmarkServer(host, port, tls) {
     server_creds = grpc.ServerCredentials.createInsecure();
   }
 
-  var server = new Server();
+  var server = new grpc.Server();
   this.port = server.bind(host + ':' + port, server_creds);
   server.addProtoService(serviceProto.BenchmarkService.service, {
     unaryCall: unaryCall,

@@ -39,18 +39,20 @@ var BenchmarkServer = require('./benchmark_server');
 exports.runClient = function runClient(call) {
   var client;
   call.on('data', function(request) {
+    var stats;
     switch (request.argtype) {
       case 'setup':
       var setup = request.setup;
       client = new BenchmarkClient(setup.server_targets,
                                    setup.client_channels,
-                                   setup.security_params,
-                                   setup.histogram_params);
+                                   setup.histogram_params,
+                                   setup.security_params);
       switch (setup.load_params.load) {
         case 'closed_loop':
         client.startClosedLoop(setup.outstanding_rpcs_per_channel,
-                               setup.rpc_type, setup.payload_config.req_size,
-                               setup.payload_config.resp_size);
+                               setup.rpc_type,
+                               setup.payload_config.simple_params.req_size,
+                               setup.payload_config.simple_params.resp_size);
         break;
         case 'poisson':
         client.startPoisson(setup.outstanding_rpcs_per_channel,
@@ -62,9 +64,15 @@ exports.runClient = function runClient(call) {
         call.emit('error', new Error('Unsupported LoadParams type' +
             setup.load_params.load));
       }
+      stats = client.mark();
+      console.log(stats);
+      call.write({
+        stats: stats
+      });
+      break;
       case 'mark':
       if (client) {
-        var stats = client.mark(request.mark.reset);
+        stats = client.mark(request.mark.reset);
         call.write({
           stats: stats
         });
@@ -76,24 +84,30 @@ exports.runClient = function runClient(call) {
     }
   });
   call.on('end', function() {
-    // TODO(murgatroid99): Ensure client is shutdown before calling call.end
-    client.stop();
-    call.end();
+    client.stop(function() {
+      call.end();
+    });
   });
 };
 
 exports.runServer = function runServer(call) {
   var server;
   call.on('data', function(request) {
+    var stats;
     switch (request.argtype) {
       case 'setup':
       server = new BenchmarkServer(request.setup.host, request.setup.port,
                                    request.setup.security_params);
       server.start();
+      stats = server.mark();
+      call.write({
+        stats: stats,
+        port: server.getPort()
+      });
       break;
       case 'mark':
       if (server) {
-        var stats = server.mark(request.mark.reset);
+        stats = server.mark(request.mark.reset);
         call.write({
           stats: stats,
           port: server.getPort()
