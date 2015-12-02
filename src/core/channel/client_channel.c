@@ -244,7 +244,6 @@ static void cc_on_config_changed(grpc_exec_ctx *exec_ctx, void *arg,
 static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
                                   grpc_channel_element *elem,
                                   grpc_transport_op *op) {
-  grpc_lb_policy *lb_policy = NULL;
   channel_data *chand = elem->channel_data;
   grpc_resolver *destroy_resolver = NULL;
 
@@ -262,7 +261,6 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
     op->connectivity_state = NULL;
   }
 
-  lb_policy = chand->lb_policy;
   if (op->disconnect && chand->resolver != NULL) {
     grpc_connectivity_state_set(exec_ctx, &chand->state_tracker,
                                 GRPC_CHANNEL_FATAL_FAILURE, "disconnect");

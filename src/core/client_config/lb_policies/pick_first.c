@@ -101,9 +101,10 @@ void pf_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   p->pending_picks = NULL;
   grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
                               GRPC_CHANNEL_FATAL_FAILURE, "shutdown");
+  /* cancel subscription */
   if (p->selected != NULL) {
     grpc_connected_subchannel_notify_on_state_change(
-        exec_ctx, p->selected, NULL, &p->connectivity_changed);
+        exec_ctx, p->selected, NULL, NULL, &p->connectivity_changed);
   } else {
     grpc_subchannel_notify_on_state_change(
         exec_ctx, p->subchannels[p->checking_subchannel], NULL, NULL,
@@ -198,13 +199,11 @@ static void destroy_subchannels(grpc_exec_ctx *exec_ctx, void *arg,
   size_t i;
   size_t num_subchannels = p->num_subchannels;
   grpc_subchannel **subchannels;
-  grpc_connected_subchannel *exclude_subchannel;
 
   gpr_mu_lock(&p->mu);
   subchannels = p->subchannels;
   p->num_subchannels = 0;
   p->subchannels = NULL;
-  exclude_subchannel = p->selected;
   gpr_mu_unlock(&p->mu);
   GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "destroy_subchannels");
 
@@ -236,7 +235,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                                 p->checking_connectivity, "selected_changed");
     if (p->checking_connectivity != GRPC_CHANNEL_FATAL_FAILURE) {
       grpc_connected_subchannel_notify_on_state_change(
-          exec_ctx, p->selected, &p->checking_connectivity,
+          exec_ctx, p->selected, &p->base.interested_parties, &p->checking_connectivity,
           &p->connectivity_changed);
     } else {
       GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "pick_first_connectivity");
@@ -266,7 +265,7 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
           gpr_free(pp);
         }
         grpc_connected_subchannel_notify_on_state_change(
-            exec_ctx, p->selected, &p->checking_connectivity,
+            exec_ctx, p->selected, &p->base.interested_parties, &p->checking_connectivity,
             &p->connectivity_changed);
         break;
       case GRPC_CHANNEL_TRANSIENT_FAILURE:

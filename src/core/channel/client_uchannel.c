@@ -85,7 +85,7 @@ static void monitor_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
                               chand->subchannel_connectivity,
                               "uchannel_monitor_subchannel");
   grpc_connected_subchannel_notify_on_state_change(
-      exec_ctx, chand->connected_subchannel, &chand->subchannel_connectivity,
+      exec_ctx, chand->connected_subchannel, NULL, &chand->subchannel_connectivity,
       &chand->connectivity_cb);
 }
 
@@ -168,9 +168,10 @@ static void cuc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
   channel_data *chand = elem->channel_data;
   /* cancel subscription */
   grpc_connected_subchannel_notify_on_state_change(
-      exec_ctx, chand->connected_subchannel, NULL, &chand->connectivity_cb);
+      exec_ctx, chand->connected_subchannel, NULL, NULL, &chand->connectivity_cb);
   grpc_connectivity_state_destroy(exec_ctx, &chand->state_tracker);
   gpr_mu_destroy(&chand->mu_state);
+  GRPC_CONNECTED_SUBCHANNEL_UNREF(exec_ctx, chand->connected_subchannel, "uchannel");
 }
 
 static void cuc_set_pollset(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
@@ -190,17 +191,8 @@ grpc_connectivity_state grpc_client_uchannel_check_connectivity_state(
     grpc_exec_ctx *exec_ctx, grpc_channel_element *elem, int try_to_connect) {
   channel_data *chand = elem->channel_data;
   grpc_connectivity_state out;
-  out = grpc_connectivity_state_check(&chand->state_tracker);
   gpr_mu_lock(&chand->mu_state);
-  if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
-    grpc_connectivity_state_set(exec_ctx, &chand->state_tracker,
-                                GRPC_CHANNEL_CONNECTING,
-                                "uchannel_connecting_changed");
-    chand->subchannel_connectivity = out;
-    grpc_connected_subchannel_notify_on_state_change(
-        exec_ctx, chand->connected_subchannel, &chand->subchannel_connectivity,
-        &chand->connectivity_cb);
-  }
+  out = grpc_connectivity_state_check(&chand->state_tracker);
   gpr_mu_unlock(&chand->mu_state);
   return out;
 }
@@ -244,5 +236,6 @@ void grpc_client_uchannel_set_connected_subchannel(
   GPR_ASSERT(elem->filter == &grpc_client_uchannel_filter);
   gpr_mu_lock(&chand->mu_state);
   chand->connected_subchannel = connected_subchannel;
+  GRPC_CONNECTED_SUBCHANNEL_REF(connected_subchannel, "uchannel");
   gpr_mu_unlock(&chand->mu_state);
 }
