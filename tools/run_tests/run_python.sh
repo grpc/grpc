@@ -40,4 +40,6 @@ export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
 export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
 source "python"$PYVER"_virtual_environment"/bin/activate
 
-"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --junitxml=./report.xml --timeout=300 -v --boxed --timeout_method=thread"
+mkdir -p reports
+
+"python"$PYVER $GRPCIO_TEST/setup.py test -a "-n8 --cov=grpc --html=$ROOT/reports/report.html --junitxml=$ROOT/report.xml --timeout=300 -v --boxed --timeout_method=thread"
