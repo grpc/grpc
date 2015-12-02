@@ -220,8 +220,7 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
         initial_op->context[GRPC_CONTEXT_SECURITY].value);
   }
   server_ctx = grpc_server_security_context_create();
-  server_ctx->auth_context =
-      grpc_auth_context_create(chand->auth_context);
+  server_ctx->auth_context = grpc_auth_context_create(chand->auth_context);
   server_ctx->auth_context->pollset = initial_op->bind_pollset;
   initial_op->context[GRPC_CONTEXT_SECURITY].value = server_ctx;
   initial_op->context[GRPC_CONTEXT_SECURITY].destroy =

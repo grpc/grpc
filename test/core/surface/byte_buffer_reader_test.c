@@ -185,8 +185,8 @@ static void test_byte_buffer_from_reader(void) {
 }
 
 static void test_readall(void) {
-  char* lotsa_as[512];
-  char* lotsa_bs[1024];
+  char *lotsa_as[512];
+  char *lotsa_bs[1024];
   gpr_slice slices[2];
   grpc_byte_buffer *buffer;
   grpc_byte_buffer_reader reader;

@@ -88,7 +88,8 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
   grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
 
   grpc_call_credentials_get_request_metadata(&exec_ctx, creds, &request.pollset,
-                                             null_ctx, on_oauth2_response, &request);
+                                             null_ctx, on_oauth2_response,
+                                             &request);
 
   grpc_exec_ctx_finish(&exec_ctx);
 

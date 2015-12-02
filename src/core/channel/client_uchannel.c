@@ -172,7 +172,7 @@ static void monitor_subchannel(grpc_exec_ctx *exec_ctx, void *arg,
 }
 
 static void started_call_locked(grpc_exec_ctx *exec_ctx, void *arg,
-                         int iomgr_success) {
+                                int iomgr_success) {
   call_data *calld = arg;
   grpc_transport_stream_op op;
   int have_waiting;
@@ -466,15 +466,9 @@ static void cuc_destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 const grpc_channel_filter grpc_client_uchannel_filter = {
-    cuc_start_transport_stream_op,
-    cuc_start_transport_op,
-    sizeof(call_data),
-    cuc_init_call_elem,
-    cuc_destroy_call_elem,
-    sizeof(channel_data),
-    cuc_init_channel_elem,
-    cuc_destroy_channel_elem,
-    cuc_get_peer,
+    cuc_start_transport_stream_op, cuc_start_transport_op, sizeof(call_data),
+    cuc_init_call_elem, cuc_destroy_call_elem, sizeof(channel_data),
+    cuc_init_channel_elem, cuc_destroy_channel_elem, cuc_get_peer,
     "client-uchannel",
 };
 
