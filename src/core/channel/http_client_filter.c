@@ -31,12 +31,13 @@
  */
 
 #include "src/core/channel/http_client_filter.h"
-#include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include "src/core/support/string.h"
+#include <string.h>
 #include "src/core/profiling/timers.h"
+#include "src/core/support/string.h"
+#include "src/core/transport/static_metadata.h"
 
 typedef struct call_data {
   grpc_linked_mdelem method;
@@ -57,12 +58,7 @@ typedef struct call_data {
 } call_data;
 
 typedef struct channel_data {
-  grpc_mdelem *te_trailers;
-  grpc_mdelem *method;
-  grpc_mdelem *scheme;
-  grpc_mdelem *content_type;
-  grpc_mdelem *status;
-  /** complete user agent mdelem */
+  grpc_mdelem *static_scheme;
   grpc_mdelem *user_agent;
 } channel_data;
 
@@ -73,14 +69,12 @@ typedef struct {
 
 static grpc_mdelem *client_recv_filter(void *user_data, grpc_mdelem *md) {
   client_recv_filter_args *a = user_data;
-  grpc_call_element *elem = a->elem;
-  channel_data *channeld = elem->channel_data;
-  if (md == channeld->status) {
+  if (md == GRPC_MDELEM_STATUS_200) {
     return NULL;
-  } else if (md->key == channeld->status->key) {
-    grpc_call_element_send_cancel(a->exec_ctx, elem);
+  } else if (md->key == GRPC_MDSTR_STATUS) {
+    grpc_call_element_send_cancel(a->exec_ctx, a->elem);
     return NULL;
-  } else if (md->key == channeld->content_type->key) {
+  } else if (md->key == GRPC_MDSTR_CONTENT_TYPE) {
     return NULL;
   }
   return md;
@@ -98,14 +92,12 @@ static void hc_on_recv(grpc_exec_ctx *exec_ctx, void *user_data, int success) {
 }
 
 static grpc_mdelem *client_strip_filter(void *user_data, grpc_mdelem *md) {
-  grpc_call_element *elem = user_data;
-  channel_data *channeld = elem->channel_data;
   /* eat the things we'd like to set ourselves */
-  if (md->key == channeld->method->key) return NULL;
-  if (md->key == channeld->scheme->key) return NULL;
-  if (md->key == channeld->te_trailers->key) return NULL;
-  if (md->key == channeld->content_type->key) return NULL;
-  if (md->key == channeld->user_agent->key) return NULL;
+  if (md->key == GRPC_MDSTR_METHOD) return NULL;
+  if (md->key == GRPC_MDSTR_SCHEME) return NULL;
+  if (md->key == GRPC_MDSTR_TE) return NULL;
+  if (md->key == GRPC_MDSTR_CONTENT_TYPE) return NULL;
+  if (md->key == GRPC_MDSTR_USER_AGENT) return NULL;
   return md;
 }
 
@@ -120,14 +112,14 @@ static void hc_mutate_op(grpc_call_element *elem,
     /* Send : prefixed headers, which have to be before any application
        layer headers. */
     grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->method,
-                                 GRPC_MDELEM_REF(channeld->method));
+                                 GRPC_MDELEM_METHOD_POST);
     grpc_metadata_batch_add_head(op->send_initial_metadata, &calld->scheme,
-                                 GRPC_MDELEM_REF(channeld->scheme));
+                                 channeld->static_scheme);
     grpc_metadata_batch_add_tail(op->send_initial_metadata, &calld->te_trailers,
-                                 GRPC_MDELEM_REF(channeld->te_trailers));
-    grpc_metadata_batch_add_tail(op->send_initial_metadata,
-                                 &calld->content_type,
-                                 GRPC_MDELEM_REF(channeld->content_type));
+                                 GRPC_MDELEM_TE_TRAILERS);
+    grpc_metadata_batch_add_tail(
+        op->send_initial_metadata, &calld->content_type,
+        GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
     grpc_metadata_batch_add_tail(op->send_initial_metadata, &calld->user_agent,
                                  GRPC_MDELEM_REF(channeld->user_agent));
   }
@@ -162,21 +154,28 @@ static void init_call_elem(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
 static void destroy_call_elem(grpc_exec_ctx *exec_ctx,
                               grpc_call_element *elem) {}
 
-static const char *scheme_from_args(const grpc_channel_args *args) {
+static grpc_mdelem *scheme_from_args(const grpc_channel_args *args) {
   unsigned i;
+  size_t j;
+  grpc_mdelem *valid_schemes[] = {GRPC_MDELEM_SCHEME_HTTP,
+                                  GRPC_MDELEM_SCHEME_HTTPS};
   if (args != NULL) {
     for (i = 0; i < args->num_args; ++i) {
       if (args->args[i].type == GRPC_ARG_STRING &&
           strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME) == 0) {
-        return args->args[i].value.string;
+        for (j = 0; j < GPR_ARRAY_SIZE(valid_schemes); j++) {
+          if (0 == strcmp(grpc_mdstr_as_c_string(valid_schemes[j]->value),
+                          args->args[i].value.string)) {
+            return valid_schemes[j];
+          }
+        }
       }
     }
   }
-  return "http";
+  return GRPC_MDELEM_SCHEME_HTTP;
 }
 
-static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
-                                        const grpc_channel_args *args) {
+static grpc_mdstr *user_agent_from_args(const grpc_channel_args *args) {
   gpr_strvec v;
   size_t i;
   int is_first = 1;
@@ -218,7 +217,7 @@ static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
 
   tmp = gpr_strvec_flatten(&v, NULL);
   gpr_strvec_destroy(&v);
-  result = grpc_mdstr_from_string(mdctx, tmp);
+  result = grpc_mdstr_from_string(tmp);
   gpr_free(tmp);
 
   return result;
@@ -228,43 +227,18 @@ static grpc_mdstr *user_agent_from_args(grpc_mdctx *mdctx,
 static void init_channel_elem(grpc_exec_ctx *exec_ctx,
                               grpc_channel_element *elem,
                               grpc_channel_element_args *args) {
-  /* grab pointers to our data from the channel element */
-  channel_data *channeld = elem->channel_data;
-
-  /* The first and the last filters tend to be implemented differently to
-     handle the case that there's no 'next' filter to call on the up or down
-     path */
+  channel_data *chand = elem->channel_data;
   GPR_ASSERT(!args->is_last);
-
-  /* initialize members */
-  channeld->te_trailers =
-      grpc_mdelem_from_strings(args->metadata_context, "te", "trailers");
-  channeld->method =
-      grpc_mdelem_from_strings(args->metadata_context, ":method", "POST");
-  channeld->scheme = grpc_mdelem_from_strings(
-      args->metadata_context, ":scheme", scheme_from_args(args->channel_args));
-  channeld->content_type = grpc_mdelem_from_strings(
-      args->metadata_context, "content-type", "application/grpc");
-  channeld->status =
-      grpc_mdelem_from_strings(args->metadata_context, ":status", "200");
-  channeld->user_agent = grpc_mdelem_from_metadata_strings(
-      args->metadata_context,
-      grpc_mdstr_from_string(args->metadata_context, "user-agent"),
-      user_agent_from_args(args->metadata_context, args->channel_args));
+  chand->static_scheme = scheme_from_args(args->channel_args);
+  chand->user_agent = grpc_mdelem_from_metadata_strings(
+      GRPC_MDSTR_USER_AGENT, user_agent_from_args(args->channel_args));
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
                                  grpc_channel_element *elem) {
-  /* grab pointers to our data from the channel element */
-  channel_data *channeld = elem->channel_data;
-
-  GRPC_MDELEM_UNREF(channeld->te_trailers);
-  GRPC_MDELEM_UNREF(channeld->method);
-  GRPC_MDELEM_UNREF(channeld->scheme);
-  GRPC_MDELEM_UNREF(channeld->content_type);
-  GRPC_MDELEM_UNREF(channeld->status);
-  GRPC_MDELEM_UNREF(channeld->user_agent);
+  channel_data *chand = elem->channel_data;
+  GRPC_MDELEM_UNREF(chand->user_agent);
 }
 
 const grpc_channel_filter grpc_http_client_filter = {

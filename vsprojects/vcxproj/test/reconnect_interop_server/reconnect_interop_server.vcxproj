@@ -176,6 +176,9 @@
     <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\reconnect_server\reconnect_server.vcxproj">
       <Project>{929C90AE-483F-AC80-EF93-226199F9E428}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\test_tcp_server\test_tcp_server.vcxproj">
+      <Project>{E3110C46-A148-FF65-08FD-3324829BE7FE}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\grpc++_test_util\grpc++_test_util.vcxproj">
       <Project>{0BE77741-552A-929B-A497-4EF7ECE17A64}</Project>
     </ProjectReference>

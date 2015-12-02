@@ -36,7 +36,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '0.11.2'
+  version = '0.12.0'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'http://www.grpc.io'
@@ -78,6 +78,7 @@ Pod::Spec.new do |s|
                       'include/grpc/support/atm_gcc_atomic.h',
                       'include/grpc/support/atm_gcc_sync.h',
                       'include/grpc/support/atm_win32.h',
+                      'include/grpc/support/avl.h',
                       'include/grpc/support/cmdline.h',
                       'include/grpc/support/cpu.h',
                       'include/grpc/support/histogram.h',
@@ -103,6 +104,7 @@ Pod::Spec.new do |s|
                       'src/core/profiling/basic_timers.c',
                       'src/core/profiling/stap_timers.c',
                       'src/core/support/alloc.c',
+                      'src/core/support/avl.c',
                       'src/core/support/cmdline.c',
                       'src/core/support/cpu_iphone.c',
                       'src/core/support/cpu_linux.c',
@@ -167,6 +169,7 @@ Pod::Spec.new do |s|
                       'src/core/channel/subchannel_call_holder.h',
                       'src/core/client_config/client_config.h',
                       'src/core/client_config/connector.h',
+                      'src/core/client_config/initial_connect_string.h',
                       'src/core/client_config/lb_policies/pick_first.h',
                       'src/core/client_config/lb_policies/round_robin.h',
                       'src/core/client_config/lb_policy.h',
@@ -182,6 +185,7 @@ Pod::Spec.new do |s|
                       'src/core/client_config/subchannel_factory_decorators/add_channel_arg.h',
                       'src/core/client_config/subchannel_factory_decorators/merge_channel_args.h',
                       'src/core/client_config/uri_parser.h',
+                      'src/core/compression/algorithm_metadata.h',
                       'src/core/compression/message_compress.h',
                       'src/core/debug/trace.h',
                       'src/core/httpcli/format_request.h',
@@ -264,6 +268,7 @@ Pod::Spec.new do |s|
                       'src/core/transport/connectivity_state.h',
                       'src/core/transport/metadata.h',
                       'src/core/transport/metadata_batch.h',
+                      'src/core/transport/static_metadata.h',
                       'src/core/transport/transport.h',
                       'src/core/transport/transport_impl.h',
                       'src/core/census/aggregation.h',
@@ -311,6 +316,8 @@ Pod::Spec.new do |s|
                       'src/core/channel/subchannel_call_holder.c',
                       'src/core/client_config/client_config.c',
                       'src/core/client_config/connector.c',
+                      'src/core/client_config/default_initial_connect_string.c',
+                      'src/core/client_config/initial_connect_string.c',
                       'src/core/client_config/lb_policies/pick_first.c',
                       'src/core/client_config/lb_policies/round_robin.c',
                       'src/core/client_config/lb_policy.c',
@@ -419,6 +426,7 @@ Pod::Spec.new do |s|
                       'src/core/transport/connectivity_state.c',
                       'src/core/transport/metadata.c',
                       'src/core/transport/metadata_batch.c',
+                      'src/core/transport/static_metadata.c',
                       'src/core/transport/transport.c',
                       'src/core/transport/transport_op_string.c',
                       'src/core/census/context.c',
@@ -463,6 +471,7 @@ Pod::Spec.new do |s|
                               'src/core/channel/subchannel_call_holder.h',
                               'src/core/client_config/client_config.h',
                               'src/core/client_config/connector.h',
+                              'src/core/client_config/initial_connect_string.h',
                               'src/core/client_config/lb_policies/pick_first.h',
                               'src/core/client_config/lb_policies/round_robin.h',
                               'src/core/client_config/lb_policy.h',
@@ -478,6 +487,7 @@ Pod::Spec.new do |s|
                               'src/core/client_config/subchannel_factory_decorators/add_channel_arg.h',
                               'src/core/client_config/subchannel_factory_decorators/merge_channel_args.h',
                               'src/core/client_config/uri_parser.h',
+                              'src/core/compression/algorithm_metadata.h',
                               'src/core/compression/message_compress.h',
                               'src/core/debug/trace.h',
                               'src/core/httpcli/format_request.h',
@@ -560,6 +570,7 @@ Pod::Spec.new do |s|
                               'src/core/transport/connectivity_state.h',
                               'src/core/transport/metadata.h',
                               'src/core/transport/metadata_batch.h',
+                              'src/core/transport/static_metadata.h',
                               'src/core/transport/transport.h',
                               'src/core/transport/transport_impl.h',
                               'src/core/census/aggregation.h',
@@ -578,7 +589,7 @@ Pod::Spec.new do |s|
 
     ss.requires_arc = false
     ss.libraries = 'z'
-    ss.dependency 'OpenSSL', '~> 1.0.200'
+    ss.dependency 'OpenSSL', '~> 1.0.204.1'
 
     # ss.compiler_flags = '-GCC_WARN_INHIBIT_ALL_WARNINGS', '-w'
   end

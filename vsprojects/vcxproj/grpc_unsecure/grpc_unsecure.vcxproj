@@ -259,6 +259,7 @@
     <ClInclude Include="..\..\..\src\core\channel\subchannel_call_holder.h" />
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
+    <ClInclude Include="..\..\..\src\core\client_config\initial_connect_string.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\pick_first.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policies\round_robin.h" />
     <ClInclude Include="..\..\..\src\core\client_config\lb_policy.h" />
@@ -274,6 +275,7 @@
     <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\add_channel_arg.h" />
     <ClInclude Include="..\..\..\src\core\client_config\subchannel_factory_decorators\merge_channel_args.h" />
     <ClInclude Include="..\..\..\src\core\client_config\uri_parser.h" />
+    <ClInclude Include="..\..\..\src\core\compression\algorithm_metadata.h" />
     <ClInclude Include="..\..\..\src\core\compression\message_compress.h" />
     <ClInclude Include="..\..\..\src\core\debug\trace.h" />
     <ClInclude Include="..\..\..\src\core\httpcli\format_request.h" />
@@ -356,6 +358,7 @@
     <ClInclude Include="..\..\..\src\core\transport\connectivity_state.h" />
     <ClInclude Include="..\..\..\src\core\transport\metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\metadata_batch.h" />
+    <ClInclude Include="..\..\..\src\core\transport\static_metadata.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport.h" />
     <ClInclude Include="..\..\..\src\core\transport\transport_impl.h" />
     <ClInclude Include="..\..\..\src\core\census\aggregation.h" />
@@ -392,6 +395,10 @@
     <ClCompile Include="..\..\..\src\core\client_config\client_config.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\connector.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\default_initial_connect_string.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\client_config\initial_connect_string.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\client_config\lb_policies\pick_first.c">
     </ClCompile>
@@ -608,6 +615,8 @@
     <ClCompile Include="..\..\..\src\core\transport\metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\metadata_batch.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\transport\static_metadata.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\transport\transport.c">
     </ClCompile>
