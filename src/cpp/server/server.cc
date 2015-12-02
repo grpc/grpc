@@ -60,12 +60,10 @@ class DefaultGlobalCallbacks GRPC_FINAL : public Server::GlobalCallbacks {
 static Server::GlobalCallbacks* g_callbacks = nullptr;
 static gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
 
-static void DeleteGlobalCallbacks() { delete g_callbacks; }
-
 static void InitGlobalCallbacks() {
   if (g_callbacks == nullptr) {
-    g_callbacks = new DefaultGlobalCallbacks();
-    atexit(DeleteGlobalCallbacks);
+    static DefaultGlobalCallbacks default_global_callbacks;
+    g_callbacks = &default_global_callbacks;
   }
 }
 
