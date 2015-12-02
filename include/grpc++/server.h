@@ -91,9 +91,15 @@ class Server GRPC_FINAL : public GrpcLibrary, private CallHook {
   /// a server event occurs
   class GlobalCallbacks {
    public:
+    virtual ~GlobalCallbacks() {}
+    /// Called before application callback for each synchronous server request
     virtual void PreSynchronousRequest(ServerContext* context) = 0;
+    /// Called after application callback for each synchronous server request
     virtual void PostSynchronousRequest(ServerContext* context) = 0;
   };
+  /// Set the global callback object. Can only be called once. Does not take
+  /// ownership of callbacks, and expects the pointed to object to be alive
+  /// until all server objects in the process have been destroyed.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
  private:

@@ -57,8 +57,17 @@ class DefaultGlobalCallbacks GRPC_FINAL : public Server::GlobalCallbacks {
   void PostSynchronousRequest(ServerContext* context) GRPC_OVERRIDE {}
 };
 
-static DefaultGlobalCallbacks g_default_callbacks;
-static Server::GlobalCallbacks* g_callbacks = &g_default_callbacks;
+static Server::GlobalCallbacks* g_callbacks = nullptr;
+static gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
+
+static void DeleteGlobalCallbacks() { delete g_callbacks; }
+
+static void InitGlobalCallbacks() {
+  if (g_callbacks == nullptr) {
+    g_callbacks = new DefaultGlobalCallbacks();
+    atexit(DeleteGlobalCallbacks);
+  }
+}
 
 class Server::UnimplementedAsyncRequestContext {
  protected:
@@ -294,6 +303,7 @@ Server::Server(ThreadPoolInterface* thread_pool, bool thread_pool_owned,
       server_(CreateServer(max_message_size, compression_options)),
       thread_pool_(thread_pool),
       thread_pool_owned_(thread_pool_owned) {
+  gpr_once_init(&g_once_init_callbacks, InitGlobalCallbacks);
   grpc_server_register_completion_queue(server_, cq_.cq(), nullptr);
 }
 
@@ -316,9 +326,8 @@ Server::~Server() {
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
-  GPR_ASSERT(g_callbacks == &g_default_callbacks);
-  GPR_ASSERT(callbacks != NULL);
-  GPR_ASSERT(callbacks != &g_default_callbacks);
+  GPR_ASSERT(g_callbacks == nullptr);
+  GPR_ASSERT(callbacks != nullptr);
   g_callbacks = callbacks;
 }
 
