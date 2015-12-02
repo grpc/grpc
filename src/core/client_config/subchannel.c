@@ -266,7 +266,7 @@ void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
   old_refs = ref_mutate(c, -(gpr_atm)1, 1 REF_MUTATE_PURPOSE("WEAK_UNREF"));
-  if (old_refs == 0) {
+  if (old_refs == 1) {
     grpc_exec_ctx_enqueue(exec_ctx, grpc_closure_create(subchannel_destroy, c),
                           1);
   }
@@ -426,7 +426,7 @@ static void subchannel_on_child_state_changed(grpc_exec_ctx *exec_ctx, void *p,
                                 sw->connectivity_state, "reflect_child");
     if (sw->connectivity_state != GRPC_CHANNEL_FATAL_FAILURE) {
       grpc_connected_subchannel_notify_on_state_change(
-          exec_ctx, GET_CONNECTED_SUBCHANNEL(c, no_barrier),
+          exec_ctx, GET_CONNECTED_SUBCHANNEL(c, no_barrier), NULL,
           &sw->connectivity_state, &sw->closure);
       GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
       sw = NULL;
@@ -440,6 +440,7 @@ static void subchannel_on_child_state_changed(grpc_exec_ctx *exec_ctx, void *p,
 
 static void connected_subchannel_state_op(grpc_exec_ctx *exec_ctx,
                                           grpc_connected_subchannel *con,
+                                          grpc_pollset_set *interested_parties,
                                           grpc_connectivity_state *state,
                                           grpc_closure *closure) {
   grpc_transport_op op;
@@ -447,14 +448,15 @@ static void connected_subchannel_state_op(grpc_exec_ctx *exec_ctx,
   memset(&op, 0, sizeof(op));
   op.connectivity_state = state;
   op.on_connectivity_state_change = closure;
+  op.bind_pollset_set = interested_parties;
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(con), 0);
   elem->filter->start_transport_op(exec_ctx, elem, &op);
 }
 
 void grpc_connected_subchannel_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
-    grpc_connectivity_state *state, grpc_closure *closure) {
-  connected_subchannel_state_op(exec_ctx, con, state, closure);
+    grpc_pollset_set *interested_parties, grpc_connectivity_state *state, grpc_closure *closure) {
+  connected_subchannel_state_op(exec_ctx, con, interested_parties, state, closure);
 }
 
 static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
@@ -512,7 +514,7 @@ static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   GRPC_SUBCHANNEL_WEAK_REF(c, "state_watcher");
   GRPC_SUBCHANNEL_WEAK_UNREF(exec_ctx, c, "connecting");
   grpc_connected_subchannel_notify_on_state_change(
-      exec_ctx, con, &sw_subchannel->connectivity_state,
+      exec_ctx, con, &c->pollset_set, &sw_subchannel->connectivity_state,
       &sw_subchannel->closure);
 
   /* signal completion */

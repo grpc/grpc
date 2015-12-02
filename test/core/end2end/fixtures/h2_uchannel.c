@@ -162,6 +162,9 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   s = grpc_subchannel_create(&c->base, args);
   grpc_connector_unref(exec_ctx, &c->base);
   grpc_channel_args_destroy(final_args);
+  if (*f->sniffed_subchannel) {
+    GRPC_SUBCHANNEL_UNREF(exec_ctx, *f->sniffed_subchannel, "sniffed");
+  }
   *f->sniffed_subchannel = s;
   GRPC_SUBCHANNEL_REF(s, "sniffed");
   return s;
@@ -224,6 +227,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_micro_fullstack(
   micro_fullstack_fixture_data *ffd =
       gpr_malloc(sizeof(micro_fullstack_fixture_data));
   memset(&f, 0, sizeof(f));
+  memset(ffd, 0, sizeof(*ffd));
 
   gpr_join_host_port(&ffd->localaddr, "127.0.0.1", port);
 
