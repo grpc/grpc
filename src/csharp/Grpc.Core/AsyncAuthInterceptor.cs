@@ -32,55 +32,53 @@
 #endregion
 
 using System;
-using System.Threading;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-using Google.Apis.Auth.OAuth2;
-using Grpc.Core;
+using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
-namespace Grpc.Auth
+namespace Grpc.Core
 {
     /// <summary>
-    /// Factory methods to create authorization interceptors for Google credentials.
-    /// <seealso cref="GoogleGrpcCredentials"/>
+    /// Asynchronous authentication interceptor for <see cref="CallCredentials"/>.
     /// </summary>
-    public static class GoogleAuthInterceptors
+    /// <param name="context">The interceptor context.</param>
+    /// <param name="metadata">Metadata to populate with entries that will be added to outgoing call's headers.</param>
+    /// <returns></returns>
+    public delegate Task AsyncAuthInterceptor(AuthInterceptorContext context, Metadata metadata);
+
+    /// <summary>
+    /// Context for an RPC being intercepted by <see cref="AsyncAuthInterceptor"/>.
+    /// </summary>
+    public class AuthInterceptorContext
     {
-        private const string AuthorizationHeader = "Authorization";
-        private const string Schema = "Bearer";
+        readonly string serviceUrl;
+        readonly string methodName;
 
         /// <summary>
-        /// Creates an <see cref="AsyncAuthInterceptor"/> that will obtain access token from any credential type that implements
-        /// <c>ITokenAccess</c>. (e.g. <c>GoogleCredential</c>).
+        /// Initializes a new instance of <c>AuthInterceptorContext</c>.
         /// </summary>
-        /// <param name="credential">The credential to use to obtain access tokens.</param>
-        /// <returns>The interceptor.</returns>
-        public static AsyncAuthInterceptor FromCredential(ITokenAccess credential)
+        public AuthInterceptorContext(string serviceUrl, string methodName)
         {
-            return new AsyncAuthInterceptor(async (context, metadata) =>
-            {
-                var accessToken = await credential.GetAccessTokenForRequestAsync(context.ServiceUrl, CancellationToken.None).ConfigureAwait(false);
-                metadata.Add(CreateBearerTokenHeader(accessToken));
-            });
+            this.serviceUrl = Preconditions.CheckNotNull(serviceUrl);
+            this.methodName = Preconditions.CheckNotNull(methodName);
         }
 
         /// <summary>
-        /// Creates an <see cref="AsyncAuthInterceptor"/> that will use given access token as authorization.
+        /// The fully qualified service URL for the RPC being called.
         /// </summary>
-        /// <param name="accessToken">OAuth2 access token.</param>
-        /// <returns>The interceptor.</returns>
-        public static AsyncAuthInterceptor FromAccessToken(string accessToken)
+        public string ServiceUrl
         {
-            Preconditions.CheckNotNull(accessToken);
-            return new AsyncAuthInterceptor(async (context, metadata) =>
-            {
-                metadata.Add(CreateBearerTokenHeader(accessToken));
-            });
+            get { return serviceUrl; }
         }
 
-        private static Metadata.Entry CreateBearerTokenHeader(string accessToken)
+        /// <summary>
+        /// The method name of the RPC being called.
+        /// </summary>
+        public string MethodName
         {
-            return new Metadata.Entry(AuthorizationHeader, Schema + " " + accessToken);
+            get { return methodName; }
         }
     }
 }
