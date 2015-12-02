@@ -1587,7 +1587,8 @@
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util", 
-      "reconnect_server"
+      "reconnect_server", 
+      "test_tcp_server"
     ], 
     "headers": [
       "test/proto/empty.grpc.pb.h", 
