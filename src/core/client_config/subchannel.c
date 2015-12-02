@@ -455,8 +455,10 @@ static void connected_subchannel_state_op(grpc_exec_ctx *exec_ctx,
 
 void grpc_connected_subchannel_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
-    grpc_pollset_set *interested_parties, grpc_connectivity_state *state, grpc_closure *closure) {
-  connected_subchannel_state_op(exec_ctx, con, interested_parties, state, closure);
+    grpc_pollset_set *interested_parties, grpc_connectivity_state *state,
+    grpc_closure *closure) {
+  connected_subchannel_state_op(exec_ctx, con, interested_parties, state,
+                                closure);
 }
 
 static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
