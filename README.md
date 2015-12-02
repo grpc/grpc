@@ -21,14 +21,14 @@ Libraries in different languages are in different state of development. We are s
 
 | Language                | Source                              | Status                          |
 |-------------------------|-------------------------------------|---------------------------------|
-| Shared C [core library] | [src/core] (src/core)               | <span style="color:orange;">Beta</span> - the surface API is stable |
-| C++                     | [src/cpp] (src/cpp)                 | <span style="color:orange;">Beta</span> - the surface API is stable |
-| Ruby                    | [src/ruby] (src/ruby)               | <span style="color:orange;">Beta</span> - the surface API is stable |
-| NodeJS                  | [src/node] (src/node)               | <span style="color:orange;">Beta</span> - the surface API is stable |
-| Python                  | [src/python] (src/python)           | <span style="color:orange;">Beta</span> - the surface API is stable |
-| PHP                     | [src/php] (src/php)                 | <span style="color:orange;">Beta</span> - the surface API is stable |
-| C#                      | [src/csharp] (src/csharp)           | <span style="color:orange;">Beta</span> - the surface API is stable |
-| Objective-C             | [src/objective-c] (src/objective-c) | <span style="color:orange;">Beta</span> - the surface API is stable |
+| Shared C [core library] | [src/core] (src/core)               | Beta - the surface API is stable |
+| C++                     | [src/cpp] (src/cpp)                 | Beta - the surface API is stable |
+| Ruby                    | [src/ruby] (src/ruby)               | Beta - the surface API is stable |
+| NodeJS                  | [src/node] (src/node)               | Beta - the surface API is stable |
+| Python                  | [src/python] (src/python)           | Beta - the surface API is stable |
+| PHP                     | [src/php] (src/php)                 | Beta - the surface API is stable |
+| C#                      | [src/csharp] (src/csharp)           | Beta - the surface API is stable |
+| Objective-C             | [src/objective-c] (src/objective-c) | Beta - the surface API is stable |
 
 <small>
 Java source code is in [grpc-java] (http://github.com/grpc/grpc-java) repository.
