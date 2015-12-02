@@ -147,11 +147,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_fixture_h2_uchannel\end2end_fixture_h2_uchannel.vcxproj">
-      <Project>{CE17F95F-4FD3-41C3-E1B9-9B85F1FE7D4A}</Project>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_nosec_fixture_h2_uchannel\end2end_nosec_fixture_h2_uchannel.vcxproj">
+      <Project>{6DF096AD-5865-3035-B7AE-5019FAC19EEB}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_test_cancel_with_status\end2end_test_cancel_with_status.vcxproj">
-      <Project>{8E92B6CB-6F25-FEC5-314F-7C9171C20402}</Project>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_nosec_test_cancel_with_status\end2end_nosec_test_cancel_with_status.vcxproj">
+      <Project>{4E966A30-74DE-B9CE-2440-5292A3258506}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\grpc_test_util_unsecure\grpc_test_util_unsecure.vcxproj">
       <Project>{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}</Project>
