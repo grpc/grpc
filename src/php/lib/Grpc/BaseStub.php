@@ -216,7 +216,7 @@ class BaseStub
      */
     public function _simpleRequest($method,
                                    $argument,
-                                   callable $deserialize,
+                                   $deserialize,
                                    $metadata = [],
                                    $options = [])
     {
