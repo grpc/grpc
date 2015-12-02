@@ -31,50 +31,23 @@
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
+#ifndef GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_METADATA_H
+#define GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_METADATA_H
 
 #include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include "src/core/transport/metadata.h"
 
-#include "test/core/util/test_config.h"
+/** Return compression algorithm based metadata value */
+grpc_mdstr *grpc_compression_algorithm_mdstr(
+    grpc_compression_algorithm algorithm);
 
-static void test_compression_algorithm_parse(void) {
-  size_t i;
-  const char *valid_names[] = {"identity", "gzip", "deflate"};
-  const grpc_compression_algorithm valid_algorithms[] = {
-      GRPC_COMPRESS_NONE, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_DEFLATE};
-  const char *invalid_names[] = {"gzip2", "foo", "", "2gzip"};
+/** Return compression algorithm based metadata element (grpc-encoding: xxx) */
+grpc_mdelem *grpc_compression_encoding_mdelem(
+    grpc_compression_algorithm algorithm);
 
-  gpr_log(GPR_DEBUG, "test_compression_algorithm_parse");
+/** Find compression algorithm based on passed in mdstr - returns
+ * GRPC_COMPRESS_ALGORITHM_COUNT on failure */
+grpc_compression_algorithm grpc_compression_algorithm_from_mdstr(
+    grpc_mdstr *str);
 
-  for (i = 0; i < GPR_ARRAY_SIZE(valid_names); i++) {
-    const char *valid_name = valid_names[i];
-    grpc_compression_algorithm algorithm;
-    int success;
-    success = grpc_compression_algorithm_parse(valid_name, strlen(valid_name),
-                                               &algorithm);
-    GPR_ASSERT(success != 0);
-    GPR_ASSERT(algorithm == valid_algorithms[i]);
-  }
-
-  for (i = 0; i < GPR_ARRAY_SIZE(invalid_names); i++) {
-    const char *invalid_name = invalid_names[i];
-    grpc_compression_algorithm algorithm;
-    int success;
-    success = grpc_compression_algorithm_parse(
-        invalid_name, strlen(invalid_name), &algorithm);
-    GPR_ASSERT(success == 0);
-    /* the value of "algorithm" is undefined upon failure */
-  }
-}
-
-int main(int argc, char **argv) {
-  grpc_init();
-  test_compression_algorithm_parse();
-  grpc_shutdown();
-
-  return 0;
-}
+#endif /* GRPC_INTERNAL_CORE_COMPRESSION_ALGORITHM_METADATA_H */

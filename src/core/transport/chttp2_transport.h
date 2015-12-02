@@ -42,7 +42,7 @@ extern int grpc_flowctl_trace;
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
-    grpc_endpoint *ep, grpc_mdctx *metadata_context, int is_client);
+    grpc_endpoint *ep, int is_client);
 
 void grpc_chttp2_transport_start_reading(grpc_exec_ctx *exec_ctx,
                                          grpc_transport *transport,

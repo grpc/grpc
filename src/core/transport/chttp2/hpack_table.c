@@ -176,11 +176,10 @@ static gpr_uint32 entries_for_bytes(gpr_uint32 bytes) {
          GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 }
 
-void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx) {
+void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl) {
   size_t i;
 
   memset(tbl, 0, sizeof(*tbl));
-  tbl->mdctx = mdctx;
   tbl->current_table_bytes = tbl->max_bytes =
       GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE;
   tbl->max_entries = tbl->cap_entries =
@@ -188,8 +187,8 @@ void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl *tbl, grpc_mdctx *mdctx) {
   tbl->ents = gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries);
   memset(tbl->ents, 0, sizeof(*tbl->ents) * tbl->cap_entries);
   for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    tbl->static_ents[i - 1] = grpc_mdelem_from_strings(
-        mdctx, static_table[i].key, static_table[i].value);
+    tbl->static_ents[i - 1] =
+        grpc_mdelem_from_strings(static_table[i].key, static_table[i].value);
   }
 }
 

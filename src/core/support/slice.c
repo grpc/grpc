@@ -57,6 +57,21 @@ void gpr_slice_unref(gpr_slice slice) {
   }
 }
 
+/* gpr_slice_from_static_string support structure - a refcount that does
+   nothing */
+static void noop_ref_or_unref(void *unused) {}
+
+static gpr_slice_refcount noop_refcount = {noop_ref_or_unref,
+                                           noop_ref_or_unref};
+
+gpr_slice gpr_slice_from_static_string(const char *s) {
+  gpr_slice slice;
+  slice.refcount = &noop_refcount;
+  slice.data.refcounted.bytes = (gpr_uint8 *)s;
+  slice.data.refcounted.length = strlen(s);
+  return slice;
+}
+
 /* gpr_slice_new support structures - we create a refcount object extended
    with the user provided data pointer & destroy function */
 typedef struct new_slice_refcount {
