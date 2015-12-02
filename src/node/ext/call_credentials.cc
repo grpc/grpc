@@ -162,6 +162,7 @@ NAN_METHOD(CallCredentials::CreateFromPlugin) {
   plugin.get_metadata = plugin_get_metadata;
   plugin.destroy = plugin_destroy_state;
   plugin.state = reinterpret_cast<void*>(state);
+  plugin.type = "";
   grpc_call_credentials *creds = grpc_metadata_credentials_create_from_plugin(
       plugin, NULL);
   info.GetReturnValue().Set(WrapStruct(creds));
@@ -225,7 +226,7 @@ NAUV_WORK_CB(SendPluginCallback) {
   uv_close((uv_handle_t *)async, (uv_close_cb)free);
 }
 
-void plugin_get_metadata(void *state, const char *service_url,
+void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data) {
   uv_async_t *async = static_cast<uv_async_t*>(malloc(sizeof(uv_async_t)));
@@ -234,7 +235,7 @@ void plugin_get_metadata(void *state, const char *service_url,
                 SendPluginCallback);
   plugin_callback_data *data = new plugin_callback_data;
   data->state = reinterpret_cast<plugin_state*>(state);
-  data->service_url = service_url;
+  data->service_url = context.service_url;
   data->cb = cb;
   data->user_data = user_data;
   async->data = data;

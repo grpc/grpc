@@ -81,7 +81,7 @@ static void state_unref(grpc_server_secure_state *state) {
 }
 
 static void setup_transport(grpc_exec_ctx *exec_ctx, void *statep,
-                            grpc_transport *transport, grpc_mdctx *mdctx) {
+                            grpc_transport *transport) {
   static grpc_channel_filter const *extra_filters[] = {
       &grpc_server_auth_filter, &grpc_http_server_filter};
   grpc_server_secure_state *state = statep;
@@ -93,7 +93,7 @@ static void setup_transport(grpc_exec_ctx *exec_ctx, void *statep,
       grpc_server_get_channel_args(state->server), args_to_add,
       GPR_ARRAY_SIZE(args_to_add));
   grpc_server_setup_transport(exec_ctx, state->server, transport, extra_filters,
-                              GPR_ARRAY_SIZE(extra_filters), mdctx, args_copy);
+                              GPR_ARRAY_SIZE(extra_filters), args_copy);
   grpc_channel_args_destroy(args_copy);
 }
 
@@ -102,16 +102,14 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *statep,
                                      grpc_endpoint *secure_endpoint) {
   grpc_server_secure_state *state = statep;
   grpc_transport *transport;
-  grpc_mdctx *mdctx;
   if (status == GRPC_SECURITY_OK) {
     if (secure_endpoint) {
       gpr_mu_lock(&state->mu);
       if (!state->is_shutdown) {
-        mdctx = grpc_mdctx_create();
         transport = grpc_create_chttp2_transport(
             exec_ctx, grpc_server_get_channel_args(state->server),
-            secure_endpoint, mdctx, 0);
-        setup_transport(exec_ctx, state, transport, mdctx);
+            secure_endpoint, 0);
+        setup_transport(exec_ctx, state, transport);
         grpc_chttp2_transport_start_reading(exec_ctx, transport, NULL, 0);
       } else {
         /* We need to consume this here, because the server may already have
@@ -192,6 +190,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
             creds->type);
     goto error;
   }
+  sc->channel_args = grpc_server_get_channel_args(server);
 
   /* resolve address */
   resolved = grpc_blocking_resolve_address(addr, "https");
@@ -205,9 +204,11 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
   }
 
   for (i = 0; i < resolved->naddrs; i++) {
-    port_temp = grpc_tcp_server_add_port(
+    grpc_tcp_listener *listener;
+    listener = grpc_tcp_server_add_port(
         tcp, (struct sockaddr *)&resolved->addrs[i].addr,
         resolved->addrs[i].len);
+    port_temp = grpc_tcp_listener_get_port(listener);
     if (port_temp >= 0) {
       if (port_num == -1) {
         port_num = port_temp;

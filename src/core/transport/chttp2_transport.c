@@ -49,10 +49,10 @@
 #include "src/core/transport/chttp2/internal.h"
 #include "src/core/transport/chttp2/status_conversion.h"
 #include "src/core/transport/chttp2/timeout_encoding.h"
+#include "src/core/transport/static_metadata.h"
 #include "src/core/transport/transport_impl.h"
 
 #define DEFAULT_WINDOW 65535
-#define GRPC_CHTTP2_STREAM_LOOKAHEAD DEFAULT_WINDOW
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 
@@ -156,9 +156,6 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
   grpc_chttp2_hpack_parser_destroy(&t->parsing.hpack_parser);
   grpc_chttp2_goaway_parser_destroy(&t->parsing.goaway_parser);
 
-  GRPC_MDSTR_UNREF(t->parsing.str_grpc_timeout);
-  GRPC_MDELEM_UNREF(t->parsing.elem_grpc_status_ok);
-
   for (i = 0; i < STREAM_LIST_COUNT; i++) {
     GPR_ASSERT(t->lists[i].head == NULL);
     GPR_ASSERT(t->lists[i].tail == NULL);
@@ -183,8 +180,6 @@ static void destruct_transport(grpc_exec_ctx *exec_ctx,
     ping->prev->next = ping->next;
     gpr_free(ping);
   }
-
-  grpc_mdctx_unref(t->metadata_context);
 
   gpr_free(t->peer_string);
   gpr_free(t);
@@ -220,8 +215,7 @@ static void ref_transport(grpc_chttp2_transport *t) { gpr_ref(&t->refs); }
 
 static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
                            const grpc_channel_args *channel_args,
-                           grpc_endpoint *ep, grpc_mdctx *mdctx,
-                           gpr_uint8 is_client) {
+                           grpc_endpoint *ep, gpr_uint8 is_client) {
   size_t i;
   int j;
 
@@ -237,22 +231,17 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   /* ref is dropped at transport close() */
   gpr_ref_init(&t->shutdown_ep_refs, 1);
   gpr_mu_init(&t->mu);
-  grpc_mdctx_ref(mdctx);
   t->peer_string = grpc_endpoint_get_peer(ep);
-  t->metadata_context = mdctx;
   t->endpoint_reading = 1;
   t->global.next_stream_id = is_client ? 1 : 2;
   t->global.is_client = is_client;
   t->writing.outgoing_window = DEFAULT_WINDOW;
   t->parsing.incoming_window = DEFAULT_WINDOW;
+  t->global.stream_lookahead = DEFAULT_WINDOW;
   t->global.connection_window_target = DEFAULT_CONNECTION_WINDOW_TARGET;
   t->global.ping_counter = 1;
   t->global.pings.next = t->global.pings.prev = &t->global.pings;
   t->parsing.is_client = is_client;
-  t->parsing.str_grpc_timeout =
-      grpc_mdstr_from_string(t->metadata_context, "grpc-timeout");
-  t->parsing.elem_grpc_status_ok =
-      grpc_mdelem_from_strings(t->metadata_context, "grpc-status", "0");
   t->parsing.deframe_state =
       is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0;
   t->writing.is_client = is_client;
@@ -263,12 +252,12 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   gpr_slice_buffer_init(&t->global.qbuf);
 
   gpr_slice_buffer_init(&t->writing.outbuf);
-  grpc_chttp2_hpack_compressor_init(&t->writing.hpack_compressor, mdctx);
+  grpc_chttp2_hpack_compressor_init(&t->writing.hpack_compressor);
   grpc_closure_init(&t->writing_action, writing_action, t);
 
   gpr_slice_buffer_init(&t->parsing.qbuf);
   grpc_chttp2_goaway_parser_init(&t->parsing.goaway_parser);
-  grpc_chttp2_hpack_parser_init(&t->parsing.hpack_parser, t->metadata_context);
+  grpc_chttp2_hpack_parser_init(&t->parsing.hpack_parser);
 
   grpc_closure_init(&t->writing.done_cb, grpc_chttp2_terminate_writing,
                     &t->writing);
@@ -337,6 +326,43 @@ static void init_transport(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
         } else {
           t->global.next_stream_id =
               (gpr_uint32)channel_args->args[i].value.integer;
+        }
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer",
+                  GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES);
+        } else if (channel_args->args[i].value.integer <= 5) {
+          gpr_log(GPR_ERROR, "%s: must be at least 5",
+                  GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES);
+        } else {
+          t->global.stream_lookahead =
+              (gpr_uint32)channel_args->args[i].value.integer;
+        }
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer",
+                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
+        } else if (channel_args->args[i].value.integer < 0) {
+          gpr_log(GPR_DEBUG, "%s: must be non-negative",
+                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER);
+        } else {
+          push_setting(t, GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE,
+                       (gpr_uint32)channel_args->args[i].value.integer);
+        }
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER)) {
+        if (channel_args->args[i].type != GRPC_ARG_INTEGER) {
+          gpr_log(GPR_ERROR, "%s: must be an integer",
+                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
+        } else if (channel_args->args[i].value.integer < 0) {
+          gpr_log(GPR_DEBUG, "%s: must be non-negative",
+                  GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER);
+        } else {
+          grpc_chttp2_hpack_compressor_set_max_usable_size(
+              &t->writing.hpack_compressor,
+              (gpr_uint32)channel_args->args[i].value.integer);
         }
       }
     }
@@ -563,7 +589,8 @@ static void lock(grpc_chttp2_transport *t) { gpr_mu_lock(&t->mu); }
 static void unlock(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t) {
   GPR_TIMER_BEGIN("unlock", 0);
   if (!t->writing_active && !t->closed &&
-      grpc_chttp2_unlocking_check_writes(&t->global, &t->writing)) {
+      grpc_chttp2_unlocking_check_writes(&t->global, &t->writing,
+                                         t->parsing_active)) {
     t->writing_active = 1;
     REF_TRANSPORT(t, "writing");
     grpc_exec_ctx_enqueue(exec_ctx, &t->writing_action, 1);
@@ -724,16 +751,17 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
 static int contains_non_ok_status(
     grpc_chttp2_transport_global *transport_global,
     grpc_metadata_batch *batch) {
-  grpc_mdelem *ok_elem =
-      TRANSPORT_FROM_GLOBAL(transport_global)->parsing.elem_grpc_status_ok;
   grpc_linked_mdelem *l;
   for (l = batch->list.head; l; l = l->next) {
-    if (l->md->key == ok_elem->key && l->md != ok_elem) {
+    if (l->md->key == GRPC_MDSTR_GRPC_STATUS &&
+        l->md != GRPC_MDELEM_GRPC_STATUS_0) {
       return 1;
     }
   }
   return 0;
 }
+
+static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, int success) {}
 
 static void perform_stream_op_locked(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
@@ -743,6 +771,9 @@ static void perform_stream_op_locked(
   GPR_TIMER_BEGIN("perform_stream_op_locked", 0);
 
   on_complete = op->on_complete;
+  if (on_complete == NULL) {
+    on_complete = grpc_closure_create(do_nothing, NULL);
+  }
   /* use final_data as a barrier until enqueue time; the inital counter is
      dropped at the end of this function */
   on_complete->final_data = 2;
@@ -806,7 +837,7 @@ static void perform_stream_op_locked(
     }
     if (stream_global->write_closed) {
       grpc_chttp2_complete_closure_step(
-          exec_ctx, &stream_global->send_trailing_metadata_finished, 
+          exec_ctx, &stream_global->send_trailing_metadata_finished,
           grpc_metadata_batch_is_empty(op->send_trailing_metadata));
     } else if (stream_global->id != 0) {
       /* TODO(ctiller): check if there's flow control for any outstanding
@@ -1033,20 +1064,20 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
      to the upper layers - drop what we've got, and then publish
      what we want - which is safe because we haven't told anyone
      about the metadata yet */
-  if (!stream_global->published_trailing_metadata || stream_global->recv_trailing_metadata_finished != NULL) {
-    grpc_mdctx *mdctx =
-        TRANSPORT_FROM_GLOBAL(transport_global)->metadata_context;
+  if (!stream_global->published_trailing_metadata ||
+      stream_global->recv_trailing_metadata_finished != NULL) {
     char status_string[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, status_string);
     grpc_chttp2_incoming_metadata_buffer_add(
         &stream_global->received_trailing_metadata,
-        grpc_mdelem_from_strings(mdctx, "grpc-status", status_string));
+        grpc_mdelem_from_metadata_strings(
+            GRPC_MDSTR_GRPC_STATUS, grpc_mdstr_from_string(status_string)));
     if (slice) {
       grpc_chttp2_incoming_metadata_buffer_add(
           &stream_global->received_trailing_metadata,
           grpc_mdelem_from_metadata_strings(
-              mdctx, grpc_mdstr_from_string(mdctx, "grpc-message"),
-              grpc_mdstr_from_slice(mdctx, gpr_slice_ref(*slice))));
+              GRPC_MDSTR_GRPC_MESSAGE,
+              grpc_mdstr_from_slice(gpr_slice_ref(*slice))));
     }
     stream_global->published_trailing_metadata = 1;
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
@@ -1372,8 +1403,8 @@ static void incoming_byte_stream_update_flow_control(
   gpr_uint32 max_recv_bytes;
 
   /* clamp max recv hint to an allowable size */
-  if (max_size_hint >= GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD) {
-    max_recv_bytes = GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD;
+  if (max_size_hint >= GPR_UINT32_MAX - transport_global->stream_lookahead) {
+    max_recv_bytes = GPR_UINT32_MAX - transport_global->stream_lookahead;
   } else {
     max_recv_bytes = (gpr_uint32)max_size_hint;
   }
@@ -1386,8 +1417,9 @@ static void incoming_byte_stream_update_flow_control(
   }
 
   /* add some small lookahead to keep pipelines flowing */
-  GPR_ASSERT(max_recv_bytes <= GPR_UINT32_MAX - GRPC_CHTTP2_STREAM_LOOKAHEAD);
-  max_recv_bytes += GRPC_CHTTP2_STREAM_LOOKAHEAD;
+  GPR_ASSERT(max_recv_bytes <=
+             GPR_UINT32_MAX - transport_global->stream_lookahead);
+  max_recv_bytes += transport_global->stream_lookahead;
   if (stream_global->max_recv_bytes < max_recv_bytes) {
     gpr_uint32 add_max_recv_bytes =
         max_recv_bytes - stream_global->max_recv_bytes;
@@ -1596,9 +1628,9 @@ static const grpc_transport_vtable vtable = {
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,
-    grpc_endpoint *ep, grpc_mdctx *mdctx, int is_client) {
+    grpc_endpoint *ep, int is_client) {
   grpc_chttp2_transport *t = gpr_malloc(sizeof(grpc_chttp2_transport));
-  init_transport(exec_ctx, t, channel_args, ep, mdctx, is_client != 0);
+  init_transport(exec_ctx, t, channel_args, ep, is_client != 0);
   return &t->base;
 }
 

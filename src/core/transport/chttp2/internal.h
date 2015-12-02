@@ -191,6 +191,9 @@ typedef struct {
       copied to next_stream_id in parsing when parsing commences */
   gpr_uint32 next_stream_id;
 
+  /** how far to lookahead in a stream? */
+  gpr_uint32 stream_lookahead;
+
   /** last received stream id */
   gpr_uint32 last_incoming_stream_id;
 
@@ -227,14 +230,14 @@ struct grpc_chttp2_transport_parsing {
   /** was a goaway frame received? */
   gpr_uint8 goaway_received;
 
+  /** the last sent max_table_size setting */
+  gpr_uint32 last_sent_max_table_size;
+
   /** initial window change */
   gpr_int64 initial_window_update;
 
   /** data to write later - after parsing */
   gpr_slice_buffer qbuf;
-  /* metadata object cache */
-  grpc_mdstr *str_grpc_timeout;
-  grpc_mdelem *elem_grpc_status_ok;
   /** parser for headers */
   grpc_chttp2_hpack_parser hpack_parser;
   /** simple one shot parsers */
@@ -288,7 +291,6 @@ struct grpc_chttp2_transport_parsing {
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   grpc_endpoint *ep;
-  grpc_mdctx *metadata_context;
   gpr_refcount refs;
   char *peer_string;
 
@@ -483,7 +485,8 @@ struct grpc_chttp2_stream {
 /** Someone is unlocking the transport mutex: check to see if writes
     are required, and schedule them if so */
 int grpc_chttp2_unlocking_check_writes(grpc_chttp2_transport_global *global,
-                                       grpc_chttp2_transport_writing *writing);
+                                       grpc_chttp2_transport_writing *writing,
+                                       int is_parsing);
 void grpc_chttp2_perform_writes(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_writing *transport_writing,
     grpc_endpoint *endpoint);

@@ -77,6 +77,7 @@ Local<Value> ByteBufferToBuffer(grpc_byte_buffer *buffer) {
   while (grpc_byte_buffer_reader_next(&reader, &next) != 0) {
     memcpy(result + offset, GPR_SLICE_START_PTR(next), GPR_SLICE_LENGTH(next));
     offset += GPR_SLICE_LENGTH(next);
+    gpr_slice_unref(next);
   }
   return scope.Escape(MakeFastBuffer(
       Nan::NewBuffer(result, length).ToLocalChecked()));

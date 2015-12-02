@@ -40,6 +40,7 @@
 #include <grpc++/create_channel.h>
 
 #include "test/cpp/interop/interop_client.h"
+#include "test/cpp/util/metrics_server.h"
 
 namespace grpc {
 namespace testing {
@@ -81,21 +82,19 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
 
 StressTestInteropClient::StressTestInteropClient(
     int test_id, const grpc::string& server_address,
+    std::shared_ptr<Channel> channel,
     const WeightedRandomTestSelector& test_selector, long test_duration_secs,
-    long sleep_duration_ms)
+    long sleep_duration_ms, long metrics_collection_interval_secs)
     : test_id_(test_id),
       server_address_(server_address),
+      channel_(channel),
+      interop_client_(new InteropClient(channel, false)),
       test_selector_(test_selector),
       test_duration_secs_(test_duration_secs),
-      sleep_duration_ms_(sleep_duration_ms) {
-  // TODO(sreek): This will change once we add support for other tests
-  // that won't work with InsecureChannelCredentials()
-  std::shared_ptr<Channel> channel(
-      CreateChannel(server_address, InsecureChannelCredentials()));
-  interop_client_.reset(new InteropClient(channel, false));
-}
+      sleep_duration_ms_(sleep_duration_ms),
+      metrics_collection_interval_secs_(metrics_collection_interval_secs) {}
 
-void StressTestInteropClient::MainLoop() {
+void StressTestInteropClient::MainLoop(std::shared_ptr<Gauge> qps_gauge) {
   gpr_log(GPR_INFO, "Running test %d. ServerAddr: %s", test_id_,
           server_address_.c_str());
 
@@ -104,21 +103,38 @@ void StressTestInteropClient::MainLoop() {
                    gpr_time_from_seconds(test_duration_secs_, GPR_TIMESPAN));
 
   gpr_timespec current_time = gpr_now(GPR_CLOCK_REALTIME);
+  gpr_timespec next_stat_collection_time = current_time;
+  gpr_timespec collection_interval =
+      gpr_time_from_seconds(metrics_collection_interval_secs_, GPR_TIMESPAN);
+  long num_calls_per_interval = 0;
+
   while (test_duration_secs_ < 0 ||
-         gpr_time_cmp(current_time, test_end_time) < 0) {
+         gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), test_end_time) < 0) {
     // Select the test case to execute based on the weights and execute it
     TestCaseType test_case = test_selector_.GetNextTest();
     gpr_log(GPR_INFO, "%d - Executing the test case %d", test_id_, test_case);
     RunTest(test_case);
 
-    // Sleep between successive calls if needed
-    if (sleep_duration_ms_ > 0) {
-      gpr_timespec sleep_time = gpr_time_add(
-          current_time, gpr_time_from_millis(sleep_duration_ms_, GPR_TIMESPAN));
-      gpr_sleep_until(sleep_time);
+    num_calls_per_interval++;
+
+    // See if its time to collect stats yet
+    current_time = gpr_now(GPR_CLOCK_REALTIME);
+    if (gpr_time_cmp(next_stat_collection_time, current_time) < 0) {
+      qps_gauge->Set(num_calls_per_interval /
+                     metrics_collection_interval_secs_);
+
+      num_calls_per_interval = 0;
+      next_stat_collection_time =
+          gpr_time_add(current_time, collection_interval);
     }
 
-    current_time = gpr_now(GPR_CLOCK_REALTIME);
+    // Sleep between successive calls if needed
+    if (sleep_duration_ms_ > 0) {
+      gpr_timespec sleep_time =
+          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                       gpr_time_from_millis(sleep_duration_ms_, GPR_TIMESPAN));
+      gpr_sleep_until(sleep_time);
+    }
   }
 }
 

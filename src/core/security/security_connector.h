@@ -91,8 +91,10 @@ struct grpc_security_connector {
   const char *url_scheme;
   grpc_auth_context *auth_context; /* Populated after the peer is checked. */
   /* Used on server side only. */
+  /* TODO(yangg) maybe create a grpc_server_security_connector with these */
   gpr_mu mu;
   grpc_security_connector_handshake_list *handshaking_handshakes;
+  const grpc_channel_args *channel_args;
 };
 
 /* Refcounting. */

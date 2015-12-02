@@ -141,6 +141,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\vsprojects\vcxproj\.\test_tcp_server\test_tcp_server.vcxproj">
+      <Project>{E3110C46-A148-FF65-08FD-3324829BE7FE}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
       <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
     </ProjectReference>

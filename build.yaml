@@ -119,6 +119,7 @@ filegroups:
   - src/core/channel/subchannel_call_holder.h
   - src/core/client_config/client_config.h
   - src/core/client_config/connector.h
+  - src/core/client_config/initial_connect_string.h
   - src/core/client_config/lb_policies/pick_first.h
   - src/core/client_config/lb_policies/round_robin.h
   - src/core/client_config/lb_policy.h
@@ -134,6 +135,7 @@ filegroups:
   - src/core/client_config/subchannel_factory_decorators/add_channel_arg.h
   - src/core/client_config/subchannel_factory_decorators/merge_channel_args.h
   - src/core/client_config/uri_parser.h
+  - src/core/compression/algorithm_metadata.h
   - src/core/compression/message_compress.h
   - src/core/debug/trace.h
   - src/core/httpcli/format_request.h
@@ -216,6 +218,7 @@ filegroups:
   - src/core/transport/connectivity_state.h
   - src/core/transport/metadata.h
   - src/core/transport/metadata_batch.h
+  - src/core/transport/static_metadata.h
   - src/core/transport/transport.h
   - src/core/transport/transport_impl.h
   src:
@@ -233,6 +236,8 @@ filegroups:
   - src/core/channel/subchannel_call_holder.c
   - src/core/client_config/client_config.c
   - src/core/client_config/connector.c
+  - src/core/client_config/default_initial_connect_string.c
+  - src/core/client_config/initial_connect_string.c
   - src/core/client_config/lb_policies/pick_first.c
   - src/core/client_config/lb_policies/round_robin.c
   - src/core/client_config/lb_policy.c
@@ -341,6 +346,7 @@ filegroups:
   - src/core/transport/connectivity_state.c
   - src/core/transport/metadata.c
   - src/core/transport/metadata_batch.c
+  - src/core/transport/static_metadata.c
   - src/core/transport/transport.c
   - src/core/transport/transport_op_string.c
 - name: grpc_test_util_base
@@ -373,6 +379,7 @@ libs:
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_win32.h
+  - include/grpc/support/avl.h
   - include/grpc/support/cmdline.h
   - include/grpc/support/cpu.h
   - include/grpc/support/histogram.h
@@ -410,6 +417,7 @@ libs:
   - src/core/profiling/basic_timers.c
   - src/core/profiling/stap_timers.c
   - src/core/support/alloc.c
+  - src/core/support/avl.c
   - src/core/support/cmdline.c
   - src/core/support/cpu_iphone.c
   - src/core/support/cpu_linux.c
@@ -578,6 +586,19 @@ libs:
   - test/core/util/reconnect_server.h
   src:
   - test/core/util/reconnect_server.c
+  deps:
+  - test_tcp_server
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: test_tcp_server
+  build: private
+  language: c
+  headers:
+  - test/core/util/test_tcp_server.h
+  src:
+  - test/core/util/test_tcp_server.c
   deps:
   - grpc_test_util
   - grpc
@@ -969,6 +990,14 @@ targets:
   src:
   - tools/codegen/core/gen_legal_metadata_characters.c
   deps: []
+- name: gpr_avl_test
+  build: test
+  language: c
+  src:
+  - test/core/support/avl_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: gpr_cmdline_test
   build: test
   language: c
@@ -1422,6 +1451,17 @@ targets:
   src:
   - test/core/security/secure_endpoint_test.c
   deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: set_initial_connect_string_test
+  build: test
+  language: c
+  src:
+  - test/core/client_config/set_initial_connect_string_test.c
+  deps:
+  - test_tcp_server
   - grpc_test_util
   - grpc
   - gpr_test_util
@@ -1887,6 +1927,20 @@ targets:
   - mac
   - linux
   - posix
+- name: metrics_client
+  build: test
+  run: false
+  language: c++
+  headers:
+  - test/cpp/util/metrics_server.h
+  src:
+  - test/proto/metrics.proto
+  - test/cpp/interop/metrics_client.cc
+  deps:
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
 - name: mock_test
   build: test
   language: c++
@@ -2015,6 +2069,7 @@ targets:
   - test/cpp/interop/reconnect_interop_server.cc
   deps:
   - reconnect_server
+  - test_tcp_server
   - grpc++_test_util
   - grpc_test_util
   - grpc++
@@ -2127,13 +2182,16 @@ targets:
   - test/cpp/interop/client_helper.h
   - test/cpp/interop/interop_client.h
   - test/cpp/interop/stress_interop_client.h
+  - test/cpp/util/metrics_server.h
   src:
   - test/proto/empty.proto
   - test/proto/messages.proto
+  - test/proto/metrics.proto
   - test/proto/test.proto
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc
+  - test/cpp/util/metrics_server.cc
   deps:
   - grpc++_test_util
   - grpc_test_util
@@ -2228,6 +2286,23 @@ node_modules:
 - deps:
   - grpc
   - gpr
+  headers:
+  - src/node/ext/byte_buffer.h
+  - src/node/ext/call.h
+  - src/node/ext/call_credentials.h
+  - src/node/ext/channel.h
+  - src/node/ext/channel_credentials.h
+  - src/node/ext/completion_queue_async_worker.h
+  - src/node/ext/server.h
+  - src/node/ext/server_credentials.h
+  - src/node/ext/timeval.h
+  js:
+  - src/node/index.js
+  - src/node/src/client.js
+  - src/node/src/common.js
+  - src/node/src/credentials.js
+  - src/node/src/metadata.js
+  - src/node/src/server.js
   name: grpc_node
   src:
   - src/node/ext/byte_buffer.cc

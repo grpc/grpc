@@ -41,6 +41,7 @@
 #include <grpc++/create_channel.h>
 
 #include "test/cpp/interop/interop_client.h"
+#include "test/cpp/util/metrics_server.h"
 
 namespace grpc {
 namespace testing {
@@ -84,20 +85,26 @@ class WeightedRandomTestSelector {
 class StressTestInteropClient {
  public:
   StressTestInteropClient(int test_id, const grpc::string& server_address,
+                          std::shared_ptr<Channel> channel,
                           const WeightedRandomTestSelector& test_selector,
-                          long test_duration_secs, long sleep_duration_ms);
+                          long test_duration_secs, long sleep_duration_ms,
+                          long metrics_collection_interval_secs);
 
-  void MainLoop();  // The main function. Use this as the thread entry point.
+  // The main function. Use this as the thread entry point.
+  // qps_gauge is the Gauge to record the requests per second metric
+  void MainLoop(std::shared_ptr<Gauge> qps_gauge);
 
  private:
   void RunTest(TestCaseType test_case);
 
   int test_id_;
-  std::unique_ptr<InteropClient> interop_client_;
   const grpc::string& server_address_;
+  std::shared_ptr<Channel> channel_;
+  std::unique_ptr<InteropClient> interop_client_;
   const WeightedRandomTestSelector& test_selector_;
   long test_duration_secs_;
   long sleep_duration_ms_;
+  long metrics_collection_interval_secs_;
 };
 
 }  // namespace testing

@@ -591,9 +591,9 @@ size_t grpc_get_default_ssl_roots(const unsigned char **pem_root_certs) {
 }
 
 grpc_security_status grpc_ssl_channel_security_connector_create(
-    grpc_call_credentials *request_metadata_creds, const grpc_ssl_config *config,
-    const char *target_name, const char *overridden_target_name,
-    grpc_channel_security_connector **sc) {
+    grpc_call_credentials *request_metadata_creds,
+    const grpc_ssl_config *config, const char *target_name,
+    const char *overridden_target_name, grpc_channel_security_connector **sc) {
   size_t num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const unsigned char **alpn_protocol_strings =
       gpr_malloc(sizeof(const char *) * num_alpn_protocols);

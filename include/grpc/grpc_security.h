@@ -41,6 +41,81 @@
 extern "C" {
 #endif
 
+/* --- Authentication Context. --- */
+
+#define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
+#define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
+
+#define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
+#define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
+
+typedef struct grpc_auth_context grpc_auth_context;
+
+typedef struct grpc_auth_property_iterator {
+  const grpc_auth_context *ctx;
+  size_t index;
+  const char *name;
+} grpc_auth_property_iterator;
+
+/* value, if not NULL, is guaranteed to be NULL terminated. */
+typedef struct grpc_auth_property {
+  char *name;
+  char *value;
+  size_t value_length;
+} grpc_auth_property;
+
+/* Returns NULL when the iterator is at the end. */
+const grpc_auth_property *grpc_auth_property_iterator_next(
+    grpc_auth_property_iterator *it);
+
+/* Iterates over the auth context. */
+grpc_auth_property_iterator grpc_auth_context_property_iterator(
+    const grpc_auth_context *ctx);
+
+/* Gets the peer identity. Returns an empty iterator (first _next will return
+   NULL) if the peer is not authenticated. */
+grpc_auth_property_iterator grpc_auth_context_peer_identity(
+    const grpc_auth_context *ctx);
+
+/* Finds a property in the context. May return an empty iterator (first _next
+   will return NULL) if no property with this name was found in the context. */
+grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
+    const grpc_auth_context *ctx, const char *name);
+
+/* Gets the name of the property that indicates the peer identity. Will return
+   NULL if the peer is not authenticated. */
+const char *grpc_auth_context_peer_identity_property_name(
+    const grpc_auth_context *ctx);
+
+/* Returns 1 if the peer is authenticated, 0 otherwise. */
+int grpc_auth_context_peer_is_authenticated(const grpc_auth_context *ctx);
+
+/* Gets the auth context from the call. Caller needs to call
+   grpc_auth_context_release on the returned context. */
+grpc_auth_context *grpc_call_auth_context(grpc_call *call);
+
+/* Releases the auth context returned from grpc_call_auth_context. */
+void grpc_auth_context_release(grpc_auth_context *context);
+
+/* --
+   The following auth context methods should only be called by a server metadata
+   processor to set properties extracted from auth metadata.
+   -- */
+
+/* Add a property. */
+void grpc_auth_context_add_property(grpc_auth_context *ctx, const char *name,
+                                    const char *value, size_t value_length);
+
+/* Add a C string property. */
+void grpc_auth_context_add_cstring_property(grpc_auth_context *ctx,
+                                            const char *name,
+                                            const char *value);
+
+/* Sets the property name. Returns 1 if successful or 0 in case of failure
+   (which means that no property with this name exists). */
+int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context *ctx,
+                                                      const char *name);
+
 /* --- grpc_channel_credentials object. ---
 
    A channel credentials object represents a way to authenticate a client on a
@@ -165,6 +240,24 @@ typedef void (*grpc_credentials_plugin_metadata_cb)(
     void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
     grpc_status_code status, const char *error_details);
 
+/* Context that can be used by metadata credentials plugin in order to create
+   auth related metadata. */
+typedef struct {
+  /* The fully qualifed service url. */
+  const char *service_url;
+
+  /* The method name of the RPC being called (not fully qualified).
+     The fully qualified method name can be built from the service_url:
+     full_qualified_method_name = ctx->service_url + '/' + ctx->method_name. */
+  const char *method_name;
+
+  /* The auth_context of the channel which gives the server's identity. */
+  const grpc_auth_context *channel_auth_context;
+
+  /* Reserved for future use. */
+  void *reserved;
+} grpc_auth_metadata_context;
+
 /* grpc_metadata_credentials plugin is an API user provided structure used to
    create grpc_credentials objects that can be set on a channel (composed) or
    a call. See grpc_credentials_metadata_create_from_plugin below.
@@ -172,11 +265,11 @@ typedef void (*grpc_credentials_plugin_metadata_cb)(
    every call in scope for the credentials created from it. */
 typedef struct {
   /* The implementation of this method has to be non-blocking.
-     - service_url is the fully qualified URL that the client stack is
-       connecting to.
+     - context is the information that can be used by the plugin to create auth
+       metadata.
      - cb is the callback that needs to be called when the metadata is ready.
      - user_data needs to be passed as the first parameter of the callback. */
-  void (*get_metadata)(void *state, const char *service_url,
+  void (*get_metadata)(void *state, grpc_auth_metadata_context context,
                        grpc_credentials_plugin_metadata_cb cb, void *user_data);
 
   /* Destroys the plugin state. */
@@ -184,6 +277,9 @@ typedef struct {
 
   /* State that will be set as the first parameter of the methods above. */
   void *state;
+
+  /* Type of credentials that this plugin is implementing. */
+  const char *type;
 } grpc_metadata_credentials_plugin;
 
 /* Creates a credentials object from a plugin. */
@@ -238,81 +334,6 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
    grpc_call_start_batch. */
 grpc_call_error grpc_call_set_credentials(grpc_call *call,
                                           grpc_call_credentials *creds);
-
-/* --- Authentication Context. --- */
-
-#define GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME "transport_security_type"
-#define GRPC_SSL_TRANSPORT_SECURITY_TYPE "ssl"
-
-#define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
-#define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
-
-typedef struct grpc_auth_context grpc_auth_context;
-
-typedef struct grpc_auth_property_iterator {
-  const grpc_auth_context *ctx;
-  size_t index;
-  const char *name;
-} grpc_auth_property_iterator;
-
-/* value, if not NULL, is guaranteed to be NULL terminated. */
-typedef struct grpc_auth_property {
-  char *name;
-  char *value;
-  size_t value_length;
-} grpc_auth_property;
-
-/* Returns NULL when the iterator is at the end. */
-const grpc_auth_property *grpc_auth_property_iterator_next(
-    grpc_auth_property_iterator *it);
-
-/* Iterates over the auth context. */
-grpc_auth_property_iterator grpc_auth_context_property_iterator(
-    const grpc_auth_context *ctx);
-
-/* Gets the peer identity. Returns an empty iterator (first _next will return
-   NULL) if the peer is not authenticated. */
-grpc_auth_property_iterator grpc_auth_context_peer_identity(
-    const grpc_auth_context *ctx);
-
-/* Finds a property in the context. May return an empty iterator (first _next
-   will return NULL) if no property with this name was found in the context. */
-grpc_auth_property_iterator grpc_auth_context_find_properties_by_name(
-    const grpc_auth_context *ctx, const char *name);
-
-/* Gets the name of the property that indicates the peer identity. Will return
-   NULL if the peer is not authenticated. */
-const char *grpc_auth_context_peer_identity_property_name(
-    const grpc_auth_context *ctx);
-
-/* Returns 1 if the peer is authenticated, 0 otherwise. */
-int grpc_auth_context_peer_is_authenticated(const grpc_auth_context *ctx);
-
-/* Gets the auth context from the call. Caller needs to call
-   grpc_auth_context_release on the returned context. */
-grpc_auth_context *grpc_call_auth_context(grpc_call *call);
-
-/* Releases the auth context returned from grpc_call_auth_context. */
-void grpc_auth_context_release(grpc_auth_context *context);
-
-/* --
-   The following auth context methods should only be called by a server metadata
-   processor to set properties extracted from auth metadata.
-   -- */
-
-/* Add a property. */
-void grpc_auth_context_add_property(grpc_auth_context *ctx, const char *name,
-                                    const char *value, size_t value_length);
-
-/* Add a C string property. */
-void grpc_auth_context_add_cstring_property(grpc_auth_context *ctx,
-                                            const char *name,
-                                            const char *value);
-
-/* Sets the property name. Returns 1 if successful or 0 in case of failure
-   (which means that no property with this name exists). */
-int grpc_auth_context_set_peer_identity_property_name(grpc_auth_context *ctx,
-                                                      const char *name);
 
 /* --- Auth Metadata Processing --- */
 

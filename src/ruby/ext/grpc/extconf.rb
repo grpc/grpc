@@ -94,6 +94,10 @@ else
     end
     $CFLAGS << ' -I' + File.join(grpc_root, 'include')
     $LDFLAGS << ' -L' + grpc_lib_dir
+    if grpc_config == 'gcov'
+      $CFLAGS << ' -O0 -fprofile-arcs -ftest-coverage'
+      $LDFLAGS << ' -fprofile-arcs -ftest-coverage -rdynamic'
+    end
     raise 'gpr not found' unless have_library('gpr', 'gpr_now')
     raise 'grpc not found' unless have_library('grpc', 'grpc_channel_destroy')
   end

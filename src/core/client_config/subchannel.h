@@ -77,10 +77,10 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
 
 /** construct a subchannel call (possibly asynchronously).
  *
- * If the returned status is 1, the call will return immediately and \a target 
- * will point to a connected \a subchannel_call instance. Note that \a notify 
+ * If the returned status is 1, the call will return immediately and \a target
+ * will point to a connected \a subchannel_call instance. Note that \a notify
  * will \em not be invoked in this case.
- * Otherwise, if the returned status is 0, the subchannel call will be created 
+ * Otherwise, if the returned status is 0, the subchannel call will be created
  * asynchronously, invoking the \a notify callback upon completion. */
 int grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx,
                                 grpc_subchannel *subchannel,
@@ -147,8 +147,6 @@ struct grpc_subchannel_args {
   /** Address to connect to */
   struct sockaddr *addr;
   size_t addr_len;
-  /** metadata context to use */
-  grpc_mdctx *mdctx;
   /** master channel */
   grpc_channel *master;
 };
@@ -156,9 +154,6 @@ struct grpc_subchannel_args {
 /** create a subchannel given a connector */
 grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
                                         grpc_subchannel_args *args);
-
-/** Return the metadata context associated with the subchannel */
-grpc_mdctx *grpc_subchannel_get_mdctx(grpc_subchannel *subchannel);
 
 /** Return the master channel associated with the subchannel */
 grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel);
