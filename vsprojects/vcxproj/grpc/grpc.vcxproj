@@ -259,6 +259,7 @@
     <ClInclude Include="..\..\..\src\core\security\handshake.h" />
     <ClInclude Include="..\..\..\src\core\security\json_token.h" />
     <ClInclude Include="..\..\..\src\core\security\jwt_verifier.h" />
+    <ClInclude Include="..\..\..\src\core\security\pre_handshake.h" />
     <ClInclude Include="..\..\..\src\core\security\secure_endpoint.h" />
     <ClInclude Include="..\..\..\src\core\security\security_connector.h" />
     <ClInclude Include="..\..\..\src\core\security\security_context.h" />
@@ -408,6 +409,8 @@
     <ClCompile Include="..\..\..\src\core\security\json_token.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\jwt_verifier.c">
+    </ClCompile>
+    <ClCompile Include="..\..\..\src\core\security\pre_handshake.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\security\secure_endpoint.c">
     </ClCompile>

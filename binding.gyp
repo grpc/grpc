@@ -163,6 +163,7 @@
         'src/core/security/handshake.c',
         'src/core/security/json_token.c',
         'src/core/security/jwt_verifier.c',
+        'src/core/security/pre_handshake.c',
         'src/core/security/secure_endpoint.c',
         'src/core/security/security_connector.c',
         'src/core/security/security_context.c',

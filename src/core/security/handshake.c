@@ -35,10 +35,11 @@
 
 #include <string.h>
 
-#include "src/core/security/secure_endpoint.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
+#include "src/core/security/pre_handshake.h"
+#include "src/core/security/secure_endpoint.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
@@ -56,6 +57,7 @@ typedef struct {
   void *user_data;
   grpc_closure on_handshake_data_sent_to_peer;
   grpc_closure on_handshake_data_received_from_peer;
+  grpc_closure on_handshake_done;
 } grpc_security_handshake;
 
 static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
@@ -64,9 +66,9 @@ static void on_handshake_data_received_from_peer(grpc_exec_ctx *exec_ctx,
 static void on_handshake_data_sent_to_peer(grpc_exec_ctx *exec_ctx, void *setup,
                                            int success);
 
-static void security_handshake_done(grpc_exec_ctx *exec_ctx,
-                                    grpc_security_handshake *h,
+static void security_handshake_done(grpc_exec_ctx *exec_ctx, void *handshake,
                                     int is_success) {
+  grpc_security_handshake *h = handshake;
   if (is_success) {
     h->cb(exec_ctx, h->user_data, GRPC_SECURITY_OK, h->wrapped_endpoint,
           h->secure_endpoint);
@@ -281,8 +283,11 @@ void grpc_do_security_handshake(grpc_exec_ctx *exec_ctx,
                     on_handshake_data_sent_to_peer, h);
   grpc_closure_init(&h->on_handshake_data_received_from_peer,
                     on_handshake_data_received_from_peer, h);
+  grpc_closure_init(&h->on_handshake_done, security_handshake_done, h);
   gpr_slice_buffer_init(&h->left_overs);
   gpr_slice_buffer_init(&h->outgoing);
   gpr_slice_buffer_init(&h->incoming);
-  send_handshake_bytes_to_peer(exec_ctx, h);
+  grpc_pre_handshake(exec_ctx, h->connector, &h->incoming, nonsecure_endpoint,
+                     &h->on_handshake_data_received_from_peer,
+                     &h->on_handshake_done);
 }
