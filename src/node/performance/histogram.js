@@ -44,8 +44,8 @@
  * pared down to the statistics needed for client stats in
  * test/proto/benchmarks/stats.proto.
  * @constructor
- * @param {number} resolution The histogram's bucket resolution
- * @param {number} max_possible The maximum allowed value
+ * @param {number} resolution The histogram's bucket resolution. Must be positive
+ * @param {number} max_possible The maximum allowed value. Must be greater than 1
  */
 function Histogram(resolution, max_possible) {
   this.resolution = resolution;

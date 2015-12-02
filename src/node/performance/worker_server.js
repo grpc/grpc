@@ -41,20 +41,23 @@ var serviceProto = grpc.load({
   file: 'test/proto/benchmarks/services.proto'}).grpc.testing;
 
 function runServer(port) {
-  var server_creds;
-  // Need to actually populate server_creds
+  var server_creds = grpc.ServerCredentials.createInsecure();
   var server = new grpc.Server();
   server.addProtoService(serviceProto.WorkerService.service,
                          worker_service_impl);
-  server.bind('0.0.0.0:' + port, server_creds);
+  var address = '0.0.0.0:' + port;
+  server.bind(address, server_creds);
   server.start();
   return server;
 }
 
 if (require.main === module) {
+  Error.stackTraceLimit = Infinity;
   var parseArgs = require('minimist');
   var argv = parseArgs(process.argv, {
     string: ['driver_port']
   });
   runServer(argv.driver_port);
 }
+
+exports.runServer = runServer;
