@@ -135,10 +135,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\test\core\end2end\data\ssl_test_data.h" />
+    <ClInclude Include="..\..\..\test\core\security\oauth2_utils.h" />
     <ClInclude Include="..\..\..\test\core\end2end\cq_verifier.h" />
     <ClInclude Include="..\..\..\test\core\end2end\fixtures\proxy.h" />
     <ClInclude Include="..\..\..\test\core\iomgr\endpoint_tests.h" />
-    <ClInclude Include="..\..\..\test\core\security\oauth2_utils.h" />
     <ClInclude Include="..\..\..\test\core\util\grpc_profiler.h" />
     <ClInclude Include="..\..\..\test\core\util\parse_hexstring.h" />
     <ClInclude Include="..\..\..\test\core\util\port.h" />
@@ -151,13 +151,13 @@
     </ClCompile>
     <ClCompile Include="..\..\..\test\core\end2end\data\test_root_cert.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\test\core\security\oauth2_utils.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\test\core\end2end\cq_verifier.c">
     </ClCompile>
     <ClCompile Include="..\..\..\test\core\end2end\fixtures\proxy.c">
     </ClCompile>
     <ClCompile Include="..\..\..\test\core\iomgr\endpoint_tests.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\test\core\security\oauth2_utils.c">
     </ClCompile>
     <ClCompile Include="..\..\..\test\core\util\grpc_profiler.c">
     </ClCompile>
