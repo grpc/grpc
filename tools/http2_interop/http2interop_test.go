@@ -3,6 +3,7 @@ package http2interop
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -68,6 +69,7 @@ func (ctx *HTTP2InteropCtx) Close() error {
 }
 
 func TestClientShortSettings(t *testing.T) {
+	defer Report(t)()
 	if *testCase != "framing" {
 		t.SkipNow()
 	}
@@ -79,6 +81,7 @@ func TestClientShortSettings(t *testing.T) {
 }
 
 func TestShortPreface(t *testing.T) {
+	defer Report(t)()
 	if *testCase != "framing" {
 		t.SkipNow()
 	}
@@ -90,6 +93,7 @@ func TestShortPreface(t *testing.T) {
 }
 
 func TestUnknownFrameType(t *testing.T) {
+	defer Report(t)()
 	if *testCase != "framing" {
 		t.SkipNow()
 	}
@@ -100,6 +104,7 @@ func TestUnknownFrameType(t *testing.T) {
 }
 
 func TestClientPrefaceWithStreamId(t *testing.T) {
+	defer Report(t)()
 	if *testCase != "framing" {
 		t.SkipNow()
 	}
@@ -109,6 +114,7 @@ func TestClientPrefaceWithStreamId(t *testing.T) {
 }
 
 func TestTLSApplicationProtocol(t *testing.T) {
+	defer Report(t)()
 	if *testCase != "tls" {
 		t.SkipNow()
 	}
@@ -118,6 +124,7 @@ func TestTLSApplicationProtocol(t *testing.T) {
 }
 
 func TestTLSMaxVersion(t *testing.T) {
+	defer Report(t)()
 	if *testCase != "tls" {
 		t.SkipNow()
 	}
@@ -129,6 +136,7 @@ func TestTLSMaxVersion(t *testing.T) {
 }
 
 func TestTLSBadCipherSuites(t *testing.T) {
+	defer Report(t)()
 	if *testCase != "tls" {
 		t.SkipNow()
 	}
@@ -151,5 +159,10 @@ func matchError(t *testing.T, err error, matches ...string) {
 
 func TestMain(m *testing.M) {
 	flag.Parse()
-	os.Exit(m.Run())
+	m.Run()
+	if err := json.NewEncoder(os.Stderr).Encode(&allCaseInfos); err != nil {
+		fmt.Println("Failed to encode", err)
+	}
+	// Always pass
+	os.Exit(0)
 }
