@@ -234,6 +234,7 @@ int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
             creds->type);
     goto error;
   }
+  sc->channel_args = grpc_server_get_channel_args(server);
 
   /* resolve address */
   resolved = grpc_blocking_resolve_address(addr, "https");
