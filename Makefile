@@ -4510,6 +4510,7 @@ LIBGRPC_SRC = \
     src/core/security/handshake.c \
     src/core/security/json_token.c \
     src/core/security/jwt_verifier.c \
+    src/core/security/pre_handshake.c \
     src/core/security/secure_endpoint.c \
     src/core/security/security_connector.c \
     src/core/security/security_context.c \
@@ -23215,6 +23216,7 @@ src/core/security/google_default_credentials.c: $(OPENSSL_DEP)
 src/core/security/handshake.c: $(OPENSSL_DEP)
 src/core/security/json_token.c: $(OPENSSL_DEP)
 src/core/security/jwt_verifier.c: $(OPENSSL_DEP)
+src/core/security/pre_handshake.c: $(OPENSSL_DEP)
 src/core/security/secure_endpoint.c: $(OPENSSL_DEP)
 src/core/security/security_connector.c: $(OPENSSL_DEP)
 src/core/security/security_context.c: $(OPENSSL_DEP)
