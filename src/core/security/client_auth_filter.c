@@ -152,8 +152,8 @@ void build_auth_metadata_context(grpc_security_connector *sc,
                grpc_mdstr_as_c_string(calld->host), service);
   calld->auth_md_context.service_url = service_url;
   calld->auth_md_context.method_name = method_name;
-  calld->auth_md_context.channel_auth_context = GRPC_AUTH_CONTEXT_REF(
-      sc->auth_context, "grpc_auth_metadata_context");
+  calld->auth_md_context.channel_auth_context =
+      GRPC_AUTH_CONTEXT_REF(sc->auth_context, "grpc_auth_metadata_context");
   gpr_free(service);
 }
 

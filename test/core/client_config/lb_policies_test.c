@@ -286,10 +286,12 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
     op->reserved = NULL;
     op++;
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-    op->data.recv_status_on_client.trailing_metadata = &rdata->trailing_metadata_recv;
+    op->data.recv_status_on_client.trailing_metadata =
+        &rdata->trailing_metadata_recv;
     op->data.recv_status_on_client.status = &rdata->status;
     op->data.recv_status_on_client.status_details = &rdata->details;
-    op->data.recv_status_on_client.status_details_capacity = &rdata->details_capacity;
+    op->data.recv_status_on_client.status_details_capacity =
+        &rdata->details_capacity;
     op->flags = 0;
     op->reserved = NULL;
     op++;
@@ -354,7 +356,8 @@ int *perform_request(servers_fixture *f, grpc_channel *client,
       GPR_ASSERT(rdata->status == GRPC_STATUS_UNIMPLEMENTED);
       GPR_ASSERT(0 == strcmp(rdata->details, "xyz"));
       GPR_ASSERT(0 == strcmp(rdata->call_details[s_idx].method, "/foo"));
-      GPR_ASSERT(0 == strcmp(rdata->call_details[s_idx].host, "foo.test.google.fr"));
+      GPR_ASSERT(0 ==
+                 strcmp(rdata->call_details[s_idx].host, "foo.test.google.fr"));
       GPR_ASSERT(was_cancelled == 1);
     } else {
     }
