@@ -330,6 +330,7 @@ func http2Connect(c net.Conn, sf *SettingsFrame) error {
 	if _, err := c.Write([]byte(Preface)); err != nil {
 		return err
 	}
+
 	if sf == nil {
 		sf = &SettingsFrame{}
 	}
