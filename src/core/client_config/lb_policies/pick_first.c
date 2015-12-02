@@ -235,8 +235,8 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
                                 p->checking_connectivity, "selected_changed");
     if (p->checking_connectivity != GRPC_CHANNEL_FATAL_FAILURE) {
       grpc_connected_subchannel_notify_on_state_change(
-          exec_ctx, p->selected, &p->base.interested_parties, &p->checking_connectivity,
-          &p->connectivity_changed);
+          exec_ctx, p->selected, &p->base.interested_parties,
+          &p->checking_connectivity, &p->connectivity_changed);
     } else {
       GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, &p->base, "pick_first_connectivity");
     }
@@ -265,8 +265,8 @@ static void pf_connectivity_changed(grpc_exec_ctx *exec_ctx, void *arg,
           gpr_free(pp);
         }
         grpc_connected_subchannel_notify_on_state_change(
-            exec_ctx, p->selected, &p->base.interested_parties, &p->checking_connectivity,
-            &p->connectivity_changed);
+            exec_ctx, p->selected, &p->base.interested_parties,
+            &p->checking_connectivity, &p->connectivity_changed);
         break;
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
         grpc_connectivity_state_set(exec_ctx, &p->state_tracker,
