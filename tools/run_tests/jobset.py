@@ -43,11 +43,23 @@ import time
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
 _MAX_RESULT_SIZE = 8192
 
+def platform_string():
+  if platform.system() == 'Windows':
+    return 'windows'
+  elif platform.system()[:7] == 'MSYS_NT':
+    return 'windows'
+  elif platform.system() == 'Darwin':
+    return 'mac'
+  elif platform.system() == 'Linux':
+    return 'linux'
+  else:
+    return 'posix'
+
 
 # setup a signal handler so that signal.pause registers 'something'
 # when a child finishes
 # not using futures and threading to avoid a dependency on subprocess32
-if platform.system() == 'Windows':
+if platform_string() == 'windows':
   pass
 else:
   have_alarm = False
@@ -99,7 +111,7 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
   message.old_tag = tag
   message.old_msg = msg
   try:
-    if platform.system() == 'Windows' or not sys.stdout.isatty():
+    if platform_string() == 'windows' or not sys.stdout.isatty():
       if explanatory_text:
         print explanatory_text
       print '%s: %s' % (tag, msg)
@@ -359,7 +371,7 @@ class Jobset(object):
       if (not self._travis):
         message('WAITING', '%d jobs running, %d complete, %d failed' % (
             len(self._running), self._completed, self._failures))
-      if platform.system() == 'Windows':
+      if platform_string() == 'windows':
         time.sleep(0.1)
       else:
         global have_alarm
