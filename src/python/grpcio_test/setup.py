@@ -67,6 +67,7 @@ _SETUP_REQUIRES = (
     'pytest-cov>=2.0',
     'pytest-xdist>=1.11',
     'pytest-timeout>=0.5',
+    'pytest-html>=1.7',
 )
 
 _INSTALL_REQUIRES = (
