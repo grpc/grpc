@@ -147,11 +147,11 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_fixture_h2_sockpair_1byte\end2end_fixture_h2_sockpair_1byte.vcxproj">
-      <Project>{B0F4BF34-3C82-EB67-990E-959CDDBEB734}</Project>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_nosec_fixture_h2_sockpair_1byte\end2end_nosec_fixture_h2_sockpair_1byte.vcxproj">
+      <Project>{6F1C96CC-AC8F-3864-0154-0F9212DCCFE2}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_test_cancel_after_accept\end2end_test_cancel_after_accept.vcxproj">
-      <Project>{075083B6-7408-E329-59FF-E92DE8325FB1}</Project>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_nosec_test_cancel_after_accept\end2end_nosec_test_cancel_after_accept.vcxproj">
+      <Project>{90885966-34FD-ACBE-8FE1-85A29FDC4FE6}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\grpc_test_util_unsecure\grpc_test_util_unsecure.vcxproj">
       <Project>{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}</Project>

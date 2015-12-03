@@ -354,7 +354,6 @@ filegroups:
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
-  - test/core/security/oauth2_utils.h
   - test/core/util/grpc_profiler.h
   - test/core/util/parse_hexstring.h
   - test/core/util/port.h
@@ -363,7 +362,6 @@ filegroups:
   - test/core/end2end/cq_verifier.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
-  - test/core/security/oauth2_utils.c
   - test/core/util/grpc_profiler.c
   - test/core/util/parse_hexstring.c
   - test/core/util/port_posix.c
@@ -526,10 +524,12 @@ libs:
   language: c
   headers:
   - test/core/end2end/data/ssl_test_data.h
+  - test/core/security/oauth2_utils.h
   src:
   - test/core/end2end/data/server1_cert.c
   - test/core/end2end/data/server1_key.c
   - test/core/end2end/data/test_root_cert.c
+  - test/core/security/oauth2_utils.c
   deps:
   - gpr
   - gpr_test_util
@@ -543,7 +543,7 @@ libs:
   deps:
   - gpr
   - gpr_test_util
-  - grpc
+  - grpc_unsecure
   filegroups:
   - grpc_test_util_base
   secure: false
