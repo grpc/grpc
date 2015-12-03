@@ -54,7 +54,7 @@
     <Compile Include="Internal\NativeMetadataCredentialsPlugin.cs" />
     <Compile Include="Internal\INativeCall.cs" />
     <Compile Include="Internal\PlatformInvocation.cs" />
-    <Compile Include="Internal\PlatformInvocationLinux64.cs" />
+    <Compile Include="Internal\PlatformInvocationLinux.cs" />
     <Compile Include="Internal\PlatformInvocationWin32.cs" />
     <Compile Include="Internal\PlatformInvocationWin64.cs" />
     <Compile Include="IServerStreamWriter.cs" />

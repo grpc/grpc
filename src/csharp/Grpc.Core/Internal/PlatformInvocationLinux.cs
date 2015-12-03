@@ -6,7 +6,7 @@ namespace Grpc.Core.Internal
     /// <summary>
     /// Platform invoke method bindings for 64-bit Linux platforms
     /// </summary>
-    internal class PlatformInvocationLinux64 : IPlatformInvocation
+    internal class PlatformInvocationLinux : IPlatformInvocation
     {
         // Environment
 
