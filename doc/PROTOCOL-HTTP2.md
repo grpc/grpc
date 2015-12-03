@@ -10,58 +10,82 @@ Production rules are using <a href="http://tools.ietf.org/html/rfc5234">ABNF syn
 
 The following is the general sequence of message atoms in a GRPC request & response message stream
 
-* Request → Request-Headers *Delimited-Message EOS
-* Response → (Response-Headers *Delimited-Message Trailers) / Trailers-Only
+* Request → Request-Headers \*Length-Prefixed-Message EOS
+* Response → (Response-Headers \*Length-Prefixed-Message Trailers) / Trailers-Only
 
 
 ### Requests
 
-* Request → Request-Headers *Delimited-Message EOS
+* Request → Request-Headers \*Length-Prefixed-Message EOS
 
 Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
-* **Request-Headers** → Call-Definition *Custom-Metadata
-* **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] [Content-Type] [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
-* **Method** →  “:method POST”
-* **Scheme** → “:scheme ”  (“http” / “https”)
-* **Path** → “:path”  {_path identifying method within exposed API_}
-* **Authority** → “:authority” {_virtual host name of authority_}
-* **TE** → “te” “trailers”  # Used to detect incompatible proxies
-* **Timeout** → “grpc-timeout” TimeoutValue TimeoutUnit
+* **Request-Headers** → Call-Definition \*Custom-Metadata
+* **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
+* **Method** →  ":method POST"
+* **Scheme** → ":scheme "  ("http" / "https")
+* **Path** → ":path"  {_path identifying method within exposed API_}
+* **Authority** → ":authority" {_virtual host name of authority_}
+* **TE** → "te" "trailers"  # Used to detect incompatible proxies
+* **Timeout** → "grpc-timeout" TimeoutValue TimeoutUnit
 * **TimeoutValue** → {_positive integer as ASCII string of at most 8 digits_}
 * **TimeoutUnit** → Hour / Minute / Second / Millisecond / Microsecond / Nanosecond
-* **Hour** → “H”
-* **Minute** → “M”
-* **Second** → “S”
-* **Millisecond** → “m”
-* **Microsecond** → “u”
-* **Nanosecond** → “n”
-* **Content-Type** → “content-type” “application/grpc” [(“+proto” / “+json” / {_custom_})]
-* **Content-Coding** → “gzip” / “deflate” / “snappy” / {_custom_}
-* **Message-Encoding** → “grpc-encoding” Content-Coding
-* **Message-Accept-Encoding** → “grpc-accept-encoding” Content-Coding *("," Content-Coding)
-* **User-Agent** → “user-agent” {_structured user-agent string_}
-* **Message-Type** → “grpc-message-type” {_type name for message schema_}
+* **Hour** → "H"
+* **Minute** → "M"
+* **Second** → "S"
+* **Millisecond** → "m"
+* **Microsecond** → "u"
+* **Nanosecond** → "n"
+* **Content-Type** → "content-type" "application/grpc" [("+proto" / "+json" / {_custom_})]
+* **Content-Coding** → "identity" / "gzip" / "deflate" / "snappy" / {_custom_}
+* **Message-Encoding** → "grpc-encoding" Content-Coding
+* **Message-Accept-Encoding** → "grpc-accept-encoding" Content-Coding \*("," Content-Coding)
+* **User-Agent** → "user-agent" {_structured user-agent string_}
+* **Message-Type** → "grpc-message-type" {_type name for message schema_}
 * **Custom-Metadata** → Binary-Header / ASCII-Header
-* **Binary-Header** → {Header-Name “-bin” } {_base64 encoded value_}
-* **ASCII-Header** → Header-Name {_value_}
-* **Header-Name** → 1*( %x30-39 / %x61-7A / “_” / “-”) ; 0-9 a-z 
+* **Binary-Header** → {Header-Name "-bin" } {_base64 encoded value_}
+* **ASCII-Header** → Header-Name ASCII-Value
+* **Header-Name** → 1\*( %x30-39 / %x61-7A / "\_" / "-") ; 0-9 a-z \_ -
+* **ASCII-Value** → 1\*( %x20-%x7E ) ; space and printable ASCII
 
 
-HTTP2 requires that reserved headers, ones starting with “:” appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
+HTTP2 requires that reserved headers, ones starting with ":" appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
 
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 
-**Custom-Metadata** is an arbitrary set of key-value pairs defined by the application layer. Aside from transport limits on the total length of HTTP2 HEADERS the only other constraint is that header names starting with “grpc-” are reserved for future use.
+**Custom-Metadata** is an arbitrary set of key-value pairs defined by the application layer. Header names starting with "grpc-" but not listed here are reserved for future GRPC use and should not be used by applications as **Custom-Metadata**.
 
-Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per https://tools.ietf.org/html/rfc4648#section-4. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with “-bin”. Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding & decoding as headers are sent and received.
+Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per https://tools.ietf.org/html/rfc4648#section-4. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with "-bin". Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding & decoding as headers are sent and received.
 
-The repeated sequence of **Delimited-Message** items is delivered in DATA frames
+**Custom-Metadata** header order is not guaranteed to be preserved except for
+values with duplicate header names. Duplicate header names may have their values
+joined with "," as the delimiter and be considered semantically equivalent.
+Implementations must split **Binary-Header**s on "," before decoding the
+Base64-encoded values.
 
-* **Delimited-Message** → Compressed-Flag Message-Length Message
+**ASCII-Value** should not have leading or trailing whitespace. If it contains
+leading or trailing whitespace, it may be stripped. The **ASCII-Value**
+character range defined is more strict than HTTP. Implementations must not error
+due to receiving an invalid **ASCII-Value** that's a valid **field-value** in
+HTTP, but the precise behavior is not strictly defined: they may throw the value
+away or accept the value. If accepted, care must be taken to make sure that the
+application is permitted to echo the value back as metadata. For example, if the
+metadata is provided to the application as a list in a request, the application
+should not trigger an error by providing that same list as the metadata in the
+response.
+
+Servers may limit the size of **Request-Headers**, with a default of 8 KiB
+suggested.  Implementations are encouraged to compute total header size like
+HTTP/2's `SETTINGS_MAX_HEADER_LIST_SIZE`: the sum of all header fields, for each
+field the sum of the uncompressed field name and value lengths plus 32, with
+binary values' lengths being post-Base64.
+
+The repeated sequence of **Length-Prefixed-Message** items is delivered in DATA frames
+
+* **Length-Prefixed-Message** → Compressed-Flag Message-Length Message
 * **Compressed-Flag** → 0 / 1   # encoded as 1 byte unsigned integer
 * **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer
-* **Message** → *{binary octet}
+* **Message** → \*{binary octet}
 
 A **Compressed-Flag** value of 1 indicates that the binary octet sequence of **Message** is compressed using the mechanism declared by the **Message-Encoding** header. A value of 0 indicates that no encoding of **Message** bytes has occurred. Compression contexts are NOT maintained over message boundaries, implementations must create a new context for each message in the stream. If the **Message-Encoding** header is omitted then the **Compressed-Flag** must be 0.
 
@@ -69,19 +93,22 @@ For requests, **EOS** (end-of-stream) is indicated by the presence of the END_ST
 
 ###Responses
 
-* **Response** → (Response-Headers *Delimited-Message Trailers) / Trailers-Only
-* **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type *Custom-Metadata
+* **Response** → (Response-Headers \*Length-Prefixed-Message Trailers) / Trailers-Only
+* **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type \*Custom-Metadata
 * **Trailers-Only** → HTTP-Status Content-Type Trailers
-* **Trailers** → Status [Status-Message] *Custom-Metadata
-* **HTTP-Status** → “:status 200”
-* **Status** → “grpc-status” <status-code-as-ASCII-string>
-* **Status-Message** → “grpc-message” <descriptive text for status as ASCII string>
+* **Trailers** → Status [Status-Message] \*Custom-Metadata
+* **HTTP-Status** → ":status 200"
+* **Status** → "grpc-status" <status-code-as-ASCII-string>
+* **Status-Message** → "grpc-message" <descriptive text for status as ASCII string>
 
 **Response-Headers** & **Trailers-Only** are each delivered in a single HTTP2 HEADERS frame block. Most responses are expected to have both headers and trailers but **Trailers-Only** is permitted for calls that produce an immediate error. Status must be sent in **Trailers** even if the status code is OK.
 
 For responses end-of-stream is indicated by the presence of the END_STREAM flag on the last received HEADERS frame that carries **Trailers**.
 
 Implementations should expect broken deployments to send non-200 HTTP status codes in responses as well as a variety of non-GRPC content-types and to omit **Status** & **Status-Message**. Implementations must synthesize a **Status** & **Status-Message** to propagate to the application layer when this occurs.
+
+Clients may limit the size of **Response-Headers**, **Trailers**, and
+**Trailers-Only**, with a default of 8 KiB each suggested.
 
 ####Example
 
@@ -101,7 +128,7 @@ grpc-encoding = gzip
 authorization = Bearer y235.wef315yfh138vh31hv93hv8h3v
 
 DATA (flags = END_STREAM)
-<Delimited Message>
+<Length-Prefixed Message>
 ```
 **Response**
 ```
@@ -110,7 +137,7 @@ HEADERS (flags = END_HEADERS)
 grpc-encoding = gzip
 
 DATA
-<Delimited Message>
+<Length-Prefixed Message>
 
 HEADERS (flags = END_STREAM, END_HEADERS)
 grpc-status = 0 # OK
@@ -120,7 +147,7 @@ trace-proto-bin = jher831yy13JHy3hc
 
 While the protocol does not require a user-agent to function it is recommended that clients provide a structured user-agent string that provides a basic description of the calling library, version & platform to facilitate issue diagnosis in heterogeneous environments. The following structure is recommended to library developers
 ```
-User-Agent → “grpc-” Language ?(“-” Variant) “/” Version ?( “ (“  *(AdditionalProperty “;”) “)” )
+User-Agent → "grpc-" Language ?("-" Variant) "/" Version ?( " ("  *(AdditionalProperty ";") ")" )
 ```
 E.g.
 
@@ -136,7 +163,7 @@ grpc-java-android/0.9.1 (gingerbread/1.2.4; nexus5; tmobile)
 All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as call identifiers in this scheme. NOTE: These id’s are contextual to an open HTTP2 session and will not be unique within a given process that is handling more than one HTTP2 session nor can they be used as GUIDs.
 
 #####Data Frames
-DATA frame boundaries have no relation to **Delimited-Message** boundaries and implementations should make no assumptions about their alignment.
+DATA frame boundaries have no relation to **Length-Prefixed-Message** boundaries and implementations should make no assumptions about their alignment.
 
 #####Errors
 

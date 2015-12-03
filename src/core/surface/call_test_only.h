@@ -57,7 +57,6 @@ gpr_uint32 grpc_call_test_only_get_message_flags(grpc_call *call);
  * To be indexed by grpc_compression_algorithm enum values. */
 gpr_uint32 grpc_call_test_only_get_encodings_accepted_by_peer(grpc_call *call);
 
-
 #ifdef __cplusplus
 }
 #endif

@@ -43,7 +43,7 @@
 namespace grpc {
 
 /// A thin wrapper around \a grpc_alarm (see / \a / src/core/surface/alarm.h).
-class Alarm: public GrpcLibrary {
+class Alarm : public GrpcLibrary {
  public:
   /// Create a completion queue alarm instance associated to \a cq.
   ///

@@ -43,8 +43,7 @@
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_int32(driver_port, 0, "Driver server port.");
-DEFINE_int32(server_port, 0, "Spawned server port.");
+DEFINE_int32(driver_port, 0, "Port for communication with driver");
 
 static bool got_sigint = false;
 
@@ -54,7 +53,7 @@ namespace grpc {
 namespace testing {
 
 static void RunServer() {
-  QpsWorker worker(FLAGS_driver_port, FLAGS_server_port);
+  QpsWorker worker(FLAGS_driver_port);
 
   while (!got_sigint) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),

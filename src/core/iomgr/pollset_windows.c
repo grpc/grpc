@@ -35,6 +35,7 @@
 
 #ifdef GPR_WINSOCK_SOCKET
 
+#include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 
 #include "src/core/iomgr/timer_internal.h"
@@ -112,7 +113,6 @@ void grpc_pollset_init(grpc_pollset *pollset) {
 
 void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_closure *closure) {
-  gpr_mu_lock(&grpc_polling_mu);
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
@@ -120,10 +120,19 @@ void grpc_pollset_shutdown(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
   } else {
     pollset->on_shutdown = closure;
   }
-  gpr_mu_unlock(&grpc_polling_mu);
 }
 
 void grpc_pollset_destroy(grpc_pollset *pollset) {}
+
+void grpc_pollset_reset(grpc_pollset *pollset) {
+  GPR_ASSERT(pollset->shutting_down);
+  GPR_ASSERT(
+      !has_workers(&pollset->root_worker, GRPC_POLLSET_WORKER_LINK_POLLSET));
+  pollset->shutting_down = 0;
+  pollset->is_iocp_worker = 0;
+  pollset->kicked_without_pollers = 0;
+  pollset->on_shutdown = NULL;
+}
 
 void grpc_pollset_work(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                        grpc_pollset_worker *worker, gpr_timespec now,
