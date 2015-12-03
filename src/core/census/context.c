@@ -39,6 +39,10 @@
 
 /* Placeholder implementation only. */
 
+census_context* census_context_current(void) {
+  return NULL;
+}
+
 size_t census_context_serialize(const census_context *context, char *buffer,
                                 size_t buf_size) {
   /* TODO(aveitch): implement serialization */

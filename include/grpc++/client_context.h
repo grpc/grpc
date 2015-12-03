@@ -37,7 +37,6 @@
 /// side.
 /// - Control call settings such as compression and authentication.
 /// - Initial and trailing metadata coming from the server.
-/// - Get performance metrics (ie, census).
 ///
 /// Context settings are only relevant to the call they are invoked with, that
 /// is to say, they aren't sticky. Some of these settings, such as the
@@ -63,8 +62,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-
-struct census_context;
 
 namespace grpc {
 
@@ -268,12 +265,6 @@ class ClientContext {
   /// \return The call's peer URI.
   grpc::string peer() const;
 
-  /// Get and set census context
-  void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
-  struct census_context* census_context() const {
-    return census_context_;
-  }
-
   /// Send a best-effort out-of-band cancel. The call could be in any stage.
   /// e.g. if it is already finished, it may still return success.
   ///
@@ -323,7 +314,6 @@ class ClientContext {
   grpc::string authority_;
   std::shared_ptr<CallCredentials> creds_;
   mutable std::shared_ptr<const AuthContext> auth_context_;
-  struct census_context* census_context_;
   std::multimap<grpc::string, grpc::string> send_initial_metadata_;
   std::multimap<grpc::string_ref, grpc::string_ref> recv_initial_metadata_;
   std::multimap<grpc::string_ref, grpc::string_ref> trailing_metadata_;

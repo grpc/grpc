@@ -36,14 +36,14 @@
 
 #include <grpc/census.h>
 
+#define GRPC_CENSUS_MAX_ON_THE_WIRE_TAG_BYTES 8 * 1024
+
 /* census_context is the in-memory representation of information needed to
  * maintain tracing, RPC statistics and resource usage information. */
 struct census_context {
-  gpr_uint64 op_id;    /* Operation identifier - unique per-context */
-  gpr_uint64 trace_id; /* Globally unique trace identifier */
-                       /* TODO(aveitch) Add census tags:
-                          const census_tag_set *tags;
-                        */
+  gpr_uint64 op_id;     /* Operation identifier - unique per-context */
+  gpr_uint64 trace_id;  /* Globally unique trace identifier */
+  void* tags;           /* Opaque data structure for Census tags. */
 };
 
 #endif /* GRPC_INTERNAL_CORE_CENSUS_CONTEXT_H */

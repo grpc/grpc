@@ -79,6 +79,14 @@ int census_enabled(void);
 */
 typedef struct census_context census_context;
 
+/**
+ Returns the census_context of the current thread, creating one if necessary.
+ The object pointed to by the returned pointer is thread local, and thus may
+ be read without concurrency concerns, but should not be shared with other
+ threads.
+*/
+census_context* census_context_current();
+
 /* This function is called by the RPC subsystem whenever it needs to get a
  * serialized form of the current census context (presumably to pass across
  * the wire). Arguments:
