@@ -240,15 +240,13 @@ namespace Grpc.Core.Internal
 
             switch (Environment.OSVersion.Platform)
             {
+                case PlatformID.MacOSX:
                 case PlatformID.Unix:
                     if( !Environment.Is64BitProcess )
                         throw new NotSupportedException(String.Format(reasonTemplate, "Linux 32-bit"));
 
                     Implementation = new PlatformInvocationLinux64();
                     break;
-
-                case PlatformID.MacOSX:
-                    throw new NotSupportedException(String.Format(reasonTemplate, "OSX"));
 
                 case PlatformID.Xbox:
                     throw new NotSupportedException(String.Format(reasonTemplate, "XBox"));
