@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# Example usage:
+#   tools/codegen/core/gen_load_balancing_proto.sh \
+#     src/core/client_config/lb_policies/proto/load_balancer.proto
 
 if [ $# -eq 0 ]; then
   echo "Usage: $0 <load_balancer.proto>"
