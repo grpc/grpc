@@ -170,7 +170,7 @@ class CLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_c.bat']]
+      return [['tools/run_tests/pre_build_c.bat']]
     else:
       return []
 
@@ -337,7 +337,7 @@ class CSharpLanguage(object):
                   'Grpc.HealthCheck.Tests',
                   'Grpc.IntegrationTesting']
     if self.platform == 'windows':
-      cmd = 'tools\\run_tests\\run_csharp.bat'
+      cmd = 'tools/run_tests/run_csharp.bat'
     else:
       cmd = 'tools/run_tests/run_csharp.sh'
 
@@ -355,7 +355,7 @@ class CSharpLanguage(object):
 
   def pre_build_steps(self):
     if self.platform == 'windows':
-      return [['tools\\run_tests\\pre_build_csharp.bat']]
+      return [['tools/run_tests/pre_build_csharp.bat']]
     else:
       return [['tools/run_tests/pre_build_csharp.sh']]
 
@@ -369,7 +369,7 @@ class CSharpLanguage(object):
 
   def build_steps(self):
     if self.platform == 'windows':
-      return [['src\\csharp\\buildall.bat']]
+      return [['src/csharp/buildall.bat']]
     else:
       return [['tools/run_tests/build_csharp.sh']]
 
@@ -643,8 +643,8 @@ if platform_string() == 'windows':
     # disable PDB generation: it's broken, and we don't need it during CI
     extra_args.extend(['/p:Jenkins=true'])
     return [
-      jobset.JobSpec(['vsprojects\\build.bat',
-                      'vsprojects\\%s.sln' % target,
+      jobset.JobSpec(['vsprojects/build.bat',
+                      'vsprojects/%s.sln' % target,
                       '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
                       extra_args,
                       shell=True, timeout_seconds=90*60)
