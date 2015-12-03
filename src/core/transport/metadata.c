@@ -225,7 +225,8 @@ void grpc_mdctx_global_shutdown(void) {
     gc_mdtab(shard);
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
-      gpr_log(GPR_DEBUG, "WARNING: %d metadata elements were leaked", shard->count);
+      gpr_log(GPR_DEBUG, "WARNING: %d metadata elements were leaked",
+              shard->count);
     }
     gpr_free(shard->elems);
   }
@@ -234,7 +235,8 @@ void grpc_mdctx_global_shutdown(void) {
     gpr_mu_destroy(&shard->mu);
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
-      gpr_log(GPR_DEBUG, "WARNING: %d metadata strings were leaked", shard->count);
+      gpr_log(GPR_DEBUG, "WARNING: %d metadata strings were leaked",
+              shard->count);
     }
     gpr_free(shard->strs);
   }
