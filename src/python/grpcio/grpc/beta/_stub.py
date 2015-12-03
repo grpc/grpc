@@ -90,9 +90,8 @@ def _disassemble(end_link, grpc_link, pool):
 
 
 def _wrap_assembly(stub, end_link, grpc_link, assembly_pool):
-  disassembly_thread = threading.Thread(
-      target=_disassemble, args=(end_link, grpc_link, assembly_pool))
-  return _AutoIntermediary(stub, disassembly_thread.start)
+  disassembly = lambda: _disassemble(end_link, grpc_link, assembly_pool)
+  return _AutoIntermediary(stub, disassembly)
 
 
 def generic_stub(
