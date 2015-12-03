@@ -2269,11 +2269,11 @@ vspackages:
   name: grpc.dependencies.zlib
   props: false
   redist: true
-  version: 1.2.8.9
+  version: 1.2.8.10
 - name: grpc.dependencies.openssl
   props: true
   redist: true
-  version: 1.0.2.3
+  version: 1.0.204.1
 - name: gflags
   props: false
   redist: false

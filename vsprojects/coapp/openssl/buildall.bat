@@ -14,6 +14,18 @@ mkdir inc32\openssl
 mkdir tmp32
 nmake -f ms\nt.mak headers || goto :eof
 endlocal
+
+setlocal
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" amd64
+call :build x64 Release v140 || goto :eof
+call :build x64 Debug v140 || goto :eof
+endlocal
+
+setlocal
+call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86
+call :build Win32 Release v140 || goto :eof
+call :build Win32 Debug v140 || goto :eof
+endlocal
 	
 setlocal
 call "C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat" amd64
@@ -52,8 +64,8 @@ call :build Win32 Debug v100 || goto :eof
 endlocal
 
 :build
-msbuild /P:Platform=%1 /P:Configuration=%2 /P:PlatformToolset=%3 /P:UsesConfigurationType=dynamic /P:ConfigurationType=DynamicLibrary .\openssl.sln || goto :eof
-msbuild /P:Platform=%1 /P:Configuration=%2 /P:PlatformToolset=%3 /P:UsesConfigurationType=static /P:ConfigurationType=StaticLibrary .\openssl.sln || goto :eof
+msbuild /m:4 /P:Platform=%1 /P:Configuration=%2 /P:PlatformToolset=%3 /P:UsesConfigurationType=dynamic /P:ConfigurationType=DynamicLibrary .\openssl.sln || goto :eof
+msbuild /m:4 /P:Platform=%1 /P:Configuration=%2 /P:PlatformToolset=%3 /P:UsesConfigurationType=static /P:ConfigurationType=StaticLibrary .\openssl.sln || goto :eof
 goto :eof
 
 
