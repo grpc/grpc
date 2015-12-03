@@ -60,14 +60,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
 def platform_string():
-  if platform.system() == 'Windows':
-    return 'windows'
-  elif platform.system() == 'Darwin':
-    return 'mac'
-  elif platform.system() == 'Linux':
-    return 'linux'
-  else:
-    return 'posix'
+  return jobset.platform_string()
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -640,7 +633,7 @@ if len(build_configs) > 1:
       print language, 'does not support multiple build configurations'
       sys.exit(1)
 
-if platform.system() == 'Windows':
+if platform_string() == 'windows':
   def make_jobspec(cfg, targets, makefile='Makefile'):
     extra_args = []
     # better do parallel compilation
@@ -770,7 +763,7 @@ def _start_port_server(port_server_port):
             '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
-    if platform.system() == 'Windows':
+    if platform_string() == 'windows':
       # Working directory of port server needs to be outside of Jenkins
       # workspace to prevent file lock issues.
       tempdir = tempfile.mkdtemp()
