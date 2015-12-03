@@ -40,9 +40,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "test/core/util/test_config.h"
 #include "src/core/support/murmur_hash.h"
 #include "test/core/util/slice_splitter.h"
+#include "test/core/util/test_config.h"
 
 typedef enum { ONE_A = 0, ONE_KB_A, ONE_MB_A, TEST_VALUE_COUNT } test_value;
 

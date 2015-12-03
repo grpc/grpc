@@ -33,9 +33,9 @@
 
 #include "src/core/channel/http_server_filter.h"
 
-#include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <string.h>
 #include "src/core/profiling/timers.h"
 #include "src/core/transport/static_metadata.h"
 
