@@ -115,6 +115,22 @@ TEST_F(ChannelArgumentsTest, SetString) {
   }
 }
 
+TEST_F(ChannelArgumentsTest, SetPointer) {
+  grpc_channel_args args;
+  ChannelArguments channel_args;
+  // Empty arguments.
+  SetChannelArgs(channel_args, &args);
+  EXPECT_EQ(static_cast<size_t>(0), args.num_args);
+
+  grpc::string key("key0");
+  channel_args.SetPointer(key, &key);
+  SetChannelArgs(channel_args, &args);
+  EXPECT_EQ(static_cast<size_t>(1), args.num_args);
+  EXPECT_EQ(GRPC_ARG_POINTER, args.args[0].type);
+  EXPECT_STREQ("key0", args.args[0].key);
+  EXPECT_EQ(&key, args.args[0].value.pointer.p);
+}
+
 }  // namespace testing
 }  // namespace grpc
 
