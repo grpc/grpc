@@ -79,6 +79,7 @@ typedef struct {
   gpr_uint32 min_value;
   gpr_uint32 max_value;
   grpc_chttp2_invalid_value_behavior invalid_value_behavior;
+  gpr_uint32 error_value;
 } grpc_chttp2_setting_parameters;
 
 /* HTTP/2 mandated connection setting parameters */
