@@ -115,9 +115,6 @@ void grpc_chttp2_publish_reads(
         transport_parsing->incoming_stream_id;
   }
 
-  /* copy parsing qbuf to global qbuf */
-  gpr_slice_buffer_move_into(&transport_parsing->qbuf, &transport_global->qbuf);
-
   /* update global settings */
   if (transport_parsing->settings_updated) {
     memcpy(transport_global->settings[GRPC_PEER_SETTINGS],
