@@ -125,7 +125,7 @@ void gpr_histogram_add(gpr_histogram *h, double x) {
   h->buckets[bucket_for(h, x)]++;
 }
 
-int gpr_histogram_merge(gpr_histogram *dst, gpr_histogram *src) {
+int gpr_histogram_merge(gpr_histogram *dst, const gpr_histogram *src) {
   if ((dst->num_buckets != src->num_buckets) ||
       (dst->multiplier != src->multiplier)) {
     /* Fail because these histograms don't match */

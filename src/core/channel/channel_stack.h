@@ -51,6 +51,19 @@
 typedef struct grpc_channel_element grpc_channel_element;
 typedef struct grpc_call_element grpc_call_element;
 
+typedef struct {
+  grpc_channel *master;
+  const grpc_channel_args *channel_args;
+  int is_first;
+  int is_last;
+} grpc_channel_element_args;
+
+typedef struct {
+  grpc_stream_refcount *refcount;
+  const void *server_transport_data;
+  grpc_call_context_element *context;
+} grpc_call_element_args;
+
 /* Channel filters specify:
    1. the amount of memory needed in the channel & call (via the sizeof_XXX
       members)
@@ -84,8 +97,9 @@ typedef struct {
      transport and is on the server. Most filters want to ignore this
      argument. */
   void (*init_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
-                         const void *server_transport_data,
-                         grpc_transport_stream_op *initial_op);
+                         grpc_call_element_args *args);
+  void (*set_pollset)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
+                      grpc_pollset *pollset);
   /* Destroy per call data.
      The filter does not need to do any chaining */
   void (*destroy_call_elem)(grpc_exec_ctx *exec_ctx, grpc_call_element *elem);
@@ -99,9 +113,7 @@ typedef struct {
      useful for asserting correct configuration by upper layer code.
      The filter does not need to do any chaining */
   void (*init_channel_elem)(grpc_exec_ctx *exec_ctx, grpc_channel_element *elem,
-                            grpc_channel *master, const grpc_channel_args *args,
-                            grpc_mdctx *metadata_context, int is_first,
-                            int is_last);
+                            grpc_channel_element_args *args);
   /* Destroy per channel data.
      The filter does not need to do any chaining */
   void (*destroy_channel_elem)(grpc_exec_ctx *exec_ctx,
@@ -141,7 +153,14 @@ typedef struct {
 
 /* A call stack tracks a set of related filters for one call, and guarantees
    they live within a single malloc() allocation */
-typedef struct { size_t count; } grpc_call_stack;
+typedef struct {
+  /* shared refcount for this channel stack.
+     MUST be the first element: the underlying code calls destroy
+     with the address of the refcount, but higher layers prefer to think
+     about the address of the call stack itself. */
+  grpc_stream_refcount refcount;
+  size_t count;
+} grpc_call_stack;
 
 /* Get a channel element given a channel stack and its index */
 grpc_channel_element *grpc_channel_stack_element(grpc_channel_stack *stack,
@@ -160,7 +179,6 @@ void grpc_channel_stack_init(grpc_exec_ctx *exec_ctx,
                              const grpc_channel_filter **filters,
                              size_t filter_count, grpc_channel *master,
                              const grpc_channel_args *args,
-                             grpc_mdctx *metadata_context,
                              grpc_channel_stack *stack);
 /* Destroy a channel stack */
 void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
@@ -170,13 +188,35 @@ void grpc_channel_stack_destroy(grpc_exec_ctx *exec_ctx,
    expected to be NULL on a client, or an opaque transport owned pointer on the
    server. */
 void grpc_call_stack_init(grpc_exec_ctx *exec_ctx,
-                          grpc_channel_stack *channel_stack,
+                          grpc_channel_stack *channel_stack, int initial_refs,
+                          grpc_iomgr_cb_func destroy, void *destroy_arg,
+                          grpc_call_context_element *context,
                           const void *transport_server_data,
-                          grpc_transport_stream_op *initial_op,
                           grpc_call_stack *call_stack);
+/* Set a pollset for a call stack: must occur before the first op is started */
+void grpc_call_stack_set_pollset(grpc_exec_ctx *exec_ctx,
+                                 grpc_call_stack *call_stack,
+                                 grpc_pollset *pollset);
+
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+#define grpc_call_stack_ref(call_stack, reason) \
+  grpc_stream_ref(&(call_stack)->refcount, reason)
+#define grpc_call_stack_unref(exec_ctx, call_stack, reason) \
+  grpc_stream_unref(exec_ctx, &(call_stack)->refcount, reason)
+#else
+#define grpc_call_stack_ref(call_stack) grpc_stream_ref(&(call_stack)->refcount)
+#define grpc_call_stack_unref(exec_ctx, call_stack) \
+  grpc_stream_unref(exec_ctx, &(call_stack)->refcount)
+#endif
+
 /* Destroy a call stack */
 void grpc_call_stack_destroy(grpc_exec_ctx *exec_ctx, grpc_call_stack *stack);
 
+/* Ignore set pollset - used by filters to implement the set_pollset method
+   if they don't care about pollsets at all. Does nothing. */
+void grpc_call_stack_ignore_set_pollset(grpc_exec_ctx *exec_ctx,
+                                        grpc_call_element *elem,
+                                        grpc_pollset *pollset);
 /* Call the next operation in a call stack */
 void grpc_call_next_op(grpc_exec_ctx *exec_ctx, grpc_call_element *elem,
                        grpc_transport_stream_op *op);

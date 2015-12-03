@@ -264,6 +264,33 @@ void rr_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_mu_unlock(&p->mu);
 }
 
+static void rr_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                           grpc_subchannel **target) {
+  round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
+  pending_pick *pp;
+  size_t i;
+  gpr_mu_lock(&p->mu);
+  pp = p->pending_picks;
+  p->pending_picks = NULL;
+  while (pp != NULL) {
+    pending_pick *next = pp->next;
+    if (pp->target == target) {
+      for (i = 0; i < p->num_subchannels; i++) {
+        grpc_subchannel_add_interested_party(exec_ctx, p->subchannels[i],
+                                             pp->pollset);
+      }
+      *target = NULL;
+      grpc_exec_ctx_enqueue(exec_ctx, pp->on_complete, 0);
+      gpr_free(pp);
+    } else {
+      pp->next = p->pending_picks;
+      p->pending_picks = pp;
+    }
+    pp = next;
+  }
+  gpr_mu_unlock(&p->mu);
+}
+
 static void start_picking(grpc_exec_ctx *exec_ctx, round_robin_lb_policy *p) {
   size_t i;
   p->started_picking = 1;
@@ -286,9 +313,9 @@ void rr_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol) {
   gpr_mu_unlock(&p->mu);
 }
 
-void rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
-             grpc_pollset *pollset, grpc_metadata_batch *initial_metadata,
-             grpc_subchannel **target, grpc_closure *on_complete) {
+int rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_pollset *pollset,
+            grpc_metadata_batch *initial_metadata, grpc_subchannel **target,
+            grpc_closure *on_complete) {
   size_t i;
   round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
   pending_pick *pp;
@@ -303,7 +330,7 @@ void rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     }
     /* only advance the last picked pointer if the selection was used */
     advance_last_picked_locked(p);
-    on_complete->cb(exec_ctx, on_complete->cb_arg, 1);
+    return 1;
   } else {
     if (!p->started_picking) {
       start_picking(exec_ctx, p);
@@ -319,6 +346,7 @@ void rr_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
     pp->on_complete = on_complete;
     p->pending_picks = pp;
     gpr_mu_unlock(&p->mu);
+    return 0;
   }
 }
 
@@ -487,8 +515,8 @@ static void rr_notify_on_state_change(grpc_exec_ctx *exec_ctx,
 }
 
 static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
-    rr_destroy, rr_shutdown, rr_pick, rr_exit_idle, rr_broadcast,
-    rr_check_connectivity, rr_notify_on_state_change};
+    rr_destroy, rr_shutdown, rr_pick, rr_cancel_pick, rr_exit_idle,
+    rr_broadcast, rr_check_connectivity, rr_notify_on_state_change};
 
 static void round_robin_factory_ref(grpc_lb_policy_factory *factory) {}
 

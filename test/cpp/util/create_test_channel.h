@@ -51,7 +51,7 @@ std::shared_ptr<Channel> CreateTestChannel(
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
     bool enable_ssl, bool use_prod_roots,
-    const std::shared_ptr<Credentials>& creds);
+    const std::shared_ptr<CallCredentials>& creds);
 
 }  // namespace grpc
 

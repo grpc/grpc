@@ -39,6 +39,9 @@
 /* Forward decl of grpc_tcp_server */
 typedef struct grpc_tcp_server grpc_tcp_server;
 
+/* Forward decl of grpc_tcp_listener */
+typedef struct grpc_tcp_listener grpc_tcp_listener;
+
 /* Called for newly connected TCP connections. */
 typedef void (*grpc_tcp_server_cb)(grpc_exec_ctx *exec_ctx, void *arg,
                                    grpc_endpoint *ep);
@@ -51,19 +54,17 @@ void grpc_tcp_server_start(grpc_exec_ctx *exec_ctx, grpc_tcp_server *server,
                            grpc_pollset **pollsets, size_t pollset_count,
                            grpc_tcp_server_cb on_accept_cb, void *cb_arg);
 
-/* Add a port to the server, returning port number on success, or negative
-   on failure.
+/* Add a port to the server, returning the newly created listener on success,
+   or a null pointer on failure.
 
    The :: and 0.0.0.0 wildcard addresses are treated identically, accepting
    both IPv4 and IPv6 connections, but :: is the preferred style.  This usually
    creates one socket, but possibly two on systems which support IPv6,
-   but not dualstack sockets.
-
-   For raw access to the underlying sockets, see grpc_tcp_server_get_fd(). */
+   but not dualstack sockets. */
 /* TODO(ctiller): deprecate this, and make grpc_tcp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
-int grpc_tcp_server_add_port(grpc_tcp_server *s, const void *addr,
-                             size_t addr_len);
+grpc_tcp_listener *grpc_tcp_server_add_port(grpc_tcp_server *s,
+                                            const void *addr, size_t addr_len);
 
 /* Returns the file descriptor of the Nth listening socket on this server,
    or -1 if the index is out of bounds.
@@ -74,5 +75,9 @@ int grpc_tcp_server_get_fd(grpc_tcp_server *s, unsigned index);
 
 void grpc_tcp_server_destroy(grpc_exec_ctx *exec_ctx, grpc_tcp_server *server,
                              grpc_closure *closure);
+
+int grpc_tcp_listener_get_port(grpc_tcp_listener *listener);
+void grpc_tcp_listener_ref(grpc_tcp_listener *listener);
+void grpc_tcp_listener_unref(grpc_tcp_listener *listener);
 
 #endif /* GRPC_INTERNAL_CORE_IOMGR_TCP_SERVER_H */

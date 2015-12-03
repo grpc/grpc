@@ -44,7 +44,7 @@ typedef struct grpc_subchannel grpc_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
 typedef struct grpc_subchannel_args grpc_subchannel_args;
 
-#ifdef GRPC_SUBCHANNEL_REFCOUNT_DEBUG
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
   grpc_subchannel_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_UNREF(cl, p, r) \
@@ -75,27 +75,22 @@ void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
                                 grpc_subchannel_call *call
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
-typedef enum {
-  GRPC_SUBCHANNEL_CALL_CREATE_READY,
-  GRPC_SUBCHANNEL_CALL_CREATE_PENDING
-} grpc_subchannel_call_create_status;
-
 /** construct a subchannel call (possibly asynchronously).
  *
- * If the returned status is \a GRPC_SUBCHANNEL_CALL_CREATE_READY, the call will
- * return immediately and \a target will point to a connected \a subchannel_call
- * instance. Note that \a notify will \em not be invoked in this case.
- * Otherwise, if the returned status is GRPC_SUBCHANNEL_CALL_CREATE_PENDING, the
- * subchannel call will be created asynchronously, invoking the \a notify
- * callback upon completion. */
-grpc_subchannel_call_create_status grpc_subchannel_create_call(
-    grpc_exec_ctx *exec_ctx, grpc_subchannel *subchannel, grpc_pollset *pollset,
-    grpc_subchannel_call **target, grpc_closure *notify);
+ * If the returned status is 1, the call will return immediately and \a target
+ * will point to a connected \a subchannel_call instance. Note that \a notify
+ * will \em not be invoked in this case.
+ * Otherwise, if the returned status is 0, the subchannel call will be created
+ * asynchronously, invoking the \a notify callback upon completion. */
+int grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx,
+                                grpc_subchannel *subchannel,
+                                grpc_pollset *pollset, gpr_atm *target,
+                                grpc_closure *notify);
 
 /** cancel \a call in the waiting state. */
-void grpc_subchannel_cancel_waiting_call(grpc_exec_ctx *exec_ctx,
-                                         grpc_subchannel *subchannel,
-                                         int iomgr_success);
+void grpc_subchannel_cancel_create_call(grpc_exec_ctx *exec_ctx,
+                                        grpc_subchannel *subchannel,
+                                        gpr_atm *target);
 
 /** process a transport level op */
 void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
@@ -138,6 +133,9 @@ void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
 char *grpc_subchannel_call_get_peer(grpc_exec_ctx *exec_ctx,
                                     grpc_subchannel_call *subchannel_call);
 
+grpc_call_stack *grpc_subchannel_call_get_call_stack(
+    grpc_subchannel_call *subchannel_call);
+
 struct grpc_subchannel_args {
   /** Channel filters for this channel - wrapped factories will likely
       want to mutate this */
@@ -149,8 +147,6 @@ struct grpc_subchannel_args {
   /** Address to connect to */
   struct sockaddr *addr;
   size_t addr_len;
-  /** metadata context to use */
-  grpc_mdctx *mdctx;
   /** master channel */
   grpc_channel *master;
 };
@@ -158,9 +154,6 @@ struct grpc_subchannel_args {
 /** create a subchannel given a connector */
 grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
                                         grpc_subchannel_args *args);
-
-/** Return the metadata context associated with the subchannel */
-grpc_mdctx *grpc_subchannel_get_mdctx(grpc_subchannel *subchannel);
 
 /** Return the master channel associated with the subchannel */
 grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel);

@@ -199,11 +199,7 @@ module GRPC
     # marshalled.
     def remote_send(req, marshalled = false)
       GRPC.logger.debug("sending #{req}, marshalled? #{marshalled}")
-      if marshalled
-        payload = req
-      else
-        payload = @marshal.call(req)
-      end
+      payload = marshalled ? req : @marshal.call(req)
       @call.run_batch(@cq, self, INFINITE_FUTURE, SEND_MESSAGE => payload)
     end
 
@@ -417,7 +413,9 @@ module GRPC
     # @return [Enumerator, nil] a response Enumerator
     def bidi_streamer(requests, **kw, &blk)
       start_call(**kw) unless @started
-      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal)
+      bd = BidiCall.new(@call, @cq, @marshal, @unmarshal,
+                        metadata_tag: @metadata_tag)
+      @metadata_tag = nil  # run_on_client ensures metadata is read
       bd.run_on_client(requests, @op_notifier, &blk)
     end
 
