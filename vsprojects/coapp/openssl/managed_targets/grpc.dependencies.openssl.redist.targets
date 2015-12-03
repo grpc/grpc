@@ -29,8 +29,8 @@
   </PropertyGroup>
   <Choose>
     <!-- Under older versions of Monodevelop, Choose is not supported and is just ignored, which gives us the desired effect. -->
-    <When Condition=" '$(OS)' != 'Unix' ">
-      <ItemGroup Condition=" '$(CopyNativeDependencies)' == 'true' ">
+    <When Condition=" '$(CopyNativeDependencies)' == 'true' ">
+      <ItemGroup>
         <Content Include="$(MSBuildThisFileDirectory)..\..\build\native\bin\$(NativeDependenciesToolset)\$(NativeDependenciesPlatform)\$(NativeDependenciesConfiguration)\dynamic\libeay32.dll">
           <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
