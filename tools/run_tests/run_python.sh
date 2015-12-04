@@ -43,22 +43,6 @@ export LDFLAGS="-L$ROOT/libs/$CONFIG"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
 
-VIRTUALENV=python"$PYVER"_virtual_environment
-source $VIRTUALENV/bin/activate
-
-(rm $GRPCIO/.coverage)   || true
-(rm $GRPCIO/.coverage.*) || true
-
-if python -u $GRPCIO/setup.py test; then
-  EXIT_CODE=0
-else
-  EXIT_CODE=$?
-fi
-
-cp $GRPCIO/report.xml $ROOT
-
 cd $GRPCIO
-(coverage combine) || true
-(coverage report --include='grpc/*' --omit='grpc/framework/alpha/*','grpc/early_adopter/*','grpc/framework/base/*''grpc/framework/face/*') || true
+tox
 
-exit $EXIT_CODE
