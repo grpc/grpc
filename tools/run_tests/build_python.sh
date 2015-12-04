@@ -35,35 +35,13 @@ cd $(dirname $0)/../..
 
 ROOT=`pwd`
 GRPCIO=$ROOT/src/python/grpcio
+export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
+export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
+export CFLAGS="-I$ROOT/include -std=c89"
+export LDFLAGS="-L$ROOT/libs/$CONFIG"
+export GRPC_PYTHON_BUILD_WITH_CYTHON=1
+export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
 
-# Builds the testing environment.
-make_virtualenv() {
-  virtualenv_name="python"$1"_virtual_environment"
-  if [ ! -d $virtualenv_name ]
-  then
-    # Build the entire virtual environment
-    virtualenv -p `which "python"$1` $virtualenv_name
-    source $virtualenv_name/bin/activate
-
-    cd $GRPCIO
-    pip install -r requirements.txt
-  else
-    source $virtualenv_name/bin/activate
-
-    cd $GRPCIO
-    pip install -U -r requirements.txt
-  fi
-
-  export LD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-  export DYLD_LIBRARY_PATH=$ROOT/libs/$CONFIG
-  export PATH=$ROOT/bins/$CONFIG:$ROOT/bins/$CONFIG/protobuf:$PATH
-  export CFLAGS="-I$ROOT/include -std=c89"
-  export LDFLAGS="-L$ROOT/libs/$CONFIG"
-  export GRPC_PYTHON_BUILD_WITH_CYTHON=1
-  export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
-  python $GRPCIO/setup.py gather --test --install
-  python $GRPCIO/setup.py build_ext --inplace
-  python $GRPCIO/setup.py build_py
-}
-
-make_virtualenv $1
+cd $GRPCIO
+tox --notest
