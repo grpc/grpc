@@ -916,7 +916,7 @@ static batch_control *allocate_batch_control(grpc_call *call) {
       return &call->active_batches[i];
     }
   }
-  GPR_UNREACHABLE_CODE(return NULL);
+  return NULL;
 }
 
 static void finish_batch_completion(grpc_exec_ctx *exec_ctx, void *user_data,

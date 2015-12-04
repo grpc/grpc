@@ -115,7 +115,7 @@ static void on_readable(grpc_exec_ctx *exec_ctx, void *arg, int success) {
     /* HACK: let wakeup_fd code know that we stole the fd */
     workqueue->wakeup_fd.read_fd = 0;
     grpc_wakeup_fd_destroy(&workqueue->wakeup_fd);
-    grpc_fd_orphan(exec_ctx, workqueue->wakeup_read_fd, NULL, "destroy");
+    grpc_fd_orphan(exec_ctx, workqueue->wakeup_read_fd, NULL, NULL, "destroy");
     gpr_free(workqueue);
   } else {
     gpr_mu_lock(&workqueue->mu);

@@ -37,6 +37,7 @@ filegroups:
   - include/grpc++/impl/rpc_method.h
   - include/grpc++/impl/rpc_service_method.h
   - include/grpc++/impl/serialization_traits.h
+  - include/grpc++/impl/server_builder_option.h
   - include/grpc++/impl/service_type.h
   - include/grpc++/impl/sync.h
   - include/grpc++/impl/sync_cxx11.h
@@ -72,7 +73,6 @@ filegroups:
   - src/cpp/server/thread_pool_interface.h
   src:
   - src/cpp/client/channel.cc
-  - src/cpp/client/channel_arguments.cc
   - src/cpp/client/client_context.cc
   - src/cpp/client/create_channel.cc
   - src/cpp/client/create_channel_internal.cc
@@ -80,6 +80,7 @@ filegroups:
   - src/cpp/client/generic_stub.cc
   - src/cpp/client/insecure_credentials.cc
   - src/cpp/common/call.cc
+  - src/cpp/common/channel_arguments.cc
   - src/cpp/common/completion_queue.cc
   - src/cpp/common/rpc_method.cc
   - src/cpp/proto/proto_utils.cc
@@ -354,7 +355,6 @@ filegroups:
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
-  - test/core/security/oauth2_utils.h
   - test/core/util/grpc_profiler.h
   - test/core/util/parse_hexstring.h
   - test/core/util/port.h
@@ -363,7 +363,6 @@ filegroups:
   - test/core/end2end/cq_verifier.c
   - test/core/end2end/fixtures/proxy.c
   - test/core/iomgr/endpoint_tests.c
-  - test/core/security/oauth2_utils.c
   - test/core/util/grpc_profiler.c
   - test/core/util/parse_hexstring.c
   - test/core/util/port_posix.c
@@ -526,10 +525,12 @@ libs:
   language: c
   headers:
   - test/core/end2end/data/ssl_test_data.h
+  - test/core/security/oauth2_utils.h
   src:
   - test/core/end2end/data/server1_cert.c
   - test/core/end2end/data/server1_key.c
   - test/core/end2end/data/test_root_cert.c
+  - test/core/security/oauth2_utils.c
   deps:
   - gpr
   - gpr_test_util
@@ -543,7 +544,7 @@ libs:
   deps:
   - gpr
   - gpr_test_util
-  - grpc
+  - grpc_unsecure
   filegroups:
   - grpc_test_util_base
   secure: false
@@ -612,10 +613,10 @@ libs:
   - src/cpp/common/secure_auth_context.h
   - src/cpp/server/secure_server_credentials.h
   src:
-  - src/cpp/client/secure_channel_arguments.cc
   - src/cpp/client/secure_credentials.cc
   - src/cpp/common/auth_property_iterator.cc
   - src/cpp/common/secure_auth_context.cc
+  - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
   - src/cpp/server/secure_server_credentials.cc
   deps:
@@ -1692,7 +1693,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/cpp/client/channel_arguments_test.cc
+  - test/cpp/common/channel_arguments_test.cc
   deps:
   - grpc++
   - grpc
@@ -2269,11 +2270,11 @@ vspackages:
   name: grpc.dependencies.zlib
   props: false
   redist: true
-  version: 1.2.8.9
+  version: 1.2.8.10
 - name: grpc.dependencies.openssl
   props: true
   redist: true
-  version: 1.0.2.3
+  version: 1.0.204.1
 - name: gflags
   props: false
   redist: false

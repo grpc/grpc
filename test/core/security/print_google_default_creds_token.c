@@ -74,10 +74,13 @@ int main(int argc, char **argv) {
   synchronizer sync;
   grpc_channel_credentials *creds = NULL;
   char *service_url = "https://test.foo.google.com/Foo";
+  grpc_auth_metadata_context context;
   gpr_cmdline *cl = gpr_cmdline_create("print_google_default_creds_token");
   gpr_cmdline_add_string(cl, "service_url",
                          "Service URL for the token request.", &service_url);
   gpr_cmdline_parse(cl, argc, argv);
+  memset(&context, 0, sizeof(context));
+  context.service_url = service_url;
 
   grpc_init();
 
@@ -93,7 +96,7 @@ int main(int argc, char **argv) {
 
   grpc_call_credentials_get_request_metadata(
       &exec_ctx, ((grpc_composite_channel_credentials *)creds)->call_creds,
-      &sync.pollset, service_url, on_metadata_response, &sync);
+      &sync.pollset, context, on_metadata_response, &sync);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&sync.pollset));
   while (!sync.is_done) {

@@ -68,7 +68,7 @@ static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
   tsi_result result = TSI_OK;
   tsi_handshaker *handshaker;
   if (c->handshaker_factory == NULL) {
-    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, nonsecure_endpoint, NULL);
+    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL);
     return;
   }
   result = tsi_ssl_handshaker_factory_create_handshaker(
@@ -76,7 +76,7 @@ static void httpcli_ssl_do_handshake(grpc_exec_ctx *exec_ctx,
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
             tsi_result_to_string(result));
-    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, nonsecure_endpoint, NULL);
+    cb(exec_ctx, user_data, GRPC_SECURITY_ERROR, NULL);
   } else {
     grpc_do_security_handshake(exec_ctx, handshaker, sc, nonsecure_endpoint, cb,
                                user_data);
@@ -149,7 +149,6 @@ typedef struct {
 
 static void on_secure_transport_setup_done(grpc_exec_ctx *exec_ctx, void *rp,
                                            grpc_security_status status,
-                                           grpc_endpoint *wrapped_endpoint,
                                            grpc_endpoint *secure_endpoint) {
   on_done_closure *c = rp;
   if (status != GRPC_SECURITY_OK) {

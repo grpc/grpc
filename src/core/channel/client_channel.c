@@ -124,6 +124,8 @@ static void on_lb_policy_state_changed_locked(
       w->chand->resolver != NULL) {
     publish_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     grpc_resolver_channel_saw_error(exec_ctx, w->chand->resolver);
+    GRPC_LB_POLICY_UNREF(exec_ctx, w->chand->lb_policy, "channel");
+    w->chand->lb_policy = NULL;
   }
   grpc_connectivity_state_set(exec_ctx, &w->chand->state_tracker, publish_state,
                               "lb_changed");
