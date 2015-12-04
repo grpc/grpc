@@ -50,6 +50,8 @@
 #import <Foundation/Foundation.h>
 #import <RxLibrary/GRXWriter.h>
 
+#include <AvailabilityMacros.h>
+
 #pragma mark gRPC errors
 
 /** Domain of NSError objects produced by gRPC. */
@@ -235,6 +237,7 @@ extern id const kGRPCTrailersKey;
 #pragma mark Backwards compatibiity
 
 /** This protocol is kept for backwards compatibility with existing code. */
+DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 @protocol GRPCRequestHeaders <NSObject>
 @property(nonatomic, readonly) NSUInteger count;
 
@@ -245,6 +248,9 @@ extern id const kGRPCTrailersKey;
 - (void)removeObjectForKey:(NSString *)key;
 @end
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
 /** This is only needed for backwards-compatibility. */
 @interface NSMutableDictionary (GRPCRequestHeaders) <GRPCRequestHeaders>
 @end
+#pragma clang diagnostic pop
