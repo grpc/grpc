@@ -10,9 +10,6 @@
     <ClCompile Include="..\..\..\test\core\iomgr\endpoint_tests.c">
       <Filter>test\core\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\test\core\security\oauth2_utils.c">
-      <Filter>test\core\security</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\test\core\util\grpc_profiler.c">
       <Filter>test\core\util</Filter>
     </ClCompile>
@@ -38,9 +35,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\test\core\iomgr\endpoint_tests.h">
       <Filter>test\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\test\core\security\oauth2_utils.h">
-      <Filter>test\core\security</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\test\core\util\grpc_profiler.h">
       <Filter>test\core\util</Filter>
@@ -71,9 +65,6 @@
     </Filter>
     <Filter Include="test\core\iomgr">
       <UniqueIdentifier>{53745d42-f5b1-2381-6b64-146f1234e513}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="test\core\security">
-      <UniqueIdentifier>{aad20f56-4919-a88e-eea2-02340647c85a}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\core\util">
       <UniqueIdentifier>{31b30beb-baf0-3979-2a54-560a16814cf9}</UniqueIdentifier>

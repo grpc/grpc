@@ -39,11 +39,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 
-#include "src/core/channel/compress_filter.h"
 #include "src/core/channel/channel_args.h"
-#include "src/core/profiling/timers.h"
+#include "src/core/channel/compress_filter.h"
 #include "src/core/compression/algorithm_metadata.h"
 #include "src/core/compression/message_compress.h"
+#include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
 #include "src/core/transport/static_metadata.h"
 

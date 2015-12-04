@@ -31,12 +31,13 @@
  *
  */
 
-#include <grpc/support/log.h>
 #include <grpc++/channel.h>
 #include <grpc++/impl/grpc_library.h>
 #include <grpc++/support/channel_arguments.h>
+#include <grpc/support/log.h>
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/client/secure_credentials.h"
+#include "src/cpp/common/secure_auth_context.h"
 
 namespace grpc {
 
@@ -160,7 +161,7 @@ void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
 }
 
 void MetadataCredentialsPluginWrapper::GetMetadata(
-    void* wrapper, const char* service_url,
+    void* wrapper, grpc_auth_metadata_context context,
     grpc_credentials_plugin_metadata_cb cb, void* user_data) {
   GPR_ASSERT(wrapper);
   MetadataCredentialsPluginWrapper* w =
@@ -171,18 +172,25 @@ void MetadataCredentialsPluginWrapper::GetMetadata(
   }
   if (w->plugin_->IsBlocking()) {
     w->thread_pool_->Add(
-        std::bind(&MetadataCredentialsPluginWrapper::InvokePlugin, w,
-                  service_url, cb, user_data));
+        std::bind(&MetadataCredentialsPluginWrapper::InvokePlugin, w, context,
+                  cb, user_data));
   } else {
-    w->InvokePlugin(service_url, cb, user_data);
+    w->InvokePlugin(context, cb, user_data);
   }
 }
 
 void MetadataCredentialsPluginWrapper::InvokePlugin(
-    const char* service_url, grpc_credentials_plugin_metadata_cb cb,
+    grpc_auth_metadata_context context, grpc_credentials_plugin_metadata_cb cb,
     void* user_data) {
   std::multimap<grpc::string, grpc::string> metadata;
-  Status status = plugin_->GetMetadata(service_url, &metadata);
+
+  // const_cast is safe since the SecureAuthContext does not take owndership and
+  // the object is passed as a const ref to plugin_->GetMetadata.
+  SecureAuthContext cpp_channel_auth_context(
+      const_cast<grpc_auth_context*>(context.channel_auth_context), false);
+
+  Status status = plugin_->GetMetadata(context.service_url, context.method_name,
+                                       cpp_channel_auth_context, &metadata);
   std::vector<grpc_metadata> md;
   for (auto it = metadata.begin(); it != metadata.end(); ++it) {
     grpc_metadata md_entry;
@@ -204,11 +212,12 @@ MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin) {
   GrpcLibrary init;  // To call grpc_init().
+  const char* type = plugin->GetType();
   MetadataCredentialsPluginWrapper* wrapper =
       new MetadataCredentialsPluginWrapper(std::move(plugin));
   grpc_metadata_credentials_plugin c_plugin = {
       MetadataCredentialsPluginWrapper::GetMetadata,
-      MetadataCredentialsPluginWrapper::Destroy, wrapper};
+      MetadataCredentialsPluginWrapper::Destroy, wrapper, type};
   return WrapCallCredentials(
       grpc_metadata_credentials_create_from_plugin(c_plugin, nullptr));
 }

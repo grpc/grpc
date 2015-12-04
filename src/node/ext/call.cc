@@ -234,6 +234,12 @@ class SendMetadataOp : public Op {
 
 class SendMessageOp : public Op {
  public:
+  SendMessageOp() { send_message = NULL; }
+  ~SendMessageOp() {
+    if (send_message != NULL) {
+      grpc_byte_buffer_destroy(send_message);
+    }
+  }
   Local<Value> GetNodeValue() const {
     EscapableHandleScope scope;
     return scope.Escape(Nan::True());
@@ -253,7 +259,8 @@ class SendMessageOp : public Op {
         out->flags = maybe_flag.FromMaybe(0) & GRPC_WRITE_USED_MASK;
       }
     }
-    out->data.send_message = BufferToByteBuffer(value);
+    send_message = BufferToByteBuffer(value);
+    out->data.send_message = send_message;
     PersistentValue *handle = new PersistentValue(value);
     resources->handles.push_back(unique_ptr<PersistentValue>(handle));
     return true;
@@ -262,6 +269,9 @@ class SendMessageOp : public Op {
   std::string GetTypeString() const {
     return "send_message";
   }
+
+ private:
+  grpc_byte_buffer *send_message;
 };
 
 class SendClientCloseOp : public Op {

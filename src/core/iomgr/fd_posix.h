@@ -62,6 +62,7 @@ struct grpc_fd {
   gpr_mu mu;
   int shutdown;
   int closed;
+  int released;
 
   /* The watcher list.
 
@@ -107,11 +108,12 @@ grpc_fd *grpc_fd_create(int fd, const char *name);
 /* Releases fd to be asynchronously destroyed.
    on_done is called when the underlying file descriptor is definitely close()d.
    If on_done is NULL, no callback will be made.
+   If release_fd is not NULL, it's set to fd and fd will not be closed.
    Requires: *fd initialized; no outstanding notify_on_read or
    notify_on_write.
    MUST NOT be called with a pollset lock taken */
 void grpc_fd_orphan(grpc_exec_ctx *exec_ctx, grpc_fd *fd, grpc_closure *on_done,
-                    const char *reason);
+                    int *release_fd, const char *reason);
 
 /* Begin polling on an fd.
    Registers that the given pollset is interested in this fd - so that if read

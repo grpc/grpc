@@ -84,7 +84,7 @@ typedef struct plugin_callback_data {
   void *user_data;
 } plugin_callback_data;
 
-void plugin_get_metadata(void *state, const char *service_url,
+void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
                          grpc_credentials_plugin_metadata_cb cb,
                          void *user_data);
 

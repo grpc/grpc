@@ -60,14 +60,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
 def platform_string():
-  if platform.system() == 'Windows':
-    return 'windows'
-  elif platform.system() == 'Darwin':
-    return 'mac'
-  elif platform.system() == 'Linux':
-    return 'linux'
-  else:
-    return 'posix'
+  return jobset.platform_string()
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -322,7 +315,7 @@ class RubyLanguage(object):
     return [['tools/run_tests/build_ruby.sh']]
 
   def post_tests_steps(self):
-    return []
+    return [['tools/run_tests/post_tests_ruby.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -640,7 +633,7 @@ if len(build_configs) > 1:
       print language, 'does not support multiple build configurations'
       sys.exit(1)
 
-if platform.system() == 'Windows':
+if platform_string() == 'windows':
   def make_jobspec(cfg, targets, makefile='Makefile'):
     extra_args = []
     # better do parallel compilation
@@ -770,7 +763,7 @@ def _start_port_server(port_server_port):
             '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
-    if platform.system() == 'Windows':
+    if platform_string() == 'windows':
       # Working directory of port server needs to be outside of Jenkins
       # workspace to prevent file lock issues.
       tempdir = tempfile.mkdtemp()
@@ -862,6 +855,7 @@ def _build_and_run(
   port_server_port = 32767
   _start_port_server(port_server_port)
   resultset = None
+  num_test_failures = 0
   try:
     infinite_runs = runs_per_test == 0
     one_run = set(
@@ -885,7 +879,7 @@ def _build_and_run(
                      else itertools.repeat(massaged_one_run, runs_per_test))
     all_runs = itertools.chain.from_iterable(runs_sequence)
 
-    number_failures, resultset = jobset.run(
+    num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
         travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
@@ -902,8 +896,6 @@ def _build_and_run(
               do_newline=True)
         else:
           jobset.message('PASSED', k, do_newline=True)
-    if number_failures:
-      return 2
   finally:
     for antagonist in antagonists:
       antagonist.kill()
@@ -913,8 +905,8 @@ def _build_and_run(
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,
       newline_on_success=newline_on_success, travis=args.travis)
-  if number_failures:
-    return 3
+  if num_test_failures or number_failures:
+    return 2
 
   if cache: cache.save()
 

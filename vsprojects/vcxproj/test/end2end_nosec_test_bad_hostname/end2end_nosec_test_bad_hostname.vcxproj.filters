@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\end2end\tests\bad_hostname.c">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\test\core\end2end\tests\cancel_test_helpers.h">
+      <Filter>test\core\end2end\tests</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\test\core\end2end\end2end_tests.h">
+      <Filter>test\core\end2end</Filter>
+    </ClInclude>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{e11fc6e8-49b9-281d-68eb-c2baf505174f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{2ac72a4a-31f7-badb-330c-36437ce1969a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end">
+      <UniqueIdentifier>{00810f13-4d63-73e9-23e8-0f2b59b522d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\end2end\tests">
+      <UniqueIdentifier>{68fd41f4-b17e-0440-71b2-45b5ef427418}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+

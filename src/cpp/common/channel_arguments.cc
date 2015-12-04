@@ -62,7 +62,9 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
         break;
       case GRPC_ARG_POINTER:
         ap.value.pointer = a->value.pointer;
-        ap.value.pointer.p = a->value.pointer.copy(ap.value.pointer.p);
+        ap.value.pointer.p = a->value.pointer.copy
+                                 ? a->value.pointer.copy(ap.value.pointer.p)
+                                 : ap.value.pointer.p;
         break;
     }
     args_.push_back(ap);
@@ -86,6 +88,17 @@ void ChannelArguments::SetInt(const grpc::string& key, int value) {
   arg.key = const_cast<char*>(strings_.back().c_str());
   arg.value.integer = value;
 
+  args_.push_back(arg);
+}
+
+void ChannelArguments::SetPointer(const grpc::string& key, void* value) {
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  strings_.push_back(key);
+  arg.key = const_cast<char*>(strings_.back().c_str());
+  arg.value.pointer.p = value;
+  arg.value.pointer.copy = nullptr;
+  arg.value.pointer.destroy = nullptr;
   args_.push_back(arg);
 }
 
