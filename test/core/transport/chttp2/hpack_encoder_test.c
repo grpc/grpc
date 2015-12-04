@@ -37,6 +37,7 @@
 
 #include "src/core/support/string.h"
 #include "src/core/transport/chttp2/hpack_parser.h"
+#include "src/core/transport/metadata.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -187,6 +188,7 @@ static void run_test(void (*test)(), const char *name) {
 
 int main(int argc, char **argv) {
   size_t i;
+  grpc_test_only_set_metadata_hash_seed(0);
   grpc_test_init(argc, argv);
   grpc_init();
   TEST(test_basic_headers);

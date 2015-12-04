@@ -1299,7 +1299,11 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
       ;
     GPR_TIMER_END("recv_data.parse", 0);
     gpr_mu_lock(&t->mu);
+    /* copy parsing qbuf to global qbuf */
+    gpr_slice_buffer_move_into(&t->parsing.qbuf, &t->global.qbuf);
     if (i != t->read_buffer.count) {
+      unlock(exec_ctx, t);
+      lock(t);
       drop_connection(exec_ctx, t);
     }
     /* merge stream lists */

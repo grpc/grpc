@@ -80,13 +80,16 @@ char *grpc_test_fetch_oauth2_token_with_credentials(
   oauth2_request request;
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_closure do_nothing_closure;
+  grpc_auth_metadata_context null_ctx = {"", "", NULL, NULL};
+
   grpc_pollset_init(&request.pollset);
   request.is_done = 0;
 
   grpc_closure_init(&do_nothing_closure, do_nothing, NULL);
 
   grpc_call_credentials_get_request_metadata(&exec_ctx, creds, &request.pollset,
-                                             "", on_oauth2_response, &request);
+                                             null_ctx, on_oauth2_response,
+                                             &request);
 
   grpc_exec_ctx_finish(&exec_ctx);
 
