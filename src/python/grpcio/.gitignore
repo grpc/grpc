@@ -13,3 +13,4 @@ dist/
 nosetests.xml
 doc/
 _grpcio_metadata.py
+htmlcov/

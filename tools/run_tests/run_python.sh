@@ -46,3 +46,6 @@ export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
 cd $GRPCIO
 tox
 
+mkdir -p $ROOT/reports
+rm -rf $ROOT/reports/python-coverage
+(mv -T $GRPCIO/htmlcov $ROOT/reports/python-coverage) || true
