@@ -101,7 +101,7 @@ static void *grpc_rb_call_credentials_callback_with_gil(void *param) {
   VALUE details;
   char *error_details;
   grpc_metadata_array_init(&md_ary);
-  rb_hash_aset(args, rb_str_new2("jwt_aud_uri"), auth_uri);
+  rb_hash_aset(args, ID2SYM(rb_intern("jwt_aud_uri")), auth_uri);
   rb_ary_push(callback_args, params->get_metadata);
   rb_ary_push(callback_args, args);
   result = rb_rescue(grpc_rb_call_credentials_callback, callback_args,
