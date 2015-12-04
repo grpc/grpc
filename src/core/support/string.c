@@ -173,6 +173,27 @@ int gpr_ltoa(long value, char *string) {
   return i;
 }
 
+int gpr_int64toa(gpr_int64 value, char *string) {
+  int i = 0;
+  int neg = value < 0;
+
+  if (value == 0) {
+    string[0] = '0';
+    string[1] = 0;
+    return 1;
+  }
+
+  if (neg) value = -value;
+  while (value) {
+    string[i++] = (char)('0' + value % 10);
+    value /= 10;
+  }
+  if (neg) string[i++] = '-';
+  gpr_reverse_bytes(string, i);
+  string[i] = 0;
+  return i;
+}
+
 char *gpr_strjoin(const char **strs, size_t nstrs, size_t *final_length) {
   return gpr_strjoin_sep(strs, nstrs, "", final_length);
 }
