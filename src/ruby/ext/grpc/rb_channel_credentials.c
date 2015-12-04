@@ -38,6 +38,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+#include "rb_call_credentials.h"
 #include "rb_grpc.h"
 
 /* grpc_rb_cChannelCredentials is the ruby class that proxies
@@ -97,6 +98,17 @@ static rb_data_type_t grpc_rb_channel_credentials_data_type = {
     RUBY_TYPED_FREE_IMMEDIATELY
 #endif
 };
+
+/* Creates a wrapping object for a given channel credentials. This should only
+ * be called with grpc_channel_credentials objects that are not already
+ * associated with any Ruby object. */
+VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials *c) {
+  if (c == NULL) {
+    return Qnil;
+  }
+  return TypedData_Wrap_Struct(grpc_rb_cChannelCredentials,
+                               &grpc_rb_channel_credentials_data_type, c);
+}
 
 /* Allocates ChannelCredential instances.
    Provides safe initial defaults for the instance fields. */
@@ -199,6 +211,21 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE *argv, VALUE self)
   return self;
 }
 
+static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE *argv,
+                                                 VALUE self) {
+  grpc_channel_credentials *creds;
+  grpc_call_credentials *other;
+  if (argc == 0) {
+    return self;
+  }
+  creds = grpc_rb_get_wrapped_channel_credentials(self);
+  for (int i = 0; i < argc; i++) {
+    other = grpc_rb_get_wrapped_call_credentials(argv[i]);
+    creds = grpc_composite_channel_credentials_create(creds, other, NULL);
+  }
+  return grpc_rb_wrap_channel_credentials(creds);
+}
+
 void Init_grpc_channel_credentials() {
   grpc_rb_cChannelCredentials =
       rb_define_class_under(grpc_rb_mGrpcCore, "ChannelCredentials", rb_cObject);
@@ -212,6 +239,8 @@ void Init_grpc_channel_credentials() {
                    grpc_rb_channel_credentials_init, -1);
   rb_define_method(grpc_rb_cChannelCredentials, "initialize_copy",
                    grpc_rb_channel_credentials_init_copy, 1);
+  rb_define_method(grpc_rb_cChannelCredentials, "compose",
+                   grpc_rb_channel_credentials_compose, -1);
 
   id_pem_cert_chain = rb_intern("__pem_cert_chain");
   id_pem_private_key = rb_intern("__pem_private_key");
