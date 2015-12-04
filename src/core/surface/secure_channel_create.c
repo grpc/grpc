@@ -88,7 +88,6 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
 
 static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                                      grpc_security_status status,
-                                     grpc_endpoint *wrapped_endpoint,
                                      grpc_endpoint *secure_endpoint) {
   connector *c = arg;
   grpc_closure *notify;
@@ -97,13 +96,11 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     memset(c->result, 0, sizeof(*c->result));
     gpr_mu_unlock(&c->mu);
   } else if (status != GRPC_SECURITY_OK) {
-    GPR_ASSERT(c->connecting_endpoint == wrapped_endpoint);
     gpr_log(GPR_ERROR, "Secure handshake failed with error %d.", status);
     memset(c->result, 0, sizeof(*c->result));
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
   } else {
-    GPR_ASSERT(c->connecting_endpoint == wrapped_endpoint);
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
     c->result->transport = grpc_create_chttp2_transport(

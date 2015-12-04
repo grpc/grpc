@@ -10,6 +10,9 @@
     <ClCompile Include="..\..\..\test\core\end2end\data\test_root_cert.c">
       <Filter>test\core\end2end\data</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\test\core\security\oauth2_utils.c">
+      <Filter>test\core\security</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\test\core\end2end\cq_verifier.c">
       <Filter>test\core\end2end</Filter>
     </ClCompile>
@@ -18,9 +21,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\test\core\iomgr\endpoint_tests.c">
       <Filter>test\core\iomgr</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\test\core\security\oauth2_utils.c">
-      <Filter>test\core\security</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\test\core\util\grpc_profiler.c">
       <Filter>test\core\util</Filter>
@@ -42,6 +42,9 @@
     <ClInclude Include="..\..\..\test\core\end2end\data\ssl_test_data.h">
       <Filter>test\core\end2end\data</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\test\core\security\oauth2_utils.h">
+      <Filter>test\core\security</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\test\core\end2end\cq_verifier.h">
       <Filter>test\core\end2end</Filter>
     </ClInclude>
@@ -50,9 +53,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\test\core\iomgr\endpoint_tests.h">
       <Filter>test\core\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\test\core\security\oauth2_utils.h">
-      <Filter>test\core\security</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\test\core\util\grpc_profiler.h">
       <Filter>test\core\util</Filter>

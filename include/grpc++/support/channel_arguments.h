@@ -80,6 +80,11 @@ class ChannelArguments {
   // Generic channel argument setters. Only for advanced use cases.
   /// Set an integer argument \a value under \a key.
   void SetInt(const grpc::string& key, int value);
+
+  // Generic channel argument setter. Only for advanced use cases.
+  /// Set a pointer argument \a value under \a key. Owership is not transferred.
+  void SetPointer(const grpc::string& key, void* value);
+
   /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);
 
