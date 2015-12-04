@@ -413,6 +413,8 @@ describe 'the http client/server' do
 end
 
 describe 'the secure http client/server' do
+  include_context 'setup: tags'
+
   def load_test_certs
     test_root = File.join(File.dirname(__FILE__), 'testdata')
     files = ['ca.pem', 'server1.key', 'server1.pem']
@@ -442,5 +444,32 @@ describe 'the secure http client/server' do
   end
 
   it_behaves_like 'GRPC metadata delivery works OK' do
+  end
+
+  it 'modifies metadata with CallCredentials' do
+    auth_proc = proc { { 'k1' => 'updated-v1' } }
+    call_creds = GRPC::Core::CallCredentials.new(auth_proc)
+    md = { 'k2' => 'v2' }
+    expected_md = { 'k1' => 'updated-v1', 'k2' => 'v2' }
+    recvd_rpc = nil
+    rcv_thread = Thread.new do
+      recvd_rpc = @server.request_call(@server_queue, @server_tag, deadline)
+    end
+
+    call = new_client_call
+    call.set_credentials! call_creds
+    client_ops = {
+      CallOps::SEND_INITIAL_METADATA => md
+    }
+    batch_result = call.run_batch(@client_queue, @client_tag, deadline,
+                                  client_ops)
+    expect(batch_result.send_metadata).to be true
+
+    # confirm the server can receive the client metadata
+    rcv_thread.join
+    expect(recvd_rpc).to_not eq nil
+    recvd_md = recvd_rpc.metadata
+    replace_symbols = Hash[expected_md.each_pair.collect { |x, y| [x.to_s, y] }]
+    expect(recvd_md).to eq(recvd_md.merge(replace_symbols))
   end
 end

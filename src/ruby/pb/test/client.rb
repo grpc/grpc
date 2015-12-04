@@ -132,7 +132,8 @@ def create_stub(opts)
     if wants_creds.include?(opts.test_case)
       unless opts.oauth_scope.nil?
         auth_creds = Google::Auth.get_application_default(opts.oauth_scope)
-        stub_opts[:update_metadata] = auth_creds.updater_proc
+        call_creds = GRPC::Core::CallCredentials.new(auth_creds.updater_proc)
+        stub_opts[:creds] = stub_opts[:creds].compose call_creds
       end
     end
 
@@ -141,12 +142,14 @@ def create_stub(opts)
       kw = auth_creds.updater_proc.call({})  # gives as an auth token
 
       # use a metadata update proc that just adds the auth token.
-      stub_opts[:update_metadata] = proc { |md| md.merge(kw) }
+      call_creds = GRPC::Core::CallCredentials.new(proc { |md| md.merge(kw) })
+      stub_opts[:creds] = stub_opts[:creds].compose call_creds
     end
 
     if opts.test_case == 'jwt_token_creds'  # don't use a scope
       auth_creds = Google::Auth.get_application_default
-      stub_opts[:update_metadata] = auth_creds.updater_proc
+      call_creds = GRPC::Core::CallCredentials.new(auth_creds.updater_proc)
+      stub_opts[:creds] = stub_opts[:creds].compose call_creds
     end
 
     GRPC.logger.info("... connecting securely to #{address}")
