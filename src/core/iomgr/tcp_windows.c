@@ -281,15 +281,14 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   tcp->write_cb = cb;
   tcp->write_slices = slices;
-
-  GPR_ASSERT((tcp->write_slices->count >> 32) == 0);
+  GPR_ASSERT(tcp->write_slices->count <= UINT32_MAX);
   if (tcp->write_slices->count > GPR_ARRAY_SIZE(local_buffers)) {
     buffers = (WSABUF *)gpr_malloc(sizeof(WSABUF) * tcp->write_slices->count);
     allocated = buffers;
   }
 
   for (i = 0; i < tcp->write_slices->count; i++) {
-    GPR_ASSERT((GPR_SLICE_LENGTH(tcp->write_slices->slices[i]) >> 32) == 0);
+    GPR_ASSERT(GPR_SLICE_LENGTH(tcp->write_slices->slices[i]) <= UINT32_MAX);
     buffers[i].len = (ULONG) GPR_SLICE_LENGTH(tcp->write_slices->slices[i]);
     buffers[i].buf = (char *)GPR_SLICE_START_PTR(tcp->write_slices->slices[i]);
   }
