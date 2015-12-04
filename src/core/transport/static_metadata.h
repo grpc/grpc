@@ -31,11 +31,13 @@
 
 /*
  * WARNING: Auto-generated code.
- * 
- * To make changes to this file, change tools/codegen/core/gen_static_metadata.py,
+ *
+ * To make changes to this file, change
+ *tools/codegen/core/gen_static_metadata.py,
  * and then re-run it.
- * 
- * See metadata.h for an explanation of the interface here, and metadata.c for an
+ *
+ * See metadata.h for an explanation of the interface here, and metadata.c for
+ *an
  * explanation of what's going on.
  */
 
@@ -155,7 +157,8 @@ extern grpc_mdstr grpc_static_mdstr_table[GRPC_STATIC_MDSTR_COUNT];
 /* "identity,deflate" */
 #define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE (&grpc_static_mdstr_table[53])
 /* "identity,deflate,gzip" */
-#define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE_COMMA_GZIP (&grpc_static_mdstr_table[54])
+#define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
+  (&grpc_static_mdstr_table[54])
 /* "identity,gzip" */
 #define GRPC_MDSTR_IDENTITY_COMMA_GZIP (&grpc_static_mdstr_table[55])
 /* "if-match" */
