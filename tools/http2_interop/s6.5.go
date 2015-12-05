@@ -11,7 +11,6 @@ func testSmallMaxFrameSize(ctx *HTTP2InteropCtx) error {
 		return err
 	}
 	defer conn.Close()
-	conn.Log = ctx.T.Log
 	conn.SetDeadline(time.Now().Add(defaultTimeout))
 
 	sf := &SettingsFrame{
