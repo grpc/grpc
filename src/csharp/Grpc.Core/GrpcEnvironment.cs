@@ -46,7 +46,8 @@ namespace Grpc.Core
     /// </summary>
     public class GrpcEnvironment
     {
-        const int THREAD_POOL_SIZE = 4;
+        const int DefaultThreadPoolSize = 4;
+        static int _threadPoolSize = DefaultThreadPoolSize;
 
         static readonly IPlatformInvocation pinvoke = PlatformInvocation.Implementation;
 
@@ -60,6 +61,21 @@ namespace Grpc.Core
         readonly CompletionRegistry completionRegistry;
         readonly DebugStats debugStats = new DebugStats();
         bool isClosed;
+
+
+        /// <summary>
+        /// This is provided for advanced use-cases, such as libraries which provide a layer of abstract over grpc.
+        /// Setting this value will not have an effect until after all open channels/servers are shutdown.
+        /// Therefore, an application may change this at anytime but will need to orchastrate restrarting all channels/servers.
+        /// </summary>
+        /// <remarks>The default is 4</remarks>
+        /// <returns>The previous thread pool size</returns>
+        public static int SetThreadPoolSize(int numberOfThreads)
+        {
+            var previousValue = _threadPoolSize;
+            _threadPoolSize = numberOfThreads;
+            return previousValue;
+        }
 
         /// <summary>
         /// Returns a reference-counted instance of initialized gRPC environment.
@@ -141,8 +157,9 @@ namespace Grpc.Core
             NativeLogRedirector.Redirect();
             GrpcNativeInit();
             completionRegistry = new CompletionRegistry(this);
-            threadPool = new GrpcThreadPool(this, THREAD_POOL_SIZE);
+            threadPool = new GrpcThreadPool(this, _threadPoolSize);
             threadPool.Start();
+
         }
 
         /// <summary>
