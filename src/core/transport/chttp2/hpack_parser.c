@@ -748,6 +748,7 @@ static int parse_indexed_field_x(grpc_chttp2_hpack_parser *p,
 static int finish_lithdr_incidx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
+  GPR_ASSERT(md != NULL); /* handled in string parsing */
   return on_hdr(p, grpc_mdelem_from_metadata_strings(GRPC_MDSTR_REF(md->key),
                                                      take_string(p, &p->value)),
                 1) &&
@@ -799,6 +800,7 @@ static int parse_lithdr_incidx_v(grpc_chttp2_hpack_parser *p,
 static int finish_lithdr_notidx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
+  GPR_ASSERT(md != NULL); /* handled in string parsing */
   return on_hdr(p, grpc_mdelem_from_metadata_strings(GRPC_MDSTR_REF(md->key),
                                                      take_string(p, &p->value)),
                 0) &&
@@ -850,6 +852,7 @@ static int parse_lithdr_notidx_v(grpc_chttp2_hpack_parser *p,
 static int finish_lithdr_nvridx(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   grpc_mdelem *md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
+  GPR_ASSERT(md != NULL); /* handled in string parsing */
   return on_hdr(p, grpc_mdelem_from_metadata_strings(GRPC_MDSTR_REF(md->key),
                                                      take_string(p, &p->value)),
                 0) &&
@@ -1300,7 +1303,10 @@ static is_binary_header is_binary_literal_header(grpc_chttp2_hpack_parser *p) {
 
 static is_binary_header is_binary_indexed_header(grpc_chttp2_hpack_parser *p) {
   grpc_mdelem *elem = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  if (!elem) return ERROR_HEADER;
+  if (!elem) {
+    gpr_log(GPR_ERROR, "Invalid HPACK index received: %d", p->index);
+    return ERROR_HEADER;
+  }
   return grpc_is_binary_header(
              (const char *)GPR_SLICE_START_PTR(elem->key->slice),
              GPR_SLICE_LENGTH(elem->key->slice))
@@ -1338,15 +1344,7 @@ static int parse_value_string_with_literal_key(grpc_chttp2_hpack_parser *p,
 /* PUBLIC INTERFACE */
 
 static void on_header_not_set(void *user_data, grpc_mdelem *md) {
-  char *keyhex = gpr_dump_slice(md->key->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  char *valuehex =
-      gpr_dump_slice(md->value->slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-  gpr_log(GPR_ERROR, "on_header callback not set; key=%s value=%s", keyhex,
-          valuehex);
-  gpr_free(keyhex);
-  gpr_free(valuehex);
-  GRPC_MDELEM_UNREF(md);
-  abort();
+  GPR_UNREACHABLE_CODE(return );
 }
 
 void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser *p) {
