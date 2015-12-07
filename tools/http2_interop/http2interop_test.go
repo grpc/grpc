@@ -68,7 +68,7 @@ func (ctx *HTTP2InteropCtx) Close() error {
 	return nil
 }
 
-func TestClientShortSettings(t *testing.T) {
+func TestSoonClientShortSettings(t *testing.T) {
 	defer Report(t)
 	if *testCase != "framing" {
 		t.SkipNow()
@@ -80,7 +80,7 @@ func TestClientShortSettings(t *testing.T) {
 	}
 }
 
-func TestShortPreface(t *testing.T) {
+func TestSoonShortPreface(t *testing.T) {
 	defer Report(t)
 	if *testCase != "framing" {
 		t.SkipNow()
@@ -92,7 +92,7 @@ func TestShortPreface(t *testing.T) {
 	}
 }
 
-func TestUnknownFrameType(t *testing.T) {
+func TestSoonUnknownFrameType(t *testing.T) {
 	defer Report(t)
 	if *testCase != "framing" {
 		t.SkipNow()
@@ -103,7 +103,7 @@ func TestUnknownFrameType(t *testing.T) {
 	}
 }
 
-func TestClientPrefaceWithStreamId(t *testing.T) {
+func TestSoonClientPrefaceWithStreamId(t *testing.T) {
 	defer Report(t)
 	if *testCase != "framing" {
 		t.SkipNow()
@@ -113,7 +113,7 @@ func TestClientPrefaceWithStreamId(t *testing.T) {
 	matchError(t, err, "EOF")
 }
 
-func TestTLSApplicationProtocol(t *testing.T) {
+func TestSoonTLSApplicationProtocol(t *testing.T) {
 	defer Report(t)
 	if *testCase != "tls" {
 		t.SkipNow()
@@ -123,7 +123,7 @@ func TestTLSApplicationProtocol(t *testing.T) {
 	matchError(t, err, "EOF", "broken pipe")
 }
 
-func TestTLSMaxVersion(t *testing.T) {
+func TestSoonTLSMaxVersion(t *testing.T) {
 	defer Report(t)
 	if *testCase != "tls" {
 		t.SkipNow()
@@ -135,7 +135,7 @@ func TestTLSMaxVersion(t *testing.T) {
 	matchError(t, err, "EOF", "server selected unsupported protocol")
 }
 
-func TestTLSBadCipherSuites(t *testing.T) {
+func TestSoonTLSBadCipherSuites(t *testing.T) {
 	defer Report(t)
 	if *testCase != "tls" {
 		t.SkipNow()
