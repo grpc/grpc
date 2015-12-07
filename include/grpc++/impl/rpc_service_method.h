@@ -34,6 +34,7 @@
 #ifndef GRPCXX_IMPL_RPC_SERVICE_METHOD_H
 #define GRPCXX_IMPL_RPC_SERVICE_METHOD_H
 
+#include <climits>
 #include <functional>
 #include <map>
 #include <memory>
