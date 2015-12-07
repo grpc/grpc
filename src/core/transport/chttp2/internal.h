@@ -512,9 +512,6 @@ void grpc_chttp2_publish_reads(grpc_exec_ctx *exec_ctx,
 void grpc_chttp2_list_add_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global);
-void grpc_chttp2_list_add_first_writable_stream(
-    grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
 int grpc_chttp2_list_pop_writable_stream(
     grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_transport_writing *transport_writing,
