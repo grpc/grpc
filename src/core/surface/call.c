@@ -1270,6 +1270,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         if (call->receiving_message) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+          goto done_with_error;
         }
         call->receiving_message = 1;
         bctl->recv_message = 1;

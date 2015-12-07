@@ -679,7 +679,7 @@ try:
       for test_case in _HTTP2_TEST_CASES:
         if server_name == "go":
           # TODO(carl-mastrangelo): Reenable after https://github.com/grpc/grpc-go/issues/434
-          continue
+          continue 
         test_job = cloud_to_cloud_jobspec(http2Interop,
                                           test_case,
                                           server_name,

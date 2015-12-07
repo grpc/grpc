@@ -49,8 +49,6 @@ void grpc_chttp2_incoming_metadata_buffer_init(
     grpc_chttp2_incoming_metadata_buffer *buffer);
 void grpc_chttp2_incoming_metadata_buffer_destroy(
     grpc_chttp2_incoming_metadata_buffer *buffer);
-void grpc_chttp2_incoming_metadata_buffer_reset(
-    grpc_chttp2_incoming_metadata_buffer *buffer);
 void grpc_chttp2_incoming_metadata_buffer_publish(
     grpc_chttp2_incoming_metadata_buffer *buffer, grpc_metadata_batch *batch);
 
