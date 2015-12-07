@@ -243,7 +243,7 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, 1);
 
   GPR_ASSERT(op->set_accept_stream == NULL);
-  GPR_ASSERT(op->bind_pollset == NULL);
+  GPR_ASSERT(op->bind_pollset == NULL || op->send_ping != NULL);
 
   gpr_mu_lock(&chand->mu_config);
   if (op->on_connectivity_state_change != NULL) {
@@ -257,6 +257,16 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
   lb_policy = chand->lb_policy;
   if (lb_policy) {
     GRPC_LB_POLICY_REF(lb_policy, "broadcast");
+  }
+
+  if (op->send_ping != NULL) {
+    if (lb_policy == NULL) {
+      grpc_exec_ctx_enqueue(exec_ctx, op->send_ping, 0);
+    } else {
+      grpc_lb_policy_ping_one(exec_ctx, lb_policy, op->bind_pollset, op->send_ping);
+      op->bind_pollset = NULL;
+    }
+    op->send_ping = NULL;
   }
 
   if (op->disconnect && chand->resolver != NULL) {

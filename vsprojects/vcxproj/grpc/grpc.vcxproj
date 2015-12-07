@@ -609,6 +609,8 @@
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\channel_create.c">
     </ClCompile>
+    <ClCompile Include="..\..\..\src\core\surface\channel_ping.c">
+    </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\completion_queue.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\surface\event_string.c">
