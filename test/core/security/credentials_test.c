@@ -31,8 +31,10 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
 #include "src/core/security/credentials.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "src/core/httpcli/httpcli.h"
@@ -1013,6 +1015,30 @@ static void test_metadata_plugin_failure(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+static void test_get_well_known_google_credentials_file_path(void) {
+#ifdef GPR_POSIX_FILE
+  char *path;
+  char *old_home = gpr_getenv("HOME");
+  gpr_setenv("HOME", "/tmp");
+  path = grpc_get_well_known_google_credentials_file_path();
+  GPR_ASSERT(path != NULL);
+  GPR_ASSERT(0 == strcmp("/tmp/.config/" GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY
+                         "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE,
+                         path));
+  gpr_free(path);
+#if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
+  unsetenv("HOME");
+  path = grpc_get_well_known_google_credentials_file_path();
+  GPR_ASSERT(path == NULL);
+#endif /* GPR_POSIX_ENV || GPR_LINUX_ENV */
+  gpr_setenv("HOME", old_home);
+#else /* GPR_POSIX_FILE */
+  char *path = grpc_get_well_known_google_credentials_file_path();
+  GPR_ASSERT(path != NULL);
+  gpr_free(path);
+#endif
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_empty_md_store();
@@ -1043,5 +1069,6 @@ int main(int argc, char **argv) {
   test_google_default_creds_access_token();
   test_metadata_plugin_success();
   test_metadata_plugin_failure();
+  test_get_well_known_google_credentials_file_path();
   return 0;
 }
