@@ -267,7 +267,7 @@ class PythonLanguage:
 
   def client_cmd(self, args):
     return [
-        'python2.7_virtual_environment/bin/python',
+        'src/python/grpcio/.tox/py27/bin/python',
         'src/python/grpcio/setup.py',
         'run_interop',
         '--client',
@@ -279,7 +279,7 @@ class PythonLanguage:
 
   def server_cmd(self, args):
     return [
-        'python2.7_virtual_environment/bin/python',
+        'src/python/grpcio/.tox/py27/bin/python',
         'src/python/grpcio/setup.py',
         'run_interop',
         '--server',
