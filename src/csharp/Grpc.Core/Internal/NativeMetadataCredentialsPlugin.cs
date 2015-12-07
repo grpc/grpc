@@ -96,7 +96,7 @@ namespace Grpc.Core.Internal
             try
             {
                 var metadata = new Metadata();
-                await interceptor(serviceUrl, metadata);
+                await interceptor(serviceUrl, metadata).ConfigureAwait(false);
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(metadata))
                 {
