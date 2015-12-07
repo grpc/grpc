@@ -87,6 +87,8 @@ Histogram.prototype.bucketStart = function(index) {
  * @param {number} value The value to add
  */
 Histogram.prototype.add = function(value) {
+  // Ensure value is a number
+  value = +value;
   this.sum += value;
   this.sum_of_squares += value * value;
   this.count++;
