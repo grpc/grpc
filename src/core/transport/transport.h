@@ -50,19 +50,32 @@ typedef struct grpc_transport grpc_transport;
    for a stream. */
 typedef struct grpc_stream grpc_stream;
 
+/*#define GRPC_STREAM_REFCOUNT_DEBUG*/
+
 typedef struct grpc_stream_refcount {
   gpr_refcount refs;
   grpc_closure destroy;
+#ifdef GRPC_STREAM_REFCOUNT_DEBUG
+  const char *object_type;
+#endif
 } grpc_stream_refcount;
 
-/*#define GRPC_STREAM_REFCOUNT_DEBUG*/
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
+void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
+                          grpc_iomgr_cb_func cb, void *cb_arg,
+                          const char *object_type);
 void grpc_stream_ref(grpc_stream_refcount *refcount, const char *reason);
 void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount,
                        const char *reason);
+#define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
+  grpc_stream_ref_init(rc, ir, cb, cb_arg, objtype)
 #else
+void grpc_stream_ref_init(grpc_stream_refcount *refcount, int initial_refs,
+                          grpc_iomgr_cb_func cb, void *cb_arg);
 void grpc_stream_ref(grpc_stream_refcount *refcount);
 void grpc_stream_unref(grpc_exec_ctx *exec_ctx, grpc_stream_refcount *refcount);
+#define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
+  grpc_stream_ref_init(rc, ir, cb, cb_arg)
 #endif
 
 /* Transport stream op: a set of operations to perform on a transport
@@ -96,7 +109,7 @@ typedef struct grpc_transport_stream_op {
 typedef struct grpc_transport_op {
   /** called when processing of this op is done */
   grpc_closure *on_consumed;
-  /** connectivity monitoring */
+  /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
   grpc_closure *on_connectivity_state_change;
   grpc_connectivity_state *connectivity_state;
   /** should the transport be disconnected */
