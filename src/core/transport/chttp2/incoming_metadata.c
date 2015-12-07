@@ -56,16 +56,6 @@ void grpc_chttp2_incoming_metadata_buffer_destroy(
   gpr_free(buffer->elems);
 }
 
-void grpc_chttp2_incoming_metadata_buffer_reset(
-    grpc_chttp2_incoming_metadata_buffer *buffer) {
-  size_t i;
-  GPR_ASSERT(!buffer->published);
-  for (i = 0; i < buffer->count; i++) {
-    GRPC_MDELEM_UNREF(buffer->elems[i].md);
-  }
-  buffer->count = 0;
-}
-
 void grpc_chttp2_incoming_metadata_buffer_add(
     grpc_chttp2_incoming_metadata_buffer *buffer, grpc_mdelem *elem) {
   GPR_ASSERT(!buffer->published);
@@ -81,14 +71,6 @@ void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer *buffer, gpr_timespec deadline) {
   GPR_ASSERT(!buffer->published);
   buffer->deadline = deadline;
-}
-
-void grpc_chttp2_incoming_metadata_buffer_swap(
-    grpc_chttp2_incoming_metadata_buffer *a,
-    grpc_chttp2_incoming_metadata_buffer *b) {
-  GPR_ASSERT(!a->published);
-  GPR_ASSERT(!b->published);
-  GPR_SWAP(grpc_chttp2_incoming_metadata_buffer, *a, *b);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_publish(
