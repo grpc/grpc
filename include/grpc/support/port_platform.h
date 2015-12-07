@@ -252,7 +252,7 @@
 #define GPR_PLATFORM_STRING "unknown"
 #endif
 
-#ifdef GCOV
+#ifdef GPR_GCOV
 #undef GPR_FORBID_UNREACHABLE_CODE
 #define GPR_FORBID_UNREACHABLE_CODE 1
 #endif
