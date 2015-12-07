@@ -131,7 +131,8 @@ grpc_channel *grpc_channel_create_from_filters(
         } else {
           if (channel->default_authority) {
             /* other ways of setting this (notably ssl) take precedence */
-            gpr_log(GPR_ERROR, "%s ignored: default host already set some other way",
+            gpr_log(GPR_ERROR,
+                    "%s ignored: default host already set some other way",
                     GRPC_ARG_DEFAULT_AUTHORITY);
           } else {
             channel->default_authority = grpc_mdelem_from_strings(
