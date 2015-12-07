@@ -33,6 +33,8 @@
 
 #include <grpc++/impl/proto_utils.h>
 
+#include <climits>
+
 #include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
