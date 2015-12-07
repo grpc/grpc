@@ -47,6 +47,9 @@ exports.runClient = function runClient(call) {
                                    setup.client_channels,
                                    setup.histogram_params,
                                    setup.security_params);
+      client.on('error', function(error) {
+        call.emit('error', error);
+      });
       switch (setup.load_params.load) {
         case 'closed_loop':
         client.startClosedLoop(setup.outstanding_rpcs_per_channel,
@@ -65,7 +68,6 @@ exports.runClient = function runClient(call) {
             setup.load_params.load));
       }
       stats = client.mark();
-      console.log(stats);
       call.write({
         stats: stats
       });
@@ -79,8 +81,9 @@ exports.runClient = function runClient(call) {
       } else {
         call.emit('error', new Error('Got Mark before ClientConfig'));
       }
+      break;
       default:
-      throw new Error('Nonexistent client argtype option');
+      throw new Error('Nonexistent client argtype option: ' + request.argtype);
     }
   });
   call.on('end', function() {
@@ -110,10 +113,11 @@ exports.runServer = function runServer(call) {
         stats = server.mark(request.mark.reset);
         call.write({
           stats: stats,
-          port: server.getPort()
+          port: server.getPort(),
+          cores: 1
         });
       } else {
-        call.emit('error', new Error('Got Mark befor ServerConfig'));
+        call.emit('error', new Error('Got Mark before ServerConfig'));
       }
       break;
       default:

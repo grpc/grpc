@@ -62,6 +62,17 @@ function zeroBuffer(size) {
 }
 
 /**
+ * Convert a time difference, as returned by process.hrtime, to a number of
+ * nanoseconds.
+ * @param {Array.<number>} time_diff The time diff, represented as
+ *     [seconds, nanoseconds]
+ * @return {number} The total number of nanoseconds
+ */
+function timeDiffToNanos(time_diff) {
+  return time_diff[0] * 1e9 + time_diff[1];
+}
+
+/**
  * The BenchmarkClient class. Opens channels to servers and makes RPCs based on
  * parameters from the driver, and records statistics about those RPCs.
  * @param {Array.<string>} server_targets List of servers to connect to
@@ -143,9 +154,13 @@ BenchmarkClient.prototype.startClosedLoop = function(
         self.pending_calls++;
         var start_time = process.hrtime();
         client.unaryCall(argument, function(error, response) {
-          // Ignoring error for now
+          if (error) {
+            self.emit('error', new Error('Client error: ' + error.message));
+            self.running = false;
+            return;
+          }
           var time_diff = process.hrtime(start_time);
-          self.histogram.add(time_diff);
+          self.histogram.add(timeDiffToNanos(time_diff));
           makeCall(client);
           self.pending_calls--;
           if ((!self.running) && self.pending_calls == 0) {
@@ -165,12 +180,16 @@ BenchmarkClient.prototype.startClosedLoop = function(
         });
         call.on('end', function() {
           var time_diff = process.hrtime(start_time);
-          self.histogram.add(time_diff);
+          self.histogram.add(timeDiffToNanos(time_diff));
           makeCall(client);
           self.pending_calls--;
           if ((!self.running) && self.pending_calls == 0) {
             self.emit('finished');
           }
+        });
+        call.on('error', function(error) {
+          self.emit('error', new Error('Client error: ' + error.message));
+          self.running = false;
         });
       }
     };
@@ -218,9 +237,13 @@ BenchmarkClient.prototype.startPoisson = function(
         self.pending_calls++;
         var start_time = process.hrtime();
         client.unaryCall(argument, function(error, response) {
-          // Ignoring error for now
+          if (error) {
+            self.emit('error', new Error('Client error: ' + error.message));
+            self.running = false;
+            return;
+          }
           var time_diff = process.hrtime(start_time);
-          self.histogram.add(time_diff);
+          self.histogram.add(timeDiffToNanos(time_diff));
           self.pending_calls--;
           if ((!self.running) && self.pending_calls == 0) {
             self.emit('finished');
@@ -241,11 +264,15 @@ BenchmarkClient.prototype.startPoisson = function(
         });
         call.on('end', function() {
           var time_diff = process.hrtime(start_time);
-          self.histogram.add(time_diff);
+          self.histogram.add(timeDiffToNanos(time_diff));
           self.pending_calls--;
           if ((!self.running) && self.pending_calls == 0) {
             self.emit('finished');
           }
+        });
+        call.on('error', function(error) {
+          self.emit('error', new Error('Client error: ' + error.message));
+          self.running = false;
         });
       } else {
         poisson.stop();
@@ -303,7 +330,7 @@ BenchmarkClient.prototype.mark = function(reset) {
  */
 BenchmarkClient.prototype.stop = function(callback) {
   this.running = false;
-  self.on('finished', callback);
+  this.on('finished', callback);
 };
 
 module.exports = BenchmarkClient;
