@@ -697,6 +697,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "httpscli_test", 
+    "src": [
+      "test/core/httpcli/httpscli_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "init_test", 
     "src": [
       "test/core/surface/init_test.c"
