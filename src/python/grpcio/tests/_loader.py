@@ -34,14 +34,6 @@ import unittest
 
 import coverage
 
-# Some global spooky-action-at-a-distance hackery to get around
-# system-installation issues where the google namespace is defaulted to the
-# system even though the egg is higher priority on sys.path. This inverts the
-# path priority on package module paths thus giving any installed eggs higher
-# priority and having little effect otherwise.
-import google
-google.__path__.reverse()
-
 TEST_MODULE_REGEX = r'^.*_test$'
 
 
