@@ -461,9 +461,9 @@ void grpc_connected_subchannel_notify_on_state_change(
                                 closure);
 }
 
-void grpc_connected_subchannel_ping(
-    grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *con,
-    grpc_closure *closure) {
+void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
+                                    grpc_connected_subchannel *con,
+                                    grpc_closure *closure) {
   grpc_transport_op op;
   grpc_channel_element *elem;
   memset(&op, 0, sizeof(op));

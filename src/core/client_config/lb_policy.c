@@ -116,7 +116,8 @@ void grpc_lb_policy_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy) {
   policy->vtable->exit_idle(exec_ctx, policy);
 }
 
-void grpc_lb_policy_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy, grpc_closure *closure) {
+void grpc_lb_policy_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                             grpc_closure *closure) {
   policy->vtable->ping_one(exec_ctx, policy, closure);
 }
 

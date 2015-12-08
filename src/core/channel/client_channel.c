@@ -253,7 +253,8 @@ static void cc_start_transport_op(grpc_exec_ctx *exec_ctx,
 
   GPR_ASSERT(op->set_accept_stream == NULL);
   if (op->bind_pollset != NULL) {
-    grpc_pollset_set_add_pollset(exec_ctx, &chand->interested_parties, op->bind_pollset);
+    grpc_pollset_set_add_pollset(exec_ctx, &chand->interested_parties,
+                                 op->bind_pollset);
   }
 
   gpr_mu_lock(&chand->mu_config);
