@@ -27,6 +27,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+cimport cpython
+
 from grpc._cython._cygrpc cimport call
 from grpc._cython._cygrpc cimport completion_queue
 from grpc._cython._cygrpc cimport credentials
@@ -70,12 +72,16 @@ cdef class Channel:
       method = method.encode()
     else:
       raise TypeError("expected method to be str or bytes")
-    if isinstance(host, bytes):
+    cdef char *host_c_string = NULL
+    if host is None:
       pass
+    elif isinstance(host, bytes):
+      host_c_string = host
     elif isinstance(host, basestring):
       host = host.encode()
+      host_c_string = host
     else:
-      raise TypeError("expected host to be str or bytes")
+      raise TypeError("expected host to be str, bytes, or None")
     cdef call.Call operation_call = call.Call()
     operation_call.references = [self, method, host, queue]
     cdef grpc.grpc_call *parent_call = NULL
@@ -83,9 +89,28 @@ cdef class Channel:
       parent_call = parent.c_call
     operation_call.c_call = grpc.grpc_channel_create_call(
         self.c_channel, parent_call, flags,
-        queue.c_completion_queue, method, host, deadline.c_time,
+        queue.c_completion_queue, method, host_c_string, deadline.c_time,
         NULL)
     return operation_call
+
+  def check_connectivity_state(self, bint try_to_connect):
+    return grpc.grpc_channel_check_connectivity_state(self.c_channel,
+                                                      try_to_connect)
+
+  def watch_connectivity_state(
+      self, last_observed_state, records.Timespec deadline not None,
+      completion_queue.CompletionQueue queue not None, tag):
+    cdef records.OperationTag operation_tag = records.OperationTag(tag)
+    cpython.Py_INCREF(operation_tag)
+    grpc.grpc_channel_watch_connectivity_state(
+        self.c_channel, last_observed_state, deadline.c_time,
+        queue.c_completion_queue, <cpython.PyObject *>operation_tag)
+
+  def target(self):
+    cdef char * target = grpc.grpc_channel_get_target(self.c_channel)
+    result = <bytes>target
+    grpc.gpr_free(target)
+    return result
 
   def __dealloc__(self):
     if self.c_channel != NULL:

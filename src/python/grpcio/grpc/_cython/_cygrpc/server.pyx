@@ -132,7 +132,7 @@ cdef class Server:
 
   def cancel_all_calls(self):
     if not self.is_shutting_down:
-      raise ValueError("the server must be shutting down to cancel all calls")
+      raise RuntimeError("the server must be shutting down to cancel all calls")
     elif self.is_shutdown:
       return
     else:
