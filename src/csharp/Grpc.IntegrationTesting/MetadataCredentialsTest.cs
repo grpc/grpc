@@ -67,7 +67,7 @@ namespace Grpc.IntegrationTesting
                 new ChannelOption(ChannelOptions.SslTargetNameOverride, TestCredentials.DefaultHostOverride)
             };
 
-            var asyncAuthInterceptor = new AsyncAuthInterceptor(async (authUri, metadata) =>
+            var asyncAuthInterceptor = new AsyncAuthInterceptor(async (context, metadata) =>
             {
                 await Task.Delay(100);  // make sure the operation is asynchronous.
                 metadata.Add("authorization", "SECRET_TOKEN");
