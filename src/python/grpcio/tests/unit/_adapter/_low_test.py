@@ -80,11 +80,11 @@ class InsecureServerInsecureClient(unittest.TestCase):
     del self.client_channel
 
     self.client_completion_queue.shutdown()
-    while (self.client_completion_queue.next().type !=
+    while (self.client_completion_queue.next(float('+inf')).type !=
            _types.EventType.QUEUE_SHUTDOWN):
       pass
     self.server_completion_queue.shutdown()
-    while (self.server_completion_queue.next().type !=
+    while (self.server_completion_queue.next(float('+inf')).type !=
            _types.EventType.QUEUE_SHUTDOWN):
       pass
 
@@ -294,8 +294,12 @@ class HangingServerShutdown(unittest.TestCase):
 
     # Now try to shutdown the server and expect that we see server shutdown
     # almost immediately after calling cancel_all_calls.
+
+    # First attempt to cancel all calls before shutting down, and expect
+    # our state machine to catch the erroneous API use.
     with self.assertRaises(RuntimeError):
       self.server.cancel_all_calls()
+
     shutdown_tag = object()
     self.server.shutdown(shutdown_tag)
     pre_cancel_timestamp = time.time()
