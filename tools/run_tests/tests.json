@@ -789,6 +789,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "invalid_call_argument_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "json_rewrite_test", 
     "platforms": [
       "linux", 
