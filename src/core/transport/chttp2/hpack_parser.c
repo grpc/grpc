@@ -728,6 +728,7 @@ static int finish_indexed_field(grpc_chttp2_hpack_parser *p,
 /* parse an indexed field with index < 127 */
 static int parse_indexed_field(grpc_chttp2_hpack_parser *p,
                                const gpr_uint8 *cur, const gpr_uint8 *end) {
+  p->dynamic_table_update_allowed = 0;
   p->index = (*cur) & 0x7f;
   return finish_indexed_field(p, cur + 1, end);
 }
@@ -737,6 +738,7 @@ static int parse_indexed_field_x(grpc_chttp2_hpack_parser *p,
                                  const gpr_uint8 *cur, const gpr_uint8 *end) {
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       finish_indexed_field};
+  p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = 0x7f;
   p->parsing.value = &p->index;
@@ -769,6 +771,7 @@ static int parse_lithdr_incidx(grpc_chttp2_hpack_parser *p,
                                const gpr_uint8 *cur, const gpr_uint8 *end) {
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       parse_value_string_with_indexed_key, finish_lithdr_incidx};
+  p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = (*cur) & 0x3f;
   return parse_string_prefix(p, cur + 1, end);
@@ -780,6 +783,7 @@ static int parse_lithdr_incidx_x(grpc_chttp2_hpack_parser *p,
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       parse_string_prefix, parse_value_string_with_indexed_key,
       finish_lithdr_incidx};
+  p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = 0x3f;
   p->parsing.value = &p->index;
@@ -792,6 +796,7 @@ static int parse_lithdr_incidx_v(grpc_chttp2_hpack_parser *p,
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       parse_key_string, parse_string_prefix,
       parse_value_string_with_literal_key, finish_lithdr_incidx_v};
+  p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   return parse_string_prefix(p, cur + 1, end);
 }
@@ -821,6 +826,7 @@ static int parse_lithdr_notidx(grpc_chttp2_hpack_parser *p,
                                const gpr_uint8 *cur, const gpr_uint8 *end) {
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       parse_value_string_with_indexed_key, finish_lithdr_notidx};
+  p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = (*cur) & 0xf;
   return parse_string_prefix(p, cur + 1, end);
@@ -832,6 +838,7 @@ static int parse_lithdr_notidx_x(grpc_chttp2_hpack_parser *p,
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       parse_string_prefix, parse_value_string_with_indexed_key,
       finish_lithdr_notidx};
+  p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = 0xf;
   p->parsing.value = &p->index;
@@ -844,6 +851,7 @@ static int parse_lithdr_notidx_v(grpc_chttp2_hpack_parser *p,
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       parse_key_string, parse_string_prefix,
       parse_value_string_with_literal_key, finish_lithdr_notidx_v};
+  p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   return parse_string_prefix(p, cur + 1, end);
 }
@@ -873,6 +881,7 @@ static int parse_lithdr_nvridx(grpc_chttp2_hpack_parser *p,
                                const gpr_uint8 *cur, const gpr_uint8 *end) {
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       parse_value_string_with_indexed_key, finish_lithdr_nvridx};
+  p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = (*cur) & 0xf;
   return parse_string_prefix(p, cur + 1, end);
@@ -884,6 +893,7 @@ static int parse_lithdr_nvridx_x(grpc_chttp2_hpack_parser *p,
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       parse_string_prefix, parse_value_string_with_indexed_key,
       finish_lithdr_nvridx};
+  p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = 0xf;
   p->parsing.value = &p->index;
@@ -896,6 +906,7 @@ static int parse_lithdr_nvridx_v(grpc_chttp2_hpack_parser *p,
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       parse_key_string, parse_string_prefix,
       parse_value_string_with_literal_key, finish_lithdr_nvridx_v};
+  p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   return parse_string_prefix(p, cur + 1, end);
 }
@@ -911,6 +922,10 @@ static int finish_max_tbl_size(grpc_chttp2_hpack_parser *p,
 /* parse a max table size change, max size < 15 */
 static int parse_max_tbl_size(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
                               const gpr_uint8 *end) {
+  if (p->dynamic_table_update_allowed == 0) {
+    return 0;
+  }
+  p->dynamic_table_update_allowed--;
   p->index = (*cur) & 0x1f;
   return finish_max_tbl_size(p, cur + 1, end);
 }
@@ -920,6 +935,10 @@ static int parse_max_tbl_size_x(grpc_chttp2_hpack_parser *p,
                                 const gpr_uint8 *cur, const gpr_uint8 *end) {
   static const grpc_chttp2_hpack_parser_state and_then[] = {
       finish_max_tbl_size};
+  if (p->dynamic_table_update_allowed == 0) {
+    return 0;
+  }
+  p->dynamic_table_update_allowed--;
   p->next_state = and_then;
   p->index = 0x1f;
   p->parsing.value = &p->index;
@@ -1357,6 +1376,7 @@ void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser *p) {
   p->value.str = NULL;
   p->value.capacity = 0;
   p->value.length = 0;
+  p->dynamic_table_update_allowed = 2;
   grpc_chttp2_hptbl_init(&p->table);
 }
 
@@ -1412,6 +1432,7 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
     parser->on_header_user_data = NULL;
     parser->is_boundary = 0xde;
     parser->is_eof = 0xde;
+    parser->dynamic_table_update_allowed = 2;
   }
   GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
   return GRPC_CHTTP2_PARSE_OK;
