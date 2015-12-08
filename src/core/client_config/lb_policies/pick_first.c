@@ -348,7 +348,8 @@ void pf_notify_on_state_change(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
   gpr_mu_unlock(&p->mu);
 }
 
-void pf_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol, grpc_closure *closure) {
+void pf_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                 grpc_closure *closure) {
   pick_first_lb_policy *p = (pick_first_lb_policy *)pol;
   gpr_mu_lock(&p->mu);
   if (p->selected) {

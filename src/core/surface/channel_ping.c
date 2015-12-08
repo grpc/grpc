@@ -48,21 +48,23 @@ typedef struct {
   grpc_cq_completion completion_storage;
 } ping_result;
 
-static void ping_destroy(grpc_exec_ctx *exec_ctx, void *arg, grpc_cq_completion *storage) {
+static void ping_destroy(grpc_exec_ctx *exec_ctx, void *arg,
+                         grpc_cq_completion *storage) {
   gpr_free(arg);
 }
 
 static void ping_done(grpc_exec_ctx *exec_ctx, void *arg, int success) {
   ping_result *pr = arg;
-  grpc_cq_end_op(exec_ctx, pr->cq, pr->tag, success, ping_destroy, pr, &pr->completion_storage);
+  grpc_cq_end_op(exec_ctx, pr->cq, pr->tag, success, ping_destroy, pr,
+                 &pr->completion_storage);
 }
 
-void grpc_channel_ping(
-    grpc_channel *channel, grpc_completion_queue *cq, void *tag, void *reserved) {
+void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
+                       void *tag, void *reserved) {
   grpc_transport_op op;
   ping_result *pr = gpr_malloc(sizeof(*pr));
-  grpc_channel_element *top_elem = grpc_channel_stack_element(
-      grpc_channel_get_channel_stack(channel), 0);
+  grpc_channel_element *top_elem =
+      grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   memset(&op, 0, sizeof(op));
   pr->tag = tag;
