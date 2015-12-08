@@ -32,7 +32,10 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
+
+static int g_flag;
 
 static void test(int rounds) {
   int i;
@@ -44,7 +47,7 @@ static void test(int rounds) {
   }
 }
 
-static void test_mixed() {
+static void test_mixed(void) {
   grpc_init();
   grpc_init();
   grpc_shutdown();
@@ -53,11 +56,23 @@ static void test_mixed() {
   grpc_shutdown();
 }
 
+static void plugin_init(void) { g_flag = 1; }
+static void plugin_destroy(void) { g_flag = 2; }
+
+static void test_plugin() {
+  grpc_register_plugin(plugin_init, plugin_destroy);
+  grpc_init();
+  GPR_ASSERT(g_flag == 1);
+  grpc_shutdown();
+  GPR_ASSERT(g_flag == 2);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test(1);
   test(2);
   test(3);
   test_mixed();
+  test_plugin();
   return 0;
 }

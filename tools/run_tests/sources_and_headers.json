@@ -697,6 +697,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "init_test", 
+    "src": [
+      "test/core/surface/init_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "invalid_call_argument_test", 
     "src": [
       "test/core/end2end/invalid_call_argument_test.c"
@@ -796,20 +810,6 @@
     "name": "message_compress_test", 
     "src": [
       "test/core/compression/message_compress_test.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "multi_init_test", 
-    "src": [
-      "test/core/surface/multi_init_test.c"
     ]
   }, 
   {
