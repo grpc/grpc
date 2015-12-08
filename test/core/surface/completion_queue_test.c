@@ -175,6 +175,19 @@ static void test_pluck(void) {
   grpc_exec_ctx_finish(&exec_ctx);
 }
 
+static void test_pluck_after_shutdown(void) {
+  grpc_event ev;
+  grpc_completion_queue *cc;
+
+  LOG_TEST("test_pluck_after_shutdown");
+  cc = grpc_completion_queue_create(NULL);
+  grpc_completion_queue_shutdown(cc);
+  ev = grpc_completion_queue_pluck(cc, NULL, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                   NULL);
+  GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
+  grpc_completion_queue_destroy(cc);
+}
+
 #define TEST_THREAD_EVENTS 10000
 
 typedef struct test_thread_options {
@@ -343,6 +356,7 @@ int main(int argc, char **argv) {
   test_shutdown_then_next_with_timeout();
   test_cq_end_op();
   test_pluck();
+  test_pluck_after_shutdown();
   test_threading(1, 1);
   test_threading(1, 10);
   test_threading(10, 1);

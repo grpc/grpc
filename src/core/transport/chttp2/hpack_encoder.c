@@ -458,12 +458,6 @@ static void deadline_enc(grpc_chttp2_hpack_compressor *c, gpr_timespec deadline,
   GRPC_MDELEM_UNREF(mdelem);
 }
 
-gpr_slice grpc_chttp2_data_frame_create_empty_close(gpr_uint32 id) {
-  gpr_slice slice = gpr_slice_malloc(9);
-  fill_header(GPR_SLICE_START_PTR(slice), GRPC_CHTTP2_FRAME_DATA, id, 0, 1);
-  return slice;
-}
-
 static gpr_uint32 elems_for_bytes(gpr_uint32 bytes) {
   return (bytes + 31) / 32;
 }
