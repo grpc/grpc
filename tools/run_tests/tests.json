@@ -789,6 +789,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "init_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "json_rewrite_test", 
     "platforms": [
       "linux", 
@@ -862,24 +880,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "message_compress_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "multi_init_test", 
     "platforms": [
       "linux", 
       "mac", 

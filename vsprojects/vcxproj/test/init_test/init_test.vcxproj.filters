@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\test\core\surface\multi_init_test.c">
+    <ClCompile Include="..\..\..\..\test\core\surface\init_test.c">
       <Filter>test\core\surface</Filter>
     </ClCompile>
   </ItemGroup>
 
   <ItemGroup>
     <Filter Include="test">
-      <UniqueIdentifier>{9fd58330-04b7-e69b-7217-2b6df7135781}</UniqueIdentifier>
+      <UniqueIdentifier>{a29deb69-37b5-31c0-c4a2-da409b5fe7ac}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\core">
-      <UniqueIdentifier>{a1129343-c108-ef14-75a6-89805909cda1}</UniqueIdentifier>
+      <UniqueIdentifier>{cecabaca-db86-b86c-3ad7-ad6fc6958f15}</UniqueIdentifier>
     </Filter>
     <Filter Include="test\core\surface">
-      <UniqueIdentifier>{7b12af46-5c98-9a39-b0db-82bdc9fb52d2}</UniqueIdentifier>
+      <UniqueIdentifier>{93a3608f-710d-f929-fa89-6f762d06cb4c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
