@@ -33,35 +33,31 @@
 
 'use strict';
 
-var grpc = require('../');
+var worker_service_impl = require('./worker_service_impl');
 
-var _ = require('lodash');
+var grpc = require('../../../');
+var serviceProto = grpc.load({
+  root: __dirname + '/../../..',
+  file: 'test/proto/benchmarks/services.proto'}).grpc.testing;
 
-var health_proto = grpc.load(__dirname +
-    '/../../proto/grpc/health/v1alpha/health.proto');
-
-var HealthClient = health_proto.grpc.health.v1alpha.Health;
-
-function HealthImplementation(statusMap) {
-  this.statusMap = _.clone(statusMap);
+function runServer(port) {
+  var server_creds = grpc.ServerCredentials.createInsecure();
+  var server = new grpc.Server();
+  server.addProtoService(serviceProto.WorkerService.service,
+                         worker_service_impl);
+  var address = '0.0.0.0:' + port;
+  server.bind(address, server_creds);
+  server.start();
+  return server;
 }
 
-HealthImplementation.prototype.setStatus = function(service, status) {
-  this.statusMap[service] = status;
-};
+if (require.main === module) {
+  Error.stackTraceLimit = Infinity;
+  var parseArgs = require('minimist');
+  var argv = parseArgs(process.argv, {
+    string: ['driver_port']
+  });
+  runServer(argv.driver_port);
+}
 
-HealthImplementation.prototype.check = function(call, callback){
-  var service = call.request.service;
-  var status = _.get(this.statusMap, service, null);
-  if (status === null) {
-    callback({code:grpc.status.NOT_FOUND});
-  } else {
-    callback(null, {status: status});
-  }
-};
-
-module.exports = {
-  Client: HealthClient,
-  service: HealthClient.service,
-  Implementation: HealthImplementation
-};
+exports.runServer = runServer;
