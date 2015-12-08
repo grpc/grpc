@@ -45,3 +45,5 @@ export GRPC_PYTHON_ENABLE_CYTHON_TRACING=1
 
 cd $GRPCIO
 tox --notest
+
+$GRPCIO/.tox/py27/bin/python $GRPCIO/setup.py build
