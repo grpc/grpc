@@ -4,8 +4,9 @@ import (
 	"testing"
 )
 
-func TestSmallMaxFrameSize(t *testing.T) {
-	if *testCase != "experimental" {
+func TestSoonSmallMaxFrameSize(t *testing.T) {
+	defer Report(t)
+	if *testCase != "framing" {
 		t.SkipNow()
 	}
 	ctx := InteropCtx(t)
