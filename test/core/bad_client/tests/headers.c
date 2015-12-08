@@ -195,5 +195,11 @@ int main(int argc, char **argv) {
                            "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
                            0);
 
+  /* an invalid header found with fuzzing */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x00\x01\x39\x67\xed\x1d\x64",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+
   return 0;
 }
