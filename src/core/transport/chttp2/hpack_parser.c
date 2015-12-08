@@ -1066,7 +1066,7 @@ static int parse_value4(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
 error:
   gpr_log(GPR_ERROR,
           "integer overflow in hpack integer decoding: have 0x%08x, "
-          "got byte 0x%02x",
+          "got byte 0x%02x on byte 5",
           *p->parsing.value, *cur);
   return parse_error(p, cur, end);
 }
@@ -1091,7 +1091,8 @@ static int parse_value5up(grpc_chttp2_hpack_parser *p, const gpr_uint8 *cur,
 
   gpr_log(GPR_ERROR,
           "integer overflow in hpack integer decoding: have 0x%08x, "
-          "got byte 0x%02x sometime after byte 4");
+          "got byte 0x%02x sometime after byte 5",
+          *p->parsing.value, *cur);
   return parse_error(p, cur, end);
 }
 
