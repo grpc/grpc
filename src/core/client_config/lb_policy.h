@@ -63,7 +63,7 @@ struct grpc_lb_policy_vtable {
   void (*cancel_pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                       grpc_connected_subchannel **target);
 
-  void (*ping_one)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy, grpc_pollset *pollset, grpc_closure *closure);
+  void (*ping_one)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy, grpc_closure *closure);
 
   /** try to enter a READY connectivity state */
   void (*exit_idle)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
@@ -123,7 +123,7 @@ int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                         grpc_connected_subchannel **target,
                         grpc_closure *on_complete);
 
-void grpc_lb_policy_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy, grpc_pollset *pollset, grpc_closure *closure);
+void grpc_lb_policy_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy, grpc_closure *closure);
 
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                                 grpc_connected_subchannel **target);
