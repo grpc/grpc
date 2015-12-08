@@ -912,10 +912,11 @@ void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx,
        ping = ping->next) {
     if (0 == memcmp(opaque_8bytes, ping->id, 8)) {
       grpc_exec_ctx_enqueue(exec_ctx, ping->on_recv, 1);
+      ping->next->prev = ping->prev;
+      ping->prev->next = ping->next;
+      gpr_free(ping);
+      break;
     }
-    ping->next->prev = ping->prev;
-    ping->prev->next = ping->next;
-    gpr_free(ping);
   }
   unlock(exec_ctx, t);
 }
