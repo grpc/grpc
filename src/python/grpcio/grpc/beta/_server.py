@@ -170,7 +170,7 @@ class _Server(interfaces.Server):
     with self._lock:
       if self._end_link is None:
         return self._grpc_link.add_port(
-            address, server_credentials._intermediary_low_credentials)  # pylint: disable=protected-access
+            address, server_credentials._low_credentials)  # pylint: disable=protected-access
       else:
         raise ValueError('Can\'t add port to serving server!')
 

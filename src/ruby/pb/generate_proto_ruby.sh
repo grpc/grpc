@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright 2015, Google Inc.
 # All rights reserved.
 #
@@ -27,76 +28,24 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Regenerates gRPC service stubs from proto files.
+set +e
+cd $(dirname $0)/../../..
 
-# Adapter from grpc._cython.types to the surface expected by
-# grpc._adapter._intermediary_low.
-#
-# TODO(atash): Once this is plugged into grpc._adapter._intermediary_low, remove
-# both grpc._adapter._intermediary_low and this file. The fore and rear links in
-# grpc._adapter should be able to use grpc._cython.types directly.
+PROTOC=bins/opt/protobuf/protoc
+PLUGIN=protoc-gen-grpc=bins/opt/grpc_ruby_plugin
 
-from grpc._adapter import _types as type_interfaces
-from grpc._cython import cygrpc
+$PROTOC -I src/proto src/proto/grpc/health/v1alpha/health.proto \
+    --grpc_out=src/ruby/pb \
+    --ruby_out=src/ruby/pb \
+    --plugin=$PLUGIN
 
+$PROTOC -I . test/proto/{messages,test,empty}.proto \
+    --grpc_out=src/ruby/pb \
+    --ruby_out=src/ruby/pb \
+    --plugin=$PLUGIN
 
-class ClientCredentials(object):
-  def __init__(self):
-    raise NotImplementedError()
-
-  @staticmethod
-  def google_default():
-    raise NotImplementedError()
-
-  @staticmethod
-  def ssl():
-    raise NotImplementedError()
-
-  @staticmethod
-  def composite():
-    raise NotImplementedError()
-
-  @staticmethod
-  def compute_engine():
-    raise NotImplementedError()
-
-  @staticmethod
-  def jwt():
-    raise NotImplementedError()
-
-  @staticmethod
-  def refresh_token():
-    raise NotImplementedError()
-
-  @staticmethod
-  def iam():
-    raise NotImplementedError()
-
-
-class ServerCredentials(object):
-  def __init__(self):
-    raise NotImplementedError()
-
-  @staticmethod
-  def ssl():
-    raise NotImplementedError()
-
-
-class CompletionQueue(type_interfaces.CompletionQueue):
-  def __init__(self):
-    raise NotImplementedError()
-
-
-class Call(type_interfaces.Call):
-  def __init__(self):
-    raise NotImplementedError()
-
-
-class Channel(type_interfaces.Channel):
-  def __init__(self):
-    raise NotImplementedError()
-
-
-class Server(type_interfaces.Server):
-  def __init__(self):
-    raise NotImplementedError()
-
+$PROTOC -I src/proto/math src/proto/math/math.proto \
+    --grpc_out=src/ruby/bin \
+    --ruby_out=src/ruby/bin \
+    --plugin=$PLUGIN

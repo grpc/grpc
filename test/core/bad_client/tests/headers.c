@@ -126,24 +126,24 @@ int main(int argc, char **argv) {
                            0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
                            "\x00\x00\x04\x01\x04\x00\x00\x00\x01"
-                           "\x7f\x7f\x01a",
+                           "\x7f\x7f\x01""a",
                            0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
                            "\x00\x00\x04\x01\x04\x00\x00\x00\x01"
-                           "\x0f\x7f\x01a",
+                           "\x0f\x7f\x01""a",
                            0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
                            "\x00\x00\x04\x01\x04\x00\x00\x00\x01"
-                           "\x1f\x7f\x01a",
+                           "\x1f\x7f\x01""a",
                            0);
   /* test nvr, not indexed in static table */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
                            "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
-                           "\x01\x01a",
+                           "\x01\x01""a",
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
                            "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
-                           "\x11\x01a",
+                           "\x11\x01""a",
                            GRPC_BAD_CLIENT_DISCONNECT);
   /* illegal op code */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
@@ -267,6 +267,12 @@ int main(int argc, char **argv) {
                            PFX_STR 
                            "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
                            0);
+
+  /* an invalid header found with fuzzing */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x00\x01\x39\x67\xed\x1d\x64",
+                           GRPC_BAD_CLIENT_DISCONNECT);
 
   return 0;
 }

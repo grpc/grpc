@@ -94,12 +94,27 @@ static void do_nothing_with_len_1(void *ignored, size_t len) {
 
 static void test_slice_new_with_len_returns_something_sensible(void) {
   gpr_uint8 x;
+  int num_refs = 5; /* To test adding/removing an arbitrary number of refs */
+  int i;
 
   gpr_slice slice = gpr_slice_new_with_len(&x, 1, do_nothing_with_len_1);
-  GPR_ASSERT(slice.refcount);
+  GPR_ASSERT(slice.refcount); /* ref count is initialized to 1 at this point */
   GPR_ASSERT(slice.data.refcounted.bytes == &x);
   GPR_ASSERT(slice.data.refcounted.length == 1);
   GPR_ASSERT(do_nothing_with_len_1_calls == 0);
+
+  /* Add an arbitrary number of refs to the slice and remoe the refs. This is to
+     make sure that that the destroy callback (i.e do_nothing_with_len_1()) is
+     not called until the last unref operation */
+  for (i = 0; i < num_refs; i++) {
+    gpr_slice_ref(slice);
+  }
+  for (i = 0; i < num_refs; i++) {
+    gpr_slice_unref(slice);
+  }
+  GPR_ASSERT(do_nothing_with_len_1_calls == 0); /* Shouldn't be called yet */
+
+  /* last unref */
   gpr_slice_unref(slice);
   GPR_ASSERT(do_nothing_with_len_1_calls == 1);
 }

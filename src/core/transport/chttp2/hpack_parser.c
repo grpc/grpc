@@ -1419,15 +1419,19 @@ grpc_chttp2_parse_error grpc_chttp2_header_parser_parse(
       GPR_TIMER_END("grpc_chttp2_hpack_parser_parse", 0);
       return GRPC_CHTTP2_CONNECTION_ERROR;
     }
-    if (parser->is_boundary) {
-      stream_parsing
-          ->got_metadata_on_parse[stream_parsing->header_frames_received] = 1;
-      stream_parsing->header_frames_received++;
-      grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
-                                               stream_parsing);
-    }
-    if (parser->is_eof) {
-      stream_parsing->received_close = 1;
+    /* need to check for null stream: this can occur if we receive an invalid
+       stream id on a header */
+    if (stream_parsing != NULL) {
+      if (parser->is_boundary) {
+        stream_parsing
+            ->got_metadata_on_parse[stream_parsing->header_frames_received] = 1;
+        stream_parsing->header_frames_received++;
+        grpc_chttp2_list_add_parsing_seen_stream(transport_parsing,
+                                                 stream_parsing);
+      }
+      if (parser->is_eof) {
+        stream_parsing->received_close = 1;
+      }
     }
     parser->on_header = on_header_not_set;
     parser->on_header_user_data = NULL;
