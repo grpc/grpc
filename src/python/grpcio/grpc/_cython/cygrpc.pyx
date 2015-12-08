@@ -44,6 +44,9 @@ from grpc._cython._cygrpc import completion_queue
 from grpc._cython._cygrpc import records
 from grpc._cython._cygrpc import server
 
+ConnectivityState = records.ConnectivityState
+ChannelArgKey = records.ChannelArgKey
+WriteFlag = records.WriteFlag
 StatusCode = records.StatusCode
 CallError = records.CallError
 CompletionType = records.CompletionType
