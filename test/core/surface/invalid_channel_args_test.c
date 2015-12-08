@@ -91,6 +91,7 @@ static void test_max_message_length_type() {
 
   client_arg.type = GRPC_ARG_STRING;
   client_arg.key = GRPC_ARG_MAX_MESSAGE_LENGTH;
+  client_arg.value.string = NULL;
 
   client_args.num_args = 1;
   client_args.args = &client_arg;
@@ -122,6 +123,7 @@ static void test_default_authority_type() {
 
   client_arg.type = GRPC_ARG_INTEGER;
   client_arg.key = GRPC_ARG_DEFAULT_AUTHORITY;
+  client_arg.value.integer = 0;
 
   client_args.num_args = 1;
   client_args.args = &client_arg;
@@ -137,6 +139,7 @@ static void test_ssl_name_override_type() {
 
   client_arg.type = GRPC_ARG_INTEGER;
   client_arg.key = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG;
+  client_arg.value.integer = 0;
 
   client_args.num_args = 1;
   client_args.args = &client_arg;
