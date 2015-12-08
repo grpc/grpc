@@ -44,15 +44,16 @@
 #include <unistd.h>
 #endif
 
-#include "test/core/util/grpc_profiler.h"
-#include "test/core/util/test_config.h"
 #include <grpc/support/alloc.h>
 #include <grpc/support/cmdline.h>
 #include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include "test/core/util/port.h"
+#include "src/core/profiling/timers.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/util/grpc_profiler.h"
+#include "test/core/util/port.h"
+#include "test/core/util/test_config.h"
 
 static grpc_completion_queue *cq;
 static grpc_server *server;
@@ -191,6 +192,8 @@ int main(int argc, char **argv) {
   char *addr = NULL;
 
   char *fake_argv[1];
+
+  gpr_timers_set_log_filename("latency_trace.fling_server.txt");
 
   GPR_ASSERT(argc >= 1);
   fake_argv[0] = argv[0];

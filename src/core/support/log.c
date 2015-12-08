@@ -32,6 +32,7 @@
  */
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +49,7 @@ const char *gpr_log_severity_string(gpr_log_severity severity) {
     case GPR_LOG_SEVERITY_ERROR:
       return "E";
   }
-  return "UNKNOWN";
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
 void gpr_log_message(const char *file, int line, gpr_log_severity severity,

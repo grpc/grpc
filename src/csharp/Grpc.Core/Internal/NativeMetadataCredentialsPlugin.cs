@@ -38,7 +38,7 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void NativeMetadataInterceptor(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy);
+    internal delegate void NativeMetadataInterceptor(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy);
 
     internal class NativeMetadataCredentialsPlugin
     {
@@ -46,7 +46,7 @@ namespace Grpc.Core.Internal
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeMetadataCredentialsPlugin>();
 
         [DllImport("grpc_csharp_ext.dll")]
-        static extern CredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(NativeMetadataInterceptor interceptor);
+        static extern CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(NativeMetadataInterceptor interceptor);
         
         [DllImport("grpc_csharp_ext.dll", CharSet = CharSet.Ansi)]
         static extern void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails);
@@ -54,7 +54,7 @@ namespace Grpc.Core.Internal
         AsyncAuthInterceptor interceptor;
         GCHandle gcHandle;
         NativeMetadataInterceptor nativeInterceptor;
-        CredentialsSafeHandle credentials;
+        CallCredentialsSafeHandle credentials;
 
         public NativeMetadataCredentialsPlugin(AsyncAuthInterceptor interceptor)
         {
@@ -66,12 +66,12 @@ namespace Grpc.Core.Internal
             this.credentials = grpcsharp_metadata_credentials_create_from_plugin(nativeInterceptor);
         }
 
-        public CredentialsSafeHandle Credentials
+        public CallCredentialsSafeHandle Credentials
         {
             get { return credentials; }
         }
 
-        private void NativeMetadataInterceptorHandler(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
+        private void NativeMetadataInterceptorHandler(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
         {
             if (isDestroy)
             {
@@ -81,8 +81,9 @@ namespace Grpc.Core.Internal
 
             try
             {
-                string serviceUrl = Marshal.PtrToStringAnsi(serviceUrlPtr);
-                StartGetMetadata(serviceUrl, callbackPtr, userDataPtr);
+                var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr),
+                                                         Marshal.PtrToStringAnsi(methodNamePtr));
+                StartGetMetadata(context, callbackPtr, userDataPtr);
             }
             catch (Exception e)
             {
@@ -91,12 +92,12 @@ namespace Grpc.Core.Internal
             }
         }
 
-        private async void StartGetMetadata(string serviceUrl, IntPtr callbackPtr, IntPtr userDataPtr)
+        private async void StartGetMetadata(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
         {
             try
             {
                 var metadata = new Metadata();
-                await interceptor(serviceUrl, metadata);
+                await interceptor(context, metadata).ConfigureAwait(false);
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(metadata))
                 {

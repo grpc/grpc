@@ -75,8 +75,8 @@ namespace Grpc.Core
             this.options = options != null ? new List<ChannelOption>(options) : new List<ChannelOption>();
 
             EnsureUserAgentChannelOption(this.options);
-            using (CredentialsSafeHandle nativeCredentials = credentials.ToNativeCredentials())
-            using (ChannelArgsSafeHandle nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options))
+            using (var nativeCredentials = credentials.ToNativeCredentials())
+            using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options))
             {
                 if (nativeCredentials != null)
                 {
@@ -173,7 +173,7 @@ namespace Grpc.Core
                 {
                     throw new OperationCanceledException("Channel has reached FatalFailure state.");
                 }
-                await WaitForStateChangedAsync(currentState, deadline);
+                await WaitForStateChangedAsync(currentState, deadline).ConfigureAwait(false);
                 currentState = handle.CheckConnectivityState(false);
             }
         }
@@ -198,7 +198,7 @@ namespace Grpc.Core
 
             handle.Dispose();
 
-            await Task.Run(() => GrpcEnvironment.Release());
+            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
         }
 
         internal ChannelSafeHandle Handle

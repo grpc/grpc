@@ -181,9 +181,9 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
-#define GPR_FORBID_UNREACHABLE_CODE
 #define GPR_MSG_IOVLEN_TYPE int
 #if TARGET_OS_IPHONE
+#define GPR_FORBID_UNREACHABLE_CODE 1
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
@@ -250,6 +250,11 @@
 #ifndef GPR_PLATFORM_STRING
 #warning "GPR_PLATFORM_STRING not auto-detected"
 #define GPR_PLATFORM_STRING "unknown"
+#endif
+
+#ifdef GPR_GCOV
+#undef GPR_FORBID_UNREACHABLE_CODE
+#define GPR_FORBID_UNREACHABLE_CODE 1
 #endif
 
 /* For a common case, assume that the platform has a C99-like stdint.h */
@@ -337,7 +342,7 @@ typedef uintptr_t gpr_uintptr;
 #endif
 #endif
 
-#ifdef GPR_FORBID_UNREACHABLE_CODE
+#if GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)
 #else
 #define GPR_UNREACHABLE_CODE(STATEMENT)             \

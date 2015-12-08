@@ -36,11 +36,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "test/core/util/test_config.h"
-#include "src/core/support/murmur_hash.h"
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/support/murmur_hash.h"
 #include "test/core/util/slice_splitter.h"
+#include "test/core/util/test_config.h"
 
 typedef enum { ONE_A = 0, ONE_KB_A, ONE_MB_A, TEST_VALUE_COUNT } test_value;
 
@@ -175,6 +177,7 @@ int main(int argc, char **argv) {
                                                     GRPC_SLICE_SPLIT_ONE_BYTE};
 
   grpc_test_init(argc, argv);
+  grpc_init();
 
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     for (j = 0; j < GPR_ARRAY_SIZE(uncompressed_split_modes); j++) {
@@ -189,6 +192,7 @@ int main(int argc, char **argv) {
   }
 
   test_bad_data();
+  grpc_shutdown();
 
   return 0;
 }
