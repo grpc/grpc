@@ -691,6 +691,20 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "invalid_call_argument_test", 
+    "src": [
+      "test/core/end2end/invalid_call_argument_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc"
     ], 
     "headers": [], 
