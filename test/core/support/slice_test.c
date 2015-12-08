@@ -221,6 +221,7 @@ static void test_slice_from_copied_string_works(void) {
   LOG_TEST_NAME("test_slice_from_copied_string_works");
 
   slice = gpr_slice_from_copied_string(text);
+  gpr_log(GPR_INFO, "slice: %s", gpr_slice_to_cstring(slice));
   GPR_ASSERT(strlen(text) == GPR_SLICE_LENGTH(slice));
   GPR_ASSERT(0 ==
              memcmp(text, GPR_SLICE_START_PTR(slice), GPR_SLICE_LENGTH(slice)));
