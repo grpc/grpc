@@ -57,19 +57,6 @@ ENABLE_CYTHON_TRACING = os.environ.get(
 # the installation.
 INSTALL_TESTS = os.environ.get('GRPC_PYTHON_INSTALL_TESTS', False)
 
-C_EXTENSION_SOURCES = (
-    'grpc/_adapter/_c/module.c',
-    'grpc/_adapter/_c/types.c',
-    'grpc/_adapter/_c/utility.c',
-    'grpc/_adapter/_c/types/call_credentials.c',
-    'grpc/_adapter/_c/types/channel_credentials.c',
-    'grpc/_adapter/_c/types/server_credentials.c',
-    'grpc/_adapter/_c/types/completion_queue.c',
-    'grpc/_adapter/_c/types/call.c',
-    'grpc/_adapter/_c/types/channel.c',
-    'grpc/_adapter/_c/types/server.c',
-)
-
 CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
 CYTHON_EXTENSION_MODULE_NAMES = (
@@ -92,14 +79,6 @@ EXTENSION_LIBRARIES = (
 )
 if not "darwin" in sys.platform:
     EXTENSION_LIBRARIES += ('rt',)
-
-
-C_EXTENSION_MODULE = _core.Extension(
-    'grpc._adapter._c', sources=list(C_EXTENSION_SOURCES),
-    include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
-    libraries=list(EXTENSION_LIBRARIES)
-)
-EXTENSION_MODULES = [C_EXTENSION_MODULE]
 
 
 def cython_extensions(package_names, module_names, include_dirs, libraries,
@@ -185,7 +164,7 @@ else:
 setuptools.setup(
     name='grpcio',
     version='0.11.0b2',
-    ext_modules=EXTENSION_MODULES + CYTHON_EXTENSION_MODULES,
+    ext_modules=CYTHON_EXTENSION_MODULES,
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     install_requires=INSTALL_REQUIRES,
