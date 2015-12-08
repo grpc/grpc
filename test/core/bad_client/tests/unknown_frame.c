@@ -31,37 +31,28 @@
  *
  */
 
-'use strict';
+#include "test/core/bad_client/bad_client.h"
+#include "src/core/surface/server.h"
 
-var grpc = require('../');
+#define PFX_STR                      \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
+  "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
 
-var _ = require('lodash');
-
-var health_proto = grpc.load(__dirname +
-    '/../../proto/grpc/health/v1alpha/health.proto');
-
-var HealthClient = health_proto.grpc.health.v1alpha.Health;
-
-function HealthImplementation(statusMap) {
-  this.statusMap = _.clone(statusMap);
+static void verifier(grpc_server *server, grpc_completion_queue *cq) {
+  while (grpc_server_has_open_connections(server)) {
+    GPR_ASSERT(grpc_completion_queue_next(
+                   cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20), NULL)
+                   .type == GRPC_QUEUE_TIMEOUT);
+  }
 }
 
-HealthImplementation.prototype.setStatus = function(service, status) {
-  this.statusMap[service] = status;
-};
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
 
-HealthImplementation.prototype.check = function(call, callback){
-  var service = call.request.service;
-  var status = _.get(this.statusMap, service, null);
-  if (status === null) {
-    callback({code:grpc.status.NOT_FOUND});
-  } else {
-    callback(null, {status: status});
-  }
-};
+  /* test adding prioritization data */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x00\x88\x00\x00\x00\x00\x01",
+                           GRPC_BAD_CLIENT_DISCONNECT);
 
-module.exports = {
-  Client: HealthClient,
-  service: HealthClient.service,
-  Implementation: HealthImplementation
-};
+  return 0;
+}

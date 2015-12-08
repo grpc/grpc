@@ -30,19 +30,22 @@
 
 # Regenerates gRPC service stubs from proto files.
 set +e
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 
 PROTOC=bins/opt/protobuf/protoc
-PLUGIN=protoc-gen-grpc=bins/opt/grpc_csharp_plugin
-EXAMPLES_DIR=src/csharp/Grpc.Examples
-HEALTHCHECK_DIR=src/csharp/Grpc.HealthCheck
-TESTING_DIR=src/csharp/Grpc.IntegrationTesting
+PLUGIN=protoc-gen-grpc=bins/opt/grpc_ruby_plugin
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$EXAMPLES_DIR --grpc_out=$EXAMPLES_DIR \
-    -I src/proto/math src/proto/math/math.proto
+$PROTOC -I src/proto src/proto/grpc/health/v1alpha/health.proto \
+    --grpc_out=src/ruby/pb \
+    --ruby_out=src/ruby/pb \
+    --plugin=$PLUGIN
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_DIR \
-    -I src/proto/grpc/health/v1alpha src/proto/grpc/health/v1alpha/health.proto
+$PROTOC -I . test/proto/{messages,test,empty}.proto \
+    --grpc_out=src/ruby/pb \
+    --ruby_out=src/ruby/pb \
+    --plugin=$PLUGIN
 
-$PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR --grpc_out=$TESTING_DIR \
-    -I . test/proto/{empty,messages,test}.proto test/proto/benchmarks/*.proto
+$PROTOC -I src/proto/math src/proto/math/math.proto \
+    --grpc_out=src/ruby/bin \
+    --ruby_out=src/ruby/bin \
+    --plugin=$PLUGIN
