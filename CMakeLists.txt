@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 2.8.4 FATAL_ERROR)
 
 
 set (PACKAGE_NAME      "grpc")
-set (PACKAGE_VERSION   "0.11.0")
+set (PACKAGE_VERSION   "0.12.0")
 set (PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set (PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set (PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -30,7 +30,7 @@ else()
     message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
 endif()
 
-find_package(PROTOBUF REQUIRED)
+find_package(Protobuf REQUIRED)
 if (PROTOBUF_FOUND)
   include_directories(${PROTOBUF_INCLUDE_DIRS})
 endif(PROTOBUF_FOUND)
@@ -61,22 +61,24 @@ else()
   set(MATH_LIB)
 endif()
 
-PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_STATS_PROTO_SRCS TEST_PROTO_BENCHMARKS_STATS_PROTO_HDRS stats.proto PROTOROOT test/proto/benchmarks OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto/benchmarks)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_SERVICES_PROTO_SRCS TEST_PROTO_BENCHMARKS_SERVICES_PROTO_HDRS services.proto PROTOROOT test/proto/benchmarks OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto/benchmarks)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_TEST_PROTO_SRCS TEST_PROTO_TEST_PROTO_HDRS test.proto PROTOROOT test/proto OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_SRCS TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_HDRS payloads.proto PROTOROOT test/proto/benchmarks OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto/benchmarks)
-PROTOBUF_GENERATE_CPP(TEST_CPP_QPS_PERF_DB_PROTO_SRCS TEST_CPP_QPS_PERF_DB_PROTO_HDRS perf_db.proto PROTOROOT test/cpp/qps OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/cpp/qps)
-PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_SRCS TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_HDRS echo_duplicate.proto PROTOROOT test/cpp/util OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/cpp/util)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_MESSAGES_PROTO_SRCS TEST_PROTO_MESSAGES_PROTO_HDRS messages.proto PROTOROOT test/proto OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_EMPTY_PROTO_SRCS TEST_PROTO_EMPTY_PROTO_HDRS empty.proto PROTOROOT test/proto OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto)
-PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_CONTROL_PROTO_SRCS TEST_PROTO_BENCHMARKS_CONTROL_PROTO_HDRS control.proto PROTOROOT test/proto/benchmarks OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/proto/benchmarks)
-PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_MESSAGES_PROTO_SRCS TEST_CPP_UTIL_MESSAGES_PROTO_HDRS messages.proto PROTOROOT test/cpp/util OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/cpp/util)
-PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_ECHO_PROTO_SRCS TEST_CPP_UTIL_ECHO_PROTO_HDRS echo.proto PROTOROOT test/cpp/util OUTPATH ${CMAKE_CURRENT_BINARY_DIR}/test/cpp/util)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_STATS_PROTO_SRCS TEST_PROTO_BENCHMARKS_STATS_PROTO_HDRS test/proto/benchmarks/stats.proto)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_SERVICES_PROTO_SRCS TEST_PROTO_BENCHMARKS_SERVICES_PROTO_HDRS test/proto/benchmarks/services.proto)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_TEST_PROTO_SRCS TEST_PROTO_TEST_PROTO_HDRS test/proto/test.proto)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_SRCS TEST_PROTO_BENCHMARKS_PAYLOADS_PROTO_HDRS test/proto/benchmarks/payloads.proto)
+PROTOBUF_GENERATE_CPP(TEST_CPP_QPS_PERF_DB_PROTO_SRCS TEST_CPP_QPS_PERF_DB_PROTO_HDRS test/cpp/qps/perf_db.proto)
+PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_SRCS TEST_CPP_UTIL_ECHO_DUPLICATE_PROTO_HDRS test/cpp/util/echo_duplicate.proto)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_MESSAGES_PROTO_SRCS TEST_PROTO_MESSAGES_PROTO_HDRS test/proto/messages.proto)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_EMPTY_PROTO_SRCS TEST_PROTO_EMPTY_PROTO_HDRS test/proto/empty.proto)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_BENCHMARKS_CONTROL_PROTO_SRCS TEST_PROTO_BENCHMARKS_CONTROL_PROTO_HDRS test/proto/benchmarks/control.proto)
+PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_MESSAGES_PROTO_SRCS TEST_CPP_UTIL_MESSAGES_PROTO_HDRS test/cpp/util/messages.proto)
+PROTOBUF_GENERATE_CPP(TEST_PROTO_METRICS_PROTO_SRCS TEST_PROTO_METRICS_PROTO_HDRS test/proto/metrics.proto)
+PROTOBUF_GENERATE_CPP(TEST_CPP_UTIL_ECHO_PROTO_SRCS TEST_CPP_UTIL_ECHO_PROTO_HDRS test/cpp/util/echo.proto)
 
 add_library(gpr
   src/core/profiling/basic_timers.c
   src/core/profiling/stap_timers.c
   src/core/support/alloc.c
+  src/core/support/avl.c
   src/core/support/cmdline.c
   src/core/support/cpu_iphone.c
   src/core/support/cpu_linux.c
@@ -151,8 +153,11 @@ add_library(grpc
   src/core/channel/http_client_filter.c
   src/core/channel/http_server_filter.c
   src/core/channel/noop_filter.c
+  src/core/channel/subchannel_call_holder.c
   src/core/client_config/client_config.c
   src/core/client_config/connector.c
+  src/core/client_config/default_initial_connect_string.c
+  src/core/client_config/initial_connect_string.c
   src/core/client_config/lb_policies/pick_first.c
   src/core/client_config/lb_policies/round_robin.c
   src/core/client_config/lb_policy.c
@@ -220,7 +225,6 @@ add_library(grpc
   src/core/json/json_writer.c
   src/core/surface/api_trace.c
   src/core/surface/byte_buffer.c
-  src/core/surface/byte_buffer_queue.c
   src/core/surface/byte_buffer_reader.c
   src/core/surface/call.c
   src/core/surface/call_details.c
@@ -237,6 +241,7 @@ add_library(grpc
   src/core/surface/server_chttp2.c
   src/core/surface/server_create.c
   src/core/surface/version.c
+  src/core/transport/byte_stream.c
   src/core/transport/chttp2/alpn.c
   src/core/transport/chttp2/bin_encoder.c
   src/core/transport/chttp2/frame_data.c
@@ -245,13 +250,13 @@ add_library(grpc
   src/core/transport/chttp2/frame_rst_stream.c
   src/core/transport/chttp2/frame_settings.c
   src/core/transport/chttp2/frame_window_update.c
+  src/core/transport/chttp2/hpack_encoder.c
   src/core/transport/chttp2/hpack_parser.c
   src/core/transport/chttp2/hpack_table.c
   src/core/transport/chttp2/huffsyms.c
   src/core/transport/chttp2/incoming_metadata.c
   src/core/transport/chttp2/parsing.c
   src/core/transport/chttp2/status_conversion.c
-  src/core/transport/chttp2/stream_encoder.c
   src/core/transport/chttp2/stream_lists.c
   src/core/transport/chttp2/stream_map.c
   src/core/transport/chttp2/timeout_encoding.c
@@ -260,7 +265,8 @@ add_library(grpc
   src/core/transport/chttp2_transport.c
   src/core/transport/connectivity_state.c
   src/core/transport/metadata.c
-  src/core/transport/stream_op.c
+  src/core/transport/metadata_batch.c
+  src/core/transport/static_metadata.c
   src/core/transport/transport.c
   src/core/transport/transport_op_string.c
   src/core/census/context.c
@@ -272,10 +278,10 @@ add_library(grpc_test_util
   test/core/end2end/data/server1_cert.c
   test/core/end2end/data/server1_key.c
   test/core/end2end/data/test_root_cert.c
+  test/core/security/oauth2_utils.c
   test/core/end2end/cq_verifier.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
-  test/core/security/oauth2_utils.c
   test/core/util/grpc_profiler.c
   test/core/util/parse_hexstring.c
   test/core/util/port_posix.c
@@ -286,7 +292,6 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/cq_verifier.c
   test/core/end2end/fixtures/proxy.c
   test/core/iomgr/endpoint_tests.c
-  test/core/security/oauth2_utils.c
   test/core/util/grpc_profiler.c
   test/core/util/parse_hexstring.c
   test/core/util/port_posix.c
@@ -306,8 +311,11 @@ add_library(grpc_unsecure
   src/core/channel/http_client_filter.c
   src/core/channel/http_server_filter.c
   src/core/channel/noop_filter.c
+  src/core/channel/subchannel_call_holder.c
   src/core/client_config/client_config.c
   src/core/client_config/connector.c
+  src/core/client_config/default_initial_connect_string.c
+  src/core/client_config/initial_connect_string.c
   src/core/client_config/lb_policies/pick_first.c
   src/core/client_config/lb_policies/round_robin.c
   src/core/client_config/lb_policy.c
@@ -375,7 +383,6 @@ add_library(grpc_unsecure
   src/core/json/json_writer.c
   src/core/surface/api_trace.c
   src/core/surface/byte_buffer.c
-  src/core/surface/byte_buffer_queue.c
   src/core/surface/byte_buffer_reader.c
   src/core/surface/call.c
   src/core/surface/call_details.c
@@ -392,6 +399,7 @@ add_library(grpc_unsecure
   src/core/surface/server_chttp2.c
   src/core/surface/server_create.c
   src/core/surface/version.c
+  src/core/transport/byte_stream.c
   src/core/transport/chttp2/alpn.c
   src/core/transport/chttp2/bin_encoder.c
   src/core/transport/chttp2/frame_data.c
@@ -400,13 +408,13 @@ add_library(grpc_unsecure
   src/core/transport/chttp2/frame_rst_stream.c
   src/core/transport/chttp2/frame_settings.c
   src/core/transport/chttp2/frame_window_update.c
+  src/core/transport/chttp2/hpack_encoder.c
   src/core/transport/chttp2/hpack_parser.c
   src/core/transport/chttp2/hpack_table.c
   src/core/transport/chttp2/huffsyms.c
   src/core/transport/chttp2/incoming_metadata.c
   src/core/transport/chttp2/parsing.c
   src/core/transport/chttp2/status_conversion.c
-  src/core/transport/chttp2/stream_encoder.c
   src/core/transport/chttp2/stream_lists.c
   src/core/transport/chttp2/stream_map.c
   src/core/transport/chttp2/timeout_encoding.c
@@ -415,7 +423,8 @@ add_library(grpc_unsecure
   src/core/transport/chttp2_transport.c
   src/core/transport/connectivity_state.c
   src/core/transport/metadata.c
-  src/core/transport/stream_op.c
+  src/core/transport/metadata_batch.c
+  src/core/transport/static_metadata.c
   src/core/transport/transport.c
   src/core/transport/transport_op_string.c
   src/core/census/context.c
@@ -431,15 +440,17 @@ endif()
 add_library(reconnect_server
   test/core/util/reconnect_server.c
 )
+add_library(test_tcp_server
+  test/core/util/test_tcp_server.c
+)
 add_library(grpc++
-  src/cpp/client/secure_channel_arguments.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/auth_property_iterator.cc
   src/cpp/common/secure_auth_context.cc
+  src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/client/channel.cc
-  src/cpp/client/channel_arguments.cc
   src/cpp/client/client_context.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
@@ -447,6 +458,7 @@ add_library(grpc++
   src/cpp/client/generic_stub.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/call.cc
+  src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue.cc
   src/cpp/common/rpc_method.cc
   src/cpp/proto/proto_utils.cc
@@ -480,7 +492,6 @@ add_library(grpc++_test_util
 add_library(grpc++_unsecure
   src/cpp/common/insecure_create_auth_context.cc
   src/cpp/client/channel.cc
-  src/cpp/client/channel_arguments.cc
   src/cpp/client/client_context.cc
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
@@ -488,6 +499,7 @@ add_library(grpc++_unsecure
   src/cpp/client/generic_stub.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/call.cc
+  src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue.cc
   src/cpp/common/rpc_method.cc
   src/cpp/proto/proto_utils.cc
@@ -629,6 +641,56 @@ add_library(end2end_fixture_h2_uds+poll
   test/core/end2end/fixtures/h2_uds+poll.c
 )
 endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_nosec_fixture_h2_compress
+  test/core/end2end/fixtures/h2_compress.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_nosec_fixture_h2_full
+  test/core/end2end/fixtures/h2_full.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(end2end_nosec_fixture_h2_full+poll
+  test/core/end2end/fixtures/h2_full+poll.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_nosec_fixture_h2_proxy
+  test/core/end2end/fixtures/h2_proxy.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_nosec_fixture_h2_sockpair
+  test/core/end2end/fixtures/h2_sockpair.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_nosec_fixture_h2_sockpair+trace
+  test/core/end2end/fixtures/h2_sockpair+trace.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_nosec_fixture_h2_sockpair_1byte
+  test/core/end2end/fixtures/h2_sockpair_1byte.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Windows) OR (CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_nosec_fixture_h2_uchannel
+  test/core/end2end/fixtures/h2_uchannel.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_library(end2end_nosec_fixture_h2_uds
+  test/core/end2end/fixtures/h2_uds.c
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_library(end2end_nosec_fixture_h2_uds+poll
+  test/core/end2end/fixtures/h2_uds+poll.c
+)
+endif()
 add_library(end2end_test_bad_hostname
   test/core/end2end/tests/bad_hostname.c
 )
@@ -652,6 +714,9 @@ add_library(end2end_test_cancel_before_invoke
 )
 add_library(end2end_test_cancel_in_a_vacuum
   test/core/end2end/tests/cancel_in_a_vacuum.c
+)
+add_library(end2end_test_cancel_with_status
+  test/core/end2end/tests/cancel_with_status.c
 )
 add_library(end2end_test_census_simple_request
   test/core/end2end/tests/census_simple_request.c
@@ -677,6 +742,9 @@ add_library(end2end_test_graceful_server_shutdown
 add_library(end2end_test_high_initial_seqno
   test/core/end2end/tests/high_initial_seqno.c
 )
+add_library(end2end_test_hpack_size
+  test/core/end2end/tests/hpack_size.c
+)
 add_library(end2end_test_invoke_large_request
   test/core/end2end/tests/invoke_large_request.c
 )
@@ -691,6 +759,9 @@ add_library(end2end_test_max_message_length
 )
 add_library(end2end_test_metadata
   test/core/end2end/tests/metadata.c
+)
+add_library(end2end_test_negative_deadline
+  test/core/end2end/tests/negative_deadline.c
 )
 add_library(end2end_test_no_op
   test/core/end2end/tests/no_op.c
@@ -726,6 +797,111 @@ add_library(end2end_test_simple_request
   test/core/end2end/tests/simple_request.c
 )
 add_library(end2end_test_trailing_metadata
+  test/core/end2end/tests/trailing_metadata.c
+)
+add_library(end2end_nosec_test_bad_hostname
+  test/core/end2end/tests/bad_hostname.c
+)
+add_library(end2end_nosec_test_binary_metadata
+  test/core/end2end/tests/binary_metadata.c
+)
+add_library(end2end_nosec_test_cancel_after_accept
+  test/core/end2end/tests/cancel_after_accept.c
+)
+add_library(end2end_nosec_test_cancel_after_client_done
+  test/core/end2end/tests/cancel_after_client_done.c
+)
+add_library(end2end_nosec_test_cancel_after_invoke
+  test/core/end2end/tests/cancel_after_invoke.c
+)
+add_library(end2end_nosec_test_cancel_before_invoke
+  test/core/end2end/tests/cancel_before_invoke.c
+)
+add_library(end2end_nosec_test_cancel_in_a_vacuum
+  test/core/end2end/tests/cancel_in_a_vacuum.c
+)
+add_library(end2end_nosec_test_cancel_with_status
+  test/core/end2end/tests/cancel_with_status.c
+)
+add_library(end2end_nosec_test_census_simple_request
+  test/core/end2end/tests/census_simple_request.c
+)
+add_library(end2end_nosec_test_channel_connectivity
+  test/core/end2end/tests/channel_connectivity.c
+)
+add_library(end2end_nosec_test_compressed_payload
+  test/core/end2end/tests/compressed_payload.c
+)
+add_library(end2end_nosec_test_default_host
+  test/core/end2end/tests/default_host.c
+)
+add_library(end2end_nosec_test_disappearing_server
+  test/core/end2end/tests/disappearing_server.c
+)
+add_library(end2end_nosec_test_empty_batch
+  test/core/end2end/tests/empty_batch.c
+)
+add_library(end2end_nosec_test_graceful_server_shutdown
+  test/core/end2end/tests/graceful_server_shutdown.c
+)
+add_library(end2end_nosec_test_high_initial_seqno
+  test/core/end2end/tests/high_initial_seqno.c
+)
+add_library(end2end_nosec_test_hpack_size
+  test/core/end2end/tests/hpack_size.c
+)
+add_library(end2end_nosec_test_invoke_large_request
+  test/core/end2end/tests/invoke_large_request.c
+)
+add_library(end2end_nosec_test_large_metadata
+  test/core/end2end/tests/large_metadata.c
+)
+add_library(end2end_nosec_test_max_concurrent_streams
+  test/core/end2end/tests/max_concurrent_streams.c
+)
+add_library(end2end_nosec_test_max_message_length
+  test/core/end2end/tests/max_message_length.c
+)
+add_library(end2end_nosec_test_metadata
+  test/core/end2end/tests/metadata.c
+)
+add_library(end2end_nosec_test_negative_deadline
+  test/core/end2end/tests/negative_deadline.c
+)
+add_library(end2end_nosec_test_no_op
+  test/core/end2end/tests/no_op.c
+)
+add_library(end2end_nosec_test_payload
+  test/core/end2end/tests/payload.c
+)
+add_library(end2end_nosec_test_ping_pong_streaming
+  test/core/end2end/tests/ping_pong_streaming.c
+)
+add_library(end2end_nosec_test_registered_call
+  test/core/end2end/tests/registered_call.c
+)
+add_library(end2end_nosec_test_request_with_flags
+  test/core/end2end/tests/request_with_flags.c
+)
+add_library(end2end_nosec_test_request_with_payload
+  test/core/end2end/tests/request_with_payload.c
+)
+add_library(end2end_nosec_test_server_finishes_request
+  test/core/end2end/tests/server_finishes_request.c
+)
+add_library(end2end_nosec_test_shutdown_finishes_calls
+  test/core/end2end/tests/shutdown_finishes_calls.c
+)
+add_library(end2end_nosec_test_shutdown_finishes_tags
+  test/core/end2end/tests/shutdown_finishes_tags.c
+)
+add_library(end2end_nosec_test_simple_delayed_request
+  test/core/end2end/tests/simple_delayed_request.c
+)
+add_library(end2end_nosec_test_simple_request
+  test/core/end2end/tests/simple_request.c
+)
+add_library(end2end_nosec_test_trailing_metadata
   test/core/end2end/tests/trailing_metadata.c
 )
 add_library(end2end_certs
@@ -770,10 +946,10 @@ target_link_libraries(bin_encoder_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(chttp2_status_conversion_test
-  test/core/transport/chttp2/status_conversion_test.c
+add_executable(chttp2_hpack_encoder_test
+  test/core/transport/chttp2/hpack_encoder_test.c
 )
-target_link_libraries(chttp2_status_conversion_test
+target_link_libraries(chttp2_hpack_encoder_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -786,10 +962,10 @@ target_link_libraries(chttp2_status_conversion_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(chttp2_stream_encoder_test
-  test/core/transport/chttp2/stream_encoder_test.c
+add_executable(chttp2_status_conversion_test
+  test/core/transport/chttp2/status_conversion_test.c
 )
-target_link_libraries(chttp2_stream_encoder_test
+target_link_libraries(chttp2_status_conversion_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -980,6 +1156,20 @@ add_executable(gen_legal_metadata_characters
   tools/codegen/core/gen_legal_metadata_characters.c
 )
 target_link_libraries(gen_legal_metadata_characters
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(gpr_avl_test
+  test/core/support/avl_test.c
+)
+target_link_libraries(gpr_avl_test
+  gpr_test_util
+  gpr
   ${PROTOBUF_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${OPENSSL_LIBRARIES}
@@ -1420,22 +1610,6 @@ target_link_libraries(grpc_security_connector_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(grpc_stream_op_test
-  test/core/transport/stream_op_test.c
-)
-target_link_libraries(grpc_stream_op_test
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(grpc_verify_jwt
   test/core/security/verify_jwt.c
 )
@@ -1520,6 +1694,38 @@ add_executable(httpcli_test
   test/core/httpcli/httpcli_test.c
 )
 target_link_libraries(httpcli_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(init_test
+  test/core/surface/init_test.c
+)
+target_link_libraries(init_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(invalid_call_argument_test
+  test/core/end2end/invalid_call_argument_test.c
+)
+target_link_libraries(invalid_call_argument_test
   grpc_test_util
   grpc
   gpr_test_util
@@ -1642,22 +1848,6 @@ target_link_libraries(message_compress_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
-add_executable(multi_init_test
-  test/core/surface/multi_init_test.c
-)
-target_link_libraries(multi_init_test
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-  ${PROTOBUF_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${OPENSSL_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT}
-  ${MATH_LIB}
-)
-endif()
-if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(multiple_server_queues_test
   test/core/end2end/multiple_server_queues_test.c
 )
@@ -1724,6 +1914,23 @@ add_executable(secure_endpoint_test
   test/core/security/secure_endpoint_test.c
 )
 target_link_libraries(secure_endpoint_test
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(set_initial_connect_string_test
+  test/core/client_config/set_initial_connect_string_test.c
+)
+target_link_libraries(set_initial_connect_string_test
+  test_tcp_server
   grpc_test_util
   grpc
   gpr_test_util
@@ -2035,7 +2242,7 @@ target_link_libraries(auth_property_iterator_test
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(channel_arguments_test
-  test/cpp/client/channel_arguments_test.cc
+  test/cpp/common/channel_arguments_test.cc
 )
 target_link_libraries(channel_arguments_test
   grpc++
@@ -2355,6 +2562,23 @@ target_link_libraries(interop_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(metrics_client
+  ${TEST_PROTO_METRICS_PROTO_SRCS} ${TEST_PROTO_METRICS_PROTO_HDRS}
+  test/cpp/interop/metrics_client.cc
+)
+target_link_libraries(metrics_client
+  grpc++
+  grpc
+  gpr
+  grpc++_test_config
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(mock_test
   test/cpp/end2end/mock_test.cc
 )
@@ -2502,6 +2726,7 @@ add_executable(reconnect_interop_server
 )
 target_link_libraries(reconnect_interop_server
   reconnect_server
+  test_tcp_server
   grpc++_test_util
   grpc_test_util
   grpc++
@@ -2646,10 +2871,12 @@ if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYS
 add_executable(stress_test
   ${TEST_PROTO_EMPTY_PROTO_SRCS} ${TEST_PROTO_EMPTY_PROTO_HDRS}
   ${TEST_PROTO_MESSAGES_PROTO_SRCS} ${TEST_PROTO_MESSAGES_PROTO_HDRS}
+  ${TEST_PROTO_METRICS_PROTO_SRCS} ${TEST_PROTO_METRICS_PROTO_HDRS}
   ${TEST_PROTO_TEST_PROTO_SRCS} ${TEST_PROTO_TEST_PROTO_HDRS}
   test/cpp/interop/interop_client.cc
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
+  test/cpp/util/metrics_server.cc
 )
 target_link_libraries(stress_test
   grpc++_test_util
@@ -2894,6 +3121,25 @@ target_link_libraries(h2_compress_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_with_status_test
+  end2end_fixture_h2_compress
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_compress_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -3046,6 +3292,25 @@ target_link_libraries(h2_compress_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_hpack_size_test
+  end2end_fixture_h2_compress
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_compress_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -3128,6 +3393,25 @@ add_executable(h2_compress_metadata_test
 target_link_libraries(h2_compress_metadata_test
   end2end_fixture_h2_compress
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_negative_deadline_test
+  end2end_fixture_h2_compress
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -3521,6 +3805,25 @@ target_link_libraries(h2_fakesec_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_cancel_with_status_test
+  end2end_fixture_h2_fakesec
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_fakesec_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -3673,6 +3976,25 @@ target_link_libraries(h2_fakesec_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_hpack_size_test
+  end2end_fixture_h2_fakesec
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_fakesec_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -3755,6 +4077,25 @@ add_executable(h2_fakesec_metadata_test
 target_link_libraries(h2_fakesec_metadata_test
   end2end_fixture_h2_fakesec
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_fakesec_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_fakesec_negative_deadline_test
+  end2end_fixture_h2_fakesec
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -4148,6 +4489,25 @@ target_link_libraries(h2_full_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_with_status_test
+  end2end_fixture_h2_full
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_full_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -4300,6 +4660,25 @@ target_link_libraries(h2_full_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_hpack_size_test
+  end2end_fixture_h2_full
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_full_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -4382,6 +4761,25 @@ add_executable(h2_full_metadata_test
 target_link_libraries(h2_full_metadata_test
   end2end_fixture_h2_full
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_negative_deadline_test
+  end2end_fixture_h2_full
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -4775,6 +5173,25 @@ target_link_libraries(h2_full+poll_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_with_status_test
+  end2end_fixture_h2_full+poll
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_full+poll_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -4927,6 +5344,25 @@ target_link_libraries(h2_full+poll_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_hpack_size_test
+  end2end_fixture_h2_full+poll
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_full+poll_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -5009,6 +5445,25 @@ add_executable(h2_full+poll_metadata_test
 target_link_libraries(h2_full+poll_metadata_test
   end2end_fixture_h2_full+poll
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_negative_deadline_test
+  end2end_fixture_h2_full+poll
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -5402,6 +5857,25 @@ target_link_libraries(h2_oauth2_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_cancel_with_status_test
+  end2end_fixture_h2_oauth2
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_oauth2_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -5554,6 +6028,25 @@ target_link_libraries(h2_oauth2_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_hpack_size_test
+  end2end_fixture_h2_oauth2
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_oauth2_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -5636,6 +6129,25 @@ add_executable(h2_oauth2_metadata_test
 target_link_libraries(h2_oauth2_metadata_test
   end2end_fixture_h2_oauth2
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_oauth2_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_oauth2_negative_deadline_test
+  end2end_fixture_h2_oauth2
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -6029,6 +6541,25 @@ target_link_libraries(h2_proxy_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_with_status_test
+  end2end_fixture_h2_proxy
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_proxy_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -6206,6 +6737,25 @@ add_executable(h2_proxy_metadata_test
 target_link_libraries(h2_proxy_metadata_test
   end2end_fixture_h2_proxy
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_negative_deadline_test
+  end2end_fixture_h2_proxy
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -6580,6 +7130,25 @@ target_link_libraries(h2_sockpair_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_with_status_test
+  end2end_fixture_h2_sockpair
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -6675,6 +7244,25 @@ target_link_libraries(h2_sockpair_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_hpack_size_test
+  end2end_fixture_h2_sockpair
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -6757,6 +7345,25 @@ add_executable(h2_sockpair_metadata_test
 target_link_libraries(h2_sockpair_metadata_test
   end2end_fixture_h2_sockpair
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_negative_deadline_test
+  end2end_fixture_h2_sockpair
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -7131,6 +7738,25 @@ target_link_libraries(h2_sockpair+trace_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_with_status_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair+trace_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -7308,6 +7934,25 @@ add_executable(h2_sockpair+trace_metadata_test
 target_link_libraries(h2_sockpair+trace_metadata_test
   end2end_fixture_h2_sockpair+trace
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_negative_deadline_test
+  end2end_fixture_h2_sockpair+trace
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -7682,6 +8327,25 @@ target_link_libraries(h2_sockpair_1byte_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_with_status_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair_1byte_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -7777,6 +8441,25 @@ target_link_libraries(h2_sockpair_1byte_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_hpack_size_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_sockpair_1byte_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -7859,6 +8542,25 @@ add_executable(h2_sockpair_1byte_metadata_test
 target_link_libraries(h2_sockpair_1byte_metadata_test
   end2end_fixture_h2_sockpair_1byte
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_negative_deadline_test
+  end2end_fixture_h2_sockpair_1byte
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -8233,6 +8935,25 @@ target_link_libraries(h2_ssl_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_cancel_with_status_test
+  end2end_fixture_h2_ssl
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_ssl_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -8385,6 +9106,25 @@ target_link_libraries(h2_ssl_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_hpack_size_test
+  end2end_fixture_h2_ssl
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_ssl_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -8467,6 +9207,25 @@ add_executable(h2_ssl_metadata_test
 target_link_libraries(h2_ssl_metadata_test
   end2end_fixture_h2_ssl
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_negative_deadline_test
+  end2end_fixture_h2_ssl
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -8860,6 +9619,25 @@ target_link_libraries(h2_ssl+poll_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_cancel_with_status_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_ssl+poll_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -9012,6 +9790,25 @@ target_link_libraries(h2_ssl+poll_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_hpack_size_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_ssl+poll_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -9094,6 +9891,25 @@ add_executable(h2_ssl+poll_metadata_test
 target_link_libraries(h2_ssl+poll_metadata_test
   end2end_fixture_h2_ssl+poll
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_ssl+poll_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl+poll_negative_deadline_test
+  end2end_fixture_h2_ssl+poll
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -9487,6 +10303,25 @@ target_link_libraries(h2_ssl_proxy_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_cancel_with_status_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_ssl_proxy_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -9664,6 +10499,25 @@ add_executable(h2_ssl_proxy_metadata_test
 target_link_libraries(h2_ssl_proxy_metadata_test
   end2end_fixture_h2_ssl_proxy
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_ssl_proxy_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_ssl_proxy_negative_deadline_test
+  end2end_fixture_h2_ssl_proxy
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -10038,6 +10892,25 @@ target_link_libraries(h2_uchannel_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_with_status_test
+  end2end_fixture_h2_uchannel
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_uchannel_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -10190,6 +11063,25 @@ target_link_libraries(h2_uchannel_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_hpack_size_test
+  end2end_fixture_h2_uchannel
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
 add_executable(h2_uchannel_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -10272,6 +11164,25 @@ add_executable(h2_uchannel_metadata_test
 target_link_libraries(h2_uchannel_metadata_test
   end2end_fixture_h2_uchannel
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_negative_deadline_test
+  end2end_fixture_h2_uchannel
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -10665,6 +11576,25 @@ target_link_libraries(h2_uds_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_with_status_test
+  end2end_fixture_h2_uds
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
 add_executable(h2_uds_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -10798,6 +11728,25 @@ target_link_libraries(h2_uds_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_hpack_size_test
+  end2end_fixture_h2_uds
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
 add_executable(h2_uds_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -10880,6 +11829,25 @@ add_executable(h2_uds_metadata_test
 target_link_libraries(h2_uds_metadata_test
   end2end_fixture_h2_uds
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_negative_deadline_test
+  end2end_fixture_h2_uds
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -11273,6 +12241,25 @@ target_link_libraries(h2_uds+poll_cancel_in_a_vacuum_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_with_status_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_with_status_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_cancel_with_status
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_uds+poll_census_simple_request_test
   vsprojects/dummy.c
 )
@@ -11406,6 +12393,25 @@ target_link_libraries(h2_uds+poll_high_initial_seqno_test
 )
 endif()
 if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_hpack_size_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_hpack_size_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_hpack_size
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
 add_executable(h2_uds+poll_invoke_large_request_test
   vsprojects/dummy.c
 )
@@ -11488,6 +12494,25 @@ add_executable(h2_uds+poll_metadata_test
 target_link_libraries(h2_uds+poll_metadata_test
   end2end_fixture_h2_uds+poll
   end2end_test_metadata
+  end2end_certs
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_negative_deadline_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_negative_deadline_test
+  end2end_fixture_h2_uds+poll
+  end2end_test_negative_deadline
   end2end_certs
   grpc_test_util
   grpc
@@ -11733,8 +12758,8 @@ add_executable(h2_compress_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_bad_hostname_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_bad_hostname
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_bad_hostname
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11751,8 +12776,8 @@ add_executable(h2_compress_binary_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_binary_metadata_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_binary_metadata
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_binary_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11769,8 +12794,8 @@ add_executable(h2_compress_cancel_after_accept_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_cancel_after_accept_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_cancel_after_accept
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_cancel_after_accept
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11787,8 +12812,8 @@ add_executable(h2_compress_cancel_after_client_done_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_cancel_after_client_done_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_cancel_after_client_done
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_cancel_after_client_done
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11805,8 +12830,8 @@ add_executable(h2_compress_cancel_after_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_cancel_after_invoke_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_cancel_after_invoke
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_cancel_after_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11823,8 +12848,8 @@ add_executable(h2_compress_cancel_before_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_cancel_before_invoke_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_cancel_before_invoke
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_cancel_before_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11841,8 +12866,26 @@ add_executable(h2_compress_cancel_in_a_vacuum_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_cancel_in_a_vacuum_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_cancel_in_a_vacuum
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_cancel_with_status
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11859,8 +12902,8 @@ add_executable(h2_compress_census_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_census_simple_request_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_census_simple_request
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11877,8 +12920,8 @@ add_executable(h2_compress_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_channel_connectivity_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_channel_connectivity
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11895,8 +12938,8 @@ add_executable(h2_compress_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_compressed_payload_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_compressed_payload
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_compressed_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11913,8 +12956,8 @@ add_executable(h2_compress_default_host_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_default_host_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_default_host
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_default_host
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11931,8 +12974,8 @@ add_executable(h2_compress_disappearing_server_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_disappearing_server_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_disappearing_server
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_disappearing_server
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11949,8 +12992,8 @@ add_executable(h2_compress_empty_batch_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_empty_batch_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_empty_batch
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_empty_batch
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11967,8 +13010,8 @@ add_executable(h2_compress_graceful_server_shutdown_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_graceful_server_shutdown_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_graceful_server_shutdown
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_graceful_server_shutdown
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -11985,8 +13028,26 @@ add_executable(h2_compress_high_initial_seqno_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_high_initial_seqno_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_high_initial_seqno
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_hpack_size
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12003,8 +13064,8 @@ add_executable(h2_compress_invoke_large_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_invoke_large_request_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_invoke_large_request
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_invoke_large_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12021,8 +13082,8 @@ add_executable(h2_compress_large_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_large_metadata_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_large_metadata
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_large_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12039,8 +13100,8 @@ add_executable(h2_compress_max_concurrent_streams_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_max_concurrent_streams_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_max_concurrent_streams
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_max_concurrent_streams
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12057,8 +13118,8 @@ add_executable(h2_compress_max_message_length_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_max_message_length_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_max_message_length
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_max_message_length
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12075,8 +13136,26 @@ add_executable(h2_compress_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_metadata_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_metadata
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_compress_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_compress_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_negative_deadline
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12093,8 +13172,8 @@ add_executable(h2_compress_no_op_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_no_op_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_no_op
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_no_op
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12111,8 +13190,8 @@ add_executable(h2_compress_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_payload_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_payload
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12129,8 +13208,8 @@ add_executable(h2_compress_ping_pong_streaming_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_ping_pong_streaming_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_ping_pong_streaming
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_ping_pong_streaming
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12147,8 +13226,8 @@ add_executable(h2_compress_registered_call_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_registered_call_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_registered_call
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_registered_call
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12165,8 +13244,8 @@ add_executable(h2_compress_request_with_flags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_request_with_flags_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_request_with_flags
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_request_with_flags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12183,8 +13262,8 @@ add_executable(h2_compress_request_with_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_request_with_payload_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_request_with_payload
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_request_with_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12201,8 +13280,8 @@ add_executable(h2_compress_server_finishes_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_server_finishes_request_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_server_finishes_request
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_server_finishes_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12219,8 +13298,8 @@ add_executable(h2_compress_shutdown_finishes_calls_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_shutdown_finishes_calls_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_shutdown_finishes_calls
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_shutdown_finishes_calls
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12237,8 +13316,8 @@ add_executable(h2_compress_shutdown_finishes_tags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_shutdown_finishes_tags_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_shutdown_finishes_tags
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_shutdown_finishes_tags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12255,8 +13334,8 @@ add_executable(h2_compress_simple_delayed_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_simple_delayed_request_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_simple_delayed_request
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_simple_delayed_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12273,8 +13352,8 @@ add_executable(h2_compress_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_simple_request_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_simple_request
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12291,8 +13370,8 @@ add_executable(h2_compress_trailing_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_compress_trailing_metadata_nosec_test
-  end2end_fixture_h2_compress
-  end2end_test_trailing_metadata
+  end2end_nosec_fixture_h2_compress
+  end2end_nosec_test_trailing_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12309,8 +13388,8 @@ add_executable(h2_full_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_bad_hostname_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_bad_hostname
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_bad_hostname
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12327,8 +13406,8 @@ add_executable(h2_full_binary_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_binary_metadata_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_binary_metadata
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_binary_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12345,8 +13424,8 @@ add_executable(h2_full_cancel_after_accept_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_cancel_after_accept_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_cancel_after_accept
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_cancel_after_accept
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12363,8 +13442,8 @@ add_executable(h2_full_cancel_after_client_done_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_cancel_after_client_done_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_cancel_after_client_done
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_cancel_after_client_done
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12381,8 +13460,8 @@ add_executable(h2_full_cancel_after_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_cancel_after_invoke_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_cancel_after_invoke
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_cancel_after_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12399,8 +13478,8 @@ add_executable(h2_full_cancel_before_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_cancel_before_invoke_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_cancel_before_invoke
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_cancel_before_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12417,8 +13496,26 @@ add_executable(h2_full_cancel_in_a_vacuum_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_cancel_in_a_vacuum_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_cancel_in_a_vacuum
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_cancel_with_status
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12435,8 +13532,8 @@ add_executable(h2_full_census_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_census_simple_request_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_census_simple_request
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12453,8 +13550,8 @@ add_executable(h2_full_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_channel_connectivity_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_channel_connectivity
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12471,8 +13568,8 @@ add_executable(h2_full_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_compressed_payload_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_compressed_payload
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_compressed_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12489,8 +13586,8 @@ add_executable(h2_full_default_host_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_default_host_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_default_host
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_default_host
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12507,8 +13604,8 @@ add_executable(h2_full_disappearing_server_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_disappearing_server_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_disappearing_server
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_disappearing_server
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12525,8 +13622,8 @@ add_executable(h2_full_empty_batch_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_empty_batch_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_empty_batch
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_empty_batch
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12543,8 +13640,8 @@ add_executable(h2_full_graceful_server_shutdown_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_graceful_server_shutdown_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_graceful_server_shutdown
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_graceful_server_shutdown
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12561,8 +13658,26 @@ add_executable(h2_full_high_initial_seqno_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_high_initial_seqno_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_high_initial_seqno
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_hpack_size
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12579,8 +13694,8 @@ add_executable(h2_full_invoke_large_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_invoke_large_request_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_invoke_large_request
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_invoke_large_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12597,8 +13712,8 @@ add_executable(h2_full_large_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_large_metadata_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_large_metadata
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_large_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12615,8 +13730,8 @@ add_executable(h2_full_max_concurrent_streams_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_max_concurrent_streams_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_max_concurrent_streams
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_max_concurrent_streams
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12633,8 +13748,8 @@ add_executable(h2_full_max_message_length_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_max_message_length_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_max_message_length
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_max_message_length
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12651,8 +13766,26 @@ add_executable(h2_full_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_metadata_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_metadata
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_full_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_negative_deadline
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12669,8 +13802,8 @@ add_executable(h2_full_no_op_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_no_op_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_no_op
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_no_op
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12687,8 +13820,8 @@ add_executable(h2_full_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_payload_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_payload
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12705,8 +13838,8 @@ add_executable(h2_full_ping_pong_streaming_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_ping_pong_streaming_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_ping_pong_streaming
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_ping_pong_streaming
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12723,8 +13856,8 @@ add_executable(h2_full_registered_call_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_registered_call_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_registered_call
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_registered_call
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12741,8 +13874,8 @@ add_executable(h2_full_request_with_flags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_request_with_flags_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_request_with_flags
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_request_with_flags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12759,8 +13892,8 @@ add_executable(h2_full_request_with_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_request_with_payload_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_request_with_payload
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_request_with_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12777,8 +13910,8 @@ add_executable(h2_full_server_finishes_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_server_finishes_request_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_server_finishes_request
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_server_finishes_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12795,8 +13928,8 @@ add_executable(h2_full_shutdown_finishes_calls_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_shutdown_finishes_calls_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_shutdown_finishes_calls
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_shutdown_finishes_calls
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12813,8 +13946,8 @@ add_executable(h2_full_shutdown_finishes_tags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_shutdown_finishes_tags_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_shutdown_finishes_tags
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_shutdown_finishes_tags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12831,8 +13964,8 @@ add_executable(h2_full_simple_delayed_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_simple_delayed_request_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_simple_delayed_request
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_simple_delayed_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12849,8 +13982,8 @@ add_executable(h2_full_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_simple_request_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_simple_request
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12867,8 +14000,8 @@ add_executable(h2_full_trailing_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full_trailing_metadata_nosec_test
-  end2end_fixture_h2_full
-  end2end_test_trailing_metadata
+  end2end_nosec_fixture_h2_full
+  end2end_nosec_test_trailing_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12885,8 +14018,8 @@ add_executable(h2_full+poll_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_bad_hostname_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_bad_hostname
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_bad_hostname
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12903,8 +14036,8 @@ add_executable(h2_full+poll_binary_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_binary_metadata_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_binary_metadata
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_binary_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12921,8 +14054,8 @@ add_executable(h2_full+poll_cancel_after_accept_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_cancel_after_accept_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_cancel_after_accept
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_cancel_after_accept
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12939,8 +14072,8 @@ add_executable(h2_full+poll_cancel_after_client_done_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_cancel_after_client_done_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_cancel_after_client_done
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_cancel_after_client_done
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12957,8 +14090,8 @@ add_executable(h2_full+poll_cancel_after_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_cancel_after_invoke_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_cancel_after_invoke
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_cancel_after_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12975,8 +14108,8 @@ add_executable(h2_full+poll_cancel_before_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_cancel_before_invoke_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_cancel_before_invoke
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_cancel_before_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -12993,8 +14126,26 @@ add_executable(h2_full+poll_cancel_in_a_vacuum_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_cancel_in_a_vacuum_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_cancel_in_a_vacuum
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_cancel_with_status
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13011,8 +14162,8 @@ add_executable(h2_full+poll_census_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_census_simple_request_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_census_simple_request
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13029,8 +14180,8 @@ add_executable(h2_full+poll_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_channel_connectivity_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_channel_connectivity
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13047,8 +14198,8 @@ add_executable(h2_full+poll_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_compressed_payload_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_compressed_payload
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_compressed_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13065,8 +14216,8 @@ add_executable(h2_full+poll_default_host_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_default_host_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_default_host
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_default_host
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13083,8 +14234,8 @@ add_executable(h2_full+poll_disappearing_server_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_disappearing_server_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_disappearing_server
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_disappearing_server
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13101,8 +14252,8 @@ add_executable(h2_full+poll_empty_batch_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_empty_batch_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_empty_batch
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_empty_batch
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13119,8 +14270,8 @@ add_executable(h2_full+poll_graceful_server_shutdown_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_graceful_server_shutdown_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_graceful_server_shutdown
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_graceful_server_shutdown
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13137,8 +14288,26 @@ add_executable(h2_full+poll_high_initial_seqno_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_high_initial_seqno_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_high_initial_seqno
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_hpack_size
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13155,8 +14324,8 @@ add_executable(h2_full+poll_invoke_large_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_invoke_large_request_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_invoke_large_request
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_invoke_large_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13173,8 +14342,8 @@ add_executable(h2_full+poll_large_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_large_metadata_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_large_metadata
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_large_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13191,8 +14360,8 @@ add_executable(h2_full+poll_max_concurrent_streams_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_max_concurrent_streams_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_max_concurrent_streams
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_max_concurrent_streams
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13209,8 +14378,8 @@ add_executable(h2_full+poll_max_message_length_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_max_message_length_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_max_message_length
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_max_message_length
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13227,8 +14396,26 @@ add_executable(h2_full+poll_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_metadata_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_metadata
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_full+poll_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_full+poll_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_negative_deadline
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13245,8 +14432,8 @@ add_executable(h2_full+poll_no_op_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_no_op_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_no_op
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_no_op
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13263,8 +14450,8 @@ add_executable(h2_full+poll_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_payload_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_payload
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13281,8 +14468,8 @@ add_executable(h2_full+poll_ping_pong_streaming_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_ping_pong_streaming_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_ping_pong_streaming
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_ping_pong_streaming
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13299,8 +14486,8 @@ add_executable(h2_full+poll_registered_call_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_registered_call_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_registered_call
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_registered_call
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13317,8 +14504,8 @@ add_executable(h2_full+poll_request_with_flags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_request_with_flags_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_request_with_flags
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_request_with_flags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13335,8 +14522,8 @@ add_executable(h2_full+poll_request_with_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_request_with_payload_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_request_with_payload
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_request_with_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13353,8 +14540,8 @@ add_executable(h2_full+poll_server_finishes_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_server_finishes_request_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_server_finishes_request
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_server_finishes_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13371,8 +14558,8 @@ add_executable(h2_full+poll_shutdown_finishes_calls_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_shutdown_finishes_calls_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_shutdown_finishes_calls
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_shutdown_finishes_calls
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13389,8 +14576,8 @@ add_executable(h2_full+poll_shutdown_finishes_tags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_shutdown_finishes_tags_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_shutdown_finishes_tags
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_shutdown_finishes_tags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13407,8 +14594,8 @@ add_executable(h2_full+poll_simple_delayed_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_simple_delayed_request_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_simple_delayed_request
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_simple_delayed_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13425,8 +14612,8 @@ add_executable(h2_full+poll_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_simple_request_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_simple_request
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13443,8 +14630,8 @@ add_executable(h2_full+poll_trailing_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_full+poll_trailing_metadata_nosec_test
-  end2end_fixture_h2_full+poll
-  end2end_test_trailing_metadata
+  end2end_nosec_fixture_h2_full+poll
+  end2end_nosec_test_trailing_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13461,8 +14648,8 @@ add_executable(h2_proxy_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_bad_hostname_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_bad_hostname
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_bad_hostname
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13479,8 +14666,8 @@ add_executable(h2_proxy_binary_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_binary_metadata_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_binary_metadata
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_binary_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13497,8 +14684,8 @@ add_executable(h2_proxy_cancel_after_accept_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_cancel_after_accept_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_cancel_after_accept
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_cancel_after_accept
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13515,8 +14702,8 @@ add_executable(h2_proxy_cancel_after_client_done_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_cancel_after_client_done_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_cancel_after_client_done
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_cancel_after_client_done
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13533,8 +14720,8 @@ add_executable(h2_proxy_cancel_after_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_cancel_after_invoke_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_cancel_after_invoke
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_cancel_after_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13551,8 +14738,8 @@ add_executable(h2_proxy_cancel_before_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_cancel_before_invoke_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_cancel_before_invoke
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_cancel_before_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13569,8 +14756,26 @@ add_executable(h2_proxy_cancel_in_a_vacuum_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_cancel_in_a_vacuum_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_cancel_in_a_vacuum
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_cancel_with_status
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13587,8 +14792,8 @@ add_executable(h2_proxy_census_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_census_simple_request_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_census_simple_request
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13605,8 +14810,8 @@ add_executable(h2_proxy_default_host_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_default_host_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_default_host
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_default_host
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13623,8 +14828,8 @@ add_executable(h2_proxy_disappearing_server_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_disappearing_server_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_disappearing_server
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_disappearing_server
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13641,8 +14846,8 @@ add_executable(h2_proxy_empty_batch_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_empty_batch_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_empty_batch
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_empty_batch
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13659,8 +14864,8 @@ add_executable(h2_proxy_graceful_server_shutdown_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_graceful_server_shutdown_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_graceful_server_shutdown
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_graceful_server_shutdown
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13677,8 +14882,8 @@ add_executable(h2_proxy_high_initial_seqno_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_high_initial_seqno_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_high_initial_seqno
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_high_initial_seqno
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13695,8 +14900,8 @@ add_executable(h2_proxy_invoke_large_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_invoke_large_request_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_invoke_large_request
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_invoke_large_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13713,8 +14918,8 @@ add_executable(h2_proxy_large_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_large_metadata_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_large_metadata
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_large_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13731,8 +14936,8 @@ add_executable(h2_proxy_max_message_length_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_max_message_length_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_max_message_length
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_max_message_length
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13749,8 +14954,26 @@ add_executable(h2_proxy_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_metadata_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_metadata
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_proxy_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_proxy_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_negative_deadline
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13767,8 +14990,8 @@ add_executable(h2_proxy_no_op_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_no_op_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_no_op
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_no_op
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13785,8 +15008,8 @@ add_executable(h2_proxy_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_payload_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_payload
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13803,8 +15026,8 @@ add_executable(h2_proxy_ping_pong_streaming_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_ping_pong_streaming_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_ping_pong_streaming
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_ping_pong_streaming
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13821,8 +15044,8 @@ add_executable(h2_proxy_registered_call_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_registered_call_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_registered_call
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_registered_call
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13839,8 +15062,8 @@ add_executable(h2_proxy_request_with_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_request_with_payload_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_request_with_payload
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_request_with_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13857,8 +15080,8 @@ add_executable(h2_proxy_server_finishes_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_server_finishes_request_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_server_finishes_request
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_server_finishes_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13875,8 +15098,8 @@ add_executable(h2_proxy_shutdown_finishes_calls_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_shutdown_finishes_calls_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_shutdown_finishes_calls
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_shutdown_finishes_calls
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13893,8 +15116,8 @@ add_executable(h2_proxy_shutdown_finishes_tags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_shutdown_finishes_tags_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_shutdown_finishes_tags
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_shutdown_finishes_tags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13911,8 +15134,8 @@ add_executable(h2_proxy_simple_delayed_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_simple_delayed_request_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_simple_delayed_request
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_simple_delayed_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13929,8 +15152,8 @@ add_executable(h2_proxy_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_simple_request_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_simple_request
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13947,8 +15170,8 @@ add_executable(h2_proxy_trailing_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_proxy_trailing_metadata_nosec_test
-  end2end_fixture_h2_proxy
-  end2end_test_trailing_metadata
+  end2end_nosec_fixture_h2_proxy
+  end2end_nosec_test_trailing_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13965,8 +15188,8 @@ add_executable(h2_sockpair_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_bad_hostname_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_bad_hostname
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_bad_hostname
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -13983,8 +15206,8 @@ add_executable(h2_sockpair_binary_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_binary_metadata_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_binary_metadata
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_binary_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14001,8 +15224,8 @@ add_executable(h2_sockpair_cancel_after_accept_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_cancel_after_accept_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_cancel_after_accept
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_cancel_after_accept
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14019,8 +15242,8 @@ add_executable(h2_sockpair_cancel_after_client_done_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_cancel_after_client_done_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_cancel_after_client_done
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_cancel_after_client_done
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14037,8 +15260,8 @@ add_executable(h2_sockpair_cancel_after_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_cancel_after_invoke_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_cancel_after_invoke
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_cancel_after_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14055,8 +15278,8 @@ add_executable(h2_sockpair_cancel_before_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_cancel_before_invoke_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_cancel_before_invoke
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_cancel_before_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14073,8 +15296,26 @@ add_executable(h2_sockpair_cancel_in_a_vacuum_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_cancel_in_a_vacuum_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_cancel_in_a_vacuum
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_cancel_with_status
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14091,8 +15332,8 @@ add_executable(h2_sockpair_census_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_census_simple_request_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_census_simple_request
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14109,8 +15350,8 @@ add_executable(h2_sockpair_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_compressed_payload_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_compressed_payload
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_compressed_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14127,8 +15368,8 @@ add_executable(h2_sockpair_empty_batch_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_empty_batch_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_empty_batch
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_empty_batch
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14145,8 +15386,8 @@ add_executable(h2_sockpair_graceful_server_shutdown_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_graceful_server_shutdown_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_graceful_server_shutdown
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_graceful_server_shutdown
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14163,8 +15404,26 @@ add_executable(h2_sockpair_high_initial_seqno_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_high_initial_seqno_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_high_initial_seqno
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_hpack_size
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14181,8 +15440,8 @@ add_executable(h2_sockpair_invoke_large_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_invoke_large_request_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_invoke_large_request
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_invoke_large_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14199,8 +15458,8 @@ add_executable(h2_sockpair_large_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_large_metadata_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_large_metadata
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_large_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14217,8 +15476,8 @@ add_executable(h2_sockpair_max_concurrent_streams_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_max_concurrent_streams_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_max_concurrent_streams
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_max_concurrent_streams
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14235,8 +15494,8 @@ add_executable(h2_sockpair_max_message_length_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_max_message_length_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_max_message_length
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_max_message_length
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14253,8 +15512,26 @@ add_executable(h2_sockpair_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_metadata_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_metadata
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_negative_deadline
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14271,8 +15548,8 @@ add_executable(h2_sockpair_no_op_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_no_op_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_no_op
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_no_op
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14289,8 +15566,8 @@ add_executable(h2_sockpair_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_payload_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_payload
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14307,8 +15584,8 @@ add_executable(h2_sockpair_ping_pong_streaming_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_ping_pong_streaming_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_ping_pong_streaming
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_ping_pong_streaming
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14325,8 +15602,8 @@ add_executable(h2_sockpair_registered_call_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_registered_call_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_registered_call
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_registered_call
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14343,8 +15620,8 @@ add_executable(h2_sockpair_request_with_flags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_request_with_flags_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_request_with_flags
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_request_with_flags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14361,8 +15638,8 @@ add_executable(h2_sockpair_request_with_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_request_with_payload_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_request_with_payload
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_request_with_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14379,8 +15656,8 @@ add_executable(h2_sockpair_server_finishes_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_server_finishes_request_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_server_finishes_request
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_server_finishes_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14397,8 +15674,8 @@ add_executable(h2_sockpair_shutdown_finishes_calls_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_shutdown_finishes_calls_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_shutdown_finishes_calls
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_shutdown_finishes_calls
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14415,8 +15692,8 @@ add_executable(h2_sockpair_shutdown_finishes_tags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_shutdown_finishes_tags_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_shutdown_finishes_tags
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_shutdown_finishes_tags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14433,8 +15710,8 @@ add_executable(h2_sockpair_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_simple_request_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_simple_request
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14451,8 +15728,8 @@ add_executable(h2_sockpair_trailing_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_trailing_metadata_nosec_test
-  end2end_fixture_h2_sockpair
-  end2end_test_trailing_metadata
+  end2end_nosec_fixture_h2_sockpair
+  end2end_nosec_test_trailing_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14469,8 +15746,8 @@ add_executable(h2_sockpair+trace_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_bad_hostname_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_bad_hostname
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_bad_hostname
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14487,8 +15764,8 @@ add_executable(h2_sockpair+trace_binary_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_binary_metadata_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_binary_metadata
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_binary_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14505,8 +15782,8 @@ add_executable(h2_sockpair+trace_cancel_after_accept_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_cancel_after_accept_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_cancel_after_accept
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_cancel_after_accept
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14523,8 +15800,8 @@ add_executable(h2_sockpair+trace_cancel_after_client_done_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_cancel_after_client_done_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_cancel_after_client_done
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_cancel_after_client_done
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14541,8 +15818,8 @@ add_executable(h2_sockpair+trace_cancel_after_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_cancel_after_invoke_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_cancel_after_invoke
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_cancel_after_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14559,8 +15836,8 @@ add_executable(h2_sockpair+trace_cancel_before_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_cancel_before_invoke_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_cancel_before_invoke
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_cancel_before_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14577,8 +15854,26 @@ add_executable(h2_sockpair+trace_cancel_in_a_vacuum_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_cancel_in_a_vacuum_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_cancel_in_a_vacuum
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_cancel_with_status
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14595,8 +15890,8 @@ add_executable(h2_sockpair+trace_census_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_census_simple_request_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_census_simple_request
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14613,8 +15908,8 @@ add_executable(h2_sockpair+trace_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_compressed_payload_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_compressed_payload
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_compressed_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14631,8 +15926,8 @@ add_executable(h2_sockpair+trace_empty_batch_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_empty_batch_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_empty_batch
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_empty_batch
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14649,8 +15944,8 @@ add_executable(h2_sockpair+trace_graceful_server_shutdown_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_graceful_server_shutdown_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_graceful_server_shutdown
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_graceful_server_shutdown
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14667,8 +15962,8 @@ add_executable(h2_sockpair+trace_high_initial_seqno_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_high_initial_seqno_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_high_initial_seqno
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_high_initial_seqno
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14685,8 +15980,8 @@ add_executable(h2_sockpair+trace_invoke_large_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_invoke_large_request_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_invoke_large_request
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_invoke_large_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14703,8 +15998,8 @@ add_executable(h2_sockpair+trace_large_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_large_metadata_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_large_metadata
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_large_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14721,8 +16016,8 @@ add_executable(h2_sockpair+trace_max_concurrent_streams_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_max_concurrent_streams_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_max_concurrent_streams
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_max_concurrent_streams
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14739,8 +16034,8 @@ add_executable(h2_sockpair+trace_max_message_length_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_max_message_length_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_max_message_length
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_max_message_length
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14757,8 +16052,26 @@ add_executable(h2_sockpair+trace_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_metadata_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_metadata
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair+trace_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair+trace_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_negative_deadline
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14775,8 +16088,8 @@ add_executable(h2_sockpair+trace_no_op_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_no_op_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_no_op
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_no_op
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14793,8 +16106,8 @@ add_executable(h2_sockpair+trace_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_payload_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_payload
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14811,8 +16124,8 @@ add_executable(h2_sockpair+trace_ping_pong_streaming_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_ping_pong_streaming_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_ping_pong_streaming
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_ping_pong_streaming
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14829,8 +16142,8 @@ add_executable(h2_sockpair+trace_registered_call_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_registered_call_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_registered_call
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_registered_call
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14847,8 +16160,8 @@ add_executable(h2_sockpair+trace_request_with_flags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_request_with_flags_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_request_with_flags
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_request_with_flags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14865,8 +16178,8 @@ add_executable(h2_sockpair+trace_request_with_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_request_with_payload_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_request_with_payload
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_request_with_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14883,8 +16196,8 @@ add_executable(h2_sockpair+trace_server_finishes_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_server_finishes_request_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_server_finishes_request
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_server_finishes_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14901,8 +16214,8 @@ add_executable(h2_sockpair+trace_shutdown_finishes_calls_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_shutdown_finishes_calls_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_shutdown_finishes_calls
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_shutdown_finishes_calls
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14919,8 +16232,8 @@ add_executable(h2_sockpair+trace_shutdown_finishes_tags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_shutdown_finishes_tags_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_shutdown_finishes_tags
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_shutdown_finishes_tags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14937,8 +16250,8 @@ add_executable(h2_sockpair+trace_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_simple_request_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_simple_request
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14955,8 +16268,8 @@ add_executable(h2_sockpair+trace_trailing_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair+trace_trailing_metadata_nosec_test
-  end2end_fixture_h2_sockpair+trace
-  end2end_test_trailing_metadata
+  end2end_nosec_fixture_h2_sockpair+trace
+  end2end_nosec_test_trailing_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14973,8 +16286,8 @@ add_executable(h2_sockpair_1byte_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_bad_hostname_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_bad_hostname
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_bad_hostname
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -14991,8 +16304,8 @@ add_executable(h2_sockpair_1byte_binary_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_binary_metadata_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_binary_metadata
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_binary_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15009,8 +16322,8 @@ add_executable(h2_sockpair_1byte_cancel_after_accept_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_cancel_after_accept_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_cancel_after_accept
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_cancel_after_accept
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15027,8 +16340,8 @@ add_executable(h2_sockpair_1byte_cancel_after_client_done_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_cancel_after_client_done_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_cancel_after_client_done
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_cancel_after_client_done
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15045,8 +16358,8 @@ add_executable(h2_sockpair_1byte_cancel_after_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_cancel_after_invoke_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_cancel_after_invoke
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_cancel_after_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15063,8 +16376,8 @@ add_executable(h2_sockpair_1byte_cancel_before_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_cancel_before_invoke_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_cancel_before_invoke
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_cancel_before_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15081,8 +16394,26 @@ add_executable(h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_cancel_in_a_vacuum_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_cancel_in_a_vacuum
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_cancel_with_status
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15099,8 +16430,8 @@ add_executable(h2_sockpair_1byte_census_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_census_simple_request_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_census_simple_request
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15117,8 +16448,8 @@ add_executable(h2_sockpair_1byte_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_compressed_payload_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_compressed_payload
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_compressed_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15135,8 +16466,8 @@ add_executable(h2_sockpair_1byte_empty_batch_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_empty_batch_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_empty_batch
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_empty_batch
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15153,8 +16484,8 @@ add_executable(h2_sockpair_1byte_graceful_server_shutdown_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_graceful_server_shutdown_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_graceful_server_shutdown
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_graceful_server_shutdown
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15171,8 +16502,26 @@ add_executable(h2_sockpair_1byte_high_initial_seqno_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_high_initial_seqno_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_high_initial_seqno
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_hpack_size
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15189,8 +16538,8 @@ add_executable(h2_sockpair_1byte_invoke_large_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_invoke_large_request_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_invoke_large_request
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_invoke_large_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15207,8 +16556,8 @@ add_executable(h2_sockpair_1byte_large_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_large_metadata_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_large_metadata
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_large_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15225,8 +16574,8 @@ add_executable(h2_sockpair_1byte_max_concurrent_streams_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_max_concurrent_streams_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_max_concurrent_streams
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_max_concurrent_streams
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15243,8 +16592,8 @@ add_executable(h2_sockpair_1byte_max_message_length_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_max_message_length_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_max_message_length
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_max_message_length
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15261,8 +16610,26 @@ add_executable(h2_sockpair_1byte_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_metadata_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_metadata
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_sockpair_1byte_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_sockpair_1byte_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_negative_deadline
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15279,8 +16646,8 @@ add_executable(h2_sockpair_1byte_no_op_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_no_op_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_no_op
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_no_op
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15297,8 +16664,8 @@ add_executable(h2_sockpair_1byte_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_payload_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_payload
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15315,8 +16682,8 @@ add_executable(h2_sockpair_1byte_ping_pong_streaming_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_ping_pong_streaming_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_ping_pong_streaming
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_ping_pong_streaming
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15333,8 +16700,8 @@ add_executable(h2_sockpair_1byte_registered_call_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_registered_call_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_registered_call
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_registered_call
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15351,8 +16718,8 @@ add_executable(h2_sockpair_1byte_request_with_flags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_request_with_flags_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_request_with_flags
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_request_with_flags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15369,8 +16736,8 @@ add_executable(h2_sockpair_1byte_request_with_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_request_with_payload_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_request_with_payload
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_request_with_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15387,8 +16754,8 @@ add_executable(h2_sockpair_1byte_server_finishes_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_server_finishes_request_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_server_finishes_request
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_server_finishes_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15405,8 +16772,8 @@ add_executable(h2_sockpair_1byte_shutdown_finishes_calls_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_shutdown_finishes_calls_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_shutdown_finishes_calls
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_shutdown_finishes_calls
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15423,8 +16790,8 @@ add_executable(h2_sockpair_1byte_shutdown_finishes_tags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_shutdown_finishes_tags_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_shutdown_finishes_tags
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_shutdown_finishes_tags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15441,8 +16808,8 @@ add_executable(h2_sockpair_1byte_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_simple_request_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_simple_request
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15459,8 +16826,8 @@ add_executable(h2_sockpair_1byte_trailing_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_sockpair_1byte_trailing_metadata_nosec_test
-  end2end_fixture_h2_sockpair_1byte
-  end2end_test_trailing_metadata
+  end2end_nosec_fixture_h2_sockpair_1byte
+  end2end_nosec_test_trailing_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15477,8 +16844,8 @@ add_executable(h2_uchannel_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_bad_hostname_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_bad_hostname
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_bad_hostname
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15495,8 +16862,8 @@ add_executable(h2_uchannel_binary_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_binary_metadata_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_binary_metadata
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_binary_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15513,8 +16880,8 @@ add_executable(h2_uchannel_cancel_after_accept_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_cancel_after_accept_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_cancel_after_accept
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_cancel_after_accept
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15531,8 +16898,8 @@ add_executable(h2_uchannel_cancel_after_client_done_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_cancel_after_client_done_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_cancel_after_client_done
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_cancel_after_client_done
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15549,8 +16916,8 @@ add_executable(h2_uchannel_cancel_after_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_cancel_after_invoke_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_cancel_after_invoke
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_cancel_after_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15567,8 +16934,8 @@ add_executable(h2_uchannel_cancel_before_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_cancel_before_invoke_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_cancel_before_invoke
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_cancel_before_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15585,8 +16952,26 @@ add_executable(h2_uchannel_cancel_in_a_vacuum_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_cancel_in_a_vacuum_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_cancel_in_a_vacuum
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_cancel_with_status
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15603,8 +16988,8 @@ add_executable(h2_uchannel_census_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_census_simple_request_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_census_simple_request
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15621,8 +17006,8 @@ add_executable(h2_uchannel_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_channel_connectivity_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_channel_connectivity
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15639,8 +17024,8 @@ add_executable(h2_uchannel_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_compressed_payload_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_compressed_payload
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_compressed_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15657,8 +17042,8 @@ add_executable(h2_uchannel_default_host_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_default_host_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_default_host
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_default_host
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15675,8 +17060,8 @@ add_executable(h2_uchannel_disappearing_server_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_disappearing_server_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_disappearing_server
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_disappearing_server
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15693,8 +17078,8 @@ add_executable(h2_uchannel_empty_batch_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_empty_batch_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_empty_batch
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_empty_batch
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15711,8 +17096,8 @@ add_executable(h2_uchannel_graceful_server_shutdown_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_graceful_server_shutdown_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_graceful_server_shutdown
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_graceful_server_shutdown
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15729,8 +17114,26 @@ add_executable(h2_uchannel_high_initial_seqno_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_high_initial_seqno_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_high_initial_seqno
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_hpack_size
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15747,8 +17150,8 @@ add_executable(h2_uchannel_invoke_large_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_invoke_large_request_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_invoke_large_request
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_invoke_large_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15765,8 +17168,8 @@ add_executable(h2_uchannel_large_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_large_metadata_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_large_metadata
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_large_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15783,8 +17186,8 @@ add_executable(h2_uchannel_max_concurrent_streams_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_max_concurrent_streams_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_max_concurrent_streams
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_max_concurrent_streams
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15801,8 +17204,8 @@ add_executable(h2_uchannel_max_message_length_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_max_message_length_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_max_message_length
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_max_message_length
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15819,8 +17222,26 @@ add_executable(h2_uchannel_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_metadata_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_metadata
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(h2_uchannel_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uchannel_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_negative_deadline
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15837,8 +17258,8 @@ add_executable(h2_uchannel_no_op_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_no_op_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_no_op
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_no_op
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15855,8 +17276,8 @@ add_executable(h2_uchannel_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_payload_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_payload
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15873,8 +17294,8 @@ add_executable(h2_uchannel_ping_pong_streaming_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_ping_pong_streaming_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_ping_pong_streaming
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_ping_pong_streaming
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15891,8 +17312,8 @@ add_executable(h2_uchannel_registered_call_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_registered_call_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_registered_call
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_registered_call
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15909,8 +17330,8 @@ add_executable(h2_uchannel_request_with_flags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_request_with_flags_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_request_with_flags
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_request_with_flags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15927,8 +17348,8 @@ add_executable(h2_uchannel_request_with_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_request_with_payload_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_request_with_payload
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_request_with_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15945,8 +17366,8 @@ add_executable(h2_uchannel_server_finishes_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_server_finishes_request_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_server_finishes_request
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_server_finishes_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15963,8 +17384,8 @@ add_executable(h2_uchannel_shutdown_finishes_calls_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_shutdown_finishes_calls_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_shutdown_finishes_calls
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_shutdown_finishes_calls
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15981,8 +17402,8 @@ add_executable(h2_uchannel_shutdown_finishes_tags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_shutdown_finishes_tags_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_shutdown_finishes_tags
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_shutdown_finishes_tags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -15999,8 +17420,8 @@ add_executable(h2_uchannel_simple_delayed_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_simple_delayed_request_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_simple_delayed_request
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_simple_delayed_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16017,8 +17438,8 @@ add_executable(h2_uchannel_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_simple_request_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_simple_request
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16035,8 +17456,8 @@ add_executable(h2_uchannel_trailing_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uchannel_trailing_metadata_nosec_test
-  end2end_fixture_h2_uchannel
-  end2end_test_trailing_metadata
+  end2end_nosec_fixture_h2_uchannel
+  end2end_nosec_test_trailing_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16053,8 +17474,8 @@ add_executable(h2_uds_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_bad_hostname_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_bad_hostname
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_bad_hostname
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16071,8 +17492,8 @@ add_executable(h2_uds_binary_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_binary_metadata_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_binary_metadata
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_binary_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16089,8 +17510,8 @@ add_executable(h2_uds_cancel_after_accept_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_cancel_after_accept_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_cancel_after_accept
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_cancel_after_accept
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16107,8 +17528,8 @@ add_executable(h2_uds_cancel_after_client_done_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_cancel_after_client_done_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_cancel_after_client_done
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_cancel_after_client_done
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16125,8 +17546,8 @@ add_executable(h2_uds_cancel_after_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_cancel_after_invoke_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_cancel_after_invoke
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_cancel_after_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16143,8 +17564,8 @@ add_executable(h2_uds_cancel_before_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_cancel_before_invoke_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_cancel_before_invoke
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_cancel_before_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16161,8 +17582,26 @@ add_executable(h2_uds_cancel_in_a_vacuum_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_cancel_in_a_vacuum_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_cancel_in_a_vacuum
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_cancel_with_status
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16179,8 +17618,8 @@ add_executable(h2_uds_census_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_census_simple_request_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_census_simple_request
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16197,8 +17636,8 @@ add_executable(h2_uds_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_channel_connectivity_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_channel_connectivity
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16215,8 +17654,8 @@ add_executable(h2_uds_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_compressed_payload_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_compressed_payload
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_compressed_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16233,8 +17672,8 @@ add_executable(h2_uds_disappearing_server_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_disappearing_server_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_disappearing_server
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_disappearing_server
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16251,8 +17690,8 @@ add_executable(h2_uds_empty_batch_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_empty_batch_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_empty_batch
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_empty_batch
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16269,8 +17708,8 @@ add_executable(h2_uds_graceful_server_shutdown_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_graceful_server_shutdown_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_graceful_server_shutdown
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_graceful_server_shutdown
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16287,8 +17726,26 @@ add_executable(h2_uds_high_initial_seqno_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_high_initial_seqno_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_high_initial_seqno
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_hpack_size
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16305,8 +17762,8 @@ add_executable(h2_uds_invoke_large_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_invoke_large_request_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_invoke_large_request
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_invoke_large_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16323,8 +17780,8 @@ add_executable(h2_uds_large_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_large_metadata_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_large_metadata
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_large_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16341,8 +17798,8 @@ add_executable(h2_uds_max_concurrent_streams_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_max_concurrent_streams_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_max_concurrent_streams
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_max_concurrent_streams
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16359,8 +17816,8 @@ add_executable(h2_uds_max_message_length_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_max_message_length_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_max_message_length
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_max_message_length
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16377,8 +17834,26 @@ add_executable(h2_uds_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_metadata_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_metadata
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)))
+add_executable(h2_uds_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_negative_deadline
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16395,8 +17870,8 @@ add_executable(h2_uds_no_op_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_no_op_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_no_op
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_no_op
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16413,8 +17888,8 @@ add_executable(h2_uds_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_payload_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_payload
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16431,8 +17906,8 @@ add_executable(h2_uds_ping_pong_streaming_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_ping_pong_streaming_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_ping_pong_streaming
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_ping_pong_streaming
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16449,8 +17924,8 @@ add_executable(h2_uds_registered_call_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_registered_call_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_registered_call
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_registered_call
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16467,8 +17942,8 @@ add_executable(h2_uds_request_with_flags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_request_with_flags_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_request_with_flags
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_request_with_flags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16485,8 +17960,8 @@ add_executable(h2_uds_request_with_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_request_with_payload_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_request_with_payload
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_request_with_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16503,8 +17978,8 @@ add_executable(h2_uds_server_finishes_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_server_finishes_request_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_server_finishes_request
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_server_finishes_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16521,8 +17996,8 @@ add_executable(h2_uds_shutdown_finishes_calls_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_shutdown_finishes_calls_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_shutdown_finishes_calls
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_shutdown_finishes_calls
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16539,8 +18014,8 @@ add_executable(h2_uds_shutdown_finishes_tags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_shutdown_finishes_tags_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_shutdown_finishes_tags
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_shutdown_finishes_tags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16557,8 +18032,8 @@ add_executable(h2_uds_simple_delayed_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_simple_delayed_request_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_simple_delayed_request
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_simple_delayed_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16575,8 +18050,8 @@ add_executable(h2_uds_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_simple_request_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_simple_request
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16593,8 +18068,8 @@ add_executable(h2_uds_trailing_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds_trailing_metadata_nosec_test
-  end2end_fixture_h2_uds
-  end2end_test_trailing_metadata
+  end2end_nosec_fixture_h2_uds
+  end2end_nosec_test_trailing_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16611,8 +18086,8 @@ add_executable(h2_uds+poll_bad_hostname_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_bad_hostname_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_bad_hostname
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_bad_hostname
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16629,8 +18104,8 @@ add_executable(h2_uds+poll_binary_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_binary_metadata_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_binary_metadata
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_binary_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16647,8 +18122,8 @@ add_executable(h2_uds+poll_cancel_after_accept_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_cancel_after_accept_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_cancel_after_accept
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_cancel_after_accept
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16665,8 +18140,8 @@ add_executable(h2_uds+poll_cancel_after_client_done_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_cancel_after_client_done_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_cancel_after_client_done
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_cancel_after_client_done
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16683,8 +18158,8 @@ add_executable(h2_uds+poll_cancel_after_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_cancel_after_invoke_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_cancel_after_invoke
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_cancel_after_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16701,8 +18176,8 @@ add_executable(h2_uds+poll_cancel_before_invoke_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_cancel_before_invoke_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_cancel_before_invoke
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_cancel_before_invoke
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16719,8 +18194,26 @@ add_executable(h2_uds+poll_cancel_in_a_vacuum_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_cancel_in_a_vacuum_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_cancel_in_a_vacuum
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_cancel_in_a_vacuum
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_cancel_with_status_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_cancel_with_status_nosec_test
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_cancel_with_status
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16737,8 +18230,8 @@ add_executable(h2_uds+poll_census_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_census_simple_request_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_census_simple_request
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_census_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16755,8 +18248,8 @@ add_executable(h2_uds+poll_channel_connectivity_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_channel_connectivity_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_channel_connectivity
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_channel_connectivity
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16773,8 +18266,8 @@ add_executable(h2_uds+poll_compressed_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_compressed_payload_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_compressed_payload
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_compressed_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16791,8 +18284,8 @@ add_executable(h2_uds+poll_disappearing_server_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_disappearing_server_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_disappearing_server
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_disappearing_server
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16809,8 +18302,8 @@ add_executable(h2_uds+poll_empty_batch_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_empty_batch_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_empty_batch
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_empty_batch
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16827,8 +18320,8 @@ add_executable(h2_uds+poll_graceful_server_shutdown_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_graceful_server_shutdown_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_graceful_server_shutdown
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_graceful_server_shutdown
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16845,8 +18338,26 @@ add_executable(h2_uds+poll_high_initial_seqno_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_high_initial_seqno_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_high_initial_seqno
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_high_initial_seqno
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_hpack_size_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_hpack_size_nosec_test
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_hpack_size
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16863,8 +18374,8 @@ add_executable(h2_uds+poll_invoke_large_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_invoke_large_request_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_invoke_large_request
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_invoke_large_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16881,8 +18392,8 @@ add_executable(h2_uds+poll_large_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_large_metadata_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_large_metadata
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_large_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16899,8 +18410,8 @@ add_executable(h2_uds+poll_max_concurrent_streams_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_max_concurrent_streams_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_max_concurrent_streams
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_max_concurrent_streams
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16917,8 +18428,8 @@ add_executable(h2_uds+poll_max_message_length_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_max_message_length_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_max_message_length
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_max_message_length
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16935,8 +18446,26 @@ add_executable(h2_uds+poll_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_metadata_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_metadata
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_metadata
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux))
+add_executable(h2_uds+poll_negative_deadline_nosec_test
+  vsprojects/dummy.c
+)
+target_link_libraries(h2_uds+poll_negative_deadline_nosec_test
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_negative_deadline
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16953,8 +18482,8 @@ add_executable(h2_uds+poll_no_op_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_no_op_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_no_op
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_no_op
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16971,8 +18500,8 @@ add_executable(h2_uds+poll_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_payload_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_payload
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -16989,8 +18518,8 @@ add_executable(h2_uds+poll_ping_pong_streaming_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_ping_pong_streaming_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_ping_pong_streaming
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_ping_pong_streaming
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17007,8 +18536,8 @@ add_executable(h2_uds+poll_registered_call_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_registered_call_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_registered_call
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_registered_call
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17025,8 +18554,8 @@ add_executable(h2_uds+poll_request_with_flags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_request_with_flags_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_request_with_flags
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_request_with_flags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17043,8 +18572,8 @@ add_executable(h2_uds+poll_request_with_payload_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_request_with_payload_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_request_with_payload
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_request_with_payload
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17061,8 +18590,8 @@ add_executable(h2_uds+poll_server_finishes_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_server_finishes_request_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_server_finishes_request
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_server_finishes_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17079,8 +18608,8 @@ add_executable(h2_uds+poll_shutdown_finishes_calls_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_shutdown_finishes_calls_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_shutdown_finishes_calls
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_shutdown_finishes_calls
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17097,8 +18626,8 @@ add_executable(h2_uds+poll_shutdown_finishes_tags_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_shutdown_finishes_tags_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_shutdown_finishes_tags
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_shutdown_finishes_tags
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17115,8 +18644,8 @@ add_executable(h2_uds+poll_simple_delayed_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_simple_delayed_request_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_simple_delayed_request
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_simple_delayed_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17133,8 +18662,8 @@ add_executable(h2_uds+poll_simple_request_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_simple_request_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_simple_request
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_simple_request
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17151,8 +18680,8 @@ add_executable(h2_uds+poll_trailing_metadata_nosec_test
   vsprojects/dummy.c
 )
 target_link_libraries(h2_uds+poll_trailing_metadata_nosec_test
-  end2end_fixture_h2_uds+poll
-  end2end_test_trailing_metadata
+  end2end_nosec_fixture_h2_uds+poll
+  end2end_nosec_test_trailing_metadata
   grpc_test_util_unsecure
   grpc_unsecure
   gpr_test_util
@@ -17169,6 +18698,23 @@ add_executable(connection_prefix_bad_client_test
   test/core/bad_client/tests/connection_prefix.c
 )
 target_link_libraries(connection_prefix_bad_client_test
+  bad_client_test
+  grpc_test_util_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  ${PROTOBUF_LIBRARIES}
+  ${ZLIB_LIBRARIES}
+  ${OPENSSL_LIBRARIES}
+  ${CMAKE_THREAD_LIBS_INIT}
+  ${MATH_LIB}
+)
+endif()
+if ((CMAKE_SYSTEM EQUAL Linux) OR (CMAKE_SYSTEM EQUAL Darwin) OR (NOT (CMAKE_SYSTEM EQUAL Windows)) OR (CMAKE_SYSTEM EQUAL Windows))
+add_executable(headers_bad_client_test
+  test/core/bad_client/tests/headers.c
+)
+target_link_libraries(headers_bad_client_test
   bad_client_test
   grpc_test_util_unsecure
   grpc_unsecure

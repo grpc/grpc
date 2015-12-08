@@ -63,7 +63,7 @@
       message(STATUS "The compiler <%text>${CMAKE_CXX_COMPILER}</%text> has no C++11 support. Please use a different C++ compiler.")
   endif()
 
-  find_package(PROTOBUF REQUIRED)
+  find_package(Protobuf REQUIRED)
   if (PROTOBUF_FOUND)
     include_directories(<%text>${PROTOBUF_INCLUDE_DIRS}</%text>)
   endif(PROTOBUF_FOUND)
@@ -95,7 +95,7 @@
   endif()
 
   % for proto in all_protos:
-  PROTOBUF_GENERATE_CPP(${protovars(proto)} ${os.path.split(proto)[1]} PROTOROOT ${os.path.split(proto)[0]} OUTPATH <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>${os.path.split(proto)[0]})
+  PROTOBUF_GENERATE_CPP(${protovars(proto)} ${proto})
   % endfor
 
   % for lib in libs:
