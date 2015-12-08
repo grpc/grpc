@@ -165,5 +165,35 @@ int main(int argc, char **argv) {
                            "\x01",
                            GRPC_BAD_CLIENT_DISCONNECT);
 
+  /* dynamic table size update: set to default */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
+                           "\x3f\xe1\x1f",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
+                           "\x3f\xf1\x1f",
+                           0);
+
+  /* non-ending header followed by continuation frame */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x00\x01\x00\x00\x00\x00\x01"
+                           "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  /* non-ending header followed by non-continuation frame */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x00\x01\x00\x00\x00\x00\x01"
+                           "\x00\x00\x00\x00\x04\x00\x00\x00\x01",
+                           0);
+  /* opening with a continuation frame */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
+                           0);
+
   return 0;
 }
