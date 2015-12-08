@@ -145,7 +145,9 @@ void tsi_frame_protector_destroy(tsi_frame_protector *self) {
 tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker *self,
                                                     unsigned char *bytes,
                                                     size_t *bytes_size) {
-  if (self == NULL) return TSI_INVALID_ARGUMENT;
+  if (self == NULL || bytes == NULL || bytes_size == NULL) {
+    return TSI_INVALID_ARGUMENT;
+  }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   return self->vtable->get_bytes_to_send_to_peer(self, bytes, bytes_size);
 }
@@ -153,7 +155,9 @@ tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker *self,
 tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker *self,
                                                   const unsigned char *bytes,
                                                   size_t *bytes_size) {
-  if (self == NULL) return TSI_INVALID_ARGUMENT;
+  if (self == NULL || bytes == NULL || bytes_size == NULL) {
+    return TSI_INVALID_ARGUMENT;
+  }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   return self->vtable->process_bytes_from_peer(self, bytes, bytes_size);
 }
