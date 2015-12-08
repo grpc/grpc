@@ -15511,6 +15511,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "headers_bad_client_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "initial_settings_frame_bad_client_test", 
     "platforms": [
       "linux", 

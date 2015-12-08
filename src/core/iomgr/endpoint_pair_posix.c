@@ -36,6 +36,7 @@
 #ifdef GPR_POSIX_SOCKET
 
 #include "src/core/iomgr/endpoint_pair.h"
+#include "src/core/iomgr/socket_utils_posix.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -56,6 +57,8 @@ static void create_sockets(int sv[2]) {
   GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]));
+  GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]));
 }
 
 grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char *name,
