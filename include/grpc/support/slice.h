@@ -175,10 +175,6 @@ gpr_slice gpr_empty_slice(void);
 int gpr_slice_cmp(gpr_slice a, gpr_slice b);
 int gpr_slice_str_cmp(gpr_slice a, const char *b);
 
-/* Returns a c-string representation of a slice. Useful for logging or debugging
-   purposes only. The string representation can change in future */
-char *gpr_slice_to_cstring(gpr_slice slice);
-
 #ifdef __cplusplus
 }
 #endif
