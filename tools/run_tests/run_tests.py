@@ -152,7 +152,10 @@ class CLanguage(object):
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
       if os.path.isfile(binary):
-        out.append(config.job_spec([binary], [binary]))
+        out.append(config.job_spec([binary], [binary],
+                                   environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
+                                            os.path.abspath(os.path.dirname(
+                                                sys.argv[0]) + '/../../etc')}))
       elif args.regex == '.*' or platform_string() == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
@@ -191,6 +194,7 @@ class CLanguage(object):
 
   def __str__(self):
     return self.make_target
+
 
 class NodeLanguage(object):
 
