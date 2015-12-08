@@ -82,9 +82,9 @@ static void one_test(grpc_channel_args *args, char *expected_error_message) {
   grpc_channel_destroy(chan);
 }
 
-static void test_no_error_message() { one_test(NULL, NULL); }
+static void test_no_error_message(void) { one_test(NULL, NULL); }
 
-static void test_max_message_length_type() {
+static void test_max_message_length_type(void) {
   grpc_arg client_arg;
   grpc_channel_args client_args;
   char *expected_error_message;
@@ -100,7 +100,7 @@ static void test_max_message_length_type() {
   one_test(&client_args, expected_error_message);
 }
 
-static void test_max_message_length_negative() {
+static void test_max_message_length_negative(void) {
   grpc_arg client_arg;
   grpc_channel_args client_args;
   char *expected_error_message;
@@ -116,7 +116,7 @@ static void test_max_message_length_negative() {
   one_test(&client_args, expected_error_message);
 }
 
-static void test_default_authority_type() {
+static void test_default_authority_type(void) {
   grpc_arg client_arg;
   grpc_channel_args client_args;
   char *expected_error_message;
@@ -132,7 +132,7 @@ static void test_default_authority_type() {
   one_test(&client_args, expected_error_message);
 }
 
-static void test_ssl_name_override_type() {
+static void test_ssl_name_override_type(void) {
   grpc_arg client_arg;
   grpc_channel_args client_args;
   char *expected_error_message;
@@ -148,7 +148,7 @@ static void test_ssl_name_override_type() {
   one_test(&client_args, expected_error_message);
 }
 
-static void test_ssl_name_override_failed() {
+static void test_ssl_name_override_failed(void) {
   grpc_arg client_arg[2];
   grpc_channel_args client_args;
   char *expected_error_message;
