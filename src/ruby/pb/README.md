@@ -20,7 +20,7 @@ re-generate the surface.
 
 ```bash
 $ # (from this directory)
-$ protoc -I . grpc/health/v1alpha/health.proto \
+$ protoc -I ../../proto ../../proto/grpc/health/v1alpha/health.proto \
     --grpc_out=. \
     --ruby_out=. \
     --plugin=protoc-gen-grpc=`which grpc_ruby_plugin`
