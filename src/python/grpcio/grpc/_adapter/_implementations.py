@@ -27,76 +27,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import collections
 
-# Adapter from grpc._cython.types to the surface expected by
-# grpc._adapter._intermediary_low.
-#
-# TODO(atash): Once this is plugged into grpc._adapter._intermediary_low, remove
-# both grpc._adapter._intermediary_low and this file. The fore and rear links in
-# grpc._adapter should be able to use grpc._cython.types directly.
+from grpc.beta import interfaces
 
-from grpc._adapter import _types as type_interfaces
-from grpc._cython import cygrpc
-
-
-class ClientCredentials(object):
-  def __init__(self):
-    raise NotImplementedError()
-
-  @staticmethod
-  def google_default():
-    raise NotImplementedError()
-
-  @staticmethod
-  def ssl():
-    raise NotImplementedError()
-
-  @staticmethod
-  def composite():
-    raise NotImplementedError()
-
-  @staticmethod
-  def compute_engine():
-    raise NotImplementedError()
-
-  @staticmethod
-  def jwt():
-    raise NotImplementedError()
-
-  @staticmethod
-  def refresh_token():
-    raise NotImplementedError()
-
-  @staticmethod
-  def iam():
-    raise NotImplementedError()
+class AuthMetadataContext(collections.namedtuple(
+    'AuthMetadataContext', [
+        'service_url',
+        'method_name'
+    ]), interfaces.GRPCAuthMetadataContext):
+  pass
 
 
-class ServerCredentials(object):
-  def __init__(self):
-    raise NotImplementedError()
+class AuthMetadataPluginCallback(interfaces.GRPCAuthMetadataContext):
 
-  @staticmethod
-  def ssl():
-    raise NotImplementedError()
+  def __init__(self, callback):
+    self._callback = callback
 
-
-class CompletionQueue(type_interfaces.CompletionQueue):
-  def __init__(self):
-    raise NotImplementedError()
-
-
-class Call(type_interfaces.Call):
-  def __init__(self):
-    raise NotImplementedError()
-
-
-class Channel(type_interfaces.Channel):
-  def __init__(self):
-    raise NotImplementedError()
-
-
-class Server(type_interfaces.Server):
-  def __init__(self):
-    raise NotImplementedError()
-
+  def __call__(self, metadata, error):
+    self._callback(metadata, error)
