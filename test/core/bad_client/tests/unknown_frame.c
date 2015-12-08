@@ -31,37 +31,28 @@
  *
  */
 
-#include <stdlib.h>
+#include "test/core/bad_client/bad_client.h"
+#include "src/core/surface/server.h"
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
-#include <grpc/grpc.h>
+#define PFX_STR                      \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
+  "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
 
-#include "grpc/_adapter/_c/types.h"
-
-static PyMethodDef c_methods[] = {
-    {NULL}
-};
-
-PyMODINIT_FUNC init_c(void) {
-  PyObject *module;
-
-  module = Py_InitModule3("_c", c_methods,
-                          "Wrappings of C structures and functions.");
-
-  if (pygrpc_module_add_types(module) < 0) {
-    return;
+static void verifier(grpc_server *server, grpc_completion_queue *cq) {
+  while (grpc_server_has_open_connections(server)) {
+    GPR_ASSERT(grpc_completion_queue_next(
+                   cq, GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20), NULL)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
+}
 
-  if (PyModule_AddStringConstant(
-          module, "PRIMARY_USER_AGENT_KEY",
-          GRPC_ARG_PRIMARY_USER_AGENT_STRING) < 0) {
-    return;
-  }
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
 
-  /* GRPC maintains an internal counter of how many times it has been
-     initialized and handles multiple pairs of grpc_init()/grpc_shutdown()
-     invocations accordingly. */
-  grpc_init();
-  atexit(&grpc_shutdown);
+  /* test adding prioritization data */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x00\x88\x00\x00\x00\x00\x01",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+
+  return 0;
 }
