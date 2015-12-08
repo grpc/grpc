@@ -102,7 +102,7 @@ void test_slice_buffer_move_first() {
   GPR_ASSERT(src.length == src_len);
   GPR_ASSERT(dst.length == dst_len);
 
-  /* src now has two slices ["bb"] and  ["cccc"] */
+  /* src now has two slices ["bbb"] and  ["ccc"] */
   /* Case 2: Move the first slice from src to dst */
   gpr_slice_buffer_move_first(&src, 3, &dst);
   src_len -= 3;
