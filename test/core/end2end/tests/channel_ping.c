@@ -45,10 +45,30 @@ static void *tag(gpr_intptr t) { return (void *)t; }
 static void test_ping(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(NULL, NULL);
   cq_verifier *cqv = cq_verifier_create(f.cq);
+  grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   int i;
 
   config.init_client(&f, NULL);
   config.init_server(&f, NULL);
+
+  grpc_channel_ping(f.client, f.cq, tag(0), NULL);
+  cq_expect_completion(cqv, tag(0), 0);
+
+  /* check that we're still in idle, and start connecting */
+  GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==
+             GRPC_CHANNEL_IDLE);
+  /* we'll go through some set of transitions (some might be missed), until
+     READY is reached */
+  while (state != GRPC_CHANNEL_READY) {
+    grpc_channel_watch_connectivity_state(
+        f.client, state, GRPC_TIMEOUT_SECONDS_TO_DEADLINE(3), f.cq, tag(99));
+    cq_expect_completion(cqv, tag(99), 1);
+    cq_verify(cqv);
+    state = grpc_channel_check_connectivity_state(f.client, 0);
+    GPR_ASSERT(state == GRPC_CHANNEL_READY ||
+               state == GRPC_CHANNEL_CONNECTING ||
+               state == GRPC_CHANNEL_TRANSIENT_FAILURE);
+  }
 
   for (i = 1; i <= 5; i++) {
     grpc_channel_ping(f.client, f.cq, tag(i), NULL);

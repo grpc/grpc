@@ -901,6 +901,25 @@ static void send_ping_locked(grpc_chttp2_transport *t, grpc_closure *on_recv) {
   gpr_slice_buffer_add(&t->global.qbuf, grpc_chttp2_ping_create(0, p->id));
 }
 
+void grpc_chttp2_ack_ping(grpc_exec_ctx *exec_ctx, 
+                                 grpc_chttp2_transport_parsing *transport_parsing,
+                                 const gpr_uint8 *opaque_8bytes) {
+  grpc_chttp2_outstanding_ping *ping;
+  grpc_chttp2_transport *t = TRANSPORT_FROM_PARSING(transport_parsing);
+  grpc_chttp2_transport_global *transport_global = &t->global;
+  lock(t);
+  for (ping = transport_global->pings.next;
+       ping != &transport_global->pings; ping = ping->next) {
+    if (0 == memcmp(opaque_8bytes, ping->id, 8)) {
+      grpc_exec_ctx_enqueue(exec_ctx, ping->on_recv, 1);
+    }
+    ping->next->prev = ping->prev;
+    ping->prev->next = ping->next;
+    gpr_free(ping);
+  }
+  unlock(exec_ctx, t);
+}
+
 static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
                                  grpc_transport_op *op) {
   grpc_chttp2_transport *t = (grpc_chttp2_transport *)gt;
