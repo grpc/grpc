@@ -927,7 +927,8 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_metadata_credentials_notify_from_plugin(
 }
 
 typedef void(GPR_CALLTYPE *grpcsharp_metadata_interceptor_func)(
-  void *state, const char *service_url, grpc_credentials_plugin_metadata_cb cb,
+  void *state, const char *service_url, const char *method_name,
+  grpc_credentials_plugin_metadata_cb cb,
   void *user_data, gpr_int32 is_destroy);
 
 static void grpcsharp_get_metadata_handler(
@@ -935,13 +936,13 @@ static void grpcsharp_get_metadata_handler(
     grpc_credentials_plugin_metadata_cb cb, void *user_data) {
   grpcsharp_metadata_interceptor_func interceptor =
       (grpcsharp_metadata_interceptor_func)(gpr_intptr)state;
-  interceptor(state, context.service_url, cb, user_data, 0);
+  interceptor(state, context.service_url, context.method_name, cb, user_data, 0);
 }
 
 static void grpcsharp_metadata_credentials_destroy_handler(void *state) {
   grpcsharp_metadata_interceptor_func interceptor =
       (grpcsharp_metadata_interceptor_func)(gpr_intptr)state;
-  interceptor(state, NULL, NULL, NULL, 1);
+  interceptor(state, NULL, NULL, NULL, NULL, 1);
 }
 
 GPR_EXPORT grpc_call_credentials *GPR_CALLTYPE grpcsharp_metadata_credentials_create_from_plugin(
