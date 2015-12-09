@@ -31,14 +31,25 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_NOOP_FILTER_H
-#define GRPC_INTERNAL_CORE_CHANNEL_NOOP_FILTER_H
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include "src/core/client_config/resolver_registry.h"
+#include "test/core/util/test_config.h"
 
-#include "src/core/channel/channel_stack.h"
+void test_unknown_scheme_target(void) {
+  grpc_channel *chan;
+  /* avoid default prefix */
+  grpc_resolver_registry_shutdown();
+  grpc_resolver_registry_init("");
 
-/* No-op filter: simply takes everything it's given, and passes it on to the
-   next filter. Exists simply as a starting point that others can take and
-   customize for their own filters */
-extern const grpc_channel_filter grpc_no_op_filter;
+  chan = grpc_insecure_channel_create("blah://blah", NULL, NULL);
+  GPR_ASSERT(chan == NULL);
+}
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_NOOP_FILTER_H */
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  grpc_init();
+  test_unknown_scheme_target();
+  grpc_shutdown();
+  return 0;
+}

@@ -96,6 +96,10 @@ int main(int argc, char **argv) {
                            0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
                            "\x00\x00\x05\x01\x24\x00\x00\x00\x01"
+                           "",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x05\x01\x24\x00\x00\x00\x01"
                            "\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
@@ -173,7 +177,49 @@ int main(int argc, char **argv) {
                            0);
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
                            "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
+                           "\xff",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
+                           "\xff\x80",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
+                           "\xff\x80\x80",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
+                           "\xff\x80\x80\x80",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
+                           "\xff\x80\x80\x80\x80",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
+                           "\xff\x80\x80\x80\x80\x80",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
+                           "\xff\x80\x80\x80\x80\x80\x80",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
                            "\xff\x80\x80\x80\x80\x80\x80\x00",
+                           0);
+  /* overflow on byte 4 */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x06\x01\x04\x00\x00\x00\x01"
+                           "\xff\x80\x80\x80\x80\x7f",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x06\x01\x04\x00\x00\x00\x01"
+                           "\xff\xff\xff\xff\xff\x0f",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  /* overflow after byte 4 */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x08\x01\x04\x00\x00\x00\x01"
+                           "\xff\x80\x80\x80\x80\x80\x80\x02",
                            0);
   /* end of headers mid-opcode */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
@@ -187,10 +233,21 @@ int main(int argc, char **argv) {
                            "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
                            "\x3f\xe1\x1f",
                            GRPC_BAD_CLIENT_DISCONNECT);
+  /* dynamic table size update: set too large */
   GRPC_RUN_BAD_CLIENT_TEST(verifier,
                            PFX_STR 
                            "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
                            "\x3f\xf1\x1f",
+                           0);
+  /* dynamic table size update: set twice */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x04\x01\x04\x00\x00\x00\x01"
+                           "\x20\x3f\xe1\x1f",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  /* dynamic table size update: set thrice */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x03\x01\x04\x00\x00\x00\x01"
+                           "\x20\x20\x20",
                            0);
 
   /* non-ending header followed by continuation frame */
@@ -205,16 +262,47 @@ int main(int argc, char **argv) {
                            "\x00\x00\x00\x01\x00\x00\x00\x00\x01"
                            "\x00\x00\x00\x00\x04\x00\x00\x00\x01",
                            0);
+  /* non-ending header followed by a continuation frame for a different stream */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x00\x01\x04\x00\x00\x00\x01"
+                           "\x00\x00\x00\x01\x00\x00\x00\x00\x03"
+                           "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
+                           0);
   /* opening with a continuation frame */
   GRPC_RUN_BAD_CLIENT_TEST(verifier,
                            PFX_STR 
                            "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
                            0);
+  /* three header frames */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x00\x01\x04\x00\x00\x00\x01"
+                           "\x00\x00\x00\x01\x04\x00\x00\x00\x01"
+                           "\x00\x00\x00\x01\x04\x00\x00\x00\x01",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+
 
   /* an invalid header found with fuzzing */
   GRPC_RUN_BAD_CLIENT_TEST(verifier,
                            PFX_STR 
                            "\x00\x00\x00\x01\x39\x67\xed\x1d\x64",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+
+  /* a badly encoded timeout value */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x19\x01\x04\x00\x00\x00\x01"
+                           "\x10\x0cgrpc-timeout\x0a"
+                           "15 seconds",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  /* a badly encoded timeout value: twice (catches caching) */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x19\x01\x04\x00\x00\x00\x01"
+                           "\x10\x0cgrpc-timeout\x0a"
+                           "15 seconds"
+                           "\x00\x00\x19\x01\x04\x00\x00\x00\x03"
+                           "\x10\x0cgrpc-timeout\x0a"
+                           "15 seconds",
                            GRPC_BAD_CLIENT_DISCONNECT);
 
   return 0;
