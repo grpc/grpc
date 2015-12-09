@@ -153,9 +153,8 @@ void gpr_reverse_bytes(char *str, int len) {
 }
 
 int gpr_ltoa(long value, char *string) {
-  unsigned long uval;
+  long sign;
   int i = 0;
-  int neg = value < 0;
 
   if (value == 0) {
     string[0] = '0';
@@ -163,25 +162,20 @@ int gpr_ltoa(long value, char *string) {
     return 1;
   }
 
-  if (neg) {
-    uval = (unsigned long)-value;
-  } else {
-    uval = (unsigned long)value;
+  sign = value < 0 ? -1 : 1;
+  while (value) {
+    string[i++] = (char)('0' + sign * (value % 10));
+    value /= 10;
   }
-  while (uval) {
-    string[i++] = (char)('0' + uval % 10);
-    uval /= 10;
-  }
-  if (neg) string[i++] = '-';
+  if (sign < 0) string[i++] = '-';
   gpr_reverse_bytes(string, i);
   string[i] = 0;
   return i;
 }
 
 int gpr_int64toa(gpr_int64 value, char *string) {
-  gpr_uint64 uval;
+  gpr_int64 sign;
   int i = 0;
-  int neg = value < 0;
 
   if (value == 0) {
     string[0] = '0';
@@ -189,16 +183,12 @@ int gpr_int64toa(gpr_int64 value, char *string) {
     return 1;
   }
 
-  if (neg) {
-    uval = (gpr_uint64)-value;
-  } else {
-    uval = (gpr_uint64)value;
+  sign = value < 0 ? -1 : 1;
+  while (value) {
+    string[i++] = (char)('0' + sign * (value % 10));
+    value /= 10;
   }
-  while (uval) {
-    string[i++] = (char)('0' + uval % 10);
-    uval /= 10;
-  }
-  if (neg) string[i++] = '-';
+  if (sign < 0) string[i++] = '-';
   gpr_reverse_bytes(string, i);
   string[i] = 0;
   return i;
