@@ -809,6 +809,14 @@ libs:
   - winsock
   - global
 targets:
+- name: alloc_test
+  build: test
+  language: c
+  src:
+  - test/core/support/alloc_test.c
+  deps:
+  - gpr_test_util
+  - gpr
 - name: alpn_test
   build: test
   language: c
