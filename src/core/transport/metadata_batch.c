@@ -133,16 +133,6 @@ void grpc_metadata_batch_link_tail(grpc_metadata_batch *batch,
   link_tail(&batch->list, storage);
 }
 
-void grpc_metadata_batch_merge(grpc_metadata_batch *target,
-                               grpc_metadata_batch *to_add) {
-  grpc_linked_mdelem *l;
-  grpc_linked_mdelem *next;
-  for (l = to_add->list.head; l; l = next) {
-    next = l->next;
-    link_tail(&target->list, l);
-  }
-}
-
 void grpc_metadata_batch_move(grpc_metadata_batch *dst,
                               grpc_metadata_batch *src) {
   *dst = *src;
