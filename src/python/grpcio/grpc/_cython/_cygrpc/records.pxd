@@ -66,6 +66,7 @@ cdef class Event:
   cdef readonly call.Call operation_call
 
   # For Server.request_call
+  cdef readonly bint is_new_request
   cdef readonly CallDetails request_call_details
   cdef readonly Metadata request_metadata
 
