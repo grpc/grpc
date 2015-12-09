@@ -43,7 +43,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/channel/channel_stack.h"
-#include "src/core/channel/noop_filter.h"
 #include "src/core/statistics/census_interface.h"
 #include "src/core/statistics/census_rpc_stats.h"
 #include "src/core/transport/static_metadata.h"
