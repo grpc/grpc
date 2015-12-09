@@ -31,12 +31,13 @@
  *
  */
 
-#include <grpc/grpc.h>
+#include <string.h>
 
-#include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "test/core/end2end/cq_verifier.h"
+#include "test/core/util/test_config.h"
 
 static void *tag(gpr_intptr x) { return (void *)x; }
 
@@ -47,21 +48,25 @@ int main(int argc, char **argv) {
   cq_verifier *cqv;
   grpc_op ops[6];
   grpc_op *op;
+  grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_status_code status;
   grpc_call_error error;
   char *details = NULL;
   size_t details_capacity = 0;
+  char *peer;
 
   grpc_test_init(argc, argv);
   grpc_init();
 
+  grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
 
   chan = grpc_lame_client_channel_create(
       "lampoon:national", GRPC_STATUS_UNKNOWN, "Rpc sent on a lame channel.");
   GPR_ASSERT(chan);
   cq = grpc_completion_queue_create(NULL);
+
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
                                   "/Foo", "anywhere",
                                   GRPC_TIMEOUT_SECONDS_TO_DEADLINE(100), NULL);
@@ -71,6 +76,11 @@ int main(int argc, char **argv) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = NULL;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata = &initial_metadata_recv;
   op->flags = 0;
   op->reserved = NULL;
   op++;
@@ -89,11 +99,16 @@ int main(int argc, char **argv) {
   cq_expect_completion(cqv, tag(1), 1);
   cq_verify(cqv);
 
+  peer = grpc_call_get_peer(call);
+  GPR_ASSERT(strcmp(peer, "lampoon:national") == 0);
+  gpr_free(peer);
+
   grpc_call_destroy(call);
   grpc_channel_destroy(chan);
   cq_verifier_destroy(cqv);
   grpc_completion_queue_destroy(cq);
 
+  grpc_metadata_array_destroy(&initial_metadata_recv);
   grpc_metadata_array_destroy(&trailing_metadata_recv);
   gpr_free(details);
 
