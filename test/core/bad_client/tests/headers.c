@@ -262,6 +262,13 @@ int main(int argc, char **argv) {
                            "\x00\x00\x00\x01\x00\x00\x00\x00\x01"
                            "\x00\x00\x00\x00\x04\x00\x00\x00\x01",
                            0);
+  /* non-ending header followed by a continuation frame for a different stream */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x00\x01\x04\x00\x00\x00\x01"
+                           "\x00\x00\x00\x01\x00\x00\x00\x00\x03"
+                           "\x00\x00\x00\x09\x04\x00\x00\x00\x01",
+                           GRPC_BAD_CLIENT_DISCONNECT);
   /* opening with a continuation frame */
   GRPC_RUN_BAD_CLIENT_TEST(verifier,
                            PFX_STR 
