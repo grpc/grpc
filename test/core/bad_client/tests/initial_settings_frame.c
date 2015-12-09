@@ -94,7 +94,15 @@ int main(int argc, char **argv) {
   /* some settings values are illegal */
   /* max frame size = 0 */
   GRPC_RUN_BAD_CLIENT_TEST(verifier,
-                           PFX_STR ONE_SETTING_HDR "\x00\x05\x00\x00\x00\x00", GRPC_BAD_CLIENT_DISCONNECT);
+                           PFX_STR ONE_SETTING_HDR "\x00\x05\x00\x00\x00\x00", 
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR ONE_SETTING_HDR "\x00\x06\xff\xff\xff\xff", 
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  /* update intiial window size */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR ONE_SETTING_HDR "\x00\x04\x00\x01\x00\x00", 
+                           GRPC_BAD_CLIENT_DISCONNECT);
 
   return 0;
 }

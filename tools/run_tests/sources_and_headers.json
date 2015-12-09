@@ -4,6 +4,18 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "alloc_test", 
+    "src": [
+      "test/core/support/alloc_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
@@ -14475,7 +14487,6 @@
       "src/core/channel/context.h", 
       "src/core/channel/http_client_filter.h", 
       "src/core/channel/http_server_filter.h", 
-      "src/core/channel/noop_filter.h", 
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.h", 
@@ -14630,8 +14641,6 @@
       "src/core/channel/http_client_filter.h", 
       "src/core/channel/http_server_filter.c", 
       "src/core/channel/http_server_filter.h", 
-      "src/core/channel/noop_filter.c", 
-      "src/core/channel/noop_filter.h", 
       "src/core/channel/subchannel_call_holder.c", 
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.c", 
@@ -14987,7 +14996,6 @@
       "src/core/channel/context.h", 
       "src/core/channel/http_client_filter.h", 
       "src/core/channel/http_server_filter.h", 
-      "src/core/channel/noop_filter.h", 
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.h", 
@@ -15128,8 +15136,6 @@
       "src/core/channel/http_client_filter.h", 
       "src/core/channel/http_server_filter.c", 
       "src/core/channel/http_server_filter.h", 
-      "src/core/channel/noop_filter.c", 
-      "src/core/channel/noop_filter.h", 
       "src/core/channel/subchannel_call_holder.c", 
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.c", 
