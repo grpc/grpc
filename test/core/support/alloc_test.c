@@ -31,42 +31,44 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_ALLOC_H
-#define GRPC_SUPPORT_ALLOC_H
+#include <grpc/support/log.h>
+#include <grpc/support/alloc.h>
+#include "test/core/util/test_config.h"
 
-#include <stddef.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct gpr_allocation_functions {
- void *(*malloc_fn)(size_t size);
- void *(*realloc_fn)(void *ptr, size_t size);
- void (*free_fn)(void *ptr);
-} gpr_allocation_functions;
-
-/* malloc, never returns NULL */
-void *gpr_malloc(size_t size);
-/* free */
-void gpr_free(void *ptr);
-/* realloc, never returns NULL */
-void *gpr_realloc(void *p, size_t size);
-/* aligned malloc, never returns NULL, will align to 1 << alignment_log */
-void *gpr_malloc_aligned(size_t size, size_t alignment_log);
-/* free memory allocated by gpr_malloc_aligned */
-void gpr_free_aligned(void *ptr);
-
-/** Request the family of allocation functions in \a functions be used. NOTE
- * that this request will be honored in a *best effort* basis and that no
- * guarantees are made about the default functions (eg, malloc) being called. */
-void gpr_set_allocation_functions(gpr_allocation_functions functions);
-
-/** Return the family of allocation functions currently in effect. */
-gpr_allocation_functions gpr_get_allocation_functions();
-
-#ifdef __cplusplus
+static void *fake_malloc(size_t size) {
+  return (void*)size;
 }
-#endif
 
-#endif /* GRPC_SUPPORT_ALLOC_H */
+static void *fake_realloc(void *addr, size_t size) {
+  return (void*)size;
+}
+
+static void fake_free(void *addr) {
+  *((gpr_intptr*)addr) = 0xdeadd00d;
+}
+
+static void test_custom_allocs() {
+  const gpr_allocation_functions default_fns = gpr_get_allocation_functions();
+  gpr_intptr addr_to_free = 0;
+  int *i;
+  gpr_allocation_functions fns = {fake_malloc, fake_realloc, fake_free};
+
+  gpr_set_allocation_functions(fns);
+  GPR_ASSERT((void*)0xdeadbeef == gpr_malloc(0xdeadbeef));
+  GPR_ASSERT((void*)0xcafed00d == gpr_realloc(0, 0xcafed00d));
+
+  gpr_free(&addr_to_free);
+  GPR_ASSERT(addr_to_free == 0xdeadd00d);
+
+  /* Restore and check we don't get funky values and that we don't leak */
+  gpr_set_allocation_functions(default_fns);
+  GPR_ASSERT((void*)1 != (i = gpr_malloc(sizeof(*i))));
+  GPR_ASSERT((void*)2 != (i = gpr_realloc(i, 2)));
+  gpr_free(i);
+}
+
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  test_custom_allocs();
+  return 0;
+}
