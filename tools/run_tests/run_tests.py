@@ -155,7 +155,7 @@ class CLanguage(object):
         out.append(config.job_spec([binary], [binary],
                                    environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
                                             os.path.abspath(os.path.dirname(
-                                                sys.argv[0]) + '/../../etc')}))
+                                                sys.argv[0]) + '/../../src/core/tsi/test_creds/ca.pem')}))
       elif args.regex == '.*' or platform_string() == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
