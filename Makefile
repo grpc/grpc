@@ -4542,7 +4542,6 @@ LIBGRPC_SRC = \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
     src/core/channel/http_server_filter.c \
-    src/core/channel/noop_filter.c \
     src/core/channel/subchannel_call_holder.c \
     src/core/client_config/client_config.c \
     src/core/client_config/connector.c \
@@ -4825,7 +4824,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
     src/core/channel/http_server_filter.c \
-    src/core/channel/noop_filter.c \
     src/core/channel/subchannel_call_holder.c \
     src/core/client_config/client_config.c \
     src/core/client_config/connector.c \
