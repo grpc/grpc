@@ -47,6 +47,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "channel_create_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "chttp2_hpack_encoder_test", 
     "platforms": [
       "linux", 
