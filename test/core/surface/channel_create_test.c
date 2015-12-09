@@ -31,13 +31,25 @@
  *
  */
 
-#include "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h"
-#include "src/core/client_config/subchannel_factory_decorators/merge_channel_args.h"
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include "src/core/client_config/resolver_registry.h"
+#include "test/core/util/test_config.h"
 
-grpc_subchannel_factory *grpc_subchannel_factory_add_channel_arg(
-    grpc_subchannel_factory *input, const grpc_arg *arg) {
-  grpc_channel_args args;
-  args.num_args = 1;
-  args.args = (grpc_arg *)arg;
-  return grpc_subchannel_factory_merge_channel_args(input, &args);
+void test_unknown_scheme_target(void) {
+  grpc_channel *chan;
+  /* avoid default prefix */
+  grpc_resolver_registry_shutdown();
+  grpc_resolver_registry_init("");
+
+  chan = grpc_insecure_channel_create("blah://blah", NULL, NULL);
+  GPR_ASSERT(chan == NULL);
+}
+
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  grpc_init();
+  test_unknown_scheme_target();
+  grpc_shutdown();
+  return 0;
 }

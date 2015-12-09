@@ -160,7 +160,7 @@ end
 # produces a string of null chars (\0) of length l.
 def nulls(l)
   fail 'requires #{l} to be +ve' if l < 0
-  [].pack('x' * l).force_encoding('utf-8')
+  [].pack('x' * l).force_encoding('ascii-8bit')
 end
 
 # a PingPongPlayer implements the ping pong bidi test.
