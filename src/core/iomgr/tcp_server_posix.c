@@ -464,7 +464,9 @@ grpc_tcp_listener *grpc_tcp_server_add_port(grpc_tcp_server *s,
     addr_len = sizeof(wild6);
     fd = grpc_create_dualstack_socket(addr, SOCK_STREAM, 0, &dsmode);
     sp = add_socket_to_server(s, fd, addr, addr_len);
-    allocated_port = sp->port;
+    if (sp != NULL) {
+      allocated_port = sp->port;
+    }
     if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
       goto done;
     }
