@@ -31,16 +31,23 @@
 """Run interop (cross-language) tests in parallel."""
 
 import argparse
+import atexit
 import dockerjob
 import itertools
 import jobset
+import json
 import multiprocessing
 import os
+import re
 import report_utils
+import subprocess
 import sys
 import tempfile
 import time
 import uuid
+
+# Docker doesn't clean up after itself, so we do it on exit.
+atexit.register(lambda: subprocess.call(['stty', 'echo']))
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
@@ -513,6 +520,33 @@ def build_interop_image_jobspec(language, tag=None):
   return build_job
 
 
+def aggregate_http2_results(stdout):
+  match = re.search(r'\{"cases[^\]]*\]\}', stdout)
+  if not match:
+    return None
+    
+  results = json.loads(match.group(0))
+  skipped = 0
+  passed = 0
+  failed = 0
+  failed_cases = []
+  for case in results['cases']:
+    if case.get('skipped', False):
+      skipped += 1
+    else:
+      if case.get('passed', False):
+        passed += 1
+      else:
+        failed += 1
+        failed_cases.append(case.get('name', "NONAME"))
+  return {
+    'passed': passed,
+    'failed': failed,
+    'skipped': skipped,
+    'failed_cases': ', '.join(failed_cases),
+    'percent': 1.0 * passed / (passed + failed)
+  }
+
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-l', '--language',
                   choices=['all'] + sorted(_LANGUAGES),
@@ -639,9 +673,7 @@ try:
                                            docker_image=docker_images.get(str(language)))
           jobs.append(test_job)
 
-    # TODO(carl-mastrangelo): Currently prod TLS terminators aren't spec compliant. Reenable
-    # this once a better solution is in place.
-    if args.http2_interop and False:
+    if args.http2_interop:
       for test_case in _HTTP2_TEST_CASES:
         test_job = cloud_to_prod_jobspec(http2Interop, test_case,
                                          docker_image=docker_images.get(str(http2Interop)))
@@ -702,6 +734,10 @@ try:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
   report_utils.render_junit_xml_report(resultset, 'report.xml')
+
+  for name, job in resultset.iteritems():
+    if "http2" in name:
+      job[0].http2results = aggregate_http2_results(job[0].message)
 
   report_utils.render_interop_html_report(
       set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES, 

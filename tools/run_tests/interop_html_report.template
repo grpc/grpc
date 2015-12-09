@@ -40,6 +40,26 @@
   % endif
 </%def>
 
+<%def name="fill_one_http2_test_result(shortname, resultset)">
+    ## keep this mostly in sync with the template above
+  % if shortname in resultset:
+    ## Because interop tests does not have runs_per_test flag, each test is 
+    ## run once. So there should only be one element for each result.
+    <% result = resultset[shortname][0] %>
+    <td bgcolor="white">
+      <div style="width:95%; border: 1px solid black; position: relative; padding: 3px;">
+        <span style="position: absolute; left: 45%;">${int(result.http2results['percent'] * 100)}&#37;</span>
+        <div style="height: 20px; 
+          background-color: hsl(${result.http2results['percent'] * 120}, 100%, 50%); 
+          width: ${result.http2results['percent'] * 100}%;"
+          title="${result.http2results['failed_cases'] | h}"></div>
+      </div>
+    </td>
+  % else:
+     <td bgcolor="magenta">Not implemented</td>
+  % endif
+</%def>
+
 % if num_failures > 1:
   <p><h2><font color="red">${num_failures} tests failed!</font></h2></p>
 % elif num_failures:
@@ -95,11 +115,11 @@
         shortname = 'cloud_to_cloud:http2:%s_server:%s' % (
             server_lang, test_case)
       %>
-      ${fill_one_test_result(shortname, resultset)}
+      ${fill_one_http2_test_result(shortname, resultset)}
     % endfor
     % if cloud_to_prod:
       <% shortname = 'cloud_to_prod:http2:%s' % test_case %>
-      ${fill_one_test_result(shortname, resultset)}
+      ${fill_one_http2_test_result(shortname, resultset)}
     % endif
     </tr>
   % endfor
