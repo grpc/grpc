@@ -84,6 +84,14 @@ int main(int argc, char **argv) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
+  error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), NULL);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  /* the call should immediately fail */
+  cq_expect_completion(cqv, tag(1), 0);
+  cq_verify(cqv);
+
+  op = ops;
   op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
   op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
   op->data.recv_status_on_client.status = &status;
@@ -92,11 +100,11 @@ int main(int argc, char **argv) {
   op->flags = 0;
   op->reserved = NULL;
   op++;
-  error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(1), NULL);
+  error = grpc_call_start_batch(call, ops, (size_t)(op - ops), tag(2), NULL);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the call should immediately fail */
-  cq_expect_completion(cqv, tag(1), 1);
+  cq_expect_completion(cqv, tag(2), 1);
   cq_verify(cqv);
 
   peer = grpc_call_get_peer(call);
