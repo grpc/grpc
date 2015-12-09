@@ -43,6 +43,7 @@ BAD_CLIENT_TESTS = {
     'connection_prefix': default_test_options,
     'headers': default_test_options,
     'initial_settings_frame': default_test_options,
+    'simple_request': default_test_options,
     'unknown_frame': default_test_options,
 }
 
