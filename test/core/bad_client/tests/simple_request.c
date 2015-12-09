@@ -85,8 +85,18 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq) {
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
-  /* partial http2 header prefixes */
+  /* basic request: check that things are working */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR, 0);
+
+  /* push an illegal data frame */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x05\x00\x00\x00\x00\x00\x01"
+                           "\x34\x00\x00\x00\x00",
+                           0);
+
+  /* push a data frame with bad flags */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR "\x00\x00\x00\x00\x02\x00\x00\x00\x01", 0);
 
   return 0;
 }
