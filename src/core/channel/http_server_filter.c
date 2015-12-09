@@ -124,7 +124,6 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
        omitted */
     grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
         GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
-    GRPC_MDELEM_UNREF(md);
     calld->seen_authority = 1;
     return authority;
   } else {
