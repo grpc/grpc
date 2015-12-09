@@ -9,3 +9,5 @@ content-type: application/grpc+this-is-valid
 grpc-accept-encoding: deflate,identity,gzip
 te: trailers
 user-agent: bad-client grpc-c/0.12.0.0 (linux)
+grpc-timeout: 10S
+grpc-timeout: 5S
