@@ -164,9 +164,9 @@ int gpr_ltoa(long value, char *string) {
   }
 
   if (neg) {
-    uval = -value;
+    uval = (unsigned long)-value;
   } else {
-    uval = value;
+    uval = (unsigned long)value;
   }
   while (uval) {
     string[i++] = (char)('0' + uval % 10);
@@ -190,9 +190,9 @@ int gpr_int64toa(gpr_int64 value, char *string) {
   }
 
   if (neg) {
-    uval = -value;
+    uval = (gpr_uint64)-value;
   } else {
-    uval = value;
+    uval = (gpr_uint64)value;
   }
   while (uval) {
     string[i++] = (char)('0' + uval % 10);
