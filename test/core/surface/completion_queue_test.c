@@ -188,6 +188,64 @@ static void test_pluck_after_shutdown(void) {
   grpc_completion_queue_destroy(cc);
 }
 
+struct thread_state {
+  grpc_completion_queue *cc;
+  void *tag;
+};
+
+static void pluck_one(void *arg) {
+  struct thread_state *state = arg;
+  grpc_completion_queue_pluck(state->cc, state->tag,
+                              gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+}
+
+static void test_too_many_plucks(void) {
+  grpc_event ev;
+  grpc_completion_queue *cc;
+  void *tags[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
+  grpc_cq_completion completions[GPR_ARRAY_SIZE(tags)];
+  gpr_thd_id thread_ids[GPR_ARRAY_SIZE(tags)];
+  struct thread_state thread_states[GPR_ARRAY_SIZE(tags)];
+  gpr_thd_options thread_options = gpr_thd_options_default();
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  unsigned i, j;
+
+  LOG_TEST("test_too_many_plucks");
+
+  cc = grpc_completion_queue_create(NULL);
+  gpr_thd_options_set_joinable(&thread_options);
+
+  for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
+    tags[i] = create_test_tag();
+    for (j = 0; j < i; j++) {
+      GPR_ASSERT(tags[i] != tags[j]);
+    }
+    thread_states[i].cc = cc;
+    thread_states[i].tag = tags[i];
+    gpr_thd_new(thread_ids + i, pluck_one, thread_states + i, &thread_options);
+  }
+
+  /* wait until all other threads are plucking */
+  gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100));
+
+  ev = grpc_completion_queue_pluck(cc, create_test_tag(),
+                                   gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
+
+  for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
+    grpc_cq_begin_op(cc);
+    grpc_cq_end_op(&exec_ctx, cc, tags[i], 1, do_nothing_end_completion, NULL,
+                   &completions[i]);
+  }
+
+  for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
+    gpr_thd_join(thread_ids[i]);
+  }
+
+  shutdown_and_destroy(cc);
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 #define TEST_THREAD_EVENTS 10000
 
 typedef struct test_thread_options {
@@ -357,6 +415,7 @@ int main(int argc, char **argv) {
   test_cq_end_op();
   test_pluck();
   test_pluck_after_shutdown();
+  test_too_many_plucks();
   test_threading(1, 1);
   test_threading(1, 10);
   test_threading(10, 1);
