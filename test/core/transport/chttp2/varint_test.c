@@ -38,7 +38,9 @@
 
 #include "test/core/util/test_config.h"
 
-static void test_varint(gpr_uint32 value, int prefix_bits, gpr_uint8 prefix_or, const char *expect_bytes, size_t expect_length) {
+static void test_varint(gpr_uint32 value, gpr_uint32 prefix_bits,
+                        gpr_uint8 prefix_or, const char *expect_bytes,
+                        size_t expect_length) {
   gpr_uint32 nbytes = GRPC_CHTTP2_VARINT_LENGTH(value, prefix_bits);
   gpr_slice expect = gpr_slice_from_copied_buffer(expect_bytes, expect_length);
   gpr_slice slice;
