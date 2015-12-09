@@ -1058,6 +1058,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "transport_connectivity_state_test", 
+    "src": [
+      "test/core/transport/connectivity_state_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "transport_metadata_test", 
     "src": [
       "test/core/transport/metadata_test.c"
