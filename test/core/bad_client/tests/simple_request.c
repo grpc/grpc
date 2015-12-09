@@ -58,7 +58,7 @@
 #define PFX_STR_UNUSUAL                                                    \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */              \
-  "\x00\x00\xd1\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
+  "\x00\x00\xf4\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
                                             simple_request_unusual.headers \
                                             in this directory */           \
   "\x10\x05:path\x08/foo/bar"                                              \
@@ -68,7 +68,9 @@
   "\x10\x0c""content-type\x1e""application/grpc+this-is-valid"             \
   "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"                  \
   "\x10\x02te\x08trailers"                                                 \
-  "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
+  "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"                 \
+  "\x10\x0cgrpc-timeout\x03""10S"                                          \
+  "\x10\x0cgrpc-timeout\x02""5S"
 
 static void *tag(gpr_intptr t) { return (void *)t; }
 
