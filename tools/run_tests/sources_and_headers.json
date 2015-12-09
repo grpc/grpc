@@ -80,6 +80,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "chttp2_varint_test", 
+    "src": [
+      "test/core/transport/chttp2/varint_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "compression_test", 
     "src": [
       "test/core/compression/compression_test.c"
@@ -14436,8 +14450,6 @@
       "src/core/client_config/resolvers/sockaddr_resolver.h", 
       "src/core/client_config/subchannel.h", 
       "src/core/client_config/subchannel_factory.h", 
-      "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h", 
-      "src/core/client_config/subchannel_factory_decorators/merge_channel_args.h", 
       "src/core/client_config/uri_parser.h", 
       "src/core/compression/algorithm_metadata.h", 
       "src/core/compression/message_compress.h", 
@@ -14611,10 +14623,6 @@
       "src/core/client_config/subchannel.h", 
       "src/core/client_config/subchannel_factory.c", 
       "src/core/client_config/subchannel_factory.h", 
-      "src/core/client_config/subchannel_factory_decorators/add_channel_arg.c", 
-      "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h", 
-      "src/core/client_config/subchannel_factory_decorators/merge_channel_args.c", 
-      "src/core/client_config/subchannel_factory_decorators/merge_channel_args.h", 
       "src/core/client_config/uri_parser.c", 
       "src/core/client_config/uri_parser.h", 
       "src/core/compression/algorithm.c", 
@@ -14954,8 +14962,6 @@
       "src/core/client_config/resolvers/sockaddr_resolver.h", 
       "src/core/client_config/subchannel.h", 
       "src/core/client_config/subchannel_factory.h", 
-      "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h", 
-      "src/core/client_config/subchannel_factory_decorators/merge_channel_args.h", 
       "src/core/client_config/uri_parser.h", 
       "src/core/compression/algorithm_metadata.h", 
       "src/core/compression/message_compress.h", 
@@ -15115,10 +15121,6 @@
       "src/core/client_config/subchannel.h", 
       "src/core/client_config/subchannel_factory.c", 
       "src/core/client_config/subchannel_factory.h", 
-      "src/core/client_config/subchannel_factory_decorators/add_channel_arg.c", 
-      "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h", 
-      "src/core/client_config/subchannel_factory_decorators/merge_channel_args.c", 
-      "src/core/client_config/subchannel_factory_decorators/merge_channel_args.h", 
       "src/core/client_config/uri_parser.c", 
       "src/core/client_config/uri_parser.h", 
       "src/core/compression/algorithm.c", 
