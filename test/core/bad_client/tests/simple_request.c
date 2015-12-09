@@ -32,15 +32,18 @@
  */
 
 #include "test/core/bad_client/bad_client.h"
+
+#include <string.h>
+
 #include "test/core/end2end/cq_verifier.h"
 #include "src/core/surface/server.h"
 
 #define PFX_STR                                                            \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"     /* settings frame */              \
-  "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* headers: generated from        \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
+  "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */              \
+  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
                                             simple_request.headers in this \
                                             directory */                   \
-  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01"                                   \
   "\x10\x05:path\x08/foo/bar"                                              \
   "\x10\x07:scheme\x04http"                                                \
   "\x10\x07:method\x04POST"                                                \
@@ -69,6 +72,9 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq) {
   GPR_ASSERT(GRPC_CALL_OK == error);
   cq_expect_completion(cqv, tag(101), 1);
   cq_verify(cqv);
+
+  GPR_ASSERT(0 == strcmp(call_details.host, "localhost"));
+  GPR_ASSERT(0 == strcmp(call_details.method, "/foo/bar"));
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
