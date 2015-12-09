@@ -3,6 +3,38 @@ using System.Runtime.InteropServices;
 
 namespace Grpc.Core.Internal
 {
+    /// <summary>
+    /// Platform invocation dispatch
+    /// </summary>
+    internal static class PlatformInvocation
+    {
+        /// <summary>
+        /// Retrieve an implementation of platform invocations specific to the current cpu's architecture.
+        /// This allows assemblies to function correctly when compiled for AnyCPU
+        /// </summary>
+        internal static IPlatformInvocation Implementation { get; private set; }
+
+        static PlatformInvocation()
+        {
+            const string reasonTemplate = "{0} bindings are not available.";
+
+            switch (Environment.OSVersion.Platform)
+            {
+                case PlatformID.MacOSX:
+                case PlatformID.Unix:
+                    Implementation = new PlatformInvocationLinux();
+                    break;
+
+                case PlatformID.Xbox:
+                    throw new NotSupportedException(String.Format(reasonTemplate, "XBox"));
+
+                default:
+                    Implementation = Environment.Is64BitProcess ? (IPlatformInvocation)new PlatformInvocationWin64() : new PlatformInvocationWin32();
+                    break;
+            }
+        }
+    }
+
     internal interface IPlatformInvocation
     {
         // Environment 
@@ -222,37 +254,4 @@ namespace Grpc.Core.Internal
         int gprsharp_sizeof_timespec();
 
     }
-
-    /// <summary>
-    /// Platform invocation dispatch
-    /// </summary>
-    internal static class PlatformInvocation
-    {
-        /// <summary>
-        /// Retrieve an implementation of platform invocations specific to the current cpu's architecture.
-        /// This allows assemblies to function correctly when compiled for AnyCPU
-        /// </summary>
-        internal static IPlatformInvocation Implementation { get; private set; }
-
-        static PlatformInvocation()
-        {
-            const string reasonTemplate = "{0} bindings are not available.";
-
-            switch (Environment.OSVersion.Platform)
-            {
-                case PlatformID.MacOSX:
-                case PlatformID.Unix:
-                    Implementation = new PlatformInvocationLinux();
-                    break;
-
-                case PlatformID.Xbox:
-                    throw new NotSupportedException(String.Format(reasonTemplate, "XBox"));
-
-                default:
-                    Implementation = Environment.Is64BitProcess ? (IPlatformInvocation)new PlatformInvocationWin64() : new PlatformInvocationWin32();
-                    break;
-            }
-        }
-    }
-
 }
