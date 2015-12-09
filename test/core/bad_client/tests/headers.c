@@ -274,5 +274,21 @@ int main(int argc, char **argv) {
                            "\x00\x00\x00\x01\x39\x67\xed\x1d\x64",
                            GRPC_BAD_CLIENT_DISCONNECT);
 
+  /* a badly encoded timeout value */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x19\x01\x04\x00\x00\x00\x01"
+                           "\x10\x0cgrpc-timeout\x0a"
+                           "15 seconds",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+  /* a badly encoded timeout value: twice (catches caching) */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, PFX_STR
+                           "\x00\x00\x19\x01\x04\x00\x00\x00\x01"
+                           "\x10\x0cgrpc-timeout\x0a"
+                           "15 seconds"
+                           "\x00\x00\x19\x01\x04\x00\x00\x00\x03"
+                           "\x10\x0cgrpc-timeout\x0a"
+                           "15 seconds",
+                           GRPC_BAD_CLIENT_DISCONNECT);
+
   return 0;
 }
