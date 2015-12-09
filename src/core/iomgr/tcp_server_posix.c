@@ -486,7 +486,7 @@ grpc_tcp_listener *grpc_tcp_server_add_port(grpc_tcp_server *s,
     addr_len = sizeof(addr4_copy);
   }
   sp = add_socket_to_server(s, fd, addr, addr_len);
-  sp->sibling = sp2;
+  if (sp) sp->sibling = sp2;
   if (sp2) sp2->is_sibling = 1;
 
 done:
