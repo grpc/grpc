@@ -51,7 +51,7 @@
   "\x10\x0c"                                                               \
   "content-type\x10"                                                       \
   "application/grpc"                                                       \
-  "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"                  \
+  "\x10\x14grpc-accept-encoding\x15""deflate,identity,gzip"                \
   "\x10\x02te\x08trailers"                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
