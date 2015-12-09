@@ -38,6 +38,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "channel_create_test", 
+    "src": [
+      "test/core/surface/channel_create_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "chttp2_hpack_encoder_test", 
     "src": [
       "test/core/transport/chttp2/hpack_encoder_test.c"

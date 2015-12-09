@@ -831,6 +831,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: channel_create_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/channel_create_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: chttp2_hpack_encoder_test
   build: test
   language: c
