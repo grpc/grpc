@@ -286,7 +286,7 @@ static void test_strsplit(void) {
   gpr_free(parts);
 }
 
-test_ltoa() {
+static void test_ltoa() {
   char *str;
   char buf[GPR_LTOA_MIN_BUFSIZE];
 
@@ -311,7 +311,7 @@ test_ltoa() {
   gpr_free(str);
 }
 
-test_int64toa() {
+static void test_int64toa() {
   char buf[GPR_INT64TOA_MIN_BUFSIZE];
 
   LOG_TEST_NAME("test_int64toa");
