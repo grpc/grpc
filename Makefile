@@ -777,6 +777,7 @@ systemtap_dep_error:
 stop:
 	@false
 
+alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
@@ -1882,6 +1883,7 @@ endif
 buildtests: buildtests_c buildtests_cxx buildtests_zookeeper
 
 buildtests_c: privatelibs_c \
+  $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
   $(BINDIR)/$(CONFIG)/channel_create_test \
@@ -2866,6 +2868,8 @@ test: test_c test_cxx test_zookeeper
 flaky_test: flaky_test_c flaky_test_cxx flaky_test_zookeeper
 
 test_c: buildtests_c
+	$(E) "[RUN]     Testing alloc_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alloc_test || ( echo test alloc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alpn_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
@@ -5523,7 +5527,6 @@ LIBGRPC_SRC = \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
     src/core/channel/http_server_filter.c \
-    src/core/channel/noop_filter.c \
     src/core/channel/subchannel_call_holder.c \
     src/core/client_config/client_config.c \
     src/core/client_config/connector.c \
@@ -5806,7 +5809,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/channel/connected_channel.c \
     src/core/channel/http_client_filter.c \
     src/core/channel/http_server_filter.c \
-    src/core/channel/noop_filter.c \
     src/core/channel/subchannel_call_holder.c \
     src/core/client_config/client_config.c \
     src/core/client_config/connector.c \
@@ -9202,6 +9204,35 @@ endif
 
 
 # All of the test targets, and protoc plugins
+
+
+ALLOC_TEST_SRC = \
+    test/core/support/alloc_test.c \
+
+ALLOC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALLOC_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alloc_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alloc_test: $(ALLOC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(ALLOC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/alloc_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/support/alloc_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_alloc_test: $(ALLOC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALLOC_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 ALPN_TEST_SRC = \
