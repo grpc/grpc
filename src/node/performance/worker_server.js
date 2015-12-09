@@ -31,13 +31,33 @@
  *
  */
 
-#include "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h"
-#include "src/core/client_config/subchannel_factory_decorators/merge_channel_args.h"
+'use strict';
 
-grpc_subchannel_factory *grpc_subchannel_factory_add_channel_arg(
-    grpc_subchannel_factory *input, const grpc_arg *arg) {
-  grpc_channel_args args;
-  args.num_args = 1;
-  args.args = (grpc_arg *)arg;
-  return grpc_subchannel_factory_merge_channel_args(input, &args);
+var worker_service_impl = require('./worker_service_impl');
+
+var grpc = require('../../../');
+var serviceProto = grpc.load({
+  root: __dirname + '/../../..',
+  file: 'test/proto/benchmarks/services.proto'}).grpc.testing;
+
+function runServer(port) {
+  var server_creds = grpc.ServerCredentials.createInsecure();
+  var server = new grpc.Server();
+  server.addProtoService(serviceProto.WorkerService.service,
+                         worker_service_impl);
+  var address = '0.0.0.0:' + port;
+  server.bind(address, server_creds);
+  server.start();
+  return server;
 }
+
+if (require.main === module) {
+  Error.stackTraceLimit = Infinity;
+  var parseArgs = require('minimist');
+  var argv = parseArgs(process.argv, {
+    string: ['driver_port']
+  });
+  runServer(argv.driver_port);
+}
+
+exports.runServer = runServer;

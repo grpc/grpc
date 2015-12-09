@@ -40,7 +40,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/client_config/lb_policy_registry.h"
-#include "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/support/string.h"
 
