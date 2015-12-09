@@ -116,7 +116,6 @@ filegroups:
   - src/core/channel/context.h
   - src/core/channel/http_client_filter.h
   - src/core/channel/http_server_filter.h
-  - src/core/channel/noop_filter.h
   - src/core/channel/subchannel_call_holder.h
   - src/core/client_config/client_config.h
   - src/core/client_config/connector.h
@@ -231,7 +230,6 @@ filegroups:
   - src/core/channel/connected_channel.c
   - src/core/channel/http_client_filter.c
   - src/core/channel/http_server_filter.c
-  - src/core/channel/noop_filter.c
   - src/core/channel/subchannel_call_holder.c
   - src/core/client_config/client_config.c
   - src/core/client_config/connector.c
