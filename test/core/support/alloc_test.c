@@ -31,16 +31,44 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_DECORATORS_ADD_CHANNEL_ARG_H
-#define GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_DECORATORS_ADD_CHANNEL_ARG_H
+#include <grpc/support/log.h>
+#include <grpc/support/alloc.h>
+#include "test/core/util/test_config.h"
 
-#include "src/core/client_config/subchannel_factory.h"
+static void *fake_malloc(size_t size) {
+  return (void*)size;
+}
 
-/** Takes a subchannel factory, returns a new one that mutates incoming
-    channel_args by adding a new argument; ownership of input, arg is retained
-    by the caller. */
-grpc_subchannel_factory *grpc_subchannel_factory_add_channel_arg(
-    grpc_subchannel_factory *input, const grpc_arg *arg);
+static void *fake_realloc(void *addr, size_t size) {
+  return (void*)size;
+}
 
-#endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_FACTORY_DECORATORS_ADD_CHANNEL_ARG_H \
-        */
+static void fake_free(void *addr) {
+  *((gpr_intptr*)addr) = 0xdeadd00d;
+}
+
+static void test_custom_allocs() {
+  const gpr_allocation_functions default_fns = gpr_get_allocation_functions();
+  gpr_intptr addr_to_free = 0;
+  int *i;
+  gpr_allocation_functions fns = {fake_malloc, fake_realloc, fake_free};
+
+  gpr_set_allocation_functions(fns);
+  GPR_ASSERT((void*)0xdeadbeef == gpr_malloc(0xdeadbeef));
+  GPR_ASSERT((void*)0xcafed00d == gpr_realloc(0, 0xcafed00d));
+
+  gpr_free(&addr_to_free);
+  GPR_ASSERT(addr_to_free == 0xdeadd00d);
+
+  /* Restore and check we don't get funky values and that we don't leak */
+  gpr_set_allocation_functions(default_fns);
+  GPR_ASSERT((void*)1 != (i = gpr_malloc(sizeof(*i))));
+  GPR_ASSERT((void*)2 != (i = gpr_realloc(i, 2)));
+  gpr_free(i);
+}
+
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  test_custom_allocs();
+  return 0;
+}

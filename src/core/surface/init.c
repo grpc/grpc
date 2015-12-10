@@ -147,6 +147,7 @@ void grpc_shutdown(void) {
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_resolver_registry_shutdown();
+    grpc_lb_policy_registry_shutdown();
     for (i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].destroy != NULL) {
         g_all_of_the_plugins[i].destroy();

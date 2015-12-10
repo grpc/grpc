@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/support/port_platform.h>
 #include "src/core/support/string.h"
 
 static int round_up(int x, int divisor) {
@@ -57,13 +58,13 @@ static int round_up_to_three_sig_figs(int x) {
 /* encode our minimum viable timeout value */
 static void enc_tiny(char *buffer) { memcpy(buffer, "1n", 3); }
 
-static void enc_ext(char *buffer, long value, char ext) {
-  int n = gpr_ltoa(value, buffer);
+static void enc_ext(char *buffer, gpr_int64 value, char ext) {
+  int n = gpr_int64toa(value, buffer);
   buffer[n] = ext;
   buffer[n + 1] = 0;
 }
 
-static void enc_seconds(char *buffer, long sec) {
+static void enc_seconds(char *buffer, gpr_int64 sec) {
   if (sec % 3600 == 0) {
     enc_ext(buffer, sec / 3600, 'H');
   } else if (sec % 60 == 0) {
