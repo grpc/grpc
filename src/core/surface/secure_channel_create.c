@@ -305,29 +305,22 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   f->master = channel;
   GRPC_CHANNEL_INTERNAL_REF(channel, "subchannel_factory");
   resolver = grpc_resolver_create(target, &f->base);
-  if (!resolver) {
-    grpc_subchannel_factory_unref(&exec_ctx, &f->base);
-    GRPC_SECURITY_CONNECTOR_UNREF(&security_connector->base, "channel_create");
-    grpc_channel_args_destroy(args_copy);
-    if (new_args_from_connector != NULL) {
-      grpc_channel_args_destroy(new_args_from_connector);
-    }
-    GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, channel, "subchannel_factory");
-    grpc_exec_ctx_finish(&exec_ctx);
-    return NULL;
+  if (resolver) {
+    grpc_client_channel_set_resolver(
+        &exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
+    GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "create");
   }
-
-  grpc_client_channel_set_resolver(
-      &exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
-  GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "create");
   grpc_subchannel_factory_unref(&exec_ctx, &f->base);
   GRPC_SECURITY_CONNECTOR_UNREF(&security_connector->base, "channel_create");
-
   grpc_channel_args_destroy(args_copy);
   if (new_args_from_connector != NULL) {
     grpc_channel_args_destroy(new_args_from_connector);
   }
 
+  if (!resolver) {
+    GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, channel, "subchannel_factory");
+    channel = NULL;
+  }
   grpc_exec_ctx_finish(&exec_ctx);
 
   return channel;
