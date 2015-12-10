@@ -48,6 +48,15 @@ static void must_succeed(grpc_exec_ctx *exec_ctx, void *p, int success) {
   gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
 }
 
+static void test_ref_unref(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_workqueue *wq = grpc_workqueue_create(&exec_ctx);
+  GRPC_WORKQUEUE_REF(wq, "test");
+  GRPC_WORKQUEUE_UNREF(&exec_ctx, wq, "test");
+  GRPC_WORKQUEUE_UNREF(&exec_ctx, wq, "destroy");
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
 static void test_add_closure(void) {
   grpc_closure c;
   int done = 0;
@@ -58,6 +67,31 @@ static void test_add_closure(void) {
   grpc_closure_init(&c, must_succeed, &done);
 
   grpc_workqueue_push(wq, &c, 1);
+  grpc_workqueue_add_to_pollset(&exec_ctx, wq, &g_pollset);
+
+  gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
+  GPR_ASSERT(!done);
+  grpc_pollset_work(&exec_ctx, &g_pollset, &worker,
+                    gpr_now(deadline.clock_type), deadline);
+  gpr_mu_unlock(GRPC_POLLSET_MU(&g_pollset));
+  grpc_exec_ctx_finish(&exec_ctx);
+  GPR_ASSERT(done);
+
+  GRPC_WORKQUEUE_UNREF(&exec_ctx, wq, "destroy");
+  grpc_exec_ctx_finish(&exec_ctx);
+}
+
+static void test_flush(void) {
+  grpc_closure c;
+  int done = 0;
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_workqueue *wq = grpc_workqueue_create(&exec_ctx);
+  gpr_timespec deadline = GRPC_TIMEOUT_SECONDS_TO_DEADLINE(5);
+  grpc_pollset_worker worker;
+  grpc_closure_init(&c, must_succeed, &done);
+
+  grpc_exec_ctx_enqueue(&exec_ctx, &c, 1);
+  grpc_workqueue_flush(&exec_ctx, wq);
   grpc_workqueue_add_to_pollset(&exec_ctx, wq, &g_pollset);
 
   gpr_mu_lock(GRPC_POLLSET_MU(&g_pollset));
@@ -83,7 +117,9 @@ int main(int argc, char **argv) {
   grpc_init();
   grpc_pollset_init(&g_pollset);
 
+  test_ref_unref();
   test_add_closure();
+  test_flush();
 
   grpc_closure_init(&destroyed, destroy_pollset, &g_pollset);
   grpc_pollset_shutdown(&exec_ctx, &g_pollset, &destroyed);
