@@ -241,5 +241,20 @@ void grpc_flush_cached_google_default_credentials(void) {
     grpc_channel_credentials_unref(default_credentials);
     default_credentials = NULL;
   }
+  compute_engine_detection_done = 0;
   gpr_mu_unlock(&g_mu);
+}
+
+/* -- Well known credentials path. -- */
+
+static grpc_well_known_credentials_path_getter creds_path_getter = NULL;
+
+char *grpc_get_well_known_google_credentials_file_path(void) {
+  if (creds_path_getter != NULL) return creds_path_getter();
+  return grpc_get_well_known_google_credentials_file_path_impl();
+}
+
+void grpc_override_well_known_credentials_path_getter(
+    grpc_well_known_credentials_path_getter getter) {
+  creds_path_getter = getter;
 }

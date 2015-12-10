@@ -201,7 +201,7 @@ namespace Grpc.Core.Tests
             Assert.AreEqual(headers[1].Key, trailers[1].Key);
             CollectionAssert.AreEqual(headers[1].ValueBytes, trailers[1].ValueBytes);
         }
-            
+
         [Test]
         public void UnknownMethodHandler()
         {
@@ -216,18 +216,6 @@ namespace Grpc.Core.Tests
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(callDetails, "abc"));
             Assert.AreEqual(StatusCode.Unimplemented, ex.Status.StatusCode);
-        }
-
-        [Test]
-        public void UserAgentStringPresent()
-        {
-            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
-            {
-                return context.RequestHeaders.Where(entry => entry.Key == "user-agent").Single().Value;
-            });
-
-            string userAgent = Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc");
-            Assert.IsTrue(userAgent.StartsWith("grpc-csharp/"));
         }
 
         [Test]
