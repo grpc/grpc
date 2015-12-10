@@ -1329,10 +1329,7 @@ h2_uchannel_cancel_before_invoke_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_be
 h2_uchannel_cancel_in_a_vacuum_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_test
 h2_uchannel_cancel_with_status_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_test
 h2_uchannel_census_simple_request_test: $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_test
-h2_uchannel_channel_connectivity_test: $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test
 h2_uchannel_compressed_payload_test: $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test
-h2_uchannel_default_host_test: $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test
-h2_uchannel_disappearing_server_test: $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test
 h2_uchannel_empty_batch_test: $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_test
 h2_uchannel_graceful_server_shutdown_test: $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_test
 h2_uchannel_high_initial_seqno_test: $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_test
@@ -1352,7 +1349,6 @@ h2_uchannel_request_with_payload_test: $(BINDIR)/$(CONFIG)/h2_uchannel_request_w
 h2_uchannel_server_finishes_request_test: $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_test
 h2_uchannel_shutdown_finishes_calls_test: $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_test
 h2_uchannel_shutdown_finishes_tags_test: $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test
-h2_uchannel_simple_delayed_request_test: $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test
 h2_uchannel_simple_request_test: $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_test
 h2_uchannel_trailing_metadata_test: $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_test
 h2_uds_bad_hostname_test: $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_test
@@ -1661,10 +1657,7 @@ h2_uchannel_cancel_before_invoke_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_can
 h2_uchannel_cancel_in_a_vacuum_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_nosec_test
 h2_uchannel_cancel_with_status_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_nosec_test
 h2_uchannel_census_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_nosec_test
-h2_uchannel_channel_connectivity_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_nosec_test
 h2_uchannel_compressed_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test
-h2_uchannel_default_host_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_nosec_test
-h2_uchannel_disappearing_server_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_nosec_test
 h2_uchannel_empty_batch_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_nosec_test
 h2_uchannel_graceful_server_shutdown_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_nosec_test
 h2_uchannel_high_initial_seqno_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_nosec_test
@@ -1684,7 +1677,6 @@ h2_uchannel_request_with_payload_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_req
 h2_uchannel_server_finishes_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_nosec_test
 h2_uchannel_shutdown_finishes_calls_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_nosec_test
 h2_uchannel_shutdown_finishes_tags_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test
-h2_uchannel_simple_delayed_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_nosec_test
 h2_uchannel_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_nosec_test
 h2_uchannel_trailing_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_nosec_test
 h2_uds_bad_hostname_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_nosec_test
@@ -2385,10 +2377,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_test \
-  $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test \
-  $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test \
-  $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_test \
@@ -2408,7 +2397,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test \
-  $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_test \
   $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_test \
@@ -2717,10 +2705,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_in_a_vacuum_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_graceful_server_shutdown_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_high_initial_seqno_nosec_test \
@@ -2740,7 +2725,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_uchannel_server_finishes_request_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test \
-  $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uchannel_trailing_metadata_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds_bad_hostname_nosec_test \
@@ -3866,14 +3850,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_test || ( echo test h2_uchannel_cancel_with_status_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_census_simple_request_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_test || ( echo test h2_uchannel_census_simple_request_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_channel_connectivity_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test || ( echo test h2_uchannel_channel_connectivity_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_compressed_payload_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test || ( echo test h2_uchannel_compressed_payload_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_default_host_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test || ( echo test h2_uchannel_default_host_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_disappearing_server_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test || ( echo test h2_uchannel_disappearing_server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_empty_batch_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_test || ( echo test h2_uchannel_empty_batch_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_graceful_server_shutdown_test"
@@ -3912,8 +3890,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_test || ( echo test h2_uchannel_shutdown_finishes_calls_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_shutdown_finishes_tags_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test || ( echo test h2_uchannel_shutdown_finishes_tags_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_simple_delayed_request_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test || ( echo test h2_uchannel_simple_delayed_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_simple_request_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_test || ( echo test h2_uchannel_simple_request_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_trailing_metadata_test"
@@ -4530,14 +4506,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_cancel_with_status_nosec_test || ( echo test h2_uchannel_cancel_with_status_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_census_simple_request_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_nosec_test || ( echo test h2_uchannel_census_simple_request_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_channel_connectivity_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_nosec_test || ( echo test h2_uchannel_channel_connectivity_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_compressed_payload_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test || ( echo test h2_uchannel_compressed_payload_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_default_host_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_nosec_test || ( echo test h2_uchannel_default_host_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_disappearing_server_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_nosec_test || ( echo test h2_uchannel_disappearing_server_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_empty_batch_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_empty_batch_nosec_test || ( echo test h2_uchannel_empty_batch_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_graceful_server_shutdown_nosec_test"
@@ -4576,8 +4546,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_calls_nosec_test || ( echo test h2_uchannel_shutdown_finishes_calls_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_shutdown_finishes_tags_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test || ( echo test h2_uchannel_shutdown_finishes_tags_nosec_test failed ; exit 1 )
-	$(E) "[RUN]     Testing h2_uchannel_simple_delayed_request_nosec_test"
-	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_nosec_test || ( echo test h2_uchannel_simple_delayed_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_simple_request_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uchannel_simple_request_nosec_test || ( echo test h2_uchannel_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uchannel_trailing_metadata_nosec_test"
@@ -21065,24 +21033,6 @@ ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
 $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test: openssl_dep_error
 
 else
@@ -21091,42 +21041,6 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test:  $(LIBDIR)/$(CONFIG)/li
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_default_host.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_test
 
 endif
 
@@ -21469,24 +21383,6 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test:  $(LIBDIR)/$(CONFIG
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_test
-
-endif
-
-
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test: openssl_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test:  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libend2end_certs.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_test
 
 endif
 
@@ -24677,34 +24573,10 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_census_simple_request_nosec_test:  $(LIBDIR)/$(C
 
 
 
-$(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_channel_connectivity.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_channel_connectivity_nosec_test
-
-
-
-
 $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_compressed_payload.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_compressed_payload_nosec_test
-
-
-
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_default_host_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_default_host.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_default_host_nosec_test
-
-
-
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_disappearing_server.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_disappearing_server_nosec_test
 
 
 
@@ -24857,14 +24729,6 @@ $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test:  $(LIBDIR)/$(
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_shutdown_finishes_tags.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_shutdown_finishes_tags_nosec_test
-
-
-
-
-$(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_nosec_test:  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uchannel.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_simple_delayed_request.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uchannel_simple_delayed_request_nosec_test
 
 
 
