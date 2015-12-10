@@ -1368,9 +1368,7 @@ targets:
   - gpr_test_util
   - gpr
   platforms:
-  - mac
   - linux
-  - posix
 - name: init_test
   build: test
   language: c
