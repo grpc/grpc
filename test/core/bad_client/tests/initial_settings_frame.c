@@ -103,6 +103,19 @@ int main(int argc, char **argv) {
   GRPC_RUN_BAD_CLIENT_TEST(verifier,
                            PFX_STR ONE_SETTING_HDR "\x00\x04\x00\x01\x00\x00", 
                            GRPC_BAD_CLIENT_DISCONNECT);
+  /* ack with data */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
+                           "\x00\x00\x01\x04\x01\x00\x00\x00\x00", 0);
+  /* settings frame with invalid flags */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR 
+                           "\x00\x00\x00\x04\x10\x00\x00\x00\x00", 0);
+  /* unknown settings should be ignored */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier,
+                           PFX_STR ONE_SETTING_HDR "\x00\x99\x00\x00\x00\x00", 
+                           GRPC_BAD_CLIENT_DISCONNECT);
 
   return 0;
 }
