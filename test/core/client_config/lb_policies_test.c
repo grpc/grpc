@@ -42,8 +42,9 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/channel/channel_stack.h"
-#include "src/core/surface/channel.h"
 #include "src/core/channel/client_channel.h"
+#include "src/core/client_config/lb_policy_registry.h"
+#include "src/core/surface/channel.h"
 #include "src/core/support/string.h"
 #include "src/core/surface/server.h"
 #include "test/core/util/test_config.h"
@@ -715,6 +716,9 @@ int main(int argc, char **argv) {
 
   grpc_test_init(argc, argv);
   grpc_init();
+
+  GPR_ASSERT(grpc_lb_policy_create("this-lb-policy-does-not-exist", NULL) == NULL);
+  GPR_ASSERT(grpc_lb_policy_create(NULL, NULL) == NULL);
 
   /* everything is fine, all servers stay up the whole time and life's peachy */
   spec = test_spec_create(NUM_ITERS, NUM_SERVERS);
