@@ -367,7 +367,7 @@ static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, int success) {
         &c->metadata_batch[1 /* is_receiving */][i /* is_initial */]);
   }
   if (c->receiving_stream != NULL) {
-    grpc_byte_stream_destroy(c->receiving_stream);
+    grpc_byte_stream_destroy(exec_ctx, c->receiving_stream);
   }
   grpc_call_stack_destroy(exec_ctx, CALL_STACK_FROM_CALL(c));
   GRPC_CHANNEL_INTERNAL_UNREF(exec_ctx, c->channel, "call");
@@ -951,7 +951,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
                        (*call->receiving_buffer)->data.raw.slice_buffer.length;
     if (remaining == 0) {
       call->receiving_message = 0;
-      grpc_byte_stream_destroy(call->receiving_stream);
+      grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
       call->receiving_stream = NULL;
       if (gpr_unref(&bctl->steps_to_complete)) {
         post_batch_completion(exec_ctx, bctl);
@@ -1067,7 +1067,7 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
              grpc_channel_get_max_message_length(call->channel)) {
     cancel_with_status(exec_ctx, call, GRPC_STATUS_INTERNAL,
                        "Max message size exceeded");
-    grpc_byte_stream_destroy(call->receiving_stream);
+    grpc_byte_stream_destroy(exec_ctx, call->receiving_stream);
     call->receiving_stream = NULL;
     *call->receiving_buffer = NULL;
     if (gpr_unref(&bctl->steps_to_complete)) {
@@ -1356,7 +1356,7 @@ done_with_error:
   }
   if (bctl->send_message) {
     call->sending_message = 0;
-    grpc_byte_stream_destroy(&call->sending_stream.base);
+    grpc_byte_stream_destroy(exec_ctx, &call->sending_stream.base);
   }
   if (bctl->send_final_op) {
     call->sent_final_op = 0;
