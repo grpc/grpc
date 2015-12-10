@@ -134,6 +134,11 @@ static void connectivity_state_set(
 static void check_read_ops(grpc_exec_ctx *exec_ctx,
                            grpc_chttp2_transport_global *transport_global);
 
+static void incoming_byte_stream_update_flow_control(
+    grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global, size_t max_size_hint,
+    size_t have_already);
+
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -858,6 +863,9 @@ static void perform_stream_op_locked(
     GPR_ASSERT(stream_global->recv_message_ready == NULL);
     stream_global->recv_message_ready = op->recv_message_ready;
     stream_global->recv_message = op->recv_message;
+    if (stream_global->incoming_frames.head != NULL) {
+      incoming_byte_stream_update_flow_control(transport_global, stream_global, 5, 0);
+    }
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
 
@@ -1475,16 +1483,7 @@ static void incoming_byte_stream_unref(grpc_chttp2_incoming_byte_stream *bs) {
 }
 
 static void incoming_byte_stream_destroy(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream) {
-  grpc_chttp2_incoming_byte_stream *incoming_byte_stream =
-      (grpc_chttp2_incoming_byte_stream *)byte_stream;
-  if (incoming_byte_stream->base.length == 0 && incoming_byte_stream->is_tail) {
-    lock(incoming_byte_stream->transport);
-    incoming_byte_stream_update_flow_control(
-        &incoming_byte_stream->transport->global,
-        &incoming_byte_stream->stream->global, 0, 0);
-    unlock(exec_ctx, incoming_byte_stream->transport);
-  }
-  incoming_byte_stream_unref(incoming_byte_stream);
+  incoming_byte_stream_unref((grpc_chttp2_incoming_byte_stream *)byte_stream);
 }
 
 void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,

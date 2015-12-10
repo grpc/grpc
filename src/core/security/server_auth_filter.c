@@ -140,7 +140,7 @@ static void on_md_processing_done(
     message = gpr_slice_from_copied_string(error_details);
     calld->transport_op.send_initial_metadata = NULL;
     if (calld->transport_op.send_message != NULL) {
-      grpc_byte_stream_destroy(calld->transport_op.send_message);
+      grpc_byte_stream_destroy(&exec_ctx, calld->transport_op.send_message);
       calld->transport_op.send_message = NULL;
     }
     calld->transport_op.send_trailing_metadata = NULL;
