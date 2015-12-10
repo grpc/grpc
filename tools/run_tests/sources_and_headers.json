@@ -986,6 +986,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "sockaddr_resolver_test", 
+    "src": [
+      "test/core/client_config/resolvers/sockaddr_resolver_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "sockaddr_utils_test", 
     "src": [
       "test/core/iomgr/sockaddr_utils_test.c"

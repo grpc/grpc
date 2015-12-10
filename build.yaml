@@ -1531,6 +1531,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: sockaddr_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_config/resolvers/sockaddr_resolver_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: sockaddr_utils_test
   build: test
   language: c
