@@ -51,10 +51,6 @@ void grpc_wakeup_fd_global_init(void) {
   }
 }
 
-void grpc_wakeup_fd_global_init_force_fallback(void) {
-  wakeup_fd_vtable = &grpc_pipe_wakeup_fd_vtable;
-}
-
 void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = NULL; }
 
 void grpc_wakeup_fd_init(grpc_wakeup_fd *fd_info) {
