@@ -512,6 +512,43 @@ _WINDOWS_CONFIG = {
     }
 
 
+def _windows_arch_option(arch):
+  """Returns msbuild cmdline option for selected architecture."""
+  if arch == 'default' or arch == 'windows_x86':
+    return '/p:Platform=Win32'
+  elif arch == 'windows_x64':
+    return '/p:Platform=x64'
+  else:
+    print 'Architecture %s not supported on current platform.' % arch
+    sys.exit(1)
+
+    
+def _windows_build_bat(compiler):
+  """Returns name of build.bat for selected compiler."""
+  if compiler == 'default' or compiler == 'vs2013':
+    return 'vsprojects\\build_vs2013.bat'
+  elif compiler == 'vs2015':
+    return 'vsprojects\\build_vs2015.bat'
+  elif compiler == 'vs2010':
+    return 'vsprojects\\build_vs2010.bat'
+  else:
+    print 'Compiler %s not supported.' % compiler
+    sys.exit(1)
+    
+    
+def _windows_toolset_option(compiler):
+  """Returns msbuild PlatformToolset for selected compiler."""
+  if compiler == 'default' or compiler == 'vs2013':
+    return '/p:PlatformToolset=v120'
+  elif compiler == 'vs2015':
+    return '/p:PlatformToolset=v140'
+  elif compiler == 'vs2010':
+    return '/p:PlatformToolset=v100'
+  else:
+    print 'Compiler %s not supported.' % compiler
+    sys.exit(1)
+   
+
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
 
@@ -576,6 +613,19 @@ argp.add_argument('--allow_flakes',
                   action='store_const',
                   const=True,
                   help='Allow flaky tests to show as passing (re-runs failed tests up to five times)')
+argp.add_argument('--arch',
+                  choices=['default', 'windows_x86', 'windows_x64'],
+                  default='default',
+                  help='Selects architecture to target. For some platforms "default" is the only supported choice.')
+argp.add_argument('--compiler',
+                  choices=['default', 'vs2010', 'vs2013', 'vs2015'],
+                  default='default',
+                  help='Selects compiler to use. For some platforms "default" is the only supported choice.')
+argp.add_argument('--build_only',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Perform all the build steps but dont run any tests.')
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
@@ -637,6 +687,14 @@ if len(build_configs) > 1:
       print language, 'does not support multiple build configurations'
       sys.exit(1)
 
+if platform_string() != 'windows':
+  if args.arch != 'default':
+    print 'Architecture %s not supported on current platform.' % args.arch
+    sys.exit(1)
+  if args.compiler != 'default':
+    print 'Compiler %s not supported on current platform.' % args.compiler
+    sys.exit(1)
+
 if platform_string() == 'windows':
   def make_jobspec(cfg, targets, makefile='Makefile'):
     extra_args = []
@@ -647,9 +705,11 @@ if platform_string() == 'windows':
     # disable PDB generation: it's broken, and we don't need it during CI
     extra_args.extend(['/p:Jenkins=true'])
     return [
-      jobset.JobSpec(['vsprojects\\build.bat',
+      jobset.JobSpec([_windows_build_bat(args.compiler),
                       'vsprojects\\%s.sln' % target,
-                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
+                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg],
+                      _windows_toolset_option(args.compiler),
+                      _windows_arch_option(args.arch)] +
                       extra_args,
                       shell=True, timeout_seconds=90*60)
       for target in targets]
@@ -844,7 +904,7 @@ def _calculate_num_runs_failures(list_of_results):
 
 
 def _build_and_run(
-    check_cancelled, newline_on_success, cache, xml_report=None):
+    check_cancelled, newline_on_success, cache, xml_report=None, build_only=False):
   """Do one pass of building & running tests."""
   # build latest sequentially
   num_failures, _ = jobset.run(
@@ -852,6 +912,9 @@ def _build_and_run(
       newline_on_success=newline_on_success, travis=args.travis)
   if num_failures:
     return 1
+    
+  if build_only:
+    return 0
 
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
@@ -929,7 +992,8 @@ if forever:
     previous_success = success
     success = _build_and_run(check_cancelled=have_files_changed,
                              newline_on_success=False,
-                             cache=test_cache) == 0
+                             cache=test_cache,
+                             build_only=args.build_only) == 0
     if not previous_success and success:
       jobset.message('SUCCESS',
                      'All tests are now passing properly',
@@ -941,7 +1005,8 @@ else:
   result = _build_and_run(check_cancelled=lambda: False,
                           newline_on_success=args.newline_on_success,
                           cache=test_cache,
-                          xml_report=args.xml_report)
+                          xml_report=args.xml_report,
+                          build_only=args.build_only)
   if result == 0:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   else:
