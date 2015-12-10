@@ -217,6 +217,9 @@ grpc_channel *grpc_insecure_channel_create(const char *target,
   GRPC_CHANNEL_INTERNAL_REF(f->master, "subchannel_factory");
   resolver = grpc_resolver_create(target, &f->base);
   if (!resolver) {
+    GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, f->master, "subchannel_factory");
+    grpc_subchannel_factory_unref(&exec_ctx, &f->base);
+    grpc_exec_ctx_finish(&exec_ctx);
     return NULL;
   }
 
