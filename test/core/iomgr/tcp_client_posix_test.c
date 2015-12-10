@@ -234,8 +234,9 @@ void test_times_out(void) {
     if (gpr_time_cmp(now, finish_time) > 0) {
       break;
     }
-    gpr_log(GPR_DEBUG, "now=%d.%09d connect_deadline=%d.%09d", now.tv_sec,
-            now.tv_nsec, connect_deadline.tv_sec, connect_deadline.tv_nsec);
+    gpr_log(GPR_DEBUG, "now=%lld.%09d connect_deadline=%lld.%09d",
+            (long long)now.tv_sec, (int)now.tv_nsec,
+            (long long)connect_deadline.tv_sec, (int)connect_deadline.tv_nsec);
     if (is_after_deadline && gpr_time_cmp(now, restart_verifying_time) <= 0) {
       /* allow some slack before insisting that things be done */
     } else {

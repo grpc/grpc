@@ -126,8 +126,8 @@ static double ts_to_dbl(gpr_timespec ts) {
 
 static gpr_timespec dbl_to_ts(double d) {
   gpr_timespec ts;
-  ts.tv_sec = (time_t)d;
-  ts.tv_nsec = (int)(1e9 * (d - (double)ts.tv_sec));
+  ts.tv_sec = (gpr_int64)d;
+  ts.tv_nsec = (gpr_int32)(1e9 * (d - (double)ts.tv_sec));
   ts.clock_type = GPR_TIMESPAN;
   return ts;
 }
