@@ -833,6 +833,7 @@ hpack_table_test: $(BINDIR)/$(CONFIG)/hpack_table_test
 httpcli_format_request_test: $(BINDIR)/$(CONFIG)/httpcli_format_request_test
 httpcli_parser_test: $(BINDIR)/$(CONFIG)/httpcli_parser_test
 httpcli_test: $(BINDIR)/$(CONFIG)/httpcli_test
+httpscli_test: $(BINDIR)/$(CONFIG)/httpscli_test
 init_test: $(BINDIR)/$(CONFIG)/init_test
 invalid_call_argument_test: $(BINDIR)/$(CONFIG)/invalid_call_argument_test
 json_rewrite: $(BINDIR)/$(CONFIG)/json_rewrite
@@ -847,6 +848,7 @@ murmur_hash_test: $(BINDIR)/$(CONFIG)/murmur_hash_test
 no_server_test: $(BINDIR)/$(CONFIG)/no_server_test
 resolve_address_test: $(BINDIR)/$(CONFIG)/resolve_address_test
 secure_endpoint_test: $(BINDIR)/$(CONFIG)/secure_endpoint_test
+server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
 set_initial_connect_string_test: $(BINDIR)/$(CONFIG)/set_initial_connect_string_test
 sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 tcp_client_posix_test: $(BINDIR)/$(CONFIG)/tcp_client_posix_test
@@ -1939,6 +1941,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/httpcli_format_request_test \
   $(BINDIR)/$(CONFIG)/httpcli_parser_test \
   $(BINDIR)/$(CONFIG)/httpcli_test \
+  $(BINDIR)/$(CONFIG)/httpscli_test \
   $(BINDIR)/$(CONFIG)/init_test \
   $(BINDIR)/$(CONFIG)/invalid_call_argument_test \
   $(BINDIR)/$(CONFIG)/json_rewrite \
@@ -1952,6 +1955,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/no_server_test \
   $(BINDIR)/$(CONFIG)/resolve_address_test \
   $(BINDIR)/$(CONFIG)/secure_endpoint_test \
+  $(BINDIR)/$(CONFIG)/server_chttp2_test \
   $(BINDIR)/$(CONFIG)/set_initial_connect_string_test \
   $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
   $(BINDIR)/$(CONFIG)/tcp_client_posix_test \
@@ -2976,6 +2980,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/httpcli_parser_test || ( echo test httpcli_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing httpcli_test"
 	$(Q) $(BINDIR)/$(CONFIG)/httpcli_test || ( echo test httpcli_test failed ; exit 1 )
+	$(E) "[RUN]     Testing httpscli_test"
+	$(Q) $(BINDIR)/$(CONFIG)/httpscli_test || ( echo test httpscli_test failed ; exit 1 )
 	$(E) "[RUN]     Testing init_test"
 	$(Q) $(BINDIR)/$(CONFIG)/init_test || ( echo test init_test failed ; exit 1 )
 	$(E) "[RUN]     Testing invalid_call_argument_test"
@@ -3000,6 +3006,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/resolve_address_test || ( echo test resolve_address_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_endpoint_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_endpoint_test || ( echo test secure_endpoint_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_chttp2_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_chttp2_test || ( echo test server_chttp2_test failed ; exit 1 )
 	$(E) "[RUN]     Testing set_initial_connect_string_test"
 	$(Q) $(BINDIR)/$(CONFIG)/set_initial_connect_string_test || ( echo test set_initial_connect_string_test failed ; exit 1 )
 	$(E) "[RUN]     Testing sockaddr_utils_test"
@@ -10902,6 +10910,35 @@ endif
 endif
 
 
+HTTPSCLI_TEST_SRC = \
+    test/core/httpcli/httpscli_test.c \
+
+HTTPSCLI_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPSCLI_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/httpscli_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/httpscli_test: $(HTTPSCLI_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HTTPSCLI_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/httpscli_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/httpcli/httpscli_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_httpscli_test: $(HTTPSCLI_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HTTPSCLI_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 INIT_TEST_SRC = \
     test/core/surface/init_test.c \
 
@@ -11304,6 +11341,35 @@ deps_secure_endpoint_test: $(SECURE_ENDPOINT_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SECURE_ENDPOINT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SERVER_CHTTP2_TEST_SRC = \
+    test/core/surface/server_chttp2_test.c \
+
+SERVER_CHTTP2_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_CHTTP2_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_chttp2_test: openssl_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_chttp2_test: $(SERVER_CHTTP2_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SERVER_CHTTP2_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/server_chttp2_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/surface/server_chttp2_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_server_chttp2_test: $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_CHTTP2_TEST_OBJS:.o=.dep)
 endif
 endif
 

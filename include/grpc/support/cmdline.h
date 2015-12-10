@@ -83,8 +83,12 @@ void gpr_cmdline_add_string(gpr_cmdline *cl, const char *name, const char *help,
 void gpr_cmdline_on_extra_arg(
     gpr_cmdline *cl, const char *name, const char *help,
     void (*on_extra_arg)(void *user_data, const char *arg), void *user_data);
-/* Parse the command line */
-void gpr_cmdline_parse(gpr_cmdline *cl, int argc, char **argv);
+/* Enable surviving failure: default behavior is to exit the process */
+void gpr_cmdline_set_survive_failure(gpr_cmdline *cl);
+/* Parse the command line; returns 1 on success, on failure either dies
+   (by default) or returns 0 if gpr_cmdline_set_survive_failure() has been
+   called */
+int gpr_cmdline_parse(gpr_cmdline *cl, int argc, char **argv);
 /* Destroy the parser */
 void gpr_cmdline_destroy(gpr_cmdline *cl);
 /* Get a string describing usage */
