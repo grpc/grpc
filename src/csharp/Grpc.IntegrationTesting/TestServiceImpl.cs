@@ -33,6 +33,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Google.Protobuf;
@@ -51,14 +52,20 @@ namespace Grpc.Testing
             return Task.FromResult(new Empty());
         }
 
-        public Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
+        public async Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
         {
+            await EnsureEchoMetadataAsync(context);
+            EnsureEchoStatus(request.ResponseStatus, context);
+
             var response = new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) };
-            return Task.FromResult(response);
+            return response;
         }
 
         public async Task StreamingOutputCall(StreamingOutputCallRequest request, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
+            await EnsureEchoMetadataAsync(context);
+            EnsureEchoStatus(request.ResponseStatus, context);
+
             foreach (var responseParam in request.ResponseParameters)
             {
                 var response = new StreamingOutputCallResponse { Payload = CreateZerosPayload(responseParam.Size) };
@@ -68,6 +75,8 @@ namespace Grpc.Testing
 
         public async Task<StreamingInputCallResponse> StreamingInputCall(IAsyncStreamReader<StreamingInputCallRequest> requestStream, ServerCallContext context)
         {
+            await EnsureEchoMetadataAsync(context);
+
             int sum = 0;
             await requestStream.ForEachAsync(async request =>
             {
@@ -78,8 +87,11 @@ namespace Grpc.Testing
 
         public async Task FullDuplexCall(IAsyncStreamReader<StreamingOutputCallRequest> requestStream, IServerStreamWriter<StreamingOutputCallResponse> responseStream, ServerCallContext context)
         {
+            await EnsureEchoMetadataAsync(context);
+
             await requestStream.ForEachAsync(async request =>
             {
+                EnsureEchoStatus(request.ResponseStatus, context);
                 foreach (var responseParam in request.ResponseParameters)
                 {
                     var response = new StreamingOutputCallResponse { Payload = CreateZerosPayload(responseParam.Size) };
@@ -96,6 +108,29 @@ namespace Grpc.Testing
         private static Payload CreateZerosPayload(int size)
         {
             return new Payload { Body = ByteString.CopyFrom(new byte[size]) };
+        }
+
+        private static async Task EnsureEchoMetadataAsync(ServerCallContext context)
+        {
+            var echoInitialList = context.RequestHeaders.Where((entry) => entry.Key == "x-grpc-test-echo-initial").ToList();
+            if (echoInitialList.Any()) {
+                var entry = echoInitialList.Single();
+                await context.WriteResponseHeadersAsync(new Metadata { entry });
+            }
+
+            var echoTrailingList = context.RequestHeaders.Where((entry) => entry.Key == "x-grpc-test-echo-trailing-bin").ToList();
+            if (echoTrailingList.Any()) {
+                context.ResponseTrailers.Add(echoTrailingList.Single());
+            }
+        }
+
+        private static void EnsureEchoStatus(EchoStatus responseStatus, ServerCallContext context)
+        {
+            if (responseStatus != null)
+            {
+                var statusCode = (StatusCode)responseStatus.Code;
+                context.Status = new Status(statusCode, responseStatus.Message);
+            }
         }
     }
 }
