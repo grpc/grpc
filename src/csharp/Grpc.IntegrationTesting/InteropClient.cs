@@ -131,8 +131,7 @@ namespace Grpc.IntegrationTesting
                 };
             }
             var channel = new Channel(options.ServerHost, options.ServerPort, credentials, channelOptions);
-            TestService.TestServiceClient client = new TestService.TestServiceClient(channel);
-            await RunTestCaseAsync(client, options);
+            await RunTestCaseAsync(channel, options);
             await channel.ShutdownAsync();
         }
 
@@ -160,8 +159,9 @@ namespace Grpc.IntegrationTesting
             return credentials;
         }
 
-        private async Task RunTestCaseAsync(TestService.TestServiceClient client, ClientOptions options)
+        private async Task RunTestCaseAsync(Channel channel, ClientOptions options)
         {
+            var client = new TestService.TestServiceClient(channel);
             switch (options.TestCase)
             {
                 case "empty_unary":
@@ -208,6 +208,9 @@ namespace Grpc.IntegrationTesting
                     break;
                 case "status_code_and_message":
                     await RunStatusCodeAndMessageAsync(client);
+                    break;
+                case "unimplemented_method":
+                    RunUnimplementedMethod(new UnimplementedService.UnimplementedServiceClient(channel));
                     break;
                 default:
                     throw new ArgumentException("Unknown test case " + options.TestCase);
@@ -574,6 +577,16 @@ namespace Grpc.IntegrationTesting
                 Assert.AreEqual(echoStatus.Message, e.Status.Detail);
             }
 
+            Console.WriteLine("Passed!");
+        }
+
+        public static void RunUnimplementedMethod(UnimplementedService.IUnimplementedServiceClient client)
+        {
+            Console.WriteLine("running unimplemented_method");
+            var e = Assert.Throws<RpcException>(() => client.UnimplementedCall(new Empty()));
+
+            Assert.AreEqual(StatusCode.Unimplemented, e.Status.StatusCode);
+            Assert.AreEqual("", e.Status.Detail);
             Console.WriteLine("Passed!");
         }
 

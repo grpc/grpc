@@ -284,7 +284,7 @@ namespace Grpc.Core.Internal
             var finishedTask = asyncCall.ServerSideCallAsync();
             var responseStream = new ServerResponseStream<byte[], byte[]>(asyncCall);
 
-            await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, "No such method."), Metadata.Empty).ConfigureAwait(false);
+            await responseStream.WriteStatusAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty).ConfigureAwait(false);
             await finishedTask.ConfigureAwait(false);
         }
     }

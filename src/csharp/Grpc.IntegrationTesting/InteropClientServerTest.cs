@@ -144,5 +144,11 @@ namespace Grpc.IntegrationTesting
         {
             await InteropClient.RunStatusCodeAndMessageAsync(client);
         }
+
+        [Test]
+        public void UnimplementedMethod()
+        {
+            InteropClient.RunUnimplementedMethod(UnimplementedService.NewClient(channel));
+        }
     }
 }
