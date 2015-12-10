@@ -154,6 +154,12 @@ NAN_METHOD(ChannelCredentials::CreateSsl) {
     return Nan::ThrowTypeError(
         "createSSl's third argument must be a Buffer if provided");
   }
+  if ((key_cert_pair.private_key == NULL) !=
+      (key_cert_pair.cert_chain == NULL)) {
+    return Nan::ThrowError(
+        "createSsl's second and third arguments must be"
+        " provided or omitted together");
+  }
   grpc_channel_credentials *creds = grpc_ssl_credentials_create(
       root_certs, key_cert_pair.private_key == NULL ? NULL : &key_cert_pair,
       NULL);
