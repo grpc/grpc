@@ -25,8 +25,10 @@ namespace Grpc.Core.Internal
                     Implementation = new PlatformInvocationLinux();
                     break;
 
+                // This may work, actually, assuming we can compile for whatever architecture is used on various types
+                // I guess I'll wait until someone complains that they can't get to Bigtable from their gaming console
                 case PlatformID.Xbox:
-                    throw new NotSupportedException(String.Format(reasonTemplate, "XBox"));
+                    throw new PlatformNotSupportedException(String.Format(reasonTemplate, "XBox"));
 
                 default:
                     Implementation = Environment.Is64BitProcess ? (IPlatformInvocation)new PlatformInvocationWin64() : new PlatformInvocationWin32();
