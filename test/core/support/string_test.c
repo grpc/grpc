@@ -33,6 +33,7 @@
 
 #include "src/core/support/string.h"
 
+#include <limits.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -306,7 +307,7 @@ static void test_ltoa() {
 
   /* large negative - we don't know the size of long in advance */
   GPR_ASSERT(gpr_asprintf(&str, "%lld", (long long)LONG_MIN));
-  GPR_ASSERT(strlen(str) == gpr_ltoa(LONG_MIN, buf));
+  GPR_ASSERT(strlen(str) == (size_t)gpr_ltoa(LONG_MIN, buf));
   GPR_ASSERT(0 == strcmp(str, buf));
   gpr_free(str);
 }
@@ -329,7 +330,7 @@ static void test_int64toa() {
   GPR_ASSERT(0 == strcmp("9223372036854775807", buf));
 
   /* large negative */
-  GPR_ASSERT(20 == gpr_int64toa(-9223372036854775808LL, buf));
+  GPR_ASSERT(20 == gpr_int64toa(-9223372036854775807LL - 1, buf));
   GPR_ASSERT(0 == strcmp("-9223372036854775808", buf));
 }
 
