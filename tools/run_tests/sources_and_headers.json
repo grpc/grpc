@@ -1933,6 +1933,531 @@
   {
     "deps": [
       "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_bad_hostname", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_bad_hostname_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_binary_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_binary_metadata_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_call_creds", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_call_creds_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_cancel_after_accept", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_after_accept_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_cancel_after_client_done", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_after_client_done_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_cancel_after_invoke", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_after_invoke_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_cancel_before_invoke", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_before_invoke_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_cancel_in_a_vacuum", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_in_a_vacuum_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_cancel_with_status", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_with_status_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_channel_connectivity", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_channel_connectivity_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_compressed_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_compressed_payload_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_default_host_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_disappearing_server", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_disappearing_server_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_empty_batch", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_empty_batch_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_graceful_server_shutdown", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_graceful_server_shutdown_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_high_initial_seqno", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_high_initial_seqno_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_hpack_size", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_hpack_size_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_invoke_large_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_invoke_large_request_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_large_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_large_metadata_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_max_concurrent_streams", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_max_concurrent_streams_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_max_message_length", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_max_message_length_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_metadata_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_negative_deadline", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_negative_deadline_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_no_op", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_no_op_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_payload_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_ping_pong_streaming", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_ping_pong_streaming_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_registered_call", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_registered_call_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_request_with_flags", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_request_with_flags_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_request_with_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_request_with_payload_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_server_finishes_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_server_finishes_request_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_shutdown_finishes_calls", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_shutdown_finishes_calls_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_shutdown_finishes_tags", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_shutdown_finishes_tags_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_simple_delayed_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_simple_delayed_request_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_simple_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_simple_request_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "end2end_fixture_h2_census", 
+      "end2end_test_trailing_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_trailing_metadata_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
       "end2end_fixture_h2_compress", 
       "end2end_test_bad_hostname", 
       "gpr", 
@@ -2063,21 +2588,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_compress_cancel_with_status_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_compress", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_compress_census_simple_request_test", 
     "src": []
   }, 
   {
@@ -2609,21 +3119,6 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_h2_fakesec", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_fakesec_census_simple_request_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_fakesec", 
       "end2end_test_channel_connectivity", 
       "gpr", 
       "gpr_test_util", 
@@ -3143,21 +3638,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_full_cancel_with_status_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_full", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_full_census_simple_request_test", 
     "src": []
   }, 
   {
@@ -3689,21 +4169,6 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_h2_full+poll", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_full+poll_census_simple_request_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_full+poll", 
       "end2end_test_channel_connectivity", 
       "gpr", 
       "gpr_test_util", 
@@ -4223,21 +4688,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_oauth2_cancel_with_status_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_oauth2", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_oauth2_census_simple_request_test", 
     "src": []
   }, 
   {
@@ -4769,21 +5219,6 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_h2_proxy", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_proxy_census_simple_request_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_proxy", 
       "end2end_test_default_host", 
       "gpr", 
       "gpr_test_util", 
@@ -5228,21 +5663,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair_cancel_with_status_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_sockpair", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair_census_simple_request_test", 
     "src": []
   }, 
   {
@@ -5714,21 +6134,6 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_h2_sockpair+trace", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair+trace_census_simple_request_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_sockpair+trace", 
       "end2end_test_compressed_payload", 
       "gpr", 
       "gpr_test_util", 
@@ -6173,21 +6578,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair_1byte_cancel_with_status_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_sockpair_1byte", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_census_simple_request_test", 
     "src": []
   }, 
   {
@@ -6653,21 +7043,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_ssl_cancel_with_status_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_ssl", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_ssl_census_simple_request_test", 
     "src": []
   }, 
   {
@@ -7199,21 +7574,6 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_h2_ssl+poll", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_ssl+poll_census_simple_request_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_ssl+poll", 
       "end2end_test_channel_connectivity", 
       "gpr", 
       "gpr_test_util", 
@@ -7739,21 +8099,6 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_h2_ssl_proxy", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_ssl_proxy_census_simple_request_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_ssl_proxy", 
       "end2end_test_default_host", 
       "gpr", 
       "gpr_test_util", 
@@ -8198,21 +8543,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_uchannel_cancel_with_status_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_uchannel", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_uchannel_census_simple_request_test", 
     "src": []
   }, 
   {
@@ -8678,21 +9008,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_uds_cancel_with_status_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_uds", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_uds_census_simple_request_test", 
     "src": []
   }, 
   {
@@ -9209,21 +9524,6 @@
     "deps": [
       "end2end_certs", 
       "end2end_fixture_h2_uds+poll", 
-      "end2end_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_uds+poll_census_simple_request_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "end2end_fixture_h2_uds+poll", 
       "end2end_test_channel_connectivity", 
       "gpr", 
       "gpr_test_util", 
@@ -9597,6 +9897,482 @@
   }, 
   {
     "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_bad_hostname", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_bad_hostname_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_binary_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_binary_metadata_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_cancel_after_accept", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_after_accept_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_cancel_after_client_done", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_after_client_done_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_cancel_after_invoke", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_after_invoke_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_cancel_before_invoke", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_before_invoke_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_cancel_in_a_vacuum", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_in_a_vacuum_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_cancel_with_status", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_cancel_with_status_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_channel_connectivity", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_channel_connectivity_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_compressed_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_compressed_payload_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_default_host", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_default_host_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_disappearing_server", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_disappearing_server_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_empty_batch", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_empty_batch_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_graceful_server_shutdown", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_graceful_server_shutdown_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_high_initial_seqno", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_high_initial_seqno_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_hpack_size", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_hpack_size_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_invoke_large_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_invoke_large_request_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_large_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_large_metadata_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_max_concurrent_streams", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_max_concurrent_streams_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_max_message_length", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_max_message_length_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_metadata_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_negative_deadline", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_negative_deadline_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_no_op", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_no_op_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_payload_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_ping_pong_streaming", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_ping_pong_streaming_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_registered_call", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_registered_call_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_request_with_flags", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_request_with_flags_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_request_with_payload", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_request_with_payload_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_server_finishes_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_server_finishes_request_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_shutdown_finishes_calls", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_shutdown_finishes_calls_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_shutdown_finishes_tags", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_shutdown_finishes_tags_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_simple_delayed_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_simple_delayed_request_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_simple_request", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_simple_request_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
+      "end2end_nosec_fixture_h2_census", 
+      "end2end_nosec_test_trailing_metadata", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "h2_census_trailing_metadata_nosec_test", 
+    "src": []
+  }, 
+  {
+    "deps": [
       "end2end_nosec_fixture_h2_compress", 
       "end2end_nosec_test_bad_hostname", 
       "gpr", 
@@ -9705,20 +10481,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_compress_cancel_with_status_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_fixture_h2_compress", 
-      "end2end_nosec_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_compress_census_simple_request_nosec_test", 
     "src": []
   }, 
   {
@@ -10200,20 +10962,6 @@
   {
     "deps": [
       "end2end_nosec_fixture_h2_full", 
-      "end2end_nosec_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_full_census_simple_request_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_fixture_h2_full", 
       "end2end_nosec_test_channel_connectivity", 
       "gpr", 
       "gpr_test_util", 
@@ -10685,20 +11433,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_full+poll_cancel_with_status_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_fixture_h2_full+poll", 
-      "end2end_nosec_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_full+poll_census_simple_request_nosec_test", 
     "src": []
   }, 
   {
@@ -11180,20 +11914,6 @@
   {
     "deps": [
       "end2end_nosec_fixture_h2_proxy", 
-      "end2end_nosec_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_proxy_census_simple_request_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_fixture_h2_proxy", 
       "end2end_nosec_test_default_host", 
       "gpr", 
       "gpr_test_util", 
@@ -11595,20 +12315,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair_cancel_with_status_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_fixture_h2_sockpair", 
-      "end2end_nosec_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair_census_simple_request_nosec_test", 
     "src": []
   }, 
   {
@@ -12034,20 +12740,6 @@
   {
     "deps": [
       "end2end_nosec_fixture_h2_sockpair+trace", 
-      "end2end_nosec_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair+trace_census_simple_request_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_fixture_h2_sockpair+trace", 
       "end2end_nosec_test_compressed_payload", 
       "gpr", 
       "gpr_test_util", 
@@ -12449,20 +13141,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_sockpair_1byte_cancel_with_status_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_fixture_h2_sockpair_1byte", 
-      "end2end_nosec_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_census_simple_request_nosec_test", 
     "src": []
   }, 
   {
@@ -12888,20 +13566,6 @@
   {
     "deps": [
       "end2end_nosec_fixture_h2_uchannel", 
-      "end2end_nosec_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_uchannel_census_simple_request_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_fixture_h2_uchannel", 
       "end2end_nosec_test_compressed_payload", 
       "gpr", 
       "gpr_test_util", 
@@ -13317,20 +13981,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_uds_cancel_with_status_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_fixture_h2_uds", 
-      "end2end_nosec_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_uds_census_simple_request_nosec_test", 
     "src": []
   }, 
   {
@@ -13793,20 +14443,6 @@
     "headers": [], 
     "language": "c", 
     "name": "h2_uds+poll_cancel_with_status_nosec_test", 
-    "src": []
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_fixture_h2_uds+poll", 
-      "end2end_nosec_test_census_simple_request", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "language": "c", 
-    "name": "h2_uds+poll_census_simple_request_nosec_test", 
     "src": []
   }, 
   {
@@ -15854,6 +16490,24 @@
       "test/core/end2end/end2end_tests.h"
     ], 
     "language": "c", 
+    "name": "end2end_fixture_h2_census", 
+    "src": [
+      "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/fixtures/h2_census.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "end2end_certs", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/end2end_tests.h"
+    ], 
+    "language": "c", 
     "name": "end2end_fixture_h2_compress", 
     "src": [
       "test/core/end2end/end2end_tests.h", 
@@ -16110,6 +16764,23 @@
     "src": [
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/fixtures/h2_uds+poll.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "test/core/end2end/end2end_tests.h"
+    ], 
+    "language": "c", 
+    "name": "end2end_nosec_fixture_h2_census", 
+    "src": [
+      "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/fixtures/h2_census.c"
     ]
   }, 
   {
@@ -16460,26 +17131,6 @@
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "end2end_certs", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/tests/cancel_test_helpers.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_test_census_simple_request", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/tests/cancel_test_helpers.h", 
-      "test/core/end2end/tests/census_simple_request.c"
     ]
   }, 
   {
@@ -17152,25 +17803,6 @@
       "test/core/end2end/end2end_tests.h", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.c"
-    ]
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/tests/cancel_test_helpers.h"
-    ], 
-    "language": "c", 
-    "name": "end2end_nosec_test_census_simple_request", 
-    "src": [
-      "test/core/end2end/end2end_tests.h", 
-      "test/core/end2end/tests/cancel_test_helpers.h", 
-      "test/core/end2end/tests/census_simple_request.c"
     ]
   }, 
   {
