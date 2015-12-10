@@ -878,7 +878,7 @@ static void test_google_default_creds_auth_key(void) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
-static void test_google_default_creds_access_token(void) {
+static void test_google_default_creds_refresh_token(void) {
   grpc_google_refresh_token_credentials *refresh;
   grpc_composite_channel_credentials *creds;
   grpc_flush_cached_google_default_credentials();
@@ -892,6 +892,60 @@ static void test_google_default_creds_access_token(void) {
                     "32555999999.apps.googleusercontent.com") == 0);
   grpc_channel_credentials_unref(&creds->base);
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+}
+
+static int default_creds_gce_detection_httpcli_get_success_override(
+    grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
+    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
+    void *user_data) {
+  grpc_httpcli_response response = http_response(200, "");
+  grpc_httpcli_header header;
+  header.key = "Metadata-Flavor";
+  header.value = "Google";
+  response.hdr_count = 1;
+  response.hdrs = &header;
+  GPR_ASSERT(strcmp(request->path, "/") == 0);
+  GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
+  on_response(exec_ctx, user_data, &response);
+  return 1;
+}
+
+static char *null_well_known_creds_path_getter(void) {
+  return NULL;
+}
+
+static void test_google_default_creds_gce(void) {
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_composite_channel_credentials *creds;
+  grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, NULL,
+                                            NULL};
+  grpc_flush_cached_google_default_credentials();
+  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_override_well_known_credentials_path_getter(
+      null_well_known_creds_path_getter);
+
+  /* Simulate a successful detection of GCE. */
+  grpc_httpcli_set_override(
+      default_creds_gce_detection_httpcli_get_success_override,
+      httpcli_post_should_not_be_called);
+  creds = (grpc_composite_channel_credentials *)
+      grpc_google_default_credentials_create();
+
+  /* Verify that the default creds actually embeds a GCE creds. */
+  GPR_ASSERT(creds != NULL);
+  GPR_ASSERT(creds->call_creds != NULL);
+  grpc_httpcli_set_override(compute_engine_httpcli_get_success_override,
+                            httpcli_post_should_not_be_called);
+  grpc_call_credentials_get_request_metadata(
+      &exec_ctx, creds->call_creds, NULL, auth_md_ctx,
+      on_oauth2_creds_get_metadata_success, (void *)test_user_data);
+  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_exec_ctx_finish(&exec_ctx);
+
+  /* Cleanup. */
+  grpc_channel_credentials_release(&creds->base);
+  grpc_httpcli_set_override(NULL, NULL);
+  grpc_override_well_known_credentials_path_getter(NULL);
 }
 
 typedef enum {
@@ -1067,7 +1121,8 @@ int main(int argc, char **argv) {
   test_jwt_creds_success();
   test_jwt_creds_signing_failure();
   test_google_default_creds_auth_key();
-  test_google_default_creds_access_token();
+  test_google_default_creds_refresh_token();
+  test_google_default_creds_gce();
   test_metadata_plugin_success();
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();

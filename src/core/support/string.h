@@ -70,6 +70,16 @@ int gpr_parse_bytes_to_uint32(const char *data, size_t length,
    output must be at least GPR_LTOA_MIN_BUFSIZE bytes long. */
 int gpr_ltoa(long value, char *output);
 
+/* Minimum buffer size for calling int64toa */
+#define GPR_INT64TOA_MIN_BUFSIZE (3 * sizeof(gpr_int64))
+
+/* Convert an int64 to a string in base 10; returns the length of the
+output string (or 0 on failure).
+output must be at least GPR_INT64TOA_MIN_BUFSIZE bytes long.
+NOTE: This function ensures sufficient bit width even on Win x64,
+where long is 32bit is size.*/
+int gpr_int64toa(gpr_int64 value, char *output);
+
 /* Reverse a run of bytes */
 void gpr_reverse_bytes(char *str, int len);
 
