@@ -81,7 +81,7 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
         $call = new Grpc\Call($this->channel,
-                              '/abc/dummy_method/',
+                              '/abc/dummy_method',
                               $deadline,
                               $this->host_override);
 
@@ -92,5 +92,45 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
 
         $this->assertTrue($event->send_metadata);
         $this->assertTrue($event->send_close);
+
+        $event = $this->server->requestCall();
+
+        $this->assertTrue(is_array($event->metadata));
+        $metadata = $event->metadata;
+        $this->assertTrue(array_key_exists('k1', $metadata));
+        $this->assertTrue(array_key_exists('k2', $metadata));
+        $this->assertSame($metadata['k1'], ['v1']);
+        $this->assertSame($metadata['k2'], ['v2']);
+
+        $this->assertSame('/abc/dummy_method', $event->method);
+        $server_call = $event->call;
+
+        $event = $server_call->startBatch([
+            Grpc\OP_SEND_INITIAL_METADATA => [],
+            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+                'metadata' => [],
+                'code' => Grpc\STATUS_OK,
+                'details' => $status_text,
+            ],
+            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+        ]);
+
+        $this->assertTrue($event->send_metadata);
+        $this->assertTrue($event->send_status);
+        $this->assertFalse($event->cancelled);
+
+        $event = $call->startBatch([
+            Grpc\OP_RECV_INITIAL_METADATA => true,
+            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
+
+        $this->assertSame([], $event->metadata);
+        $status = $event->status;
+        $this->assertSame([], $status->metadata);
+        $this->assertSame(Grpc\STATUS_OK, $status->code);
+        $this->assertSame($status_text, $status->details);
+
+        unset($call);
+        unset($server_call);
     }
 }
