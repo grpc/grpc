@@ -148,23 +148,50 @@ static gpr_slice create_test_value(test_value id) {
   return gpr_slice_from_copied_string("bad value");
 }
 
-static void test_bad_data(void) {
+static void test_tiny_data_compress(void) {
   gpr_slice_buffer input;
   gpr_slice_buffer output;
   grpc_compression_algorithm i;
 
   gpr_slice_buffer_init(&input);
   gpr_slice_buffer_init(&output);
-  gpr_slice_buffer_add(&input, gpr_slice_from_copied_string(
-                                   "this is not valid compressed input"));
+  gpr_slice_buffer_add(&input, create_test_value(ONE_A));
 
   for (i = 0; i < GRPC_COMPRESS_ALGORITHMS_COUNT; i++) {
     if (i == GRPC_COMPRESS_NONE) continue;
-    GPR_ASSERT(0 == grpc_msg_decompress(i, &input, &output));
-    GPR_ASSERT(0 == output.count);
+    GPR_ASSERT(0 == grpc_msg_compress(i, &input, &output));
+    GPR_ASSERT(1 == output.count);
   }
 
   gpr_slice_buffer_destroy(&input);
+  gpr_slice_buffer_destroy(&output);
+}
+
+static void test_bad_data_decompress(void) {
+  gpr_slice_buffer input;
+  gpr_slice_buffer corrupted;
+  gpr_slice_buffer output;
+  size_t idx;
+  const gpr_uint32 bad = 0xdeadbeef;
+
+  gpr_slice_buffer_init(&input);
+  gpr_slice_buffer_init(&corrupted);
+  gpr_slice_buffer_init(&output);
+  gpr_slice_buffer_add(&input, create_test_value(ONE_MB_A));
+
+  /* compress it */
+  grpc_msg_compress(GRPC_COMPRESS_GZIP, &input, &corrupted);
+  /* corrupt the output by smashing the CRC */
+  GPR_ASSERT(corrupted.count > 1);
+  GPR_ASSERT(GPR_SLICE_LENGTH(corrupted.slices[1]) > 8);
+  idx = GPR_SLICE_LENGTH(corrupted.slices[1]) - 8;
+  memcpy(GPR_SLICE_START_PTR(corrupted.slices[1]) + idx, &bad, 4);
+
+  /* try (and fail) to decompress the corrupted compresed buffer */
+  GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_GZIP, &corrupted, &output));
+
+  gpr_slice_buffer_destroy(&input);
+  gpr_slice_buffer_destroy(&corrupted);
   gpr_slice_buffer_destroy(&output);
 }
 
@@ -234,7 +261,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  test_bad_data();
+  test_tiny_data_compress();
+  test_bad_data_decompress();
   test_bad_compression_algorithm();
   test_bad_decompression_algorithm();
   grpc_shutdown();

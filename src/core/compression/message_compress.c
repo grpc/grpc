@@ -111,10 +111,7 @@ static int zlib_compress(gpr_slice_buffer* input, gpr_slice_buffer* output,
   zs.zfree = zfree_gpr;
   r = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | (gzip ? 16 : 0),
                    8, Z_DEFAULT_STRATEGY);
-  if (r != Z_OK) {
-    gpr_log(GPR_ERROR, "deflateInit2 returns %d", r);
-    return 0;
-  }
+  GPR_ASSERT(r == Z_OK);
   r = zlib_body(&zs, input, output, deflate) && output->length < input->length;
   if (!r) {
     for (i = count_before; i < output->count; i++) {
@@ -138,10 +135,7 @@ static int zlib_decompress(gpr_slice_buffer* input, gpr_slice_buffer* output,
   zs.zalloc = zalloc_gpr;
   zs.zfree = zfree_gpr;
   r = inflateInit2(&zs, 15 | (gzip ? 16 : 0));
-  if (r != Z_OK) {
-    gpr_log(GPR_ERROR, "inflateInit2 returns %d", r);
-    return 0;
-  }
+  GPR_ASSERT(r == Z_OK);
   r = zlib_body(&zs, input, output, inflate);
   if (!r) {
     for (i = count_before; i < output->count; i++) {
