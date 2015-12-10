@@ -65,6 +65,10 @@ int main(int argc, char **argv) {
   chan = grpc_lame_client_channel_create(
       "lampoon:national", GRPC_STATUS_UNKNOWN, "Rpc sent on a lame channel.");
   GPR_ASSERT(chan);
+
+  GPR_ASSERT(GRPC_CHANNEL_FATAL_FAILURE ==
+             grpc_channel_check_connectivity_state(chan, 0));
+
   cq = grpc_completion_queue_create(NULL);
 
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,
