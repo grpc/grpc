@@ -853,6 +853,18 @@
   }, 
   {
     "ci_platforms": [
+      "linux"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "httpscli_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "ci_platforms": [
       "linux", 
       "mac", 
       "posix", 
