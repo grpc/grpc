@@ -1500,6 +1500,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: secure_channel_create_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/secure_channel_create_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: secure_endpoint_test
   build: test
   language: c
