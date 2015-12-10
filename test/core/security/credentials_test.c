@@ -1096,6 +1096,7 @@ static void test_get_well_known_google_credentials_file_path(void) {
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_empty_md_store();
   test_ref_unref_empty_md_store();
   test_add_to_empty_md_store();
@@ -1126,5 +1127,6 @@ int main(int argc, char **argv) {
   test_metadata_plugin_success();
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();
+  grpc_shutdown();
   return 0;
 }

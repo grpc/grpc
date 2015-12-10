@@ -20,7 +20,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{D46F6F0D-576C-5B15-010E-53BE17AFF25E}</ProjectGuid>
+    <ProjectGuid>{BF9F909B-8266-6AAC-A81B-05F8210AA8CA}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(VisualStudioVersion)' == '10.0'" Label="Configuration">
@@ -55,13 +55,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <TargetName>h2_uchannel_default_host_nosec_test</TargetName>
+    <TargetName>server_chttp2_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)'=='Release'">
-    <TargetName>h2_uchannel_default_host_nosec_test</TargetName>
+    <TargetName>server_chttp2_test</TargetName>
     <Linkage-grpc_dependencies_zlib>static</Linkage-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_zlib>Debug</Configuration-grpc_dependencies_zlib>
     <Configuration-grpc_dependencies_openssl>Debug</Configuration-grpc_dependencies_openssl>
@@ -143,21 +143,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\vsprojects\dummy.c">
+    <ClCompile Include="..\..\..\..\test\core\surface\server_chttp2_test.c">
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_nosec_fixture_h2_uchannel\end2end_nosec_fixture_h2_uchannel.vcxproj">
-      <Project>{6DF096AD-5865-3035-B7AE-5019FAC19EEB}</Project>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\grpc_test_util\grpc_test_util.vcxproj">
+      <Project>{17BCAFC0-5FDC-4C94-AEB9-95F3E220614B}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\test\end2end_nosec_test_default_host\end2end_nosec_test_default_host.vcxproj">
-      <Project>{EAD35938-4D82-EEA2-4B69-E827E6373A28}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\grpc_test_util_unsecure\grpc_test_util_unsecure.vcxproj">
-      <Project>{0A7E7F92-FDEA-40F1-A9EC-3BA484F98BBF}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\grpc_unsecure\grpc_unsecure.vcxproj">
-      <Project>{46CEDFFF-9692-456A-AA24-38B5D6BCF4C5}</Project>
+    <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\grpc\grpc.vcxproj">
+      <Project>{29D16885-7228-4C31-81ED-5F9187C7F2A9}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\..\..\vsprojects\vcxproj\.\gpr_test_util\gpr_test_util.vcxproj">
       <Project>{EAB0A629-17A9-44DB-B5FF-E91A721FE037}</Project>
