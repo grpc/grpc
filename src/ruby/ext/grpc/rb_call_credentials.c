@@ -179,17 +179,6 @@ static rb_data_type_t grpc_rb_call_credentials_data_type = {
 #endif
 };
 
-/* Creates a wrapping object for a given call credentials. This should only be
- * called with grpc_call_credentials objects that are not already associated
- * with any Ruby object */
-VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials *c) {
-  if (c == NULL) {
-    return Qnil;
-  }
-  return TypedData_Wrap_Struct(grpc_rb_cCallCredentials,
-                               &grpc_rb_call_credentials_data_type, c);
-}
-
 /* Allocates CallCredentials instances.
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
@@ -197,6 +186,22 @@ static VALUE grpc_rb_call_credentials_alloc(VALUE cls) {
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_rb_call_credentials_data_type, wrapper);
+}
+
+/* Creates a wrapping object for a given call credentials. This should only be
+ * called with grpc_call_credentials objects that are not already associated
+ * with any Ruby object */
+VALUE grpc_rb_wrap_call_credentials(grpc_call_credentials *c) {
+  VALUE rb_wrapper;
+  grpc_rb_call_credentials *wrapper;
+  if (c == NULL) {
+    return Qnil;
+  }
+  rb_wrapper = grpc_rb_call_credentials_alloc(grpc_rb_cCallCredentials);
+  TypedData_Get_Struct(rb_wrapper, grpc_rb_call_credentials,
+                       &grpc_rb_call_credentials_data_type, wrapper);
+  wrapper->wrapped = c;
+  return rb_wrapper;
 }
 
 /* Clones CallCredentials instances.
@@ -246,6 +251,10 @@ static VALUE grpc_rb_call_credentials_init(VALUE self, VALUE proc) {
 
   plugin.get_metadata = grpc_rb_call_credentials_plugin_get_metadata;
   plugin.destroy = grpc_rb_call_credentials_plugin_destroy;
+  if (!rb_obj_is_proc(proc)) {
+    rb_raise(rb_eTypeError, "Argument to CallCredentials#new must be a proc");
+    return Qnil;
+  }
   plugin.state = (void*)proc;
   plugin.type = "";
 
