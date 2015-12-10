@@ -66,6 +66,7 @@ void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
   grpc_channel_element *top_elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GPR_ASSERT(reserved == NULL);
   memset(&op, 0, sizeof(op));
   pr->tag = tag;
   pr->cq = cq;
