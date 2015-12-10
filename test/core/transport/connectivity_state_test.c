@@ -31,14 +31,27 @@
  *
  */
 
-#ifndef GRPC_INTERNAL_CORE_CHANNEL_NOOP_FILTER_H
-#define GRPC_INTERNAL_CORE_CHANNEL_NOOP_FILTER_H
+#include "src/core/transport/connectivity_state.h"
 
-#include "src/core/channel/channel_stack.h"
+#include <string.h>
 
-/* No-op filter: simply takes everything it's given, and passes it on to the
-   next filter. Exists simply as a starting point that others can take and
-   customize for their own filters */
-extern const grpc_channel_filter grpc_no_op_filter;
+#include <grpc/support/log.h>
 
-#endif /* GRPC_INTERNAL_CORE_CHANNEL_NOOP_FILTER_H */
+#include "test/core/util/test_config.h"
+
+#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
+
+static void test_connectivity_state_name(void) {
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_IDLE), "IDLE"));
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_CONNECTING), "CONNECTING"));
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_READY), "READY"));
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_TRANSIENT_FAILURE), "TRANSIENT_FAILURE"));
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_FATAL_FAILURE), "FATAL_FAILURE"));
+}
+
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  grpc_connectivity_state_trace = 1;
+  test_connectivity_state_name();
+  return 0;
+}

@@ -116,7 +116,6 @@ filegroups:
   - src/core/channel/context.h
   - src/core/channel/http_client_filter.h
   - src/core/channel/http_server_filter.h
-  - src/core/channel/noop_filter.h
   - src/core/channel/subchannel_call_holder.h
   - src/core/client_config/client_config.h
   - src/core/client_config/connector.h
@@ -231,7 +230,6 @@ filegroups:
   - src/core/channel/connected_channel.c
   - src/core/channel/http_client_filter.c
   - src/core/channel/http_server_filter.c
-  - src/core/channel/noop_filter.c
   - src/core/channel/subchannel_call_holder.c
   - src/core/client_config/client_config.c
   - src/core/client_config/connector.c
@@ -1359,6 +1357,18 @@ targets:
   - mac
   - linux
   - posix
+- name: httpscli_test
+  build: test
+  language: c
+  src:
+  - test/core/httpcli/httpscli_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
 - name: init_test
   build: test
   language: c
@@ -1500,6 +1510,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: server_chttp2_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/server_chttp2_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: set_initial_connect_string_test
   build: test
   language: c
@@ -1608,6 +1628,16 @@ targets:
   language: c
   src:
   - test/core/profiling/timers_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: transport_connectivity_state_test
+  build: test
+  language: c
+  src:
+  - test/core/transport/connectivity_state_test.c
   deps:
   - grpc_test_util
   - grpc

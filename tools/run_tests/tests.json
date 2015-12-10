@@ -853,6 +853,18 @@
   }, 
   {
     "ci_platforms": [
+      "linux"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "httpscli_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "ci_platforms": [
       "linux", 
       "mac", 
       "posix", 
@@ -1077,6 +1089,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "server_chttp2_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "set_initial_connect_string_test", 
     "platforms": [
       "linux", 
@@ -1234,6 +1264,24 @@
     "flaky": false, 
     "language": "c", 
     "name": "timers_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "transport_connectivity_state_test", 
     "platforms": [
       "linux", 
       "mac", 
