@@ -37,6 +37,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
 
 #include "rb_call_credentials.h"
 #include "rb_grpc.h"
@@ -99,17 +100,6 @@ static rb_data_type_t grpc_rb_channel_credentials_data_type = {
 #endif
 };
 
-/* Creates a wrapping object for a given channel credentials. This should only
- * be called with grpc_channel_credentials objects that are not already
- * associated with any Ruby object. */
-VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials *c) {
-  if (c == NULL) {
-    return Qnil;
-  }
-  return TypedData_Wrap_Struct(grpc_rb_cChannelCredentials,
-                               &grpc_rb_channel_credentials_data_type, c);
-}
-
 /* Allocates ChannelCredential instances.
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_channel_credentials_alloc(VALUE cls) {
@@ -117,6 +107,22 @@ static VALUE grpc_rb_channel_credentials_alloc(VALUE cls) {
   wrapper->wrapped = NULL;
   wrapper->mark = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_rb_channel_credentials_data_type, wrapper);
+}
+
+/* Creates a wrapping object for a given channel credentials. This should only
+ * be called with grpc_channel_credentials objects that are not already
+ * associated with any Ruby object. */
+VALUE grpc_rb_wrap_channel_credentials(grpc_channel_credentials *c) {
+  VALUE rb_wrapper;
+  grpc_rb_channel_credentials *wrapper;
+  if (c == NULL) {
+    return Qnil;
+  }
+  rb_wrapper = grpc_rb_channel_credentials_alloc(grpc_rb_cChannelCredentials);
+  TypedData_Get_Struct(rb_wrapper, grpc_rb_channel_credentials,
+                       &grpc_rb_channel_credentials_data_type, wrapper);
+  wrapper->wrapped = c;
+  return rb_wrapper;
 }
 
 /* Clones ChannelCredentials instances.
@@ -222,6 +228,10 @@ static VALUE grpc_rb_channel_credentials_compose(int argc, VALUE *argv,
   for (int i = 0; i < argc; i++) {
     other = grpc_rb_get_wrapped_call_credentials(argv[i]);
     creds = grpc_composite_channel_credentials_create(creds, other, NULL);
+    if (creds == NULL) {
+      rb_raise(rb_eRuntimeError,
+               "Failed to compose channel and call credentials");
+    }
   }
   return grpc_rb_wrap_channel_credentials(creds);
 }
