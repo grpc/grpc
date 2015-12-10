@@ -85,6 +85,8 @@ struct grpc_wakeup_fd {
   int write_fd;
 };
 
+extern int grpc_allow_specialized_wakeup_fd;
+
 #define GRPC_WAKEUP_FD_GET_READ_FD(fd_info) ((fd_info)->read_fd)
 
 void grpc_wakeup_fd_init(grpc_wakeup_fd* fd_info);
