@@ -50,6 +50,7 @@ uds_fixture_options = default_unsecure_fixture_options._replace(dns_resolver=Fal
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
     'h2_compress': default_unsecure_fixture_options,
+    'h2_census': default_unsecure_fixture_options,
     'h2_fakesec': default_secure_fixture_options._replace(ci_mac=False),
     'h2_full': default_unsecure_fixture_options,
     'h2_full+poll': default_unsecure_fixture_options._replace(
@@ -87,7 +88,6 @@ END2END_TESTS = {
     'cancel_before_invoke': default_test_options,
     'cancel_in_a_vacuum': default_test_options,
     'cancel_with_status': default_test_options,
-    'census_simple_request': default_test_options,
     'channel_connectivity': connectivity_test_options._replace(proxyable=False),
     'compressed_payload': default_test_options._replace(proxyable=False),
     'default_host': default_test_options._replace(needs_fullstack=True,
