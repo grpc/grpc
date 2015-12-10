@@ -57,6 +57,20 @@ typedef struct wrapped_grpc_call_credentials {
   grpc_call_credentials *wrapped;
 } wrapped_grpc_call_credentials;
 
+/* Struct to hold callback function for plugin creds API */
+typedef struct plugin_state {
+  zend_fcall_info *fci;
+  zend_fcall_info_cache *fci_cache;
+} plugin_state;
+
+/* Callback function for plugin creds API */
+void plugin_get_metadata(void *state, grpc_auth_metadata_context context,
+                         grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data);
+
+/* Cleanup function for plugin creds API */
+void plugin_destroy_state(void *ptr);
+
 /* Initializes the CallCredentials PHP class */
 void grpc_init_call_credentials(TSRMLS_D);
 
