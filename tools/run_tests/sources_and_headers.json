@@ -751,6 +751,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "httpscli_test", 
+    "src": [
+      "test/core/httpcli/httpscli_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "init_test", 
     "src": [
       "test/core/surface/init_test.c"
@@ -939,6 +953,20 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "server_chttp2_test", 
+    "src": [
+      "test/core/surface/server_chttp2_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util", 
       "test_tcp_server"
     ], 
@@ -1073,6 +1101,20 @@
     "name": "timers_test", 
     "src": [
       "test/core/profiling/timers_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "transport_connectivity_state_test", 
+    "src": [
+      "test/core/transport/connectivity_state_test.c"
     ]
   }, 
   {
@@ -14473,7 +14515,6 @@
       "src/core/channel/context.h", 
       "src/core/channel/http_client_filter.h", 
       "src/core/channel/http_server_filter.h", 
-      "src/core/channel/noop_filter.h", 
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.h", 
@@ -14628,8 +14669,6 @@
       "src/core/channel/http_client_filter.h", 
       "src/core/channel/http_server_filter.c", 
       "src/core/channel/http_server_filter.h", 
-      "src/core/channel/noop_filter.c", 
-      "src/core/channel/noop_filter.h", 
       "src/core/channel/subchannel_call_holder.c", 
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.c", 
@@ -14985,7 +15024,6 @@
       "src/core/channel/context.h", 
       "src/core/channel/http_client_filter.h", 
       "src/core/channel/http_server_filter.h", 
-      "src/core/channel/noop_filter.h", 
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.h", 
       "src/core/client_config/connector.h", 
@@ -15126,8 +15164,6 @@
       "src/core/channel/http_client_filter.h", 
       "src/core/channel/http_server_filter.c", 
       "src/core/channel/http_server_filter.h", 
-      "src/core/channel/noop_filter.c", 
-      "src/core/channel/noop_filter.h", 
       "src/core/channel/subchannel_call_holder.c", 
       "src/core/channel/subchannel_call_holder.h", 
       "src/core/client_config/client_config.c", 

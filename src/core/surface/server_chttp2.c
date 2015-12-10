@@ -101,9 +101,7 @@ int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
   }
 
   tcp = grpc_tcp_server_create();
-  if (!tcp) {
-    goto error;
-  }
+  GPR_ASSERT(tcp);
 
   for (i = 0; i < resolved->naddrs; i++) {
     grpc_tcp_listener *listener;

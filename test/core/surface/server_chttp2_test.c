@@ -31,31 +31,19 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
-#ifdef GPR_POSIX_FILE
-
-#include "src/core/security/credentials.h"
-
-#include <grpc/support/alloc.h>
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
+#include "test/core/util/test_config.h"
 
-#include "src/core/support/env.h"
-#include "src/core/support/string.h"
-
-char *grpc_get_well_known_google_credentials_file_path_impl(void) {
-  char *result = NULL;
-  char *home = gpr_getenv("HOME");
-  if (home == NULL) {
-    gpr_log(GPR_ERROR, "Could not get HOME environment variable.");
-    return NULL;
-  }
-  gpr_asprintf(&result, "%s/.config/%s/%s", home,
-               GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY,
-               GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE);
-  gpr_free(home);
-  return result;
+void test_unparsable_target(void) {
+  int port = grpc_server_add_insecure_http2_port(NULL, "[");
+  GPR_ASSERT(port == 0);
 }
 
-#endif /* GPR_POSIX_FILE */
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  grpc_init();
+  test_unparsable_target();
+  grpc_shutdown();
+  return 0;
+}

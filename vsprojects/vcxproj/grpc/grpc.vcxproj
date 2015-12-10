@@ -276,7 +276,6 @@
     <ClInclude Include="..\..\..\src\core\channel\context.h" />
     <ClInclude Include="..\..\..\src\core\channel\http_client_filter.h" />
     <ClInclude Include="..\..\..\src\core\channel\http_server_filter.h" />
-    <ClInclude Include="..\..\..\src\core\channel\noop_filter.h" />
     <ClInclude Include="..\..\..\src\core\channel\subchannel_call_holder.h" />
     <ClInclude Include="..\..\..\src\core\client_config\client_config.h" />
     <ClInclude Include="..\..\..\src\core\client_config\connector.h" />
@@ -446,8 +445,6 @@
     <ClCompile Include="..\..\..\src\core\channel\http_client_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\http_server_filter.c">
-    </ClCompile>
-    <ClCompile Include="..\..\..\src\core\channel\noop_filter.c">
     </ClCompile>
     <ClCompile Include="..\..\..\src\core\channel\subchannel_call_holder.c">
     </ClCompile>
