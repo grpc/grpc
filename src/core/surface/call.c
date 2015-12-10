@@ -336,10 +336,6 @@ void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                               grpc_cq_pollset(cq));
 }
 
-grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
-  return call->cq;
-}
-
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
 void grpc_call_internal_ref(grpc_call *c, const char *reason) {
   grpc_call_stack_ref(CALL_STACK_FROM_CALL(c), reason);
