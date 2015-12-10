@@ -4,6 +4,18 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
+    "name": "alloc_test", 
+    "src": [
+      "test/core/support/alloc_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "gpr_test_util", 
       "grpc", 
       "grpc_test_util"

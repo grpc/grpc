@@ -33,6 +33,7 @@
 
 #include "src/core/support/string.h"
 
+#include <limits.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
@@ -286,6 +287,53 @@ static void test_strsplit(void) {
   gpr_free(parts);
 }
 
+static void test_ltoa() {
+  char *str;
+  char buf[GPR_LTOA_MIN_BUFSIZE];
+
+  LOG_TEST_NAME("test_ltoa");
+
+  /* zero */
+  GPR_ASSERT(1 == gpr_ltoa(0, buf));
+  GPR_ASSERT(0 == strcmp("0", buf));
+
+  /* positive number */
+  GPR_ASSERT(3 == gpr_ltoa(123, buf));
+  GPR_ASSERT(0 == strcmp("123", buf));
+
+  /* negative number */
+  GPR_ASSERT(6 == gpr_ltoa(-12345, buf));
+  GPR_ASSERT(0 == strcmp("-12345", buf));
+
+  /* large negative - we don't know the size of long in advance */
+  GPR_ASSERT(gpr_asprintf(&str, "%lld", (long long)LONG_MIN));
+  GPR_ASSERT(strlen(str) == (size_t)gpr_ltoa(LONG_MIN, buf));
+  GPR_ASSERT(0 == strcmp(str, buf));
+  gpr_free(str);
+}
+
+static void test_int64toa() {
+  char buf[GPR_INT64TOA_MIN_BUFSIZE];
+
+  LOG_TEST_NAME("test_int64toa");
+
+  /* zero */
+  GPR_ASSERT(1 == gpr_int64toa(0, buf));
+  GPR_ASSERT(0 == strcmp("0", buf));
+
+  /* positive */
+  GPR_ASSERT(3 == gpr_int64toa(123, buf));
+  GPR_ASSERT(0 == strcmp("123", buf));
+
+  /* large positive */
+  GPR_ASSERT(19 == gpr_int64toa(9223372036854775807LL, buf));
+  GPR_ASSERT(0 == strcmp("9223372036854775807", buf));
+
+  /* large negative */
+  GPR_ASSERT(20 == gpr_int64toa(-9223372036854775807LL - 1, buf));
+  GPR_ASSERT(0 == strcmp("-9223372036854775808", buf));
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   test_strdup();
@@ -296,5 +344,7 @@ int main(int argc, char **argv) {
   test_strjoin();
   test_strjoin_sep();
   test_strsplit();
+  test_ltoa();
+  test_int64toa();
   return 0;
 }

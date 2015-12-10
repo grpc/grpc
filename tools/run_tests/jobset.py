@@ -178,6 +178,9 @@ class JobSpec(object):
 
   def __cmp__(self, other):
     return self.identity() == other.identity()
+    
+  def __repr__(self):
+    return 'JobSpec(shortname=%s, cmdline=%s)' % (self.shortname, self.cmdline)
 
 
 class JobResult(object):
