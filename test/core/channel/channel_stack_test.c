@@ -81,6 +81,16 @@ static char *get_peer(grpc_exec_ctx *exec_ctx, grpc_call_element *elem) {
   return gpr_strdup("peer");
 }
 
+static void free_channel(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+  grpc_channel_stack_destroy(exec_ctx, arg);
+  gpr_free(arg);
+}
+
+static void free_call(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+  grpc_call_stack_destroy(exec_ctx, arg);
+  gpr_free(arg);
+}
+
 static void test_create_channel_stack(void) {
   const grpc_channel_filter filter = {
       call_func, channel_func, sizeof(int), call_init_func,
@@ -105,16 +115,16 @@ static void test_create_channel_stack(void) {
   chan_args.args = &arg;
 
   channel_stack = gpr_malloc(grpc_channel_stack_size(&filters, 1));
-  grpc_channel_stack_init(&exec_ctx, &filters, 1, NULL, &chan_args,
-                          channel_stack);
+  grpc_channel_stack_init(&exec_ctx, 1, free_channel, channel_stack, &filters,
+                          1, &chan_args, "test", channel_stack);
   GPR_ASSERT(channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
   channel_data = (int *)channel_elem->channel_data;
   GPR_ASSERT(*channel_data == 0);
 
   call_stack = gpr_malloc(channel_stack->call_stack_size);
-  grpc_call_stack_init(&exec_ctx, channel_stack, 0, NULL, NULL, NULL, NULL,
-                       call_stack);
+  grpc_call_stack_init(&exec_ctx, channel_stack, 1, free_call, call_stack, NULL,
+                       NULL, call_stack);
   GPR_ASSERT(call_stack->count == 1);
   call_elem = grpc_call_stack_element(call_stack, 0);
   GPR_ASSERT(call_elem->filter == channel_elem->filter);
@@ -123,12 +133,11 @@ static void test_create_channel_stack(void) {
   GPR_ASSERT(*call_data == 0);
   GPR_ASSERT(*channel_data == 1);
 
-  grpc_call_stack_destroy(&exec_ctx, call_stack);
-  gpr_free(call_stack);
+  GRPC_CALL_STACK_UNREF(&exec_ctx, call_stack, "done");
+  grpc_exec_ctx_flush(&exec_ctx);
   GPR_ASSERT(*channel_data == 2);
 
-  grpc_channel_stack_destroy(&exec_ctx, channel_stack);
-  gpr_free(channel_stack);
+  GRPC_CHANNEL_STACK_UNREF(&exec_ctx, channel_stack, "done");
 
   grpc_exec_ctx_finish(&exec_ctx);
 }

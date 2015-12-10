@@ -82,8 +82,9 @@ static void test_get(int port) {
 
   memset(&req, 0, sizeof(req));
   req.host = host;
+  req.ssl_host_override = "foo.test.google.fr";
   req.path = "/get";
-  req.handshaker = &grpc_httpcli_plaintext;
+  req.handshaker = &grpc_httpcli_ssl;
 
   grpc_httpcli_get(&exec_ctx, &g_context, &g_pollset, &req, n_seconds_time(15),
                    on_finish, (void *)42);
@@ -113,8 +114,9 @@ static void test_post(int port) {
 
   memset(&req, 0, sizeof(req));
   req.host = host;
+  req.ssl_host_override = "foo.test.google.fr";
   req.path = "/post";
-  req.handshaker = &grpc_httpcli_plaintext;
+  req.handshaker = &grpc_httpcli_ssl;
 
   grpc_httpcli_post(&exec_ctx, &g_context, &g_pollset, &req, "hello", 5,
                     n_seconds_time(15), on_finish, (void *)42);
@@ -141,7 +143,7 @@ int main(int argc, char **argv) {
   gpr_subprocess *server;
   char *me = argv[0];
   char *lslash = strrchr(me, '/');
-  char *args[4];
+  char *args[5];
   char root[1024];
   int port = grpc_pick_unused_port_or_die();
 
@@ -157,7 +159,8 @@ int main(int argc, char **argv) {
   gpr_asprintf(&args[0], "%s/../../test/core/httpcli/test_server.py", root);
   args[1] = "--port";
   gpr_asprintf(&args[2], "%d", port);
-  server = gpr_subprocess_create(3, (const char **)args);
+  args[3] = "--ssl";
+  server = gpr_subprocess_create(4, (const char **)args);
   GPR_ASSERT(server);
   gpr_free(args[0]);
   gpr_free(args[2]);

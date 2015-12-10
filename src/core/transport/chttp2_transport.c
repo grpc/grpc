@@ -910,7 +910,7 @@ static void perform_transport_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
 
   grpc_exec_ctx_enqueue(exec_ctx, op->on_consumed, 1);
 
-  if (op->on_connectivity_state_change) {
+  if (op->on_connectivity_state_change != NULL) {
     grpc_connectivity_state_notify_on_state_change(
         exec_ctx, &t->channel_callback.state_tracker, op->connectivity_state,
         op->on_connectivity_state_change);

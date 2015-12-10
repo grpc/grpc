@@ -853,6 +853,18 @@
   }, 
   {
     "ci_platforms": [
+      "linux"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "httpscli_test", 
+    "platforms": [
+      "linux"
+    ]
+  }, 
+  {
+    "ci_platforms": [
       "linux", 
       "mac", 
       "posix", 
@@ -1060,6 +1072,24 @@
     "flaky": false, 
     "language": "c", 
     "name": "secure_endpoint_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "server_chttp2_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -9129,61 +9159,7 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_uchannel_channel_connectivity_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
     "name": "h2_uchannel_compressed_payload_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uchannel_default_host_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uchannel_disappearing_server_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -9526,24 +9502,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_uchannel_shutdown_finishes_tags_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uchannel_simple_delayed_request_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -14972,61 +14930,7 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_uchannel_channel_connectivity_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
     "name": "h2_uchannel_compressed_payload_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uchannel_default_host_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uchannel_disappearing_server_nosec_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -15369,24 +15273,6 @@
     "flaky": false, 
     "language": "c", 
     "name": "h2_uchannel_shutdown_finishes_tags_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ]
-  }, 
-  {
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "exclude_configs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uchannel_simple_delayed_request_nosec_test", 
     "platforms": [
       "linux", 
       "mac", 
