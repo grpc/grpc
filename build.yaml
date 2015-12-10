@@ -1358,6 +1358,18 @@ targets:
   - mac
   - linux
   - posix
+- name: httpscli_test
+  build: test
+  language: c
+  src:
+  - test/core/httpcli/httpscli_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - linux
 - name: init_test
   build: test
   language: c
@@ -1494,6 +1506,16 @@ targets:
   language: c
   src:
   - test/core/security/secure_endpoint_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+- name: server_chttp2_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/server_chttp2_test.c
   deps:
   - grpc_test_util
   - grpc
