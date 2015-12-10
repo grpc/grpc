@@ -1520,6 +1520,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: server_test
+  build: test
+  language: c
+  src:
+  - test/core/surface/server_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: set_initial_connect_string_test
   build: test
   language: c
