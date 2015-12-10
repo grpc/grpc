@@ -917,6 +917,7 @@ static char *null_well_known_creds_path_getter(void) {
 static void test_google_default_creds_gce(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_composite_channel_credentials *creds;
+  grpc_channel_credentials *cached_creds;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, NULL,
                                             NULL};
   grpc_flush_cached_google_default_credentials();
@@ -942,7 +943,13 @@ static void test_google_default_creds_gce(void) {
   grpc_exec_ctx_flush(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
 
+  /* Check that we get a cached creds if we call
+     grpc_google_default_credentials_create again. */
+  cached_creds = grpc_google_default_credentials_create();
+  GPR_ASSERT(cached_creds == &creds->base);
+
   /* Cleanup. */
+  grpc_channel_credentials_release(cached_creds);
   grpc_channel_credentials_release(&creds->base);
   grpc_httpcli_set_override(NULL, NULL);
   grpc_override_well_known_credentials_path_getter(NULL);
