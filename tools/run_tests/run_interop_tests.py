@@ -107,7 +107,8 @@ class CSharpLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return _SKIP_COMPRESSION
+    # TODO: status_code_and_message doesn't work against node_server
+    return _SKIP_COMPRESSION + ['status_code_and_message']
 
   def unimplemented_test_cases_server(self):
     return _SKIP_COMPRESSION
