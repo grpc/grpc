@@ -31,31 +31,27 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
+#include "src/core/transport/connectivity_state.h"
 
-#ifdef GPR_POSIX_FILE
+#include <string.h>
 
-#include "src/core/security/credentials.h"
-
-#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
-#include "src/core/support/env.h"
-#include "src/core/support/string.h"
+#include "test/core/util/test_config.h"
 
-char *grpc_get_well_known_google_credentials_file_path_impl(void) {
-  char *result = NULL;
-  char *home = gpr_getenv("HOME");
-  if (home == NULL) {
-    gpr_log(GPR_ERROR, "Could not get HOME environment variable.");
-    return NULL;
-  }
-  gpr_asprintf(&result, "%s/.config/%s/%s", home,
-               GRPC_GOOGLE_CLOUD_SDK_CONFIG_DIRECTORY,
-               GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE);
-  gpr_free(home);
-  return result;
+#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
+
+static void test_connectivity_state_name(void) {
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_IDLE), "IDLE"));
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_CONNECTING), "CONNECTING"));
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_READY), "READY"));
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_TRANSIENT_FAILURE), "TRANSIENT_FAILURE"));
+  GPR_ASSERT(0 == strcmp(grpc_connectivity_state_name(GRPC_CHANNEL_FATAL_FAILURE), "FATAL_FAILURE"));
 }
 
-#endif /* GPR_POSIX_FILE */
+int main(int argc, char **argv) {
+  grpc_test_init(argc, argv);
+  grpc_connectivity_state_trace = 1;
+  test_connectivity_state_name();
+  return 0;
+}
