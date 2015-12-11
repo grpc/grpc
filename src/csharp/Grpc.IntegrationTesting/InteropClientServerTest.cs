@@ -147,6 +147,7 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
+        [Ignore("TODO: see #4427")]
         public void UnimplementedMethod()
         {
             InteropClient.RunUnimplementedMethod(UnimplementedService.NewClient(channel));
