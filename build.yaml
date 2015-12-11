@@ -1562,6 +1562,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: socket_utils_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/socket_utils_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  - posix
 - name: tcp_client_posix_test
   build: test
   language: c
