@@ -170,6 +170,7 @@ void grpc_fd_become_readable(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
 void grpc_fd_become_writable(grpc_exec_ctx *exec_ctx, grpc_fd *fd);
 
 /* Reference counting for fds */
+/*#define GRPC_FD_REF_COUNT_DEBUG*/
 #ifdef GRPC_FD_REF_COUNT_DEBUG
 void grpc_fd_ref(grpc_fd *fd, const char *reason, const char *file, int line);
 void grpc_fd_unref(grpc_fd *fd, const char *reason, const char *file, int line);
