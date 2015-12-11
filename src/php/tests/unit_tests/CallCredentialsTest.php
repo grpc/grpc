@@ -69,9 +69,10 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
         unset($this->server);
     }
 
-    public function callbackFunc($service_url)
+    public function callbackFunc($context)
     {
-        $this->assertTrue(is_string($service_url));
+        $this->assertTrue(is_string($context->service_url));
+        $this->assertTrue(is_string($context->method_name));
 
         return ['k1' => ['v1'], 'k2' => ['v2']];
     }
