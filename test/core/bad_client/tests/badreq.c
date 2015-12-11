@@ -96,5 +96,19 @@ int main(int argc, char **argv) {
     "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
     GRPC_BAD_CLIENT_DISCONNECT);
 
+  /* bad accept-encoding algorithm */
+  GRPC_RUN_BAD_CLIENT_TEST(verifier, 
+    PFX_STR
+    "\x00\x00\xd2\x01\x04\x00\x00\x00\x01"
+    "\x10\x05:path\x08/foo/bar"
+    "\x10\x07:scheme\x04http"
+    "\x10\x07:method\x04POST"
+    "\x10\x0a:authority\x09localhost"
+    "\x10\x0c""content-type\x10""application/grpc"
+    "\x10\x14grpc-accept-encoding\x1enobody-knows-the-trouble-i-see"
+    "\x10\x02te\x08trailers"
+    "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
+    GRPC_BAD_CLIENT_DISCONNECT);
+
   return 0;
 }
