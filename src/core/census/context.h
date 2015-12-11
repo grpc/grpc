@@ -36,7 +36,7 @@
 
 #include <grpc/census.h>
 
-#define GRPC_CENSUS_MAX_ON_THE_WIRE_TAG_BYTES 4096
+#define GRPC_CENSUS_MAX_ON_THE_WIRE_TAG_BYTES 2048
 
 /* census_context is the in-memory representation of information needed to
  * maintain tracing, RPC statistics and resource usage information. */

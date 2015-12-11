@@ -33,11 +33,11 @@
  * WARNING: Auto-generated code.
  *
  * To make changes to this file, change
- *tools/codegen/core/gen_static_metadata.py,
+ * tools/codegen/core/gen_static_metadata.py,
  * and then re-run it.
  *
  * See metadata.h for an explanation of the interface here, and metadata.c for
- *an
+ * an
  * explanation of what's going on.
  */
 
