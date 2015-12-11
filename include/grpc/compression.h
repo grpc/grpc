@@ -79,12 +79,6 @@ int grpc_compression_algorithm_parse(const char *name, size_t name_length,
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                     char **name);
 
-/** Returns the compression level corresponding to \a algorithm.
- *
- * It abort()s for unknown algorithms. */
-grpc_compression_level grpc_compression_level_for_algorithm(
-    grpc_compression_algorithm algorithm);
-
 /** Returns the compression algorithm corresponding to \a level.
  *
  * It abort()s for unknown levels . */
