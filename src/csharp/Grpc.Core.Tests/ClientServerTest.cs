@@ -262,7 +262,7 @@ namespace Grpc.Core.Tests
         }
 
         [Test]
-        public void PeerInfoPresent()
+        public void ServerCallContext_PeerInfoPresent()
         {
             helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
             {
@@ -271,6 +271,18 @@ namespace Grpc.Core.Tests
 
             string peer = Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc");
             Assert.IsTrue(peer.Contains(Host));
+        }
+
+        [Test]
+        public void ServerCallContext_HostAndMethodPresent()
+        {
+            helper.UnaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            {
+                Assert.IsTrue(context.Host.Contains(Host));
+                Assert.AreEqual("/tests.Test/Unary", context.Method);
+                return "PASS";
+            });
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), "abc"));
         }
 
         [Test]
