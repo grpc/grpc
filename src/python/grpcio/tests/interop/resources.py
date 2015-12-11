@@ -44,10 +44,6 @@ def test_root_certificates():
       __name__, _ROOT_CERTIFICATES_RESOURCE_PATH)
 
 
-def prod_root_certificates():
-  return open(os.environ['SSL_CERT_FILE'], mode='rb').read()
-
-
 def private_key():
   return pkg_resources.resource_string(__name__, _PRIVATE_KEY_RESOURCE_PATH)
 
