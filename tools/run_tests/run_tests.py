@@ -47,6 +47,7 @@ import tempfile
 import traceback
 import time
 import urllib2
+import uuid
 
 import jobset
 import report_utils
@@ -336,26 +337,42 @@ class CSharpLanguage(object):
     self.platform = platform_string()
 
   def test_specs(self, config, args):
-    assemblies = ['Grpc.Core.Tests',
-                  'Grpc.Examples.Tests',
-                  'Grpc.HealthCheck.Tests',
-                  'Grpc.IntegrationTesting']
+    with open('src/csharp/tests.json') as f:
+      tests_json = json.load(f)
+    assemblies = tests_json['assemblies']
+    tests = tests_json['tests']
+
+    msbuild_config = _WINDOWS_CONFIG[config.build_config]
+    assembly_files = ['%s/bin/%s/%s.dll' % (a, msbuild_config, a)
+                      for a in assemblies]
+
+    extra_args = ['-labels'] + assembly_files
+
     if self.platform == 'windows':
-      cmd = 'tools\\run_tests\\run_csharp.bat'
+      script_name = 'tools\\run_tests\\run_csharp.bat'
+      extra_args += ['-domain=None']
     else:
-      cmd = 'tools/run_tests/run_csharp.sh'
+      script_name = 'tools/run_tests/run_csharp.sh'
 
     if config.build_config == 'gcov':
       # On Windows, we only collect C# code coverage.
       # On Linux, we only collect coverage for native extension.
       # For code coverage all tests need to run as one suite.
-      return [config.job_spec([cmd], None,
-              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+      return [config.job_spec([script_name] + extra_args, None,
+                              shortname='csharp.coverage',
+                              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
     else:
-      return [config.job_spec([cmd, assembly],
-              None, shortname=assembly,
-              environ=_FORCE_ENVIRON_FOR_WRAPPERS)
-              for assembly in assemblies]
+      specs = []
+      for test in tests:
+        cmdline = [script_name, '-run=%s' % test] + extra_args
+        if self.platform == 'windows':
+          # use different output directory for each test to prevent
+          # TestResult.xml clash between parallel test runs.
+          cmdline += ['-work=test-result/%s' % uuid.uuid4()]
+        specs.append(config.job_spec(cmdline, None,
+                                     shortname='csharp.%s' % test,
+                                     environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+      return specs
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -509,6 +526,7 @@ _LANGUAGES = {
 _WINDOWS_CONFIG = {
     'dbg': 'Debug',
     'opt': 'Release',
+    'gcov': 'Release',
     }
 
 
