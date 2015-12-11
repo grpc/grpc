@@ -347,6 +347,9 @@ static grpc_resolver *sockaddr_create(
   gpr_slice_buffer_destroy(&path_parts);
   gpr_slice_unref(path_slice);
   if (errors_found) {
+    gpr_free(r->lb_policy_name);
+    gpr_free(r->addrs);
+    gpr_free(r->addrs_len);
     gpr_free(r);
     return NULL;
   }
