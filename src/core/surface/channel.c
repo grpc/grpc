@@ -40,7 +40,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/census/context.h"
 #include "src/core/client_config/resolver_registry.h"
 #include "src/core/iomgr/iomgr.h"
 #include "src/core/support/string.h"
@@ -168,7 +167,7 @@ static grpc_call *grpc_channel_create_call_internal(
     grpc_channel *channel, grpc_call *parent_call, gpr_uint32 propagation_mask,
     grpc_completion_queue *cq, grpc_mdelem *path_mdelem,
     grpc_mdelem *authority_mdelem, gpr_timespec deadline) {
-  grpc_mdelem *send_metadata[3];
+  grpc_mdelem *send_metadata[2];
   size_t num_metadata = 0;
 
   GPR_ASSERT(channel->is_client);
@@ -180,16 +179,6 @@ static grpc_call *grpc_channel_create_call_internal(
     send_metadata[num_metadata++] = GRPC_MDELEM_REF(channel->default_authority);
   }
 
-  if (propagation_mask & GRPC_PROPAGATE_CENSUS_TRACING_CONTEXT) {
-    char buf[GRPC_CENSUS_MAX_ON_THE_WIRE_TAG_BYTES];
-    size_t len = census_context_serialize(
-        census_context_current(), buf, GRPC_CENSUS_MAX_ON_THE_WIRE_TAG_BYTES);
-    if (len > 0) {
-      grpc_mdelem *census_mdelem = grpc_mdelem_from_metadata_strings(
-          GRPC_MDSTR_CENSUS, grpc_mdstr_from_buffer((gpr_uint8 *)buf, len));
-      send_metadata[num_metadata++] = census_mdelem;
-    }
-  }
   return grpc_call_create(channel, parent_call, propagation_mask, cq, NULL,
                           send_metadata, num_metadata, deadline);
 }
