@@ -467,8 +467,24 @@ static void rr_notify_on_state_change(grpc_exec_ctx *exec_ctx,
   gpr_mu_unlock(&p->mu);
 }
 
+static void rr_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *pol,
+                        grpc_closure *closure) {
+  round_robin_lb_policy *p = (round_robin_lb_policy *)pol;
+  ready_list *selected;
+  grpc_connected_subchannel *target;
+  gpr_mu_lock(&p->mu);
+  if ((selected = peek_next_connected_locked(p))) {
+    gpr_mu_unlock(&p->mu);
+    target = grpc_subchannel_get_connected_subchannel(selected->subchannel);
+    grpc_connected_subchannel_ping(exec_ctx, target, closure);
+  } else {
+    gpr_mu_unlock(&p->mu);
+    grpc_exec_ctx_enqueue(exec_ctx, closure, 0);
+  }
+}
+
 static const grpc_lb_policy_vtable round_robin_lb_policy_vtable = {
-    rr_destroy, rr_shutdown, rr_pick, rr_cancel_pick, rr_exit_idle,
+    rr_destroy, rr_shutdown, rr_pick, rr_cancel_pick, rr_ping_one, rr_exit_idle,
     rr_check_connectivity, rr_notify_on_state_change};
 
 static void round_robin_factory_ref(grpc_lb_policy_factory *factory) {}
