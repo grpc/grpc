@@ -1028,6 +1028,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "socket_utils_test", 
+    "src": [
+      "test/core/iomgr/socket_utils_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "tcp_client_posix_test", 
     "src": [
       "test/core/iomgr/tcp_client_posix_test.c"
