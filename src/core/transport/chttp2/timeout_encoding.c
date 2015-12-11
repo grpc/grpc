@@ -39,12 +39,12 @@
 #include <grpc/support/port_platform.h>
 #include "src/core/support/string.h"
 
-static int round_up(int x, int divisor) {
+static gpr_int64 round_up(gpr_int64 x, gpr_int64 divisor) {
   return (x / divisor + (x % divisor != 0)) * divisor;
 }
 
 /* round an integer up to the next value with three significant figures */
-static int round_up_to_three_sig_figs(int x) {
+static gpr_int64 round_up_to_three_sig_figs(gpr_int64 x) {
   if (x < 1000) return x;
   if (x < 10000) return round_up(x, 10);
   if (x < 100000) return round_up(x, 100);
@@ -74,7 +74,7 @@ static void enc_seconds(char *buffer, gpr_int64 sec) {
   }
 }
 
-static void enc_nanos(char *buffer, int x) {
+static void enc_nanos(char *buffer, gpr_int64 x) {
   x = round_up_to_three_sig_figs(x);
   if (x < 100000) {
     if (x % 1000 == 0) {
@@ -98,7 +98,7 @@ static void enc_nanos(char *buffer, int x) {
   }
 }
 
-static void enc_micros(char *buffer, int x) {
+static void enc_micros(char *buffer, gpr_int64 x) {
   x = round_up_to_three_sig_figs(x);
   if (x < 100000) {
     if (x % 1000 == 0) {
@@ -124,7 +124,7 @@ void grpc_chttp2_encode_timeout(gpr_timespec timeout, char *buffer) {
     enc_nanos(buffer, timeout.tv_nsec);
   } else if (timeout.tv_sec < 1000 && timeout.tv_nsec != 0) {
     enc_micros(buffer,
-               (int)(timeout.tv_sec * 1000000) +
+               (gpr_int64)(timeout.tv_sec * 1000000) +
                    (timeout.tv_nsec / 1000 + (timeout.tv_nsec % 1000 != 0)));
   } else {
     enc_seconds(buffer, timeout.tv_sec + (timeout.tv_nsec != 0));

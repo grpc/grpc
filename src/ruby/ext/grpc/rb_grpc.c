@@ -91,7 +91,7 @@ static ID id_tv_sec;
 static ID id_tv_nsec;
 
 /**
- * grpc_rb_time_timeval creates a time_eval from a ruby time object.
+ * grpc_rb_time_timeval creates a timeval from a ruby time object.
  *
  * This func is copied from ruby source, MRI/source/time.c, which is published
  * under the same license as the ruby.h, on which the entire extensions is
@@ -137,7 +137,7 @@ gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
           d += 1;
           f -= 1;
         }
-        t.tv_sec = (time_t)f;
+        t.tv_sec = (gpr_int64)f;
         if (f != t.tv_sec) {
           rb_raise(rb_eRangeError, "%f out of Time range",
                    RFLOAT_VALUE(time));
