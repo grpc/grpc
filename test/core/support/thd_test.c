@@ -62,6 +62,19 @@ static void thd_body(void *v) {
 
 static void thd_body_joinable(void *v) {}
 
+/* Test thread options work as expected */
+static void test_options(void) {
+  gpr_thd_options options = gpr_thd_options_default();
+  GPR_ASSERT(!gpr_thd_options_is_joinable(&options));
+  GPR_ASSERT(gpr_thd_options_is_detached(&options));
+  gpr_thd_options_set_joinable(&options);
+  GPR_ASSERT(gpr_thd_options_is_joinable(&options));
+  GPR_ASSERT(!gpr_thd_options_is_detached(&options));
+  gpr_thd_options_set_detached(&options);
+  GPR_ASSERT(!gpr_thd_options_is_joinable(&options));
+  GPR_ASSERT(gpr_thd_options_is_detached(&options));
+}
+
 /* Test that we can create a number of threads and wait for them. */
 static void test(void) {
   int i;
@@ -96,6 +109,7 @@ static void test(void) {
 
 int main(int argc, char *argv[]) {
   grpc_test_init(argc, argv);
+  test_options();
   test();
   return 0;
 }
