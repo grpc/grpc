@@ -66,9 +66,8 @@ typedef struct callback_params {
 
 static VALUE grpc_rb_call_credentials_callback(VALUE callback_args) {
   VALUE result = rb_hash_new();
-  VALUE empty_md = rb_hash_new();
   VALUE metadata = rb_funcall(rb_ary_entry(callback_args, 0), rb_intern("call"),
-                              2, empty_md, rb_ary_entry(callback_args, 1));
+                              1, rb_ary_entry(callback_args, 1));
   rb_hash_aset(result, rb_str_new2("metadata"), metadata);
   rb_hash_aset(result, rb_str_new2("status"), INT2NUM(GRPC_STATUS_OK));
   rb_hash_aset(result, rb_str_new2("details"), rb_str_new2(""));
@@ -111,7 +110,6 @@ static void *grpc_rb_call_credentials_callback_with_gil(void *param) {
   status = NUM2INT(rb_hash_aref(result, rb_str_new2("status")));
   details = rb_hash_aref(result, rb_str_new2("details"));
   error_details = StringValueCStr(details);
-
   params->callback(params->user_data, md_ary.metadata, md_ary.count, status,
                    error_details);
   grpc_metadata_array_destroy(&md_ary);
