@@ -140,6 +140,7 @@ namespace Grpc.IntegrationTesting
         }
 
         [Test]
+        [Ignore("TODO: see #4427")]
         public async Task StatusCodeAndMessage()
         {
             await InteropClient.RunStatusCodeAndMessageAsync(client);
