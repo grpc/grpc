@@ -54,8 +54,6 @@ int grpc_timer_check(grpc_exec_ctx* exec_ctx, gpr_timespec now,
 void grpc_timer_list_init(gpr_timespec now);
 void grpc_timer_list_shutdown(grpc_exec_ctx* exec_ctx);
 
-gpr_timespec grpc_timer_list_next_timeout(void);
-
 /* the following must be implemented by each iomgr implementation */
 
 void grpc_kick_poller(void);

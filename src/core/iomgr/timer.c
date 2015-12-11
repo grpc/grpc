@@ -343,11 +343,3 @@ int grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
       exec_ctx, now, next,
       gpr_time_cmp(now, gpr_inf_future(now.clock_type)) != 0);
 }
-
-gpr_timespec grpc_timer_list_next_timeout(void) {
-  gpr_timespec out;
-  gpr_mu_lock(&g_mu);
-  out = g_shard_queue[0]->min_deadline;
-  gpr_mu_unlock(&g_mu);
-  return out;
-}
