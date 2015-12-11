@@ -298,8 +298,8 @@ class PythonLanguage:
 
   def client_cmd(self, args):
     return [
-        'src/python/grpcio/.tox/py27/bin/python',
-        'src/python/grpcio/setup.py',
+        '.tox/py27/bin/python',
+        'setup.py',
         'run_interop',
         '--client',
         '--args=\'{}\''.format(' '.join(args))
@@ -310,8 +310,8 @@ class PythonLanguage:
 
   def server_cmd(self, args):
     return [
-        'src/python/grpcio/.tox/py27/bin/python',
-        'src/python/grpcio/setup.py',
+        '.tox/py27/bin/python',
+        'setup.py',
         'run_interop',
         '--server',
         '--args=\'{}\''.format(' '.join(args) + ' --use_tls=true')

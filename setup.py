@@ -37,11 +37,16 @@ from distutils import core as _core
 from distutils import extension as _extension
 import setuptools
 
+PYTHON_STEM = './src/python/grpcio/'
+CORE_INCLUDE = ('./include', './',)
+
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, PYTHON_STEM)
 
-# Break import-style to ensure we can actually find our commands module.
+# Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
+import grpc_core_dependencies
 
 # Environment variable to determine whether or not the Cython extension should
 # *use* Cython or use the generated C files. Note that this requires the C files
@@ -59,23 +64,13 @@ INSTALL_TESTS = os.environ.get('GRPC_PYTHON_INSTALL_TESTS', False)
 
 CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
-CYTHON_EXTENSION_MODULE_NAMES = (
-    'grpc._cython.cygrpc',
-    'grpc._cython._cygrpc.call',
-    'grpc._cython._cygrpc.channel',
-    'grpc._cython._cygrpc.completion_queue',
-    'grpc._cython._cygrpc.credentials',
-    'grpc._cython._cygrpc.records',
-    'grpc._cython._cygrpc.server',
-)
+CYTHON_EXTENSION_MODULE_NAMES = ('grpc._cython.cygrpc',)
 
-EXTENSION_INCLUDE_DIRECTORIES = (
-    '.',
-)
+EXTENSION_INCLUDE_DIRECTORIES = (PYTHON_STEM,) + CORE_INCLUDE
 
 EXTENSION_LIBRARIES = (
-    'grpc',
-    'gpr',
+    'ssl',
+    'crypto',
 )
 if not "darwin" in sys.platform:
     EXTENSION_LIBRARIES += ('rt',)
@@ -84,11 +79,13 @@ if not "darwin" in sys.platform:
 def cython_extensions(package_names, module_names, include_dirs, libraries,
                       build_with_cython=False):
   file_extension = 'pyx' if build_with_cython else 'c'
-  module_files = [name.replace('.', '/') + '.' + file_extension
+  module_files = [os.path.join(PYTHON_STEM,
+                               name.replace('.', '/') + '.' + file_extension)
                   for name in module_names]
   extensions = [
       _extension.Extension(
-          name=module_name, sources=[module_file],
+          name=module_name,
+          sources=[module_file] + grpc_core_dependencies.CORE_SOURCE_FILES,
           include_dirs=include_dirs, libraries=libraries,
           define_macros=[('CYTHON_TRACE_NOGIL', 1)] if ENABLE_CYTHON_TRACING else []
       ) for (module_name, module_file) in zip(module_names, module_files)
@@ -97,6 +94,7 @@ def cython_extensions(package_names, module_names, include_dirs, libraries,
     import Cython.Build
     return Cython.Build.cythonize(
         extensions,
+        include_path=include_dirs,
         compiler_directives={'linetrace': bool(ENABLE_CYTHON_TRACING)})
   else:
     return extensions
@@ -107,7 +105,7 @@ CYTHON_EXTENSION_MODULES = cython_extensions(
     bool(BUILD_WITH_CYTHON))
 
 PACKAGE_DIRECTORIES = {
-    '': '.',
+    '': PYTHON_STEM,
 }
 
 INSTALL_REQUIRES = (
@@ -157,16 +155,18 @@ TEST_RUNNER = 'tests:Runner'
 PACKAGE_DATA = {}
 if INSTALL_TESTS:
   PACKAGE_DATA = dict(PACKAGE_DATA, **TEST_PACKAGE_DATA)
-  PACKAGES = setuptools.find_packages('.')
+  PACKAGES = setuptools.find_packages(PYTHON_STEM)
 else:
-  PACKAGES = setuptools.find_packages('.', exclude=['tests', 'tests.*'])
+  PACKAGES = setuptools.find_packages(
+      PYTHON_STEM, exclude=['tests', 'tests.*'])
 
 setuptools.setup(
     name='grpcio',
-    version='0.12.0b0',
+    version='0.12.0b1',
     ext_modules=CYTHON_EXTENSION_MODULES,
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
+    package_data=PACKAGE_DATA,
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS,
