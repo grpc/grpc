@@ -31,36 +31,16 @@
  *
  */
 
-#ifndef GRPC_RB_CALL_H_
-#define GRPC_RB_CALL_H_
+#ifndef GRPC_RB_CALL_CREDENTIALS_H_
+#define GRPC_RB_CALL_CREDENTIALS_H_
 
 #include <ruby/ruby.h>
 
-#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 
-/* Gets the wrapped call from a VALUE. */
-grpc_call* grpc_rb_get_wrapped_call(VALUE v);
+/* Initializes the ruby CallCredentials class. */
+void Init_grpc_call_credentials();
 
-/* Gets the VALUE corresponding to given grpc_call. */
-VALUE grpc_rb_wrap_call(grpc_call* c);
+grpc_call_credentials* grpc_rb_get_wrapped_call_credentials(VALUE v);
 
-/* Provides the details of an call error */
-const char* grpc_call_error_detail_of(grpc_call_error err);
-
-/* Converts a metadata array to a hash. */
-VALUE grpc_rb_md_ary_to_h(grpc_metadata_array *md_ary);
-
-/* grpc_rb_md_ary_convert converts a ruby metadata hash into
-   a grpc_metadata_array.
-*/
-void grpc_rb_md_ary_convert(VALUE md_ary_hash,
-                            grpc_metadata_array *md_ary);
-
-/* grpc_rb_eCallError is the ruby class of the exception thrown during call
-   operations. */
-extern VALUE grpc_rb_eCallError;
-
-/* Initializes the Call class. */
-void Init_grpc_call();
-
-#endif /* GRPC_RB_CALL_H_ */
+#endif /* GRPC_RB_CALL_CREDENTIALS_H_ */
