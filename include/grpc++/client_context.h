@@ -268,7 +268,7 @@ class ClientContext {
   /// \return The call's peer URI.
   grpc::string peer() const;
 
-  /// Get and set census context
+  /// Get and set census context.
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
   struct census_context* census_context() const {
     return census_context_;
