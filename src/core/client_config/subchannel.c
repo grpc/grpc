@@ -461,6 +461,17 @@ void grpc_connected_subchannel_notify_on_state_change(
                                 closure);
 }
 
+void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
+                                    grpc_connected_subchannel *con,
+                                    grpc_closure *closure) {
+  grpc_transport_op op;
+  grpc_channel_element *elem;
+  memset(&op, 0, sizeof(op));
+  op.send_ping = closure;
+  elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CONNECTION(con), 0);
+  elem->filter->start_transport_op(exec_ctx, elem, &op);
+}
+
 static void publish_transport(grpc_exec_ctx *exec_ctx, grpc_subchannel *c) {
   size_t channel_stack_size;
   grpc_connected_subchannel *con;
