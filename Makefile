@@ -1793,6 +1793,7 @@ h2_uds+poll_shutdown_finishes_tags_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_s
 h2_uds+poll_simple_delayed_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_nosec_test
 h2_uds+poll_simple_request_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_nosec_test
 h2_uds+poll_trailing_metadata_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test
+badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
 connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
 headers_bad_client_test: $(BINDIR)/$(CONFIG)/headers_bad_client_test
 initial_settings_frame_bad_client_test: $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
@@ -2887,6 +2888,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_delayed_request_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_nosec_test \
   $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test \
+  $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
   $(BINDIR)/$(CONFIG)/headers_bad_client_test \
   $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
@@ -4870,6 +4872,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_simple_request_nosec_test || ( echo test h2_uds+poll_simple_request_nosec_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_uds+poll_trailing_metadata_nosec_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test || ( echo test h2_uds+poll_trailing_metadata_nosec_test failed ; exit 1 )
+	$(E) "[RUN]     Testing badreq_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/badreq_bad_client_test || ( echo test badreq_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing connection_prefix_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test || ( echo test connection_prefix_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing headers_bad_client_test"
@@ -26085,6 +26089,23 @@ $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test:  $(LIBDIR)/$(CONFI
 	$(Q) $(LD) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libend2end_nosec_fixture_h2_uds+poll.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_test_trailing_metadata.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/h2_uds+poll_trailing_metadata_nosec_test
 
 
+
+
+BADREQ_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/badreq.c \
+
+BADREQ_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BADREQ_BAD_CLIENT_TEST_SRC))))
+$(BINDIR)/$(CONFIG)/badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/badreq_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/badreq.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BADREQ_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
 
 
 CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC = \
