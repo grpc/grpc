@@ -37,7 +37,7 @@
 /// side.
 /// - Control call settings such as compression and authentication.
 /// - Initial and trailing metadata coming from the server.
-/// - Get performace metrics (ie, census).
+/// - Get performance metrics (ie, census).
 ///
 /// Context settings are only relevant to the call they are invoked with, that
 /// is to say, they aren't sticky. Some of these settings, such as the
