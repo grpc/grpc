@@ -38,6 +38,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_NEED_UDP
 #ifdef GPR_POSIX_SOCKET
 
 #include "src/core/iomgr/udp_server.h"
@@ -434,4 +435,5 @@ void grpc_udp_server_write(server_port *sp, const char *buffer, size_t buf_len,
   }
 }
 
+#endif
 #endif
