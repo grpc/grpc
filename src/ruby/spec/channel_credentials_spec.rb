@@ -54,10 +54,15 @@ describe GRPC::Core::ChannelCredentials do
       expect { ChannelCredentials.new(root_cert) }.not_to raise_error
     end
 
-    it 'cannot be constructed with a nil server roots' do
+    it 'can be constructed with a nil server roots' do
       _, client_key, client_chain = load_test_certs
       blk = proc { ChannelCredentials.new(nil, client_key, client_chain) }
-      expect(&blk).to raise_error
+      expect(&blk).not_to raise_error
+    end
+
+    it 'can be constructed with no params' do
+      blk = proc { ChannelCredentials.new(nil) }
+      expect(&blk).not_to raise_error
     end
   end
 end

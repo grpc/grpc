@@ -54,11 +54,6 @@ os.chdir(ROOT)
 
 _DEFAULT_SERVER_PORT=8080
 
-# TOOD(jtattermusch) wrapped languages use this variable for location
-# of roots.pem. We might want to use GRPC_DEFAULT_SSL_ROOTS_FILE_PATH
-# supported by C core SslCredentials instead.
-_SSL_CERT_ENV = { 'SSL_CERT_FILE':'/usr/local/share/grpc/roots.pem' }
-
 _SKIP_COMPRESSION = ['large_compressed_unary',
                      'server_compressed_streaming']
 
@@ -105,7 +100,7 @@ class CSharpLanguage:
     return ['mono', 'Grpc.IntegrationTesting.Client.exe'] + args
 
   def cloud_to_prod_env(self):
-    return _SSL_CERT_ENV
+    return {}
 
   def server_cmd(self, args):
     return ['mono', 'Grpc.IntegrationTesting.Server.exe', '--use_tls=true'] + args
@@ -222,7 +217,7 @@ class NodeLanguage:
     return ['node', 'src/node/interop/interop_client.js'] + args
 
   def cloud_to_prod_env(self):
-    return _SSL_CERT_ENV
+    return {}
 
   def server_cmd(self, args):
     return ['node', 'src/node/interop/interop_server.js', '--use_tls=true'] + args
@@ -250,7 +245,7 @@ class PHPLanguage:
     return ['src/php/bin/interop_client.sh'] + args
 
   def cloud_to_prod_env(self):
-    return _SSL_CERT_ENV
+    return {}
 
   def global_env(self):
     return {}
@@ -276,7 +271,7 @@ class RubyLanguage:
     return ['ruby', 'src/ruby/bin/interop/interop_client.rb'] + args
 
   def cloud_to_prod_env(self):
-    return _SSL_CERT_ENV
+    return {}
 
   def server_cmd(self, args):
     return ['ruby', 'src/ruby/bin/interop/interop_server.rb', '--use_tls=true'] + args
@@ -311,7 +306,7 @@ class PythonLanguage:
     ]
 
   def cloud_to_prod_env(self):
-    return _SSL_CERT_ENV
+    return {}
 
   def server_cmd(self, args):
     return [
