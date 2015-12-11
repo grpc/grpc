@@ -145,21 +145,6 @@ grpc_compression_algorithm grpc_compression_algorithm_for_level(
   }
 }
 
-grpc_compression_level grpc_compression_level_for_algorithm(
-    grpc_compression_algorithm algorithm) {
-  grpc_compression_level clevel;
-  GRPC_API_TRACE("grpc_compression_level_for_algorithm(algorithm=%d)", 1,
-                 ((int)algorithm));
-  for (clevel = GRPC_COMPRESS_LEVEL_NONE; clevel < GRPC_COMPRESS_LEVEL_COUNT;
-       ++clevel) {
-    if (grpc_compression_algorithm_for_level(clevel) == algorithm) {
-      return clevel;
-    }
-  }
-  abort();
-  return GRPC_COMPRESS_LEVEL_NONE;
-}
-
 void grpc_compression_options_init(grpc_compression_options *opts) {
   opts->enabled_algorithms_bitset = (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1;
   opts->default_compression_algorithm = GRPC_COMPRESS_NONE;

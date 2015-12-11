@@ -810,6 +810,16 @@ libs:
   - winsock
   - global
 targets:
+- name: algorithm_test
+  build: test
+  language: c
+  src:
+  - test/core/compression/algorithm_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: alloc_test
   build: test
   language: c
