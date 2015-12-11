@@ -917,6 +917,7 @@ static char *null_well_known_creds_path_getter(void) {
 static void test_google_default_creds_gce(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_composite_channel_credentials *creds;
+  grpc_channel_credentials *cached_creds;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method, NULL,
                                             NULL};
   grpc_flush_cached_google_default_credentials();
@@ -942,8 +943,51 @@ static void test_google_default_creds_gce(void) {
   grpc_exec_ctx_flush(&exec_ctx);
   grpc_exec_ctx_finish(&exec_ctx);
 
+  /* Check that we get a cached creds if we call
+     grpc_google_default_credentials_create again.
+     GCE detection should not occur anymore either. */
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  cached_creds = grpc_google_default_credentials_create();
+  GPR_ASSERT(cached_creds == &creds->base);
+
   /* Cleanup. */
+  grpc_channel_credentials_release(cached_creds);
   grpc_channel_credentials_release(&creds->base);
+  grpc_httpcli_set_override(NULL, NULL);
+  grpc_override_well_known_credentials_path_getter(NULL);
+}
+
+static int default_creds_gce_detection_httpcli_get_failure_override(
+    grpc_exec_ctx *exec_ctx, const grpc_httpcli_request *request,
+    gpr_timespec deadline, grpc_httpcli_response_cb on_response,
+    void *user_data) {
+  /* No magic header. */
+  grpc_httpcli_response response = http_response(200, "");
+  GPR_ASSERT(strcmp(request->path, "/") == 0);
+  GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
+  on_response(exec_ctx, user_data, &response);
+  return 1;
+}
+
+static void test_no_google_default_creds(void) {
+  grpc_flush_cached_google_default_credentials();
+  gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
+  grpc_override_well_known_credentials_path_getter(
+      null_well_known_creds_path_getter);
+
+  /* Simulate a successful detection of GCE. */
+  grpc_httpcli_set_override(
+      default_creds_gce_detection_httpcli_get_failure_override,
+      httpcli_post_should_not_be_called);
+  GPR_ASSERT(grpc_google_default_credentials_create() == NULL);
+
+  /* Try a cached one. GCE detection should not occur anymore. */
+  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
+                            httpcli_post_should_not_be_called);
+  GPR_ASSERT(grpc_google_default_credentials_create() == NULL);
+
+  /* Cleanup. */
   grpc_httpcli_set_override(NULL, NULL);
   grpc_override_well_known_credentials_path_getter(NULL);
 }
@@ -1124,6 +1168,7 @@ int main(int argc, char **argv) {
   test_google_default_creds_auth_key();
   test_google_default_creds_refresh_token();
   test_google_default_creds_gce();
+  test_no_google_default_creds();
   test_metadata_plugin_success();
   test_metadata_plugin_failure();
   test_get_well_known_google_credentials_file_path();
