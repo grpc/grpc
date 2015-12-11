@@ -40,6 +40,8 @@ import setuptools
 from setuptools.command import build_py
 from setuptools.command import test
 
+PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
+
 CONF_PY_ADDENDUM = """
 extensions.append('sphinx.ext.napoleon')
 napoleon_google_docstring = True
@@ -68,7 +70,7 @@ class SphinxDocumentation(setuptools.Command):
     import sphinx.apidoc
     metadata = self.distribution.metadata
     src_dir = os.path.join(
-        os.getcwd(), self.distribution.package_dir[''], 'grpc')
+        PYTHON_STEM, self.distribution.package_dir[''], 'grpc')
     sys.path.append(src_dir)
     sphinx.apidoc.main([
         '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
@@ -104,7 +106,7 @@ class BuildProtoModules(setuptools.Command):
     include_regex = re.compile(self.include)
     exclude_regex = re.compile(self.exclude) if self.exclude else None
     paths = []
-    root_directory = os.getcwd()
+    root_directory = PYTHON_STEM
     for walk_root, directories, filenames in os.walk(root_directory):
       for filename in filenames:
         path = os.path.join(walk_root, filename)
@@ -140,7 +142,7 @@ class BuildProjectMetadata(setuptools.Command):
     pass
 
   def run(self):
-    with open('grpc/_grpcio_metadata.py', 'w') as module_file:
+    with open(os.path.join(PYTHON_STEM, 'grpc/_grpcio_metadata.py'), 'w') as module_file:
       module_file.write('__version__ = """{}"""'.format(
           self.distribution.get_version()))
 
