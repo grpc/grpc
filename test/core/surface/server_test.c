@@ -77,6 +77,7 @@ void test_bind_server_twice(void) {
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
   grpc_server_destroy(server1);
   grpc_server_destroy(server2);
+  grpc_completion_queue_destroy(cq);
 }
 
 int main(int argc, char **argv) {
