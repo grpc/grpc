@@ -14833,6 +14833,21 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "badreq_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/badreq.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "connection_prefix_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/connection_prefix.c"

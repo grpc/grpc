@@ -107,6 +107,7 @@ int main(int argc, char **argv) {
   test_fails(ipv6, "ipv6:[::]");
   test_succeeds(ipv6, "ipv6:[::]:1234");
   test_fails(ipv6, "ipv6:[::]:123456");
+  test_fails(ipv6, "ipv6:www.google.com");
 
   grpc_resolver_factory_unref(ipv4);
   grpc_resolver_factory_unref(ipv6);

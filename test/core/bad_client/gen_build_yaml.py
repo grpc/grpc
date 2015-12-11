@@ -40,6 +40,7 @@ default_test_options = TestOptions(False)
 
 # maps test names to options
 BAD_CLIENT_TESTS = {
+    'badreq': default_test_options,
     'connection_prefix': default_test_options,
     'headers': default_test_options,
     'initial_settings_frame': default_test_options,
