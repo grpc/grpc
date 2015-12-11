@@ -155,10 +155,7 @@ namespace Grpc.Core.Tests
         {
             helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
             {
-                foreach (string response in request.Split(new []{' '}))
-                {
-                    await responseStream.WriteAsync(response);
-                }
+                await responseStream.WriteAllAsync(request.Split(new []{' '}));
                 context.ResponseTrailers.Add("xyz", "");
             });
 
