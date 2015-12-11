@@ -191,8 +191,10 @@ function oauth2AuthToken($stub, $args)
              'invalid email returned');
 }
 
-function updateAuthMetadataCallback($authUri)
+function updateAuthMetadataCallback($context)
 {
+    $authUri = $context->service_url;
+    $methodName = $context->method_name;
     $auth_credentials = ApplicationDefaultCredentials::getCredentials();
 
     return $auth_credentials->updateMetadata($metadata = [], $authUri);

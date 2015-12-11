@@ -183,7 +183,9 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
   zval *arg;
   zval *retval;
   MAKE_STD_ZVAL(arg);
-  ZVAL_STRING(arg, context.service_url, 1);
+  object_init(arg);
+  add_property_string(arg, "service_url", context.service_url, true);
+  add_property_string(arg, "method_name", context.method_name, true);
   params[0] = &arg;
   state->fci->param_count = 1;
   state->fci->params = params;
