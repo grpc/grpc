@@ -98,7 +98,7 @@ static void test_values(void) {
   fprintf(stderr, "far future ");
   i_to_s(x.tv_sec, 16, 16, &to_fp, stderr);
   fprintf(stderr, "\n");
-  GPR_ASSERT(x.tv_sec >= INT_MAX);
+  GPR_ASSERT(x.tv_sec == INT64_MAX);
   fprintf(stderr, "far future ");
   ts_to_s(x, &to_fp, stderr);
   fprintf(stderr, "\n");
@@ -107,7 +107,7 @@ static void test_values(void) {
   fprintf(stderr, "far past   ");
   i_to_s(x.tv_sec, 16, 16, &to_fp, stderr);
   fprintf(stderr, "\n");
-  GPR_ASSERT(x.tv_sec <= INT_MIN);
+  GPR_ASSERT(x.tv_sec == INT64_MIN);
   fprintf(stderr, "far past   ");
   ts_to_s(x, &to_fp, stderr);
   fprintf(stderr, "\n");

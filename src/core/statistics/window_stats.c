@@ -94,7 +94,7 @@ static gpr_int64 timespec_to_ns(const gpr_timespec ts) {
   if (ts.tv_sec > max_seconds) {
     return GPR_INT64_MAX - 1;
   }
-  return (gpr_int64)ts.tv_sec * GPR_NS_PER_SEC + ts.tv_nsec;
+  return ts.tv_sec * GPR_NS_PER_SEC + ts.tv_nsec;
 }
 
 static void cws_initialize_statistic(void *statistic,
