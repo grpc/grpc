@@ -1071,6 +1071,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "secure_channel_create_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "secure_endpoint_test", 
     "platforms": [
       "linux", 
