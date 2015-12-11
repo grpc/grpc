@@ -43,6 +43,7 @@
 #include <ext/standard/info.h>
 #include <ext/spl/spl_exceptions.h>
 #include "php_grpc.h"
+#include "call.h"
 
 #include <zend_exceptions.h>
 #include <zend_hash.h>
@@ -103,7 +104,7 @@ PHP_METHOD(CallCredentials, createComposite) {
   zval *cred1_obj;
   zval *cred2_obj;
 
-  /* "OO" == 3 Objects */
+  /* "OO" == 2 Objects */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OO", &cred1_obj,
                             grpc_ce_call_credentials, &cred2_obj,
                             grpc_ce_call_credentials) == FAILURE) {
@@ -125,8 +126,106 @@ PHP_METHOD(CallCredentials, createComposite) {
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
+/**
+ * Create a call credentials object from the plugin API
+ * @param function callback The callback function
+ * @return CallCredentials The new call credentials object
+ */
+PHP_METHOD(CallCredentials, createFromPlugin) {
+  zend_fcall_info *fci;
+  zend_fcall_info_cache *fci_cache;
+
+  fci = (zend_fcall_info *)emalloc(sizeof(zend_fcall_info));
+  fci_cache = (zend_fcall_info_cache *)emalloc(sizeof(zend_fcall_info_cache));
+  memset(fci, 0, sizeof(zend_fcall_info));
+  memset(fci_cache, 0, sizeof(zend_fcall_info_cache));
+
+  /* "f" == 1 function */
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "f", fci,
+                            fci_cache,
+                            fci->params,
+                            fci->param_count) == FAILURE) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "createFromPlugin expects 1 callback",
+                         1 TSRMLS_CC);
+    return;
+  }
+
+  plugin_state *state;
+  state = (plugin_state *)emalloc(sizeof(plugin_state));
+  memset(state, 0, sizeof(plugin_state));
+
+  /* save the user provided PHP callback function */
+  state->fci = fci;
+  state->fci_cache = fci_cache;
+
+  grpc_metadata_credentials_plugin plugin;
+  plugin.get_metadata = plugin_get_metadata;
+  plugin.destroy = plugin_destroy_state;
+  plugin.state = (void *)state;
+  plugin.type = "";
+
+  grpc_call_credentials *creds = grpc_metadata_credentials_create_from_plugin(
+      plugin, NULL);
+  zval *creds_object = grpc_php_wrap_call_credentials(creds);
+  RETURN_DESTROY_ZVAL(creds_object);
+}
+
+/* Callback function for plugin creds API */
+void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
+                         grpc_credentials_plugin_metadata_cb cb,
+                         void *user_data) {
+  plugin_state *state = (plugin_state *)ptr;
+
+  /* prepare to call the user callback function with info from the
+   * grpc_auth_metadata_context */
+  zval **params[1];
+  zval *arg;
+  zval *retval;
+  MAKE_STD_ZVAL(arg);
+  object_init(arg);
+  add_property_string(arg, "service_url", context.service_url, true);
+  add_property_string(arg, "method_name", context.method_name, true);
+  params[0] = &arg;
+  state->fci->param_count = 1;
+  state->fci->params = params;
+  state->fci->retval_ptr_ptr = &retval;
+
+  /* call the user callback function */
+  zend_call_function(state->fci, state->fci_cache);
+
+  if (Z_TYPE_P(retval) != IS_ARRAY) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "plugin callback must return metadata array",
+                         1 TSRMLS_CC);
+  }
+
+  grpc_metadata_array metadata;
+  if (!create_metadata_array(retval, &metadata)) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "invalid metadata", 1 TSRMLS_CC);
+    grpc_metadata_array_destroy(&metadata);
+  }
+
+  /* TODO: handle error */
+  grpc_status_code code = GRPC_STATUS_OK;
+
+  /* Pass control back to core */
+  cb(user_data, metadata.metadata, metadata.count, code, NULL);
+}
+
+/* Cleanup function for plugin creds API */
+void plugin_destroy_state(void *ptr) {
+  plugin_state *state = (plugin_state *)ptr;
+  efree(state->fci);
+  efree(state->fci_cache);
+  efree(state);
+}
+
 static zend_function_entry call_credentials_methods[] = {
   PHP_ME(CallCredentials, createComposite, NULL,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(CallCredentials, createFromPlugin, NULL,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_FE_END};
 
