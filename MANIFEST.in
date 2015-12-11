@@ -1,0 +1,8 @@
+graft src/python/grpcio/grpc
+graft src/python/grpcio/tests
+graft src/core
+graft include/grpc
+include src/python/grpcio/commands.py
+include src/python/grpcio/grpc_core_dependencies.py
+include src/python/grpcio/README.rst
+include requirements.txt

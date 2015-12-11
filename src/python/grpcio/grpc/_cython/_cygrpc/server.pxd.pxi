@@ -27,48 +27,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cimport cpython
 
-from grpc._cython._cygrpc cimport grpc
-from grpc._cython._cygrpc cimport records
+cdef class Server:
 
-
-cdef class ChannelCredentials:
-
-  cdef grpc.grpc_channel_credentials *c_credentials
-  cdef grpc.grpc_ssl_pem_key_cert_pair c_ssl_pem_key_cert_pair
+  cdef grpc_server *c_server
+  cdef bint is_started  # start has been called
+  cdef bint is_shutting_down  # shutdown has been called
+  cdef bint is_shutdown  # notification of complete shutdown received
+  # used at dealloc when user forgets to shutdown
+  cdef CompletionQueue backup_shutdown_queue
   cdef list references
+  cdef list registered_completion_queues
 
-
-cdef class CallCredentials:
-
-  cdef grpc.grpc_call_credentials *c_credentials
-  cdef list references
-
-
-cdef class ServerCredentials:
-
-  cdef grpc.grpc_server_credentials *c_credentials
-  cdef grpc.grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
-  cdef size_t c_ssl_pem_key_cert_pairs_count
-  cdef list references
-
-
-cdef class CredentialsMetadataPlugin:
-
-  cdef object plugin_callback
-  cdef str plugin_name
-
-  cdef grpc.grpc_metadata_credentials_plugin make_c_plugin(self)
-
-
-cdef class AuthMetadataContext:
-
-  cdef grpc.grpc_auth_metadata_context context
-
-
-cdef void plugin_get_metadata(
-    void *state, grpc.grpc_auth_metadata_context context,
-    grpc.grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil
-
-cdef void plugin_destroy_c_plugin_state(void *state)
+  cdef notify_shutdown_complete(self)
