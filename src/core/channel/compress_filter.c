@@ -39,11 +39,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/slice_buffer.h>
 
-#include "src/core/channel/compress_filter.h"
 #include "src/core/channel/channel_args.h"
-#include "src/core/profiling/timers.h"
+#include "src/core/channel/compress_filter.h"
 #include "src/core/compression/algorithm_metadata.h"
 #include "src/core/compression/message_compress.h"
+#include "src/core/profiling/timers.h"
 #include "src/core/support/string.h"
 #include "src/core/transport/static_metadata.h"
 
@@ -288,8 +288,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_element *elem) {
-}
+                                 grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_compress_filter = {
     compress_start_transport_stream_op, grpc_channel_next_op, sizeof(call_data),

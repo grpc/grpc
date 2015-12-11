@@ -57,6 +57,8 @@ typedef struct {
 
 extern int grpc_connectivity_state_trace;
 
+const char *grpc_connectivity_state_name(grpc_connectivity_state state);
+
 void grpc_connectivity_state_init(grpc_connectivity_state_tracker *tracker,
                                   grpc_connectivity_state init_state,
                                   const char *name);
@@ -73,16 +75,11 @@ void grpc_connectivity_state_set(grpc_exec_ctx *exec_ctx,
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker *tracker);
 
-/** Return 1 if the channel should start connecting, 0 otherwise */
+/** Return 1 if the channel should start connecting, 0 otherwise.
+    If current==NULL cancel notify if it is already queued (success==0 in that
+    case) */
 int grpc_connectivity_state_notify_on_state_change(
     grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
     grpc_connectivity_state *current, grpc_closure *notify);
-
-/** Remove \a subscribed_notify from the list of closures to be called on a
- * state change if present, returning 1. Otherwise, nothing is done and return
- * 0. */
-int grpc_connectivity_state_change_unsubscribe(
-    grpc_exec_ctx *exec_ctx, grpc_connectivity_state_tracker *tracker,
-    grpc_closure *subscribed_notify);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CONNECTIVITY_STATE_H */

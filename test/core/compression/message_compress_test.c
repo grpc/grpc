@@ -40,9 +40,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
-#include "test/core/util/test_config.h"
 #include "src/core/support/murmur_hash.h"
 #include "test/core/util/slice_splitter.h"
+#include "test/core/util/test_config.h"
 
 typedef enum { ONE_A = 0, ONE_KB_A, ONE_MB_A, TEST_VALUE_COUNT } test_value;
 
@@ -168,6 +168,49 @@ static void test_bad_data(void) {
   gpr_slice_buffer_destroy(&output);
 }
 
+static void test_bad_compression_algorithm(void) {
+  gpr_slice_buffer input;
+  gpr_slice_buffer output;
+  int was_compressed;
+
+  gpr_slice_buffer_init(&input);
+  gpr_slice_buffer_init(&output);
+  gpr_slice_buffer_add(&input, gpr_slice_from_copied_string(
+                                   "Never gonna give you up"));
+  was_compressed =
+      grpc_msg_compress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
+  GPR_ASSERT(0 == was_compressed);
+
+  was_compressed =
+      grpc_msg_compress(GRPC_COMPRESS_ALGORITHMS_COUNT + 123, &input, &output);
+  GPR_ASSERT(0 == was_compressed);
+
+  gpr_slice_buffer_destroy(&input);
+  gpr_slice_buffer_destroy(&output);
+}
+
+static void test_bad_decompression_algorithm(void) {
+  gpr_slice_buffer input;
+  gpr_slice_buffer output;
+  int was_decompressed;
+
+  gpr_slice_buffer_init(&input);
+  gpr_slice_buffer_init(&output);
+  gpr_slice_buffer_add(&input,
+                       gpr_slice_from_copied_string(
+                           "I'm not really compressed but it doesn't matter"));
+  was_decompressed =
+      grpc_msg_decompress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
+  GPR_ASSERT(0 == was_decompressed);
+
+  was_decompressed =
+      grpc_msg_decompress(GRPC_COMPRESS_ALGORITHMS_COUNT + 123, &input, &output);
+  GPR_ASSERT(0 == was_decompressed);
+
+  gpr_slice_buffer_destroy(&input);
+  gpr_slice_buffer_destroy(&output);
+}
+
 int main(int argc, char **argv) {
   unsigned i, j, k, m;
   grpc_slice_split_mode uncompressed_split_modes[] = {
@@ -192,6 +235,8 @@ int main(int argc, char **argv) {
   }
 
   test_bad_data();
+  test_bad_compression_algorithm();
+  test_bad_decompression_algorithm();
   grpc_shutdown();
 
   return 0;
