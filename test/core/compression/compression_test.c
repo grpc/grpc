@@ -108,22 +108,6 @@ static void test_compression_algorithm_for_level(void) {
   }
 }
 
-static void test_compression_level_for_algorithm(void) {
-
-  size_t i;
-  grpc_compression_level levels[] = {
-      GRPC_COMPRESS_LEVEL_NONE, GRPC_COMPRESS_LEVEL_LOW,
-      GRPC_COMPRESS_LEVEL_LOW, GRPC_COMPRESS_LEVEL_LOW};
-  grpc_compression_algorithm algorithms[] = {GRPC_COMPRESS_NONE,
-    GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_DEFLATE};
-  gpr_log(GPR_DEBUG, "test_compression_level_for_algorithm");
-
-  for (i = 0; i < GPR_ARRAY_SIZE(algorithms); i++) {
-    GPR_ASSERT(levels[i] ==
-               grpc_compression_level_for_algorithm(algorithms[i]));
-  }
-}
-
 static void test_compression_enable_disable_algorithm(void) {
   grpc_compression_options options;
   grpc_compression_algorithm algorithm;
@@ -155,7 +139,6 @@ int main(int argc, char **argv) {
   test_compression_algorithm_parse();
   test_compression_algorithm_name();
   test_compression_algorithm_for_level();
-  test_compression_level_for_algorithm();
   test_compression_enable_disable_algorithm();
   grpc_shutdown();
 
