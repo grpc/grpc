@@ -104,6 +104,9 @@ int main(int argc, char **argv) {
 
   test_transport_op(chan);
 
+  GPR_ASSERT(GRPC_CHANNEL_FATAL_FAILURE ==
+             grpc_channel_check_connectivity_state(chan, 0));
+
   cq = grpc_completion_queue_create(NULL);
 
   call = grpc_channel_create_call(chan, NULL, GRPC_PROPAGATE_DEFAULTS, cq,

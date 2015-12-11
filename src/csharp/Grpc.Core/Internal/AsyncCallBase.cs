@@ -238,20 +238,6 @@ namespace Grpc.Core.Internal
             }
         }
 
-        protected Exception TrySerialize(TWrite msg, out byte[] payload)
-        {
-            try
-            {
-                payload = serializer(msg);
-                return null;
-            }
-            catch (Exception e)
-            {
-                payload = null;
-                return e;
-            }
-        }
-
         protected Exception TryDeserialize(byte[] payload, out TRead msg)
         {
             using (Profilers.ForCurrentThread().NewScope("AsyncCallBase.TryDeserialize"))

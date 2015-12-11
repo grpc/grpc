@@ -89,6 +89,7 @@ END2END_TESTS = {
     'cancel_in_a_vacuum': default_test_options,
     'cancel_with_status': default_test_options,
     'channel_connectivity': connectivity_test_options._replace(proxyable=False),
+    'channel_ping': connectivity_test_options._replace(proxyable=False),
     'compressed_payload': default_test_options._replace(proxyable=False),
     'default_host': default_test_options._replace(needs_fullstack=True,
                                                   needs_dns=True),
