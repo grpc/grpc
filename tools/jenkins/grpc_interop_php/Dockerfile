@@ -100,10 +100,6 @@ RUN /bin/bash -l -c "rvm all do gem install ronn rake"
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
 
-# attempt to force a rebuild of the docker image after this point because
-# Protobuf-PHP codegen has been updated
-RUN echo 1
-
 # Download the patched PHP protobuf so that PHP gRPC clients can be generated
 # from proto3 schemas.
 RUN git clone https://github.com/stanley-cheung/Protobuf-PHP.git /var/local/git/protobuf-php
