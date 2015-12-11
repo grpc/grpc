@@ -31,67 +31,49 @@
  *
  */
 
-#include "src/core/transport/chttp2/frame_ping.h"
-#include "src/core/transport/chttp2/internal.h"
+#include "src/core/surface/channel.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-gpr_slice grpc_chttp2_ping_create(gpr_uint8 ack, gpr_uint8 *opaque_8bytes) {
-  gpr_slice slice = gpr_slice_malloc(9 + 8);
-  gpr_uint8 *p = GPR_SLICE_START_PTR(slice);
+#include "src/core/surface/api_trace.h"
+#include "src/core/surface/completion_queue.h"
 
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 8;
-  *p++ = GRPC_CHTTP2_FRAME_PING;
-  *p++ = ack ? 1 : 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  *p++ = 0;
-  memcpy(p, opaque_8bytes, 8);
+typedef struct {
+  grpc_closure closure;
+  void *tag;
+  grpc_completion_queue *cq;
+  grpc_cq_completion completion_storage;
+} ping_result;
 
-  return slice;
+static void ping_destroy(grpc_exec_ctx *exec_ctx, void *arg,
+                         grpc_cq_completion *storage) {
+  gpr_free(arg);
 }
 
-grpc_chttp2_parse_error grpc_chttp2_ping_parser_begin_frame(
-    grpc_chttp2_ping_parser *parser, gpr_uint32 length, gpr_uint8 flags) {
-  if (flags & 0xfe || length != 8) {
-    gpr_log(GPR_ERROR, "invalid ping: length=%d, flags=%02x", length, flags);
-    return GRPC_CHTTP2_CONNECTION_ERROR;
-  }
-  parser->byte = 0;
-  parser->is_ack = flags;
-  return GRPC_CHTTP2_PARSE_OK;
+static void ping_done(grpc_exec_ctx *exec_ctx, void *arg, int success) {
+  ping_result *pr = arg;
+  grpc_cq_end_op(exec_ctx, pr->cq, pr->tag, success, ping_destroy, pr,
+                 &pr->completion_storage);
 }
 
-grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
-    grpc_exec_ctx *exec_ctx, void *parser,
-    grpc_chttp2_transport_parsing *transport_parsing,
-    grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last) {
-  gpr_uint8 *const beg = GPR_SLICE_START_PTR(slice);
-  gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
-  gpr_uint8 *cur = beg;
-  grpc_chttp2_ping_parser *p = parser;
-
-  while (p->byte != 8 && cur != end) {
-    p->opaque_8bytes[p->byte] = *cur;
-    cur++;
-    p->byte++;
-  }
-
-  if (p->byte == 8) {
-    GPR_ASSERT(is_last);
-    if (p->is_ack) {
-      grpc_chttp2_ack_ping(exec_ctx, transport_parsing, p->opaque_8bytes);
-    } else {
-      gpr_slice_buffer_add(&transport_parsing->qbuf,
-                           grpc_chttp2_ping_create(1, p->opaque_8bytes));
-    }
-  }
-
-  return GRPC_CHTTP2_PARSE_OK;
+void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
+                       void *tag, void *reserved) {
+  grpc_transport_op op;
+  ping_result *pr = gpr_malloc(sizeof(*pr));
+  grpc_channel_element *top_elem =
+      grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
+  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  GPR_ASSERT(reserved == NULL);
+  memset(&op, 0, sizeof(op));
+  pr->tag = tag;
+  pr->cq = cq;
+  grpc_closure_init(&pr->closure, ping_done, pr);
+  op.send_ping = &pr->closure;
+  op.bind_pollset = grpc_cq_pollset(cq);
+  grpc_cq_begin_op(cq);
+  top_elem->filter->start_transport_op(&exec_ctx, top_elem, &op);
+  grpc_exec_ctx_finish(&exec_ctx);
 }
