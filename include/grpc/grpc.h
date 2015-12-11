@@ -531,6 +531,11 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     const char *method, const char *host,
                                     gpr_timespec deadline, void *reserved);
 
+/** Ping the channels peer (load balanced channels will select one sub-channel
+    to ping); if the channel is not connected, posts a failed. */
+void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
+                       void *tag, void *reserved);
+
 /** Pre-register a method/host pair on a channel. */
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,
                                  const char *host, void *reserved);
