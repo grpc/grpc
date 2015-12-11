@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
   /* some settings values are illegal */
   /* max frame size = 0 */
   GRPC_RUN_BAD_CLIENT_TEST(verifier,
-                           PFX_STR ONE_SETTING_HDR "\x00\x05\x00\x00\x00\x00", 
+                           PFX_STR ONE_SETTING_HDR "\x00\x05\x00\x00\x00\x00",
                            GRPC_BAD_CLIENT_DISCONNECT);
   GRPC_RUN_BAD_CLIENT_TEST(verifier,
                            PFX_STR ONE_SETTING_HDR "\x00\x06\xff\xff\xff\xff", 

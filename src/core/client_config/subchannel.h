@@ -41,6 +41,7 @@
 /** A (sub-)channel that knows how to connect to exactly one target
     address. Provides a target for load balancing. */
 typedef struct grpc_subchannel grpc_subchannel;
+typedef struct grpc_connected_subchannel grpc_connected_subchannel;
 typedef struct grpc_subchannel_call grpc_subchannel_call;
 typedef struct grpc_subchannel_args grpc_subchannel_args;
 
@@ -49,6 +50,14 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
   grpc_subchannel_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_UNREF(cl, p, r) \
   grpc_subchannel_unref((cl), (p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_WEAK_REF(p, r) \
+  grpc_subchannel_weak_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_WEAK_UNREF(cl, p, r) \
+  grpc_subchannel_weak_unref((cl), (p), __FILE__, __LINE__, (r))
+#define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) \
+  grpc_connected_subchannel_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_CONNECTED_SUBCHANNEL_UNREF(cl, p, r) \
+  grpc_connected_subchannel_unref((cl), (p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) \
   grpc_subchannel_call_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_CALL_UNREF(cl, p, r) \
@@ -58,6 +67,12 @@ typedef struct grpc_subchannel_args grpc_subchannel_args;
 #else
 #define GRPC_SUBCHANNEL_REF(p, r) grpc_subchannel_ref((p))
 #define GRPC_SUBCHANNEL_UNREF(cl, p, r) grpc_subchannel_unref((cl), (p))
+#define GRPC_SUBCHANNEL_WEAK_REF(p, r) grpc_subchannel_weak_ref((p))
+#define GRPC_SUBCHANNEL_WEAK_UNREF(cl, p, r) \
+  grpc_subchannel_weak_unref((cl), (p))
+#define GRPC_CONNECTED_SUBCHANNEL_REF(p, r) grpc_connected_subchannel_ref((p))
+#define GRPC_CONNECTED_SUBCHANNEL_UNREF(cl, p, r) \
+  grpc_connected_subchannel_unref((cl), (p))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) grpc_subchannel_call_ref((p))
 #define GRPC_SUBCHANNEL_CALL_UNREF(cl, p, r) \
   grpc_subchannel_call_unref((cl), (p))
@@ -69,33 +84,31 @@ void grpc_subchannel_ref(grpc_subchannel *channel
 void grpc_subchannel_unref(grpc_exec_ctx *exec_ctx,
                            grpc_subchannel *channel
                                GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_weak_ref(grpc_subchannel *channel
+                                  GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_subchannel_weak_unref(grpc_exec_ctx *exec_ctx,
+                                grpc_subchannel *channel
+                                    GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_connected_subchannel_ref(grpc_connected_subchannel *channel
+                                       GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+void grpc_connected_subchannel_unref(grpc_exec_ctx *exec_ctx,
+                                     grpc_connected_subchannel *channel
+                                         GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_ref(grpc_subchannel_call *call
                                   GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_unref(grpc_exec_ctx *exec_ctx,
                                 grpc_subchannel_call *call
                                     GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
-/** construct a subchannel call (possibly asynchronously).
- *
- * If the returned status is 1, the call will return immediately and \a target
- * will point to a connected \a subchannel_call instance. Note that \a notify
- * will \em not be invoked in this case.
- * Otherwise, if the returned status is 0, the subchannel call will be created
- * asynchronously, invoking the \a notify callback upon completion. */
-int grpc_subchannel_create_call(grpc_exec_ctx *exec_ctx,
-                                grpc_subchannel *subchannel,
-                                grpc_pollset *pollset, gpr_atm *target,
-                                grpc_closure *notify);
-
-/** cancel \a call in the waiting state. */
-void grpc_subchannel_cancel_create_call(grpc_exec_ctx *exec_ctx,
-                                        grpc_subchannel *subchannel,
-                                        gpr_atm *target);
+/** construct a subchannel call */
+grpc_subchannel_call *grpc_connected_subchannel_create_call(
+    grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *connected_subchannel,
+    grpc_pollset *pollset);
 
 /** process a transport level op */
-void grpc_subchannel_process_transport_op(grpc_exec_ctx *exec_ctx,
-                                          grpc_subchannel *subchannel,
-                                          grpc_transport_op *op);
+void grpc_connected_subchannel_process_transport_op(
+    grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *subchannel,
+    grpc_transport_op *op);
 
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
@@ -103,26 +116,22 @@ grpc_connectivity_state grpc_subchannel_check_connectivity(
 
 /** call notify when the connectivity state of a channel changes from *state.
     Updates *state with the new state of the channel */
-void grpc_subchannel_notify_on_state_change(grpc_exec_ctx *exec_ctx,
-                                            grpc_subchannel *channel,
-                                            grpc_connectivity_state *state,
-                                            grpc_closure *notify);
+void grpc_subchannel_notify_on_state_change(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel *channel,
+    grpc_pollset_set *interested_parties, grpc_connectivity_state *state,
+    grpc_closure *notify);
+void grpc_connected_subchannel_notify_on_state_change(
+    grpc_exec_ctx *exec_ctx, grpc_connected_subchannel *channel,
+    grpc_pollset_set *interested_parties, grpc_connectivity_state *state,
+    grpc_closure *notify);
+void grpc_connected_subchannel_ping(grpc_exec_ctx *exec_ctx,
+                                    grpc_connected_subchannel *channel,
+                                    grpc_closure *notify);
 
-/** Remove \a subscribed_notify from the list of closures to be called on a
- * state change if present, returning 1. Otherwise, nothing is done and return
- * 0. */
-int grpc_subchannel_state_change_unsubscribe(grpc_exec_ctx *exec_ctx,
-                                             grpc_subchannel *channel,
-                                             grpc_closure *subscribed_notify);
-
-/** express interest in \a channel's activities through \a pollset. */
-void grpc_subchannel_add_interested_party(grpc_exec_ctx *exec_ctx,
-                                          grpc_subchannel *channel,
-                                          grpc_pollset *pollset);
-/** stop following \a channel's activity through \a pollset. */
-void grpc_subchannel_del_interested_party(grpc_exec_ctx *exec_ctx,
-                                          grpc_subchannel *channel,
-                                          grpc_pollset *pollset);
+/** retrieve the grpc_connected_subchannel - or NULL if called before
+    the subchannel becomes connected */
+grpc_connected_subchannel *grpc_subchannel_get_connected_subchannel(
+    grpc_subchannel *subchannel);
 
 /** continue processing a transport op */
 void grpc_subchannel_call_process_op(grpc_exec_ctx *exec_ctx,
@@ -147,15 +156,10 @@ struct grpc_subchannel_args {
   /** Address to connect to */
   struct sockaddr *addr;
   size_t addr_len;
-  /** master channel */
-  grpc_channel *master;
 };
 
 /** create a subchannel given a connector */
 grpc_subchannel *grpc_subchannel_create(grpc_connector *connector,
                                         grpc_subchannel_args *args);
-
-/** Return the master channel associated with the subchannel */
-grpc_channel *grpc_subchannel_get_master(grpc_subchannel *subchannel);
 
 #endif /* GRPC_INTERNAL_CORE_CLIENT_CONFIG_SUBCHANNEL_H */

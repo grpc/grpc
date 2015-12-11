@@ -47,7 +47,8 @@ typedef void (*grpc_lb_completion)(void *cb_arg, grpc_subchannel *subchannel,
 
 struct grpc_lb_policy {
   const grpc_lb_policy_vtable *vtable;
-  gpr_refcount refs;
+  gpr_atm ref_pair;
+  grpc_pollset_set interested_parties;
 };
 
 struct grpc_lb_policy_vtable {
@@ -58,16 +59,15 @@ struct grpc_lb_policy_vtable {
   /** implement grpc_lb_policy_pick */
   int (*pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
               grpc_pollset *pollset, grpc_metadata_batch *initial_metadata,
-              grpc_subchannel **target, grpc_closure *on_complete);
+              grpc_connected_subchannel **target, grpc_closure *on_complete);
   void (*cancel_pick)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                      grpc_subchannel **target);
+                      grpc_connected_subchannel **target);
+
+  void (*ping_one)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                   grpc_closure *closure);
 
   /** try to enter a READY connectivity state */
   void (*exit_idle)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
-
-  /** broadcast a transport op to all subchannels */
-  void (*broadcast)(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                    grpc_transport_op *op);
 
   /** check the current connectivity of the lb_policy */
   grpc_connectivity_state (*check_connectivity)(grpc_exec_ctx *exec_ctx,
@@ -81,28 +81,38 @@ struct grpc_lb_policy_vtable {
                                  grpc_closure *closure);
 };
 
+/*#define GRPC_LB_POLICY_REFCOUNT_DEBUG*/
 #ifdef GRPC_LB_POLICY_REFCOUNT_DEBUG
 #define GRPC_LB_POLICY_REF(p, r) \
   grpc_lb_policy_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_LB_POLICY_UNREF(exec_ctx, p, r) \
   grpc_lb_policy_unref((exec_ctx), (p), __FILE__, __LINE__, (r))
+#define GRPC_LB_POLICY_WEAK_REF(p, r) \
+  grpc_lb_policy_weak_ref((p), __FILE__, __LINE__, (r))
+#define GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, p, r) \
+  grpc_lb_policy_weak_unref((exec_ctx), (p), __FILE__, __LINE__, (r))
 void grpc_lb_policy_ref(grpc_lb_policy *policy, const char *file, int line,
                         const char *reason);
 void grpc_lb_policy_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                           const char *file, int line, const char *reason);
+void grpc_lb_policy_weak_ref(grpc_lb_policy *policy, const char *file, int line,
+                             const char *reason);
+void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                               const char *file, int line, const char *reason);
 #else
 #define GRPC_LB_POLICY_REF(p, r) grpc_lb_policy_ref((p))
 #define GRPC_LB_POLICY_UNREF(cl, p, r) grpc_lb_policy_unref((cl), (p))
+#define GRPC_LB_POLICY_WEAK_REF(p, r) grpc_lb_policy_weak_ref((p))
+#define GRPC_LB_POLICY_WEAK_UNREF(cl, p, r) grpc_lb_policy_weak_unref((cl), (p))
 void grpc_lb_policy_ref(grpc_lb_policy *policy);
 void grpc_lb_policy_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
+void grpc_lb_policy_weak_ref(grpc_lb_policy *policy);
+void grpc_lb_policy_weak_unref(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 #endif
 
 /** called by concrete implementations to initialize the base struct */
 void grpc_lb_policy_init(grpc_lb_policy *policy,
                          const grpc_lb_policy_vtable *vtable);
-
-/** Start shutting down (fail any pending picks) */
-void grpc_lb_policy_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
 /** Given initial metadata in \a initial_metadata, find an appropriate
     target for this rpc, and 'return' it by calling \a on_complete after setting
@@ -111,13 +121,14 @@ void grpc_lb_policy_shutdown(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 int grpc_lb_policy_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
                         grpc_pollset *pollset,
                         grpc_metadata_batch *initial_metadata,
-                        grpc_subchannel **target, grpc_closure *on_complete);
+                        grpc_connected_subchannel **target,
+                        grpc_closure *on_complete);
+
+void grpc_lb_policy_ping_one(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
+                             grpc_closure *closure);
 
 void grpc_lb_policy_cancel_pick(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                                grpc_subchannel **target);
-
-void grpc_lb_policy_broadcast(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy,
-                              grpc_transport_op *op);
+                                grpc_connected_subchannel **target);
 
 void grpc_lb_policy_exit_idle(grpc_exec_ctx *exec_ctx, grpc_lb_policy *policy);
 
