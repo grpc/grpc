@@ -32,6 +32,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -144,6 +145,48 @@ namespace Grpc.Core.Tests
             var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());
             await call.RequestStream.WriteAllAsync(new string[] { "A", "B", "C" });
             Assert.AreEqual("ABC", await call.ResponseAsync);
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+            Assert.IsNotNull(call.GetTrailers());
+        }
+
+        [Test]
+        public async Task ServerStreamingCall()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+                foreach (string response in request.Split(new []{' '}))
+                {
+                    await responseStream.WriteAsync(response);
+                }
+                context.ResponseTrailers.Add("xyz", "");
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "A B C");
+            CollectionAssert.AreEqual(new string[] { "A", "B", "C" }, await call.ResponseStream.ToListAsync());
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+            Assert.IsNotNull("xyz", call.GetTrailers()[0].Key);
+        }
+
+        [Test]
+        public async Task DuplexStreamingCall()
+        {
+            helper.DuplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
+            {
+                while (await requestStream.MoveNext())
+                {
+                    await responseStream.WriteAsync(requestStream.Current);
+                }
+                context.ResponseTrailers.Add("xyz", "xyz-value");
+            });
+
+            var call = Calls.AsyncDuplexStreamingCall(helper.CreateDuplexStreamingCall());
+            await call.RequestStream.WriteAllAsync(new string[] { "A", "B", "C" });
+            CollectionAssert.AreEqual(new string[] { "A", "B", "C" }, await call.ResponseStream.ToListAsync());
+
+            Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
+            Assert.IsNotNull("xyz-value", call.GetTrailers()[0].Value);
         }
 
         [Test]
