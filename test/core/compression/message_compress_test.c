@@ -167,7 +167,7 @@ static void test_tiny_data_compress(void) {
   gpr_slice_buffer_destroy(&output);
 }
 
-static void test_bad_data_decompress(void) {
+static void test_bad_decompression_data_crc(void) {
   gpr_slice_buffer input;
   gpr_slice_buffer corrupted;
   gpr_slice_buffer output;
@@ -192,6 +192,40 @@ static void test_bad_data_decompress(void) {
 
   gpr_slice_buffer_destroy(&input);
   gpr_slice_buffer_destroy(&corrupted);
+  gpr_slice_buffer_destroy(&output);
+}
+
+static void test_bad_decompression_data_trailing_garbage(void) {
+  gpr_slice_buffer input;
+  gpr_slice_buffer output;
+
+  gpr_slice_buffer_init(&input);
+  gpr_slice_buffer_init(&output);
+  /* append 0x99 to the end of an otherwise valid stream */
+  gpr_slice_buffer_add(
+      &input, gpr_slice_from_copied_buffer(
+                  "\x78\xda\x63\x60\x60\x60\x00\x00\x00\x04\x00\x01\x99", 13));
+
+  /* try (and fail) to decompress the invalid compresed buffer */
+  GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
+
+  gpr_slice_buffer_destroy(&input);
+  gpr_slice_buffer_destroy(&output);
+}
+
+static void test_bad_decompression_data_stream(void) {
+  gpr_slice_buffer input;
+  gpr_slice_buffer output;
+
+  gpr_slice_buffer_init(&input);
+  gpr_slice_buffer_init(&output);
+  gpr_slice_buffer_add(&input,
+                       gpr_slice_from_copied_buffer("\x78\xda\xff\xff", 4));
+
+  /* try (and fail) to decompress the invalid compresed buffer */
+  GPR_ASSERT(0 == grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
+
+  gpr_slice_buffer_destroy(&input);
   gpr_slice_buffer_destroy(&output);
 }
 
@@ -262,7 +296,9 @@ int main(int argc, char **argv) {
   }
 
   test_tiny_data_compress();
-  test_bad_data_decompress();
+  test_bad_decompression_data_crc();
+  test_bad_decompression_data_stream();
+  test_bad_decompression_data_trailing_garbage();
   test_bad_compression_algorithm();
   test_bad_decompression_algorithm();
   grpc_shutdown();

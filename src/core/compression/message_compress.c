@@ -69,8 +69,8 @@ static int zlib_body(z_stream* zs, gpr_slice_buffer* input,
         zs->next_out = GPR_SLICE_START_PTR(outbuf);
       }
       r = flate(zs, flush);
-      if (r == Z_STREAM_ERROR) {
-        gpr_log(GPR_INFO, "zlib: stream error");
+      if (r < 0 && r != Z_BUF_ERROR /* not fatal */) {
+        gpr_log(GPR_INFO, "zlib error (%d)", r);
         goto error;
       }
     } while (zs->avail_out == 0);
