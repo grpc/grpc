@@ -165,6 +165,7 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE *argv, VALUE self)
   grpc_rb_channel_credentials *wrapper = NULL;
   grpc_channel_credentials *creds = NULL;
   grpc_ssl_pem_key_cert_pair key_cert_pair;
+  const char *pem_root_certs_cstr = NULL;
   MEMZERO(&key_cert_pair, grpc_ssl_pem_key_cert_pair, 1);
   /* "03" == no mandatory arg, 3 optional */
   rb_scan_args(argc, argv, "03", &pem_root_certs, &pem_private_key,
@@ -172,14 +173,15 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE *argv, VALUE self)
 
   TypedData_Get_Struct(self, grpc_rb_channel_credentials,
                        &grpc_rb_channel_credentials_data_type, wrapper);
+  if (pem_root_certs != Qnil) {
+    pem_root_certs_cstr = RSTRING_PTR(pem_root_certs);
+  }
   if (pem_private_key == Qnil && pem_cert_chain == Qnil) {
-    creds = grpc_ssl_credentials_create(
-        pem_root_certs == Qnil ? NULL : RSTRING_PTR(pem_root_certs),
-        NULL, NULL);
+    creds = grpc_ssl_credentials_create(pem_root_certs_cstr, NULL, NULL);
   } else {
     key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
     key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
-    creds = grpc_ssl_credentials_create(RSTRING_PTR(pem_root_certs),
+    creds = grpc_ssl_credentials_create(pem_root_certs_cstr,
                                         &key_cert_pair, NULL);
   }
   if (creds == NULL) {
