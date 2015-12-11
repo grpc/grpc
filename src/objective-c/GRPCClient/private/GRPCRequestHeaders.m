@@ -68,15 +68,42 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
 
 @implementation GRPCRequestHeaders {
   __weak GRPCCall *_call;
+  // The NSMutableDictionary superclass doesn't hold any storage (so that people can implement their
+  // own in subclasses). As that's not the reason we're subclassing, we just delegate storage to the
+  // default NSMutableDictionary subclass returned by the cluster (e.g. __NSDictionaryM on iOS 9).
   NSMutableDictionary *_delegate;
 }
 
+- (instancetype)init {
+  return [self initWithCall:nil];
+}
+
+- (instancetype)initWithCapacity:(NSUInteger)numItems {
+  return [self init];
+}
+
+- (instancetype)initWithCoder:(NSCoder *)aDecoder {
+  return [self init];
+}
+
 - (instancetype)initWithCall:(GRPCCall *)call {
+  return [self initWithCall:call storage:[NSMutableDictionary dictionary]];
+}
+
+// Designated initializer
+- (instancetype)initWithCall:(GRPCCall *)call storage:(NSMutableDictionary *)storage {
+  // TODO(jcanizales): Throw if call or storage are nil.
   if ((self = [super init])) {
     _call = call;
-    _delegate = [NSMutableDictionary dictionary];
+    _delegate = storage;
   }
   return self;
+}
+
+- (instancetype)initWithObjects:(const id  _Nonnull __unsafe_unretained *)objects
+                        forKeys:(const id<NSCopying>  _Nonnull __unsafe_unretained *)keys
+                          count:(NSUInteger)cnt {
+  return [self init];
 }
 
 - (void)checkCallIsNotStarted {
@@ -86,11 +113,11 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
   }
 }
 
-- (id)objectForKeyedSubscript:(NSString *)key {
+- (id)objectForKey:(NSString *)key {
   return _delegate[key.lowercaseString];
 }
 
-- (void)setObject:(id)obj forKeyedSubscript:(NSString *)key {
+- (void)setObject:(id)obj forKey:(NSString *)key {
   [self checkCallIsNotStarted];
   CheckIsNonNilASCII(@"Header name", key);
   key = key.lowercaseString;
@@ -103,16 +130,12 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
   [_delegate removeObjectForKey:key.lowercaseString];
 }
 
-- (void)removeAllObjects {
-  [self checkCallIsNotStarted];
-  [_delegate removeAllObjects];
-}
-
 - (NSUInteger)count {
   return _delegate.count;
 }
 
-- (grpc_metadata *)grpc_metadataArray {
-  return _delegate.grpc_metadataArray;
+- (NSEnumerator * _Nonnull)keyEnumerator {
+  return [_delegate keyEnumerator];
 }
+
 @end

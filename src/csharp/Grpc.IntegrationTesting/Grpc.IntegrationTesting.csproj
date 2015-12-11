@@ -83,6 +83,7 @@
     <Compile Include="..\Grpc.Core\Version.cs">
       <Link>Version.cs</Link>
     </Compile>
+    <Compile Include="HeaderInterceptorTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Empty.cs" />
     <Compile Include="Messages.cs" />

@@ -38,7 +38,7 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void NativeMetadataInterceptor(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy);
+    internal delegate void NativeMetadataInterceptor(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy);
 
     internal class NativeMetadataCredentialsPlugin
     {
@@ -71,7 +71,7 @@ namespace Grpc.Core.Internal
             get { return credentials; }
         }
 
-        private void NativeMetadataInterceptorHandler(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
+        private void NativeMetadataInterceptorHandler(IntPtr statePtr, IntPtr serviceUrlPtr, IntPtr methodNamePtr, IntPtr callbackPtr, IntPtr userDataPtr, bool isDestroy)
         {
             if (isDestroy)
             {
@@ -81,8 +81,9 @@ namespace Grpc.Core.Internal
 
             try
             {
-                string serviceUrl = Marshal.PtrToStringAnsi(serviceUrlPtr);
-                StartGetMetadata(serviceUrl, callbackPtr, userDataPtr);
+                var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr),
+                                                         Marshal.PtrToStringAnsi(methodNamePtr));
+                StartGetMetadata(context, callbackPtr, userDataPtr);
             }
             catch (Exception e)
             {
@@ -91,12 +92,12 @@ namespace Grpc.Core.Internal
             }
         }
 
-        private async void StartGetMetadata(string serviceUrl, IntPtr callbackPtr, IntPtr userDataPtr)
+        private async void StartGetMetadata(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
         {
             try
             {
                 var metadata = new Metadata();
-                await interceptor(serviceUrl, metadata);
+                await interceptor(context, metadata).ConfigureAwait(false);
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(metadata))
                 {

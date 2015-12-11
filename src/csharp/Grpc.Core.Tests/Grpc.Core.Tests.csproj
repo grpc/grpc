@@ -64,6 +64,8 @@
       <Link>Version.cs</Link>
     </Compile>
     <Compile Include="CallCredentialsTest.cs" />
+    <Compile Include="CallOptionsTest.cs" />
+    <Compile Include="UserAgentStringTest.cs" />
     <Compile Include="FakeCredentials.cs" />
     <Compile Include="MarshallingErrorsTest.cs" />
     <Compile Include="ChannelCredentialsTest.cs" />

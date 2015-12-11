@@ -40,7 +40,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/client_config/lb_policy_registry.h"
-#include "src/core/client_config/subchannel_factory_decorators/add_channel_arg.h"
 #include "src/core/iomgr/resolve_address.h"
 #include "src/core/support/string.h"
 
@@ -81,9 +80,7 @@ static void dns_maybe_finish_next_locked(grpc_exec_ctx *exec_ctx,
                                          dns_resolver *r);
 
 static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
-static void dns_channel_saw_error(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
-                                  struct sockaddr *failing_address,
-                                  int failing_address_len);
+static void dns_channel_saw_error(grpc_exec_ctx *exec_ctx, grpc_resolver *r);
 static void dns_next(grpc_exec_ctx *exec_ctx, grpc_resolver *r,
                      grpc_client_config **target_config,
                      grpc_closure *on_complete);
@@ -103,8 +100,7 @@ static void dns_shutdown(grpc_exec_ctx *exec_ctx, grpc_resolver *resolver) {
 }
 
 static void dns_channel_saw_error(grpc_exec_ctx *exec_ctx,
-                                  grpc_resolver *resolver, struct sockaddr *sa,
-                                  int len) {
+                                  grpc_resolver *resolver) {
   dns_resolver *r = (dns_resolver *)resolver;
   gpr_mu_lock(&r->mu);
   if (!r->resolving) {

@@ -33,9 +33,9 @@
 
 #include "src/core/channel/http_server_filter.h"
 
-#include <string.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <string.h>
 #include "src/core/profiling/timers.h"
 #include "src/core/transport/static_metadata.h"
 
@@ -124,7 +124,6 @@ static grpc_mdelem *server_filter(void *user_data, grpc_mdelem *md) {
        omitted */
     grpc_mdelem *authority = grpc_mdelem_from_metadata_strings(
         GRPC_MDSTR_AUTHORITY, GRPC_MDSTR_REF(md->value));
-    GRPC_MDELEM_UNREF(md);
     calld->seen_authority = 1;
     return authority;
   } else {
@@ -225,8 +224,7 @@ static void init_channel_elem(grpc_exec_ctx *exec_ctx,
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
-                                 grpc_channel_element *elem) {
-}
+                                 grpc_channel_element *elem) {}
 
 const grpc_channel_filter grpc_http_server_filter = {
     hs_start_transport_op, grpc_channel_next_op, sizeof(call_data),

@@ -91,6 +91,14 @@ error:
   return 0;
 }
 
+static void *zalloc_gpr(void* opaque, unsigned int items, unsigned int size) {
+  return gpr_malloc(items * size);
+}
+
+static void zfree_gpr(void* opaque, void *address) {
+  gpr_free(address);
+}
+
 static int zlib_compress(gpr_slice_buffer* input, gpr_slice_buffer* output,
                          int gzip) {
   z_stream zs;
@@ -99,6 +107,8 @@ static int zlib_compress(gpr_slice_buffer* input, gpr_slice_buffer* output,
   size_t count_before = output->count;
   size_t length_before = output->length;
   memset(&zs, 0, sizeof(zs));
+  zs.zalloc = zalloc_gpr;
+  zs.zfree = zfree_gpr;
   r = deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 | (gzip ? 16 : 0),
                    8, Z_DEFAULT_STRATEGY);
   if (r != Z_OK) {
@@ -125,6 +135,8 @@ static int zlib_decompress(gpr_slice_buffer* input, gpr_slice_buffer* output,
   size_t count_before = output->count;
   size_t length_before = output->length;
   memset(&zs, 0, sizeof(zs));
+  zs.zalloc = zalloc_gpr;
+  zs.zfree = zfree_gpr;
   r = inflateInit2(&zs, 15 | (gzip ? 16 : 0));
   if (r != Z_OK) {
     gpr_log(GPR_ERROR, "inflateInit2 returns %d", r);
@@ -150,7 +162,7 @@ static int copy(gpr_slice_buffer* input, gpr_slice_buffer* output) {
   return 1;
 }
 
-int compress_inner(grpc_compression_algorithm algorithm,
+static int compress_inner(grpc_compression_algorithm algorithm,
                    gpr_slice_buffer* input, gpr_slice_buffer* output) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:

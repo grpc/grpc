@@ -65,7 +65,6 @@
   <ItemGroup>
     <None Include="Grpc.HealthCheck.nuspec" />
     <None Include="packages.config" />
-    <None Include="proto\health.proto" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Grpc.Core\Grpc.Core.csproj">

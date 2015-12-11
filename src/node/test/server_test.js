@@ -45,9 +45,30 @@ describe('server', function() {
         new grpc.Server();
       });
     });
-    it('should work with an empty list argument', function() {
+    it('should work with an empty object argument', function() {
       assert.doesNotThrow(function() {
-        new grpc.Server([]);
+        new grpc.Server({});
+      });
+    });
+    it('should work without the new keyword', function() {
+      var server;
+      assert.doesNotThrow(function() {
+        server = grpc.Server();
+      });
+      assert(server instanceof grpc.Server);
+    });
+    it('should only accept objects with string or int values', function() {
+      assert.doesNotThrow(function() {
+        new grpc.Server({'key' : 'value'});
+      });
+      assert.doesNotThrow(function() {
+        new grpc.Server({'key' : 5});
+      });
+      assert.throws(function() {
+        new grpc.Server({'key' : null});
+      });
+      assert.throws(function() {
+        new grpc.Server({'key' : new Date()});
       });
     });
   });

@@ -88,7 +88,6 @@ static void connector_unref(grpc_exec_ctx *exec_ctx, grpc_connector *con) {
 
 static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
                                      grpc_security_status status,
-                                     grpc_endpoint *wrapped_endpoint,
                                      grpc_endpoint *secure_endpoint) {
   connector *c = arg;
   grpc_closure *notify;
@@ -97,13 +96,11 @@ static void on_secure_handshake_done(grpc_exec_ctx *exec_ctx, void *arg,
     memset(c->result, 0, sizeof(*c->result));
     gpr_mu_unlock(&c->mu);
   } else if (status != GRPC_SECURITY_OK) {
-    GPR_ASSERT(c->connecting_endpoint == wrapped_endpoint);
     gpr_log(GPR_ERROR, "Secure handshake failed with error %d.", status);
     memset(c->result, 0, sizeof(*c->result));
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
   } else {
-    GPR_ASSERT(c->connecting_endpoint == wrapped_endpoint);
     c->connecting_endpoint = NULL;
     gpr_mu_unlock(&c->mu);
     c->result->transport = grpc_create_chttp2_transport(
@@ -231,7 +228,6 @@ static grpc_subchannel *subchannel_factory_create_subchannel(
   gpr_mu_init(&c->mu);
   gpr_ref_init(&c->refs, 1);
   args->args = final_args;
-  args->master = f->master;
   s = grpc_subchannel_create(&c->base, args);
   grpc_connector_unref(exec_ctx, &c->base);
   grpc_channel_args_destroy(final_args);
@@ -308,22 +304,22 @@ grpc_channel *grpc_secure_channel_create(grpc_channel_credentials *creds,
   f->master = channel;
   GRPC_CHANNEL_INTERNAL_REF(channel, "subchannel_factory");
   resolver = grpc_resolver_create(target, &f->base);
-  if (!resolver) {
-    grpc_exec_ctx_finish(&exec_ctx);
-    return NULL;
+  if (resolver) {
+    grpc_client_channel_set_resolver(
+        &exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
+    GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "create");
   }
-
-  grpc_client_channel_set_resolver(
-      &exec_ctx, grpc_channel_get_channel_stack(channel), resolver);
-  GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "create");
   grpc_subchannel_factory_unref(&exec_ctx, &f->base);
   GRPC_SECURITY_CONNECTOR_UNREF(&security_connector->base, "channel_create");
-
   grpc_channel_args_destroy(args_copy);
   if (new_args_from_connector != NULL) {
     grpc_channel_args_destroy(new_args_from_connector);
   }
 
+  if (!resolver) {
+    GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, channel, "subchannel_factory");
+    channel = NULL;
+  }
   grpc_exec_ctx_finish(&exec_ctx);
 
   return channel;

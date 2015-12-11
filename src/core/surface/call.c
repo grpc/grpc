@@ -336,26 +336,19 @@ void grpc_call_set_completion_queue(grpc_exec_ctx *exec_ctx, grpc_call *call,
                               grpc_cq_pollset(cq));
 }
 
-grpc_completion_queue *grpc_call_get_completion_queue(grpc_call *call) {
-  return call->cq;
-}
-
 #ifdef GRPC_STREAM_REFCOUNT_DEBUG
-void grpc_call_internal_ref(grpc_call *c, const char *reason) {
-  grpc_call_stack_ref(CALL_STACK_FROM_CALL(c), reason);
-}
-void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c,
-                              const char *reason) {
-  grpc_call_stack_unref(exec_ctx, CALL_STACK_FROM_CALL(c), reason);
-}
+#define REF_REASON reason
+#define REF_ARG , const char *reason
 #else
-void grpc_call_internal_ref(grpc_call *c) {
-  grpc_call_stack_ref(CALL_STACK_FROM_CALL(c));
-}
-void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c) {
-  grpc_call_stack_unref(exec_ctx, CALL_STACK_FROM_CALL(c));
-}
+#define REF_REASON ""
+#define REF_ARG
 #endif
+void grpc_call_internal_ref(grpc_call *c REF_ARG) {
+  GRPC_CALL_STACK_REF(CALL_STACK_FROM_CALL(c), REF_REASON);
+}
+void grpc_call_internal_unref(grpc_exec_ctx *exec_ctx, grpc_call *c REF_ARG) {
+  GRPC_CALL_STACK_UNREF(exec_ctx, CALL_STACK_FROM_CALL(c), REF_REASON);
+}
 
 static void destroy_call(grpc_exec_ctx *exec_ctx, void *call, int success) {
   size_t i;
@@ -742,8 +735,15 @@ static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
 char *grpc_call_get_peer(grpc_call *call) {
   grpc_call_element *elem = CALL_ELEM_FROM_CALL(call, 0);
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  char *result = elem->filter->get_peer(&exec_ctx, elem);
+  char *result;
   GRPC_API_TRACE("grpc_call_get_peer(%p)", 1, (call));
+  result = elem->filter->get_peer(&exec_ctx, elem);
+  if (result == NULL) {
+    result = grpc_channel_get_target(call->channel);
+  }
+  if (result == NULL) {
+    result = gpr_strdup("unknown");
+  }
   grpc_exec_ctx_finish(&exec_ctx);
   return result;
 }
@@ -1270,6 +1270,7 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
         }
         if (call->receiving_message) {
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+          goto done_with_error;
         }
         call->receiving_message = 1;
         bctl->recv_message = 1;

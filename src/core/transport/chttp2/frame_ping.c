@@ -76,7 +76,6 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
   gpr_uint8 *const end = GPR_SLICE_END_PTR(slice);
   gpr_uint8 *cur = beg;
   grpc_chttp2_ping_parser *p = parser;
-  grpc_chttp2_outstanding_ping *ping;
 
   while (p->byte != 8 && cur != end) {
     p->opaque_8bytes[p->byte] = *cur;
@@ -87,15 +86,7 @@ grpc_chttp2_parse_error grpc_chttp2_ping_parser_parse(
   if (p->byte == 8) {
     GPR_ASSERT(is_last);
     if (p->is_ack) {
-      for (ping = transport_parsing->pings.next;
-           ping != &transport_parsing->pings; ping = ping->next) {
-        if (0 == memcmp(p->opaque_8bytes, ping->id, 8)) {
-          grpc_exec_ctx_enqueue(exec_ctx, ping->on_recv, 1);
-        }
-        ping->next->prev = ping->prev;
-        ping->prev->next = ping->next;
-        gpr_free(ping);
-      }
+      grpc_chttp2_ack_ping(exec_ctx, transport_parsing, p->opaque_8bytes);
     } else {
       gpr_slice_buffer_add(&transport_parsing->qbuf,
                            grpc_chttp2_ping_create(1, p->opaque_8bytes));

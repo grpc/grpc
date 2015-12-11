@@ -205,9 +205,9 @@
   CXX_gcov = g++
   LD_gcov = gcc
   LDXX_gcov = g++
-  CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage
+  CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
   LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
-  DEFINES_gcov = _DEBUG DEBUG
+  DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
 
 
   # General settings.
@@ -1003,27 +1003,27 @@
 
   buildtests: buildtests_c buildtests_cxx buildtests_zookeeper
 
-  buildtests_c: privatelibs_c\
+  buildtests_c: privatelibs_c <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and not tgt.language == 'c++' and not tgt.get('external_deps', None):
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
+    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
 
 
-  buildtests_cxx: buildtests_zookeeper privatelibs_cxx\
+  buildtests_cxx: buildtests_zookeeper privatelibs_cxx <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and not tgt.get('external_deps', None):
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
+    $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
 
 
   ifeq ($(HAS_ZOOKEEPER),true)
-  buildtests_zookeeper: privatelibs_zookeeper\
+  buildtests_zookeeper: privatelibs_zookeeper <%text>\</%text>
   % for tgt in targets:
   % if tgt.build == 'test' and tgt.language == 'c++' and 'zookeeper' in tgt.get('external_deps', []):
-   $(BINDIR)/$(CONFIG)/${tgt.name}\
+   $(BINDIR)/$(CONFIG)/${tgt.name} <%text>\</%text>
   % endif
   % endfor
 

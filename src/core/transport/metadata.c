@@ -132,6 +132,7 @@ typedef struct mdtab_shard {
 
 /* hash seed: decided at initialization time */
 static gpr_uint32 g_hash_seed;
+static int g_forced_hash_seed = 0;
 
 /* linearly probed hash tables for static element lookup */
 static grpc_mdstr *g_static_strtab[GRPC_STATIC_MDSTR_COUNT * 2];
@@ -144,9 +145,16 @@ static mdtab_shard g_mdtab_shard[MDTAB_SHARD_COUNT];
 
 static void gc_mdtab(mdtab_shard *shard);
 
+void grpc_test_only_set_metadata_hash_seed(gpr_uint32 seed) {
+  g_hash_seed = seed;
+  g_forced_hash_seed = 1;
+}
+
 void grpc_mdctx_global_init(void) {
   size_t i, j;
-  g_hash_seed = (gpr_uint32)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
+  if (!g_forced_hash_seed) {
+    g_hash_seed = (gpr_uint32)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
+  }
   g_static_strtab_maxprobe = 0;
   g_static_mdtab_maxprobe = 0;
   /* build static tables */
@@ -217,7 +225,8 @@ void grpc_mdctx_global_shutdown(void) {
     gc_mdtab(shard);
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
-      gpr_log(GPR_DEBUG, "WARNING: %d metadata elements were leaked", shard->count);
+      gpr_log(GPR_DEBUG, "WARNING: %d metadata elements were leaked",
+              shard->count);
     }
     gpr_free(shard->elems);
   }
@@ -226,7 +235,8 @@ void grpc_mdctx_global_shutdown(void) {
     gpr_mu_destroy(&shard->mu);
     /* TODO(ctiller): GPR_ASSERT(shard->count == 0); */
     if (shard->count != 0) {
-      gpr_log(GPR_DEBUG, "WARNING: %d metadata strings were leaked", shard->count);
+      gpr_log(GPR_DEBUG, "WARNING: %d metadata strings were leaked",
+              shard->count);
     }
     gpr_free(shard->strs);
   }
@@ -701,7 +711,7 @@ int grpc_mdstr_is_legal_header(grpc_mdstr *s) {
 
 int grpc_mdstr_is_legal_nonbin_header(grpc_mdstr *s) {
   static const gpr_uint8 legal_header_bits[256 / 8] = {
-      0x00, 0x00, 0x00, 0x00, 0xff, 0xef, 0xff, 0xff, 0xff, 0xff, 0xff,
+      0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
       0xff, 0xff, 0xff, 0xff, 0x7f, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
   return conforms_to(s, legal_header_bits);
