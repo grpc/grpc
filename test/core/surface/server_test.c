@@ -32,7 +32,10 @@
  */
 
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 void test_register_method_fail(void) {
@@ -58,11 +61,33 @@ void test_request_call_on_no_server_cq(void) {
   grpc_completion_queue_destroy(cc);
 }
 
+void test_bind_server_twice(void) {
+  char *addr;
+  grpc_server *server1 = grpc_server_create(NULL, NULL);
+  grpc_server *server2 = grpc_server_create(NULL, NULL);
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+  int port = grpc_pick_unused_port_or_die();
+  gpr_asprintf(&addr, "[::]:%d", port);
+  grpc_server_register_completion_queue(server1, cq, NULL);
+  grpc_server_register_completion_queue(server2, cq, NULL);
+  GPR_ASSERT(port == grpc_server_add_insecure_http2_port(server1, addr));
+  GPR_ASSERT(0 == grpc_server_add_insecure_http2_port(server2, addr));
+  grpc_server_shutdown_and_notify(server1, cq, NULL);
+  grpc_server_shutdown_and_notify(server2, cq, NULL);
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
+  grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), NULL);
+  grpc_server_destroy(server1);
+  grpc_server_destroy(server2);
+  grpc_completion_queue_destroy(cq);
+  gpr_free(addr);
+}
+
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
   test_register_method_fail();
   test_request_call_on_no_server_cq();
+  test_bind_server_twice();
   grpc_shutdown();
   return 0;
 }
