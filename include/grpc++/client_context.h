@@ -280,6 +280,16 @@ class ClientContext {
   /// There is no guarantee the call will be cancelled.
   void TryCancel();
 
+  /// Global Callbacks
+  ///
+  /// Can be set exactly once per application to install hooks whenever
+  /// a client context is constructed.
+  class GlobalCallbacks {
+   public:
+    virtual void DefaultConstructor(ClientContext* context) = 0;
+  };
+  static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
+
  private:
   // Disallow copy and assign.
   ClientContext(const ClientContext&);
