@@ -283,10 +283,11 @@ class ClientContext {
   /// Global Callbacks
   ///
   /// Can be set exactly once per application to install hooks whenever
-  /// a client context is constructed.
+  /// a client context is constructed and destructed.
   class GlobalCallbacks {
    public:
     virtual void DefaultConstructor(ClientContext* context) = 0;
+    virtual void Destructor(ClientContext* context) = 0;
   };
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
