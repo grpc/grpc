@@ -49,10 +49,10 @@ typedef struct testing_pair {
 
 static testing_pair testing_pairs[] = {
     /* Testing valid parsing. */
-
     /* Testing trivial parses, with de-indentation. */
     {" 0 ", "0"},
     {" 1 ", "1"},
+    {" \"    \" ", "\"    \""},
     {" \"a\" ", "\"a\""},
     {" true ", "true"},
     /* Testing the parser's ability to decode trivial UTF-16. */
@@ -69,8 +69,8 @@ static testing_pair testing_pairs[] = {
      " [ [ ] , { } , [ ] ] ", "[[],{},[]]",
     },
     /* Testing escapes and control chars in key strings. */
-    {" { \"\x7f\\n\\\\a , b\": 1, \"\": 0 } ",
-     "{\"\\u007f\\n\\\\a , b\":1,\"\":0}"},
+    {" { \"\\u007f\x7f\\n\\r\\\"\\f\\b\\\\a , b\": 1, \"\": 0 } ",
+     "{\"\\u007f\\u007f\\n\\r\\\"\\f\\b\\\\a , b\":1,\"\":0}"},
     /* Testing the writer's ability to cut off invalid UTF-8 sequences. */
     {"\"abc\xf0\x9d\x24\"", "\"abc\""},
     {"\"\xff\"", "\"\""},
@@ -96,6 +96,9 @@ static testing_pair testing_pairs[] = {
     {"\"\\udd1ef", NULL},
     {"\"\\ud834\\ud834\"", NULL},
     {"\"\\ud834\\u1234\"", NULL},
+    {"\"\\ud834]\"", NULL},
+    {"\"\\ud834 \"", NULL},
+    {"\"\\ud834\\\\\"", NULL},
     /* Testing embedded invalid whitechars. */
     {"\"\n\"", NULL},
     {"\"\t\"", NULL},
@@ -110,9 +113,15 @@ static testing_pair testing_pairs[] = {
     {"[[]", NULL},
     {"[}", NULL},
     {"{]", NULL},
-    /*Testing trailing comma. */
+    /* Testing bad containers. */
+    {"{x}", NULL},
+    {"{x=0,y}", NULL},
+    /* Testing trailing comma. */
     {"{,}", NULL},
     {"[1,2,3,4,]", NULL},
+    {"{\"a\": 1, }", NULL},
+    /* Testing after-ending characters. */
+    {"{}x", NULL},
     /* Testing having a key syntax in an array. */
     {"[\"x\":0]", NULL},
     /* Testing invalid numbers. */

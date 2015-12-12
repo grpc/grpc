@@ -847,6 +847,20 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "json_stream_error_test", 
+    "src": [
+      "test/core/json/json_stream_error_test.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "json_test", 
     "src": [
       "test/core/json/json_test.c"
