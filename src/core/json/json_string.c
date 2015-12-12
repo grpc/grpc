@@ -353,7 +353,7 @@ static void json_dump_recursive(grpc_json_writer *writer, grpc_json *json,
         grpc_json_writer_value_raw_with_len(writer, "null", 4);
         break;
       default:
-        abort();
+        GPR_UNREACHABLE_CODE(abort());
     }
     json = json->next;
   }
