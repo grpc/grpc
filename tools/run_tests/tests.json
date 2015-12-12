@@ -963,6 +963,24 @@
     "exclude_configs": [], 
     "flaky": false, 
     "language": "c", 
+    "name": "json_stream_error_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
     "name": "json_test", 
     "platforms": [
       "linux", 
@@ -18300,6 +18318,24 @@
     "name": "h2_uds+poll_trailing_metadata_nosec_test", 
     "platforms": [
       "linux"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "badreq_bad_client_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
     ]
   }, 
   {
