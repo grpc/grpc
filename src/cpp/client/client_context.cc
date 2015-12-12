@@ -48,6 +48,7 @@ namespace grpc {
 class DefaultGlobalCallbacks GRPC_FINAL : public ClientContext::GlobalCallbacks {
  public:
   void DefaultConstructor(ClientContext* context) GRPC_OVERRIDE {}
+  void Destructor(ClientContext* context) GRPC_OVERRIDE {}
 };
 
 static DefaultGlobalCallbacks g_default_callbacks;
@@ -66,6 +67,7 @@ ClientContext::~ClientContext() {
   if (call_) {
     grpc_call_destroy(call_);
   }
+  g_callbacks->Destructor(this);
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromServerContext(
