@@ -63,8 +63,6 @@ typedef struct grpc_metadata_batch {
 
 void grpc_metadata_batch_init(grpc_metadata_batch *batch);
 void grpc_metadata_batch_destroy(grpc_metadata_batch *batch);
-void grpc_metadata_batch_merge(grpc_metadata_batch *target,
-                               grpc_metadata_batch *add);
 void grpc_metadata_batch_clear(grpc_metadata_batch *batch);
 int grpc_metadata_batch_is_empty(grpc_metadata_batch *batch);
 
