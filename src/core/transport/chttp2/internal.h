@@ -385,6 +385,9 @@ typedef struct {
   grpc_metadata_batch *recv_trailing_metadata;
   grpc_closure *recv_trailing_metadata_finished;
 
+  /** Callback in case the operation on the stream is cancelled */
+  grpc_closure *on_cancel;
+
   /** when the application requests writes be closed, the write_closed is
       'queued'; when the close is flow controlled into the send path, we are
       'sending' it; when the write has been performed it is 'sent' */
@@ -741,6 +744,7 @@ grpc_chttp2_incoming_byte_stream *grpc_chttp2_incoming_byte_stream_create(
 void grpc_chttp2_incoming_byte_stream_push(grpc_exec_ctx *exec_ctx,
                                            grpc_chttp2_incoming_byte_stream *bs,
                                            gpr_slice slice);
+
 void grpc_chttp2_incoming_byte_stream_finished(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_incoming_byte_stream *bs);
 

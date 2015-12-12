@@ -750,10 +750,17 @@ static void destroy_channel_elem(grpc_exec_ctx *exec_ctx,
 }
 
 static const grpc_channel_filter server_surface_filter = {
-    server_start_transport_stream_op, grpc_channel_next_op, sizeof(call_data),
-    init_call_elem, grpc_call_stack_ignore_set_pollset, destroy_call_elem,
-    sizeof(channel_data), init_channel_elem, destroy_channel_elem,
-    grpc_call_next_get_peer, "server",
+    server_start_transport_stream_op,
+    grpc_channel_next_op,
+    sizeof(call_data),
+    init_call_elem,
+    grpc_call_stack_ignore_set_pollset,
+    destroy_call_elem,
+    sizeof(channel_data),
+    init_channel_elem,
+    destroy_channel_elem,
+    grpc_call_next_get_peer,
+    "server",
 };
 
 void grpc_server_register_completion_queue(grpc_server *server,
@@ -945,7 +952,7 @@ void grpc_server_setup_transport(grpc_exec_ctx *exec_ctx, grpc_server *s,
       method = grpc_mdstr_from_string(rm->method);
       hash = GRPC_MDSTR_KV_HASH(host ? host->hash : 0, method->hash);
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
-                               .server_registered_method != NULL;
+                           .server_registered_method != NULL;
            probes++)
         ;
       if (probes > max_probes) max_probes = probes;
@@ -1133,7 +1140,9 @@ static grpc_call_error queue_call_request(grpc_exec_ctx *exec_ctx,
     gpr_mu_lock(&server->mu_call);
     while ((calld = rm->pending_head) != NULL) {
       request_id = gpr_stack_lockfree_pop(rm->requests);
-      if (request_id == -1) break;
+      if (request_id == -1) {
+        break;
+      }
       rm->pending_head = calld->pending_next;
       gpr_mu_unlock(&server->mu_call);
       gpr_mu_lock(&calld->mu_state);
@@ -1248,7 +1257,6 @@ static void begin_call(grpc_exec_ctx *exec_ctx, grpc_server *server,
                        call_data *calld, requested_call *rc) {
   grpc_op ops[1];
   grpc_op *op = ops;
-
   memset(ops, 0, sizeof(ops));
 
   /* called once initial metadata has been read by the call, but BEFORE

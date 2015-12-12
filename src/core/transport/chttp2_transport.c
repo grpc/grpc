@@ -763,6 +763,18 @@ static int contains_non_ok_status(
 
 static void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, int success) {}
 
+static void fail_stream_op_locked(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
+    grpc_chttp2_stream_global *stream_global, grpc_transport_stream_op *op) {
+  if (op->on_complete != NULL) {
+    grpc_exec_ctx_enqueue(exec_ctx, op->on_complete, 0);
+  }
+
+  if (op->on_cancel != NULL) {
+    grpc_exec_ctx_enqueue(exec_ctx, op->on_cancel, 0);
+  }
+}
+
 static void perform_stream_op_locked(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, grpc_transport_stream_op *op) {
@@ -869,6 +881,10 @@ static void perform_stream_op_locked(
     grpc_chttp2_list_add_check_read_ops(transport_global, stream_global);
   }
 
+  if (op->on_cancel != NULL) {
+    stream_global->on_cancel = op->on_cancel;
+  }
+
   grpc_chttp2_complete_closure_step(exec_ctx, &on_complete, 1);
 
   GPR_TIMER_END("perform_stream_op_locked", 0);
@@ -880,7 +896,13 @@ static void perform_stream_op(grpc_exec_ctx *exec_ctx, grpc_transport *gt,
   grpc_chttp2_stream *s = (grpc_chttp2_stream *)gs;
 
   lock(t);
-  perform_stream_op_locked(exec_ctx, &t->global, &s->global, op);
+  /* In some cases the transport might have been closed after the higher layers
+     queued this operation. In such cases, fail the operation right away */
+  if (!t->closed) {
+    perform_stream_op_locked(exec_ctx, &t->global, &s->global, op);
+  } else {
+    fail_stream_op_locked(exec_ctx, &t->global, &s->global, op);
+  }
   unlock(exec_ctx, t);
 }
 
@@ -1033,13 +1055,14 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   if (!s) {
     s = grpc_chttp2_stream_map_delete(&t->new_stream_map, id);
   }
-  grpc_chttp2_list_remove_writable_stream(&t->global, &s->global);
   GPR_ASSERT(s);
+  grpc_chttp2_list_remove_writable_stream(&t->global, &s->global);
   s->global.in_stream_map = 0;
   if (t->parsing.incoming_stream == &s->parsing) {
     t->parsing.incoming_stream = NULL;
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, &t->parsing);
   }
+
   if (grpc_chttp2_unregister_stream(t, s) && t->global.sent_goaway) {
     close_transport_locked(exec_ctx, t);
   }
@@ -1050,6 +1073,26 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
   if (new_stream_count != t->global.concurrent_stream_count) {
     t->global.concurrent_stream_count = (gpr_uint32)new_stream_count;
     maybe_start_some_streams(exec_ctx, &t->global);
+  }
+}
+
+static void grpc_chttp2_stream_fail_all_closures(
+    grpc_exec_ctx *exec_ctx, grpc_chttp2_stream_global *stream_global) {
+  grpc_chttp2_complete_closure_step(
+      exec_ctx, &stream_global->send_initial_metadata_finished, 0);
+  grpc_chttp2_complete_closure_step(exec_ctx,
+                                    &stream_global->send_message_finished, 0);
+  grpc_chttp2_complete_closure_step(
+      exec_ctx, &stream_global->send_trailing_metadata_finished, 0);
+  grpc_chttp2_complete_closure_step(
+      exec_ctx, &stream_global->recv_initial_metadata_finished, 0);
+  grpc_chttp2_complete_closure_step(exec_ctx,
+                                    &stream_global->recv_message_ready, 0);
+  grpc_chttp2_complete_closure_step(
+      exec_ctx, &stream_global->recv_trailing_metadata_finished, 0);
+
+  if (stream_global->on_cancel != NULL) {
+    grpc_exec_ctx_enqueue(exec_ctx, stream_global->on_cancel, 0);
   }
 }
 
@@ -1064,10 +1107,12 @@ static void cancel_from_api(grpc_exec_ctx *exec_ctx,
             stream_global->id,
             (gpr_uint32)grpc_chttp2_grpc_status_to_http2_error(status)));
   }
+
   grpc_chttp2_fake_status(exec_ctx, transport_global, stream_global, status,
                           NULL);
   grpc_chttp2_mark_stream_closed(exec_ctx, transport_global, stream_global, 1,
                                  1);
+  grpc_chttp2_stream_fail_all_closures(exec_ctx, stream_global);
 }
 
 void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
@@ -1313,8 +1358,8 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
     gpr_mu_unlock(&t->mu);
     GPR_TIMER_BEGIN("recv_data.parse", 0);
     for (; i < t->read_buffer.count &&
-               grpc_chttp2_perform_read(exec_ctx, transport_parsing,
-                                        t->read_buffer.slices[i]);
+           grpc_chttp2_perform_read(exec_ctx, transport_parsing,
+                                    t->read_buffer.slices[i]);
          i++)
       ;
     GPR_TIMER_END("recv_data.parse", 0);
@@ -1647,8 +1692,9 @@ static char *chttp2_get_peer(grpc_exec_ctx *exec_ctx, grpc_transport *t) {
 }
 
 static const grpc_transport_vtable vtable = {
-    sizeof(grpc_chttp2_stream), init_stream, set_pollset, perform_stream_op,
-    perform_transport_op, destroy_stream, destroy_transport, chttp2_get_peer};
+    sizeof(grpc_chttp2_stream), init_stream,          set_pollset,
+    perform_stream_op,          perform_transport_op, destroy_stream,
+    destroy_transport,          chttp2_get_peer};
 
 grpc_transport *grpc_create_chttp2_transport(
     grpc_exec_ctx *exec_ctx, const grpc_channel_args *channel_args,

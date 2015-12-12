@@ -119,6 +119,7 @@ typedef struct batch_control {
   grpc_call *call;
   grpc_cq_completion cq_completion;
   grpc_closure finish_batch;
+  grpc_closure on_cancel;
   void *notify_tag;
   gpr_refcount steps_to_complete;
 
@@ -130,6 +131,7 @@ typedef struct batch_control {
   gpr_uint8 recv_final_op;
   gpr_uint8 is_notify_tag_closure;
   gpr_uint8 success;
+  gpr_uint8 post_batch_completion_called;
 } batch_control;
 
 struct grpc_call {
@@ -224,6 +226,10 @@ static void set_deadline_alarm(grpc_exec_ctx *exec_ctx, grpc_call *call,
                                gpr_timespec deadline);
 static void execute_op(grpc_exec_ctx *exec_ctx, grpc_call *call,
                        grpc_transport_stream_op *op);
+
+static void post_batch_completion(grpc_exec_ctx *exec_ctx, batch_control *bctl);
+static void check_and_call_post_batch_completion(grpc_exec_ctx *exec_ctx,
+                                                 batch_control *bctl);
 static grpc_call_error cancel_with_status(grpc_exec_ctx *exec_ctx, grpc_call *c,
                                           grpc_status_code status,
                                           const char *description);
@@ -926,9 +932,34 @@ static void finish_batch_completion(grpc_exec_ctx *exec_ctx, void *user_data,
   GRPC_CALL_INTERNAL_UNREF(exec_ctx, call, "completion");
 }
 
+/* Call post_batch_completion() if it was not already called and (if there are
+   no more steps to complete or if the batch failed) */
+static void check_and_call_post_batch_completion(grpc_exec_ctx *exec_ctx,
+                                                 batch_control *bctl) {
+  int are_steps_complete;
+  if (bctl->post_batch_completion_called) {
+    return;
+  }
+
+  /* Note: This decrements bctl->steps_to_complete irrespective of bctl->success
+     value and that is okay) */
+  are_steps_complete = gpr_unref(&bctl->steps_to_complete);
+
+  if (are_steps_complete || bctl->success == 0) {
+    if (!are_steps_complete && bctl->success == 0) {
+      gpr_log(GPR_INFO,
+              "post_batch_completion being called even with some "
+              "steps remaining in the batch"); /* helps with debugging */
+    }
+
+    post_batch_completion(exec_ctx, bctl);
+  }
+}
+
 static void post_batch_completion(grpc_exec_ctx *exec_ctx,
                                   batch_control *bctl) {
   grpc_call *call = bctl->call;
+  bctl->post_batch_completion_called = 1;
   if (bctl->is_notify_tag_closure) {
     grpc_exec_ctx_enqueue(exec_ctx, bctl->notify_tag, bctl->success);
     gpr_mu_lock(&call->mu);
@@ -946,6 +977,10 @@ static void post_batch_completion(grpc_exec_ctx *exec_ctx,
 static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
                                       batch_control *bctl) {
   grpc_call *call = bctl->call;
+
+  /* continue_receiving_slices() shouldn't have been called if batch failed */
+  GPR_ASSERT(bctl->success != 0);
+
   for (;;) {
     size_t remaining = call->receiving_stream->length -
                        (*call->receiving_buffer)->data.raw.slice_buffer.length;
@@ -953,9 +988,7 @@ static void continue_receiving_slices(grpc_exec_ctx *exec_ctx,
       call->receiving_message = 0;
       grpc_byte_stream_destroy(call->receiving_stream);
       call->receiving_stream = NULL;
-      if (gpr_unref(&bctl->steps_to_complete)) {
-        post_batch_completion(exec_ctx, bctl);
-      }
+      check_and_call_post_batch_completion(exec_ctx, bctl);
       return;
     }
     if (grpc_byte_stream_next(exec_ctx, call->receiving_stream,
@@ -974,11 +1007,29 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
 
-  GPR_ASSERT(success);
-  gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                       call->receiving_slice);
+  /* Ensure that we are never changing bctl->success from 0 to 1, i.e failure
+     to success */
+  GPR_ASSERT((bctl->success == (success != 0)) ||
+             (bctl->success && (success == 0)));
 
-  continue_receiving_slices(exec_ctx, bctl);
+  bctl->success = (success != 0);
+
+  if (bctl->success == 0) {
+    /* If batch failed, no point in continuing. Call batch completion */
+    check_and_call_post_batch_completion(exec_ctx, bctl);
+  } else {
+    gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
+                         call->receiving_slice);
+    continue_receiving_slices(exec_ctx, bctl);
+  }
+}
+
+static void batch_cancelled(grpc_exec_ctx *exec_ctx, void *bctlp, int success) {
+  batch_control *bctl = bctlp;
+
+  GPR_ASSERT(success == 0); /* This is called only in case of failures */
+  bctl->success = 0;
+  check_and_call_post_batch_completion(exec_ctx, bctl);
 }
 
 static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, int success) {
@@ -1048,9 +1099,7 @@ static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, int success) {
   }
   bctl->success = success != 0;
   gpr_mu_unlock(&call->mu);
-  if (gpr_unref(&bctl->steps_to_complete)) {
-    post_batch_completion(exec_ctx, bctl);
-  }
+  check_and_call_post_batch_completion(exec_ctx, bctl);
 }
 
 static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
@@ -1058,11 +1107,13 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
 
-  if (call->receiving_stream == NULL) {
+  bctl->success = (success != 0);
+
+  if (success == 0) {
+    check_and_call_post_batch_completion(exec_ctx, bctl);
+  } else if (call->receiving_stream == NULL) {
     *call->receiving_buffer = NULL;
-    if (gpr_unref(&bctl->steps_to_complete)) {
-      post_batch_completion(exec_ctx, bctl);
-    }
+    check_and_call_post_batch_completion(exec_ctx, bctl);
   } else if (call->receiving_stream->length >
              grpc_channel_get_max_message_length(call->channel)) {
     cancel_with_status(exec_ctx, call, GRPC_STATUS_INTERNAL,
@@ -1070,9 +1121,7 @@ static void receiving_stream_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
     grpc_byte_stream_destroy(call->receiving_stream);
     call->receiving_stream = NULL;
     *call->receiving_buffer = NULL;
-    if (gpr_unref(&bctl->steps_to_complete)) {
-      post_batch_completion(exec_ctx, bctl);
-    }
+    check_and_call_post_batch_completion(exec_ctx, bctl);
   } else {
     call->test_only_last_message_flags = call->receiving_stream->flags;
     if ((call->receiving_stream->flags & GRPC_WRITE_INTERNAL_COMPRESS) &&
@@ -1340,6 +1389,9 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
   stream_op.context = call->context;
   grpc_closure_init(&bctl->finish_batch, finish_batch, bctl);
   stream_op.on_complete = &bctl->finish_batch;
+
+  grpc_closure_init(&bctl->on_cancel, batch_cancelled, bctl);
+  stream_op.on_cancel = &bctl->on_cancel;
   gpr_mu_unlock(&call->mu);
 
   execute_op(exec_ctx, call, &stream_op);

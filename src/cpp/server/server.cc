@@ -35,16 +35,16 @@
 
 #include <utility>
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc++/completion_queue.h>
 #include <grpc++/generic/async_generic_service.h>
 #include <grpc++/impl/rpc_service_method.h>
 #include <grpc++/impl/service_type.h>
-#include <grpc++/server_context.h>
 #include <grpc++/security/server_credentials.h>
+#include <grpc++/server_context.h>
 #include <grpc++/support/time.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "src/core/profiling/timers.h"
 #include "src/cpp/server/thread_pool_interface.h"
@@ -172,7 +172,11 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
     GPR_UNREACHABLE_CODE(return false);
   }
 
-  void SetupRequest() { cq_ = grpc_completion_queue_create(nullptr); }
+  void SetupRequest() {
+    in_flight_ = false;
+    request_metadata_.count = 0;
+    cq_ = grpc_completion_queue_create(nullptr);
+  }
 
   void TeardownRequest() {
     grpc_completion_queue_destroy(cq_);
@@ -224,9 +228,7 @@ class Server::SyncRequest GRPC_FINAL : public CompletionQueueTag {
       ctx_.set_call(mrd->call_);
       ctx_.cq_ = &cq_;
       GPR_ASSERT(mrd->in_flight_);
-      mrd->in_flight_ = false;
-      mrd->request_metadata_.count = 0;
-    }
+   }
 
     ~CallData() {
       if (has_request_payload_ && request_payload_) {
@@ -556,20 +558,29 @@ void Server::RunRpc() {
   auto* mrd = SyncRequest::Wait(&cq_, &ok);
   if (mrd) {
     ScheduleCallback();
+
+    SyncRequest::CallData* cd = NULL;
     if (ok) {
-      SyncRequest::CallData cd(this, mrd);
-      {
-        mrd->SetupRequest();
-        grpc::unique_lock<grpc::mutex> lock(mu_);
-        if (!shutdown_) {
-          mrd->Request(server_, cq_.cq());
-        } else {
-          // destroy the structure that was created
-          mrd->TeardownRequest();
-        }
+      cd = new SyncRequest::CallData(this, mrd);
+    }
+
+    // It is important to call mrd->SetupRequest and mrd->Request even if
+    // (ok == false) so that we can receive notification on new calls.
+    {
+      mrd->SetupRequest();
+      grpc::unique_lock<grpc::mutex> lock(mu_);
+      if (!shutdown_) {
+        mrd->Request(server_, cq_.cq());
+      } else {
+        // destroy the structure that was created
+        mrd->TeardownRequest();
       }
-      GPR_TIMER_SCOPE("cd.Run()", 0);
-      cd.Run();
+    }
+
+    if (cd != NULL) {
+      GPR_TIMER_SCOPE("cd->Run()", 0);
+      cd->Run();
+      delete cd;
     }
   }
 

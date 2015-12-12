@@ -92,6 +92,7 @@ typedef struct grpc_transport_stream_op {
   grpc_metadata_batch *recv_trailing_metadata;
 
   grpc_closure *on_complete;
+  grpc_closure *on_cancel;
 
   /** If != GRPC_STATUS_OK, cancel this stream */
   grpc_status_code cancel_with_status;
