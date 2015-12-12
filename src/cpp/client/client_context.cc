@@ -50,7 +50,9 @@ ClientContext::ClientContext()
       call_(nullptr),
       call_canceled_(false),
       deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)),
-      propagate_from_call_(nullptr) {}
+      propagate_from_call_(nullptr) {
+        
+}
 
 ClientContext::~ClientContext() {
   if (call_) {

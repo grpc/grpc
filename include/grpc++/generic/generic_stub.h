@@ -54,6 +54,17 @@ class GenericStub GRPC_FINAL {
       ClientContext* context, const grpc::string& method, CompletionQueue* cq,
       void* tag);
 
+  /// Global Client Callbacks
+  ///
+  /// Can be set exactly once per application to install hooks whenever
+  /// a client call occurs
+  class GlobalCallbacks {
+   public:
+    virtual void PreSynchronousRequest(ClientContext* context) = 0;
+  };
+
+  static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
+
  private:
   std::shared_ptr<Channel> channel_;
 };
