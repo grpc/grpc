@@ -1429,6 +1429,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: json_stream_error_test
+  build: test
+  language: c
+  src:
+  - test/core/json/json_stream_error_test.c
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: json_test
   build: test
   language: c
