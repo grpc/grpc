@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\test\core\bad_ssl\servers\cert.c">
+      <Filter>test\core\bad_ssl\servers</Filter>
+    </ClCompile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Filter Include="test">
+      <UniqueIdentifier>{72cd95ad-e6f1-b1c7-655d-d7d816c03259}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core">
+      <UniqueIdentifier>{8533f4a8-8430-5f9c-8702-a230a6c04d04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_ssl">
+      <UniqueIdentifier>{6c2d6d20-9a60-17b3-a6a3-4b6fbe3effe7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test\core\bad_ssl\servers">
+      <UniqueIdentifier>{552f15cb-1bab-1205-4e7c-15eb5ffe97fe}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
+
