@@ -366,8 +366,9 @@ static void hpack_enc(grpc_chttp2_hpack_compressor *c, grpc_mdelem *elem,
   if (GPR_SLICE_START_PTR(elem->key->slice)[0] != ':') { /* regular header */
     st->seen_regular_header = 1;
   } else {
-    GPR_ASSERT(st->seen_regular_header == 0 && 
-               "Reserved header (colon-prefixed) happening after regular ones.");
+    GPR_ASSERT(
+        st->seen_regular_header == 0 &&
+        "Reserved header (colon-prefixed) happening after regular ones.");
   }
 
   inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum, c->filter_elems);

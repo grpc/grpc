@@ -47,6 +47,5 @@ grpc_server *grpc_server_create(const grpc_channel_args *args, void *reserved) {
     filters[num_filters++] = &grpc_server_census_filter;
   }
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
-  return grpc_server_create_from_filters(filters, num_filters,
-                                         args);
+  return grpc_server_create_from_filters(filters, num_filters, args);
 }

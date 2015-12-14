@@ -430,7 +430,6 @@ static void refinc(void *v /*=m*/) {
   mark_thread_done(m);
 }
 
-
 /* Wait until m->event is set to (void *)1, then decrement m->refcount by 1
    (m->threads * m->iterations * m->incr_step) times, and ensure that the last
    decrement caused the counter to reach zero, then mark thread as done.  */

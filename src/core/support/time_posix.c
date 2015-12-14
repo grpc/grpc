@@ -47,7 +47,7 @@ static struct timespec timespec_from_gpr(gpr_timespec gts) {
   struct timespec rv;
   if (sizeof(time_t) < sizeof(gpr_int64)) {
     /* fine to assert, as this is only used in gpr_sleep_until */
-     GPR_ASSERT(gts.tv_sec <= INT32_MAX && gts.tv_sec >= INT32_MIN);
+    GPR_ASSERT(gts.tv_sec <= INT32_MAX && gts.tv_sec >= INT32_MIN);
   }
   rv.tv_sec = (time_t)gts.tv_sec;
   rv.tv_nsec = gts.tv_nsec;

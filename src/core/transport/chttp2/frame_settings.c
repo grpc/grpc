@@ -44,7 +44,7 @@
 #include "src/core/transport/chttp2/http2_errors.h"
 #include "src/core/transport/chttp2_transport.h"
 
-#define MAX_MAX_HEADER_LIST_SIZE (1024*1024*1024)
+#define MAX_MAX_HEADER_LIST_SIZE (1024 * 1024 * 1024)
 
 /* HTTP/2 mandated initial connection settings */
 const grpc_chttp2_setting_parameters
@@ -62,8 +62,9 @@ const grpc_chttp2_setting_parameters
          GRPC_CHTTP2_FLOW_CONTROL_ERROR},
         {"MAX_FRAME_SIZE", 16384, 16384, 16777215,
          GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE, GRPC_CHTTP2_PROTOCOL_ERROR},
-        {"MAX_HEADER_LIST_SIZE", MAX_MAX_HEADER_LIST_SIZE, 0, MAX_MAX_HEADER_LIST_SIZE,
-         GRPC_CHTTP2_CLAMP_INVALID_VALUE, GRPC_CHTTP2_PROTOCOL_ERROR},
+        {"MAX_HEADER_LIST_SIZE", MAX_MAX_HEADER_LIST_SIZE, 0,
+         MAX_MAX_HEADER_LIST_SIZE, GRPC_CHTTP2_CLAMP_INVALID_VALUE,
+         GRPC_CHTTP2_PROTOCOL_ERROR},
 };
 
 static gpr_uint8 *fill_header(gpr_uint8 *out, gpr_uint32 length,
