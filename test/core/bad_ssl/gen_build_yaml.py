@@ -68,6 +68,7 @@ def main():
               'name': 'bad_ssl_%s_server' % t,
               'build': 'test',
               'language': 'c',
+              'run': False,
               'src': ['test/core/bad_ssl/servers/%s.c' % t],
               'vs_proj_dir': 'test',
               'deps': [
