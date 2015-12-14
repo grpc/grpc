@@ -55,6 +55,7 @@ def main():
               'src': ['test/core/bad_ssl/server.c'],
               'headers': ['test/core/bad_ssl/server.h'],
               'vs_proj_dir': 'test',
+              'platforms': ['linux', 'posix', 'mac'],
               'deps': [
                   'grpc_test_util',
                   'grpc',
@@ -71,6 +72,7 @@ def main():
               'run': False,
               'src': ['test/core/bad_ssl/servers/%s.c' % t],
               'vs_proj_dir': 'test',
+              'platforms': ['linux', 'posix', 'mac'],
               'deps': [
                   'bad_ssl_test_server',
                   'grpc_test_util',
@@ -86,6 +88,7 @@ def main():
               'language': 'c',
               'src': ['test/core/bad_ssl/bad_ssl_test.c'],
               'vs_proj_dir': 'test',
+              'platforms': ['linux', 'posix', 'mac'],
               'deps': [
                   'grpc_test_util',
                   'grpc',
