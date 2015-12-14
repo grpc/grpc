@@ -89,7 +89,7 @@ static void test_cq_end_op(void) {
 
   cc = grpc_completion_queue_create(NULL);
 
-  grpc_cq_begin_op(cc);
+  grpc_cq_begin_op(cc, tag);
   grpc_cq_end_op(&exec_ctx, cc, tag, 1, do_nothing_end_completion, NULL,
                  &completion);
 
@@ -148,7 +148,7 @@ static void test_pluck(void) {
   cc = grpc_completion_queue_create(NULL);
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-    grpc_cq_begin_op(cc);
+    grpc_cq_begin_op(cc, tags[i]);
     grpc_cq_end_op(&exec_ctx, cc, tags[i], 1, do_nothing_end_completion, NULL,
                    &completions[i]);
   }
@@ -160,7 +160,7 @@ static void test_pluck(void) {
   }
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-    grpc_cq_begin_op(cc);
+    grpc_cq_begin_op(cc, tags[i]);
     grpc_cq_end_op(&exec_ctx, cc, tags[i], 1, do_nothing_end_completion, NULL,
                    &completions[i]);
   }
@@ -233,7 +233,7 @@ static void test_too_many_plucks(void) {
   GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-    grpc_cq_begin_op(cc);
+    grpc_cq_begin_op(cc, tags[i]);
     grpc_cq_end_op(&exec_ctx, cc, tags[i], 1, do_nothing_end_completion, NULL,
                    &completions[i]);
   }
@@ -279,7 +279,7 @@ static void producer_thread(void *arg) {
 
   gpr_log(GPR_INFO, "producer %d phase 1", opt->id);
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
-    grpc_cq_begin_op(opt->cc);
+    grpc_cq_begin_op(opt->cc, (void *)(gpr_intptr)1);
   }
 
   gpr_log(GPR_INFO, "producer %d phase 1 done", opt->id);

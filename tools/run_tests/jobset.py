@@ -273,7 +273,7 @@ class Job(object):
           update_cache.finished(self._spec.identity(), self._bin_hash)
     elif self._state == _RUNNING and time.time() - self._start > self._spec.timeout_seconds:
       if self._timeout_retries < self._spec.timeout_retries:
-        message('TIMEOUT_FLAKE', self._spec.shortname, stdout, do_newline=True)
+        message('TIMEOUT_FLAKE', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout, do_newline=True)
         self._timeout_retries += 1
         self.result.num_failures += 1
         self.result.retries = self._timeout_retries + self._retries
@@ -282,7 +282,7 @@ class Job(object):
         self._process.terminate()
         self.start()
       else:
-        message('TIMEOUT', self._spec.shortname, stdout, do_newline=True)
+        message('TIMEOUT', '%s [pid=%d]' % (self._spec.shortname, self._process.pid), stdout, do_newline=True)
         self.kill()
         self.result.state = 'TIMEOUT'
         self.result.num_failures += 1

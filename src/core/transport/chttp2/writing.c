@@ -342,7 +342,6 @@ void grpc_chttp2_cleanup_writing(
     }
     if (stream_writing->sent_message) {
       GPR_ASSERT(stream_writing->send_message == NULL);
-      GPR_ASSERT(stream_global->send_message_finished);
       grpc_chttp2_complete_closure_step(
           exec_ctx, &stream_global->send_message_finished, 1);
       stream_writing->sent_message = 0;
