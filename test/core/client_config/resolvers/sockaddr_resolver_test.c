@@ -41,28 +41,27 @@
 #include "test/core/util/test_config.h"
 
 static void subchannel_factory_ref(grpc_subchannel_factory *scv) {}
-static void subchannel_factory_unref(grpc_exec_ctx *exec_ctx, 
+static void subchannel_factory_unref(grpc_exec_ctx *exec_ctx,
                                      grpc_subchannel_factory *scv) {}
-static grpc_subchannel *subchannel_factory_create_subchannel(grpc_exec_ctx *exec_ctx,
-                                                             grpc_subchannel_factory *factory,
-                                                             grpc_subchannel_args *args) {
+static grpc_subchannel *subchannel_factory_create_subchannel(
+    grpc_exec_ctx *exec_ctx, grpc_subchannel_factory *factory,
+    grpc_subchannel_args *args) {
   GPR_UNREACHABLE_CODE(return NULL);
 }
 
 static const grpc_subchannel_factory_vtable sc_vtable = {
-  subchannel_factory_ref,
-  subchannel_factory_unref,
-  subchannel_factory_create_subchannel
-};
+    subchannel_factory_ref, subchannel_factory_unref,
+    subchannel_factory_create_subchannel};
 
-static grpc_subchannel_factory sc_factory = { &sc_vtable };
+static grpc_subchannel_factory sc_factory = {&sc_vtable};
 
 static void test_succeeds(grpc_resolver_factory *factory, const char *string) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   grpc_uri *uri = grpc_uri_parse(string, 0);
   grpc_resolver_args args;
   grpc_resolver *resolver;
-  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string, factory->vtable->scheme);
+  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
+          factory->vtable->scheme);
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
@@ -79,7 +78,8 @@ static void test_fails(grpc_resolver_factory *factory, const char *string) {
   grpc_uri *uri = grpc_uri_parse(string, 0);
   grpc_resolver_args args;
   grpc_resolver *resolver;
-  gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string, factory->vtable->scheme);
+  gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
+          factory->vtable->scheme);
   GPR_ASSERT(uri);
   memset(&args, 0, sizeof(args));
   args.uri = uri;
