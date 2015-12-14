@@ -47,14 +47,15 @@ static void test_varint(gpr_uint32 value, gpr_uint32 prefix_bits,
   gpr_log(GPR_DEBUG, "Test: 0x%08x", value);
   GPR_ASSERT(nbytes == expect_length);
   slice = gpr_slice_malloc(nbytes);
-  GRPC_CHTTP2_WRITE_VARINT(value, prefix_bits, prefix_or, GPR_SLICE_START_PTR(slice), nbytes);
+  GRPC_CHTTP2_WRITE_VARINT(value, prefix_bits, prefix_or,
+                           GPR_SLICE_START_PTR(slice), nbytes);
   GPR_ASSERT(gpr_slice_cmp(expect, slice) == 0);
   gpr_slice_unref(expect);
   gpr_slice_unref(slice);
 }
 
 #define TEST_VARINT(value, prefix_bits, prefix_or, expect) \
-  test_varint(value, prefix_bits, prefix_or, expect, sizeof(expect)-1)
+  test_varint(value, prefix_bits, prefix_or, expect, sizeof(expect) - 1)
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);

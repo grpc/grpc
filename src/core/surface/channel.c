@@ -198,8 +198,8 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
       "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
       10, (channel, parent_call, (unsigned)propagation_mask, cq, method, host,
-           (long long)deadline.tv_sec, (int)deadline.tv_nsec, (int)deadline.clock_type,
-           reserved));
+           (long long)deadline.tv_sec, (int)deadline.tv_nsec,
+           (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, cq,
@@ -242,8 +242,8 @@ grpc_call *grpc_channel_create_registered_call(
       "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
       9, (channel, parent_call, (unsigned)propagation_mask, completion_queue,
-          registered_call_handle, (long long)deadline.tv_sec, (int)deadline.tv_nsec,
-          (int)deadline.clock_type, reserved));
+          registered_call_handle, (long long)deadline.tv_sec,
+          (int)deadline.tv_nsec, (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
   return grpc_channel_create_call_internal(
       channel, parent_call, propagation_mask, completion_queue,

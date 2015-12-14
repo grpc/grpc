@@ -910,9 +910,7 @@ static int default_creds_gce_detection_httpcli_get_success_override(
   return 1;
 }
 
-static char *null_well_known_creds_path_getter(void) {
-  return NULL;
-}
+static char *null_well_known_creds_path_getter(void) { return NULL; }
 
 static void test_google_default_creds_gce(void) {
   grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;

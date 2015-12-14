@@ -232,7 +232,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
                   reader->state = GRPC_JSON_STATE_END;
                   break;
                 default:
-                 GPR_UNREACHABLE_CODE(return GRPC_JSON_INTERNAL_ERROR);
+                  GPR_UNREACHABLE_CODE(return GRPC_JSON_INTERNAL_ERROR);
               }
             }
             break;

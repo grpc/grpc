@@ -54,9 +54,8 @@ static gpr_uint32 read_char(void *userdata) {
 }
 
 static grpc_json_reader_vtable reader_vtable = {
-  string_clear, NULL, NULL, read_char, NULL, NULL,
-  NULL, NULL, NULL, NULL, NULL, NULL
-};
+    string_clear, NULL, NULL, read_char, NULL, NULL,
+    NULL,         NULL, NULL, NULL,      NULL, NULL};
 
 static void read_error() {
   grpc_json_reader reader;
