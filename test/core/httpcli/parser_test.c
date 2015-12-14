@@ -159,7 +159,8 @@ int main(int argc, char **argv) {
                "hello world!");
 
     tmp1 = gpr_malloc(2 * GRPC_HTTPCLI_MAX_HEADER_LENGTH);
-    memset(tmp1, 'a', 2 * GRPC_HTTPCLI_MAX_HEADER_LENGTH);
+    memset(tmp1, 'a', 2 * GRPC_HTTPCLI_MAX_HEADER_LENGTH - 1);
+    tmp1[2 * GRPC_HTTPCLI_MAX_HEADER_LENGTH - 1] = 0;
     gpr_asprintf(&tmp2, "HTTP/1.0 200 OK\r\nxyz: %s\r\n\r\n", tmp1);
     test_fails(split_modes[i], tmp2);
     gpr_free(tmp1);
