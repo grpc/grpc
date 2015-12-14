@@ -79,7 +79,8 @@
 
 static void *tag(gpr_intptr t) { return (void *)t; }
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq, void *registered_method) {
+static void verifier(grpc_server *server, grpc_completion_queue *cq,
+                     void *registered_method) {
   grpc_call_error error;
   grpc_call *s;
   grpc_call_details call_details;
@@ -104,7 +105,8 @@ static void verifier(grpc_server *server, grpc_completion_queue *cq, void *regis
   cq_verifier_destroy(cqv);
 }
 
-static void failure_verifier(grpc_server *server, grpc_completion_queue *cq, void *registered_method) {
+static void failure_verifier(grpc_server *server, grpc_completion_queue *cq,
+                             void *registered_method) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(cq,
                                           GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20),

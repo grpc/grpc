@@ -38,7 +38,8 @@
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00"
 
-static void verifier(grpc_server *server, grpc_completion_queue *cq, void *registered_method) {
+static void verifier(grpc_server *server, grpc_completion_queue *cq,
+                     void *registered_method) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(cq,
                                           GRPC_TIMEOUT_MILLIS_TO_DEADLINE(20),
