@@ -118,7 +118,7 @@ void grpc_chttp2_encode_data(gpr_uint32 id, gpr_slice_buffer *inbuf,
 
   hdr = gpr_slice_malloc(9);
   p = GPR_SLICE_START_PTR(hdr);
-  GPR_ASSERT(write_bytes < (1<<24));
+  GPR_ASSERT(write_bytes < (1 << 24));
   *p++ = (gpr_uint8)(write_bytes >> 16);
   *p++ = (gpr_uint8)(write_bytes >> 8);
   *p++ = (gpr_uint8)(write_bytes);

@@ -624,9 +624,8 @@ static void basic_pollset_destroy(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable basic_pollset = {
-    basic_pollset_add_fd,
-    basic_pollset_maybe_work_and_unlock, basic_pollset_destroy,
-    basic_pollset_destroy};
+    basic_pollset_add_fd, basic_pollset_maybe_work_and_unlock,
+    basic_pollset_destroy, basic_pollset_destroy};
 
 static void become_basic_pollset(grpc_pollset *pollset, grpc_fd *fd_or_null) {
   pollset->vtable = &basic_pollset;

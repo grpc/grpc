@@ -197,7 +197,8 @@ static void win_read(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
 
   tcp->read_slice = gpr_slice_malloc(8192);
 
-  buffer.len = (ULONG)GPR_SLICE_LENGTH(tcp->read_slice);  // we know slice size fits in 32bit.
+  buffer.len = (ULONG)GPR_SLICE_LENGTH(
+      tcp->read_slice);  // we know slice size fits in 32bit.
   buffer.buf = (char *)GPR_SLICE_START_PTR(tcp->read_slice);
 
   TCP_REF(tcp, "read");
@@ -291,7 +292,7 @@ static void win_write(grpc_exec_ctx *exec_ctx, grpc_endpoint *ep,
   for (i = 0; i < tcp->write_slices->count; i++) {
     len = GPR_SLICE_LENGTH(tcp->write_slices->slices[i]);
     GPR_ASSERT(len <= ULONG_MAX);
-    buffers[i].len = (ULONG) len;
+    buffers[i].len = (ULONG)len;
     buffers[i].buf = (char *)GPR_SLICE_START_PTR(tcp->write_slices->slices[i]);
   }
 

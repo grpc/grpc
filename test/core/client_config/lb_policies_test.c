@@ -716,7 +716,8 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_init();
 
-  GPR_ASSERT(grpc_lb_policy_create("this-lb-policy-does-not-exist", NULL) == NULL);
+  GPR_ASSERT(grpc_lb_policy_create("this-lb-policy-does-not-exist", NULL) ==
+             NULL);
   GPR_ASSERT(grpc_lb_policy_create(NULL, NULL) == NULL);
 
   /* everything is fine, all servers stay up the whole time and life's peachy */
