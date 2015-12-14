@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
   tmp = lunder - 1;
   while (*tmp != '_') tmp--;
   tmp++;
-  memcpy(test, tmp, lunder - tmp);
+  memcpy(test, tmp, (size_t)(lunder - tmp));
   /* start the server */
   gpr_asprintf(&args[0], "%s/bad_ssl_%s_server%s", root, test,
                gpr_subprocess_binary_extension());
