@@ -38,8 +38,8 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "src/core/surface/server.h"
 
-#define PFX_STR                                                            \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
+#define PFX_STR                      \
+  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n" \
   "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */
 
 static void verifier(grpc_server *server, grpc_completion_queue *cq) {
@@ -54,76 +54,86 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
 
   /* invalid content type */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, 
-    PFX_STR
-    "\x00\x00\xc2\x01\x04\x00\x00\x00\x01"
-    "\x10\x05:path\x08/foo/bar"
-    "\x10\x07:scheme\x04http"
-    "\x10\x07:method\x04POST"
-    "\x10\x0a:authority\x09localhost"
-    "\x10\x0c""content-type\x09text/html"
-    "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
-    "\x10\x02te\x08trailers"
-    "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
-    GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, PFX_STR
+      "\x00\x00\xc2\x01\x04\x00\x00\x00\x01"
+      "\x10\x05:path\x08/foo/bar"
+      "\x10\x07:scheme\x04http"
+      "\x10\x07:method\x04POST"
+      "\x10\x0a:authority\x09localhost"
+      "\x10\x0c"
+      "content-type\x09text/html"
+      "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
+      "\x10\x02te\x08trailers"
+      "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
+      GRPC_BAD_CLIENT_DISCONNECT);
 
   /* invalid te */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, 
-    PFX_STR
-    "\x00\x00\xcb\x01\x04\x00\x00\x00\x01"
-    "\x10\x05:path\x08/foo/bar"
-    "\x10\x07:scheme\x04http"
-    "\x10\x07:method\x04POST"
-    "\x10\x0a:authority\x09localhost"
-    "\x10\x0c""content-type\x10""application/grpc"
-    "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
-    "\x10\x02te\x0a""frobnicate"
-    "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
-    GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, PFX_STR
+      "\x00\x00\xcb\x01\x04\x00\x00\x00\x01"
+      "\x10\x05:path\x08/foo/bar"
+      "\x10\x07:scheme\x04http"
+      "\x10\x07:method\x04POST"
+      "\x10\x0a:authority\x09localhost"
+      "\x10\x0c"
+      "content-type\x10"
+      "application/grpc"
+      "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
+      "\x10\x02te\x0a"
+      "frobnicate"
+      "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
+      GRPC_BAD_CLIENT_DISCONNECT);
 
   /* two path headers */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, 
-    PFX_STR
-    "\x00\x00\xd9\x01\x04\x00\x00\x00\x01"
-    "\x10\x05:path\x08/foo/bar"
-    "\x10\x05:path\x08/foo/bah"
-    "\x10\x07:scheme\x04http"
-    "\x10\x07:method\x04POST"
-    "\x10\x0a:authority\x09localhost"
-    "\x10\x0c""content-type\x10""application/grpc"
-    "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
-    "\x10\x02te\x08trailers"
-    "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
-    GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, PFX_STR
+      "\x00\x00\xd9\x01\x04\x00\x00\x00\x01"
+      "\x10\x05:path\x08/foo/bar"
+      "\x10\x05:path\x08/foo/bah"
+      "\x10\x07:scheme\x04http"
+      "\x10\x07:method\x04POST"
+      "\x10\x0a:authority\x09localhost"
+      "\x10\x0c"
+      "content-type\x10"
+      "application/grpc"
+      "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
+      "\x10\x02te\x08trailers"
+      "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
+      GRPC_BAD_CLIENT_DISCONNECT);
 
   /* bad accept-encoding algorithm */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, 
-    PFX_STR
-    "\x00\x00\xd2\x01\x04\x00\x00\x00\x01"
-    "\x10\x05:path\x08/foo/bar"
-    "\x10\x07:scheme\x04http"
-    "\x10\x07:method\x04POST"
-    "\x10\x0a:authority\x09localhost"
-    "\x10\x0c""content-type\x10""application/grpc"
-    "\x10\x14grpc-accept-encoding\x1enobody-knows-the-trouble-i-see"
-    "\x10\x02te\x08trailers"
-    "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
-    GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, PFX_STR
+      "\x00\x00\xd2\x01\x04\x00\x00\x00\x01"
+      "\x10\x05:path\x08/foo/bar"
+      "\x10\x07:scheme\x04http"
+      "\x10\x07:method\x04POST"
+      "\x10\x0a:authority\x09localhost"
+      "\x10\x0c"
+      "content-type\x10"
+      "application/grpc"
+      "\x10\x14grpc-accept-encoding\x1enobody-knows-the-trouble-i-see"
+      "\x10\x02te\x08trailers"
+      "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
+      GRPC_BAD_CLIENT_DISCONNECT);
 
   /* bad grpc-encoding algorithm */
-  GRPC_RUN_BAD_CLIENT_TEST(verifier, 
-    PFX_STR
-    "\x00\x00\xf5\x01\x04\x00\x00\x00\x01"
-    "\x10\x05:path\x08/foo/bar"
-    "\x10\x07:scheme\x04http"
-    "\x10\x07:method\x04POST"
-    "\x10\x0a:authority\x09localhost"
-    "\x10\x0c""content-type\x10""application/grpc"
-    "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
-    "\x10\x0dgrpc-encoding\x1cyou-dont-know-how-to-do-this"
-    "\x10\x02te\x08trailers"
-    "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
-    GRPC_BAD_CLIENT_DISCONNECT);
+  GRPC_RUN_BAD_CLIENT_TEST(
+      verifier, PFX_STR
+      "\x00\x00\xf5\x01\x04\x00\x00\x00\x01"
+      "\x10\x05:path\x08/foo/bar"
+      "\x10\x07:scheme\x04http"
+      "\x10\x07:method\x04POST"
+      "\x10\x0a:authority\x09localhost"
+      "\x10\x0c"
+      "content-type\x10"
+      "application/grpc"
+      "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
+      "\x10\x0dgrpc-encoding\x1cyou-dont-know-how-to-do-this"
+      "\x10\x02te\x08trailers"
+      "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)",
+      GRPC_BAD_CLIENT_DISCONNECT);
 
   return 0;
 }
