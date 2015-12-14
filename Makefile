@@ -1960,6 +1960,7 @@ badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
 connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
 headers_bad_client_test: $(BINDIR)/$(CONFIG)/headers_bad_client_test
 initial_settings_frame_bad_client_test: $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
+server_registered_method_bad_client_test: $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
 simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
 unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
 
@@ -3218,6 +3219,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
   $(BINDIR)/$(CONFIG)/headers_bad_client_test \
   $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
   $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
   $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
 
@@ -5532,6 +5534,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/headers_bad_client_test || ( echo test headers_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing initial_settings_frame_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test || ( echo test initial_settings_frame_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_registered_method_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test || ( echo test server_registered_method_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing simple_request_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
@@ -29177,6 +29181,23 @@ deps_initial_settings_frame_bad_client_test: $(INITIAL_SETTINGS_FRAME_BAD_CLIENT
 
 ifneq ($(NO_DEPS),true)
 -include $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
+SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/server_registered_method.c \
+
+SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC))))
+$(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/server_registered_method.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+deps_server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS:.o=.dep)
 endif
 
 
