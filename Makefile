@@ -5544,10 +5544,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing bad_ssl_alpn_server"
-	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_alpn_server || ( echo test bad_ssl_alpn_server failed ; exit 1 )
-	$(E) "[RUN]     Testing bad_ssl_cert_server"
-	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_cert_server || ( echo test bad_ssl_cert_server failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_ssl_alpn_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_alpn_test || ( echo test bad_ssl_alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_ssl_cert_test"
