@@ -17257,6 +17257,21 @@
     ], 
     "headers": [], 
     "language": "c", 
+    "name": "server_registered_method_bad_client_test", 
+    "src": [
+      "test/core/bad_client/tests/server_registered_method.c"
+    ]
+  }, 
+  {
+    "deps": [
+      "bad_client_test", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "language": "c", 
     "name": "simple_request_bad_client_test", 
     "src": [
       "test/core/bad_client/tests/simple_request.c"
