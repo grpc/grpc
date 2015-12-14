@@ -46,12 +46,12 @@
 int main(int argc, char **argv) {
   const char *addr = bad_ssl_addr(argc, argv);
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
-	grpc_server_credentials *ssl_creds;
-	grpc_server *server;
+  grpc_server_credentials *ssl_creds;
+  grpc_server *server;
   gpr_slice cert_slice, key_slice;
   int ok;
 
-	grpc_init();
+  grpc_init();
 
   cert_slice = gpr_load_file("src/core/tsi/test_creds/badserver.pem", 1, &ok);
   GPR_ASSERT(ok);
@@ -60,8 +60,8 @@ int main(int argc, char **argv) {
   pem_key_cert_pair.private_key = (const char *)GPR_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain = (const char *)GPR_SLICE_START_PTR(cert_slice);
 
-  ssl_creds = grpc_ssl_server_credentials_create(
-      NULL, &pem_key_cert_pair, 1, 0, NULL);
+  ssl_creds =
+      grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0, NULL);
   server = grpc_server_create(NULL, NULL);
   GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
   grpc_server_credentials_release(ssl_creds);

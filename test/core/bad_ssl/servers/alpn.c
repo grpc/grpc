@@ -64,12 +64,12 @@ int main(int argc, char **argv) {
   const char *addr = bad_ssl_addr(argc, argv);
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                   test_server1_cert};
-	grpc_server_credentials *ssl_creds;
-	grpc_server *server;
+  grpc_server_credentials *ssl_creds;
+  grpc_server *server;
 
-	grpc_init();
-  ssl_creds = grpc_ssl_server_credentials_create(
-      NULL, &pem_key_cert_pair, 1, 0, NULL);
+  grpc_init();
+  ssl_creds =
+      grpc_ssl_server_credentials_create(NULL, &pem_key_cert_pair, 1, 0, NULL);
   server = grpc_server_create(NULL, NULL);
   GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, ssl_creds));
   grpc_server_credentials_release(ssl_creds);
