@@ -974,11 +974,19 @@ static void receiving_slice_ready(grpc_exec_ctx *exec_ctx, void *bctlp,
   batch_control *bctl = bctlp;
   grpc_call *call = bctl->call;
 
-  GPR_ASSERT(success);
-  gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
-                       call->receiving_slice);
-
-  continue_receiving_slices(exec_ctx, bctl);
+  if (success) {
+    gpr_slice_buffer_add(&(*call->receiving_buffer)->data.raw.slice_buffer,
+                         call->receiving_slice);
+    continue_receiving_slices(exec_ctx, bctl);
+  } else {
+    grpc_byte_stream_destroy(call->receiving_stream);
+    call->receiving_stream = NULL;
+    grpc_byte_buffer_destroy(*call->receiving_buffer);
+    *call->receiving_buffer = NULL;
+    if (gpr_unref(&bctl->steps_to_complete)) {
+      post_batch_completion(exec_ctx, bctl);
+    }
+  }
 }
 
 static void finish_batch(grpc_exec_ctx *exec_ctx, void *bctlp, int success) {
