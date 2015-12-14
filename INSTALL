@@ -26,7 +26,7 @@ OR
 
  $ git clone https://github.com/grpc/grpc.git
  $ cd grpc
- $ git submodule update --init
+ $ git submodule update --init --recursive
  $ make 
  $ [sudo] make install
 
