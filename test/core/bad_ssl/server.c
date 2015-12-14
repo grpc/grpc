@@ -57,8 +57,8 @@ void bad_ssl_run(grpc_server *server) {
   int shutdown_started = 0;
   int shutdown_finished = 0;
   grpc_event ev;
-	
-	grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+
+  grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
   grpc_server_register_completion_queue(server, cq, NULL);
   grpc_server_start(server);
 
@@ -79,8 +79,8 @@ void bad_ssl_run(grpc_server *server) {
         NULL);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
-      	GPR_UNREACHABLE_CODE(gpr_log(GPR_DEBUG, "GRPC_OP_COMPLETE"));
-      	break;
+        GPR_UNREACHABLE_CODE(gpr_log(GPR_DEBUG, "GRPC_OP_COMPLETE"));
+        break;
       case GRPC_QUEUE_SHUTDOWN:
         GPR_ASSERT(shutdown_started);
         shutdown_finished = 1;
