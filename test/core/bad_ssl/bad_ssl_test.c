@@ -122,6 +122,7 @@ static void run_test(const char *target, size_t nops) {
   grpc_channel_destroy(channel);
   grpc_completion_queue_destroy(cq);
   cq_verifier_destroy(cqv);
+  grpc_channel_credentials_release(ssl_creds);
 }
 
 int main(int argc, char **argv) {
