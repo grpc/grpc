@@ -62,10 +62,22 @@ void bad_ssl_run(grpc_server *server) {
   int shutdown_started = 0;
   int shutdown_finished = 0;
   grpc_event ev;
-
+  grpc_call_error error;
+  grpc_call *s = NULL;
+  grpc_call_details call_details;
+  grpc_metadata_array request_metadata_recv;
   grpc_completion_queue *cq = grpc_completion_queue_create(NULL);
+
+  grpc_call_details_init(&call_details);
+  grpc_metadata_array_init(&request_metadata_recv);
+
   grpc_server_register_completion_queue(server, cq, NULL);
   grpc_server_start(server);
+
+  error =
+      grpc_server_request_call(server, &s, &call_details,
+                               &request_metadata_recv, cq, cq, (void*)1);
+  GPR_ASSERT(GRPC_CALL_OK == error);
 
   signal(SIGINT, sigint_handler);
   while (!shutdown_finished) {
@@ -84,7 +96,8 @@ void bad_ssl_run(grpc_server *server) {
         NULL);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
-        GPR_UNREACHABLE_CODE(gpr_log(GPR_DEBUG, "GRPC_OP_COMPLETE"));
+        GPR_ASSERT(ev.tag == (void*)1);
+        GPR_ASSERT(ev.success == 0);
         break;
       case GRPC_QUEUE_SHUTDOWN:
         GPR_ASSERT(shutdown_started);
@@ -94,4 +107,8 @@ void bad_ssl_run(grpc_server *server) {
         break;
     }
   }
+
+  GPR_ASSERT(s == NULL);
+  grpc_call_details_destroy(&call_details);
+  grpc_metadata_array_destroy(&request_metadata_recv);
 }
