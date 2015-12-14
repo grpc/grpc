@@ -43,6 +43,9 @@
 #include "test/core/bad_ssl/server.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
+/* This server will present an untrusted cert to the connecting client,
+ * causing the SSL handshake to fail */
+
 int main(int argc, char **argv) {
   const char *addr = bad_ssl_addr(argc, argv);
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;

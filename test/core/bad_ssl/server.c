@@ -38,6 +38,11 @@
 #include "test/core/bad_ssl/server.h"
 #include "test/core/util/test_config.h"
 
+/* Common server implementation details for all servers in servers/.
+ * There's nothing *wrong* with these servers per-se, but they are
+ * configured to cause some failure case in the SSL connection path.
+ */
+
 static int got_sigint = 0;
 
 static void sigint_handler(int x) { got_sigint = 1; }
