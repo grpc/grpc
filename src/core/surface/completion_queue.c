@@ -287,8 +287,8 @@ grpc_event grpc_completion_queue_next(grpc_completion_queue *cc,
       "cc=%p, "
       "deadline=gpr_timespec { tv_sec: %lld, tv_nsec: %d, clock_type: %d }, "
       "reserved=%p)",
-      5, (cc, (long long)deadline.tv_sec, (int)deadline.tv_nsec, (int)deadline.clock_type,
-          reserved));
+      5, (cc, (long long)deadline.tv_sec, (int)deadline.tv_nsec,
+          (int)deadline.clock_type, reserved));
   GPR_ASSERT(!reserved);
 
   deadline = gpr_convert_clock_type(deadline, GPR_CLOCK_MONOTONIC);

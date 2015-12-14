@@ -48,12 +48,12 @@ grpc_closure transport_op_cb;
 static void *tag(gpr_intptr x) { return (void *)x; }
 
 void verify_connectivity(grpc_exec_ctx *exec_ctx, void *arg, int success) {
-  grpc_transport_op* op = arg;
+  grpc_transport_op *op = arg;
   GPR_ASSERT(GRPC_CHANNEL_FATAL_FAILURE == *op->connectivity_state);
   GPR_ASSERT(success);
 }
 
-void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, int success) { }
+void do_nothing(grpc_exec_ctx *exec_ctx, void *arg, int success) {}
 
 void test_transport_op(grpc_channel *channel) {
   grpc_transport_op op;

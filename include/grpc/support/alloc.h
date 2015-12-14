@@ -41,9 +41,9 @@ extern "C" {
 #endif
 
 typedef struct gpr_allocation_functions {
- void *(*malloc_fn)(size_t size);
- void *(*realloc_fn)(void *ptr, size_t size);
- void (*free_fn)(void *ptr);
+  void *(*malloc_fn)(size_t size);
+  void *(*realloc_fn)(void *ptr, size_t size);
+  void (*free_fn)(void *ptr);
 } gpr_allocation_functions;
 
 /* malloc, never returns NULL */

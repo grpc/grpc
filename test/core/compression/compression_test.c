@@ -92,14 +92,14 @@ static void test_compression_algorithm_name(void) {
   /* the value of "name" is undefined upon failure */
 }
 
-
 static void test_compression_algorithm_for_level(void) {
   size_t i;
   grpc_compression_level levels[] = {
       GRPC_COMPRESS_LEVEL_NONE, GRPC_COMPRESS_LEVEL_LOW,
       GRPC_COMPRESS_LEVEL_MED, GRPC_COMPRESS_LEVEL_HIGH};
-  grpc_compression_algorithm algorithms[] = {GRPC_COMPRESS_NONE,
-    GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_DEFLATE};
+  grpc_compression_algorithm algorithms[] = {
+      GRPC_COMPRESS_NONE, GRPC_COMPRESS_DEFLATE, GRPC_COMPRESS_DEFLATE,
+      GRPC_COMPRESS_DEFLATE};
   gpr_log(GPR_DEBUG, "test_compression_algorithm_for_level");
 
   for (i = 0; i < GPR_ARRAY_SIZE(levels); i++) {
@@ -115,19 +115,22 @@ static void test_compression_enable_disable_algorithm(void) {
   gpr_log(GPR_DEBUG, "test_compression_enable_disable_algorithm");
 
   grpc_compression_options_init(&options);
-  for (algorithm = GRPC_COMPRESS_NONE; algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT; algorithm++) {
+  for (algorithm = GRPC_COMPRESS_NONE;
+       algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT; algorithm++) {
     /* all algorithms are enabled by default */
     GPR_ASSERT(grpc_compression_options_is_algorithm_enabled(&options,
                                                              algorithm) != 0);
   }
   /* disable one by one */
-  for (algorithm = GRPC_COMPRESS_NONE; algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT; algorithm++) {
+  for (algorithm = GRPC_COMPRESS_NONE;
+       algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT; algorithm++) {
     grpc_compression_options_disable_algorithm(&options, algorithm);
     GPR_ASSERT(grpc_compression_options_is_algorithm_enabled(&options,
                                                              algorithm) == 0);
   }
   /* re-enable one by one */
-  for (algorithm = GRPC_COMPRESS_NONE; algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT; algorithm++) {
+  for (algorithm = GRPC_COMPRESS_NONE;
+       algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT; algorithm++) {
     grpc_compression_options_enable_algorithm(&options, algorithm);
     GPR_ASSERT(grpc_compression_options_is_algorithm_enabled(&options,
                                                              algorithm) != 0);

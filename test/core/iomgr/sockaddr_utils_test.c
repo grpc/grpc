@@ -244,14 +244,14 @@ static void test_sockaddr_set_get_port(void) {
   gpr_log(GPR_DEBUG, "test_sockaddr_set_get_port");
 
   input4 = make_addr4(kIPv4, sizeof(kIPv4));
-  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr*)&input4) == 12345);
-  GPR_ASSERT(grpc_sockaddr_set_port((struct sockaddr*)&input4, 54321));
-  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr*)&input4) == 54321);
+  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr *)&input4) == 12345);
+  GPR_ASSERT(grpc_sockaddr_set_port((struct sockaddr *)&input4, 54321));
+  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr *)&input4) == 54321);
 
   input6 = make_addr6(kIPv6, sizeof(kIPv6));
-  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr*)&input6) == 12345);
-  GPR_ASSERT(grpc_sockaddr_set_port((struct sockaddr*)&input6, 54321));
-  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr*)&input6) == 54321);
+  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr *)&input6) == 12345);
+  GPR_ASSERT(grpc_sockaddr_set_port((struct sockaddr *)&input6, 54321));
+  GPR_ASSERT(grpc_sockaddr_get_port((struct sockaddr *)&input6) == 54321);
 
   memset(&dummy, 0, sizeof(dummy));
   dummy.sa_family = 123;
