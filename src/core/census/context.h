@@ -41,7 +41,7 @@
 /* census_context is the in-memory representation of information needed to
  * maintain tracing, RPC statistics and resource usage information. */
 struct census_context {
-  census_tag_set *tags;  /* Opaque data structure for census tags. */
+  census_tag_set *tags; /* Opaque data structure for census tags. */
 };
 
 #endif /* GRPC_INTERNAL_CORE_CENSUS_CONTEXT_H */

@@ -236,8 +236,8 @@ static void test_bad_compression_algorithm(void) {
 
   gpr_slice_buffer_init(&input);
   gpr_slice_buffer_init(&output);
-  gpr_slice_buffer_add(&input, gpr_slice_from_copied_string(
-                                   "Never gonna give you up"));
+  gpr_slice_buffer_add(&input,
+                       gpr_slice_from_copied_string("Never gonna give you up"));
   was_compressed =
       grpc_msg_compress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
   GPR_ASSERT(0 == was_compressed);
@@ -264,8 +264,8 @@ static void test_bad_decompression_algorithm(void) {
       grpc_msg_decompress(GRPC_COMPRESS_ALGORITHMS_COUNT, &input, &output);
   GPR_ASSERT(0 == was_decompressed);
 
-  was_decompressed =
-      grpc_msg_decompress(GRPC_COMPRESS_ALGORITHMS_COUNT + 123, &input, &output);
+  was_decompressed = grpc_msg_decompress(GRPC_COMPRESS_ALGORITHMS_COUNT + 123,
+                                         &input, &output);
   GPR_ASSERT(0 == was_decompressed);
 
   gpr_slice_buffer_destroy(&input);
