@@ -69,9 +69,10 @@ void grpc_cq_internal_unref(grpc_completion_queue *cc);
 
 /* Flag that an operation is beginning: the completion channel will not finish
    shutdown until a corrensponding grpc_cq_end_* call is made */
-void grpc_cq_begin_op(grpc_completion_queue *cc);
+void grpc_cq_begin_op(grpc_completion_queue *cc, void *tag);
 
-/* Queue a GRPC_OP_COMPLETED operation */
+/* Queue a GRPC_OP_COMPLETED operation; tag must correspond to the tag passed to
+   grpc_cq_begin_op */
 void grpc_cq_end_op(grpc_exec_ctx *exec_ctx, grpc_completion_queue *cc,
                     void *tag, int success,
                     void (*done)(grpc_exec_ctx *exec_ctx, void *done_arg,
