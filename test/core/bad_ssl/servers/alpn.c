@@ -38,8 +38,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
 
+#include "src/core/transport/chttp2/alpn.h"
 #include "test/core/bad_ssl/server.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+
+/* This test starts a server that is configured to advertise (via alpn and npn)
+ * a protocol that the connecting client does not support. It does this by
+ * overriding the functions declared in alpn.c from the core library. */
 
 static const char *const fake_versions[] = {"not-h2"};
 
