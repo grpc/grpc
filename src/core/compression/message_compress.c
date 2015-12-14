@@ -91,13 +91,11 @@ error:
   return 0;
 }
 
-static void *zalloc_gpr(void* opaque, unsigned int items, unsigned int size) {
+static void* zalloc_gpr(void* opaque, unsigned int items, unsigned int size) {
   return gpr_malloc(items * size);
 }
 
-static void zfree_gpr(void* opaque, void *address) {
-  gpr_free(address);
-}
+static void zfree_gpr(void* opaque, void* address) { gpr_free(address); }
 
 static int zlib_compress(gpr_slice_buffer* input, gpr_slice_buffer* output,
                          int gzip) {
@@ -157,7 +155,7 @@ static int copy(gpr_slice_buffer* input, gpr_slice_buffer* output) {
 }
 
 static int compress_inner(grpc_compression_algorithm algorithm,
-                   gpr_slice_buffer* input, gpr_slice_buffer* output) {
+                          gpr_slice_buffer* input, gpr_slice_buffer* output) {
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
       /* the fallback path always needs to be send uncompressed: we simply

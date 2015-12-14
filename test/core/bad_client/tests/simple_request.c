@@ -51,7 +51,8 @@
   "\x10\x0c"                                                               \
   "content-type\x10"                                                       \
   "application/grpc"                                                       \
-  "\x10\x14grpc-accept-encoding\x15""deflate,identity,gzip"                \
+  "\x10\x14grpc-accept-encoding\x15"                                       \
+  "deflate,identity,gzip"                                                  \
   "\x10\x02te\x08trailers"                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
@@ -65,12 +66,16 @@
   "\x10\x07:scheme\x04http"                                                \
   "\x10\x07:method\x04POST"                                                \
   "\x10\x04host\x09localhost"                                              \
-  "\x10\x0c""content-type\x1e""application/grpc+this-is-valid"             \
+  "\x10\x0c"                                                               \
+  "content-type\x1e"                                                       \
+  "application/grpc+this-is-valid"                                         \
   "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"                  \
   "\x10\x02te\x08trailers"                                                 \
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"                 \
-  "\x10\x0cgrpc-timeout\x03""10S"                                          \
-  "\x10\x0cgrpc-timeout\x02""5S"
+  "\x10\x0cgrpc-timeout\x03"                                               \
+  "10S"                                                                    \
+  "\x10\x0cgrpc-timeout\x02"                                               \
+  "5S"
 
 static void *tag(gpr_intptr t) { return (void *)t; }
 
@@ -130,8 +135,10 @@ int main(int argc, char **argv) {
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
                            PFX_STR "\x00\x00\x00\x08\x10\x00\x00\x00\x01", 0);
   /* push a window update with bad data */
-  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
-                           PFX_STR "\x00\x00\x04\x08\x00\x00\x00\x00\x01" "\xff\xff\xff\xff", 0);
+  GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, PFX_STR
+                           "\x00\x00\x04\x08\x00\x00\x00\x00\x01"
+                           "\xff\xff\xff\xff",
+                           0);
   /* push a short goaway */
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier,
                            PFX_STR "\x00\x00\x04\x07\x00\x00\x00\x00\x00", 0);
