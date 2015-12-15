@@ -49,6 +49,6 @@ make install
 
 (cd third_party/protobuf && make install)
 
-(cd src/php && composer install)
+(cd src/php && composer install --prefer-source)
 
 (cd src/php && protoc-gen-php -i tests/interop/ -o tests/interop/ tests/interop/test.proto)
