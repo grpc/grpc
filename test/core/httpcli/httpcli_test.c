@@ -142,19 +142,26 @@ int main(int argc, char **argv) {
   char *me = argv[0];
   char *lslash = strrchr(me, '/');
   char *args[4];
-  char root[1024];
   int port = grpc_pick_unused_port_or_die();
 
-  /* figure out where we are */
-  if (lslash) {
-    memcpy(root, me, (size_t)(lslash - me));
-    root[lslash - me] = 0;
+  GPR_ASSERT(argc <= 2);
+  if (argc == 2) {
+    args[0] = gpr_strdup(argv[1]);
   } else {
-    strcpy(root, ".");
+    /* figure out where we are */
+    char *root;
+    if (lslash) {
+      root = gpr_malloc(lslash - me + 1);
+      memcpy(root, me, (size_t)(lslash - me));
+      root[lslash - me] = 0;
+    } else {
+      root = strdup(".");
+    }
+    gpr_asprintf(&args[0], "%s/../../test/core/httpcli/test_server.py", root);
+    gpr_free(root);
   }
 
   /* start the server */
-  gpr_asprintf(&args[0], "%s/../../test/core/httpcli/test_server.py", root);
   args[1] = "--port";
   gpr_asprintf(&args[2], "%d", port);
   server = gpr_subprocess_create(3, (const char **)args);
