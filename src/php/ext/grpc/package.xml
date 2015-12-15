@@ -10,11 +10,11 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2015-10-21</date>
- <time>17:04:32</time>
+ <date>2015-12-15</date>
+ <time>13:49:29</time>
  <version>
-  <release>0.6.1</release>
-  <api>0.6.0</api>
+  <release>0.7.0</release>
+  <api>0.7.0</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,19 +22,21 @@
  </stability>
  <license>BSD</license>
  <notes>
-- fixed undefined constant fatal error when run with apache/nginx #2275
+- Breaking change to Credentials class (removed) #3765
+- Replaced by ChannelCredentials and CallCredentials class #3765
+- New plugin based metadata auth API #4394
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
    <file baseinstalldir="/" md5sum="6f19828fb869b7b8a590cbb76b4f996d" name="byte_buffer.c" role="src" />
    <file baseinstalldir="/" md5sum="c8de0f819499c48adfc8d7f472c0196b" name="byte_buffer.h" role="src" />
-   <file baseinstalldir="/" md5sum="d64c9005993de02abac55664b0b9e0b2" name="call.c" role="src" />
-   <file baseinstalldir="/" md5sum="26acbf04c30162c2d2aca4688bb2aec8" name="call.h" role="src" />
-   <file baseinstalldir="/" md5sum="6fa13d260dfde216f795225644f04e7a" name="call_credentials.c" role="src" />
-   <file baseinstalldir="/" md5sum="e45269975f9a30fd349a90daf6b31aa2" name="call_credentials.h" role="src" />
-   <file baseinstalldir="/" md5sum="0779db3b196c98081b2260ceec22cd4d" name="channel.c" role="src" />
+   <file baseinstalldir="/" md5sum="ee7eb7757f9e6f0e36f8f616b6bd0af5" name="call.c" role="src" />
+   <file baseinstalldir="/" md5sum="44c56bd9912d2538cbd6059e3e0452b6" name="call.h" role="src" />
+   <file baseinstalldir="/" md5sum="ff90f6c03ed44b5f4170bf3259a6704e" name="call_credentials.c" role="src" />
+   <file baseinstalldir="/" md5sum="3c3860e1d84f43cb6b2fbaa8d2ae1ab7" name="call_credentials.h" role="src" />
+   <file baseinstalldir="/" md5sum="00b44de389fbafa68afe8173045940af" name="channel.c" role="src" />
    <file baseinstalldir="/" md5sum="ed4b00c0cf3702b115d0cfa87450dc09" name="channel.h" role="src" />
-   <file baseinstalldir="/" md5sum="1b40f50fa6184ad7d24a961ac76151ff" name="channel_credentials.c" role="src" />
+   <file baseinstalldir="/" md5sum="d6e32503492b22bca1baf119d6c5e373" name="channel_credentials.c" role="src" />
    <file baseinstalldir="/" md5sum="a86250e03f610ce6c2c7595a84e08821" name="channel_credentials.h" role="src" />
    <file baseinstalldir="/" md5sum="55ab7a42f9dd9bfc7e28a61cfc5fca63" name="completion_queue.c" role="src" />
    <file baseinstalldir="/" md5sum="f10b5bb232d74a6878e829e2e76cdaa2" name="completion_queue.h" role="src" />
@@ -128,6 +130,23 @@ Update to wrap gRPC C Core version 0.10.0
    <license>BSD</license>
    <notes>
 - fixed undefined constant fatal error when run with apache/nginx #2275
+   </notes>
+  </release>
+  <release>
+   <version>
+    <release>0.7.0</release>
+    <api>0.7.0</api>
+   </version>
+   <stability>
+    <release>beta</release>
+    <api>beta</api>
+   </stability>
+   <date>2015-12-15</date>
+   <license>BSD</license>
+   <notes>
+- Breaking change to Credentials class (removed) #3765
+- Replaced by ChannelCredentials and CallCredentials class #3765
+- New plugin based metadata auth API #4394
    </notes>
   </release>
  </changelog>
