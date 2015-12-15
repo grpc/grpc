@@ -39,7 +39,7 @@
 #include "src/core/iomgr/exec_ctx.h"
 #include <grpc/support/slice.h>
 #include <grpc/support/slice_buffer.h>
-#include "src/core/transport/stream_op.h"
+#include "src/core/transport/byte_stream.h"
 #include "src/core/transport/chttp2/frame.h"
 
 typedef enum {
@@ -51,6 +51,14 @@ typedef enum {
   GRPC_CHTTP2_DATA_FRAME
 } grpc_chttp2_stream_state;
 
+typedef struct grpc_chttp2_incoming_byte_stream
+    grpc_chttp2_incoming_byte_stream;
+
+typedef struct grpc_chttp2_incoming_frame_queue {
+  grpc_chttp2_incoming_byte_stream *head;
+  grpc_chttp2_incoming_byte_stream *tail;
+} grpc_chttp2_incoming_frame_queue;
+
 typedef struct {
   grpc_chttp2_stream_state state;
   gpr_uint8 is_last_frame;
@@ -58,14 +66,22 @@ typedef struct {
   gpr_uint32 frame_size;
 
   int is_frame_compressed;
-  grpc_stream_op_buffer incoming_sopb;
+  grpc_chttp2_incoming_frame_queue incoming_frames;
+  grpc_chttp2_incoming_byte_stream *parsing_frame;
 } grpc_chttp2_data_parser;
+
+void grpc_chttp2_incoming_frame_queue_merge(
+    grpc_chttp2_incoming_frame_queue *head_dst,
+    grpc_chttp2_incoming_frame_queue *tail_src);
+grpc_byte_stream *grpc_chttp2_incoming_frame_queue_pop(
+    grpc_chttp2_incoming_frame_queue *q);
 
 /* initialize per-stream state for data frame parsing */
 grpc_chttp2_parse_error grpc_chttp2_data_parser_init(
     grpc_chttp2_data_parser *parser);
 
-void grpc_chttp2_data_parser_destroy(grpc_chttp2_data_parser *parser);
+void grpc_chttp2_data_parser_destroy(grpc_exec_ctx *exec_ctx,
+                                     grpc_chttp2_data_parser *parser);
 
 /* start processing a new data frame */
 grpc_chttp2_parse_error grpc_chttp2_data_parser_begin_frame(
@@ -78,7 +94,8 @@ grpc_chttp2_parse_error grpc_chttp2_data_parser_parse(
     grpc_chttp2_transport_parsing *transport_parsing,
     grpc_chttp2_stream_parsing *stream_parsing, gpr_slice slice, int is_last);
 
-/* create a slice with an empty data frame and is_last set */
-gpr_slice grpc_chttp2_data_frame_create_empty_close(gpr_uint32 id);
+void grpc_chttp2_encode_data(gpr_uint32 id, gpr_slice_buffer *inbuf,
+                             gpr_uint32 write_bytes, int is_eof,
+                             gpr_slice_buffer *outbuf);
 
 #endif /* GRPC_INTERNAL_CORE_TRANSPORT_CHTTP2_FRAME_DATA_H */

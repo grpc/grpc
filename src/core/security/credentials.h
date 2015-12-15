@@ -34,7 +34,7 @@
 #ifndef GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H
 #define GRPC_INTERNAL_CORE_SECURITY_CREDENTIALS_H
 
-#include "src/core/transport/stream_op.h"
+#include "src/core/transport/metadata_batch.h"
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/sync.h>
@@ -92,6 +92,14 @@ typedef enum {
 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */
 char *grpc_get_well_known_google_credentials_file_path(void);
+
+/* Implementation function for the different platforms. */
+char *grpc_get_well_known_google_credentials_file_path_impl(void);
+
+/* Override for testing only. Not thread-safe */
+typedef char *(*grpc_well_known_credentials_path_getter)(void);
+void grpc_override_well_known_credentials_path_getter(
+    grpc_well_known_credentials_path_getter getter);
 
 /* --- grpc_channel_credentials. --- */
 
@@ -201,6 +209,7 @@ grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_httpcli_response *response,
     grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
+
 void grpc_flush_cached_google_default_credentials(void);
 
 /* Metadata-only credentials with the specified key and value where

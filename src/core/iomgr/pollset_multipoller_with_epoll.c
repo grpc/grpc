@@ -47,21 +47,13 @@
 #include "src/core/support/block_annotate.h"
 #include "src/core/profiling/timers.h"
 
-typedef struct wakeup_fd_hdl {
-  grpc_wakeup_fd wakeup_fd;
-  struct wakeup_fd_hdl *next;
-} wakeup_fd_hdl;
-
 typedef struct {
   grpc_pollset *pollset;
   grpc_fd *fd;
   grpc_closure closure;
 } delayed_add;
 
-typedef struct {
-  int epoll_fd;
-  wakeup_fd_hdl *free_wakeup_fds;
-} pollset_hdr;
+typedef struct { int epoll_fd; } pollset_hdr;
 
 static void finally_add_fd(grpc_exec_ctx *exec_ctx, grpc_pollset *pollset,
                            grpc_fd *fd) {
@@ -131,26 +123,6 @@ static void multipoll_with_epoll_pollset_add_fd(grpc_exec_ctx *exec_ctx,
   }
 }
 
-static void multipoll_with_epoll_pollset_del_fd(grpc_exec_ctx *exec_ctx,
-                                                grpc_pollset *pollset,
-                                                grpc_fd *fd,
-                                                int and_unlock_pollset) {
-  pollset_hdr *h = pollset->data.ptr;
-  int err;
-
-  if (and_unlock_pollset) {
-    gpr_mu_unlock(&pollset->mu);
-  }
-
-  /* Note that this can race with concurrent poll, but that should be fine since
-   * at worst it creates a spurious read event on a reused grpc_fd object. */
-  err = epoll_ctl(h->epoll_fd, EPOLL_CTL_DEL, fd->fd, NULL);
-  if (err < 0) {
-    gpr_log(GPR_ERROR, "epoll_ctl del for %d failed: %s", fd->fd,
-            strerror(errno));
-  }
-}
-
 /* TODO(klempner): We probably want to turn this down a bit */
 #define GRPC_EPOLL_MAX_EVENTS 1000
 
@@ -174,7 +146,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
 
   timeout_ms = grpc_poll_deadline_to_millis_timeout(deadline, now);
 
-  pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker->wakeup_fd);
+  pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker->wakeup_fd->fd);
   pfds[0].events = POLLIN;
   pfds[0].revents = 0;
   pfds[1].fd = h->epoll_fd;
@@ -197,7 +169,7 @@ static void multipoll_with_epoll_pollset_maybe_work_and_unlock(
     /* do nothing */
   } else {
     if (pfds[0].revents) {
-      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd);
+      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd);
     }
     if (pfds[1].revents) {
       do {
@@ -243,7 +215,7 @@ static void multipoll_with_epoll_pollset_destroy(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable multipoll_with_epoll_pollset = {
-    multipoll_with_epoll_pollset_add_fd, multipoll_with_epoll_pollset_del_fd,
+    multipoll_with_epoll_pollset_add_fd,
     multipoll_with_epoll_pollset_maybe_work_and_unlock,
     multipoll_with_epoll_pollset_finish_shutdown,
     multipoll_with_epoll_pollset_destroy};

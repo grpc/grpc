@@ -46,7 +46,7 @@
 #include <grpc++/client_context.h>
 #include <grpc++/security/credentials.h>
 
-#include "src/core/transport/stream_op.h"
+#include "src/core/transport/byte_stream.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/proto/test.grpc.pb.h"
 #include "test/proto/empty.grpc.pb.h"

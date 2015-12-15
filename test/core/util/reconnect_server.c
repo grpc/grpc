@@ -44,6 +44,7 @@
 #include "src/core/iomgr/sockaddr.h"
 #include "src/core/iomgr/tcp_server.h"
 #include "test/core/util/port.h"
+#include "test/core/util/test_tcp_server.h"
 
 static void pretty_print_backoffs(reconnect_server *server) {
   gpr_timespec diff;
@@ -102,47 +103,18 @@ static void on_connect(grpc_exec_ctx *exec_ctx, void *arg, grpc_endpoint *tcp) {
 }
 
 void reconnect_server_init(reconnect_server *server) {
-  grpc_init();
-  server->tcp_server = NULL;
-  grpc_pollset_init(&server->pollset);
-  server->pollsets[0] = &server->pollset;
+  test_tcp_server_init(&server->tcp_server, on_connect, server);
   server->head = NULL;
   server->tail = NULL;
   server->peer = NULL;
 }
 
 void reconnect_server_start(reconnect_server *server, int port) {
-  struct sockaddr_in addr;
-  int port_added;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons((gpr_uint16)port);
-  memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
-
-  server->tcp_server = grpc_tcp_server_create();
-  port_added =
-      grpc_tcp_server_add_port(server->tcp_server, &addr, sizeof(addr));
-  GPR_ASSERT(port_added == port);
-
-  grpc_tcp_server_start(&exec_ctx, server->tcp_server, server->pollsets, 1,
-                        on_connect, server);
-  gpr_log(GPR_INFO, "reconnect tcp server listening on 0.0.0.0:%d", port);
-
-  grpc_exec_ctx_finish(&exec_ctx);
+  test_tcp_server_start(&server->tcp_server, port);
 }
 
 void reconnect_server_poll(reconnect_server *server, int seconds) {
-  grpc_pollset_worker worker;
-  gpr_timespec deadline =
-      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_seconds(seconds, GPR_TIMESPAN));
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  gpr_mu_lock(GRPC_POLLSET_MU(&server->pollset));
-  grpc_pollset_work(&exec_ctx, &server->pollset, &worker,
-                    gpr_now(GPR_CLOCK_MONOTONIC), deadline);
-  gpr_mu_unlock(GRPC_POLLSET_MU(&server->pollset));
-  grpc_exec_ctx_finish(&exec_ctx);
+  test_tcp_server_poll(&server->tcp_server, seconds);
 }
 
 void reconnect_server_clear_timestamps(reconnect_server *server) {
@@ -157,18 +129,7 @@ void reconnect_server_clear_timestamps(reconnect_server *server) {
   server->peer = NULL;
 }
 
-static void do_nothing(grpc_exec_ctx *exec_ctx, void *ignored, int success) {}
-
 void reconnect_server_destroy(reconnect_server *server) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_closure do_nothing_closure[2];
-  grpc_closure_init(&do_nothing_closure[0], do_nothing, NULL);
-  grpc_closure_init(&do_nothing_closure[1], do_nothing, NULL);
-  grpc_tcp_server_destroy(&exec_ctx, server->tcp_server,
-                          &do_nothing_closure[0]);
   reconnect_server_clear_timestamps(server);
-  grpc_pollset_shutdown(&exec_ctx, &server->pollset, &do_nothing_closure[1]);
-  grpc_exec_ctx_finish(&exec_ctx);
-  grpc_pollset_destroy(&server->pollset);
-  grpc_shutdown();
+  test_tcp_server_destroy(&server->tcp_server);
 }

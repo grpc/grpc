@@ -67,10 +67,10 @@ namespace Grpc.Core.Tests
             channel.ShutdownAsync().Wait();
             server.ShutdownAsync().Wait();
         }
-
-        // Test attribute commented out to prevent running as part of the default test suite.
-        //[Test]
-        //[Category("Performance")]
+            
+        [Test]
+        [Category("Performance")]
+        [Ignore("Prevent running on Jenkins")]
         public void UnaryCallPerformance()
         {
             var profiler = new BasicProfiler();

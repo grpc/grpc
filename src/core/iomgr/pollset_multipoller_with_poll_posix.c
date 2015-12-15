@@ -82,23 +82,6 @@ exit:
   }
 }
 
-static void multipoll_with_poll_pollset_del_fd(grpc_exec_ctx *exec_ctx,
-                                               grpc_pollset *pollset,
-                                               grpc_fd *fd,
-                                               int and_unlock_pollset) {
-  /* will get removed next poll cycle */
-  pollset_hdr *h = pollset->data.ptr;
-  if (h->del_count == h->del_capacity) {
-    h->del_capacity = GPR_MAX(h->del_capacity + 8, h->del_count * 3 / 2);
-    h->dels = gpr_realloc(h->dels, sizeof(grpc_fd *) * h->del_capacity);
-  }
-  h->dels[h->del_count++] = fd;
-  GRPC_FD_REF(fd, "multipoller_del");
-  if (and_unlock_pollset) {
-    gpr_mu_unlock(&pollset->mu);
-  }
-}
-
 static void multipoll_with_poll_pollset_maybe_work_and_unlock(
     grpc_exec_ctx *exec_ctx, grpc_pollset *pollset, grpc_pollset_worker *worker,
     gpr_timespec deadline, gpr_timespec now) {
@@ -124,7 +107,7 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
   pfds[0].fd = GRPC_WAKEUP_FD_GET_READ_FD(&grpc_global_wakeup_fd);
   pfds[0].events = POLLIN;
   pfds[0].revents = 0;
-  pfds[1].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker->wakeup_fd);
+  pfds[1].fd = GRPC_WAKEUP_FD_GET_READ_FD(&worker->wakeup_fd->fd);
   pfds[1].events = POLLIN;
   pfds[1].revents = 0;
   for (i = 0; i < h->fd_count; i++) {
@@ -174,7 +157,7 @@ static void multipoll_with_poll_pollset_maybe_work_and_unlock(
       grpc_wakeup_fd_consume_wakeup(&grpc_global_wakeup_fd);
     }
     if (pfds[1].revents & POLLIN_CHECK) {
-      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd);
+      grpc_wakeup_fd_consume_wakeup(&worker->wakeup_fd->fd);
     }
     for (i = 2; i < pfd_count; i++) {
       if (watchers[i].fd == NULL) {
@@ -212,7 +195,7 @@ static void multipoll_with_poll_pollset_destroy(grpc_pollset *pollset) {
 }
 
 static const grpc_pollset_vtable multipoll_with_poll_pollset = {
-    multipoll_with_poll_pollset_add_fd, multipoll_with_poll_pollset_del_fd,
+    multipoll_with_poll_pollset_add_fd,
     multipoll_with_poll_pollset_maybe_work_and_unlock,
     multipoll_with_poll_pollset_finish_shutdown,
     multipoll_with_poll_pollset_destroy};

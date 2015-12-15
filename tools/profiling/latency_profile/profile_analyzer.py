@@ -49,7 +49,7 @@ class ScopeBuilder(object):
     self.call_stack_builder.lines.append(line_item)
 
   def finish(self, line):
-    assert line['tag'] == self.top_line.tag, 'expected %s, got %s' % (self.top_line.tag, line['tag'])
+    assert line['tag'] == self.top_line.tag, 'expected %s, got %s; thread=%s; t0=%f t1=%f' % (self.top_line.tag, line['tag'], line['thd'], self.top_line.start_time, line['t'])
     final_time_stamp = line['t']
     assert self.top_line.end_time is None
     self.top_line.end_time = final_time_stamp
@@ -84,6 +84,7 @@ class CallStackBuilder(object):
       self.stk.append(ScopeBuilder(self, line))
       return False
     elif line_type == '}':
+      assert self.stk, 'expected non-empty stack for closing %s; thread=%s; t=%f' % (line['tag'], line['thd'], line['t'])
       self.stk.pop().finish(line)
       if not self.stk:
         self.finish()

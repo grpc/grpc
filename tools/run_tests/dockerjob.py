@@ -47,6 +47,7 @@ def random_name(base_name):
 def docker_kill(cid):
   """Kills a docker container. Returns True if successful."""
   return subprocess.call(['docker','kill', str(cid)],
+                         stdin=subprocess.PIPE,
                          stdout=_DEVNULL,
                          stderr=subprocess.STDOUT) == 0
 
@@ -78,6 +79,7 @@ def finish_jobs(jobs):
 def image_exists(image):
   """Returns True if given docker image exists."""
   return subprocess.call(['docker','inspect', image],
+                         stdin=subprocess.PIPE,
                          stdout=_DEVNULL,
                          stderr=subprocess.STDOUT) == 0
 
@@ -88,6 +90,7 @@ def remove_image(image, skip_nonexistent=False, max_retries=10):
     return True
   for attempt in range(0, max_retries):
     if subprocess.call(['docker','rmi', '-f', image],
+                       stdin=subprocess.PIPE,
                        stdout=_DEVNULL,
                        stderr=subprocess.STDOUT) == 0:
       return True

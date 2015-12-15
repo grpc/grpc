@@ -45,7 +45,11 @@
 
 static struct timespec timespec_from_gpr(gpr_timespec gts) {
   struct timespec rv;
-  rv.tv_sec = gts.tv_sec;
+  if (sizeof(time_t) < sizeof(gpr_int64)) {
+    /* fine to assert, as this is only used in gpr_sleep_until */
+    GPR_ASSERT(gts.tv_sec <= INT32_MAX && gts.tv_sec >= INT32_MIN);
+  }
+  rv.tv_sec = (time_t)gts.tv_sec;
   rv.tv_nsec = gts.tv_nsec;
   return rv;
 }
@@ -53,9 +57,14 @@ static struct timespec timespec_from_gpr(gpr_timespec gts) {
 #if _POSIX_TIMERS > 0
 static gpr_timespec gpr_from_timespec(struct timespec ts,
                                       gpr_clock_type clock_type) {
+  /*
+   * timespec.tv_sec can have smaller size than gpr_timespec.tv_sec,
+   * but we are only using this function to implement gpr_now
+   * so there's no need to handle "infinity" values.
+   */
   gpr_timespec rv;
   rv.tv_sec = ts.tv_sec;
-  rv.tv_nsec = (int)ts.tv_nsec;
+  rv.tv_nsec = (gpr_int32)ts.tv_nsec;
   rv.clock_type = clock_type;
   return rv;
 }
@@ -110,8 +119,8 @@ gpr_timespec gpr_now(gpr_clock_type clock) {
       break;
     case GPR_CLOCK_MONOTONIC:
       now_dbl = (mach_absolute_time() - g_time_start) * g_time_scale;
-      now.tv_sec = (time_t)(now_dbl * 1e-9);
-      now.tv_nsec = (int)(now_dbl - ((double)now.tv_sec) * 1e9);
+      now.tv_sec = (gpr_int64)(now_dbl * 1e-9);
+      now.tv_nsec = (gpr_int32)(now_dbl - ((double)now.tv_sec) * 1e9);
       break;
     case GPR_CLOCK_PRECISE:
       gpr_precise_clock_now(&now);

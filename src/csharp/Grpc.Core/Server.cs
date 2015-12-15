@@ -148,10 +148,10 @@ namespace Grpc.Core
             }
 
             handle.ShutdownAndNotify(HandleServerShutdown, environment);
-            await shutdownTcs.Task;
+            await shutdownTcs.Task.ConfigureAwait(false);
             DisposeHandle();
 
-            await Task.Run(() => GrpcEnvironment.Release());
+            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -169,8 +169,10 @@ namespace Grpc.Core
 
             handle.ShutdownAndNotify(HandleServerShutdown, environment);
             handle.CancelAllCalls();
-            await shutdownTcs.Task;
+            await shutdownTcs.Task.ConfigureAwait(false);
             DisposeHandle();
+
+            await Task.Run(() => GrpcEnvironment.Release()).ConfigureAwait(false);
         }
 
         internal void AddCallReference(object call)
@@ -268,7 +270,7 @@ namespace Grpc.Core
                 {
                     callHandler = NoSuchMethodCallHandler.Instance;
                 }
-                await callHandler.HandleCall(newRpc, environment);
+                await callHandler.HandleCall(newRpc, environment).ConfigureAwait(false);
             }
             catch (Exception e)
             {
@@ -288,7 +290,7 @@ namespace Grpc.Core
                 // after server shutdown, the callback returns with null call
                 if (!newRpc.Call.IsInvalid)
                 {
-                    Task.Run(async () => await HandleCallAsync(newRpc));
+                    Task.Run(async () => await HandleCallAsync(newRpc)).ConfigureAwait(false);
                 }
             }
 

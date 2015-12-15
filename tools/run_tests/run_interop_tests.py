@@ -31,11 +31,14 @@
 """Run interop (cross-language) tests in parallel."""
 
 import argparse
+import atexit
 import dockerjob
 import itertools
 import jobset
+import json
 import multiprocessing
 import os
+import re
 import report_utils
 import subprocess
 import sys
@@ -43,16 +46,19 @@ import tempfile
 import time
 import uuid
 
+# Docker doesn't clean up after itself, so we do it on exit.
+atexit.register(lambda: subprocess.call(['stty', 'echo']))
+
 ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
 os.chdir(ROOT)
 
 _DEFAULT_SERVER_PORT=8080
 
-# TOOD(jtattermusch) wrapped languages use this variable for location
-# of roots.pem. We might want to use GRPC_DEFAULT_SSL_ROOTS_FILE_PATH
-# supported by C core SslCredentials instead.
-_SSL_CERT_ENV = { 'SSL_CERT_FILE':'/usr/local/share/grpc/roots.pem' }
+_SKIP_COMPRESSION = ['large_compressed_unary',
+                     'server_compressed_streaming']
 
+_SKIP_ADVANCED = ['custom_metadata', 'status_code_and_message',
+                  'unimplemented_method']
 
 class CXXLanguage:
 
@@ -74,7 +80,10 @@ class CXXLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return []
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+
+  def unimplemented_test_cases_server(self):
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
 
   def __str__(self):
     return 'c++'
@@ -91,7 +100,7 @@ class CSharpLanguage:
     return ['mono', 'Grpc.IntegrationTesting.Client.exe'] + args
 
   def cloud_to_prod_env(self):
-    return _SSL_CERT_ENV
+    return {}
 
   def server_cmd(self, args):
     return ['mono', 'Grpc.IntegrationTesting.Server.exe', '--use_tls=true'] + args
@@ -100,7 +109,11 @@ class CSharpLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return []
+    # TODO: status_code_and_message doesn't work against node_server
+    return _SKIP_COMPRESSION + ['status_code_and_message']
+
+  def unimplemented_test_cases_server(self):
+    return _SKIP_COMPRESSION
 
   def __str__(self):
     return 'csharp'
@@ -126,7 +139,10 @@ class JavaLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return []
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+
+  def unimplemented_test_cases_server(self):
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
 
   def __str__(self):
     return 'java'
@@ -153,7 +169,10 @@ class GoLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return []
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+
+  def unimplemented_test_cases_server(self):
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
 
   def __str__(self):
     return 'go'
@@ -181,6 +200,9 @@ class Http2Client:
   def unimplemented_test_cases(self):
     return _TEST_CASES
 
+  def unimplemented_test_cases_server(self):
+    return []
+
   def __str__(self):
     return 'http2'
 
@@ -195,7 +217,7 @@ class NodeLanguage:
     return ['node', 'src/node/interop/interop_client.js'] + args
 
   def cloud_to_prod_env(self):
-    return _SSL_CERT_ENV
+    return {}
 
   def server_cmd(self, args):
     return ['node', 'src/node/interop/interop_server.js', '--use_tls=true'] + args
@@ -204,7 +226,10 @@ class NodeLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return []
+    return _SKIP_COMPRESSION
+
+  def unimplemented_test_cases_server(self):
+    return _SKIP_COMPRESSION
 
   def __str__(self):
     return 'node'
@@ -220,12 +245,15 @@ class PHPLanguage:
     return ['src/php/bin/interop_client.sh'] + args
 
   def cloud_to_prod_env(self):
-    return _SSL_CERT_ENV
+    return {}
 
   def global_env(self):
     return {}
 
   def unimplemented_test_cases(self):
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+
+  def unimplemented_test_cases_server(self):
     return []
 
   def __str__(self):
@@ -243,7 +271,7 @@ class RubyLanguage:
     return ['ruby', 'src/ruby/bin/interop/interop_client.rb'] + args
 
   def cloud_to_prod_env(self):
-    return _SSL_CERT_ENV
+    return {}
 
   def server_cmd(self, args):
     return ['ruby', 'src/ruby/bin/interop/interop_server.rb', '--use_tls=true'] + args
@@ -252,7 +280,10 @@ class RubyLanguage:
     return {}
 
   def unimplemented_test_cases(self):
-    return []
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
+
+  def unimplemented_test_cases_server(self):
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
 
   def __str__(self):
     return 'ruby'
@@ -275,7 +306,7 @@ class PythonLanguage:
     ]
 
   def cloud_to_prod_env(self):
-    return _SSL_CERT_ENV
+    return {}
 
   def server_cmd(self, args):
     return [
@@ -290,7 +321,11 @@ class PythonLanguage:
     return {'LD_LIBRARY_PATH': '{}/libs/opt'.format(DOCKER_WORKDIR_ROOT)}
 
   def unimplemented_test_cases(self):
-    return ['jwt_token_creds', 'per_rpc_creds']
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION + ['jwt_token_creds',
+                                                 'per_rpc_creds']
+
+  def unimplemented_test_cases_server(self):
+    return _SKIP_ADVANCED + _SKIP_COMPRESSION
 
   def __str__(self):
     return 'python'
@@ -313,12 +348,14 @@ _SERVERS = ['c++', 'node', 'csharp', 'java', 'go', 'ruby', 'python']
 _TEST_CASES = ['large_unary', 'empty_unary', 'ping_pong',
                'empty_stream', 'client_streaming', 'server_streaming',
                'cancel_after_begin', 'cancel_after_first_response',
-               'timeout_on_sleeping_server']
+               'timeout_on_sleeping_server', 'custom_metadata',
+               'status_code_and_message', 'unimplemented_method',
+               'large_compressed_unary', 'server_compressed_streaming']
 
 _AUTH_TEST_CASES = ['compute_engine_creds', 'jwt_token_creds',
                     'oauth2_auth_token', 'per_rpc_creds']
 
-_HTTP2_TEST_CASES = ["tls"]
+_HTTP2_TEST_CASES = ["tls", "framing"]
 
 DOCKER_WORKDIR_ROOT = '/var/local/git/grpc'
 
@@ -514,6 +551,33 @@ def build_interop_image_jobspec(language, tag=None):
   return build_job
 
 
+def aggregate_http2_results(stdout):
+  match = re.search(r'\{"cases[^\]]*\]\}', stdout)
+  if not match:
+    return None
+    
+  results = json.loads(match.group(0))
+  skipped = 0
+  passed = 0
+  failed = 0
+  failed_cases = []
+  for case in results['cases']:
+    if case.get('skipped', False):
+      skipped += 1
+    else:
+      if case.get('passed', False):
+        passed += 1
+      else:
+        failed += 1
+        failed_cases.append(case.get('name', "NONAME"))
+  return {
+    'passed': passed,
+    'failed': failed,
+    'skipped': skipped,
+    'failed_cases': ', '.join(failed_cases),
+    'percent': 1.0 * passed / (passed + failed)
+  }
+
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-l', '--language',
                   choices=['all'] + sorted(_LANGUAGES),
@@ -636,13 +700,12 @@ try:
     for language in languages:
       for test_case in _TEST_CASES:
         if not test_case in language.unimplemented_test_cases():
-          test_job = cloud_to_prod_jobspec(language, test_case,
-                                           docker_image=docker_images.get(str(language)))
-          jobs.append(test_job)
+          if not test_case in _SKIP_ADVANCED + _SKIP_COMPRESSION:
+            test_job = cloud_to_prod_jobspec(language, test_case,
+                                             docker_image=docker_images.get(str(language)))
+            jobs.append(test_job)
 
-    # TODO(carl-mastrangelo): Currently prod TLS terminators aren't spec compliant. Reenable
-    # this once a better solution is in place.
-    if args.http2_interop and False:
+    if args.http2_interop:
       for test_case in _HTTP2_TEST_CASES:
         test_job = cloud_to_prod_jobspec(http2Interop, test_case,
                                          docker_image=docker_images.get(str(http2Interop)))
@@ -665,22 +728,27 @@ try:
 
   for server_name, server_address in server_addresses.iteritems():
     (server_host, server_port) = server_address
+    server_language = _LANGUAGES.get(server_name, None)
+    skip_server = []  # test cases unimplemented by server
+    if server_language:
+      skip_server = server_language.unimplemented_test_cases_server()
     for language in languages:
       for test_case in _TEST_CASES:
         if not test_case in language.unimplemented_test_cases():
-          test_job = cloud_to_cloud_jobspec(language,
-                                            test_case,
-                                            server_name,
-                                            server_host,
-                                            server_port,
-                                            docker_image=docker_images.get(str(language)))
-          jobs.append(test_job)
+          if not test_case in skip_server:
+            test_job = cloud_to_cloud_jobspec(language,
+                                              test_case,
+                                              server_name,
+                                              server_host,
+                                              server_port,
+                                              docker_image=docker_images.get(str(language)))
+            jobs.append(test_job)
 
     if args.http2_interop:
       for test_case in _HTTP2_TEST_CASES:
         if server_name == "go":
           # TODO(carl-mastrangelo): Reenable after https://github.com/grpc/grpc-go/issues/434
-          continue
+          continue 
         test_job = cloud_to_cloud_jobspec(http2Interop,
                                           test_case,
                                           server_name,
@@ -702,10 +770,14 @@ try:
   else:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
 
-  report_utils.render_xml_report(resultset, 'report.xml')
+  report_utils.render_junit_xml_report(resultset, 'report.xml')
 
-  report_utils.render_html_report(
-      set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES,
+  for name, job in resultset.iteritems():
+    if "http2" in name:
+      job[0].http2results = aggregate_http2_results(job[0].message)
+
+  report_utils.render_interop_html_report(
+      set([str(l) for l in languages]), servers, _TEST_CASES, _AUTH_TEST_CASES, 
       _HTTP2_TEST_CASES, resultset, num_failures,
       args.cloud_to_prod_auth or args.cloud_to_prod, args.http2_interop)
 

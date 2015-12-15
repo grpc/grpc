@@ -36,27 +36,35 @@
 
 #include <string.h>
 
-#include "src/core/debug/trace.h"
-#include "src/core/transport/chttp2/frame.h"
-#include "src/core/transport/chttp2_transport.h"
 #include <grpc/support/log.h>
 #include <grpc/support/useful.h>
+
+#include "src/core/debug/trace.h"
+#include "src/core/transport/chttp2/frame.h"
+#include "src/core/transport/chttp2/http2_errors.h"
+#include "src/core/transport/chttp2_transport.h"
+
+#define MAX_MAX_HEADER_LIST_SIZE (1024 * 1024 * 1024)
 
 /* HTTP/2 mandated initial connection settings */
 const grpc_chttp2_setting_parameters
     grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS] = {
-        {NULL, 0, 0, 0, GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE},
+        {NULL, 0, 0, 0, GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE,
+         GRPC_CHTTP2_PROTOCOL_ERROR},
         {"HEADER_TABLE_SIZE", 4096, 0, 0xffffffff,
-         GRPC_CHTTP2_CLAMP_INVALID_VALUE},
-        {"ENABLE_PUSH", 1, 0, 1, GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE},
+         GRPC_CHTTP2_CLAMP_INVALID_VALUE, GRPC_CHTTP2_PROTOCOL_ERROR},
+        {"ENABLE_PUSH", 1, 0, 1, GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE,
+         GRPC_CHTTP2_PROTOCOL_ERROR},
         {"MAX_CONCURRENT_STREAMS", 0xffffffffu, 0, 0xffffffffu,
-         GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE},
-        {"INITIAL_WINDOW_SIZE", 65535, 0, 0xffffffffu,
-         GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE},
+         GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE, GRPC_CHTTP2_PROTOCOL_ERROR},
+        {"INITIAL_WINDOW_SIZE", 65535, 0, 0x7fffffffu,
+         GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE,
+         GRPC_CHTTP2_FLOW_CONTROL_ERROR},
         {"MAX_FRAME_SIZE", 16384, 16384, 16777215,
-         GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE},
-        {"MAX_HEADER_LIST_SIZE", 0xffffffffu, 0, 0xffffffffu,
-         GRPC_CHTTP2_CLAMP_INVALID_VALUE},
+         GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE, GRPC_CHTTP2_PROTOCOL_ERROR},
+        {"MAX_HEADER_LIST_SIZE", MAX_MAX_HEADER_LIST_SIZE, 0,
+         MAX_MAX_HEADER_LIST_SIZE, GRPC_CHTTP2_CLAMP_INVALID_VALUE,
+         GRPC_CHTTP2_PROTOCOL_ERROR},
 };
 
 static gpr_uint8 *fill_header(gpr_uint8 *out, gpr_uint32 length,
@@ -218,6 +226,10 @@ grpc_chttp2_parse_error grpc_chttp2_settings_parser_parse(
                     GPR_CLAMP(parser->value, sp->min_value, sp->max_value);
                 break;
               case GRPC_CHTTP2_DISCONNECT_ON_INVALID_VALUE:
+                grpc_chttp2_goaway_append(
+                    transport_parsing->last_incoming_stream_id, sp->error_value,
+                    gpr_slice_from_static_string("HTTP2 settings error"),
+                    &transport_parsing->qbuf);
                 gpr_log(GPR_ERROR, "invalid value %u passed for %s",
                         parser->value, sp->name);
                 return GRPC_CHTTP2_CONNECTION_ERROR;

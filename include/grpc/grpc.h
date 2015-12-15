@@ -127,6 +127,17 @@ typedef struct {
 /** Initial sequence number for http2 transports */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
+/** Amount to read ahead on individual streams. Defaults to 64kb, larger
+    values can help throughput on high-latency connections.
+    NOTE: at some point we'd like to auto-tune this, and this parameter
+    will become a no-op. */
+#define GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES "grpc.http2.lookahead_bytes"
+/** How much memory to use for hpack decoding */
+#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER \
+  "grpc.http2.hpack_table_size.decoder"
+/** How much memory to use for hpack encoding */
+#define GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER \
+  "grpc.http2.hpack_table_size.encoder"
 /** Default authority to pass if none specified on call construction */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
 /** Primary user agent: goes at the start of the user-agent metadata
@@ -519,6 +530,11 @@ grpc_call *grpc_channel_create_call(grpc_channel *channel,
                                     grpc_completion_queue *completion_queue,
                                     const char *method, const char *host,
                                     gpr_timespec deadline, void *reserved);
+
+/** Ping the channels peer (load balanced channels will select one sub-channel
+    to ping); if the channel is not connected, posts a failed. */
+void grpc_channel_ping(grpc_channel *channel, grpc_completion_queue *cq,
+                       void *tag, void *reserved);
 
 /** Pre-register a method/host pair on a channel. */
 void *grpc_channel_register_call(grpc_channel *channel, const char *method,

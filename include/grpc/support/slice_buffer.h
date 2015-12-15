@@ -89,6 +89,11 @@ void gpr_slice_buffer_move_into(gpr_slice_buffer *src, gpr_slice_buffer *dst);
 /* remove n bytes from the end of a slice buffer */
 void gpr_slice_buffer_trim_end(gpr_slice_buffer *src, size_t n,
                                gpr_slice_buffer *garbage);
+/* move the first n bytes of src into dst */
+void gpr_slice_buffer_move_first(gpr_slice_buffer *src, size_t n,
+                                 gpr_slice_buffer *dst);
+/* take the first slice in the slice buffer */
+gpr_slice gpr_slice_buffer_take_first(gpr_slice_buffer *src);
 
 #ifdef __cplusplus
 }

@@ -60,6 +60,8 @@ cdef extern from "grpc/support/port_platform.h":
   # type exactly; just close enough that the operations will be supported in the
   # underlying C layers.
   ctypedef unsigned int gpr_uint32
+  ctypedef int gpr_int32
+  ctypedef long int gpr_int64
 
 
 cdef extern from "grpc/support/time.h":
@@ -71,8 +73,8 @@ cdef extern from "grpc/support/time.h":
     GPR_TIMESPAN
 
   ctypedef struct gpr_timespec:
-    libc.time.time_t seconds "tv_sec"
-    int nanoseconds "tv_nsec"
+    gpr_int64 seconds "tv_sec"
+    gpr_int32 nanoseconds "tv_nsec"
     gpr_clock_type clock_type
 
   gpr_timespec gpr_time_0(gpr_clock_type type)

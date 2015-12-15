@@ -42,13 +42,13 @@
 #include <ext/standard/info.h>
 #include <ext/spl/spl_exceptions.h>
 #include "php_grpc.h"
+#include "call_credentials.h"
 
 #include <zend_exceptions.h>
 #include <zend_hash.h>
 
 #include <stdbool.h>
 
-#include <grpc/support/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/grpc.h>
 
@@ -515,11 +515,41 @@ PHP_METHOD(Call, cancel) {
   grpc_call_cancel(call->wrapped, NULL);
 }
 
+/**
+ * Set the CallCredentials for this call.
+ * @param CallCredentials creds_obj The CallCredentials object
+ * @param int The error code
+ */
+PHP_METHOD(Call, setCredentials) {
+  zval *creds_obj;
+
+  /* "O" == 1 Object */
+  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &creds_obj,
+                            grpc_ce_call_credentials) == FAILURE) {
+    zend_throw_exception(spl_ce_InvalidArgumentException,
+                         "setCredentials expects 1 CallCredentials",
+                         1 TSRMLS_CC);
+    return;
+  }
+
+  wrapped_grpc_call_credentials *creds =
+      (wrapped_grpc_call_credentials *)zend_object_store_get_object(
+          creds_obj TSRMLS_CC);
+
+  wrapped_grpc_call *call =
+      (wrapped_grpc_call *)zend_object_store_get_object(getThis() TSRMLS_CC);
+
+  grpc_call_error error = GRPC_CALL_ERROR;
+  error = grpc_call_set_credentials(call->wrapped, creds->wrapped);
+  RETURN_LONG(error);
+}
+
 static zend_function_entry call_methods[] = {
     PHP_ME(Call, __construct, NULL, ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
     PHP_ME(Call, startBatch, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Call, getPeer, NULL, ZEND_ACC_PUBLIC)
     PHP_ME(Call, cancel, NULL, ZEND_ACC_PUBLIC)
+    PHP_ME(Call, setCredentials, NULL, ZEND_ACC_PUBLIC)
     PHP_FE_END};
 
 void grpc_init_call(TSRMLS_D) {

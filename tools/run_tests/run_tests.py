@@ -47,6 +47,7 @@ import tempfile
 import traceback
 import time
 import urllib2
+import uuid
 
 import jobset
 import report_utils
@@ -60,14 +61,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {}
 
 
 def platform_string():
-  if platform.system() == 'Windows':
-    return 'windows'
-  elif platform.system() == 'Darwin':
-    return 'mac'
-  elif platform.system() == 'Linux':
-    return 'linux'
-  else:
-    return 'posix'
+  return jobset.platform_string()
 
 
 # SimpleConfig: just compile with CONFIG=config, and run the binary to test
@@ -147,9 +141,9 @@ class CLanguage(object):
     self.platform = platform_string()
     self.test_lang = test_lang
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     out = []
-    binaries = get_c_tests(travis, self.test_lang)
+    binaries = get_c_tests(args.travis, self.test_lang)
     for target in binaries:
       if config.build_config in target['exclude_configs']:
         continue
@@ -159,12 +153,20 @@ class CLanguage(object):
       else:
         binary = 'bins/%s/%s' % (config.build_config, target['name'])
       if os.path.isfile(binary):
-        out.append(config.job_spec([binary], [binary]))
-      else:
+        out.append(config.job_spec([binary], [binary],
+                                   environ={'GRPC_DEFAULT_SSL_ROOTS_FILE_PATH':
+                                            os.path.abspath(os.path.dirname(
+                                                sys.argv[0]) + '/../../src/core/tsi/test_creds/ca.pem')}))
+      elif args.regex == '.*' or platform_string() == 'windows':
         print '\nWARNING: binary not found, skipping', binary
     return sorted(out)
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
+    if platform_string() != 'windows' and test_regex != '.*':
+      # use the regex to minimize the number of things to build
+      return [target['name']
+              for target in get_c_tests(False, self.test_lang)
+              if re.search(test_regex, target['name'])]
     if platform_string() == 'windows':
       # don't build tools on windows just yet
       return ['buildtests_%s' % self.make_target]
@@ -194,9 +196,10 @@ class CLanguage(object):
   def __str__(self):
     return self.make_target
 
+
 class NodeLanguage(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return [config.job_spec(['tools/run_tests/run_node.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
@@ -204,7 +207,7 @@ class NodeLanguage(object):
     # Default to 1 week cache expiration
     return [['tools/run_tests/pre_build_node.sh']]
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return []
 
   def build_steps(self):
@@ -225,14 +228,14 @@ class NodeLanguage(object):
 
 class PhpLanguage(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return [config.job_spec(['src/php/bin/run_tests.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['static_c', 'shared_c']
 
   def build_steps(self):
@@ -257,7 +260,7 @@ class PythonLanguage(object):
     self._build_python_versions = ['2.7']
     self._has_python_versions = []
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
     environment['PYVER'] = '2.7'
     return [config.job_spec(
@@ -271,7 +274,7 @@ class PythonLanguage(object):
   def pre_build_steps(self):
     return []
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['static_c', 'grpc_python_plugin', 'shared_c']
 
   def build_steps(self):
@@ -303,21 +306,21 @@ class PythonLanguage(object):
 
 class RubyLanguage(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return [config.job_spec(['tools/run_tests/run_ruby.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return [['tools/run_tests/pre_build_ruby.sh']]
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['static_c']
 
   def build_steps(self):
     return [['tools/run_tests/build_ruby.sh']]
 
   def post_tests_steps(self):
-    return []
+    return [['tools/run_tests/post_tests_ruby.sh']]
 
   def makefile_name(self):
     return 'Makefile'
@@ -333,27 +336,43 @@ class CSharpLanguage(object):
   def __init__(self):
     self.platform = platform_string()
 
-  def test_specs(self, config, travis):
-    assemblies = ['Grpc.Core.Tests',
-                  'Grpc.Examples.Tests',
-                  'Grpc.HealthCheck.Tests',
-                  'Grpc.IntegrationTesting']
+  def test_specs(self, config, args):
+    with open('src/csharp/tests.json') as f:
+      tests_json = json.load(f)
+    assemblies = tests_json['assemblies']
+    tests = tests_json['tests']
+
+    msbuild_config = _WINDOWS_CONFIG[config.build_config]
+    assembly_files = ['%s/bin/%s/%s.dll' % (a, msbuild_config, a)
+                      for a in assemblies]
+
+    extra_args = ['-labels'] + assembly_files
+
     if self.platform == 'windows':
-      cmd = 'tools\\run_tests\\run_csharp.bat'
+      script_name = 'tools\\run_tests\\run_csharp.bat'
+      extra_args += ['-domain=None']
     else:
-      cmd = 'tools/run_tests/run_csharp.sh'
+      script_name = 'tools/run_tests/run_csharp.sh'
 
     if config.build_config == 'gcov':
       # On Windows, we only collect C# code coverage.
       # On Linux, we only collect coverage for native extension.
       # For code coverage all tests need to run as one suite.
-      return [config.job_spec([cmd], None,
-              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
+      return [config.job_spec([script_name] + extra_args, None,
+                              shortname='csharp.coverage',
+                              environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
     else:
-      return [config.job_spec([cmd, assembly],
-              None, shortname=assembly,
-              environ=_FORCE_ENVIRON_FOR_WRAPPERS)
-              for assembly in assemblies]
+      specs = []
+      for test in tests:
+        cmdline = [script_name, '-run=%s' % test] + extra_args
+        if self.platform == 'windows':
+          # use different output directory for each test to prevent
+          # TestResult.xml clash between parallel test runs.
+          cmdline += ['-work=test-result/%s' % uuid.uuid4()]
+        specs.append(config.job_spec(cmdline, None,
+                                     shortname='csharp.%s' % test,
+                                     environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+      return specs
 
   def pre_build_steps(self):
     if self.platform == 'windows':
@@ -361,7 +380,7 @@ class CSharpLanguage(object):
     else:
       return [['tools/run_tests/pre_build_csharp.sh']]
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     # For Windows, this target doesn't really build anything,
     # everything is build by buildall script later.
     if self.platform == 'windows':
@@ -390,14 +409,14 @@ class CSharpLanguage(object):
 
 class ObjCLanguage(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return [config.job_spec(['src/objective-c/tests/run_tests.sh'], None,
                             environ=_FORCE_ENVIRON_FOR_WRAPPERS)]
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['grpc_objective_c_plugin', 'interop_server']
 
   def build_steps(self):
@@ -418,14 +437,14 @@ class ObjCLanguage(object):
 
 class Sanity(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return [config.job_spec(['tools/run_tests/run_sanity.sh'], None),
             config.job_spec(['tools/run_tests/check_sources_and_headers.py'], None)]
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['run_dep_checks']
 
   def build_steps(self):
@@ -446,13 +465,13 @@ class Sanity(object):
 
 class Build(object):
 
-  def test_specs(self, config, travis):
+  def test_specs(self, config, args):
     return []
 
   def pre_build_steps(self):
     return []
 
-  def make_targets(self):
+  def make_targets(self, test_regex):
     return ['static']
 
   def build_steps(self):
@@ -480,10 +499,10 @@ _CONFIGS = {
     'msan': SimpleConfig('msan', timeout_multiplier=1.5),
     'ubsan': SimpleConfig('ubsan'),
     'asan': SimpleConfig('asan', timeout_multiplier=1.5, environ={
-        'ASAN_OPTIONS': 'detect_leaks=1:color=always:suppressions=tools/tsan_suppressions.txt',
+        'ASAN_OPTIONS': 'detect_leaks=1:color=always',
         'LSAN_OPTIONS': 'report_objects=1'}),
     'asan-noleaks': SimpleConfig('asan', environ={
-        'ASAN_OPTIONS': 'detect_leaks=0:color=always:suppressions=tools/tsan_suppressions.txt'}),
+        'ASAN_OPTIONS': 'detect_leaks=0:color=always'}),
     'gcov': SimpleConfig('gcov'),
     'memcheck': ValgrindConfig('valgrind', 'memcheck', ['--leak-check=full']),
     'helgrind': ValgrindConfig('dbg', 'helgrind')
@@ -507,8 +526,46 @@ _LANGUAGES = {
 _WINDOWS_CONFIG = {
     'dbg': 'Debug',
     'opt': 'Release',
+    'gcov': 'Release',
     }
 
+
+def _windows_arch_option(arch):
+  """Returns msbuild cmdline option for selected architecture."""
+  if arch == 'default' or arch == 'windows_x86':
+    return '/p:Platform=Win32'
+  elif arch == 'windows_x64':
+    return '/p:Platform=x64'
+  else:
+    print 'Architecture %s not supported on current platform.' % arch
+    sys.exit(1)
+
+    
+def _windows_build_bat(compiler):
+  """Returns name of build.bat for selected compiler."""
+  if compiler == 'default' or compiler == 'vs2013':
+    return 'vsprojects\\build_vs2013.bat'
+  elif compiler == 'vs2015':
+    return 'vsprojects\\build_vs2015.bat'
+  elif compiler == 'vs2010':
+    return 'vsprojects\\build_vs2010.bat'
+  else:
+    print 'Compiler %s not supported.' % compiler
+    sys.exit(1)
+    
+    
+def _windows_toolset_option(compiler):
+  """Returns msbuild PlatformToolset for selected compiler."""
+  if compiler == 'default' or compiler == 'vs2013':
+    return '/p:PlatformToolset=v120'
+  elif compiler == 'vs2015':
+    return '/p:PlatformToolset=v140'
+  elif compiler == 'vs2010':
+    return '/p:PlatformToolset=v100'
+  else:
+    print 'Compiler %s not supported.' % compiler
+    sys.exit(1)
+   
 
 def runs_per_test_type(arg_str):
     """Auxilary function to parse the "runs_per_test" flag.
@@ -574,6 +631,19 @@ argp.add_argument('--allow_flakes',
                   action='store_const',
                   const=True,
                   help='Allow flaky tests to show as passing (re-runs failed tests up to five times)')
+argp.add_argument('--arch',
+                  choices=['default', 'windows_x86', 'windows_x64'],
+                  default='default',
+                  help='Selects architecture to target. For some platforms "default" is the only supported choice.')
+argp.add_argument('--compiler',
+                  choices=['default', 'vs2010', 'vs2013', 'vs2015'],
+                  default='default',
+                  help='Selects compiler to use. For some platforms "default" is the only supported choice.')
+argp.add_argument('--build_only',
+                  default=False,
+                  action='store_const',
+                  const=True,
+                  help='Perform all the build steps but dont run any tests.')
 argp.add_argument('-a', '--antagonists', default=0, type=int)
 argp.add_argument('-x', '--xml_report', default=None, type=str,
         help='Generates a JUnit-compatible XML report')
@@ -619,10 +689,15 @@ build_configs = set(cfg.build_config for cfg in run_configs)
 if args.travis:
   _FORCE_ENVIRON_FOR_WRAPPERS = {'GRPC_TRACE': 'api'}
 
-languages = set(_LANGUAGES[l]
-                for l in itertools.chain.from_iterable(
-                      _LANGUAGES.iterkeys() if x == 'all' else [x]
-                      for x in args.language))
+if 'all' in args.language:
+  lang_list = _LANGUAGES.keys()  
+else:
+  lang_list = args.language
+# We don't support code coverage on ObjC
+if 'gcov' in args.config and 'objc' in lang_list:
+  lang_list.remove('objc')
+
+languages = set(_LANGUAGES[l] for l in lang_list)
 
 if len(build_configs) > 1:
   for language in languages:
@@ -630,7 +705,15 @@ if len(build_configs) > 1:
       print language, 'does not support multiple build configurations'
       sys.exit(1)
 
-if platform.system() == 'Windows':
+if platform_string() != 'windows':
+  if args.arch != 'default':
+    print 'Architecture %s not supported on current platform.' % args.arch
+    sys.exit(1)
+  if args.compiler != 'default':
+    print 'Compiler %s not supported on current platform.' % args.compiler
+    sys.exit(1)
+
+if platform_string() == 'windows':
   def make_jobspec(cfg, targets, makefile='Makefile'):
     extra_args = []
     # better do parallel compilation
@@ -640,9 +723,11 @@ if platform.system() == 'Windows':
     # disable PDB generation: it's broken, and we don't need it during CI
     extra_args.extend(['/p:Jenkins=true'])
     return [
-      jobset.JobSpec(['vsprojects\\build.bat',
+      jobset.JobSpec([_windows_build_bat(args.compiler),
                       'vsprojects\\%s.sln' % target,
-                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg]] +
+                      '/p:Configuration=%s' % _WINDOWS_CONFIG[cfg],
+                      _windows_toolset_option(args.compiler),
+                      _windows_arch_option(args.arch)] +
                       extra_args,
                       shell=True, timeout_seconds=90*60)
       for target in targets]
@@ -662,7 +747,7 @@ make_targets = {}
 for l in languages:
   makefile = l.makefile_name()
   make_targets[makefile] = make_targets.get(makefile, set()).union(
-      set(l.make_targets()))
+      set(l.make_targets(args.regex)))
 
 build_steps = list(set(
                    jobset.JobSpec(cmdline, environ={'CONFIG': cfg}, flake_retries=5)
@@ -760,7 +845,7 @@ def _start_port_server(port_server_port):
             '-p', '%d' % port_server_port, '-l', logfile]
     env = dict(os.environ)
     env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
-    if platform.system() == 'Windows':
+    if platform_string() == 'windows':
       # Working directory of port server needs to be outside of Jenkins
       # workspace to prevent file lock issues.
       tempdir = tempfile.mkdtemp()
@@ -835,15 +920,19 @@ def _calculate_num_runs_failures(list_of_results):
       num_failures += jobresult.num_failures
   return num_runs, num_failures
 
+
 def _build_and_run(
-    check_cancelled, newline_on_success, travis, cache, xml_report=None):
+    check_cancelled, newline_on_success, cache, xml_report=None, build_only=False):
   """Do one pass of building & running tests."""
   # build latest sequentially
   num_failures, _ = jobset.run(
       build_steps, maxjobs=1, stop_on_failure=True,
-      newline_on_success=newline_on_success, travis=travis)
+      newline_on_success=newline_on_success, travis=args.travis)
   if num_failures:
     return 1
+    
+  if build_only:
+    return 0
 
   # start antagonists
   antagonists = [subprocess.Popen(['tools/run_tests/antagonist.py'])
@@ -851,17 +940,18 @@ def _build_and_run(
   port_server_port = 32767
   _start_port_server(port_server_port)
   resultset = None
+  num_test_failures = 0
   try:
     infinite_runs = runs_per_test == 0
     one_run = set(
       spec
       for config in run_configs
       for language in languages
-      for spec in language.test_specs(config, args.travis)
+      for spec in language.test_specs(config, args)
       if re.search(args.regex, spec.shortname))
     # When running on travis, we want out test runs to be as similar as possible
     # for reproducibility purposes.
-    if travis:
+    if args.travis:
       massaged_one_run = sorted(one_run, key=lambda x: x.shortname)
     else:
       # whereas otherwise, we want to shuffle things up to give all tests a
@@ -874,9 +964,9 @@ def _build_and_run(
                      else itertools.repeat(massaged_one_run, runs_per_test))
     all_runs = itertools.chain.from_iterable(runs_sequence)
 
-    number_failures, resultset = jobset.run(
+    num_test_failures, resultset = jobset.run(
         all_runs, check_cancelled, newline_on_success=newline_on_success,
-        travis=travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
+        travis=args.travis, infinite_runs=infinite_runs, maxjobs=args.jobs,
         stop_on_failure=args.stop_on_failure,
         cache=cache if not xml_report else None,
         add_env={'GRPC_TEST_PORT_SERVER': 'localhost:%d' % port_server_port})
@@ -891,19 +981,17 @@ def _build_and_run(
               do_newline=True)
         else:
           jobset.message('PASSED', k, do_newline=True)
-    if number_failures:
-      return 2
   finally:
     for antagonist in antagonists:
       antagonist.kill()
     if xml_report and resultset:
-      report_utils.render_xml_report(resultset, xml_report)
+      report_utils.render_junit_xml_report(resultset, xml_report)
 
   number_failures, _ = jobset.run(
       post_tests_steps, maxjobs=1, stop_on_failure=True,
-      newline_on_success=newline_on_success, travis=travis)
-  if number_failures:
-    return 3
+      newline_on_success=newline_on_success, travis=args.travis)
+  if num_test_failures or number_failures:
+    return 2
 
   if cache: cache.save()
 
@@ -922,8 +1010,8 @@ if forever:
     previous_success = success
     success = _build_and_run(check_cancelled=have_files_changed,
                              newline_on_success=False,
-                             travis=args.travis,
-                             cache=test_cache) == 0
+                             cache=test_cache,
+                             build_only=args.build_only) == 0
     if not previous_success and success:
       jobset.message('SUCCESS',
                      'All tests are now passing properly',
@@ -934,9 +1022,9 @@ if forever:
 else:
   result = _build_and_run(check_cancelled=lambda: False,
                           newline_on_success=args.newline_on_success,
-                          travis=args.travis,
                           cache=test_cache,
-                          xml_report=args.xml_report)
+                          xml_report=args.xml_report,
+                          build_only=args.build_only)
   if result == 0:
     jobset.message('SUCCESS', 'All tests passed', do_newline=True)
   else:

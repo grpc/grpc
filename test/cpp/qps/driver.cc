@@ -110,7 +110,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   list<ClientContext> contexts;
 
   // To be added to the result, containing the final configuration used for
-  // client and config (incluiding host, etc.)
+  // client and config (including host, etc.)
   ClientConfig result_client_config;
   ServerConfig result_server_config;
 

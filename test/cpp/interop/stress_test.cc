@@ -38,14 +38,22 @@
 #include <vector>
 
 #include <gflags/gflags.h>
-#include <grpc/support/time.h>
 #include <grpc++/create_channel.h>
 #include <grpc++/grpc++.h>
 #include <grpc++/impl/thd.h>
+#include <grpc/support/time.h>
 
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/interop/stress_interop_client.h"
+#include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
+#include "test/proto/metrics.grpc.pb.h"
+#include "test/proto/metrics.pb.h"
+
+DEFINE_int32(metrics_port, 8081, "The metrics server port.");
+
+DEFINE_int32(metrics_collection_interval_secs, 5,
+             "How often (in seconds) should metrics be recorded.");
 
 DEFINE_int32(sleep_duration_ms, 0,
              "The duration (in millisec) between two"
@@ -61,6 +69,13 @@ DEFINE_string(server_addresses, "localhost:8080",
               " addresses in the format:\n"
               " \"<name_1>:<port_1>,<name_2>:<port_1>...<name_N>:<port_N>\"\n"
               " Note: <name> can be servername or IP address.");
+
+DEFINE_int32(num_channels_per_server, 1, "Number of channels for each server");
+
+DEFINE_int32(num_stubs_per_channel, 1,
+             "Number of stubs per each channels to server. This number also "
+             "indicates the max number of parallel RPC calls on each channel "
+             "at any given time.");
 
 // TODO(sreek): Add more test cases here in future
 DEFINE_string(test_cases, "",
@@ -79,15 +94,13 @@ DEFINE_string(test_cases, "",
               " 'large_unary', 10% of the time and 'empty_stream' the remaining"
               " 70% of the time");
 
-using std::make_pair;
-using std::pair;
-using std::vector;
-
 using grpc::testing::kTestCaseList;
+using grpc::testing::MetricsService;
+using grpc::testing::MetricsServiceImpl;
 using grpc::testing::StressTestInteropClient;
 using grpc::testing::TestCaseType;
-using grpc::testing::WeightedRandomTestSelector;
 using grpc::testing::UNKNOWN_TEST;
+using grpc::testing::WeightedRandomTestSelector;
 
 TestCaseType GetTestTypeFromName(const grpc::string& test_name) {
   TestCaseType test_case = UNKNOWN_TEST;
@@ -104,7 +117,7 @@ TestCaseType GetTestTypeFromName(const grpc::string& test_name) {
 
 // Converts a string of comma delimited tokens to a vector of tokens
 bool ParseCommaDelimitedString(const grpc::string& comma_delimited_str,
-                               vector<grpc::string>& tokens) {
+                               std::vector<grpc::string>& tokens) {
   size_t bpos = 0;
   size_t epos = grpc::string::npos;
 
@@ -122,10 +135,10 @@ bool ParseCommaDelimitedString(const grpc::string& comma_delimited_str,
 //   - Whether parsing was successful (return value)
 //   - Vector of (test_type_enum, weight) pairs returned via 'tests' parameter
 bool ParseTestCasesString(const grpc::string& test_cases,
-                          vector<pair<TestCaseType, int>>& tests) {
+                          std::vector<std::pair<TestCaseType, int>>& tests) {
   bool is_success = true;
 
-  vector<grpc::string> tokens;
+  std::vector<grpc::string> tokens;
   ParseCommaDelimitedString(test_cases, tokens);
 
   for (auto it = tokens.begin(); it != tokens.end(); it++) {
@@ -153,8 +166,8 @@ bool ParseTestCasesString(const grpc::string& test_cases,
 }
 
 // For debugging purposes
-void LogParameterInfo(const vector<grpc::string>& addresses,
-                      const vector<pair<TestCaseType, int>>& tests) {
+void LogParameterInfo(const std::vector<grpc::string>& addresses,
+                      const std::vector<std::pair<TestCaseType, int>>& tests) {
   gpr_log(GPR_INFO, "server_addresses: %s", FLAGS_server_addresses.c_str());
   gpr_log(GPR_INFO, "test_cases : %s", FLAGS_test_cases.c_str());
   gpr_log(GPR_INFO, "sleep_duration_ms: %d", FLAGS_sleep_duration_ms);
@@ -180,7 +193,7 @@ int main(int argc, char** argv) {
   srand(time(NULL));
 
   // Parse the server addresses
-  vector<grpc::string> server_addresses;
+  std::vector<grpc::string> server_addresses;
   ParseCommaDelimitedString(FLAGS_server_addresses, server_addresses);
 
   // Parse test cases and weights
@@ -189,7 +202,7 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  vector<pair<TestCaseType, int>> tests;
+  std::vector<std::pair<TestCaseType, int>> tests;
   if (!ParseTestCasesString(FLAGS_test_cases, tests)) {
     gpr_log(GPR_ERROR, "Error in parsing test cases string %s ",
             FLAGS_test_cases.c_str());
@@ -199,23 +212,64 @@ int main(int argc, char** argv) {
   LogParameterInfo(server_addresses, tests);
 
   WeightedRandomTestSelector test_selector(tests);
+  MetricsServiceImpl metrics_service;
 
   gpr_log(GPR_INFO, "Starting test(s)..");
 
-  vector<grpc::thread> test_threads;
-  int thread_idx = 0;
-  for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
-    StressTestInteropClient* client = new StressTestInteropClient(
-        ++thread_idx, *it, test_selector, FLAGS_test_duration_secs,
-        FLAGS_sleep_duration_ms);
+  std::vector<grpc::thread> test_threads;
 
-    test_threads.emplace_back(
-        grpc::thread(&StressTestInteropClient::MainLoop, client));
+  // Create and start the test threads.
+  // Note that:
+  // - Each server can have multiple channels (as configured by
+  // FLAGS_num_channels_per_server).
+  //
+  // - Each channel can have multiple stubs (as configured by
+  // FLAGS_num_stubs_per_channel). This is to test calling multiple RPCs in
+  // parallel on the same channel.
+  int thread_idx = 0;
+  int server_idx = -1;
+  char buffer[256];
+  for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
+    ++server_idx;
+    // Create channel(s) for each server
+    for (int channel_idx = 0; channel_idx < FLAGS_num_channels_per_server;
+         channel_idx++) {
+      // TODO (sreek). This won't work for tests that require Authentication
+      std::shared_ptr<grpc::Channel> channel(
+          grpc::CreateChannel(*it, grpc::InsecureChannelCredentials()));
+
+      // Create stub(s) for each channel
+      for (int stub_idx = 0; stub_idx < FLAGS_num_stubs_per_channel;
+           stub_idx++) {
+        StressTestInteropClient* client = new StressTestInteropClient(
+            ++thread_idx, *it, channel, test_selector, FLAGS_test_duration_secs,
+            FLAGS_sleep_duration_ms, FLAGS_metrics_collection_interval_secs);
+
+        bool is_already_created;
+        // Gauge name
+        std::snprintf(buffer, sizeof(buffer),
+                      "/stress_test/server_%d/channel_%d/stub_%d/qps",
+                      server_idx, channel_idx, stub_idx);
+
+        test_threads.emplace_back(grpc::thread(
+            &StressTestInteropClient::MainLoop, client,
+            metrics_service.CreateGauge(buffer, &is_already_created)));
+
+        // The Gauge should not have been already created
+        GPR_ASSERT(!is_already_created);
+      }
+    }
   }
 
+  // Start metrics server before waiting for the stress test threads
+  std::unique_ptr<grpc::Server> metrics_server =
+      metrics_service.StartServer(FLAGS_metrics_port);
+
+  // Wait for the stress test threads to complete
   for (auto it = test_threads.begin(); it != test_threads.end(); it++) {
     it->join();
   }
 
+  metrics_server->Wait();
   return 0;
 }

@@ -57,6 +57,7 @@ static void RunSynchronousUnaryPingPong() {
 
   ServerConfig server_config;
   server_config.set_server_type(SYNC_SERVER);
+  server_config.set_host("localhost");
 
   // Set up security params
   SecurityParams security;
