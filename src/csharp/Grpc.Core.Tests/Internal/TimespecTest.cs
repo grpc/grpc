@@ -167,18 +167,18 @@ namespace Grpc.Core.Internal.Tests
                 () => Timespec.FromDateTime(new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified)));
         }
             
-        // Test attribute commented out to prevent running as part of the default test suite.
-        // [Test]
-        // [Category("Performance")]
+        [Test]
+        [Category("Performance")]
+        [Ignore("Prevent running on Jenkins")]
         public void NowBenchmark() 
         {
             // approx Timespec.Now latency <33ns
             BenchmarkUtil.RunBenchmark(10000000, 1000000000, () => { var now = Timespec.Now; });
         }
-
-        // Test attribute commented out to prevent running as part of the default test suite.
-        // [Test]
-        // [Category("Performance")]
+            
+        [Test]
+        [Category("Performance")]
+        [Ignore("Prevent running on Jenkins")]
         public void PreciseNowBenchmark()
         {
             // approx Timespec.PreciseNow latency <18ns (when compiled with GRPC_TIMERS_RDTSC)
