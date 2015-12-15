@@ -18427,5 +18427,37 @@
       "posix", 
       "windows"
     ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "bad_ssl_alpn_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "exclude_configs": [], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "bad_ssl_cert_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
   }
 ]
