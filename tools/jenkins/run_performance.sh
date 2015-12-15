@@ -34,6 +34,10 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../..
 
+[[ $* =~ '--latency_profile' ]] \
+	&& tools/profiling/latency_profile/run_latency_profile.sh \
+	|| true
+
 config=opt
 
 make CONFIG=$config qps_worker qps_driver -j8
@@ -45,7 +49,7 @@ PID2=$!
 
 export QPS_WORKERS="localhost:10000,localhost:10010"
 
-bins/$config/qps_driver $*
+bins/$config/qps_driver
 
 kill -2 $PID1 $PID2
 wait
