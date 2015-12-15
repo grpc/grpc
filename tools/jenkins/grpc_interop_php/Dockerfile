@@ -100,9 +100,10 @@ RUN /bin/bash -l -c "rvm all do gem install ronn rake"
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
 
-# attempt to force a rebuild of the docker image after this point because
-# Protobuf-PHP codegen has been updated
-RUN echo 1
+# As an attempt to work around #4212, try to prefetch Protobuf-PHP dependency
+# into composer cache to prevent "composer install" from cloning on each build.
+RUN git clone --mirror https://github.com/stanley-cheung/Protobuf-PHP.git \
+  /root/.composer/cache/vcs/git-github.com-stanley-cheung-Protobuf-PHP.git/
 
 # Download the patched PHP protobuf so that PHP gRPC clients can be generated
 # from proto3 schemas.
@@ -112,11 +113,6 @@ RUN /bin/bash -l -c "rvm use ruby-2.1 \
   && cd /var/local/git/protobuf-php \
   && rvm all do rake pear:package version=1.0 \
   && pear install Protobuf-1.0.tgz"
-
-# As an attempt to work around #4212, try to prefetch Protobuf-PHP dependency
-# into composer cache to prevent "composer install" from cloning on each build.
-RUN git clone --mirror https://github.com/stanley-cheung/Protobuf-PHP.git \
-  /root/.composer/cache/vcs/git-github.com-stanley-cheung-Protobuf-PHP.git/
 
 # Define the default command.
 CMD ["bash"]
