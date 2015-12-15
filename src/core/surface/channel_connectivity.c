@@ -189,7 +189,7 @@ void grpc_channel_watch_connectivity_state(
       7, (channel, (int)last_observed_state, (long long)deadline.tv_sec,
           (int)deadline.tv_nsec, (int)deadline.clock_type, cq, tag));
 
-  grpc_cq_begin_op(cq);
+  grpc_cq_begin_op(cq, tag);
 
   gpr_mu_init(&w->mu);
   grpc_closure_init(&w->on_complete, watch_complete, w);

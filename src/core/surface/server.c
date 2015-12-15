@@ -1007,7 +1007,7 @@ void grpc_server_shutdown_and_notify(grpc_server *server,
 
   /* lock, and gather up some stuff to do */
   gpr_mu_lock(&server->mu_global);
-  grpc_cq_begin_op(cq);
+  grpc_cq_begin_op(cq, tag);
   if (server->shutdown_published) {
     grpc_cq_end_op(&exec_ctx, cq, tag, 1, done_published_shutdown, NULL,
                    gpr_malloc(sizeof(grpc_cq_completion)));
@@ -1176,7 +1176,7 @@ grpc_call_error grpc_server_request_call(
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
     goto done;
   }
-  grpc_cq_begin_op(cq_for_notification);
+  grpc_cq_begin_op(cq_for_notification, tag);
   details->reserved = NULL;
   rc->type = BATCH_CALL;
   rc->server = server;
@@ -1213,7 +1213,7 @@ grpc_call_error grpc_server_request_registered_call(
     error = GRPC_CALL_ERROR_NOT_SERVER_COMPLETION_QUEUE;
     goto done;
   }
-  grpc_cq_begin_op(cq_for_notification);
+  grpc_cq_begin_op(cq_for_notification, tag);
   rc->type = REGISTERED_CALL;
   rc->server = server;
   rc->tag = tag;
