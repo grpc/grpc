@@ -134,6 +134,9 @@ static void connectivity_state_set(
 static void check_read_ops(grpc_exec_ctx *exec_ctx,
                            grpc_chttp2_transport_global *transport_global);
 
+static void fail_pending_writes(grpc_exec_ctx *exec_ctx, 
+                                grpc_chttp2_stream_global *stream_global);
+
 /*
  * CONSTRUCTION/DESTRUCTION/REFCOUNTING
  */
@@ -625,6 +628,7 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
                                    void *transport_writing_ptr, int success) {
   grpc_chttp2_transport_writing *transport_writing = transport_writing_ptr;
   grpc_chttp2_transport *t = TRANSPORT_FROM_WRITING(transport_writing);
+  grpc_chttp2_stream_global *stream_global;
 
   GPR_TIMER_BEGIN("grpc_chttp2_terminate_writing", 0);
 
@@ -637,6 +641,11 @@ void grpc_chttp2_terminate_writing(grpc_exec_ctx *exec_ctx,
   }
 
   grpc_chttp2_cleanup_writing(exec_ctx, &t->global, &t->writing);
+
+  while (grpc_chttp2_list_pop_closed_waiting_for_writing(&t->global, &stream_global)) {
+    fail_pending_writes(exec_ctx, stream_global);
+    GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "finish_writes");
+  }
 
   /* leave the writing flag up on shutdown to prevent further writes in unlock()
      from starting */
@@ -1107,6 +1116,16 @@ void grpc_chttp2_fake_status(grpc_exec_ctx *exec_ctx,
   }
 }
 
+static void fail_pending_writes(grpc_exec_ctx *exec_ctx, 
+                                grpc_chttp2_stream_global *stream_global) {
+  grpc_chttp2_complete_closure_step(
+      exec_ctx, &stream_global->send_initial_metadata_finished, 0);
+  grpc_chttp2_complete_closure_step(
+      exec_ctx, &stream_global->send_trailing_metadata_finished, 0);
+  grpc_chttp2_complete_closure_step(exec_ctx,
+                                    &stream_global->send_message_finished, 0);
+}
+
 void grpc_chttp2_mark_stream_closed(
     grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
     grpc_chttp2_stream_global *stream_global, int close_reads,
@@ -1123,12 +1142,13 @@ void grpc_chttp2_mark_stream_closed(
   }
   if (close_writes && !stream_global->write_closed) {
     stream_global->write_closed = 1;
-    grpc_chttp2_complete_closure_step(
-        exec_ctx, &stream_global->send_initial_metadata_finished, 0);
-    grpc_chttp2_complete_closure_step(
-        exec_ctx, &stream_global->send_trailing_metadata_finished, 0);
-    grpc_chttp2_complete_closure_step(exec_ctx,
-                                      &stream_global->send_message_finished, 0);
+    if (TRANSPORT_FROM_GLOBAL(transport_global)->writing_active) {
+      GRPC_CHTTP2_STREAM_REF(stream_global, "finish_writes");
+      grpc_chttp2_list_add_closed_waiting_for_writing(transport_global,
+                                                      stream_global);
+    } else {
+      fail_pending_writes(exec_ctx, stream_global);
+    }
   }
   if (stream_global->read_closed && stream_global->write_closed) {
     if (stream_global->id != 0 &&
@@ -1140,7 +1160,6 @@ void grpc_chttp2_mark_stream_closed(
         remove_stream(exec_ctx, TRANSPORT_FROM_GLOBAL(transport_global),
                       stream_global->id);
       }
-      stream_global->finished_close = 1;
       GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2");
     }
   }
@@ -1354,7 +1373,6 @@ static void recv_data(grpc_exec_ctx *exec_ctx, void *tp, int success) {
       GPR_ASSERT(stream_global->write_closed);
       GPR_ASSERT(stream_global->read_closed);
       remove_stream(exec_ctx, t, stream_global->id);
-      stream_global->finished_close = 1;
       GRPC_CHTTP2_STREAM_UNREF(exec_ctx, stream_global, "chttp2");
     }
   }
