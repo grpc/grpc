@@ -115,11 +115,6 @@ static void close_from_api(grpc_exec_ctx *exec_ctx,
                            grpc_status_code status,
                            gpr_slice *optional_message);
 
-/** Fail any outstanding ops */
-static void fail_all_outstanding_ops(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global);
-
 /** Add endpoint from this transport to pollset */
 static void add_to_pollset_locked(grpc_exec_ctx *exec_ctx,
                                   grpc_chttp2_transport *t,
@@ -753,21 +748,6 @@ void grpc_chttp2_complete_closure_step(grpc_exec_ctx *exec_ctx,
   *pclosure = NULL;
 }
 
-static void fail_all_outstanding_ops(
-    grpc_exec_ctx *exec_ctx, grpc_chttp2_transport_global *transport_global,
-    grpc_chttp2_stream_global *stream_global) {
-  grpc_chttp2_complete_closure_step(
-      exec_ctx, &stream_global->send_initial_metadata_finished, 0);
-  grpc_chttp2_complete_closure_step(
-      exec_ctx, &stream_global->send_trailing_metadata_finished, 0);
-  grpc_chttp2_complete_closure_step(exec_ctx,
-                                    &stream_global->send_message_finished, 0);
-  grpc_chttp2_complete_closure_step(
-      exec_ctx, &stream_global->recv_initial_metadata_finished, 0);
-  grpc_chttp2_complete_closure_step(
-      exec_ctx, &stream_global->recv_trailing_metadata_finished, 0);
-}
-
 static int contains_non_ok_status(
     grpc_chttp2_transport_global *transport_global,
     grpc_metadata_batch *batch) {
@@ -1042,9 +1022,6 @@ static void check_read_ops(grpc_exec_ctx *exec_ctx,
             exec_ctx, &stream_global->recv_trailing_metadata_finished, 1);
       }
     }
-    if (stream_global->finished_close) {
-      fail_all_outstanding_ops(exec_ctx, transport_global, stream_global);
-    }
   }
 }
 
@@ -1146,6 +1123,12 @@ void grpc_chttp2_mark_stream_closed(
   }
   if (close_writes && !stream_global->write_closed) {
     stream_global->write_closed = 1;
+    grpc_chttp2_complete_closure_step(
+        exec_ctx, &stream_global->send_initial_metadata_finished, 0);
+    grpc_chttp2_complete_closure_step(
+        exec_ctx, &stream_global->send_trailing_metadata_finished, 0);
+    grpc_chttp2_complete_closure_step(exec_ctx,
+                                      &stream_global->send_message_finished, 0);
   }
   if (stream_global->read_closed && stream_global->write_closed) {
     if (stream_global->id != 0 &&
