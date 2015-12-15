@@ -1123,7 +1123,8 @@ static grpc_call_error call_start_batch(grpc_exec_ctx *exec_ctx,
     }
     gpr_mu_unlock(&call->mu);
     post_batch_completion(exec_ctx, bctl);
-    return GRPC_CALL_OK;
+    error = GRPC_CALL_OK;
+    goto done;
   }
 
   /* rewrite batch ops into a transport op */
