@@ -42,4 +42,4 @@ cd /var/local/git/grpc
 make install-certs
 
 # build C++ interop client & server
-make interop_client interop_server
+make interop_client interop_server stress_test
