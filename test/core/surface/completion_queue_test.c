@@ -226,7 +226,7 @@ static void test_too_many_plucks(void) {
   }
 
   /* wait until all other threads are plucking */
-  gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(100));
+  gpr_sleep_until(GRPC_TIMEOUT_MILLIS_TO_DEADLINE(1000));
 
   ev = grpc_completion_queue_pluck(cc, create_test_tag(),
                                    gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
