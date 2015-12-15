@@ -1040,10 +1040,6 @@ static void remove_stream(grpc_exec_ctx *exec_ctx, grpc_chttp2_transport *t,
     t->parsing.incoming_stream = NULL;
     grpc_chttp2_parsing_become_skip_parser(exec_ctx, &t->parsing);
   }
-  if (s->global.recv_message_ready != NULL) {
-    grpc_exec_ctx_enqueue(exec_ctx, s->global.recv_message_ready, 0);
-    s->global.recv_message_ready = 0;
-  }
   if (s->parsing.data_parser.parsing_frame != NULL) {
     grpc_chttp2_incoming_byte_stream_finished(
         exec_ctx, s->parsing.data_parser.parsing_frame, 0, 0);
