@@ -33,7 +33,7 @@ set -ex
 out=$(readlink -f ${1:-coverage})
 
 root=$(readlink -f $(dirname $0)/../..)
-shift
+shift || true
 tmp=$(mktemp)
 cd $root
 tools/run_tests/run_tests.py -c gcov -l c c++ $@ || true
